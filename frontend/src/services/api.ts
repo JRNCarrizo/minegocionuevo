@@ -184,6 +184,26 @@ class ApiService {
     return response.data;
   }
 
+  async validarStock(empresaId: number, id: number, cantidad: number): Promise<ApiResponse<{
+    stockDisponible: number;
+    stockSuficiente: boolean;
+    cantidadSolicitada: number;
+    productoNombre: string;
+  }>> {
+    const response = await this.api.get(`/empresas/${empresaId}/productos/${id}/validar-stock?cantidad=${cantidad}`);
+    return response.data;
+  }
+
+  async validarStockPublico(subdominio: string, id: number, cantidad: number): Promise<ApiResponse<{
+    stockDisponible: number;
+    stockSuficiente: boolean;
+    cantidadSolicitada: number;
+    productoNombre: string;
+  }>> {
+    const response = await this.api.get(`/publico/${subdominio}/productos/${id}/validar-stock?cantidad=${cantidad}`);
+    return response.data;
+  }
+
   async eliminarProducto(empresaId: number, id: number): Promise<ApiResponse<void>> {
     const response = await this.api.delete(`/empresas/${empresaId}/productos/${id}`);
     return response.data;
@@ -373,6 +393,18 @@ class ApiService {
   // Obtener pedidos de un cliente (requiere empresaId y clienteId)
   async obtenerPedidosCliente(empresaId: number, clienteId: number): Promise<ApiResponse<Pedido[]>> {
     const response = await this.api.get(`/empresas/${empresaId}/pedidos/cliente/${clienteId}`);
+    return response.data;
+  }
+
+  // Obtener pedidos de un cliente (endpoint público)
+  async obtenerPedidosClientePublico(subdominio: string, clienteId: number): Promise<ApiResponse<Pedido[]>> {
+    const response = await this.api.get(`/publico/${subdominio}/pedidos/cliente/${clienteId}`);
+    return response.data;
+  }
+
+  // Cancelar pedido del cliente (endpoint público)
+  async cancelarPedidoCliente(subdominio: string, pedidoId: number, clienteId: number): Promise<ApiResponse<Pedido>> {
+    const response = await this.api.put(`/publico/${subdominio}/pedidos/${pedidoId}/cancelar?clienteId=${clienteId}`);
     return response.data;
   }
 

@@ -220,6 +220,52 @@ const GestionProductos: React.FC = () => {
     navigate(`/admin/productos/editar/${producto.id}`);
   };
 
+  const eliminarProducto = async (producto: Producto) => {
+    if (!empresaId) {
+      console.error('No hay empresaId para eliminar producto');
+      return;
+    }
+
+    // Confirmar eliminación
+    const confirmar = window.confirm(
+      `¿Estás seguro de que quieres eliminar "${producto.nombre}"?\n\n⚠️ Esta acción marcará el producto como inactivo y no se mostrará en el catálogo público.\n\nEl producto se puede reactivar más tarde desde la vista de productos inactivos.`
+    );
+    
+    if (!confirmar) {
+      return;
+    }
+
+    try {
+      console.log('=== DEBUG ELIMINAR PRODUCTO ===');
+      console.log('EmpresaId:', empresaId);
+      console.log('ProductoId:', producto.id);
+      console.log('Producto:', producto.nombre);
+      
+      // Llamar al endpoint de eliminar
+      await ApiService.eliminarProducto(empresaId, producto.id);
+      
+      // Actualizar la lista local
+      setProductos(productos.filter(p => p.id !== producto.id));
+      
+      console.log('Producto eliminado exitosamente');
+      
+      // Mostrar mensaje de éxito
+      alert(`✅ Producto "${producto.nombre}" eliminado exitosamente.\n\nEl producto ha sido marcado como inactivo y no aparecerá en el catálogo público.`);
+      
+    } catch (error) {
+      console.error('Error al eliminar producto:', error);
+      
+      // Mostrar información del error para debug
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: unknown } };
+        console.error('Status del error:', axiosError.response?.status);
+        console.error('Data del error:', axiosError.response?.data);
+      }
+      
+      alert('Error al eliminar el producto. Por favor, intenta nuevamente.');
+    }
+  };
+
   if (cargando) {
     return (
       <div className="pagina-productos">
@@ -480,6 +526,18 @@ const GestionProductos: React.FC = () => {
                           >
                             ✏️
                           </button>
+                          <button 
+                            onClick={() => eliminarProducto(producto)}
+                            className="boton-accion boton-eliminar"
+                            title="Eliminar"
+                            style={{
+                              backgroundColor: '#ef4444',
+                              color: 'white',
+                              border: '1px solid #dc2626'
+                            }}
+                          >
+                            🗑️
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -548,6 +606,17 @@ const GestionProductos: React.FC = () => {
                             className="boton-accion-tarjeta boton-editar"
                           >
                             Editar
+                          </button>
+                          <button 
+                            onClick={() => eliminarProducto(producto)}
+                            className="boton-accion-tarjeta boton-eliminar"
+                            style={{
+                              backgroundColor: '#ef4444',
+                              color: 'white',
+                              border: '1px solid #dc2626'
+                            }}
+                          >
+                            🗑️ Eliminar
                           </button>
                         </div>
                       </div>

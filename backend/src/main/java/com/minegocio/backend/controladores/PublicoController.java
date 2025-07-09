@@ -5,8 +5,10 @@ import com.minegocio.backend.dto.ProductoDTO;
 import com.minegocio.backend.servicios.EmpresaService;
 import com.minegocio.backend.servicios.ProductoService;
 import com.minegocio.backend.servicios.ClienteService;
+import com.minegocio.backend.servicios.PedidoService;
 import com.minegocio.backend.dto.ClienteDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +33,9 @@ public class PublicoController {
 
     @Autowired
     private ClienteService clienteService;
+    
+    @Autowired
+    private PedidoService pedidoService;
 
     /**
      * Obtener información pública de una empresa por subdominio
@@ -428,6 +433,170 @@ public class PublicoController {
                 "error", "Error al crear productos demo",
                 "detalle", e.getMessage()
             ));
+        }
+    }
+
+    /**
+     * Valida el stock disponible para un producto (endpoint público)
+     */
+    @GetMapping("/{subdominio}/productos/{id}/validar-stock")
+    public ResponseEntity<?> validarStockPublico(
+            @PathVariable String subdominio,
+            @PathVariable Long id,
+            @RequestParam Integer cantidad) {
+        try {
+            System.out.println("=== DEBUG VALIDAR STOCK PÚBLICO ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("ProductoId: " + id);
+            System.out.println("Cantidad solicitada: " + cantidad);
+            
+            Optional<Empresa> empresa = empresaService.obtenerPorSubdominio(subdominio);
+            
+            if (empresa.isEmpty()) {
+                var error = java.util.Map.of(
+                    "error", "Empresa no encontrada"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            Long empresaId = empresa.get().getId();
+            Optional<ProductoDTO> producto = productoService.obtenerProductoPorId(id, empresaId);
+            
+            if (producto.isEmpty()) {
+                var error = java.util.Map.of(
+                    "error", "Producto no encontrado"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            ProductoDTO prod = producto.get();
+            boolean stockSuficiente = prod.getStock() >= cantidad;
+            int stockDisponible = prod.getStock();
+            
+            System.out.println("Stock disponible: " + stockDisponible);
+            System.out.println("Stock suficiente: " + stockSuficiente);
+            
+            var respuesta = java.util.Map.of(
+                "stockDisponible", stockDisponible,
+                "stockSuficiente", stockSuficiente,
+                "cantidadSolicitada", cantidad,
+                "productoNombre", prod.getNombre()
+            );
+            
+            return ResponseEntity.ok(respuesta);
+        } catch (Exception e) {
+            System.err.println("Error al validar stock público: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Obtiene los pedidos de un cliente (endpoint público)
+     */
+    @GetMapping("/{subdominio}/pedidos/cliente/{clienteId}")
+    public ResponseEntity<?> obtenerPedidosCliente(
+            @PathVariable String subdominio,
+            @PathVariable Long clienteId) {
+        try {
+            System.out.println("=== DEBUG OBTENER PEDIDOS CLIENTE ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("ClienteId: " + clienteId);
+            
+            Optional<Empresa> empresa = empresaService.obtenerPorSubdominio(subdominio);
+            
+            if (empresa.isEmpty()) {
+                var error = java.util.Map.of(
+                    "error", "Empresa no encontrada"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            Long empresaId = empresa.get().getId();
+            List<com.minegocio.backend.dto.PedidoDTO> pedidos = pedidoService.obtenerPedidosPorClienteYEmpresa(clienteId, empresaId);
+            
+            System.out.println("Pedidos encontrados: " + pedidos.size());
+            
+            var respuesta = java.util.Map.of(
+                "data", pedidos,
+                "totalPedidos", pedidos.size()
+            );
+            
+            return ResponseEntity.ok(respuesta);
+        } catch (Exception e) {
+            System.err.println("Error al obtener pedidos del cliente: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Cancela un pedido del cliente (endpoint público)
+     */
+    @PutMapping("/{subdominio}/pedidos/{pedidoId}/cancelar")
+    public ResponseEntity<?> cancelarPedidoCliente(
+            @PathVariable String subdominio,
+            @PathVariable Long pedidoId,
+            @RequestParam Long clienteId) {
+        try {
+            System.out.println("=== DEBUG CANCELAR PEDIDO CLIENTE ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("PedidoId: " + pedidoId);
+            System.out.println("ClienteId: " + clienteId);
+            
+            Optional<Empresa> empresa = empresaService.obtenerPorSubdominio(subdominio);
+            
+            if (empresa.isEmpty()) {
+                var error = java.util.Map.of(
+                    "error", "Empresa no encontrada"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            Long empresaId = empresa.get().getId();
+            
+            // Verificar que el pedido pertenece al cliente
+            List<com.minegocio.backend.dto.PedidoDTO> pedidosCliente = pedidoService.obtenerPedidosPorClienteYEmpresa(clienteId, empresaId);
+            boolean pedidoPerteneceCliente = pedidosCliente.stream()
+                .anyMatch(pedido -> pedido.getId().equals(pedidoId));
+            
+            if (!pedidoPerteneceCliente) {
+                var error = java.util.Map.of(
+                    "error", "Pedido no encontrado o no pertenece al cliente"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            // Cancelar el pedido (esto automáticamente restaura el stock)
+            com.minegocio.backend.dto.PedidoDTO pedidoCancelado = pedidoService.actualizarEstadoPedido(empresaId, pedidoId, "CANCELADO");
+            
+            System.out.println("Pedido cancelado exitosamente: " + pedidoCancelado.getNumeroPedido());
+            
+            var respuesta = java.util.Map.of(
+                "mensaje", "Pedido cancelado exitosamente",
+                "pedido", pedidoCancelado
+            );
+            
+            return ResponseEntity.ok(respuesta);
+        } catch (Exception e) {
+            System.err.println("Error al cancelar pedido: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error al cancelar pedido: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 }

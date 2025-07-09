@@ -450,4 +450,54 @@ public class ProductoController {
                 .body(Map.of("error", "Error al eliminar la imagen: " + e.getMessage()));
         }
     }
+
+    /**
+     * Valida el stock disponible para un producto
+     */
+    @GetMapping("/{id}/validar-stock")
+    public ResponseEntity<?> validarStock(
+            @PathVariable Long empresaId,
+            @PathVariable Long id,
+            @RequestParam Integer cantidad) {
+        try {
+            System.out.println("=== DEBUG VALIDAR STOCK ===");
+            System.out.println("EmpresaId: " + empresaId);
+            System.out.println("ProductoId: " + id);
+            System.out.println("Cantidad solicitada: " + cantidad);
+            
+            Optional<ProductoDTO> producto = productoService.obtenerProductoPorId(id, empresaId);
+            
+            if (producto.isEmpty()) {
+                var error = java.util.Map.of(
+                    "error", "Producto no encontrado"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            ProductoDTO prod = producto.get();
+            boolean stockSuficiente = prod.getStock() >= cantidad;
+            int stockDisponible = prod.getStock();
+            
+            System.out.println("Stock disponible: " + stockDisponible);
+            System.out.println("Stock suficiente: " + stockSuficiente);
+            
+            var respuesta = java.util.Map.of(
+                "stockDisponible", stockDisponible,
+                "stockSuficiente", stockSuficiente,
+                "cantidadSolicitada", cantidad,
+                "productoNombre", prod.getNombre()
+            );
+            
+            return ResponseEntity.ok(respuesta);
+        } catch (Exception e) {
+            System.err.println("Error al validar stock: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
 }

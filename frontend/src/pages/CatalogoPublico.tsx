@@ -6,10 +6,11 @@ import CartIcon from '../components/CartIcon';
 import CartModal from '../components/CartModal';
 import apiService from '../services/api';
 import type { Producto } from '../types';
+import toast from 'react-hot-toast';
 
 export default function CatalogoPublico() {
   const { empresa, subdominio, cargando: cargandoEmpresa } = useSubdominio();
-  const { addToCart } = useCart();
+  const { addToCart, items } = useCart();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +20,7 @@ export default function CatalogoPublico() {
   const [marcas, setMarcas] = useState<string[]>([]);
   const [clienteInfo, setClienteInfo] = useState<{ nombre: string; email: string } | null>(null);
   const [showCart, setShowCart] = useState(false);
+  const [vistaCuadricula, setVistaCuadricula] = useState(true);
 
   // Verificar si hay un cliente logueado
   useEffect(() => {
@@ -321,6 +323,98 @@ export default function CatalogoPublico() {
           </div>
         </div>
 
+        {/* Controles de vista */}
+        <div style={{
+          background: '#fff',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '24px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#64748b'
+            }}>
+              Vista:
+            </span>
+            <button
+              onClick={() => setVistaCuadricula(true)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '2px solid',
+                background: vistaCuadricula ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                borderColor: vistaCuadricula ? '#667eea' : '#e2e8f0',
+                color: vistaCuadricula ? 'white' : '#64748b',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}
+              onMouseOver={(e) => {
+                if (!vistaCuadricula) {
+                  e.currentTarget.style.borderColor = '#667eea';
+                  e.currentTarget.style.color = '#667eea';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!vistaCuadricula) {
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                  e.currentTarget.style.color = '#64748b';
+                }
+              }}
+            >
+              📱 Cuadrícula
+            </button>
+            <button
+              onClick={() => setVistaCuadricula(false)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '2px solid',
+                background: !vistaCuadricula ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                borderColor: !vistaCuadricula ? '#667eea' : '#e2e8f0',
+                color: !vistaCuadricula ? 'white' : '#64748b',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}
+              onMouseOver={(e) => {
+                if (vistaCuadricula) {
+                  e.currentTarget.style.borderColor = '#667eea';
+                  e.currentTarget.style.color = '#667eea';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (vistaCuadricula) {
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                  e.currentTarget.style.color = '#64748b';
+                }
+              }}
+            >
+              📋 Lista
+            </button>
+          </div>
+          
+          <div style={{
+            fontSize: '14px',
+            color: '#64748b',
+            fontWeight: '500'
+          }}>
+            {productos.length} producto{productos.length !== 1 ? 's' : ''} encontrado{productos.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+
         {/* Grid de productos */}
         {cargando ? (
           <div style={{
@@ -416,215 +510,263 @@ export default function CatalogoPublico() {
           </div>
         ) : (
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '24px',
+            display: vistaCuadricula ? 'grid' : 'flex',
+            gridTemplateColumns: vistaCuadricula ? 'repeat(auto-fill, minmax(280px, 1fr))' : 'none',
+            flexDirection: vistaCuadricula ? 'unset' : 'column',
+            gap: vistaCuadricula ? '24px' : '16px',
             marginBottom: '40px'
           }}>
-            {productos.map(producto => (
-              <div key={producto.id} style={{
-                background: '#fff',
-                borderRadius: '20px',
-                overflow: 'hidden',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                position: 'relative'
-              }}
-              onClick={() => window.location.href = `/producto/${producto.id}`}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.15)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
-              }}>
-                
-                {/* Imagen del producto */}
-                <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
-                  {producto.imagenes && producto.imagenes.length > 0 ? (
-                    <img 
-                      src={producto.imagenes[0]} 
-                      alt={producto.nombre}
-                      style={{
+            {productos.map(producto => {
+              const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+              const maximoAlcanzado = cantidadEnCarrito >= producto.stock;
+
+              return (
+                <div key={producto.id} style={{
+                  background: '#fff',
+                  borderRadius: '20px',
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  display: vistaCuadricula ? 'block' : 'flex',
+                  alignItems: vistaCuadricula ? 'unset' : 'center',
+                  gap: vistaCuadricula ? 'unset' : '20px'
+                }}
+                onClick={(e) => {
+                  // Solo navegar si no se hizo clic en el botón de agregar al carrito
+                  if (!(e.target as HTMLElement).closest('button')) {
+                    window.location.href = `/producto/${producto.id}`;
+                  }
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = vistaCuadricula ? 'translateY(-8px)' : 'translateX(4px)';
+                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.15)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
+                }}>
+                  
+                  {/* Imagen del producto */}
+                  <div style={{ 
+                    position: 'relative', 
+                    height: vistaCuadricula ? '200px' : '120px',
+                    width: vistaCuadricula ? 'auto' : '120px',
+                    overflow: 'hidden',
+                    flexShrink: 0
+                  }}>
+                    {producto.imagenes && producto.imagenes.length > 0 ? (
+                      <img 
+                        src={producto.imagenes[0]} 
+                        alt={producto.nombre}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          transition: 'transform 0.3s ease'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
                         width: '100%',
                         height: '100%',
-                        objectFit: 'cover',
-                        transition: 'transform 0.3s ease'
-                      }}
-                    />
-                  ) : (
-                    <div style={{
-                      width: '100%',
-                      height: '100%',
-                      background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#64748b',
-                      fontSize: '16px'
-                    }}>
-                      📷 Sin imagen
-                    </div>
-                  )}
-                  
-                  {/* Badge destacado */}
-                  {producto.destacado && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '12px',
-                      left: '12px',
-                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                      color: 'white',
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      boxShadow: '0 2px 8px rgba(245,158,11,0.3)'
-                    }}>
-                      ⭐ Destacado
-                    </div>
-                  )}
-
-                  {/* Badge de stock */}
-                  {producto.stock !== null && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '12px',
-                      right: '12px',
-                      background: producto.stock > 0 
-                        ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                        : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                      color: 'white',
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                    }}>
-                      {producto.stock > 0 ? `📦 ${producto.stock}` : '❌ Agotado'}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Información del producto */}
-                <div style={{ padding: '20px' }}>
-                  <h3 style={{
-                    margin: '0 0 8px 0',
-                    fontSize: '18px',
-                    fontWeight: '700',
-                    color: '#1e293b',
-                    lineHeight: '1.3',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
-                  }}>
-                    {producto.nombre}
-                  </h3>
-                  
-                  {/* Categoría y marca */}
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                    {producto.categoria && (
-                      <span style={{
-                        background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                        color: '#1e40af',
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        border: '1px solid #93c5fd'
+                        background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#64748b',
+                        fontSize: vistaCuadricula ? '16px' : '14px'
                       }}>
-                        📂 {producto.categoria}
-                      </span>
+                        📷 Sin imagen
+                      </div>
                     )}
                     
-                    {producto.marca && (
-                      <span style={{
-                        background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                        color: '#92400e',
-                        padding: '4px 12px',
+                    {/* Badge destacado */}
+                    {producto.destacado && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        left: '8px',
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                        color: 'white',
+                        padding: '4px 8px',
                         borderRadius: '12px',
-                        fontSize: '12px',
+                        fontSize: vistaCuadricula ? '12px' : '10px',
                         fontWeight: '600',
-                        border: '1px solid #fbbf24'
+                        boxShadow: '0 2px 8px rgba(245,158,11,0.3)'
                       }}>
-                        🏷️ {producto.marca}
-                      </span>
+                        ⭐ Destacado
+                      </div>
+                    )}
+
+                    {/* Badge de stock */}
+                    {producto.stock !== null && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        background: producto.stock > 0 
+                          ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                          : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontSize: vistaCuadricula ? '12px' : '10px',
+                        fontWeight: '600',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                      }}>
+                        {producto.stock > 0 ? `📦 ${producto.stock}` : '❌ Agotado'}
+                      </div>
                     )}
                   </div>
                   
-                  {/* Precio */}
-                  <div style={{
+                  {/* Contenido principal */}
+                  <div style={{ 
+                    flex: 1,
+                    padding: vistaCuadricula ? '20px' : '16px',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '16px'
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
                   }}>
-                    <span style={{
-                      fontSize: '24px',
-                      fontWeight: '800',
-                      color: '#059669',
-                      textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                    }}>
-                      {formatearPrecio(producto.precio, empresa.moneda)}
-                    </span>
+                    {/* Información del producto */}
+                    <div>
+                      <h3 style={{
+                        margin: '0 0 8px 0',
+                        fontSize: vistaCuadricula ? '18px' : '16px',
+                        fontWeight: '700',
+                        color: '#1e293b',
+                        lineHeight: '1.3',
+                        display: '-webkit-box',
+                        WebkitLineClamp: vistaCuadricula ? 2 : 1,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>
+                        {producto.nombre}
+                      </h3>
+                      
+                      {/* Categoría y marca */}
+                      <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                        {producto.categoria && (
+                          <span style={{
+                            background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                            color: '#1e40af',
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            fontSize: vistaCuadricula ? '12px' : '10px',
+                            fontWeight: '600',
+                            border: '1px solid #93c5fd'
+                          }}>
+                            📂 {producto.categoria}
+                          </span>
+                        )}
+                        
+                        {producto.marca && (
+                          <span style={{
+                            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                            color: '#92400e',
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            fontSize: vistaCuadricula ? '12px' : '10px',
+                            fontWeight: '600',
+                            border: '1px solid #fbbf24'
+                          }}>
+                            🏷️ {producto.marca}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Precio */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: vistaCuadricula ? 'space-between' : 'flex-start',
+                        marginBottom: vistaCuadricula ? '16px' : '12px'
+                      }}>
+                        <span style={{
+                          fontSize: vistaCuadricula ? '24px' : '20px',
+                          fontWeight: '800',
+                          color: '#059669',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                        }}>
+                          {formatearPrecio(producto.precio, empresa.moneda)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Botón agregar al carrito */}
+                    <button
+                      disabled={producto.stock === 0 || maximoAlcanzado}
+                      style={{
+                        width: vistaCuadricula ? '100%' : 'auto',
+                        minWidth: vistaCuadricula ? 'auto' : '140px',
+                        background: producto.stock === 0 
+                          ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+                          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: vistaCuadricula ? '12px 20px' : '8px 16px',
+                        fontSize: vistaCuadricula ? '16px' : '14px',
+                        fontWeight: '600',
+                        cursor: producto.stock === 0 || maximoAlcanzado ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        opacity: producto.stock === 0 || maximoAlcanzado ? 0.6 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                      onClick={async (e) => {
+                        e.stopPropagation(); // Prevenir que se propague el clic al contenedor
+                        
+                        if (producto.stock === 0) {
+                          toast.error('Este producto está agotado');
+                          return;
+                        }
+                        if (maximoAlcanzado) {
+                          toast.error('Ya tienes el máximo disponible en el carrito');
+                          return;
+                        }
+                        if (typeof producto.precio !== 'number' || isNaN(producto.precio)) {
+                          alert('Este producto no tiene un precio válido y no puede ser agregado al carrito.');
+                          return;
+                        }
+                        
+                        console.log(`Intentando agregar producto: ${producto.nombre} (stock: ${producto.stock})`);
+                        
+                        const agregado = await addToCart({
+                          id: producto.id,
+                          nombre: producto.nombre,
+                          precio: producto.precio,
+                          cantidad: 1,
+                          imagen: producto.imagenes && producto.imagenes[0]
+                        }, undefined, subdominio || undefined);
+                        
+                        if (agregado) {
+                          toast.success('Producto agregado al carrito');
+                        } else {
+                          console.log('No se pudo agregar el producto al carrito');
+                        }
+                      }}
+                      onMouseOver={(e) => {
+                        if (producto.stock !== 0 && !maximoAlcanzado) {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      {producto.stock === 0 ? '❌ Agotado' : maximoAlcanzado ? '🛒 Máximo en carrito' : '🛒 Agregar al carrito'}
+                    </button>
                   </div>
                 </div>
-
-                {/* Botón agregar al carrito */}
-                <button
-                  style={{
-                    width: '100%',
-                    background: producto.stock === 0 
-                      ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-                      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '12px 20px',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    cursor: producto.stock === 0 ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s ease',
-                    opacity: producto.stock === 0 ? 0.6 : 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                  disabled={producto.stock === 0}
-                  onClick={() => {
-                    if (producto.stock === 0) return;
-                    if (typeof producto.precio !== 'number' || isNaN(producto.precio)) {
-                      alert('Este producto no tiene un precio válido y no puede ser agregado al carrito.');
-                      return;
-                    }
-                    addToCart({
-                      id: producto.id,
-                      nombre: producto.nombre,
-                      precio: producto.precio,
-                      cantidad: 1,
-                      imagen: producto.imagenes && producto.imagenes[0]
-                    });
-                  }}
-                  onMouseOver={(e) => {
-                    if (producto.stock !== 0) {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  {producto.stock === 0 ? '❌ Agotado' : '🛒 Agregar al carrito'}
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

@@ -72,67 +72,243 @@ export default function LoginCliente() {
 
   if (cargandoEmpresa) {
     return (
-      <div className="pagina-cargando">
-        <div className="spinner"></div>
-        <p>Cargando...</p>
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid rgba(255, 255, 255, 0.3)',
+            borderTop: '3px solid white',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }} />
+          <p>Cargando tienda...</p>
+        </div>
       </div>
     );
   }
 
   if (!empresa) {
     return (
-      <div className="pagina-error">
-        <h1>Tienda no encontrada</h1>
-        <p>No se pudo encontrar la tienda solicitada.</p>
-        <Link to="/" className="boton boton-primario">
-          Volver al inicio
-        </Link>
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        padding: '2rem'
+      }}>
+        <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Tienda no encontrada</h1>
+          <p style={{ marginBottom: '2rem', opacity: 0.9 }}>
+            No se pudo encontrar la tienda solicitada.
+          </p>
+          <Link to="/" style={{
+            display: 'inline-block',
+            padding: '0.75rem 1.5rem',
+            background: 'white',
+            color: '#3b82f6',
+            textDecoration: 'none',
+            borderRadius: '0.5rem',
+            fontWeight: '600',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}>
+            Volver al inicio
+          </Link>
+        </div>
       </div>
     );
   }
 
+  // Colores personalizables por empresa (por defecto usamos los colores de la marca)
+  const brandColors = {
+    primary: empresa.colorPrimario || '#667eea',
+    secondary: empresa.colorSecundario || '#764ba2',
+    accent: empresa.colorPrimario || '#3b82f6'
+  };
+
   return (
-    <div className="login-cliente">
-      {/* Header de la tienda */}
-      <header className="header-tienda">
-        <div className="contenedor">
-          <div className="info-empresa">
+    <div style={{
+      minHeight: '100vh',
+      background: `linear-gradient(135deg, ${brandColors.primary} 0%, ${brandColors.secondary} 100%)`,
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Patrón de fondo */}
+      <div style={{
+        background: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        opacity: 0.3
+      }} />
+      
+      {/* Círculos decorativos */}
+      <div style={{
+        position: 'absolute',
+        top: '15%',
+        right: '15%',
+        width: '150px',
+        height: '150px',
+        background: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: '50%',
+        animation: 'float 6s ease-in-out infinite'
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '15%',
+        left: '15%',
+        width: '100px',
+        height: '100px',
+        background: 'rgba(255, 255, 255, 0.08)',
+        borderRadius: '50%',
+        animation: 'float 8s ease-in-out infinite reverse'
+      }} />
+
+      {/* Header simplificado */}
+      <header style={{
+        padding: '1.5rem 2rem',
+        position: 'relative',
+        zIndex: 10
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem'
+          }}>
             {empresa.logoUrl && (
               <img 
                 src={empresa.logoUrl} 
                 alt={`Logo de ${empresa.nombre}`}
-                className="logo-empresa"
+                style={{
+                  height: '40px',
+                  width: 'auto',
+                  maxWidth: '120px',
+                  objectFit: 'contain'
+                }}
               />
             )}
-            <div>
-              <h1 className="nombre-empresa">{empresa.nombre}</h1>
-            </div>
+            <h1 style={{
+              color: 'white',
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              margin: 0
+            }}>
+              {empresa.nombre}
+            </h1>
           </div>
           
-          <nav className="nav-tienda">
-            <Link to="/" className="nav-link">Catálogo</Link>
-            <Link to="/carrito" className="nav-link">Carrito</Link>
+          <nav style={{
+            display: 'flex',
+            gap: '1.5rem'
+          }}>
+            <Link to="/" style={{
+              color: 'white',
+              textDecoration: 'none',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              transition: 'opacity 0.2s ease',
+              opacity: 0.9
+            }}
+            onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseOut={(e) => e.currentTarget.style.opacity = '0.9'}>
+              Catálogo
+            </Link>
           </nav>
         </div>
       </header>
 
-      <main className="contenedor">
-        <div className="formulario-login-cliente">
-          <div className="tarjeta-login">
-            <div className="cabecera-login">
-              <h2>Iniciar Sesión</h2>
-              <p>Accede a tu cuenta en {empresa.nombre}</p>
+      {/* Contenido principal */}
+      <main style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 'calc(100vh - 120px)',
+        padding: '2rem 1rem',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        <div style={{
+          maxWidth: '450px',
+          width: '100%'
+        }}>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '1.5rem',
+            padding: '3rem 2.5rem',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            animation: 'slideInUp 0.8s ease-out'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+              <h2 style={{
+                fontSize: '2rem',
+                fontWeight: '700',
+                color: '#1e293b',
+                marginBottom: '0.5rem'
+              }}>
+                Iniciar Sesión
+              </h2>
+              <p style={{
+                color: '#64748b',
+                fontSize: '1rem',
+                lineHeight: '1.5'
+              }}>
+                Accede a tu cuenta en {empresa.nombre}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit(manejarLogin)}>
-              <div className="grupo-campo">
-                <label htmlFor="email" className="etiqueta">
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label htmlFor="email" style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
                   Email
                 </label>
                 <input
                   type="email"
                   id="email"
-                  className={`campo ${errors.email ? 'campo-error' : ''}`}
+                  style={{
+                    width: '100%',
+                    padding: '0.875rem 1rem',
+                    border: errors.email ? '2px solid #ef4444' : '2px solid #e5e7eb',
+                    borderRadius: '0.75rem',
+                    fontSize: '1rem',
+                    transition: 'all 0.2s ease',
+                    backgroundColor: 'white',
+                    outline: 'none'
+                  }}
                   placeholder="tu@email.com"
                   {...register('email', { 
                     required: 'El email es obligatorio',
@@ -143,18 +319,43 @@ export default function LoginCliente() {
                   })}
                 />
                 {errors.email && (
-                  <p className="mensaje-error">{errors.email.message}</p>
+                  <p style={{
+                    color: '#ef4444',
+                    fontSize: '0.875rem',
+                    marginTop: '0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}>
+                    <span>⚠️</span>
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
-              <div className="grupo-campo">
-                <label htmlFor="password" className="etiqueta">
+              <div style={{ marginBottom: '2rem' }}>
+                <label htmlFor="password" style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
                   Contraseña
                 </label>
                 <input
                   type="password"
                   id="password"
-                  className={`campo ${errors.password ? 'campo-error' : ''}`}
+                  style={{
+                    width: '100%',
+                    padding: '0.875rem 1rem',
+                    border: errors.password ? '2px solid #ef4444' : '2px solid #e5e7eb',
+                    borderRadius: '0.75rem',
+                    fontSize: '1rem',
+                    transition: 'all 0.2s ease',
+                    backgroundColor: 'white',
+                    outline: 'none'
+                  }}
                   placeholder="Tu contraseña"
                   {...register('password', { 
                     required: 'La contraseña es obligatoria',
@@ -165,44 +366,171 @@ export default function LoginCliente() {
                   })}
                 />
                 {errors.password && (
-                  <p className="mensaje-error">{errors.password.message}</p>
+                  <p style={{
+                    color: '#ef4444',
+                    fontSize: '0.875rem',
+                    marginTop: '0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}>
+                    <span>⚠️</span>
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 
               <button
                 type="submit"
                 disabled={cargando}
-                className={`boton boton-primario boton-completo boton-grande ${
-                  cargando ? 'opacidad-50 cursor-no-permitido' : ''
-                }`}
+                style={{
+                  width: '100%',
+                  padding: '1rem 2rem',
+                  background: cargando ? '#9ca3af' : `linear-gradient(135deg, ${brandColors.primary} 0%, ${brandColors.secondary} 100%)`,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.75rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: cargando ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: cargando ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.3)',
+                  opacity: cargando ? 0.7 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+                onMouseOver={(e) => {
+                  if (!cargando) {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!cargando) {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                  }
+                }}
               >
                 {cargando ? (
-                  <span className="flex items-centro centrado">
-                    <span className="cargando" style={{ marginRight: '0.5rem' }}></span>
+                  <>
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      border: '2px solid rgba(255, 255, 255, 0.3)',
+                      borderTop: '2px solid white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
                     Iniciando sesión...
-                  </span>
+                  </>
                 ) : (
                   'Iniciar Sesión'
                 )}
               </button>
 
-              <div className="enlaces-login">
-                <Link to="/recuperar-password" className="enlace-secundario">
+              <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+                <Link to="/recuperar-password" style={{
+                  fontSize: '0.875rem',
+                  color: brandColors.accent,
+                  textDecoration: 'none',
+                  transition: 'color 0.2s ease'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.color = '#2563eb'}
+                onMouseOut={(e) => e.currentTarget.style.color = brandColors.accent}>
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
 
-              <div className="separador">
-                <span>¿No tienes cuenta?</span>
+              <div style={{
+                textAlign: 'center',
+                marginTop: '2rem',
+                paddingTop: '1.5rem',
+                borderTop: '1px solid #e5e7eb'
+              }}>
+                <span style={{
+                  fontSize: '0.875rem',
+                  color: '#64748b',
+                  display: 'block',
+                  marginBottom: '1rem'
+                }}>
+                  ¿No tienes cuenta?
+                </span>
+                <Link to="/registro" style={{
+                  display: 'inline-block',
+                  width: '100%',
+                  padding: '0.875rem 2rem',
+                  background: 'white',
+                  color: brandColors.accent,
+                  border: `2px solid ${brandColors.accent}`,
+                  borderRadius: '0.75rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  textDecoration: 'none',
+                  textAlign: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = brandColors.accent;
+                  e.currentTarget.style.color = 'white';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = brandColors.accent;
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}>
+                  Crear cuenta
+                </Link>
               </div>
-
-              <Link to="/registro" className="boton boton-secundario boton-completo">
-                Crear cuenta
-              </Link>
             </form>
           </div>
         </div>
       </main>
+
+      <style>{`
+        @keyframes slideInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+        
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        input:focus {
+          border-color: ${brandColors.accent} !important;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        }
+        
+        @media (max-width: 480px) {
+          .login-card {
+            padding: 2rem 1.5rem !important;
+          }
+          
+          .login-title {
+            font-size: 1.75rem !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

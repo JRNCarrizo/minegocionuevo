@@ -28,15 +28,18 @@ const CartView: React.FC = () => {
                 {item.nombre}
               </td>
               <td>${item.precio.toFixed(2)}</td>
-              <td>
-                <input
-                  type="number"
-                  min={1}
-                  value={item.cantidad}
-                  onChange={e => updateQuantity(item.id, Number(e.target.value))}
-                  style={{ width: 50 }}
-                />
-              </td>
+                                    <td>
+                        <input
+                          type="number"
+                          min={1}
+                          value={item.cantidad}
+                          onChange={async e => {
+                            const nuevaCantidad = Number(e.target.value);
+                            await updateQuantity(item.id, nuevaCantidad, undefined, undefined);
+                          }}
+                          style={{ width: 50 }}
+                        />
+                      </td>
               <td>${(item.precio * item.cantidad).toFixed(2)}</td>
               <td>
                 <button onClick={() => removeFromCart(item.id)}>Eliminar</button>

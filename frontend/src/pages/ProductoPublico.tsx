@@ -6,6 +6,7 @@ import type { Producto } from '../types';
 import CartIcon from '../components/CartIcon';
 import CartModal from '../components/CartModal';
 import { useCart } from '../hooks/useCart';
+import toast from 'react-hot-toast';
 
 export default function ProductoPublico() {
   const { id } = useParams<{ id: string }>();
@@ -17,7 +18,7 @@ export default function ProductoPublico() {
   const [cantidad, setCantidad] = useState(1);
   const [showCart, setShowCart] = useState(false);
   const [clienteInfo, setClienteInfo] = useState<{ nombre: string; email: string } | null>(null);
-  const { addToCart } = useCart();
+  const { addToCart, items } = useCart();
 
   const cargarProducto = useCallback(async () => {
     if (!subdominio || !id) return;
@@ -78,20 +79,43 @@ export default function ProductoPublico() {
     return `${simbolos[moneda] || '$'}${precio.toLocaleString()}`;
   };
 
-  const agregarAlCarrito = () => {
+  const agregarAlCarrito = async () => {
     if (!producto) return;
+    
+    if (producto.stock === 0) {
+      toast.error('Este producto está agotado');
+      return;
+    }
+    
+    // Validación local: verificar si ya tenemos el máximo en el carrito
+    const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+    const cantidadTotal = cantidadEnCarrito + cantidad;
+    
+    if (cantidadTotal > producto.stock) {
+      toast.error(`No puedes agregar más de ${producto.stock} unidades. Ya tienes ${cantidadEnCarrito} en el carrito.`);
+      return;
+    }
+    
     if (typeof producto.precio !== 'number' || isNaN(producto.precio)) {
       alert('Este producto no tiene un precio válido y no puede ser agregado al carrito.');
       return;
     }
-    addToCart({
+    
+    console.log(`Intentando agregar producto: ${producto.nombre} (stock: ${producto.stock}, cantidad: ${cantidad}, cantidad en carrito: ${cantidadEnCarrito})`);
+    
+    const agregado = await addToCart({
       id: producto.id,
       nombre: producto.nombre,
       precio: producto.precio,
       cantidad,
       imagen: producto.imagenes && producto.imagenes[0]
-    });
-    // Ya no se abre el modal automáticamente
+    }, undefined, subdominio || undefined);
+    
+    if (agregado) {
+      toast.success('Producto agregado al carrito');
+    } else {
+      console.log('No se pudo agregar el producto al carrito');
+    }
   };
 
   const comprarAhora = () => {
@@ -309,12 +333,57 @@ export default function ProductoPublico() {
                     />
                   </div>
 
+                  {/* Mostrar información del carrito */}
+                  {(() => {
+                    const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                    const maximoAlcanzado = cantidadEnCarrito >= producto.stock;
+                    
+                    return (
+                      <div className="info-carrito" style={{ 
+                        marginBottom: '16px',
+                        padding: '8px 12px',
+                        background: maximoAlcanzado ? '#fef2f2' : '#f0f9ff',
+                        border: `1px solid ${maximoAlcanzado ? '#fecaca' : '#bae6fd'}`,
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        color: maximoAlcanzado ? '#dc2626' : '#0369a1'
+                      }}>
+                        {cantidadEnCarrito > 0 ? (
+                          maximoAlcanzado ? (
+                            <span>🛒 Ya tienes el máximo disponible en el carrito ({cantidadEnCarrito}/{producto.stock})</span>
+                          ) : (
+                            <span>🛒 Tienes {cantidadEnCarrito} en el carrito. Puedes agregar {producto.stock - cantidadEnCarrito} más.</span>
+                          )
+                        ) : (
+                          <span>🛒 Puedes agregar hasta {producto.stock} unidades al carrito</span>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   <div className="botones-compra">
                     <button
                       onClick={agregarAlCarrito}
+                      disabled={(() => {
+                        const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                        return cantidadEnCarrito >= producto.stock;
+                      })()}
                       className="boton boton-secundario boton-completo"
+                      style={{
+                        opacity: (() => {
+                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                          return cantidadEnCarrito >= producto.stock ? 0.6 : 1;
+                        })(),
+                        cursor: (() => {
+                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                          return cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer';
+                        })()
+                      }}
                     >
-                      Agregar al carrito
+                      {(() => {
+                        const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                        return cantidadEnCarrito >= producto.stock ? 'Máximo en carrito' : 'Agregar al carrito';
+                      })()}
                     </button>
                     
                     <button

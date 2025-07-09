@@ -80,25 +80,29 @@ export default function DashboardAdministrador() {
       titulo: 'Productos',
       valor: estadisticas.productos,
       icono: '📦',
-      color: '#3b82f6'
+      color: '#3b82f6',
+      gradiente: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
     },
     {
       titulo: 'Clientes',
       valor: estadisticas.clientes,
       icono: '👥',
-      color: '#10b981'
+      color: '#10b981',
+      gradiente: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
     },
     {
       titulo: 'Pedidos',
       valor: estadisticas.pedidos,
       icono: '📋',
-      color: '#f59e0b'
+      color: '#f59e0b',
+      gradiente: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
     },
     {
       titulo: 'Ventas',
       valor: `$${estadisticas.ventas.toLocaleString()}`,
       icono: '💰',
-      color: '#8b5cf6'
+      color: '#8b5cf6',
+      gradiente: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
     }
   ];
 
@@ -107,36 +111,45 @@ export default function DashboardAdministrador() {
       titulo: 'Gestionar Productos',
       descripcion: 'Administra tu catálogo de productos',
       icono: '📦',
-      enlace: '/admin/productos'
+      enlace: '/admin/productos',
+      color: '#3b82f6'
     },
     {
       titulo: 'Añadir Producto',
       descripcion: 'Añade un nuevo producto a tu inventario',
       icono: '➕',
-      enlace: '/admin/productos/nuevo'
+      enlace: '/admin/productos/nuevo',
+      color: '#10b981'
     },
     {
       titulo: 'Ver Pedidos',
       descripcion: 'Gestiona los pedidos pendientes',
-      icono: '�',
-      enlace: '/admin/pedidos'
+      icono: '📋',
+      enlace: '/admin/pedidos',
+      color: '#f59e0b'
     },
     {
       titulo: 'Gestionar Clientes',
       descripcion: 'Administra tu base de clientes',
       icono: '👤',
-      enlace: '/admin/clientes'
+      enlace: '/admin/clientes',
+      color: '#8b5cf6'
     },
     {
       titulo: 'Configuración',
       descripcion: 'Personaliza tu tienda',
       icono: '⚙️',
-      enlace: '/admin/configuracion'
+      enlace: '/admin/configuracion',
+      color: '#6b7280'
     }
   ];
 
   return (
-    <div className="h-pantalla-minimo" style={{ backgroundColor: '#f8fafc' }}>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+      position: 'relative'
+    }}>
       {/* Navegación */}
       <NavbarAdmin 
         onCerrarSesion={cerrarSesionConToast}
@@ -145,63 +158,229 @@ export default function DashboardAdministrador() {
       />
 
       {/* Contenido principal */}
-      <div className="contenedor py-8">
+      <div style={{
+        maxWidth: '1400px',
+        margin: '0 auto',
+        padding: '2rem 1rem'
+      }}>
         {/* Encabezado */}
-        <div className="mb-8">
-          <h1 className="titulo-2 mb-2">Panel de Administración</h1>
-          <p className="texto-gris">
+        <div style={{
+          marginBottom: '3rem',
+          animation: 'slideInUp 0.6s ease-out'
+        }}>
+          <h1 style={{
+            fontSize: '2.5rem',
+            fontWeight: '700',
+            color: '#1e293b',
+            marginBottom: '0.5rem',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            Panel de Administración
+          </h1>
+          <p style={{
+            fontSize: '1.125rem',
+            color: '#64748b',
+            lineHeight: '1.6'
+          }}>
             Bienvenido{datosUsuario?.nombre ? ` ${datosUsuario.nombre}` : ''}. 
             Aquí tienes un resumen de {datosUsuario?.empresaNombre || 'tu negocio'}.
           </p>
         </div>
 
         {/* Menú de navegación rápida */}
-        <div className="mb-8">
-          <div className="flex items-centro gap-4 flex-wrap">
+        <div style={{
+          marginBottom: '3rem',
+          animation: 'slideInUp 0.6s ease-out 0.1s both'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            flexWrap: 'wrap'
+          }}>
             <Link 
               to="/admin/productos" 
-              className="boton boton-primario"
-              style={{ 
-                background: '#3b82f6',
-                fontSize: '1.1rem',
-                padding: '12px 24px'
+              style={{
+                padding: '0.875rem 1.5rem',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '1rem',
+                fontWeight: '600',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
               }}
             >
               📦 Productos
             </Link>
-            <Link to="/admin/pedidos" className="boton boton-secundario">
+            <Link 
+              to="/admin/pedidos" 
+              style={{
+                padding: '0.875rem 1.5rem',
+                background: 'white',
+                color: '#3b82f6',
+                textDecoration: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '1rem',
+                fontWeight: '600',
+                border: '2px solid #3b82f6',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#3b82f6';
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#3b82f6';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
               📋 Pedidos
             </Link>
-            <Link to="/admin/clientes" className="boton boton-secundario">
+            <Link 
+              to="/admin/clientes" 
+              style={{
+                padding: '0.875rem 1.5rem',
+                background: 'white',
+                color: '#3b82f6',
+                textDecoration: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '1rem',
+                fontWeight: '600',
+                border: '2px solid #3b82f6',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#3b82f6';
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#3b82f6';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
               👥 Clientes
             </Link>
-            <Link to="/admin/configuracion" className="boton boton-secundario">
+            <Link 
+              to="/admin/configuracion" 
+              style={{
+                padding: '0.875rem 1.5rem',
+                background: 'white',
+                color: '#3b82f6',
+                textDecoration: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '1rem',
+                fontWeight: '600',
+                border: '2px solid #3b82f6',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#3b82f6';
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#3b82f6';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
               ⚙️ Configuración
             </Link>
           </div>
         </div>
 
         {/* Estadísticas */}
-        <div className="grid grid-2 mb-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '1.5rem',
+          marginBottom: '3rem'
+        }}>
           {tarjetasEstadisticas.map((tarjeta, index) => (
-            <div key={index} className="tarjeta animacion-entrada" 
-                 style={{ animationDelay: `${index * 0.1}s` }}>
-              <div className="flex items-centro entre">
+            <div 
+              key={index} 
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '2rem',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                animation: `slideInUp 0.6s ease-out ${index * 0.1}s both`
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
                 <div>
-                  <h3 className="texto-pequeno texto-gris mb-1">{tarjeta.titulo}</h3>
-                  <p className="titulo-2" style={{ color: tarjeta.color }}>
-                    {cargandoEstadisticas ? '...' : tarjeta.valor}
+                  <h3 style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    marginBottom: '0.5rem',
+                    fontWeight: '500',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    {tarjeta.titulo}
+                  </h3>
+                  <p style={{
+                    fontSize: '2.5rem',
+                    fontWeight: '800',
+                    color: tarjeta.color,
+                    margin: 0,
+                    lineHeight: '1'
+                  }}>
+                    {cargandoEstadisticas ? (
+                      <div style={{
+                        width: '60px',
+                        height: '40px',
+                        background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                        backgroundSize: '200% 100%',
+                        animation: 'loading 1.5s infinite',
+                        borderRadius: '0.5rem'
+                      }} />
+                    ) : (
+                      tarjeta.valor
+                    )}
                   </p>
                 </div>
                 <div style={{
-                  width: '3rem',
-                  height: '3rem',
-                  backgroundColor: tarjeta.color,
-                  borderRadius: '50%',
+                  width: '4rem',
+                  height: '4rem',
+                  background: tarjeta.gradiente,
+                  borderRadius: '1rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '1.5rem'
+                  fontSize: '2rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                 }}>
                   {tarjeta.icono}
                 </div>
@@ -211,51 +390,96 @@ export default function DashboardAdministrador() {
         </div>
 
         {/* Acciones rápidas */}
-        <div className="mb-8">
-          <h2 className="titulo-3 mb-6">Acciones Rápidas</h2>
-          <div className="grid grid-2">
+        <div style={{
+          marginBottom: '3rem',
+          animation: 'slideInUp 0.6s ease-out 0.4s both'
+        }}>
+          <h2 style={{
+            fontSize: '1.875rem',
+            fontWeight: '600',
+            color: '#1e293b',
+            marginBottom: '1.5rem'
+          }}>
+            Acciones Rápidas
+          </h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '1.5rem'
+          }}>
             {accionesRapidas.map((accion, index) => (
               <Link 
                 key={index}
                 to={accion.enlace}
-                className="tarjeta animacion-entrada"
-                style={{ 
+                style={{
+                  background: 'white',
+                  borderRadius: '1rem',
+                  padding: '2rem',
                   textDecoration: 'none',
                   color: 'inherit',
-                  animationDelay: `${(index + 4) * 0.1}s`,
-                  transition: 'transform 0.2s',
-                  display: 'block'
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                  border: '1px solid #e2e8f0',
+                  transition: 'all 0.3s ease',
+                  display: 'block',
+                  animation: `slideInUp 0.6s ease-out ${(index + 4) * 0.1}s both`
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.borderColor = accion.color;
                 }}
-                onMouseLeave={(e) => {
+                onMouseOut={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
                 }}
               >
-                <div className="flex items-centro mb-4">
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: '1.5rem'
+                }}>
                   <div style={{
-                    width: '2.5rem',
-                    height: '2.5rem',
-                    backgroundColor: 'var(--color-primario)',
-                    borderRadius: '50%',
+                    width: '3rem',
+                    height: '3rem',
+                    background: `linear-gradient(135deg, ${accion.color} 0%, ${accion.color}dd 100%)`,
+                    borderRadius: '1rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.25rem',
-                    marginRight: '1rem'
+                    fontSize: '1.5rem',
+                    marginRight: '1rem',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                   }}>
                     {accion.icono}
                   </div>
                   <div>
-                    <h3 className="titulo-3 mb-1">{accion.titulo}</h3>
-                    <p className="texto-pequeno texto-gris">{accion.descripcion}</p>
+                    <h3 style={{
+                      fontSize: '1.25rem',
+                      fontWeight: '600',
+                      color: '#1e293b',
+                      marginBottom: '0.25rem'
+                    }}>
+                      {accion.titulo}
+                    </h3>
+                    <p style={{
+                      fontSize: '0.875rem',
+                      color: '#64748b',
+                      margin: 0,
+                      lineHeight: '1.5'
+                    }}>
+                      {accion.descripcion}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-centro">
-                  <span className="texto-pequeno" style={{ color: 'var(--color-primario)' }}>
-                    Ir a {accion.titulo.toLowerCase()} →
-                  </span>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: accion.color,
+                  fontSize: '0.875rem',
+                  fontWeight: '600'
+                }}>
+                  Ir a {accion.titulo.toLowerCase()} →
                 </div>
               </Link>
             ))}
@@ -263,83 +487,213 @@ export default function DashboardAdministrador() {
         </div>
 
         {/* Actividad reciente */}
-        <div className="tarjeta">
-          <h2 className="titulo-3 mb-6">Actividad Reciente</h2>
-          <div className="space-y-4">
-            <div className="flex items-centro entre py-3" style={{ borderBottom: '1px solid var(--color-borde)' }}>
-              <div className="flex items-centro">
+        <div style={{
+          background: 'white',
+          borderRadius: '1rem',
+          padding: '2rem',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          border: '1px solid #e2e8f0',
+          animation: 'slideInUp 0.6s ease-out 0.6s both'
+        }}>
+          <h2 style={{
+            fontSize: '1.875rem',
+            fontWeight: '600',
+            color: '#1e293b',
+            marginBottom: '1.5rem'
+          }}>
+            Actividad Reciente
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '1rem 0',
+              borderBottom: '1px solid #e2e8f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <div style={{
-                  width: '2rem',
-                  height: '2rem',
-                  backgroundColor: '#10b981',
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '0.875rem',
-                  marginRight: '0.75rem',
-                  color: 'white'
+                  fontSize: '1rem',
+                  marginRight: '1rem',
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
                 }}>
                   ✓
                 </div>
                 <div>
-                  <p className="texto-medio">Nuevo pedido recibido</p>
-                  <p className="texto-pequeno texto-gris">Cliente: María García - €45.99</p>
+                  <p style={{
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    margin: 0,
+                    marginBottom: '0.25rem'
+                  }}>
+                    Nuevo pedido recibido
+                  </p>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0
+                  }}>
+                    Cliente: María García - $45.99
+                  </p>
                 </div>
               </div>
-              <span className="texto-pequeno texto-gris">Hace 5 min</span>
+              <span style={{
+                fontSize: '0.875rem',
+                color: '#64748b',
+                fontWeight: '500'
+              }}>
+                Hace 5 min
+              </span>
             </div>
 
-            <div className="flex items-centro entre py-3" style={{ borderBottom: '1px solid var(--color-borde)' }}>
-              <div className="flex items-centro">
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '1rem 0',
+              borderBottom: '1px solid #e2e8f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <div style={{
-                  width: '2rem',
-                  height: '2rem',
-                  backgroundColor: '#3b82f6',
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '0.875rem',
-                  marginRight: '0.75rem',
-                  color: 'white'
+                  fontSize: '1rem',
+                  marginRight: '1rem',
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
                 }}>
                   📦
                 </div>
                 <div>
-                  <p className="texto-medio">Producto actualizado</p>
-                  <p className="texto-pequeno texto-gris">Camiseta Básica - Stock actualizado</p>
+                  <p style={{
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    margin: 0,
+                    marginBottom: '0.25rem'
+                  }}>
+                    Producto actualizado
+                  </p>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0
+                  }}>
+                    Camiseta Básica - Stock actualizado
+                  </p>
                 </div>
               </div>
-              <span className="texto-pequeno texto-gris">Hace 1 hora</span>
+              <span style={{
+                fontSize: '0.875rem',
+                color: '#64748b',
+                fontWeight: '500'
+              }}>
+                Hace 1 hora
+              </span>
             </div>
 
-            <div className="flex items-centro entre py-3">
-              <div className="flex items-centro">
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '1rem 0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <div style={{
-                  width: '2rem',
-                  height: '2rem',
-                  backgroundColor: '#f59e0b',
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '0.875rem',
-                  marginRight: '0.75rem',
-                  color: 'white'
+                  fontSize: '1rem',
+                  marginRight: '1rem',
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
                 }}>
                   👤
                 </div>
                 <div>
-                  <p className="texto-medio">Nuevo cliente registrado</p>
-                  <p className="texto-pequeno texto-gris">Juan Pérez - juan@email.com</p>
+                  <p style={{
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    margin: 0,
+                    marginBottom: '0.25rem'
+                  }}>
+                    Nuevo cliente registrado
+                  </p>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0
+                  }}>
+                    Juan Pérez - juan@email.com
+                  </p>
                 </div>
               </div>
-              <span className="texto-pequeno texto-gris">Hace 2 horas</span>
+              <span style={{
+                fontSize: '0.875rem',
+                color: '#64748b',
+                fontWeight: '500'
+              }}>
+                Hace 2 horas
+              </span>
             </div>
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes slideInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes loading {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .dashboard-title {
+            font-size: 2rem !important;
+          }
+          
+          .stats-grid {
+            grid-template-columns: 1fr !important;
+          }
+          
+          .actions-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

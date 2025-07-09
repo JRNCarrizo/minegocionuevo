@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
@@ -6,6 +6,106 @@ import GestorImagenes from '../../components/GestorImagenes';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import '../../styles/gestor-imagenes.css';
+
+// Componente de campo de formulario optimizado con memo
+const CampoFormulario = memo(({ 
+  label, 
+  name, 
+  type = 'text', 
+  placeholder, 
+  required = false, 
+  error,
+  value,
+  onChange,
+  onSelectChange,
+  onNuevaCategoria,
+  mostrarNuevaCategoria,
+  nuevaCategoria,
+  setNuevaCategoria,
+  categorias,
+  ...props 
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  placeholder?: string;
+  required?: boolean;
+  error?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onNuevaCategoria: (e: React.KeyboardEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>) => void;
+  mostrarNuevaCategoria: boolean;
+  nuevaCategoria: string;
+  setNuevaCategoria: (value: string) => void;
+  categorias: string[];
+  [key: string]: any;
+}) => (
+  <div className="campo-grupo">
+    <label htmlFor={name} className="campo-label">
+      {label} {required && <span className="campo-requerido">*</span>}
+    </label>
+    {type === 'textarea' ? (
+      <textarea
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        className={`campo-input ${error ? 'campo-error' : ''}`}
+        placeholder={placeholder}
+        {...props}
+      />
+    ) : type === 'select' ? (
+      <>
+        <select
+          id={name}
+          name={name}
+          value={value}
+          onChange={onSelectChange}
+          className={`campo-input ${error ? 'campo-error' : ''}`}
+          {...props}
+        >
+          <option value="">Selecciona una opción</option>
+          {categorias.map(categoria => (
+            <option key={categoria} value={categoria}>
+              {categoria}
+            </option>
+          ))}
+          <option value="__nueva__">+ Agregar nueva categoría</option>
+        </select>
+        {mostrarNuevaCategoria && (
+          <input
+            type="text"
+            placeholder="Escribe el nombre de la nueva categoría"
+            className="campo-input"
+            value={nuevaCategoria}
+            onChange={(e) => setNuevaCategoria(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onNuevaCategoria(e);
+              }
+            }}
+            onBlur={onNuevaCategoria}
+            autoFocus
+          />
+        )}
+      </>
+    ) : (
+      <input
+        type={type}
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        className={`campo-input ${error ? 'campo-error' : ''}`}
+        placeholder={placeholder}
+        {...props}
+      />
+    )}
+    {error && <div className="campo-mensaje-error">{error}</div>}
+  </div>
+));
 
 export default function NuevoProducto() {
   const navigate = useNavigate();
@@ -29,6 +129,10 @@ export default function NuevoProducto() {
   const [cargando, setCargando] = useState(false);
   const [categorias, setCategorias] = useState<string[]>([]);
   const [cargandoCategorias, setCargandoCategorias] = useState(true);
+  const [pasoActual, setPasoActual] = useState(1);
+  const [errores, setErrores] = useState<{[key: string]: string}>({});
+  const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
+  const [nuevaCategoria, setNuevaCategoria] = useState('');
 
   const cargarCategorias = useCallback(async () => {
     try {
@@ -39,77 +143,136 @@ export default function NuevoProducto() {
       }
     } catch (error) {
       console.error('Error al cargar categorías:', error);
-      // No mostramos error porque las categorías son opcionales
     } finally {
       setCargandoCategorias(false);
     }
   }, [empresaId]);
 
-  // Cargar categorías al montar el componente
   useEffect(() => {
     cargarCategorias();
   }, [cargarCategorias]);
 
-  const manejarCambio = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const manejarCambio = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormulario(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+    
+    // Limpiar error del campo cuando el usuario empiece a escribir
+    setErrores(prev => {
+      const nuevosErrores = { ...prev };
+      delete nuevosErrores[name];
+      return nuevosErrores;
+    });
+  }, []);
 
-  const manejarCambioImagenes = (imagenes: string[]) => {
+  const manejarCambioSelect = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    if (value === '__nueva__') {
+      // Si selecciona "agregar nueva categoría", mostrar el input
+      setMostrarNuevaCategoria(true);
+      setNuevaCategoria('');
+      return;
+    }
+    
+    setMostrarNuevaCategoria(false);
+    setFormulario(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Limpiar error del campo
+    setErrores(prev => {
+      const nuevosErrores = { ...prev };
+      delete nuevosErrores[name];
+      return nuevosErrores;
+    });
+  }, []);
+
+  const manejarNuevaCategoria = useCallback((e: React.KeyboardEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value.trim();
+    
+    if (value) {
+      // Agregar la nueva categoría si no existe
+      if (!categorias.includes(value)) {
+        setCategorias(prev => [...prev, value]);
+      }
+      setFormulario(prev => ({ ...prev, categoria: value }));
+      setMostrarNuevaCategoria(false);
+    } else {
+      setMostrarNuevaCategoria(false);
+      setFormulario(prev => ({ ...prev, categoria: '' }));
+    }
+  }, [categorias]);
+
+  const manejarCambioImagenes = useCallback((imagenes: string[]) => {
     setFormulario(prev => ({
       ...prev,
       imagenes
     }));
+  }, []);
+
+  const validarPaso = (paso: number): boolean => {
+    const nuevosErrores: {[key: string]: string} = {};
+
+    if (paso === 1) {
+      if (!formulario.nombre.trim()) {
+        nuevosErrores.nombre = 'El nombre del producto es obligatorio';
+      }
+      if (!formulario.precio || isNaN(Number(formulario.precio)) || Number(formulario.precio) <= 0) {
+        nuevosErrores.precio = 'El precio debe ser un número válido mayor a 0';
+      }
+      if (!formulario.categoria) {
+        nuevosErrores.categoria = 'Selecciona una categoría';
+      }
+    }
+
+    if (paso === 2) {
+      if (!formulario.stock || isNaN(Number(formulario.stock)) || Number(formulario.stock) < 0) {
+        nuevosErrores.stock = 'El stock debe ser un número válido mayor o igual a 0';
+      }
+      if (!formulario.stockMinimo || isNaN(Number(formulario.stockMinimo)) || Number(formulario.stockMinimo) < 0) {
+        nuevosErrores.stockMinimo = 'El stock mínimo debe ser un número válido mayor o igual a 0';
+      }
+    }
+
+    setErrores(nuevosErrores);
+    return Object.keys(nuevosErrores).length === 0;
+  };
+
+  const siguientePaso = () => {
+    if (validarPaso(pasoActual)) {
+      setPasoActual(pasoActual + 1);
+    }
+  };
+
+  const pasoAnterior = () => {
+    setPasoActual(pasoActual - 1);
   };
 
   const validarFormulario = () => {
-    if (!formulario.nombre.trim()) {
-      toast.error('El nombre del producto es obligatorio');
-      return false;
-    }
-    if (!formulario.precio || isNaN(Number(formulario.precio)) || Number(formulario.precio) <= 0) {
-      toast.error('El precio debe ser un número válido mayor a 0');
-      return false;
-    }
-    if (!formulario.stock || isNaN(Number(formulario.stock)) || Number(formulario.stock) < 0) {
-      toast.error('El stock debe ser un número válido mayor o igual a 0');
-      return false;
-    }
-    if (!formulario.stockMinimo || isNaN(Number(formulario.stockMinimo)) || Number(formulario.stockMinimo) < 0) {
-      toast.error('El stock mínimo debe ser un número válido mayor o igual a 0');
-      return false;
-    }
-    if (!formulario.categoria) {
-      toast.error('Selecciona una categoría');
-      return false;
-    }
-    return true;
+    return validarPaso(1) && validarPaso(2);
   };
 
   const enviarFormulario = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validarFormulario()) {
+      toast.error('Por favor, corrige los errores en el formulario');
       return;
     }
 
     setCargando(true);
     
     try {
-      // Obtener datos del usuario logueado
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const empresaId = user.empresaId;
-
       if (!empresaId) {
         toast.error('Error: No se encontró la empresa asociada');
         return;
       }
 
-      // Preparar datos del producto
-      const        datosProducto = {
+      const datosProducto = {
         nombre: formulario.nombre.trim(),
         descripcion: formulario.descripcion.trim() || undefined,
         precio: Number(formulario.precio),
@@ -120,58 +283,35 @@ export default function NuevoProducto() {
         unidad: formulario.unidad.trim() || undefined,
         activo: true,
         destacado: false,
-        imagenes: formulario.imagenes // Ahora son URLs de strings
+        imagenes: formulario.imagenes
       };
 
-      // Crear el producto en el backend
-      console.log('Creando producto en backend:', datosProducto);
-      console.log('EmpresaId:', empresaId);
-      console.log('Token disponible:', !!localStorage.getItem('token'));
+      console.log('Creando producto:', datosProducto);
       
       const response = await ApiService.crearProducto(empresaId, datosProducto);
       
-      console.log('Respuesta completa del backend:', response);
-      
-      // Manejar diferentes formatos de respuesta
-      if (response) {
-        // Si la respuesta tiene estructura { data: producto }
-        if (response.data) {
-          console.log('Producto creado con éxito:', response.data);
-          toast.success('Producto creado exitosamente');
-          navigate('/admin/productos');
-        }
-        // Si la respuesta es directamente el producto (fallback)
-        else if ('id' in response && response.id) {
-          console.log('Producto creado con éxito (formato directo):', response);
-          toast.success('Producto creado exitosamente');
-          navigate('/admin/productos');
-        }
-        // Si no tiene ninguno de los formatos esperados
-        else {
-          console.log('Respuesta inesperada pero exitosa:', response);
-          toast.success('Producto creado exitosamente');
-          navigate('/admin/productos');
-        }
+      if (response && (response.data || ('id' in response && response.id))) {
+        toast.success('✅ Producto creado exitosamente');
+        navigate('/admin/productos');
       } else {
         toast.error('Error: No se recibió respuesta del servidor');
       }
     } catch (error: unknown) {
-      console.error('Error detallado al crear producto:', error);
+      console.error('Error al crear producto:', error);
       
       let mensajeError = 'Error al crear el producto';
       
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number; data?: unknown; statusText?: string } };
-        console.error('Respuesta del servidor:', axiosError.response);
         
         if (axiosError.response?.status === 403) {
-          mensajeError = 'No tienes permisos para crear productos. Verifica tu sesión.';
+          mensajeError = 'No tienes permisos para crear productos';
         } else if (axiosError.response?.status === 401) {
-          mensajeError = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.';
+          mensajeError = 'Tu sesión ha expirado';
         } else if (axiosError.response?.status === 400) {
-          mensajeError = 'Datos del producto inválidos. Verifica los campos.';
+          mensajeError = 'Datos del producto inválidos';
         } else if (axiosError.response?.status === 500) {
-          mensajeError = 'Error interno del servidor. Intenta nuevamente.';
+          mensajeError = 'Error interno del servidor';
         } else {
           mensajeError = `Error ${axiosError.response?.status}: ${axiosError.response?.statusText}`;
         }
@@ -183,9 +323,10 @@ export default function NuevoProducto() {
     }
   };
 
+
+
   return (
-    <div className="h-pantalla-minimo" style={{ backgroundColor: '#f8fafc' }}>
-      {/* Navegación */}
+    <div className="pagina-crear-producto">
       <NavbarAdmin 
         onCerrarSesion={() => {
           cerrarSesion();
@@ -197,226 +338,685 @@ export default function NuevoProducto() {
         urlVolver="/admin/productos"
       />
 
-      {/* Contenido principal */}
-      <div className="contenedor py-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-8">
-            <h1 className="titulo-2 mb-2">Añadir Nuevo Producto</h1>
-            <p className="texto-gris">Completa los datos del producto para añadirlo a tu inventario.</p>
+      <div className="contenedor-principal">
+        <div className="contenido-formulario">
+          {/* Header del formulario */}
+          <div className="header-formulario">
+            <div className="header-info">
+              <h1 className="titulo-formulario">
+                <span className="icono-titulo">📦</span>
+                Crear Nuevo Producto
+              </h1>
+              <p className="subtitulo-formulario">
+                Completa la información del producto para añadirlo a tu catálogo
+              </p>
+            </div>
+            
+            {/* Indicador de pasos */}
+            <div className="indicador-pasos">
+              <div className={`paso ${pasoActual >= 1 ? 'activo' : ''}`}>
+                <div className="paso-numero">1</div>
+                <span className="paso-texto">Información Básica</span>
+              </div>
+              <div className={`paso ${pasoActual >= 2 ? 'activo' : ''}`}>
+                <div className="paso-numero">2</div>
+                <span className="paso-texto">Inventario</span>
+              </div>
+              <div className={`paso ${pasoActual >= 3 ? 'activo' : ''}`}>
+                <div className="paso-numero">3</div>
+                <span className="paso-texto">Imágenes</span>
+              </div>
+            </div>
           </div>
 
-          <div className="tarjeta">
-            <form onSubmit={enviarFormulario} className="space-y-6">
-              {/* Nombre */}
-              <div>
-                <label htmlFor="nombre" className="etiqueta">
-                  Nombre del Producto *
-                </label>
-                <input
-                  type="text"
-                  id="nombre"
-                  name="nombre"
-                  value={formulario.nombre}
-                  onChange={manejarCambio}
-                  className="campo"
-                  placeholder="Ej: Camiseta Básica Algodón"
-                  required
-                />
-              </div>
-
-              {/* Marca */}
-              <div>
-                <label htmlFor="marca" className="etiqueta">
-                  Marca
-                </label>
-                <input
-                  type="text"
-                  id="marca"
-                  name="marca"
-                  value={formulario.marca}
-                  onChange={manejarCambio}
-                  className="campo"
-                  placeholder="Ej: Nike, Apple, Samsung..."
-                />
-              </div>
-
-              {/* Descripción */}
-              <div>
-                <label htmlFor="descripcion" className="etiqueta">
-                  Descripción
-                </label>
-                <textarea
-                  id="descripcion"
-                  name="descripcion"
-                  value={formulario.descripcion}
-                  onChange={manejarCambio}
-                  rows={4}
-                  className="campo"
-                  placeholder="Describe las características del producto..."
-                />
-              </div>
-
-              {/* Precio y Unidad */}
-              <div className="grid grid-2">
-                <div>
-                  <label htmlFor="precio" className="etiqueta">
-                    Precio ($) *
-                  </label>
-                  <input
-                    type="number"
-                    id="precio"
-                    name="precio"
-                    value={formulario.precio}
-                    onChange={manejarCambio}
-                    className="campo"
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="unidad" className="etiqueta">
-                    Unidad
-                  </label>
-                  <input
-                    type="text"
-                    id="unidad"
-                    name="unidad"
-                    value={formulario.unidad}
-                    onChange={manejarCambio}
-                    className="campo"
-                    placeholder="ej: kg, litro, unidad"
-                  />
-                </div>
-              </div>
-
-              {/* Stock y Stock Mínimo */}
-              <div className="grid grid-2">
-                <div>
-                  <label htmlFor="stock" className="etiqueta">
-                    Stock Actual *
-                  </label>
-                  <input
-                    type="number"
-                    id="stock"
-                    name="stock"
-                    value={formulario.stock}
-                    onChange={manejarCambio}
-                    className="campo"
-                    placeholder="0"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="stockMinimo" className="etiqueta">
-                    Stock Mínimo
-                  </label>
-                  <input
-                    type="number"
-                    id="stockMinimo"
-                    name="stockMinimo"
-                    value={formulario.stockMinimo}
-                    onChange={manejarCambio}
-                    className="campo"
-                    placeholder="5"
-                    min="0"
-                  />
-                </div>
-              </div>
-
-              {/* Categoría */}
-              <div>
-                <label htmlFor="categoria" className="etiqueta">
-                  Categoría *
-                </label>
-                {cargandoCategorias ? (
-                  <div className="campo" style={{ padding: '12px', color: '#666' }}>
-                    Cargando categorías...
+          {/* Formulario */}
+          <div className="tarjeta-formulario">
+            <form onSubmit={enviarFormulario}>
+              {/* Paso 1: Información Básica */}
+              {pasoActual === 1 && (
+                <div className="paso-contenido">
+                  <div className="paso-header">
+                    <h2 className="paso-titulo">📝 Información Básica del Producto</h2>
+                    <p className="paso-descripcion">
+                      Define los datos principales que identifican tu producto
+                    </p>
                   </div>
-                ) : (
-                  <select
-                    id="categoria"
-                    name="categoria"
-                    value={formulario.categoria}
-                    onChange={(e) => setFormulario(prev => ({ ...prev, categoria: e.target.value }))}
-                    className="campo"
-                    required
-                  >
-                    <option value="">Selecciona una categoría</option>
-                    {categorias.map(categoria => (
-                      <option key={categoria} value={categoria}>
-                        {categoria}
-                      </option>
-                    ))}
-                    <option value="__nueva__">+ Agregar nueva categoría</option>
-                  </select>
-                )}
-                
-                {formulario.categoria === '__nueva__' && (
-                  <div style={{ marginTop: '10px' }}>
-                    <input
-                      type="text"
-                      placeholder="Escribe el nombre de la nueva categoría"
-                      className="campo"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          const value = e.currentTarget.value.trim();
-                          if (value) {
-                            setCategorias(prev => prev.includes(value) ? prev : [...prev, value]);
-                            setFormulario(prev => ({ ...prev, categoria: value }));
-                            e.currentTarget.blur(); // Opcional: quita el foco para simular confirmación
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const value = e.target.value.trim();
-                        if (value) {
-                          setCategorias(prev => prev.includes(value) ? prev : [...prev, value]);
-                          setFormulario(prev => ({ ...prev, categoria: value }));
-                        } else {
-                          setFormulario(prev => ({ ...prev, categoria: '' }));
-                        }
-                      }}
-                      autoFocus
+
+                  <div className="campos-formulario">
+                    <CampoFormulario
+                      label="Nombre del Producto"
+                      name="nombre"
+                      placeholder="Ej: Camiseta Básica de Algodón"
+                      required
+                      error={errores.nombre}
+                      value={formulario.nombre}
+                      onChange={manejarCambio}
+                      onSelectChange={manejarCambioSelect}
+                      onNuevaCategoria={manejarNuevaCategoria}
+                      mostrarNuevaCategoria={mostrarNuevaCategoria}
+                      nuevaCategoria={nuevaCategoria}
+                      setNuevaCategoria={setNuevaCategoria}
+                      categorias={categorias}
                     />
+
+                    <div className="campos-fila">
+                      <CampoFormulario
+                        label="Marca"
+                        name="marca"
+                        placeholder="Ej: Nike, Apple, Samsung..."
+                        error={errores.marca}
+                        value={formulario.marca}
+                        onChange={manejarCambio}
+                        onSelectChange={manejarCambioSelect}
+                        onNuevaCategoria={manejarNuevaCategoria}
+                        mostrarNuevaCategoria={mostrarNuevaCategoria}
+                        nuevaCategoria={nuevaCategoria}
+                        setNuevaCategoria={setNuevaCategoria}
+                        categorias={categorias}
+                      />
+                      <CampoFormulario
+                        label="Categoría"
+                        name="categoria"
+                        type="select"
+                        required
+                        error={errores.categoria}
+                        value={formulario.categoria}
+                        onChange={manejarCambio}
+                        onSelectChange={manejarCambioSelect}
+                        onNuevaCategoria={manejarNuevaCategoria}
+                        mostrarNuevaCategoria={mostrarNuevaCategoria}
+                        nuevaCategoria={nuevaCategoria}
+                        setNuevaCategoria={setNuevaCategoria}
+                        categorias={categorias}
+                      />
+                    </div>
+
+                    <CampoFormulario
+                      label="Descripción"
+                      name="descripcion"
+                      type="textarea"
+                      placeholder="Describe las características, beneficios y detalles del producto..."
+                      rows={4}
+                      error={errores.descripcion}
+                      value={formulario.descripcion}
+                      onChange={manejarCambio}
+                      onSelectChange={manejarCambioSelect}
+                      onNuevaCategoria={manejarNuevaCategoria}
+                      mostrarNuevaCategoria={mostrarNuevaCategoria}
+                      nuevaCategoria={nuevaCategoria}
+                      setNuevaCategoria={setNuevaCategoria}
+                      categorias={categorias}
+                    />
+
+                    <div className="campos-fila">
+                      <CampoFormulario
+                        label="Precio"
+                        name="precio"
+                        type="number"
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        required
+                        error={errores.precio}
+                        value={formulario.precio}
+                        onChange={manejarCambio}
+                        onSelectChange={manejarCambioSelect}
+                        onNuevaCategoria={manejarNuevaCategoria}
+                        mostrarNuevaCategoria={mostrarNuevaCategoria}
+                        nuevaCategoria={nuevaCategoria}
+                        setNuevaCategoria={setNuevaCategoria}
+                        categorias={categorias}
+                      />
+                      <CampoFormulario
+                        label="Unidad"
+                        name="unidad"
+                        placeholder="Ej: kg, litro, unidad, par..."
+                        error={errores.unidad}
+                        value={formulario.unidad}
+                        onChange={manejarCambio}
+                        onSelectChange={manejarCambioSelect}
+                        onNuevaCategoria={manejarNuevaCategoria}
+                        mostrarNuevaCategoria={mostrarNuevaCategoria}
+                        nuevaCategoria={nuevaCategoria}
+                        setNuevaCategoria={setNuevaCategoria}
+                        categorias={categorias}
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Imágenes */}
-              <div>
-                <GestorImagenes
-                  empresaId={empresaId}
-                  imagenesIniciales={formulario.imagenes}
-                  onChange={manejarCambioImagenes}
-                  maxImagenes={5}
-                  disabled={cargando}
-                />
-              </div>
+                  <div className="botones-paso">
+                    <button
+                      type="button"
+                      onClick={siguientePaso}
+                      className="boton-siguiente"
+                      disabled={!formulario.nombre || !formulario.precio || !formulario.categoria}
+                    >
+                      Siguiente Paso
+                      <span className="icono-boton">→</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
-              {/* Botones */}
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={cargando}
-                  className="boton boton-primario flex-1"
-                >
-                  {cargando ? 'Creando Producto...' : 'Crear Producto'}
-                </button>
-                <Link
-                  to="/admin/productos"
-                  className="boton boton-secundario flex-1 text-center"
-                >
-                  Cancelar
-                </Link>
-              </div>
+              {/* Paso 2: Inventario */}
+              {pasoActual === 2 && (
+                <div className="paso-contenido">
+                  <div className="paso-header">
+                    <h2 className="paso-titulo">📊 Gestión de Inventario</h2>
+                    <p className="paso-descripcion">
+                      Configura el stock y las alertas de inventario
+                    </p>
+                  </div>
+
+                  <div className="campos-formulario">
+                    <div className="campos-fila">
+                      <CampoFormulario
+                        label="Stock Actual"
+                        name="stock"
+                        type="number"
+                        placeholder="0"
+                        min="0"
+                        required
+                        error={errores.stock}
+                        value={formulario.stock}
+                        onChange={manejarCambio}
+                        onSelectChange={manejarCambioSelect}
+                        onNuevaCategoria={manejarNuevaCategoria}
+                        mostrarNuevaCategoria={mostrarNuevaCategoria}
+                        nuevaCategoria={nuevaCategoria}
+                        setNuevaCategoria={setNuevaCategoria}
+                        categorias={categorias}
+                      />
+                      <CampoFormulario
+                        label="Stock Mínimo"
+                        name="stockMinimo"
+                        type="number"
+                        placeholder="5"
+                        min="0"
+                        error={errores.stockMinimo}
+                        value={formulario.stockMinimo}
+                        onChange={manejarCambio}
+                        onSelectChange={manejarCambioSelect}
+                        onNuevaCategoria={manejarNuevaCategoria}
+                        mostrarNuevaCategoria={mostrarNuevaCategoria}
+                        nuevaCategoria={nuevaCategoria}
+                        setNuevaCategoria={setNuevaCategoria}
+                        categorias={categorias}
+                      />
+                    </div>
+
+                    <div className="info-inventario">
+                      <div className="info-card">
+                        <div className="info-icono">📈</div>
+                        <div className="info-contenido">
+                          <h4>Stock Mínimo</h4>
+                          <p>Recibirás alertas cuando el stock baje de este nivel</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="botones-paso">
+                    <button
+                      type="button"
+                      onClick={pasoAnterior}
+                      className="boton-anterior"
+                    >
+                      <span className="icono-boton">←</span>
+                      Paso Anterior
+                    </button>
+                    <button
+                      type="button"
+                      onClick={siguientePaso}
+                      className="boton-siguiente"
+                      disabled={!formulario.stock}
+                    >
+                      Siguiente Paso
+                      <span className="icono-boton">→</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Paso 3: Imágenes */}
+              {pasoActual === 3 && (
+                <div className="paso-contenido">
+                  <div className="paso-header">
+                    <h2 className="paso-titulo">🖼️ Imágenes del Producto</h2>
+                    <p className="paso-descripcion">
+                      Añade fotos de alta calidad para mostrar tu producto
+                    </p>
+                  </div>
+
+                  <div className="campos-formulario">
+                    <div className="seccion-imagenes">
+                      <GestorImagenes
+                        empresaId={empresaId}
+                        imagenesIniciales={formulario.imagenes}
+                        onChange={manejarCambioImagenes}
+                        maxImagenes={5}
+                        disabled={cargando}
+                      />
+                    </div>
+
+                    <div className="info-imagenes">
+                      <div className="info-card">
+                        <div className="info-icono">💡</div>
+                        <div className="info-contenido">
+                          <h4>Consejos para las imágenes</h4>
+                          <ul>
+                            <li>Usa imágenes de alta resolución (mínimo 800x800px)</li>
+                            <li>Fondo blanco o neutro para mejor presentación</li>
+                            <li>Muestra el producto desde diferentes ángulos</li>
+                            <li>Máximo 5 imágenes por producto</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="botones-paso">
+                    <button
+                      type="button"
+                      onClick={pasoAnterior}
+                      className="boton-anterior"
+                    >
+                      <span className="icono-boton">←</span>
+                      Paso Anterior
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={cargando}
+                      className="boton-crear"
+                    >
+                      {cargando ? (
+                        <>
+                          <span className="spinner-mini"></span>
+                          Creando Producto...
+                        </>
+                      ) : (
+                        <>
+                          <span className="icono-boton">✅</span>
+                          Crear Producto
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
             </form>
+          </div>
+
+          {/* Botón cancelar */}
+          <div className="acciones-secundarias">
+            <Link to="/admin/productos" className="boton-cancelar">
+              <span className="icono-boton">❌</span>
+              Cancelar
+            </Link>
           </div>
         </div>
       </div>
+
+      <style>{`
+        .pagina-crear-producto {
+          min-height: 100vh;
+          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        .contenedor-principal {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 2rem 1rem;
+        }
+
+        .contenido-formulario {
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+        }
+
+        .header-formulario {
+          text-align: center;
+          margin-bottom: 2rem;
+        }
+
+        .header-info {
+          margin-bottom: 2rem;
+        }
+
+        .titulo-formulario {
+          font-size: 2.5rem;
+          font-weight: 800;
+          color: #1e293b;
+          margin-bottom: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+        }
+
+        .icono-titulo {
+          font-size: 2rem;
+        }
+
+        .subtitulo-formulario {
+          font-size: 1.125rem;
+          color: #64748b;
+          max-width: 500px;
+          margin: 0 auto;
+        }
+
+        .indicador-pasos {
+          display: flex;
+          justify-content: center;
+          gap: 2rem;
+          margin-top: 2rem;
+        }
+
+        .paso {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          opacity: 0.5;
+          transition: all 0.3s ease;
+        }
+
+        .paso.activo {
+          opacity: 1;
+        }
+
+        .paso-numero {
+          width: 2.5rem;
+          height: 2.5rem;
+          border-radius: 50%;
+          background: #e2e8f0;
+          color: #64748b;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+          font-size: 1rem;
+          transition: all 0.3s ease;
+        }
+
+        .paso.activo .paso-numero {
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          color: white;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .paso-texto {
+          font-weight: 600;
+          color: #374151;
+          font-size: 0.875rem;
+        }
+
+        .tarjeta-formulario {
+          background: white;
+          border-radius: 1rem;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+          border: 1px solid #e2e8f0;
+        }
+
+        .paso-contenido {
+          padding: 2rem;
+        }
+
+        .paso-header {
+          text-align: center;
+          margin-bottom: 2rem;
+        }
+
+        .paso-titulo {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #1e293b;
+          margin-bottom: 0.5rem;
+        }
+
+        .paso-descripcion {
+          color: #64748b;
+          font-size: 1rem;
+        }
+
+        .campos-formulario {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .campos-fila {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+        }
+
+        .campo-grupo {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .campo-label {
+          font-weight: 600;
+          color: #374151;
+          font-size: 0.875rem;
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .campo-requerido {
+          color: #ef4444;
+          font-weight: 700;
+        }
+
+        .campo-input {
+          padding: 0.75rem 1rem;
+          border: 2px solid #e2e8f0;
+          border-radius: 0.5rem;
+          font-size: 1rem;
+          transition: all 0.2s ease;
+          background: white;
+        }
+
+        .campo-input:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .campo-input.campo-error {
+          border-color: #ef4444;
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .campo-mensaje-error {
+          color: #ef4444;
+          font-size: 0.75rem;
+          font-weight: 500;
+        }
+
+        .info-inventario,
+        .info-imagenes {
+          margin-top: 1rem;
+        }
+
+        .info-card {
+          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+          border: 1px solid #e2e8f0;
+          border-radius: 0.75rem;
+          padding: 1.5rem;
+          display: flex;
+          align-items: flex-start;
+          gap: 1rem;
+        }
+
+        .info-icono {
+          font-size: 1.5rem;
+          flex-shrink: 0;
+        }
+
+        .info-contenido h4 {
+          font-weight: 600;
+          color: #1e293b;
+          margin-bottom: 0.5rem;
+        }
+
+        .info-contenido p,
+        .info-contenido ul {
+          color: #64748b;
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+
+        .info-contenido ul {
+          margin-top: 0.5rem;
+          padding-left: 1rem;
+        }
+
+        .info-contenido li {
+          margin-bottom: 0.25rem;
+        }
+
+        .seccion-imagenes {
+          border: 2px dashed #e2e8f0;
+          border-radius: 0.75rem;
+          padding: 1.5rem;
+          background: #f8fafc;
+        }
+
+        .botones-paso {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 2rem;
+          padding-top: 2rem;
+          border-top: 1px solid #e2e8f0;
+        }
+
+        .boton-siguiente,
+        .boton-anterior,
+        .boton-crear {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.5rem;
+          border: none;
+          border-radius: 0.5rem;
+          font-weight: 600;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-decoration: none;
+        }
+
+        .boton-siguiente,
+        .boton-crear {
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          color: white;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .boton-siguiente:hover:not(:disabled),
+        .boton-crear:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        .boton-siguiente:disabled,
+        .boton-crear:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .boton-anterior {
+          background: white;
+          color: #64748b;
+          border: 2px solid #e2e8f0;
+        }
+
+        .boton-anterior:hover {
+          background: #f8fafc;
+          border-color: #cbd5e1;
+        }
+
+        .icono-boton {
+          font-size: 1.125rem;
+        }
+
+        .spinner-mini {
+          width: 1rem;
+          height: 1rem;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top: 2px solid white;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .acciones-secundarias {
+          display: flex;
+          justify-content: center;
+        }
+
+        .boton-cancelar {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.5rem;
+          background: white;
+          color: #ef4444;
+          border: 2px solid #ef4444;
+          border-radius: 0.5rem;
+          font-weight: 600;
+          text-decoration: none;
+          transition: all 0.2s ease;
+        }
+
+        .boton-cancelar:hover {
+          background: #ef4444;
+          color: white;
+          transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+          .contenedor-principal {
+            padding: 1rem;
+          }
+
+          .titulo-formulario {
+            font-size: 2rem;
+          }
+
+          .indicador-pasos {
+            flex-direction: column;
+            gap: 1rem;
+          }
+
+          .campos-fila {
+            grid-template-columns: 1fr;
+          }
+
+          .botones-paso {
+            flex-direction: column;
+            gap: 1rem;
+          }
+
+          .boton-siguiente,
+          .boton-anterior,
+          .boton-crear {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      `}</style>
     </div>
   );
 }

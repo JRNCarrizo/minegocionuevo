@@ -42,7 +42,7 @@ function EstadoBadge({ estado }: { estado: string }) {
   );
 }
 
-function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido|null, open: boolean, onClose: () => void }) {
+function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Pedido|null, open: boolean, onClose: () => void, onCancelar?: (pedidoId: number) => void }) {
   const [productoSeleccionado, setProductoSeleccionado] = useState<DetallePedido | null>(null);
   const [mostrarProducto, setMostrarProducto] = useState(false);
 
@@ -451,6 +451,63 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido|null, op
                 </div>
               </div>
             </div>
+
+            {/* Botón de cancelar pedido */}
+            {(pedido.estado === 'PENDIENTE' || pedido.estado === 'CONFIRMADO') && (
+              <div style={{
+                padding: '24px 32px',
+                borderTop: '1px solid #e2e8f0',
+                background: '#f8fafc',
+                borderBottomLeftRadius: '16px',
+                borderBottomRightRadius: '16px'
+              }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+                  border: '2px solid #fecaca',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  textAlign: 'center'
+                }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: '600', color: '#dc2626' }}>
+                    ⚠️ ¿Necesitas cancelar este pedido?
+                  </h4>
+                  <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#7f1d1d', lineHeight: '1.5' }}>
+                    Solo puedes cancelar pedidos pendientes o confirmados. Al cancelar, el stock de los productos será restaurado automáticamente.
+                  </p>
+                  <button 
+                    onClick={() => {
+                      if (window.confirm('¿Estás seguro de que quieres cancelar este pedido? El stock será restaurado.')) {
+                        if (onCancelar && pedido) {
+                          onCancelar(pedido.id);
+                        }
+                      }
+                    }}
+                    style={{
+                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '12px 24px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 12px rgba(239,68,68,0.3)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(239,68,68,0.4)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.3)';
+                    }}
+                  >
+                    ❌ Cancelar Pedido
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -750,12 +807,12 @@ export default function AreaPersonalCliente() {
         setCliente(response.cliente);
         console.log('Cliente establecido:', response.cliente);
         
-        // Cargar pedidos del cliente
-        if (empresa && response.cliente?.id) {
-          console.log('Cargando pedidos para cliente:', response.cliente.id, 'empresa:', empresa.id);
+        // Cargar pedidos del cliente usando endpoint público
+        if (subdominioFinal && response.cliente?.id) {
+          console.log('Cargando pedidos para cliente:', response.cliente.id, 'subdominio:', subdominioFinal);
           setCargandoPedidos(true);
           try {
-            const pedidosResp = await api.obtenerPedidosCliente(empresa.id, response.cliente.id);
+            const pedidosResp = await api.obtenerPedidosClientePublico(subdominioFinal, response.cliente.id);
             // Adaptación robusta para diferentes estructuras de respuesta
             let pedidosArray = Array.isArray(pedidosResp) ? pedidosResp : pedidosResp?.data;
             if (!Array.isArray(pedidosArray)) pedidosArray = [];
@@ -768,7 +825,7 @@ export default function AreaPersonalCliente() {
             setCargandoPedidos(false);
           }
         } else {
-          console.log('No se pueden cargar pedidos - empresa:', !!empresa, 'cliente.id:', response.cliente?.id);
+          console.log('No se pueden cargar pedidos - subdominio:', !!subdominioFinal, 'cliente.id:', response.cliente?.id);
         }
       } catch (error: unknown) {
         console.error('Error al cargar perfil:', error);
@@ -790,10 +847,10 @@ export default function AreaPersonalCliente() {
   }, [subdominio, navigate, empresa, cargandoEmpresa]);
 
   useEffect(() => {
-    if (!empresa || !cliente?.id) return;
-    console.log('useEffect secundario - Cargando pedidos para cliente:', cliente.id, 'empresa:', empresa.id);
+    if (!subdominio || !cliente?.id) return;
+    console.log('useEffect secundario - Cargando pedidos para cliente:', cliente.id, 'subdominio:', subdominio);
     setCargandoPedidos(true);
-    api.obtenerPedidosCliente(empresa.id, cliente.id)
+    api.obtenerPedidosClientePublico(subdominio, cliente.id)
       .then((pedidosResp) => {
         // Adaptación robusta para diferentes estructuras de respuesta
         let pedidosArray = Array.isArray(pedidosResp) ? pedidosResp : pedidosResp?.data;
@@ -806,7 +863,7 @@ export default function AreaPersonalCliente() {
         setPedidos([]);
       })
       .finally(() => setCargandoPedidos(false));
-  }, [empresa, cliente]);
+  }, [subdominio, cliente]);
 
   const cerrarSesion = () => {
     localStorage.removeItem('clienteToken');
@@ -814,6 +871,35 @@ export default function AreaPersonalCliente() {
     setClienteInfo(null);
     toast.success('Sesión cerrada');
     navigate('/');
+  };
+
+  const cancelarPedido = async (pedidoId: number) => {
+    if (!subdominio || !cliente?.id) {
+      toast.error('Error: No se pudo identificar la tienda o el cliente');
+      return;
+    }
+
+    try {
+      console.log('Cancelando pedido:', pedidoId, 'cliente:', cliente.id, 'subdominio:', subdominio);
+      
+      const response = await api.cancelarPedidoCliente(subdominio, pedidoId, cliente.id);
+      console.log('Pedido cancelado:', response);
+      
+      toast.success('Pedido cancelado exitosamente. El stock ha sido restaurado.');
+      
+      // Recargar pedidos
+      const pedidosResp = await api.obtenerPedidosClientePublico(subdominio, cliente.id);
+      let pedidosArray = Array.isArray(pedidosResp) ? pedidosResp : pedidosResp?.data;
+      if (!Array.isArray(pedidosArray)) pedidosArray = [];
+      setPedidos(pedidosArray);
+      
+      // Cerrar modal si está abierto
+      setDetallePedido(null);
+    } catch (error) {
+      console.error('Error al cancelar pedido:', error);
+      const mensaje = (error as { response?: { data?: { error?: string } } }).response?.data?.error || 'Error al cancelar pedido';
+      toast.error(mensaje);
+    }
   };
 
   if (cargandoEmpresa) {
@@ -1330,8 +1416,33 @@ export default function AreaPersonalCliente() {
                               onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
                               onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
                                 👁️ Ver Detalles
-                          </button>
-                        </div>
+                              </button>
+                              
+                              {/* Botón de cancelar solo para pedidos pendientes o confirmados */}
+                              {(pedido.estado === 'PENDIENTE' || pedido.estado === 'CONFIRMADO') && (
+                                <button style={{
+                                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  padding: '8px 16px',
+                                  fontSize: '14px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm('¿Estás seguro de que quieres cancelar este pedido? El stock será restaurado.')) {
+                                    cancelarPedido(pedido.id);
+                                  }
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+                                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                                  ❌ Cancelar
+                                </button>
+                              )}
+                            </div>
                         </div>
                           
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '16px', alignItems: 'center' }}>
@@ -1443,7 +1554,8 @@ export default function AreaPersonalCliente() {
       <PedidoDetalleModal 
         pedido={detallePedido} 
         open={!!detallePedido} 
-        onClose={() => setDetallePedido(null)} 
+        onClose={() => setDetallePedido(null)}
+        onCancelar={cancelarPedido}
       />
 
       <style>{`
