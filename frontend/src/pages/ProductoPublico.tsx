@@ -3,6 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import { useSubdominio } from '../hooks/useSubdominio';
 import apiService from '../services/api';
 import type { Producto } from '../types';
+import CartIcon from '../components/CartIcon';
+import CartModal from '../components/CartModal';
+import { useCart } from '../hooks/useCart';
 
 export default function ProductoPublico() {
   const { id } = useParams<{ id: string }>();
@@ -12,14 +15,22 @@ export default function ProductoPublico() {
   const [error, setError] = useState<string | null>(null);
   const [imagenActual, setImagenActual] = useState(0);
   const [cantidad, setCantidad] = useState(1);
+  const [showCart, setShowCart] = useState(false);
+  const [clienteInfo, setClienteInfo] = useState<{ nombre: string; email: string } | null>(null);
+  const { addToCart } = useCart();
 
   const cargarProducto = useCallback(async () => {
     if (!subdominio || !id) return;
-    
     try {
       setCargando(true);
       setError(null);
-
+      const url = `/publico/${subdominio}/productos/${id}`;
+      console.log('Petición detalle producto:', {
+        url,
+        subdominio,
+        id,
+        apiBase: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
+      });
       const response = await apiService.obtenerProductoPublico(subdominio, parseInt(id));
       setProducto(response.data || null);
     } catch (err) {
@@ -31,10 +42,30 @@ export default function ProductoPublico() {
   }, [subdominio, id]);
 
   useEffect(() => {
+    // Limpiar producto y error antes de cargar uno nuevo
+    setProducto(null);
+    setError(null);
+    setCargando(true);
     if (empresa && subdominio && id) {
+      console.log('Debug Detalle:', { id, subdominio });
       cargarProducto();
     }
   }, [empresa, subdominio, id, cargarProducto]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('clienteToken');
+    const cliente = localStorage.getItem('clienteInfo');
+    if (token && cliente) {
+      try {
+        setClienteInfo(JSON.parse(cliente));
+      } catch (error) {
+        console.log(error)
+        setClienteInfo(null);
+      }
+    } else {
+      setClienteInfo(null);
+    }
+  }, []);
 
   const formatearPrecio = (precio: number, moneda: string = 'USD') => {
     const simbolos: { [key: string]: string } = {
@@ -49,9 +80,18 @@ export default function ProductoPublico() {
 
   const agregarAlCarrito = () => {
     if (!producto) return;
-    
-    // TODO: Implementar carrito de compras
-    alert(`Producto ${producto.nombre} agregado al carrito (cantidad: ${cantidad})`);
+    if (typeof producto.precio !== 'number' || isNaN(producto.precio)) {
+      alert('Este producto no tiene un precio válido y no puede ser agregado al carrito.');
+      return;
+    }
+    addToCart({
+      id: producto.id,
+      nombre: producto.nombre,
+      precio: producto.precio,
+      cantidad,
+      imagen: producto.imagenes && producto.imagenes[0]
+    });
+    // Ya no se abre el modal automáticamente
   };
 
   const comprarAhora = () => {
@@ -102,13 +142,34 @@ export default function ProductoPublico() {
           
           <nav className="nav-tienda">
             <Link to="/" className="nav-link">Catálogo</Link>
-            <Link to="/carrito" className="nav-link">
-              Carrito
-            </Link>
-            <Link to="/login" className="nav-link">Iniciar Sesión</Link>
+            <span className="nav-link" style={{ position: 'relative' }}>
+              <CartIcon onClick={() => setShowCart(true)} />
+            </span>
+            {clienteInfo ? (
+              <>
+                <Link to="/cuenta" className="nav-link">Mi Cuenta</Link>
+                <span className="nav-link" style={{ color: '#28a745' }}>
+                  ¡Hola, {clienteInfo.nombre}!
+                </span>
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('clienteToken');
+                    localStorage.removeItem('clienteInfo');
+                    setClienteInfo(null);
+                  }}
+                  className="nav-link"
+                  style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer' }}
+                >
+                  Cerrar Sesión
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="nav-link">Iniciar Sesión</Link>
+            )}
           </nav>
         </div>
       </header>
+      <CartModal open={showCart} onClose={() => setShowCart(false)} />
 
       <main className="contenedor">
         {/* Breadcrumb */}

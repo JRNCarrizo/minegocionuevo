@@ -35,12 +35,23 @@ export default function DashboardAdministrador() {
         const cantidadProductos = Array.isArray(responseProductos) ? responseProductos.length : 0;
         console.log('Dashboard - Cantidad de productos:', cantidadProductos);
 
-        // Por ahora mantenemos los otros valores como mock hasta que implementemos sus endpoints
+        // Cargar clientes reales
+        const responseClientes = await ApiService.obtenerClientesPaginado(empresaId, 0, 1);
+        const cantidadClientes = responseClientes.totalElements || 0;
+
+        // Cargar pedidos reales
+        const responsePedidos = await ApiService.obtenerPedidos(empresaId, 0, 1);
+        const cantidadPedidos = responsePedidos.totalElements || 0;
+        
+        // Cargar ventas reales
+        const responseVentas = await ApiService.obtenerEstadisticasVentas();
+        const totalVentas = responseVentas.data?.totalVentas || 0;
+        
         setEstadisticas({
           productos: cantidadProductos,
-          clientes: 128, // TODO: Conectar con API real
-          pedidos: 234,  // TODO: Conectar con API real
-          ventas: 15650  // TODO: Conectar con API real
+          clientes: cantidadClientes,
+          pedidos: cantidadPedidos,
+          ventas: totalVentas
         });
       } catch (error) {
         console.error('Error al cargar estadísticas:', error);
@@ -85,7 +96,7 @@ export default function DashboardAdministrador() {
     },
     {
       titulo: 'Ventas',
-      valor: `€${estadisticas.ventas.toLocaleString()}`,
+      valor: `$${estadisticas.ventas.toLocaleString()}`,
       icono: '💰',
       color: '#8b5cf6'
     }

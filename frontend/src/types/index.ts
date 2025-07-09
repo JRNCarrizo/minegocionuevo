@@ -72,6 +72,7 @@ export interface Cliente {
   fechaActualizacion: string;
   ultimoAcceso?: string;
   totalPedidos?: number;
+  totalCompras?: number;
 }
 
 export interface Pedido {
@@ -97,9 +98,14 @@ export interface DetallePedido {
   cantidad: number;
   precioUnitario: number;
   precioTotal: number;
+  subtotal: number; // Agregar subtotal
   observaciones?: string;
   producto: Producto;
   nombreProducto: string;
+  productoNombre: string; // Nuevo campo del DTO
+  productoDescripcion?: string; // Nuevo campo del DTO
+  productoImagen?: string; // Nuevo campo del DTO
+  productoCategoria?: string; // Nuevo campo del DTO
   descripcionProducto?: string;
   categoriaProducto?: string;
 }

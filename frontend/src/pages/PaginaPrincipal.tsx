@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import InfoMultiTenant from '../components/InfoMultiTenant';
+import CartIcon from "../components/CartIcon";
+import CartModal from "../components/CartModal";
 
 export default function PaginaPrincipal() {
   const [estadisticas, setEstadisticas] = useState({
@@ -8,6 +10,7 @@ export default function PaginaPrincipal() {
     productosGestionados: 45680,
     pedidosProcesados: 12430
   });
+  const [showCart, setShowCart] = useState(false);
 
   useEffect(() => {
     // Animación de contadores
@@ -326,6 +329,8 @@ export default function PaginaPrincipal() {
 
       {/* Información de desarrollo - Solo mostrar en localhost */}
       {window.location.hostname === 'localhost' && <InfoMultiTenant />}
+      <CartIcon onClick={() => setShowCart(true)} />
+      <CartModal open={showCart} onClose={() => setShowCart(false)} />
     </div>
   );
 }

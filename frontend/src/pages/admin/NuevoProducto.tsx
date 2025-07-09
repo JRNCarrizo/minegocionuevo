@@ -360,9 +360,22 @@ export default function NuevoProducto() {
                       type="text"
                       placeholder="Escribe el nombre de la nueva categoría"
                       className="campo"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const value = e.currentTarget.value.trim();
+                          if (value) {
+                            setCategorias(prev => prev.includes(value) ? prev : [...prev, value]);
+                            setFormulario(prev => ({ ...prev, categoria: value }));
+                            e.currentTarget.blur(); // Opcional: quita el foco para simular confirmación
+                          }
+                        }
+                      }}
                       onBlur={(e) => {
-                        if (e.target.value.trim()) {
-                          setFormulario(prev => ({ ...prev, categoria: e.target.value.trim() }));
+                        const value = e.target.value.trim();
+                        if (value) {
+                          setCategorias(prev => prev.includes(value) ? prev : [...prev, value]);
+                          setFormulario(prev => ({ ...prev, categoria: value }));
                         } else {
                           setFormulario(prev => ({ ...prev, categoria: '' }));
                         }

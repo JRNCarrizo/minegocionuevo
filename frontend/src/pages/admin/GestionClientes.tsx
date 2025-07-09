@@ -1,93 +1,388 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import api from '../../services/api';
+import type { Cliente, Pedido } from '../../types';
 
-interface Cliente {
-  id: number;
-  nombre: string;
-  apellido: string;
-  email: string;
-  telefono: string;
-  fechaRegistro: string;
-  totalPedidos: number;
-  totalGastado: number;
-  activo: boolean;
+// Componente Modal para detalles del cliente
+function ClienteDetalleModal({ cliente, pedidos, open, onClose }: { 
+  cliente: Cliente | null, 
+  pedidos: Pedido[], 
+  open: boolean, 
+  onClose: () => void 
+}) {
+  console.log('=== DEBUG CLIENTE DETALLE MODAL ===');
+  console.log('Open:', open);
+  console.log('Cliente:', cliente);
+  console.log('Pedidos:', pedidos);
+  
+  if (!cliente || !open) {
+    console.log('Modal no se renderiza - cliente:', !!cliente, 'open:', open);
+    return null;
+  }
+
+  const obtenerColorEstado = (estado: Pedido['estado']) => {
+    const colores: Record<Pedido['estado'], string> = {
+      PENDIENTE: '#f59e0b',
+      CONFIRMADO: '#3b82f6',
+      PREPARANDO: '#6366f1',
+      ENVIADO: '#8b5cf6',
+      ENTREGADO: '#10b981',
+      CANCELADO: '#ef4444',
+    };
+    return colores[estado] || '#6b7280';
+  };
+
+  const obtenerTextoEstado = (estado: Pedido['estado']) => {
+    const textos: Record<Pedido['estado'], string> = {
+      PENDIENTE: 'Pendiente',
+      CONFIRMADO: 'Confirmado',
+      PREPARANDO: 'Preparando',
+      ENVIADO: 'Enviado',
+      ENTREGADO: 'Entregado',
+      CANCELADO: 'Cancelado',
+    };
+    return textos[estado] || estado;
+  };
+
+  return (
+    <div className="modal-overlay" style={{ 
+      position: 'fixed', 
+      top: 0, 
+      left: 0, 
+      width: '100vw', 
+      height: '100vh', 
+      background: 'rgba(0,0,0,0.6)', 
+      zIndex: 1000, 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      backdropFilter: 'blur(4px)'
+    }}>
+      <div className="modal-content" style={{
+        background: '#fff',
+        borderRadius: '16px',
+        padding: '0',
+        maxWidth: '900px',
+        width: '95vw',
+        maxHeight: '90vh',
+        overflow: 'hidden',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        border: '1px solid rgba(255,255,255,0.1)'
+      }}>
+        {/* Header del modal */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1e40af 0%, #3730a3 100%)',
+          color: 'white',
+          padding: '24px 32px',
+          borderTopLeftRadius: '16px',
+          borderTopRightRadius: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
+              👤 {cliente.nombre} {cliente.apellidos}
+            </h2>
+            <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
+              Detalles completos del cliente
+            </p>
+          </div>
+          <button 
+            onClick={onClose}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              color: 'white',
+              fontSize: '20px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Contenido del modal */}
+        <div style={{ padding: '32px', maxHeight: 'calc(90vh - 120px)', overflow: 'auto' }}>
+          {/* Información del cliente */}
+          <div style={{
+            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+            borderRadius: '12px',
+            padding: '20px',
+            marginBottom: '24px',
+            border: '1px solid #bae6fd'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+              📋 Información Personal
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div>
+                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Nombre Completo</p>
+                <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                  {cliente.nombre} {cliente.apellidos}
+                </p>
+              </div>
+              <div>
+                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Email</p>
+                <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                  {cliente.email}
+                </p>
+              </div>
+              <div>
+                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Teléfono</p>
+                <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                  {cliente.telefono || 'No especificado'}
+                </p>
+              </div>
+              <div>
+                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Fecha de Registro</p>
+                <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                  {new Date(cliente.fechaCreacion).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+            </div>
+            
+            {(cliente.direccion || cliente.ciudad || cliente.pais) && (
+              <div style={{ marginTop: '16px' }}>
+                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Dirección</p>
+                <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>
+                  {[cliente.direccion, cliente.ciudad, cliente.pais].filter(Boolean).join(', ') || 'No especificada'}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Estadísticas de compras */}
+          <div style={{
+            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+            borderRadius: '12px',
+            padding: '20px',
+            marginBottom: '24px',
+            border: '1px solid #e2e8f0'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+              💰 Estadísticas de Compras
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+              <div style={{
+                background: '#fff',
+                borderRadius: '12px',
+                padding: '16px',
+                textAlign: 'center',
+                border: '1px solid #e2e8f0'
+              }}>
+                <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#64748b' }}>
+                  Total Pedidos
+                </p>
+                <p style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#3b82f6' }}>
+                  {cliente.totalPedidos || 0}
+                </p>
+              </div>
+              <div style={{
+                background: '#fff',
+                borderRadius: '12px',
+                padding: '16px',
+                textAlign: 'center',
+                border: '1px solid #e2e8f0'
+              }}>
+                <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#64748b' }}>
+                  Total Compras
+                </p>
+                <p style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#059669' }}>
+                  ${(cliente.totalCompras || 0).toFixed(2)}
+                </p>
+              </div>
+              <div style={{
+                background: '#fff',
+                borderRadius: '12px',
+                padding: '16px',
+                textAlign: 'center',
+                border: '1px solid #e2e8f0'
+              }}>
+                <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#64748b' }}>
+                  Promedio por Pedido
+                </p>
+                <p style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#f59e0b' }}>
+                  ${cliente.totalPedidos && cliente.totalPedidos > 0 ? ((cliente.totalCompras || 0) / cliente.totalPedidos).toFixed(2) : '0.00'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Historial de pedidos */}
+          <div style={{ marginBottom: '24px' }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
+              🛒 Historial de Pedidos ({pedidos.length})
+            </h3>
+            
+            {pedidos.length === 0 ? (
+              <div style={{
+                background: '#f8fafc',
+                borderRadius: '12px',
+                padding: '32px',
+                textAlign: 'center',
+                border: '1px solid #e2e8f0'
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>
+                  📭
+                </div>
+                <p style={{ margin: 0, fontSize: '16px', color: '#64748b' }}>
+                  Este cliente aún no ha realizado ningún pedido.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {pedidos.map((pedido, index) => (
+                  <div 
+                    key={pedido.id || index} 
+                    style={{
+                      background: '#fff',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      border: '2px solid #e2e8f0',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.borderColor = '#3b82f6';
+                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.15)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h4 style={{ 
+                          margin: '0 0 4px 0', 
+                          fontSize: '16px', 
+                          fontWeight: '600', 
+                          color: '#1e293b'
+                        }}>
+                          Pedido #{pedido.numeroPedido || pedido.id}
+                        </h4>
+                        <p style={{ 
+                          margin: '0 0 8px 0', 
+                          fontSize: '14px', 
+                          color: '#64748b'
+                        }}>
+                          {new Date(pedido.fechaCreacion).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                        <span
+                          style={{
+                            backgroundColor: obtenerColorEstado(pedido.estado) + '20',
+                            color: obtenerColorEstado(pedido.estado),
+                            padding: '4px 12px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            border: `1px solid ${obtenerColorEstado(pedido.estado)}30`
+                          }}
+                        >
+                          {obtenerTextoEstado(pedido.estado)}
+                        </span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ 
+                          margin: 0, 
+                          fontSize: '18px', 
+                          fontWeight: '700', 
+                          color: '#059669'
+                        }}>
+                          ${pedido.total?.toFixed(2)}
+                        </p>
+                        <p style={{ 
+                          margin: '4px 0 0 0', 
+                          fontSize: '12px', 
+                          color: '#64748b'
+                        }}>
+                          {pedido.detalles?.length || 0} producto{(pedido.detalles?.length || 0) !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function GestionClientes() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [cargando, setCargando] = useState(true);
+  const [empresaId, setEmpresaId] = useState<number | null>(null);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(null);
+  const [pedidosCliente, setPedidosCliente] = useState<Pedido[]>([]);
+  const [mostrarDetalle, setMostrarDetalle] = useState(false);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
 
   useEffect(() => {
-    cargarClientes();
+    // Obtener empresaId del usuario logueado
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setEmpresaId(user.empresaId);
+      } catch {}
+    }
   }, []);
 
+  useEffect(() => {
+    if (empresaId) {
+      cargarClientes();
+    }
+  }, [empresaId]);
+
   const cargarClientes = async () => {
+    if (!empresaId) return;
+    setCargando(true);
     try {
-      // Simular carga de datos
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('=== DEBUG CARGAR CLIENTES ===');
+      console.log('EmpresaId:', empresaId);
       
-      const clientesSimulados: Cliente[] = [
-        {
-          id: 1,
-          nombre: 'María',
-          apellido: 'García',
-          email: 'maria.garcia@email.com',
-          telefono: '+34 666 123 456',
-          fechaRegistro: '2024-01-10',
-          totalPedidos: 5,
-          totalGastado: 234.50,
-          activo: true
-        },
-        {
-          id: 2,
-          nombre: 'Juan',
-          apellido: 'Pérez',
-          email: 'juan.perez@email.com',
-          telefono: '+34 677 234 567',
-          fechaRegistro: '2024-01-08',
-          totalPedidos: 3,
-          totalGastado: 145.75,
-          activo: true
-        },
-        {
-          id: 3,
-          nombre: 'Ana',
-          apellido: 'López',
-          email: 'ana.lopez@email.com',
-          telefono: '+34 688 345 678',
-          fechaRegistro: '2024-01-05',
-          totalPedidos: 8,
-          totalGastado: 456.20,
-          activo: true
-        },
-        {
-          id: 4,
-          nombre: 'Carlos',
-          apellido: 'Ruiz',
-          email: 'carlos.ruiz@email.com',
-          telefono: '+34 699 456 789',
-          fechaRegistro: '2023-12-20',
-          totalPedidos: 12,
-          totalGastado: 678.90,
-          activo: false
-        },
-        {
-          id: 5,
-          nombre: 'Laura',
-          apellido: 'Martín',
-          email: 'laura.martin@email.com',
-          telefono: '+34 611 567 890',
-          fechaRegistro: '2023-12-15',
-          totalPedidos: 2,
-          totalGastado: 89.30,
-          activo: true
-        }
-      ];
+      const response = await api.obtenerClientesPaginado(empresaId, 0, 100);
+      console.log('Respuesta completa:', response);
       
-      setClientes(clientesSimulados);
-    } catch {
+      const clientesApi: Cliente[] = response.content || [];
+      console.log('Clientes cargados:', clientesApi);
+      console.log('Estadísticas de clientes:', clientesApi.map(c => ({
+        id: c.id,
+        nombre: c.nombre,
+        totalPedidos: c.totalPedidos,
+        totalCompras: c.totalCompras
+      })));
+      
+      setClientes(clientesApi);
+    } catch (error) {
+      console.error('Error al cargar clientes:', error);
       toast.error('Error al cargar los clientes');
     } finally {
       setCargando(false);
@@ -109,15 +404,64 @@ export default function GestionClientes() {
     }
   };
 
+  const verDetallesCliente = async (cliente: Cliente) => {
+    if (!empresaId) return;
+    
+    console.log('=== DEBUG VER DETALLES CLIENTE ===');
+    console.log('EmpresaId:', empresaId);
+    console.log('Cliente:', cliente);
+    
+    setCargandoDetalle(true);
+    try {
+      // Primero probar el endpoint de debug
+      console.log('Probando endpoint de debug...');
+      try {
+        const debugResponse = await api.debugAuth(empresaId);
+        console.log('Debug response:', debugResponse);
+      } catch (debugError) {
+        console.error('Error en debug endpoint:', debugError);
+      }
+      
+      // Cargar detalles del cliente y su historial de pedidos
+      console.log('Llamando a obtenerClienteConHistorial...');
+      const clienteResponse = await api.obtenerClienteConHistorial(empresaId, cliente.id);
+      console.log('Respuesta cliente:', clienteResponse);
+      
+      console.log('Llamando a obtenerHistorialPedidosCliente...');
+      const pedidosResponse = await api.obtenerHistorialPedidosCliente(empresaId, cliente.id);
+      console.log('Respuesta pedidos:', pedidosResponse);
+      
+      setClienteSeleccionado(clienteResponse.data);
+      setPedidosCliente(pedidosResponse.data || []);
+      setMostrarDetalle(true);
+      
+      console.log('Modal abierto con datos:', {
+        cliente: clienteResponse.data,
+        pedidos: pedidosResponse.data
+      });
+    } catch (error) {
+      console.error('Error al cargar detalles del cliente:', error);
+      toast.error('Error al cargar los detalles del cliente');
+    } finally {
+      setCargandoDetalle(false);
+    }
+  };
+
   const clientesFiltrados = clientes.filter(cliente => {
     const textoBusqueda = busqueda.toLowerCase();
     return (
       cliente.nombre.toLowerCase().includes(textoBusqueda) ||
-      cliente.apellido.toLowerCase().includes(textoBusqueda) ||
+      (cliente.apellidos?.toLowerCase().includes(textoBusqueda) || "") ||
       cliente.email.toLowerCase().includes(textoBusqueda) ||
-      cliente.telefono.includes(textoBusqueda)
+      (cliente.telefono?.includes(textoBusqueda) || "")
     );
   });
+
+  // Calcular estadísticas generales
+  const totalCompras = clientes.reduce((total, cliente) => total + (cliente.totalCompras || 0), 0);
+  const promedioCompras = clientes.length > 0 ? totalCompras / clientes.length : 0;
+
+  console.log('Estado del modal:', { mostrarDetalle, clienteSeleccionado: !!clienteSeleccionado, pedidosCliente: pedidosCliente.length });
 
   if (cargando) {
     return (
@@ -157,59 +501,227 @@ export default function GestionClientes() {
       {/* Contenido principal */}
       <div className="contenedor py-8">
         <div className="mb-8">
-          <h1 className="titulo-2 mb-2">Gestión de Clientes</h1>
-          <p className="texto-gris">Administra tu base de clientes y sus actividades.</p>
+          <h1 className="titulo-2 mb-4" style={{ 
+            fontSize: '32px', 
+            fontWeight: '700', 
+            color: '#1e293b',
+            letterSpacing: '-0.025em',
+            lineHeight: '1.2'
+          }}>
+            👥 Gestión de Clientes
+          </h1>
+          <p className="texto-gris" style={{ 
+            fontSize: '16px', 
+            color: '#64748b',
+            marginBottom: '8px'
+          }}>
+            Administra tu base de clientes y sus actividades comerciales.
+          </p>
+          <div style={{
+            height: '4px',
+            width: '60px',
+            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+            borderRadius: '2px',
+            marginTop: '16px'
+          }}></div>
+          
+          {/* Botón temporal de debug */}
+          <button 
+            onClick={async () => {
+              console.log('=== DEBUG AUTH STATE ===');
+              console.log('Token admin:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
+              console.log('Token cliente:', localStorage.getItem('clienteToken') ? 'Presente' : 'Ausente');
+              console.log('User data:', localStorage.getItem('user'));
+              console.log('EmpresaId:', empresaId);
+              
+              if (empresaId) {
+                try {
+                  console.log('Probando endpoint público...');
+                  const publicResponse = await api.debugPublic(empresaId);
+                  console.log('Public endpoint response:', publicResponse);
+                } catch (error) {
+                  console.error('Error en endpoint público:', error);
+                }
+                
+                try {
+                  console.log('Probando endpoint autenticado...');
+                  const authResponse = await api.debugAuth(empresaId);
+                  console.log('Auth endpoint response:', authResponse);
+                } catch (error) {
+                  console.error('Error en endpoint autenticado:', error);
+                }
+              }
+            }}
+            style={{
+              marginTop: '16px',
+              padding: '8px 16px',
+              backgroundColor: '#f59e0b',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            🔍 Debug Auth
+          </button>
         </div>
 
         {/* Estadísticas rápidas */}
-        <div className="grid grid-2 mb-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-          <div className="tarjeta">
-            <h3 className="texto-pequeno texto-gris mb-1">Total Clientes</h3>
-            <p className="titulo-2" style={{ color: 'var(--color-primario)' }}>
+        <div className="grid grid-2 mb-6" style={{ 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '16px'
+        }}>
+          <div className="tarjeta" style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <h3 className="texto-pequeno texto-gris mb-1" style={{ fontSize: '14px', color: '#64748b' }}>
+              👥 Total Clientes
+            </h3>
+            <p className="titulo-2" style={{ 
+              color: '#3b82f6', 
+              fontSize: '28px', 
+              fontWeight: '700',
+              margin: 0
+            }}>
               {clientes.length}
             </p>
           </div>
-          <div className="tarjeta">
-            <h3 className="texto-pequeno texto-gris mb-1">Clientes Activos</h3>
-            <p className="titulo-2" style={{ color: '#10b981' }}>
+          <div className="tarjeta" style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <h3 className="texto-pequeno texto-gris mb-1" style={{ fontSize: '14px', color: '#64748b' }}>
+              ✅ Clientes Activos
+            </h3>
+            <p className="titulo-2" style={{ 
+              color: '#10b981', 
+              fontSize: '28px', 
+              fontWeight: '700',
+              margin: 0
+            }}>
               {clientes.filter(c => c.activo).length}
             </p>
           </div>
-          <div className="tarjeta">
-            <h3 className="texto-pequeno texto-gris mb-1">Total Pedidos</h3>
-            <p className="titulo-2" style={{ color: '#f59e0b' }}>
-              {clientes.reduce((total, cliente) => total + cliente.totalPedidos, 0)}
+          <div className="tarjeta" style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <h3 className="texto-pequeno texto-gris mb-1" style={{ fontSize: '14px', color: '#64748b' }}>
+              🛒 Total Pedidos
+            </h3>
+            <p className="titulo-2" style={{ 
+              color: '#f59e0b', 
+              fontSize: '28px', 
+              fontWeight: '700',
+              margin: 0
+            }}>
+              {clientes.reduce((total, cliente) => total + (cliente.totalPedidos || 0), 0)}
             </p>
           </div>
-          <div className="tarjeta">
-            <h3 className="texto-pequeno texto-gris mb-1">Ingresos Totales</h3>
-            <p className="titulo-2" style={{ color: '#8b5cf6' }}>
-              €{clientes.reduce((total, cliente) => total + cliente.totalGastado, 0).toFixed(2)}
+          <div className="tarjeta" style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <h3 className="texto-pequeno texto-gris mb-1" style={{ fontSize: '14px', color: '#64748b' }}>
+              💰 Total Ventas
+            </h3>
+            <p className="titulo-2" style={{ 
+              color: '#059669', 
+              fontSize: '28px', 
+              fontWeight: '700',
+              margin: 0
+            }}>
+              ${totalCompras.toFixed(2)}
             </p>
           </div>
         </div>
 
         {/* Buscador */}
-        <div className="tarjeta mb-6">
-          <h3 className="titulo-3 mb-4">Buscar Clientes</h3>
+        <div className="tarjeta mb-6" style={{
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          border: '1px solid #e2e8f0',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+          <h3 className="titulo-3 mb-4" style={{
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#1e293b',
+            marginBottom: '16px'
+          }}>
+            🔍 Buscar Clientes
+          </h3>
           <input
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="campo"
             placeholder="Buscar por nombre, email o teléfono..."
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              border: '2px solid #e2e8f0',
+              borderRadius: '12px',
+              fontSize: '16px',
+              transition: 'all 0.2s ease'
+            }}
           />
         </div>
 
         {/* Lista de clientes */}
-        <div className="tarjeta">
-          <h3 className="titulo-3 mb-6">
-            Clientes ({clientesFiltrados.length})
+        <div className="tarjeta" style={{
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          border: '1px solid #e2e8f0',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+          <h3 className="titulo-3 mb-6" style={{
+            fontSize: '22px',
+            fontWeight: '600',
+            color: '#1e293b',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            👥 Clientes ({clientesFiltrados.length})
+            <span style={{
+              background: '#e2e8f0',
+              color: '#64748b',
+              fontSize: '14px',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontWeight: '500'
+            }}>
+              {clientesFiltrados.length}
+            </span>
           </h3>
           
           {clientesFiltrados.length === 0 ? (
             <div className="text-center py-12">
-              <p className="texto-gris">
+              <div style={{
+                fontSize: '48px',
+                marginBottom: '16px',
+                opacity: 0.5
+              }}>
+                📭
+              </div>
+              <p className="texto-gris" style={{ fontSize: '16px', color: '#64748b' }}>
                 {busqueda ? 'No se encontraron clientes que coincidan con la búsqueda.' : 'No hay clientes registrados.'}
               </p>
             </div>
@@ -219,50 +731,164 @@ export default function GestionClientes() {
                 <div
                   key={cliente.id}
                   className="p-6 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                  style={{
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = '#3b82f6';
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.15)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
                 >
-                  <div className="flex items-centro entre mb-4">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h4 className="titulo-3 mb-1">
-                        {cliente.nombre} {cliente.apellido}
+                      <h4 className="titulo-3 mb-1" style={{
+                        fontSize: '20px',
+                        fontWeight: '700',
+                        color: '#1e293b',
+                        marginBottom: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        {cliente.nombre} {cliente.apellidos}
                         {!cliente.activo && (
                           <span 
                             className="ml-2 px-2 py-1 rounded-full texto-pequeno"
                             style={{
                               backgroundColor: '#ef444420',
-                              color: '#ef4444'
+                              color: '#ef4444',
+                              padding: '4px 12px',
+                              borderRadius: '12px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              border: '1px solid #ef444430'
                             }}
                           >
-                            Inactivo
+                            ❌ Inactivo
                           </span>
                         )}
                       </h4>
-                      <p className="texto-pequeno texto-gris mb-2">
-                        {cliente.email} • {cliente.telefono}
+                      <p className="texto-pequeno texto-gris mb-2" style={{
+                        fontSize: '14px',
+                        color: '#64748b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        📧 {cliente.email}
+                        {cliente.telefono && (
+                          <>
+                            <span style={{ color: '#cbd5e1' }}>•</span>
+                            📞 {cliente.telefono}
+                          </>
+                        )}
                       </p>
-                      <p className="texto-pequeno texto-gris">
-                        Registrado: {cliente.fechaRegistro}
+                      <p className="texto-pequeno texto-gris" style={{
+                        fontSize: '12px',
+                        color: '#64748b'
+                      }}>
+                        📅 Registrado: {new Date(cliente.fechaCreacion).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="titulo-3 mb-1">{cliente.totalPedidos} pedidos</p>
-                      <p className="texto-medio">€{cliente.totalGastado.toFixed(2)} gastados</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                          color: 'white',
+                          padding: '8px 16px',
+                          borderRadius: '12px',
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          boxShadow: '0 2px 8px rgba(5,150,105,0.3)'
+                        }}>
+                          ${(cliente.totalCompras || 0).toFixed(2)}
+                        </div>
+                        <div style={{
+                          background: '#f1f5f9',
+                          color: '#64748b',
+                          padding: '4px 12px',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontWeight: '600'
+                        }}>
+                          🛒 {cliente.totalPedidos || 0} pedidos
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-centro entre">
+                  <div className="flex items-center justify-between">
                     <div className="flex gap-2">
-                      <button className="boton boton-secundario texto-pequeno">
-                        Ver Historial
+                      <button 
+                        onClick={() => verDetallesCliente(cliente)}
+                        className="boton boton-secundario texto-pequeno"
+                        style={{
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 2px 8px rgba(59,130,246,0.3)'
+                        }}
+                        disabled={cargandoDetalle}
+                      >
+                        {cargandoDetalle ? '⏳ Cargando...' : '👁️ Ver Detalles'}
                       </button>
-                      <button className="boton boton-secundario texto-pequeno">
-                        Enviar Email
+                      <button className="boton boton-secundario texto-pequeno" style={{
+                        background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 8px rgba(99,102,241,0.3)'
+                      }}>
+                        📧 Enviar Email
                       </button>
                     </div>
                     <button
                       onClick={() => alternarEstadoCliente(cliente.id)}
                       className={`boton texto-pequeno ${cliente.activo ? 'boton-secundario' : 'boton-primario'}`}
+                      style={{
+                        background: cliente.activo 
+                          ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                          : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: cliente.activo 
+                          ? '0 2px 8px rgba(239,68,68,0.3)'
+                          : '0 2px 8px rgba(16,185,129,0.3)'
+                      }}
                     >
-                      {cliente.activo ? 'Desactivar' : 'Activar'}
+                      {cliente.activo ? '❌ Desactivar' : '✅ Activar'}
                     </button>
                   </div>
                 </div>
@@ -271,6 +897,19 @@ export default function GestionClientes() {
           )}
         </div>
       </div>
+
+      {/* Modal de detalles */}
+      <ClienteDetalleModal 
+        cliente={clienteSeleccionado} 
+        pedidos={pedidosCliente}
+        open={mostrarDetalle} 
+        onClose={() => {
+          console.log('Cerrando modal');
+          setMostrarDetalle(false);
+          setClienteSeleccionado(null);
+          setPedidosCliente([]);
+        }} 
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useSubdominio } from './hooks/useSubdominio';
+import { CartProvider } from './hooks/useCart';
 import PaginaRegistro from './pages/PaginaRegistro.tsx';
 import PaginaPrincipal from './pages/PaginaPrincipal.tsx';
 import LoginAdministrador from './pages/LoginAdministrador.tsx';
@@ -70,34 +71,36 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <div className="App">
-        <Toaster 
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              duration: 3000,
-              iconTheme: {
-                primary: '#4ade80',
-                secondary: '#fff',
-              },
-            },
-            error: {
+      <CartProvider>
+        <div className="App">
+          <Toaster 
+            position="top-right"
+            toastOptions={{
               duration: 4000,
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
+              style: {
+                background: '#363636',
+                color: '#fff',
               },
-            },
-          }}
-        />
-        
-        <AppContent />
-      </div>
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#4ade80',
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                duration: 4000,
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+          
+          <AppContent />
+        </div>
+      </CartProvider>
     </Router>
   );
 }

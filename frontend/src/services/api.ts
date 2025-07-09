@@ -31,15 +31,38 @@ class ApiService {
     // Interceptor para agregar token de autenticación
     this.api.interceptors.request.use(
       (config) => {
+        console.log('=== DEBUG API INTERCEPTOR ===');
+        console.log('URL:', config.url);
+        console.log('Method:', config.method);
+        
+        // Solo omitir token en endpoints realmente públicos (productos y empresa)
+        if (
+          config.url &&
+          (/\/publico\/[^/]+\/productos/.test(config.url) ||
+           /\/publico\/[^/]+\/empresa/.test(config.url))
+        ) {
+          console.log('Endpoint público - omitiendo token');
+          delete config.headers.Authorization;
+          return config;
+        }
+        
         // Intentar obtener token de administrador o cliente
         const tokenAdmin = localStorage.getItem('token');
         const tokenCliente = localStorage.getItem('clienteToken');
-        
         const token = tokenAdmin || tokenCliente;
+        
+        console.log('Token admin:', tokenAdmin ? 'Presente' : 'Ausente');
+        console.log('Token cliente:', tokenCliente ? 'Presente' : 'Ausente');
+        console.log('Token final:', token ? 'Presente' : 'Ausente');
         
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
+          console.log('Authorization header agregado');
+        } else {
+          console.log('No se encontró token - request sin autorización');
         }
+        
+        console.log('Headers finales:', config.headers);
         return config;
       },
       (error) => Promise.reject(error)
@@ -229,6 +252,23 @@ class ApiService {
     return response.data;
   }
 
+  async crearPedido(empresaId: number, pedido: {
+    clienteId?: number;
+    clienteNombre: string;
+    clienteEmail: string;
+    direccionEnvio: string;
+    detalles: Array<{
+      productoId: number;
+      productoNombre: string;
+      cantidad: number;
+      precioUnitario: number;
+    }>;
+    total: number;
+  }): Promise<ApiResponse<unknown>> {
+    const response = await this.api.post(`/empresas/${empresaId}/pedidos`, pedido);
+    return response.data;
+  }
+
   // Métodos de mensajes (requieren empresaId)
   async obtenerMensajes(empresaId: number, page = 0, size = 10): Promise<PaginatedResponse<{ id: number; asunto: string; mensaje: string; leido: boolean }>> {
     const response = await this.api.get(`/empresas/${empresaId}/mensajes?page=${page}&size=${size}`);
@@ -327,6 +367,43 @@ class ApiService {
     const response = await this.api.get(`/publico/${subdominio}/auth/perfil`, {
       headers: { Authorization: `Bearer ${token}` }
     });
+    return response.data;
+  }
+
+  // Obtener pedidos de un cliente (requiere empresaId y clienteId)
+  async obtenerPedidosCliente(empresaId: number, clienteId: number): Promise<ApiResponse<Pedido[]>> {
+    const response = await this.api.get(`/empresas/${empresaId}/pedidos/cliente/${clienteId}`);
+    return response.data;
+  }
+
+  // Obtener clientes paginados (para dashboard y conteo real)
+  async obtenerClientesPaginado(empresaId: number, page = 0, size = 10) {
+    const response = await this.api.get(`/empresas/${empresaId}/clientes/paginado?page=${page}&size=${size}`);
+    return response.data;
+  }
+  
+  async obtenerClienteConHistorial(empresaId: number, clienteId: number) {
+    const response = await this.api.get(`/empresas/${empresaId}/clientes/${clienteId}/historial`);
+    return response.data;
+  }
+  
+  async obtenerHistorialPedidosCliente(empresaId: number, clienteId: number) {
+    const response = await this.api.get(`/empresas/${empresaId}/clientes/${clienteId}/pedidos`);
+    return response.data;
+  }
+  
+  async debugAuth(empresaId: number) {
+    const response = await this.api.get(`/empresas/${empresaId}/clientes/debug/auth`);
+    return response.data;
+  }
+  
+  async debugPublic(empresaId: number) {
+    const response = await this.api.get(`/empresas/${empresaId}/clientes/debug/public`);
+    return response.data;
+  }
+  
+  async obtenerEstadisticasVentas() {
+    const response = await this.api.get('/admin/estadisticas-ventas');
     return response.data;
   }
 }
