@@ -1,0 +1,154 @@
+/* Estilos para el Gestor de Imágenes */
+.gestor-imagenes {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.imagenes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.imagen-item {
+  position: relative;
+  aspect-ratio: 1;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.imagen-item.agregar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imagen-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.imagen-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.btn-eliminar-imagen {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-eliminar-imagen:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.btn-agregar-imagen {
+  width: 100%;
+  height: 100%;
+  background: #f9fafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #6b7280;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.btn-agregar-imagen:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.btn-agregar-imagen:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.icono-mas {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.info-imagenes {
+  margin-top: 8px;
+}
+
+.text-muted {
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .imagenes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+  
+  .form-label {
+    font-size: 13px;
+  }
+  
+  .btn-agregar-imagen {
+    font-size: 11px;
+  }
+  
+  .icono-mas {
+    font-size: 20px;
+  }
+}
