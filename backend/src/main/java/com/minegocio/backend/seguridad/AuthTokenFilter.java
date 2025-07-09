@@ -36,15 +36,18 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             String requestPath = request.getRequestURI();
             String method = request.getMethod();
             
+            System.out.println("=== DEBUG AuthTokenFilter ===");
+            System.out.println("Request: " + method + " " + requestPath);
+            System.out.println("Query string: " + request.getQueryString());
+            System.out.println("Context path: " + request.getContextPath());
+            System.out.println("Servlet path: " + request.getServletPath());
+            
             // Skip authentication for public endpoints
             if (isPublicEndpoint(requestPath)) {
                 System.out.println("Skipping auth for public endpoint: " + method + " " + requestPath);
                 filterChain.doFilter(request, response);
                 return;
             }
-            
-            System.out.println("=== DEBUG AuthTokenFilter ===");
-            System.out.println("Request: " + method + " " + requestPath);
             
             String jwt = parseJwt(request);
             System.out.println("JWT extraído: " + (jwt != null ? "Presente (longitud: " + jwt.length() + ")" : "Ausente"));

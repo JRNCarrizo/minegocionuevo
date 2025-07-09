@@ -93,7 +93,7 @@ public class Pedido {
     }
 
     // Métodos de utilidad
-    private String generarNumeroPedido() {
+    public String generarNumeroPedido() {
         return "PED-" + System.currentTimeMillis();
     }
 

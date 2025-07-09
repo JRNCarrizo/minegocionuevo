@@ -14,6 +14,12 @@ public class DetallePedidoDTO {
     
     private String productoNombre;
     
+    private String productoDescripcion;
+    
+    private String productoImagen; // URL de la imagen principal
+    
+    private String productoCategoria;
+    
     private BigDecimal productoPrecionUnitario;
     
     @NotNull(message = "La cantidad es requerida")
@@ -30,11 +36,15 @@ public class DetallePedidoDTO {
     public DetallePedidoDTO() {}
     
     public DetallePedidoDTO(Long id, Long productoId, String productoNombre, 
+                           String productoDescripcion, String productoImagen, String productoCategoria,
                            BigDecimal productoPrecionUnitario, Integer cantidad, 
                            BigDecimal precioUnitario, BigDecimal subtotal) {
         this.id = id;
         this.productoId = productoId;
         this.productoNombre = productoNombre;
+        this.productoDescripcion = productoDescripcion;
+        this.productoImagen = productoImagen;
+        this.productoCategoria = productoCategoria;
         this.productoPrecionUnitario = productoPrecionUnitario;
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
@@ -64,6 +74,30 @@ public class DetallePedidoDTO {
     
     public void setProductoNombre(String productoNombre) {
         this.productoNombre = productoNombre;
+    }
+    
+    public String getProductoDescripcion() {
+        return productoDescripcion;
+    }
+    
+    public void setProductoDescripcion(String productoDescripcion) {
+        this.productoDescripcion = productoDescripcion;
+    }
+    
+    public String getProductoImagen() {
+        return productoImagen;
+    }
+    
+    public void setProductoImagen(String productoImagen) {
+        this.productoImagen = productoImagen;
+    }
+    
+    public String getProductoCategoria() {
+        return productoCategoria;
+    }
+    
+    public void setProductoCategoria(String productoCategoria) {
+        this.productoCategoria = productoCategoria;
     }
     
     public BigDecimal getProductoPrecionUnitario() {

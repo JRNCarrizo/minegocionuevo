@@ -115,10 +115,10 @@ public class ProductoController {
             
             if (incluirInactivos) {
                 // Para edición, permitir productos inactivos
-                producto = productoService.obtenerProductoPorIdSinFiltro(empresaId, id);
+                producto = productoService.obtenerProductoPorIdSinFiltro(id, empresaId);
             } else {
                 // Para visualización normal, solo activos
-                producto = productoService.obtenerProductoPorId(empresaId, id);
+                producto = productoService.obtenerProductoPorId(id, empresaId);
             }
             
             if (producto.isPresent()) {
@@ -274,7 +274,7 @@ public class ProductoController {
             productoService.actualizarStock(empresaId, id, nuevoStock);
             
             // Obtener el producto actualizado para devolver la información completa
-            Optional<ProductoDTO> productoActualizado = productoService.obtenerProductoPorId(empresaId, id);
+            Optional<ProductoDTO> productoActualizado = productoService.obtenerProductoPorId(id, empresaId);
             
             if (productoActualizado.isPresent()) {
                 System.out.println("Stock actualizado exitosamente: " + nuevoStock);

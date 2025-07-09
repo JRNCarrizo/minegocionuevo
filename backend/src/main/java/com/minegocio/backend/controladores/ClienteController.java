@@ -11,9 +11,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 import java.util.Optional;
+import com.minegocio.backend.dto.PedidoDTO;
 
 /**
  * Controlador REST para la gestión de clientes
@@ -50,6 +52,10 @@ public class ClienteController {
             @RequestParam(defaultValue = "nombre") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
         try {
+            System.out.println("=== DEBUG OBTENER CLIENTES PAGINADOS ===");
+            System.out.println("EmpresaId: " + empresaId);
+            System.out.println("Page: " + page + ", Size: " + size);
+            
             Sort sort = sortDir.equalsIgnoreCase("desc") ? 
                     Sort.by(sortBy).descending() : 
                     Sort.by(sortBy).ascending();
@@ -57,8 +63,18 @@ public class ClienteController {
             Pageable pageable = PageRequest.of(page, size, sort);
             Page<ClienteDTO> clientes = clienteService.obtenerClientesPaginados(empresaId, pageable);
             
+            System.out.println("Clientes encontrados: " + clientes.getTotalElements());
+            System.out.println("Estadísticas de clientes:");
+            clientes.getContent().forEach(cliente -> {
+                System.out.println("  - " + cliente.getNombre() + ": " + 
+                    cliente.getTotalPedidos() + " pedidos, $" + 
+                    (cliente.getTotalCompras() != null ? cliente.getTotalCompras() : 0.0));
+            });
+            
             return ResponseEntity.ok(clientes);
         } catch (Exception e) {
+            System.err.println("Error al obtener clientes paginados: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -188,5 +204,134 @@ public class ClienteController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+    
+    /**
+     * Obtiene un cliente con su historial completo de pedidos
+     */
+    @GetMapping("/{id}/historial")
+    public ResponseEntity<?> obtenerClienteConHistorial(
+            @PathVariable Long empresaId,
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        try {
+            System.out.println("=== DEBUG OBTENER CLIENTE CON HISTORIAL ===");
+            System.out.println("EmpresaId: " + empresaId);
+            System.out.println("ClienteId: " + id);
+            System.out.println("Request URI: " + request.getRequestURI());
+            System.out.println("Authorization header: " + (request.getHeader("Authorization") != null ? "Presente" : "Ausente"));
+            
+            Optional<ClienteDTO> cliente = clienteService.obtenerClienteConHistorial(empresaId, id);
+            
+            if (cliente.isPresent()) {
+                System.out.println("Cliente encontrado con estadísticas: " + cliente.get());
+                System.out.println("Total pedidos: " + cliente.get().getTotalPedidos());
+                System.out.println("Total compras: " + cliente.get().getTotalCompras());
+                
+                var respuesta = java.util.Map.of(
+                    "data", cliente.get()
+                );
+                
+                return ResponseEntity.ok(respuesta);
+            } else {
+                System.out.println("Cliente no encontrado para empresaId: " + empresaId + ", id: " + id);
+                
+                var error = java.util.Map.of(
+                    "error", "Cliente no encontrado"
+                );
+                
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+        } catch (Exception e) {
+            System.err.println("Error al obtener cliente con historial: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * Obtiene el historial de pedidos de un cliente
+     */
+    @GetMapping("/{id}/pedidos")
+    public ResponseEntity<?> obtenerHistorialPedidosCliente(
+            @PathVariable Long empresaId,
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        try {
+            System.out.println("=== DEBUG OBTENER HISTORIAL PEDIDOS CLIENTE ===");
+            System.out.println("EmpresaId: " + empresaId);
+            System.out.println("ClienteId: " + id);
+            System.out.println("Request URI: " + request.getRequestURI());
+            System.out.println("Authorization header: " + (request.getHeader("Authorization") != null ? "Presente" : "Ausente"));
+            
+            List<PedidoDTO> pedidos = clienteService.obtenerHistorialPedidosCliente(empresaId, id);
+            
+            System.out.println("Pedidos encontrados: " + pedidos.size());
+            
+            var respuesta = java.util.Map.of(
+                "data", pedidos,
+                "totalPedidos", pedidos.size()
+            );
+            
+            return ResponseEntity.ok(respuesta);
+        } catch (RuntimeException e) {
+            System.err.println("Error al obtener historial de pedidos - no encontrado: " + e.getMessage());
+            
+            var error = java.util.Map.of(
+                "error", e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        } catch (Exception e) {
+            System.err.println("Error interno al obtener historial de pedidos: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * Endpoint de debug para verificar autenticación
+     */
+    @GetMapping("/debug/auth")
+    public ResponseEntity<?> debugAuth(HttpServletRequest request) {
+        System.out.println("=== DEBUG AUTH ENDPOINT ===");
+        System.out.println("Request URI: " + request.getRequestURI());
+        System.out.println("Authorization header: " + (request.getHeader("Authorization") != null ? "Presente" : "Ausente"));
+        
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("Authentication: " + (auth != null ? auth.getName() : "null"));
+        System.out.println("Authorities: " + (auth != null ? auth.getAuthorities() : "null"));
+        
+        return ResponseEntity.ok(java.util.Map.of(
+            "message", "Debug endpoint accesible",
+            "authenticated", auth != null && auth.isAuthenticated(),
+            "user", auth != null ? auth.getName() : "null",
+            "authorities", auth != null ? auth.getAuthorities().toString() : "null"
+        ));
+    }
+    
+    /**
+     * Endpoint público de debug (sin autenticación)
+     */
+    @GetMapping("/debug/public")
+    public ResponseEntity<?> debugPublic(HttpServletRequest request) {
+        System.out.println("=== DEBUG PUBLIC ENDPOINT ===");
+        System.out.println("Request URI: " + request.getRequestURI());
+        System.out.println("Authorization header: " + (request.getHeader("Authorization") != null ? "Presente" : "Ausente"));
+        
+        return ResponseEntity.ok(java.util.Map.of(
+            "message", "Public debug endpoint accesible",
+            "timestamp", java.time.LocalDateTime.now().toString()
+        ));
     }
 }

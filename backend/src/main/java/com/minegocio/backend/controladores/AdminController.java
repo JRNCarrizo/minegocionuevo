@@ -4,6 +4,7 @@ import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.servicios.EmpresaService;
 import com.minegocio.backend.servicios.AutenticacionService;
+import com.minegocio.backend.servicios.PedidoService;
 import com.minegocio.backend.seguridad.JwtUtils;
 import com.minegocio.backend.dto.EmpresaDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ public class AdminController {
     
     @Autowired
     private AutenticacionService autenticacionService;
+    
+    @Autowired
+    private PedidoService pedidoService;
     
     @Autowired
     private JwtUtils jwtUtils;
@@ -129,6 +133,45 @@ public class AdminController {
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Empresa actualizada correctamente",
                 "data", empresaActualizadaDTO
+            ));
+            
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+    
+    /**
+     * Obtener estadísticas de ventas de la empresa
+     */
+    @GetMapping("/estadisticas-ventas")
+    public ResponseEntity<?> obtenerEstadisticasVentas(HttpServletRequest request) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido"));
+            }
+            
+            token = token.substring(7);
+            String email = jwtUtils.extractUsername(token);
+            
+            Optional<Usuario> usuario = autenticacionService.obtenerPorEmail(email);
+            if (usuario.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            }
+            
+            Empresa empresa = usuario.get().getEmpresa();
+            if (empresa == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
+            }
+            
+            // Obtener estadísticas de ventas
+            Double totalVentas = pedidoService.obtenerTotalVentasPorEmpresa(empresa.getId());
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Estadísticas obtenidas correctamente",
+                "data", Map.of(
+                    "totalVentas", totalVentas != null ? totalVentas : 0.0
+                )
             ));
             
         } catch (Exception e) {

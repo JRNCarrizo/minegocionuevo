@@ -224,37 +224,51 @@ public class ClienteAuthController {
             @PathVariable String subdominio,
             @RequestHeader("Authorization") String authHeader) {
         try {
+            System.out.println("=== DEBUG OBTENER PERFIL CLIENTE ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("AuthHeader: " + (authHeader != null ? authHeader.substring(0, Math.min(20, authHeader.length())) + "..." : "null"));
+            
             // Extraer y validar token
             if (!authHeader.startsWith("Bearer ")) {
+                System.out.println("ERROR: Token no comienza con 'Bearer '");
                 return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
             }
             
             String token = authHeader.substring(7);
+            System.out.println("Token extraído: " + token.substring(0, Math.min(20, token.length())) + "...");
             
             // Validar token JWT
             if (!jwtUtils.validateJwtToken(token)) {
+                System.out.println("ERROR: Token JWT inválido");
                 return ResponseEntity.status(401).body(Map.of("error", "Token inválido o expirado"));
             }
             
             // Extraer información del token
             Long clienteId = jwtUtils.getUserIdFromJwtToken(token);
             Long empresaId = jwtUtils.getEmpresaIdFromJwtToken(token);
+            System.out.println("ClienteId extraído del token: " + clienteId);
+            System.out.println("EmpresaId extraído del token: " + empresaId);
             
             // Verificar que la empresa coincida con el subdominio
             Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
             if (empresaOpt.isEmpty() || !empresaOpt.get().getId().equals(empresaId)) {
+                System.out.println("ERROR: Empresa no coincide - Subdominio: " + subdominio + ", EmpresaId del token: " + empresaId);
                 return ResponseEntity.status(401).body(Map.of("error", "Token no válido para esta empresa"));
             }
+            
+            System.out.println("Empresa encontrada: " + empresaOpt.get().getNombre() + " (ID: " + empresaOpt.get().getId() + ")");
             
             // Obtener información actualizada del cliente
             Optional<ClienteDTO> clienteOpt = clienteService.obtenerClientePorId(empresaId, clienteId);
             if (clienteOpt.isEmpty()) {
+                System.out.println("ERROR: Cliente no encontrado - ClienteId: " + clienteId + ", EmpresaId: " + empresaId);
                 return ResponseEntity.status(404).body(Map.of("error", "Cliente no encontrado"));
             }
             
             ClienteDTO cliente = clienteOpt.get();
+            System.out.println("Cliente encontrado: " + cliente.getNombre() + " " + cliente.getApellidos() + " (ID: " + cliente.getId() + ")");
             
-            return ResponseEntity.ok(Map.of(
+            var respuesta = Map.of(
                 "cliente", Map.of(
                     "id", cliente.getId(),
                     "nombre", cliente.getNombre(),
@@ -266,9 +280,16 @@ public class ClienteAuthController {
                     "nombre", empresaOpt.get().getNombre(),
                     "subdominio", empresaOpt.get().getSubdominio()
                 )
-            ));
+            );
+            
+            System.out.println("Respuesta enviada: " + respuesta);
+            System.out.println("=== FIN DEBUG OBTENER PERFIL CLIENTE ===");
+            
+            return ResponseEntity.ok(respuesta);
             
         } catch (Exception e) {
+            System.err.println("ERROR en obtenerPerfil: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                 "error", "Error interno del servidor",
                 "detalle", e.getMessage()

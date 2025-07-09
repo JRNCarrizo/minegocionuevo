@@ -76,7 +76,11 @@ public class DetallePedido {
 
     // Métodos de utilidad
     public void calcularPrecioTotal() {
-        this.precioTotal = this.precioUnitario.multiply(BigDecimal.valueOf(this.cantidad));
+        if (this.precioUnitario != null && this.cantidad != null) {
+            this.precioTotal = this.precioUnitario.multiply(BigDecimal.valueOf(this.cantidad));
+        } else {
+            this.precioTotal = null;
+        }
     }
 
     @PrePersist
@@ -97,13 +101,17 @@ public class DetallePedido {
     public Integer getCantidad() { return cantidad; }
     public void setCantidad(Integer cantidad) { 
         this.cantidad = cantidad;
-        calcularPrecioTotal();
+        if (this.precioUnitario != null && this.cantidad != null) {
+            calcularPrecioTotal();
+        }
     }
 
     public BigDecimal getPrecioUnitario() { return precioUnitario; }
     public void setPrecioUnitario(BigDecimal precioUnitario) { 
         this.precioUnitario = precioUnitario;
-        calcularPrecioTotal();
+        if (this.precioUnitario != null && this.cantidad != null) {
+            calcularPrecioTotal();
+        }
     }
 
     public BigDecimal getPrecioTotal() { return precioTotal; }

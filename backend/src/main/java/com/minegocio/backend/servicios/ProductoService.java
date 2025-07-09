@@ -52,15 +52,15 @@ public class ProductoService {
                 .collect(Collectors.toList());
     }
 
-    public Optional<ProductoDTO> obtenerProductoPorId(Long empresaId, Long id) {
+    public Optional<ProductoDTO> obtenerProductoPorId(Long id, Long empresaId) {
         Optional<Producto> producto = productoRepository.findByIdAndEmpresaIdAndActivoTrue(id, empresaId);
         return producto.map(this::convertirADTO);
     }
 
     /**
-     * Obtiene un producto por ID sin filtro de activo (para edición)
+     * Obtiene un producto por ID sin filtro (para edición)
      */
-    public Optional<ProductoDTO> obtenerProductoPorIdSinFiltro(Long empresaId, Long id) {
+    public Optional<ProductoDTO> obtenerProductoPorIdSinFiltro(Long id, Long empresaId) {
         Optional<Producto> producto = productoRepository.findByIdAndEmpresaId(id, empresaId);
         return producto.map(this::convertirADTO);
     }

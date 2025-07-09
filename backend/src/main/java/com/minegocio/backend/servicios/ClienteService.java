@@ -1,10 +1,13 @@
 package com.minegocio.backend.servicios;
 
 import com.minegocio.backend.dto.ClienteDTO;
+import com.minegocio.backend.dto.PedidoDTO;
 import com.minegocio.backend.entidades.Cliente;
 import com.minegocio.backend.entidades.Empresa;
+import com.minegocio.backend.entidades.Pedido;
 import com.minegocio.backend.repositorios.ClienteRepository;
 import com.minegocio.backend.repositorios.EmpresaRepository;
+import com.minegocio.backend.repositorios.PedidoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +27,9 @@ public class ClienteService {
 
     @Autowired
     private EmpresaRepository empresaRepository;
+    
+    @Autowired
+    private PedidoRepository pedidoRepository;
 
     public List<ClienteDTO> obtenerTodosLosClientes(Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId)
@@ -31,7 +37,7 @@ public class ClienteService {
         
         List<Cliente> clientes = clienteRepository.findByEmpresaAndActivoTrue(empresa);
         return clientes.stream()
-                .map(this::convertirADTO)
+                .map(this::convertirADTOConEstadisticas)
                 .collect(Collectors.toList());
     }
 
@@ -40,7 +46,7 @@ public class ClienteService {
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
         
         Page<Cliente> clientes = clienteRepository.findByEmpresaAndActivoTrue(empresa, pageable);
-        return clientes.map(this::convertirADTO);
+        return clientes.map(this::convertirADTOConEstadisticas);
     }
 
     public List<ClienteDTO> buscarClientes(Long empresaId, String termino) {
@@ -49,18 +55,43 @@ public class ClienteService {
         
         List<Cliente> clientes = clienteRepository.buscarClientesPorTermino(empresa, termino);
         return clientes.stream()
-                .map(this::convertirADTO)
+                .map(this::convertirADTOConEstadisticas)
                 .collect(Collectors.toList());
     }
 
     public Optional<ClienteDTO> obtenerClientePorId(Long empresaId, Long id) {
         Optional<Cliente> cliente = clienteRepository.findByIdAndEmpresaIdAndActivoTrue(id, empresaId);
-        return cliente.map(this::convertirADTO);
+        return cliente.map(this::convertirADTOConEstadisticas);
     }
 
     public Optional<ClienteDTO> obtenerClientePorEmail(Long empresaId, String email) {
         Optional<Cliente> cliente = clienteRepository.findByEmailAndEmpresaIdAndActivoTrue(email, empresaId);
-        return cliente.map(this::convertirADTO);
+        return cliente.map(this::convertirADTOConEstadisticas);
+    }
+    
+    /**
+     * Obtiene un cliente con su historial completo de pedidos
+     */
+    public Optional<ClienteDTO> obtenerClienteConHistorial(Long empresaId, Long id) {
+        Optional<Cliente> cliente = clienteRepository.findByIdAndEmpresaIdAndActivoTrue(id, empresaId);
+        return cliente.map(this::convertirADTOConEstadisticas);
+    }
+    
+    /**
+     * Obtiene el historial de pedidos de un cliente
+     */
+    public List<PedidoDTO> obtenerHistorialPedidosCliente(Long empresaId, Long clienteId) {
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        
+        Cliente cliente = clienteRepository.findByIdAndEmpresaIdAndActivoTrue(clienteId, empresaId)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        
+        List<Pedido> pedidos = pedidoRepository.findPedidosCompletosPorCliente(cliente, empresa);
+        
+        return pedidos.stream()
+                .map(this::convertirPedidoADTO)
+                .collect(Collectors.toList());
     }
 
     public ClienteDTO crearCliente(Long empresaId, ClienteDTO clienteDTO) {
@@ -100,7 +131,7 @@ public class ClienteService {
         System.out.println("  Email: '" + cliente.getEmail() + "'");
 
         Cliente clienteGuardado = clienteRepository.save(cliente);
-        return convertirADTO(clienteGuardado);
+        return convertirADTOConEstadisticas(clienteGuardado);
     }
 
     public ClienteDTO actualizarCliente(Long empresaId, Long id, ClienteDTO clienteDTO) {
@@ -128,7 +159,7 @@ public class ClienteService {
         }
 
         Cliente clienteActualizado = clienteRepository.save(cliente);
-        return convertirADTO(clienteActualizado);
+        return convertirADTOConEstadisticas(clienteActualizado);
     }
 
     public void eliminarCliente(Long empresaId, Long id) {
@@ -161,6 +192,46 @@ public class ClienteService {
         dto.setEmpresaId(cliente.getEmpresa().getId());
         dto.setEmpresaNombre(cliente.getEmpresa().getNombre());
         dto.setPassword(cliente.getPassword()); // ¡IMPORTANTE! Incluir la contraseña
+        dto.setFechaCreacion(cliente.getFechaCreacion());
+        dto.setFechaActualizacion(cliente.getFechaActualizacion());
+        return dto;
+    }
+    
+    private ClienteDTO convertirADTOConEstadisticas(Cliente cliente) {
+        ClienteDTO dto = convertirADTO(cliente);
+        
+        // Calcular estadísticas de pedidos
+        Long totalPedidos = pedidoRepository.contarPedidosPorCliente(cliente, cliente.getEmpresa());
+        Double totalCompras = pedidoRepository.sumaTotalComprasPorCliente(cliente, cliente.getEmpresa());
+        
+        dto.setTotalPedidos(totalPedidos != null ? totalPedidos.intValue() : 0);
+        dto.setTotalCompras(totalCompras != null ? totalCompras : 0.0);
+        
+        return dto;
+    }
+    
+    private PedidoDTO convertirPedidoADTO(Pedido pedido) {
+        PedidoDTO dto = new PedidoDTO();
+        dto.setId(pedido.getId());
+        dto.setNumeroPedido(pedido.getNumeroPedido());
+        dto.setEstado(pedido.getEstado());
+        dto.setTotal(pedido.getTotal());
+        dto.setNotas(pedido.getObservaciones());
+        dto.setDireccionEntrega(pedido.getDireccionEntrega());
+        dto.setFechaCreacion(pedido.getFechaCreacion());
+        dto.setEmpresaId(pedido.getEmpresa().getId());
+        dto.setEmpresaNombre(pedido.getEmpresa().getNombre());
+        dto.setClienteId(pedido.getCliente().getId());
+        dto.setClienteNombre(pedido.getCliente().getNombre() + " " + pedido.getCliente().getApellidos());
+        dto.setClienteEmail(pedido.getCliente().getEmail());
+        
+        // Convertir cliente
+        ClienteDTO clienteDTO = convertirADTO(pedido.getCliente());
+        dto.setCliente(clienteDTO);
+        
+        // Convertir detalles (simplificado)
+        dto.setDetalles(new java.util.ArrayList<>());
+        
         return dto;
     }
 }

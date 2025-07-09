@@ -3,6 +3,7 @@ package com.minegocio.backend.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDateTime;
 
 public class ClienteDTO {
     
@@ -44,6 +45,12 @@ public class ClienteDTO {
     // Campos para autenticación
     private String password;
     private Boolean emailVerificado;
+    
+    // Campos para estadísticas de compras
+    private Integer totalPedidos;
+    private Double totalCompras;
+    private LocalDateTime fechaCreacion;
+    private LocalDateTime fechaActualizacion;
 
     // Constructores
     public ClienteDTO() {}
@@ -177,5 +184,38 @@ public class ClienteDTO {
     
     public void setEmailVerificado(Boolean emailVerificado) {
         this.emailVerificado = emailVerificado;
+    }
+    
+    // Getters y setters para estadísticas de compras
+    public Integer getTotalPedidos() {
+        return totalPedidos;
+    }
+    
+    public void setTotalPedidos(Integer totalPedidos) {
+        this.totalPedidos = totalPedidos;
+    }
+    
+    public Double getTotalCompras() {
+        return totalCompras;
+    }
+    
+    public void setTotalCompras(Double totalCompras) {
+        this.totalCompras = totalCompras;
+    }
+    
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+    
+    public void setFechaCreacion(LocalDateTime fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
+    
+    public LocalDateTime getFechaActualizacion() {
+        return fechaActualizacion;
+    }
+    
+    public void setFechaActualizacion(LocalDateTime fechaActualizacion) {
+        this.fechaActualizacion = fechaActualizacion;
     }
 }

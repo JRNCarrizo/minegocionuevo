@@ -4,6 +4,8 @@ import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.dto.ProductoDTO;
 import com.minegocio.backend.servicios.EmpresaService;
 import com.minegocio.backend.servicios.ProductoService;
+import com.minegocio.backend.servicios.ClienteService;
+import com.minegocio.backend.dto.ClienteDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +28,9 @@ public class PublicoController {
 
     @Autowired
     private ProductoService productoService;
+
+    @Autowired
+    private ClienteService clienteService;
 
     /**
      * Obtener información pública de una empresa por subdominio
@@ -230,6 +235,7 @@ public class PublicoController {
             
             Long empresaId = empresa.get().getId();
             
+            // CORREGIDO: el orden correcto es (id, empresaId)
             Optional<ProductoDTO> producto = productoService.obtenerProductoPorId(id, empresaId);
             
             if (producto.isEmpty()) {

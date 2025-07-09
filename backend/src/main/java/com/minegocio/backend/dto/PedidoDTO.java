@@ -20,7 +20,8 @@ public class PedidoDTO {
     
     private String clienteEmail;
     
-    private LocalDateTime fechaPedido;
+    // Cambiar fechaPedido por fechaCreacion para coincidir con el frontend
+    private LocalDateTime fechaCreacion;
     
     private EstadoPedido estado;
     
@@ -30,7 +31,7 @@ public class PedidoDTO {
     private String notas;
     
     @Size(max = 255, message = "La dirección de envío no puede exceder 255 caracteres")
-    private String direccionEnvio;
+    private String direccionEntrega; // Cambiar direccionEnvio por direccionEntrega
     
     @NotEmpty(message = "El pedido debe tener al menos un detalle")
     @Valid
@@ -40,22 +41,28 @@ public class PedidoDTO {
     
     private String empresaNombre;
     
+    // Agregar campos que espera el frontend
+    private String numeroPedido;
+    
+    // Agregar objeto cliente para el modal
+    private ClienteDTO cliente;
+    
     // Constructores
     public PedidoDTO() {}
     
     public PedidoDTO(Long id, Long clienteId, String clienteNombre, String clienteEmail,
-                    LocalDateTime fechaPedido, EstadoPedido estado, BigDecimal total,
-                    String notas, String direccionEnvio, List<DetallePedidoDTO> detalles,
+                    LocalDateTime fechaCreacion, EstadoPedido estado, BigDecimal total,
+                    String notas, String direccionEntrega, List<DetallePedidoDTO> detalles,
                     Long empresaId, String empresaNombre) {
         this.id = id;
         this.clienteId = clienteId;
         this.clienteNombre = clienteNombre;
         this.clienteEmail = clienteEmail;
-        this.fechaPedido = fechaPedido;
+        this.fechaCreacion = fechaCreacion;
         this.estado = estado;
         this.total = total;
         this.notas = notas;
-        this.direccionEnvio = direccionEnvio;
+        this.direccionEntrega = direccionEntrega;
         this.detalles = detalles;
         this.empresaId = empresaId;
         this.empresaNombre = empresaNombre;
@@ -94,12 +101,12 @@ public class PedidoDTO {
         this.clienteEmail = clienteEmail;
     }
     
-    public LocalDateTime getFechaPedido() {
-        return fechaPedido;
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
     }
     
-    public void setFechaPedido(LocalDateTime fechaPedido) {
-        this.fechaPedido = fechaPedido;
+    public void setFechaCreacion(LocalDateTime fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
     }
     
     public EstadoPedido getEstado() {
@@ -126,12 +133,12 @@ public class PedidoDTO {
         this.notas = notas;
     }
     
-    public String getDireccionEnvio() {
-        return direccionEnvio;
+    public String getDireccionEntrega() {
+        return direccionEntrega;
     }
     
-    public void setDireccionEnvio(String direccionEnvio) {
-        this.direccionEnvio = direccionEnvio;
+    public void setDireccionEntrega(String direccionEntrega) {
+        this.direccionEntrega = direccionEntrega;
     }
     
     public List<DetallePedidoDTO> getDetalles() {
@@ -156,5 +163,21 @@ public class PedidoDTO {
     
     public void setEmpresaNombre(String empresaNombre) {
         this.empresaNombre = empresaNombre;
+    }
+
+    public String getNumeroPedido() {
+        return numeroPedido;
+    }
+
+    public void setNumeroPedido(String numeroPedido) {
+        this.numeroPedido = numeroPedido;
+    }
+
+    public ClienteDTO getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(ClienteDTO cliente) {
+        this.cliente = cliente;
     }
 }

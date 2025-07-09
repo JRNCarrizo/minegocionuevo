@@ -26,9 +26,38 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Page<Pedido> findByEmpresa(Empresa empresa, Pageable pageable);
 
     /**
+     * Busca pedidos por empresa ordenados por fecha de creación descendente
+     */
+    @Query("SELECT p FROM Pedido p WHERE p.empresa = :empresa ORDER BY p.fechaCreacion DESC")
+    List<Pedido> findByEmpresaOrderByFechaCreacionDesc(@Param("empresa") Empresa empresa);
+
+    /**
      * Busca pedidos por cliente
      */
     Page<Pedido> findByCliente(Cliente cliente, Pageable pageable);
+
+    /**
+     * Busca pedidos por cliente ordenados por fecha de creación descendente
+     */
+    @Query("SELECT p FROM Pedido p WHERE p.cliente = :cliente ORDER BY p.fechaCreacion DESC")
+    List<Pedido> findByClienteOrderByFechaCreacionDesc(@Param("cliente") Cliente cliente);
+
+    /**
+     * Busca pedidos por cliente y empresa (para seguridad multi-tenant)
+     */
+    Page<Pedido> findByClienteAndEmpresa(Cliente cliente, Empresa empresa, Pageable pageable);
+
+    /**
+     * Busca pedidos por cliente y empresa (sin paginación) ordenados por fecha descendente
+     */
+    @Query("SELECT p FROM Pedido p WHERE p.cliente = :cliente AND p.empresa = :empresa ORDER BY p.fechaCreacion DESC")
+    List<Pedido> findByClienteAndEmpresaOrderByFechaCreacionDesc(@Param("cliente") Cliente cliente, @Param("empresa") Empresa empresa);
+    
+    /**
+     * Busca pedidos por cliente y empresa (sin paginación) - método original para compatibilidad
+     */
+    @Query("SELECT p FROM Pedido p WHERE p.cliente = :cliente AND p.empresa = :empresa ORDER BY p.fechaCreacion DESC")
+    List<Pedido> findByClienteAndEmpresa(@Param("cliente") Cliente cliente, @Param("empresa") Empresa empresa);
 
     /**
      * Busca pedidos por estado y empresa
@@ -36,9 +65,10 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Page<Pedido> findByEmpresaAndEstado(Empresa empresa, Pedido.EstadoPedido estado, Pageable pageable);
 
     /**
-     * Busca pedidos por cliente y estado
+     * Busca pedidos por cliente y estado ordenados por fecha descendente
      */
-    List<Pedido> findByClienteAndEstado(Cliente cliente, Pedido.EstadoPedido estado);
+    @Query("SELECT p FROM Pedido p WHERE p.cliente = :cliente AND p.estado = :estado ORDER BY p.fechaCreacion DESC")
+    List<Pedido> findByClienteAndEstado(@Param("cliente") Cliente cliente, @Param("estado") Pedido.EstadoPedido estado);
 
     /**
      * Busca pedido por número de pedido y empresa
@@ -51,9 +81,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Optional<Pedido> findByIdAndEmpresa(Long id, Empresa empresa);
 
     /**
-     * Busca pedidos en un rango de fechas por empresa
+     * Busca pedidos en un rango de fechas por empresa ordenados por fecha descendente
      */
-    @Query("SELECT p FROM Pedido p WHERE p.empresa = :empresa AND p.fechaCreacion BETWEEN :fechaInicio AND :fechaFin")
+    @Query("SELECT p FROM Pedido p WHERE p.empresa = :empresa AND p.fechaCreacion BETWEEN :fechaInicio AND :fechaFin ORDER BY p.fechaCreacion DESC")
     List<Pedido> findPedidosEnRangoFechas(@Param("empresa") Empresa empresa, 
                                          @Param("fechaInicio") LocalDateTime fechaInicio, 
                                          @Param("fechaFin") LocalDateTime fechaFin);
@@ -71,9 +101,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Double sumaTotalVentasPorEmpresa(@Param("empresa") Empresa empresa);
 
     /**
-     * Busca pedidos pendientes de más de X días
+     * Busca pedidos pendientes de más de X días ordenados por fecha descendente
      */
-    @Query("SELECT p FROM Pedido p WHERE p.empresa = :empresa AND p.estado = 'PENDIENTE' AND p.fechaCreacion < :fecha")
+    @Query("SELECT p FROM Pedido p WHERE p.empresa = :empresa AND p.estado = 'PENDIENTE' AND p.fechaCreacion < :fecha ORDER BY p.fechaCreacion DESC")
     List<Pedido> findPedidosPendientesAntiguos(@Param("empresa") Empresa empresa, @Param("fecha") LocalDateTime fecha);
 
     /**
@@ -91,4 +121,22 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Object[] getEstadisticasMensuales(@Param("empresa") Empresa empresa, 
                                      @Param("año") int año, 
                                      @Param("mes") int mes);
+    
+    /**
+     * Cuenta total de pedidos por cliente y empresa
+     */
+    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.cliente = :cliente AND p.empresa = :empresa AND p.estado NOT IN ('CANCELADO')")
+    Long contarPedidosPorCliente(@Param("cliente") Cliente cliente, @Param("empresa") Empresa empresa);
+    
+    /**
+     * Suma total de compras por cliente y empresa
+     */
+    @Query("SELECT COALESCE(SUM(p.total), 0) FROM Pedido p WHERE p.cliente = :cliente AND p.empresa = :empresa AND p.estado NOT IN ('CANCELADO')")
+    Double sumaTotalComprasPorCliente(@Param("cliente") Cliente cliente, @Param("empresa") Empresa empresa);
+    
+    /**
+     * Obtiene todos los pedidos de un cliente en una empresa
+     */
+    @Query("SELECT p FROM Pedido p WHERE p.cliente = :cliente AND p.empresa = :empresa ORDER BY p.fechaCreacion DESC")
+    List<Pedido> findPedidosCompletosPorCliente(@Param("cliente") Cliente cliente, @Param("empresa") Empresa empresa);
 }
