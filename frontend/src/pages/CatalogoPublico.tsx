@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 
 export default function CatalogoPublico() {
   const { empresa, subdominio, cargando: cargandoEmpresa } = useSubdominio();
-  const { addToCart, items } = useCart();
+  const { addToCart, items, updateQuantity } = useCart();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -726,23 +726,30 @@ export default function CatalogoPublico() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                              console.log('Botón menos clickeado');
+                              console.log('Producto ID:', producto.id);
+                              console.log('Cantidad actual:', cantidadEnCarrito);
                               if (cantidadEnCarrito > 0) {
-                                addToCart({
-                                  id: producto.id,
-                                  nombre: producto.nombre,
-                                  precio: producto.precio,
-                                  cantidad: -1,
-                                  imagen: producto.imagenes && producto.imagenes[0]
-                                }, undefined, subdominio || undefined);
+                                // Actualizar directamente el estado del carrito
+                                const newItems = items.map(item => 
+                                  item.id === producto.id 
+                                    ? { ...item, cantidad: item.cantidad - 1 }
+                                    : item
+                                ).filter(item => item.cantidad > 0);
+                                
+                                // Actualizar localStorage
+                                localStorage.setItem('cart', JSON.stringify(newItems));
+                                
+                                // Forzar re-render
+                                window.dispatchEvent(new Event('storage'));
                               }
                             }}
                             disabled={cantidadEnCarrito === 0}
                             style={{
                               width: '32px',
                               height: '32px',
-                              background: cantidadEnCarrito === 0 
-                                ? '#e5e7eb' 
+                              background: cantidadEnCarrito === 0
+                                ? '#e5e7eb'
                                 : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                               color: 'white',
                               border: 'none',
@@ -787,14 +794,34 @@ export default function CatalogoPublico() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              console.log('Botón más clickeado');
+                              console.log('Producto ID:', producto.id);
+                              console.log('Cantidad actual:', cantidadEnCarrito);
+                              console.log('Stock disponible:', producto.stock);
                               if (cantidadEnCarrito < producto.stock) {
-                                addToCart({
-                                  id: producto.id,
-                                  nombre: producto.nombre,
-                                  precio: producto.precio,
-                                  cantidad: 1,
-                                  imagen: producto.imagenes && producto.imagenes[0]
-                                }, undefined, subdominio || undefined);
+                                // Actualizar directamente el estado del carrito
+                                const newItems = items.map(item => 
+                                  item.id === producto.id 
+                                    ? { ...item, cantidad: item.cantidad + 1 }
+                                    : item
+                                );
+                                
+                                // Si el producto no está en el carrito, agregarlo
+                                if (!items.find(item => item.id === producto.id)) {
+                                  newItems.push({
+                                    id: producto.id,
+                                    nombre: producto.nombre,
+                                    precio: producto.precio,
+                                    cantidad: 1,
+                                    imagen: producto.imagenes && producto.imagenes[0]
+                                  });
+                                }
+                                
+                                // Actualizar localStorage
+                                localStorage.setItem('cart', JSON.stringify(newItems));
+                                
+                                // Forzar re-render
+                                window.dispatchEvent(new Event('storage'));
                               }
                             }}
                             disabled={cantidadEnCarrito >= producto.stock}

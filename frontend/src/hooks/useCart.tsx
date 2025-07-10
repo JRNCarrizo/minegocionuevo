@@ -34,6 +34,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
 
+  // Escuchar cambios en localStorage desde otros componentes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const stored = localStorage.getItem('cart');
+      if (stored) {
+        const newItems = JSON.parse(stored);
+        setItems(newItems);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const validateStock = useCallback(async (productId: number, cantidad: number, empresaId?: number, subdominio?: string): Promise<boolean> => {
     console.log(`=== VALIDANDO STOCK ===`);
     console.log(`ProductoId: ${productId}`);
@@ -145,20 +159,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateQuantity = async (id: number, cantidad: number, empresaId?: number, subdominio?: string) => {
     try {
+      console.log(`=== ACTUALIZANDO CANTIDAD ===`);
+      console.log(`ProductoId: ${id}`);
+      console.log(`Nueva cantidad: ${cantidad}`);
+      console.log(`EmpresaId: ${empresaId}`);
+      console.log(`Subdominio: ${subdominio}`);
+      
       if (cantidad <= 0) {
+        console.log('Cantidad <= 0, removiendo del carrito');
         removeFromCart(id);
         return true;
       }
 
-      // Validar stock ANTES de actualizar
-      const stockValido = await validateStock(id, cantidad, empresaId, subdominio);
-      if (!stockValido) {
-        console.log('Stock insuficiente, no se actualiza la cantidad');
-        return false;
-      }
-
-      // Solo actualizar si la validación fue exitosa
-      setItems(prev => prev.map(i => i.id === id ? { ...i, cantidad } : i));
+      // Para cambios de cantidad, no validar stock (solo validar al agregar)
+      console.log('Actualizando cantidad sin validar stock...');
+      setItems(prev => {
+        const nuevoEstado = prev.map(i => i.id === id ? { ...i, cantidad } : i);
+        console.log('Nuevo estado del carrito:', nuevoEstado);
+        return nuevoEstado;
+      });
+      
       console.log('Cantidad actualizada exitosamente');
       return true;
     } catch (error) {
