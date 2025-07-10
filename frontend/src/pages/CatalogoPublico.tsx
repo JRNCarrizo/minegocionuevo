@@ -695,255 +695,307 @@ export default function CatalogoPublico() {
                       </div>
 
                       {/* Controles a la derecha */}
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: vistaCuadricula ? 'column' : 'column',
-                        gap: vistaCuadricula ? '12px' : '8px',
-                        alignItems: vistaCuadricula ? 'stretch' : 'center',
-                        justifyContent: vistaCuadricula ? 'stretch' : 'center',
-                        minWidth: vistaCuadricula ? undefined : '200px',
-                        maxWidth: vistaCuadricula ? undefined : '220px'
-                      }}>
-                        {/* Controles de cantidad */}
+                      {clienteInfo ? (
+                        // Mostrar controles de carrito solo si hay cliente logueado
                         <div style={{
                           display: 'flex',
-                          alignItems: 'center',
-                          background: '#f8fafc',
-                          borderRadius: '10px',
-                          padding: '8px 12px',
-                          border: '1px solid #e2e8f0',
-                          width: vistaCuadricula ? '100%' : '100%',
-                          gap: '8px'
+                          flexDirection: vistaCuadricula ? 'column' : 'column',
+                          gap: vistaCuadricula ? '12px' : '8px',
+                          alignItems: vistaCuadricula ? 'stretch' : 'center',
+                          justifyContent: vistaCuadricula ? 'stretch' : 'center',
+                          minWidth: vistaCuadricula ? undefined : '200px',
+                          maxWidth: vistaCuadricula ? undefined : '220px'
                         }}>
-                          <span style={{
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#374151',
-                            minWidth: '60px'
+                          {/* Controles de cantidad */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: '#f8fafc',
+                            borderRadius: '10px',
+                            padding: '8px 12px',
+                            border: '1px solid #e2e8f0',
+                            width: vistaCuadricula ? '100%' : '100%',
+                            gap: '8px'
                           }}>
-                            Cantidad:
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('Botón menos clickeado');
-                              console.log('Producto ID:', producto.id);
-                              console.log('Cantidad actual:', cantidadEnCarrito);
-                              if (cantidadEnCarrito > 0) {
-                                // Actualizar directamente el estado del carrito
-                                const newItems = items.map(item => 
-                                  item.id === producto.id 
-                                    ? { ...item, cantidad: item.cantidad - 1 }
-                                    : item
-                                ).filter(item => item.cantidad > 0);
-                                
-                                // Actualizar localStorage
-                                localStorage.setItem('cart', JSON.stringify(newItems));
-                                
-                                // Forzar re-render
-                                window.dispatchEvent(new Event('storage'));
-                              }
-                            }}
-                            disabled={cantidadEnCarrito === 0}
-                            style={{
-                              width: '32px',
-                              height: '32px',
-                              background: cantidadEnCarrito === 0
-                                ? '#e5e7eb'
-                                : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '8px',
-                              fontSize: '16px',
-                              fontWeight: '700',
-                              cursor: cantidadEnCarrito === 0 ? 'not-allowed' : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.2s ease',
-                              opacity: cantidadEnCarrito === 0 ? 0.5 : 1
-                            }}
-                            onMouseOver={(e) => {
-                              if (cantidadEnCarrito > 0) {
-                                e.currentTarget.style.transform = 'scale(1.05)';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
-                              }
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.transform = 'scale(1)';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                          >
-                            -
-                          </button>
-                          
-                          <span style={{
-                            minWidth: '32px',
-                            textAlign: 'center',
-                            fontSize: '16px',
-                            fontWeight: '700',
-                            color: '#1e293b',
-                            background: 'white',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            border: '1px solid #d1d5db'
-                          }}>
-                            {cantidadEnCarrito}
-                          </span>
-                          
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('Botón más clickeado');
-                              console.log('Producto ID:', producto.id);
-                              console.log('Cantidad actual:', cantidadEnCarrito);
-                              console.log('Stock disponible:', producto.stock);
-                              if (cantidadEnCarrito < producto.stock) {
-                                // Actualizar directamente el estado del carrito
-                                const newItems = items.map(item => 
-                                  item.id === producto.id 
-                                    ? { ...item, cantidad: item.cantidad + 1 }
-                                    : item
-                                );
-                                
-                                // Si el producto no está en el carrito, agregarlo
-                                if (!items.find(item => item.id === producto.id)) {
-                                  newItems.push({
-                                    id: producto.id,
-                                    nombre: producto.nombre,
-                                    precio: producto.precio,
-                                    cantidad: 1,
-                                    imagen: producto.imagenes && producto.imagenes[0]
-                                  });
+                            <span style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: '#374151',
+                              minWidth: '60px'
+                            }}>
+                              Cantidad:
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('Botón menos clickeado');
+                                console.log('Producto ID:', producto.id);
+                                console.log('Cantidad actual:', cantidadEnCarrito);
+                                if (cantidadEnCarrito > 0) {
+                                  // Actualizar directamente el estado del carrito
+                                  const newItems = items.map(item => 
+                                    item.id === producto.id 
+                                      ? { ...item, cantidad: item.cantidad - 1 }
+                                      : item
+                                  ).filter(item => item.cantidad > 0);
+                                  
+                                  // Actualizar localStorage
+                                  localStorage.setItem('cart', JSON.stringify(newItems));
+                                  
+                                  // Forzar re-render
+                                  window.dispatchEvent(new Event('storage'));
                                 }
-                                
-                                // Actualizar localStorage
-                                localStorage.setItem('cart', JSON.stringify(newItems));
-                                
-                                // Forzar re-render
-                                window.dispatchEvent(new Event('storage'));
-                              }
-                            }}
-                            disabled={cantidadEnCarrito >= producto.stock}
-                            style={{
-                              width: '32px',
-                              height: '32px',
-                              background: cantidadEnCarrito >= producto.stock
-                                ? '#e5e7eb'
-                                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '8px',
+                              }}
+                              disabled={cantidadEnCarrito === 0}
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                background: cantidadEnCarrito === 0
+                                  ? '#e5e7eb'
+                                  : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '16px',
+                                fontWeight: '700',
+                                cursor: cantidadEnCarrito === 0 ? 'not-allowed' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                opacity: cantidadEnCarrito === 0 ? 0.5 : 1
+                              }}
+                              onMouseOver={(e) => {
+                                if (cantidadEnCarrito > 0) {
+                                  e.currentTarget.style.transform = 'scale(1.05)';
+                                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
+                                }
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = 'none';
+                              }}
+                            >
+                              -
+                            </button>
+                            
+                            <span style={{
+                              minWidth: '32px',
+                              textAlign: 'center',
                               fontSize: '16px',
                               fontWeight: '700',
-                              cursor: cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer',
+                              color: '#1e293b',
+                              background: 'white',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              border: '1px solid #d1d5db'
+                            }}>
+                              {cantidadEnCarrito}
+                            </span>
+                            
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('Botón más clickeado');
+                                console.log('Producto ID:', producto.id);
+                                console.log('Cantidad actual:', cantidadEnCarrito);
+                                console.log('Stock disponible:', producto.stock);
+                                if (cantidadEnCarrito < producto.stock) {
+                                  // Actualizar directamente el estado del carrito
+                                  const newItems = items.map(item => 
+                                    item.id === producto.id 
+                                      ? { ...item, cantidad: item.cantidad + 1 }
+                                      : item
+                                  );
+                                  
+                                  // Si el producto no está en el carrito, agregarlo
+                                  if (!items.find(item => item.id === producto.id)) {
+                                    newItems.push({
+                                      id: producto.id,
+                                      nombre: producto.nombre,
+                                      precio: producto.precio,
+                                      cantidad: 1,
+                                      imagen: producto.imagenes && producto.imagenes[0]
+                                    });
+                                  }
+                                  
+                                  // Actualizar localStorage
+                                  localStorage.setItem('cart', JSON.stringify(newItems));
+                                  
+                                  // Forzar re-render
+                                  window.dispatchEvent(new Event('storage'));
+                                }
+                              }}
+                              disabled={cantidadEnCarrito >= producto.stock}
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                background: cantidadEnCarrito >= producto.stock
+                                  ? '#e5e7eb'
+                                  : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '16px',
+                                fontWeight: '700',
+                                cursor: cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                opacity: cantidadEnCarrito >= producto.stock ? 0.5 : 1
+                              }}
+                              onMouseOver={(e) => {
+                                if (cantidadEnCarrito < producto.stock) {
+                                  e.currentTarget.style.transform = 'scale(1.05)';
+                                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                                }
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = 'none';
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          {/* Botón agregar al carrito mejorado */}
+                          <button
+                            disabled={producto.stock === 0}
+                            style={{
+                              width: '100%',
+                              padding: '12px 16px',
+                              background: producto.stock === 0 
+                                ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+                                : cantidadEnCarrito > 0
+                                  ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                                  : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '12px',
+                              fontSize: '15px',
+                              fontWeight: '700',
+                              cursor: producto.stock === 0 ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.3s ease',
+                              opacity: producto.stock === 0 ? 0.6 : 1,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              transition: 'all 0.2s ease',
-                              opacity: cantidadEnCarrito >= producto.stock ? 0.5 : 1
+                              gap: '8px',
+                              position: 'relative',
+                              overflow: 'hidden'
+                            }}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              
+                              if (producto.stock === 0) {
+                                toast.error('Este producto está agotado');
+                                return;
+                              }
+                              
+                              if (typeof producto.precio !== 'number' || isNaN(producto.precio)) {
+                                alert('Este producto no tiene un precio válido y no puede ser agregado al carrito.');
+                                return;
+                              }
+                              
+                              // Si no hay cantidad en carrito, agregar 1
+                              if (cantidadEnCarrito === 0) {
+                                const agregado = await addToCart({
+                                  id: producto.id,
+                                  nombre: producto.nombre,
+                                  precio: producto.precio,
+                                  cantidad: 1,
+                                  imagen: producto.imagenes && producto.imagenes[0]
+                                }, undefined, subdominio || undefined);
+                                
+                                if (agregado) {
+                                  toast.success('Producto agregado al carrito');
+                                }
+                              } else {
+                                // Si ya hay cantidad, mostrar mensaje
+                                toast.success(`Tienes ${cantidadEnCarrito} unidades en el carrito`);
+                              }
                             }}
                             onMouseOver={(e) => {
-                              if (cantidadEnCarrito < producto.stock) {
-                                e.currentTarget.style.transform = 'scale(1.05)';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                              if (producto.stock !== 0) {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.3)';
                               }
                             }}
                             onMouseOut={(e) => {
-                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.transform = 'translateY(0)';
                               e.currentTarget.style.boxShadow = 'none';
                             }}
                           >
-                            +
+                            {producto.stock === 0 ? (
+                              <>
+                                <span>❌</span>
+                                <span>Agotado</span>
+                              </>
+                            ) : cantidadEnCarrito > 0 ? (
+                              <>
+                                <span>🛒</span>
+                                <span>{cantidadEnCarrito} en carrito</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>🛒</span>
+                                <span>Agregar al carrito</span>
+                              </>
+                            )}
                           </button>
                         </div>
-
-                        {/* Botón agregar al carrito mejorado */}
-                        <button
-                          disabled={producto.stock === 0}
-                          style={{
+                      ) : (
+                        // Mostrar botón de iniciar sesión si no hay cliente logueado
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '12px',
+                          alignItems: 'stretch'
+                        }}>
+                          <div style={{
+                            padding: '12px 16px',
+                            background: '#f0f9ff',
+                            border: '1px solid #bae6fd',
+                            borderRadius: '10px',
+                            textAlign: 'center',
+                            fontSize: '14px',
+                            color: '#0369a1'
+                          }}>
+                            🔑 Inicia sesión para comprar
+                          </div>
+                          <Link to="/login" style={{
                             width: '100%',
                             padding: '12px 16px',
-                            background: producto.stock === 0 
-                              ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-                              : cantidadEnCarrito > 0
-                                ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
-                                : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                             color: 'white',
                             border: 'none',
-                            borderRadius: '12px',
-                            fontSize: '15px',
-                            fontWeight: '700',
-                            cursor: producto.stock === 0 ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.3s ease',
-                            opacity: producto.stock === 0 ? 0.6 : 1,
+                            borderRadius: '10px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '8px',
-                            position: 'relative',
-                            overflow: 'hidden'
-                          }}
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            
-                            if (producto.stock === 0) {
-                              toast.error('Este producto está agotado');
-                              return;
-                            }
-                            
-                            if (typeof producto.precio !== 'number' || isNaN(producto.precio)) {
-                              alert('Este producto no tiene un precio válido y no puede ser agregado al carrito.');
-                              return;
-                            }
-                            
-                            // Si no hay cantidad en carrito, agregar 1
-                            if (cantidadEnCarrito === 0) {
-                              const agregado = await addToCart({
-                                id: producto.id,
-                                nombre: producto.nombre,
-                                precio: producto.precio,
-                                cantidad: 1,
-                                imagen: producto.imagenes && producto.imagenes[0]
-                              }, undefined, subdominio || undefined);
-                              
-                              if (agregado) {
-                                toast.success('Producto agregado al carrito');
-                              }
-                            } else {
-                              // Si ya hay cantidad, mostrar mensaje
-                              toast.success(`Tienes ${cantidadEnCarrito} unidades en el carrito`);
-                            }
+                            transition: 'all 0.2s ease',
+                            textDecoration: 'none'
                           }}
                           onMouseOver={(e) => {
-                            if (producto.stock !== 0) {
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.3)';
-                            }
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.3)';
                           }}
                           onMouseOut={(e) => {
                             e.currentTarget.style.transform = 'translateY(0)';
                             e.currentTarget.style.boxShadow = 'none';
                           }}
-                        >
-                          {producto.stock === 0 ? (
-                            <>
-                              <span>❌</span>
-                              <span>Agotado</span>
-                            </>
-                          ) : cantidadEnCarrito > 0 ? (
-                            <>
-                              <span>🛒</span>
-                              <span>{cantidadEnCarrito} en carrito</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>🛒</span>
-                              <span>Agregar al carrito</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
+                          >
+                            <span>🔑</span>
+                            <span>Iniciar Sesión</span>
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

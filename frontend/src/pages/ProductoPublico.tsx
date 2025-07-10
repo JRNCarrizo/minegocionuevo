@@ -517,149 +517,196 @@ export default function ProductoPublico() {
                     🛒 Comprar Producto
                   </h3>
                   
-                  <div style={{ display: 'grid', gap: '16px' }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px'
-                    }}>
-                      <label htmlFor="cantidad" style={{
-                        color: '#374151',
-                        fontWeight: '500',
-                        fontSize: '14px',
-                        minWidth: '80px'
+                  {clienteInfo ? (
+                    // Mostrar controles de compra solo si hay cliente logueado
+                    <div style={{ display: 'grid', gap: '16px' }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
                       }}>
-                        Cantidad:
-                      </label>
-                      <input
-                        type="number"
-                        id="cantidad"
-                        min="1"
-                        max={producto.stock}
-                        value={cantidad}
-                        onChange={(e) => setCantidad(Math.max(1, parseInt(e.target.value) || 1))}
-                        style={{
-                          width: '100px',
-                          padding: '8px 12px',
-                          border: '2px solid #e2e8f0',
-                          borderRadius: '8px',
+                        <label htmlFor="cantidad" style={{
+                          color: '#374151',
+                          fontWeight: '500',
                           fontSize: '14px',
-                          textAlign: 'center',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onFocus={(e) => {
-                          e.target.style.borderColor = '#3b82f6';
-                          e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
-                        }}
-                        onBlur={(e) => {
-                          e.target.style.borderColor = '#e2e8f0';
-                          e.target.style.boxShadow = 'none';
-                        }}
-                      />
-                    </div>
-
-                    {/* Información del carrito */}
-                    {(() => {
-                      const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                      const maximoAlcanzado = cantidadEnCarrito >= producto.stock;
-                      
-                      return (
-                        <div style={{ 
-                          padding: '12px 16px',
-                          background: maximoAlcanzado ? '#fef2f2' : '#f0f9ff',
-                          border: `1px solid ${maximoAlcanzado ? '#fecaca' : '#bae6fd'}`,
-                          borderRadius: '8px',
-                          fontSize: '14px',
-                          color: maximoAlcanzado ? '#dc2626' : '#0369a1',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
+                          minWidth: '80px'
                         }}>
-                          {cantidadEnCarrito > 0 ? (
-                            maximoAlcanzado ? (
-                              <span>🛒 Ya tienes el máximo disponible en el carrito ({cantidadEnCarrito}/{producto.stock})</span>
-                            ) : (
-                              <span>🛒 Tienes {cantidadEnCarrito} en el carrito. Puedes agregar {producto.stock - cantidadEnCarrito} más.</span>
-                            )
-                          ) : (
-                            <span>🛒 Puedes agregar hasta {producto.stock} unidades al carrito</span>
-                          )}
-                        </div>
-                      );
-                    })()}
+                          Cantidad:
+                        </label>
+                        <input
+                          type="number"
+                          id="cantidad"
+                          min="1"
+                          max={producto.stock}
+                          value={cantidad}
+                          onChange={(e) => setCantidad(Math.max(1, parseInt(e.target.value) || 1))}
+                          style={{
+                            width: '100px',
+                            padding: '8px 12px',
+                            border: '2px solid #e2e8f0',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            textAlign: 'center',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = '#3b82f6';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = '#e2e8f0';
+                            e.target.style.boxShadow = 'none';
+                          }}
+                        />
+                      </div>
 
-                    <div style={{ display: 'grid', gap: '12px' }}>
-                      <button
-                        onClick={agregarAlCarrito}
-                        disabled={(() => {
-                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                          return cantidadEnCarrito >= producto.stock;
-                        })()}
-                        style={{
-                          width: '100%',
-                          padding: '12px 24px',
-                          background: '#f1f5f9',
-                          color: '#3b82f6',
-                          border: '1px solid #3b82f6',
-                          borderRadius: '8px',
-                          fontSize: '16px',
-                          fontWeight: '600',
-                          cursor: (() => {
+                      {/* Información del carrito */}
+                      {(() => {
+                        const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                        const maximoAlcanzado = cantidadEnCarrito >= producto.stock;
+                        
+                        return (
+                          <div style={{ 
+                            padding: '12px 16px',
+                            background: maximoAlcanzado ? '#fef2f2' : '#f0f9ff',
+                            border: `1px solid ${maximoAlcanzado ? '#fecaca' : '#bae6fd'}`,
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            color: maximoAlcanzado ? '#dc2626' : '#0369a1',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}>
+                            {cantidadEnCarrito > 0 ? (
+                              maximoAlcanzado ? (
+                                <span>🛒 Ya tienes el máximo disponible en el carrito ({cantidadEnCarrito}/{producto.stock})</span>
+                              ) : (
+                                <span>🛒 Tienes {cantidadEnCarrito} en el carrito. Puedes agregar {producto.stock - cantidadEnCarrito} más.</span>
+                              )
+                            ) : (
+                              <span>🛒 Puedes agregar hasta {producto.stock} unidades al carrito</span>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      <div style={{ display: 'grid', gap: '12px' }}>
+                        <button
+                          onClick={agregarAlCarrito}
+                          disabled={(() => {
                             const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                            return cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer';
-                          })(),
-                          opacity: (() => {
+                            return cantidadEnCarrito >= producto.stock;
+                          })()}
+                          style={{
+                            width: '100%',
+                            padding: '12px 24px',
+                            background: '#f1f5f9',
+                            color: '#3b82f6',
+                            border: '1px solid #3b82f6',
+                            borderRadius: '8px',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            cursor: (() => {
+                              const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                              return cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer';
+                            })(),
+                            opacity: (() => {
+                              const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                              return cantidadEnCarrito >= producto.stock ? 0.6 : 1;
+                            })(),
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseOver={(e) => {
                             const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                            return cantidadEnCarrito >= producto.stock ? 0.6 : 1;
-                          })(),
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseOver={(e) => {
-                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                          if (cantidadEnCarrito < producto.stock) {
-                            e.currentTarget.style.background = '#3b82f6';
-                            e.currentTarget.style.color = 'white';
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                          if (cantidadEnCarrito < producto.stock) {
-                            e.currentTarget.style.background = '#f1f5f9';
-                            e.currentTarget.style.color = '#3b82f6';
-                          }
-                        }}
-                      >
-                        {(() => {
-                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                          return cantidadEnCarrito >= producto.stock ? 'Máximo en carrito' : 'Agregar al carrito';
-                        })()}
-                      </button>
-                      
-                      <button
-                        onClick={comprarAhora}
-                        style={{
-                          width: '100%',
-                          padding: '12px 24px',
-                          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px',
-                          fontSize: '16px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)';
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
-                        }}
-                      >
-                        Comprar ahora
-                      </button>
+                            if (cantidadEnCarrito < producto.stock) {
+                              e.currentTarget.style.background = '#3b82f6';
+                              e.currentTarget.style.color = 'white';
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                            if (cantidadEnCarrito < producto.stock) {
+                              e.currentTarget.style.background = '#f1f5f9';
+                              e.currentTarget.style.color = '#3b82f6';
+                            }
+                          }}
+                        >
+                          {(() => {
+                            const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                            return cantidadEnCarrito >= producto.stock ? 'Máximo en carrito' : 'Agregar al carrito';
+                          })()}
+                        </button>
+                        
+                        <button
+                          onClick={comprarAhora}
+                          style={{
+                            width: '100%',
+                            padding: '12px 24px',
+                            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
+                          }}
+                        >
+                          Comprar ahora
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    // Mostrar botón de iniciar sesión si no hay cliente logueado
+                    <div style={{ display: 'grid', gap: '16px' }}>
+                      <div style={{
+                        padding: '16px',
+                        background: '#f0f9ff',
+                        border: '1px solid #bae6fd',
+                        borderRadius: '12px',
+                        textAlign: 'center',
+                        fontSize: '16px',
+                        color: '#0369a1'
+                      }}>
+                        🔑 Inicia sesión para comprar este producto
+                      </div>
+                      <Link to="/login" style={{
+                        width: '100%',
+                        padding: '16px 24px',
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        transition: 'all 0.2s ease',
+                        textDecoration: 'none'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.3)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                      >
+                        <span>🔑</span>
+                        <span>Iniciar Sesión</span>
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

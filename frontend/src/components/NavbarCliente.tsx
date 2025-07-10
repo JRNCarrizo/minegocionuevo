@@ -122,13 +122,15 @@ export default function NavbarCliente({
               🏠 Inicio
             </Link>
             
-            {/* Carrito */}
-            <div style={{
-              position: 'relative',
-              cursor: 'pointer'
-            }}>
-              <CartIcon onClick={onShowCart} />
-            </div>
+            {/* Carrito - solo mostrar si hay cliente logueado */}
+            {clienteInfo && (
+              <div style={{
+                position: 'relative',
+                cursor: 'pointer'
+              }}>
+                <CartIcon onClick={onShowCart} />
+              </div>
+            )}
           </div>
 
           {/* Información del cliente */}
