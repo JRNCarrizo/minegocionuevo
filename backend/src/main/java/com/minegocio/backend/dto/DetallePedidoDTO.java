@@ -20,6 +20,8 @@ public class DetallePedidoDTO {
     
     private String productoCategoria;
     
+    private String productoMarca; // Agregar campo para la marca
+    
     private BigDecimal productoPrecionUnitario;
     
     @NotNull(message = "La cantidad es requerida")
@@ -37,7 +39,7 @@ public class DetallePedidoDTO {
     
     public DetallePedidoDTO(Long id, Long productoId, String productoNombre, 
                            String productoDescripcion, String productoImagen, String productoCategoria,
-                           BigDecimal productoPrecionUnitario, Integer cantidad, 
+                           String productoMarca, BigDecimal productoPrecionUnitario, Integer cantidad, 
                            BigDecimal precioUnitario, BigDecimal subtotal) {
         this.id = id;
         this.productoId = productoId;
@@ -45,6 +47,7 @@ public class DetallePedidoDTO {
         this.productoDescripcion = productoDescripcion;
         this.productoImagen = productoImagen;
         this.productoCategoria = productoCategoria;
+        this.productoMarca = productoMarca;
         this.productoPrecionUnitario = productoPrecionUnitario;
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
@@ -98,6 +101,14 @@ public class DetallePedidoDTO {
     
     public void setProductoCategoria(String productoCategoria) {
         this.productoCategoria = productoCategoria;
+    }
+    
+    public String getProductoMarca() {
+        return productoMarca;
+    }
+    
+    public void setProductoMarca(String productoMarca) {
+        this.productoMarca = productoMarca;
     }
     
     public BigDecimal getProductoPrecionUnitario() {

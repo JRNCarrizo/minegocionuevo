@@ -43,16 +43,16 @@ VALUES
 ('PED-003', 'PENDIENTE', 79.99, 79.99, 0, 0, 'Llamar antes de entregar', 'Plaza España 7, Valencia', 3, 1, DATEADD('DAY', -1, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
 
 -- Insertar detalles de pedidos
-INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, fecha_creacion)
+INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, marca_producto, fecha_creacion)
 VALUES 
 -- Pedido 1
-(1, 899.99, 899.99, 1, 1, 'Laptop Dell Inspiron 15', 'Laptop para uso profesional', 'Electrónicos', DATEADD('DAY', -5, CURRENT_TIMESTAMP)),
-(1, 29.99, 29.99, 2, 1, 'Mouse Inalámbrico Logitech', 'Mouse inalámbrico ergonómico', 'Electrónicos', DATEADD('DAY', -5, CURRENT_TIMESTAMP)),
+(1, 899.99, 899.99, 1, 1, 'Laptop Dell Inspiron 15', 'Laptop para uso profesional', 'Electrónicos', 'Dell', DATEADD('DAY', -5, CURRENT_TIMESTAMP)),
+(1, 29.99, 29.99, 2, 1, 'Mouse Inalámbrico Logitech', 'Mouse inalámbrico ergonómico', 'Electrónicos', 'Logitech', DATEADD('DAY', -5, CURRENT_TIMESTAMP)),
 -- Pedido 2  
-(1, 79.99, 79.99, 3, 2, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', DATEADD('DAY', -2, CURRENT_TIMESTAMP)),
-(1, 299.99, 299.99, 5, 2, 'Silla Ergonómica de Oficina', 'Silla ergonómica con soporte lumbar', 'Mobiliario', DATEADD('DAY', -2, CURRENT_TIMESTAMP)),
+(1, 79.99, 79.99, 3, 2, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', 'Corsair', DATEADD('DAY', -2, CURRENT_TIMESTAMP)),
+(1, 299.99, 299.99, 5, 2, 'Silla Ergonómica de Oficina', 'Silla ergonómica con soporte lumbar', 'Mobiliario', 'Herman Miller', DATEADD('DAY', -2, CURRENT_TIMESTAMP)),
 -- Pedido 3
-(1, 79.99, 79.99, 3, 3, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', DATEADD('DAY', -1, CURRENT_TIMESTAMP));
+(1, 79.99, 79.99, 3, 3, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', 'Corsair', DATEADD('DAY', -1, CURRENT_TIMESTAMP));
 
 -- Insertar mensajes de ejemplo
 INSERT INTO mensajes (asunto, contenido, tipo, estado, leido, cliente_id, empresa_id, producto_id, fecha_creacion, fecha_actualizacion)
@@ -60,3 +60,13 @@ VALUES
 ('Consulta sobre Laptop Dell', '¿La laptop incluye Office? ¿Cuál es la garantía?', 'CONSULTA', 'PENDIENTE', false, 1, 1, 1, DATEADD('HOUR', -2, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
 ('Problema con el pedido', 'Mi pedido está marcado como preparando pero han pasado 3 días', 'RECLAMO', 'PENDIENTE', false, 2, 1, null, DATEADD('HOUR', -1, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
 ('Sugerencia de producto', 'Estaría bien que añadieran tablets a su catálogo', 'SUGERENCIA', 'PENDIENTE', false, 3, 1, null, DATEADD('MINUTE', -30, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
+
+-- Agregar columna marca_producto a la tabla detalle_pedidos si no existe
+ALTER TABLE detalle_pedidos ADD COLUMN IF NOT EXISTS marca_producto VARCHAR(100);
+
+-- Actualizar las marcas de los productos existentes en los detalles de pedidos
+UPDATE detalle_pedidos SET marca_producto = 'Dell' WHERE nombre_producto LIKE '%Dell%';
+UPDATE detalle_pedidos SET marca_producto = 'Logitech' WHERE nombre_producto LIKE '%Logitech%';
+UPDATE detalle_pedidos SET marca_producto = 'Corsair' WHERE nombre_producto LIKE '%RGB%';
+UPDATE detalle_pedidos SET marca_producto = 'Samsung' WHERE nombre_producto LIKE '%Monitor%';
+UPDATE detalle_pedidos SET marca_producto = 'Herman Miller' WHERE nombre_producto LIKE '%Silla%';

@@ -106,8 +106,10 @@ export interface DetallePedido {
   productoDescripcion?: string; // Nuevo campo del DTO
   productoImagen?: string; // Nuevo campo del DTO
   productoCategoria?: string; // Nuevo campo del DTO
+  productoMarca?: string; // Nuevo campo del DTO
   descripcionProducto?: string;
   categoriaProducto?: string;
+  marcaProducto?: string; // Campo de la entidad
 }
 
 export interface Mensaje {

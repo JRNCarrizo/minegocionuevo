@@ -321,18 +321,15 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
                             }}>
                               {detalle.productoNombre || detalle.nombreProducto}
                             </h4>
-                            {(detalle.productoDescripcion || detalle.descripcionProducto) && (
+                            {(detalle.productoMarca || detalle.marcaProducto) && (
                               <p style={{ 
                                 margin: '0 0 8px 0', 
                                 fontSize: '14px', 
                                 color: '#64748b',
                                 lineHeight: '1.4',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden'
+                                fontWeight: '500'
                               }}>
-                                {detalle.productoDescripcion || detalle.descripcionProducto}
+                                🏷️ {detalle.productoMarca || detalle.marcaProducto}
                               </p>
                             )}
                             {(detalle.productoCategoria || detalle.categoriaProducto) && (

@@ -311,18 +311,15 @@ function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Ped
                             }}>
                               {detalle.productoNombre || detalle.nombreProducto}
                             </h4>
-                            {(detalle.productoDescripcion || detalle.descripcionProducto) && (
+                            {(detalle.productoMarca || detalle.marcaProducto) && (
                               <p style={{ 
                                 margin: '0 0 8px 0', 
                                 fontSize: '14px', 
                                 color: '#64748b',
                                 lineHeight: '1.4',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden'
+                                fontWeight: '500'
                               }}>
-                                {detalle.productoDescripcion || detalle.descripcionProducto}
+                                🏷️ {detalle.productoMarca || detalle.marcaProducto}
                               </p>
                             )}
                             {(detalle.productoCategoria || detalle.categoriaProducto) && (
@@ -625,14 +622,16 @@ function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Ped
                   }}>
                     {productoSeleccionado.productoNombre || productoSeleccionado.nombreProducto}
                   </h3>
-                  {(productoSeleccionado.productoDescripcion || productoSeleccionado.descripcionProducto) && (
+                  {/* Mostrar marca en vez de descripción */}
+                  {(productoSeleccionado.productoMarca || productoSeleccionado.marcaProducto) && (
                     <p style={{ 
                       margin: 0, 
                       fontSize: '16px', 
                       color: '#64748b',
-                      lineHeight: '1.6'
+                      lineHeight: '1.6',
+                      fontWeight: 600
                     }}>
-                      {productoSeleccionado.productoDescripcion || productoSeleccionado.descripcionProducto}
+                      Marca: {productoSeleccionado.productoMarca || productoSeleccionado.marcaProducto}
                     </p>
                   )}
                 </div>

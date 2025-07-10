@@ -55,6 +55,9 @@ public class DetallePedido {
     @Column(name = "categoria_producto")
     private String categoriaProducto;
 
+    @Column(name = "marca_producto")
+    private String marcaProducto;
+
     // Timestamp
     @CreationTimestamp
     @Column(name = "fecha_creacion", updatable = false)
@@ -71,6 +74,7 @@ public class DetallePedido {
         this.nombreProducto = producto.getNombre();
         this.descripcionProducto = producto.getDescripcion();
         this.categoriaProducto = producto.getCategoria();
+        this.marcaProducto = producto.getMarca();
         calcularPrecioTotal();
     }
 
@@ -91,6 +95,7 @@ public class DetallePedido {
             this.nombreProducto = this.producto.getNombre();
             this.descripcionProducto = this.producto.getDescripcion();
             this.categoriaProducto = this.producto.getCategoria();
+            this.marcaProducto = this.producto.getMarca();
         }
     }
 
@@ -134,6 +139,9 @@ public class DetallePedido {
 
     public String getCategoriaProducto() { return categoriaProducto; }
     public void setCategoriaProducto(String categoriaProducto) { this.categoriaProducto = categoriaProducto; }
+
+    public String getMarcaProducto() { return marcaProducto; }
+    public void setMarcaProducto(String marcaProducto) { this.marcaProducto = marcaProducto; }
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }

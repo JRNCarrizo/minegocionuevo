@@ -268,6 +268,7 @@ public class PedidoService {
             d.setProductoNombre(det.getNombreProducto());
             d.setProductoDescripcion(det.getDescripcionProducto());
             d.setProductoCategoria(det.getCategoriaProducto());
+            d.setProductoMarca(det.getMarcaProducto());
             
             // Obtener la imagen principal del producto
             String imagenPrincipal = "";
