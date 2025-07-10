@@ -309,7 +309,7 @@ export default function DashboardAdministrador() {
         {/* Estadísticas */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '1.5rem',
           marginBottom: '3rem'
         }}>
@@ -323,7 +323,8 @@ export default function DashboardAdministrador() {
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                 border: '1px solid #e2e8f0',
                 transition: 'all 0.3s ease',
-                animation: `slideInUp 0.6s ease-out ${index * 0.1}s both`
+                animation: `slideInUp 0.6s ease-out ${index * 0.1}s both`,
+                gridColumn: tarjeta.titulo === 'Ventas' ? 'span 2' : 'span 1'
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.transform = 'translateY(-8px)';
@@ -334,57 +335,137 @@ export default function DashboardAdministrador() {
                 e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
               }}
             >
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}>
-                <div>
-                  <h3 style={{
-                    fontSize: '0.875rem',
-                    color: '#64748b',
-                    marginBottom: '0.5rem',
-                    fontWeight: '500',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
-                    {tarjeta.titulo}
-                  </h3>
-                  <p style={{
-                    fontSize: '2.5rem',
-                    fontWeight: '800',
-                    color: tarjeta.color,
-                    margin: 0,
-                    lineHeight: '1'
-                  }}>
-                    {cargandoEstadisticas ? (
-                      <div style={{
-                        width: '60px',
-                        height: '40px',
-                        background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
-                        backgroundSize: '200% 100%',
-                        animation: 'loading 1.5s infinite',
-                        borderRadius: '0.5rem'
-                      }} />
-                    ) : (
-                      tarjeta.valor
-                    )}
-                  </p>
-                </div>
+              {tarjeta.titulo === 'Ventas' ? (
+                // Diseño especial para la tarjeta de ventas
                 <div style={{
-                  width: '4rem',
-                  height: '4rem',
-                  background: tarjeta.gradiente,
-                  borderRadius: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '1rem'
+                  }}>
+                    <h3 style={{
+                      fontSize: '0.875rem',
+                      color: '#64748b',
+                      margin: 0,
+                      fontWeight: '500',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}>
+                      {tarjeta.titulo}
+                    </h3>
+                    <div style={{
+                      width: '3rem',
+                      height: '3rem',
+                      background: tarjeta.gradiente,
+                      borderRadius: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.5rem',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                      flexShrink: 0
+                    }}>
+                      {tarjeta.icono}
+                    </div>
+                  </div>
+                  <div style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <p style={{
+                      fontSize: 'clamp(2.2rem, 6vw, 3.2rem)',
+                      fontWeight: '800',
+                      color: tarjeta.color,
+                      margin: 0,
+                      lineHeight: '1',
+                      textAlign: 'center',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '100%'
+                    }}>
+                      {cargandoEstadisticas ? (
+                        <div style={{
+                          width: '80px',
+                          height: '50px',
+                          background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                          backgroundSize: '200% 100%',
+                          animation: 'loading 1.5s infinite',
+                          borderRadius: '0.5rem'
+                        }} />
+                      ) : (
+                        tarjeta.valor
+                      )}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                // Diseño original para las otras tarjetas
+                <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '2rem',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                  justifyContent: 'space-between',
+                  gap: '1rem',
+                  minWidth: 0
                 }}>
-                  {tarjeta.icono}
+                  <div style={{
+                    flex: 1,
+                    minWidth: 0
+                  }}>
+                    <h3 style={{
+                      fontSize: '0.875rem',
+                      color: '#64748b',
+                      marginBottom: '0.5rem',
+                      fontWeight: '500',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}>
+                      {tarjeta.titulo}
+                    </h3>
+                    <p style={{
+                      fontSize: '2rem',
+                      fontWeight: '800',
+                      color: tarjeta.color,
+                      margin: 0,
+                      lineHeight: '1'
+                    }}>
+                      {cargandoEstadisticas ? (
+                        <div style={{
+                          width: '60px',
+                          height: '40px',
+                          background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                          backgroundSize: '200% 100%',
+                          animation: 'loading 1.5s infinite',
+                          borderRadius: '0.5rem'
+                        }} />
+                      ) : (
+                        tarjeta.valor
+                      )}
+                    </p>
+                  </div>
+                  <div style={{
+                    width: '4rem',
+                    height: '4rem',
+                    background: tarjeta.gradiente,
+                    borderRadius: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2rem',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    flexShrink: 0
+                  }}>
+                    {tarjeta.icono}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ))}
         </div>

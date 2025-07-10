@@ -575,15 +575,45 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
                   }}>
                     {productoSeleccionado.productoNombre || productoSeleccionado.nombreProducto}
                   </h3>
-                  {(productoSeleccionado.productoDescripcion || productoSeleccionado.descripcionProducto) && (
+                  {(productoSeleccionado.productoMarca || productoSeleccionado.marcaProducto) && (
                     <p style={{ 
-                      margin: 0, 
+                      margin: '0 0 12px 0', 
                       fontSize: '16px', 
                       color: '#64748b',
-                      lineHeight: '1.6'
+                      lineHeight: '1.6',
+                      fontWeight: '500'
                     }}>
-                      {productoSeleccionado.productoDescripcion || productoSeleccionado.descripcionProducto}
+                      🏷️ {productoSeleccionado.productoMarca || productoSeleccionado.marcaProducto}
                     </p>
+                  )}
+                  {(productoSeleccionado.productoDescripcion || productoSeleccionado.descripcionProducto) && (
+                    <div style={{
+                      marginTop: '16px',
+                      padding: '16px',
+                      background: '#f8fafc',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      <h4 style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#1e293b',
+                        margin: '0 0 8px 0'
+                      }}>
+                        📝 Descripción
+                      </h4>
+                      <p style={{
+                        color: '#64748b',
+                        fontSize: '14px',
+                        lineHeight: '1.6',
+                        margin: 0,
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        whiteSpace: 'pre-wrap'
+                      }}>
+                        {productoSeleccionado.productoDescripcion || productoSeleccionado.descripcionProducto}
+                      </p>
+                    </div>
                   )}
                 </div>
 
