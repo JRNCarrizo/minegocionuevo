@@ -5,6 +5,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import toast from 'react-hot-toast';
 import { useSubdominio } from '../hooks/useSubdominio';
+import NavbarCliente from '../components/NavbarCliente';
 import api from '../services/api';
 
 // Esquema de validación con Yup
@@ -31,7 +32,7 @@ interface FormularioRegistro {
 const RegistroCliente: React.FC = () => {
   const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
-  const { subdominio } = useSubdominio();
+  const { empresa, subdominio, cargando: cargandoEmpresa } = useSubdominio();
 
   const {
     register,
@@ -77,188 +78,356 @@ const RegistroCliente: React.FC = () => {
     }
   };
 
+  if (cargandoEmpresa) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid rgba(255, 255, 255, 0.3)',
+            borderTop: '3px solid white',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }} />
+          <p>Cargando tienda...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!empresa) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        padding: '2rem'
+      }}>
+        <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Tienda no encontrada</h1>
+          <p style={{ marginBottom: '2rem', opacity: 0.9 }}>
+            No se pudo encontrar la tienda solicitada.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold text-gray-900">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
+    }}>
+      {/* Navbar del cliente */}
+      <NavbarCliente
+        empresa={empresa}
+        clienteInfo={null}
+        onCerrarSesion={() => {}}
+        onShowCart={() => {}}
+      />
+
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: '2rem',
+        minHeight: 'calc(100vh - 70px)'
+      }}>
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '2rem',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+          width: '100%',
+          maxWidth: '500px'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <h2 style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: '0 0 0.5rem 0'
+            }}>
               Crear Cuenta
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Únete a nuestra tienda online
+            <p style={{
+              color: '#64748b',
+              fontSize: '1rem',
+              margin: 0
+            }}>
+              Únete a {empresa.nombre}
             </p>
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit(enviarFormulario)}>
+          <form onSubmit={handleSubmit(enviarFormulario)} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Campo Nombre */}
             <div>
-              <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="nombre" style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '0.5rem'
+              }}>
                 Nombre
               </label>
-              <div className="mt-1">
-                <input
-                  id="nombre"
-                  type="text"
-                  autoComplete="given-name"
-                  {...register('nombre')}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.nombre ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                  placeholder="Ingrese su nombre"
-                />
-                {errors.nombre && (
-                  <p className="mt-2 text-sm text-red-600">{errors.nombre.message}</p>
-                )}
-              </div>
+              <input
+                id="nombre"
+                type="text"
+                autoComplete="given-name"
+                {...register('nombre')}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: errors.nombre ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  transition: 'all 0.2s ease'
+                }}
+                placeholder="Ingrese su nombre"
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = errors.nombre ? '#ef4444' : '#e2e8f0'}
+              />
+              {errors.nombre && (
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#ef4444' }}>
+                  {errors.nombre.message}
+                </p>
+              )}
             </div>
 
             {/* Campo Apellidos */}
             <div>
-              <label htmlFor="apellidos" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="apellidos" style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '0.5rem'
+              }}>
                 Apellidos
               </label>
-              <div className="mt-1">
-                <input
-                  id="apellidos"
-                  type="text"
-                  autoComplete="family-name"
-                  {...register('apellidos')}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.apellidos ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                  placeholder="Ingrese sus apellidos"
-                />
-                {errors.apellidos && (
-                  <p className="mt-2 text-sm text-red-600">{errors.apellidos.message}</p>
-                )}
-              </div>
+              <input
+                id="apellidos"
+                type="text"
+                autoComplete="family-name"
+                {...register('apellidos')}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: errors.apellidos ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  transition: 'all 0.2s ease'
+                }}
+                placeholder="Ingrese sus apellidos"
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = errors.apellidos ? '#ef4444' : '#e2e8f0'}
+              />
+              {errors.apellidos && (
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#ef4444' }}>
+                  {errors.apellidos.message}
+                </p>
+              )}
             </div>
 
             {/* Campo Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '0.5rem'
+              }}>
                 Correo electrónico
               </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  {...register('email')}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                  placeholder="correo@ejemplo.com"
-                />
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>
-                )}
-              </div>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                {...register('email')}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: errors.email ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  transition: 'all 0.2s ease'
+                }}
+                placeholder="correo@ejemplo.com"
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = errors.email ? '#ef4444' : '#e2e8f0'}
+              />
+              {errors.email && (
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#ef4444' }}>
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             {/* Campo Teléfono */}
             <div>
-              <label htmlFor="telefono" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="telefono" style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '0.5rem'
+              }}>
                 Teléfono
               </label>
-              <div className="mt-1">
-                <input
-                  id="telefono"
-                  type="tel"
-                  autoComplete="tel"
-                  {...register('telefono')}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.telefono ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                  placeholder="1234567890"
-                />
-                {errors.telefono && (
-                  <p className="mt-2 text-sm text-red-600">{errors.telefono.message}</p>
-                )}
-              </div>
+              <input
+                id="telefono"
+                type="tel"
+                autoComplete="tel"
+                {...register('telefono')}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: errors.telefono ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  transition: 'all 0.2s ease'
+                }}
+                placeholder="1234567890"
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = errors.telefono ? '#ef4444' : '#e2e8f0'}
+              />
+              {errors.telefono && (
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#ef4444' }}>
+                  {errors.telefono.message}
+                </p>
+              )}
             </div>
 
             {/* Campo Contraseña */}
             <div>
-              <label htmlFor="contraseña" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="contraseña" style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '0.5rem'
+              }}>
                 Contraseña
               </label>
-              <div className="mt-1">
-                <input
-                  id="contraseña"
-                  type="password"
-                  autoComplete="new-password"
-                  {...register('contraseña')}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.contraseña ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                  placeholder="Mínimo 6 caracteres"
-                />
-                {errors.contraseña && (
-                  <p className="mt-2 text-sm text-red-600">{errors.contraseña.message}</p>
-                )}
-              </div>
+              <input
+                id="contraseña"
+                type="password"
+                autoComplete="new-password"
+                {...register('contraseña')}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: errors.contraseña ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  transition: 'all 0.2s ease'
+                }}
+                placeholder="Mínimo 6 caracteres"
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = errors.contraseña ? '#ef4444' : '#e2e8f0'}
+              />
+              {errors.contraseña && (
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#ef4444' }}>
+                  {errors.contraseña.message}
+                </p>
+              )}
             </div>
 
             {/* Campo Confirmar Contraseña */}
             <div>
-              <label htmlFor="confirmarContraseña" className="block text-sm font-medium text-gray-700">
-                Confirmar contraseña
+              <label htmlFor="confirmarContraseña" style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '0.5rem'
+              }}>
+                Confirmar Contraseña
               </label>
-              <div className="mt-1">
-                <input
-                  id="confirmarContraseña"
-                  type="password"
-                  autoComplete="new-password"
-                  {...register('confirmarContraseña')}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.confirmarContraseña ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                  placeholder="Repita la contraseña"
-                />
-                {errors.confirmarContraseña && (
-                  <p className="mt-2 text-sm text-red-600">{errors.confirmarContraseña.message}</p>
-                )}
-              </div>
+              <input
+                id="confirmarContraseña"
+                type="password"
+                autoComplete="new-password"
+                {...register('confirmarContraseña')}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: errors.confirmarContraseña ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  transition: 'all 0.2s ease'
+                }}
+                placeholder="Confirme su contraseña"
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = errors.confirmarContraseña ? '#ef4444' : '#e2e8f0'}
+              />
+              {errors.confirmarContraseña && (
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#ef4444' }}>
+                  {errors.confirmarContraseña.message}
+                </p>
+              )}
             </div>
 
             {/* Botón de envío */}
-            <div>
-              <button
-                type="submit"
-                disabled={cargando}
-                className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
-                  cargando
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-                } transition-colors duration-200`}
-              >
-                {cargando ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creando cuenta...
-                  </span>
-                ) : (
-                  'Crear cuenta'
-                )}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={cargando}
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '0.875rem',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: cargando ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: cargando ? 0.7 : 1
+              }}
+              onMouseOver={(e) => {
+                if (!cargando) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                }
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              {cargando ? 'Creando cuenta...' : 'Crear Cuenta'}
+            </button>
 
-            {/* Enlaces adicionales */}
-            <div className="text-center">
-              <p className="text-sm text-gray-600">
+            {/* Enlace al login */}
+            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+              <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
                 ¿Ya tienes una cuenta?{' '}
-                <button
-                  type="button"
-                  onClick={() => navigate('/login')}
-                  className="font-medium text-blue-600 hover:text-blue-500"
+                <a
+                  href="/login"
+                  style={{
+                    color: '#3b82f6',
+                    textDecoration: 'none',
+                    fontWeight: '600'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                  onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
                 >
-                  Inicia sesión
-                </button>
+                  Iniciar sesión
+                </a>
               </p>
             </div>
           </form>

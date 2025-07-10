@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useSubdominio } from '../hooks/useSubdominio';
+import NavbarCliente from '../components/NavbarCliente';
 import api from '../services/api';
 
 interface LoginClienteForm {
@@ -184,65 +185,13 @@ export default function LoginCliente() {
         animation: 'float 8s ease-in-out infinite reverse'
       }} />
 
-      {/* Header simplificado */}
-      <header style={{
-        padding: '1.5rem 2rem',
-        position: 'relative',
-        zIndex: 10
-      }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem'
-          }}>
-            {empresa.logoUrl && (
-              <img 
-                src={empresa.logoUrl} 
-                alt={`Logo de ${empresa.nombre}`}
-                style={{
-                  height: '40px',
-                  width: 'auto',
-                  maxWidth: '120px',
-                  objectFit: 'contain'
-                }}
-              />
-            )}
-            <h1 style={{
-              color: 'white',
-              fontSize: '1.5rem',
-              fontWeight: '600',
-              margin: 0
-            }}>
-              {empresa.nombre}
-            </h1>
-          </div>
-          
-          <nav style={{
-            display: 'flex',
-            gap: '1.5rem'
-          }}>
-            <Link to="/" style={{
-              color: 'white',
-              textDecoration: 'none',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              transition: 'opacity 0.2s ease',
-              opacity: 0.9
-            }}
-            onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
-            onMouseOut={(e) => e.currentTarget.style.opacity = '0.9'}>
-              Catálogo
-            </Link>
-          </nav>
-        </div>
-      </header>
+      {/* Navbar del cliente */}
+      <NavbarCliente
+        empresa={empresa}
+        clienteInfo={null}
+        onCerrarSesion={() => {}}
+        onShowCart={() => {}}
+      />
 
       {/* Contenido principal */}
       <main style={{

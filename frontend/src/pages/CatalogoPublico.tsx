@@ -4,6 +4,7 @@ import { useSubdominio } from '../hooks/useSubdominio';
 import { useCart } from '../hooks/useCart';
 import CartIcon from '../components/CartIcon';
 import CartModal from '../components/CartModal';
+import NavbarCliente from '../components/NavbarCliente';
 import apiService from '../services/api';
 import type { Producto } from '../types';
 import toast from 'react-hot-toast';
@@ -122,54 +123,16 @@ export default function CatalogoPublico() {
       background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
       minHeight: '100vh'
     }}>
-      {/* Header de la tienda */}
-      <header className="header-tienda">
-        <div className="contenedor">
-          <div className="info-empresa">
-            {empresa.logoUrl && (
-              <img 
-                src={empresa.logoUrl} 
-                alt={`Logo de ${empresa.nombre}`}
-                className="logo-empresa"
-              />
-            )}
-            <div>
-              <h1 className="nombre-empresa">{empresa.nombre}</h1>
-              {empresa.descripcion && (
-                <p className="descripcion-empresa">{empresa.descripcion}</p>
-              )}
-            </div>
-          </div>
-          
-          <nav className="nav-tienda">
-            <Link to="/" className="nav-link">Inicio</Link>
-            <span className="nav-link" style={{ position: 'relative' }}>
-              <CartIcon onClick={() => setShowCart(true)} />
-            </span>
-            {clienteInfo ? (
-              <>
-                <Link to="/cuenta" className="nav-link">Mi Cuenta</Link>
-                <span className="nav-link" style={{ color: '#28a745' }}>
-                  ¡Hola, {clienteInfo.nombre}!
-                </span>
-                <button 
-                  onClick={() => {
-                    localStorage.removeItem('clienteToken');
-                    localStorage.removeItem('clienteInfo');
-                    setClienteInfo(null);
-                  }}
-                  className="nav-link"
-                  style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer' }}
-                >
-                  Cerrar Sesión
-                </button>
-              </>
-            ) : (
-              <Link to="/login" className="nav-link">Iniciar Sesión</Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      <NavbarCliente
+        empresa={empresa}
+        clienteInfo={clienteInfo}
+        onCerrarSesion={() => {
+          localStorage.removeItem('clienteToken');
+          localStorage.removeItem('clienteInfo');
+          setClienteInfo(null);
+        }}
+        onShowCart={() => setShowCart(true)}
+      />
       <CartModal open={showCart} onClose={() => setShowCart(false)} />
 
       <main className="contenedor">
@@ -531,8 +494,9 @@ export default function CatalogoPublico() {
                   cursor: 'pointer',
                   position: 'relative',
                   display: vistaCuadricula ? 'block' : 'flex',
-                  alignItems: vistaCuadricula ? 'unset' : 'center',
-                  gap: vistaCuadricula ? 'unset' : '20px'
+                  alignItems: vistaCuadricula ? 'unset' : 'stretch',
+                  gap: vistaCuadricula ? 'unset' : '0',
+                  height: vistaCuadricula ? 'auto' : '160px'
                 }}
                 onClick={(e) => {
                   // Solo navegar si no se hizo clic en el botón de agregar al carrito
@@ -552,10 +516,16 @@ export default function CatalogoPublico() {
                   {/* Imagen del producto */}
                   <div style={{ 
                     position: 'relative', 
-                    height: vistaCuadricula ? '200px' : '120px',
-                    width: vistaCuadricula ? 'auto' : '120px',
+                    width: '100%',
+                    aspectRatio: vistaCuadricula ? '1 / 1' : undefined,
+                    height: vistaCuadricula ? undefined : '160px',
+                    minWidth: vistaCuadricula ? undefined : '160px',
+                    maxWidth: vistaCuadricula ? undefined : '160px',
                     overflow: 'hidden',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    borderRadius: vistaCuadricula ? '12px 12px 0 0' : '0',
+                    margin: 0,
+                    padding: 0
                   }}>
                     {producto.imagenes && producto.imagenes.length > 0 ? (
                       <img 
@@ -565,7 +535,10 @@ export default function CatalogoPublico() {
                           width: '100%',
                           height: '100%',
                           objectFit: 'cover',
-                          transition: 'transform 0.3s ease'
+                          display: 'block',
+                          borderRadius: vistaCuadricula ? '12px 12px 0 0' : '0',
+                          margin: 0,
+                          padding: 0
                         }}
                       />
                     ) : (
@@ -577,7 +550,10 @@ export default function CatalogoPublico() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#64748b',
-                        fontSize: vistaCuadricula ? '16px' : '14px'
+                        fontSize: vistaCuadricula ? '16px' : '14px',
+                        borderRadius: vistaCuadricula ? '12px 12px 0 0' : '0',
+                        margin: 0,
+                        padding: 0
                       }}>
                         📷 Sin imagen
                       </div>
@@ -628,141 +604,320 @@ export default function CatalogoPublico() {
                     padding: vistaCuadricula ? '20px' : '16px',
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: 'space-between'
+                    justifyContent: vistaCuadricula ? 'space-between' : 'space-between',
+                    height: vistaCuadricula ? 'auto' : '160px'
                   }}>
-                    {/* Información del producto */}
-                    <div>
-                      <h3 style={{
-                        margin: '0 0 8px 0',
-                        fontSize: vistaCuadricula ? '18px' : '16px',
-                        fontWeight: '700',
-                        color: '#1e293b',
-                        lineHeight: '1.3',
-                        display: '-webkit-box',
-                        WebkitLineClamp: vistaCuadricula ? 2 : 1,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden'
+                    {/* Layout horizontal para vista de lista */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: vistaCuadricula ? 'column' : 'row',
+                      justifyContent: vistaCuadricula ? 'space-between' : 'space-between',
+                      alignItems: vistaCuadricula ? 'stretch' : 'center',
+                      height: vistaCuadricula ? 'auto' : '100%',
+                      gap: vistaCuadricula ? '0' : '16px'
+                    }}>
+                      {/* Información del producto */}
+                      <div style={{
+                        flex: vistaCuadricula ? 'none' : '1',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        height: vistaCuadricula ? 'auto' : '100%'
                       }}>
-                        {producto.nombre}
-                      </h3>
-                      
-                      {/* Categoría y marca */}
-                      <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                        {producto.categoria && (
-                          <span style={{
-                            background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                            color: '#1e40af',
-                            padding: '3px 8px',
-                            borderRadius: '8px',
-                            fontSize: vistaCuadricula ? '12px' : '10px',
-                            fontWeight: '600',
-                            border: '1px solid #93c5fd'
+                        <div>
+                          <h3 style={{
+                            margin: '0 0 8px 0',
+                            fontSize: vistaCuadricula ? '18px' : '16px',
+                            fontWeight: '700',
+                            color: '#1e293b',
+                            lineHeight: '1.3',
+                            display: '-webkit-box',
+                            WebkitLineClamp: vistaCuadricula ? 2 : 1,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
                           }}>
-                            📂 {producto.categoria}
-                          </span>
-                        )}
-                        
-                        {producto.marca && (
-                          <span style={{
-                            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                            color: '#92400e',
-                            padding: '3px 8px',
-                            borderRadius: '8px',
-                            fontSize: vistaCuadricula ? '12px' : '10px',
-                            fontWeight: '600',
-                            border: '1px solid #fbbf24'
+                            {producto.nombre}
+                          </h3>
+                          
+                          {/* Categoría y marca */}
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '6px', 
+                            marginBottom: vistaCuadricula ? '12px' : '8px', 
+                            flexWrap: 'wrap' 
                           }}>
-                            🏷️ {producto.marca}
-                          </span>
-                        )}
+                            {producto.categoria && (
+                              <span style={{
+                                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                                color: '#1e40af',
+                                padding: '3px 8px',
+                                borderRadius: '8px',
+                                fontSize: vistaCuadricula ? '12px' : '10px',
+                                fontWeight: '600',
+                                border: '1px solid #93c5fd'
+                              }}>
+                                📂 {producto.categoria}
+                              </span>
+                            )}
+                            
+                            {producto.marca && (
+                              <span style={{
+                                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                                color: '#92400e',
+                                padding: '3px 8px',
+                                borderRadius: '8px',
+                                fontSize: vistaCuadricula ? '12px' : '10px',
+                                fontWeight: '600',
+                                border: '1px solid #fbbf24'
+                              }}>
+                                🏷️ {producto.marca}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Precio */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: vistaCuadricula ? 'space-between' : 'flex-start',
+                            marginBottom: vistaCuadricula ? '16px' : '0'
+                          }}>
+                            <span style={{
+                              fontSize: vistaCuadricula ? '24px' : '20px',
+                              fontWeight: '800',
+                              color: '#059669',
+                              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                            }}>
+                              {formatearPrecio(producto.precio, empresa.moneda)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      
-                      {/* Precio */}
+
+                      {/* Controles a la derecha */}
                       <div style={{
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: vistaCuadricula ? 'space-between' : 'flex-start',
-                        marginBottom: vistaCuadricula ? '16px' : '12px'
+                        flexDirection: vistaCuadricula ? 'column' : 'column',
+                        gap: vistaCuadricula ? '12px' : '8px',
+                        alignItems: vistaCuadricula ? 'stretch' : 'center',
+                        justifyContent: vistaCuadricula ? 'stretch' : 'center',
+                        minWidth: vistaCuadricula ? undefined : '200px',
+                        maxWidth: vistaCuadricula ? undefined : '220px'
                       }}>
-                        <span style={{
-                          fontSize: vistaCuadricula ? '24px' : '20px',
-                          fontWeight: '800',
-                          color: '#059669',
-                          textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                        {/* Controles de cantidad */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          background: '#f8fafc',
+                          borderRadius: '10px',
+                          padding: '8px 12px',
+                          border: '1px solid #e2e8f0',
+                          width: vistaCuadricula ? '100%' : '100%',
+                          gap: '8px'
                         }}>
-                          {formatearPrecio(producto.precio, empresa.moneda)}
-                        </span>
+                          <span style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#374151',
+                            minWidth: '60px'
+                          }}>
+                            Cantidad:
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                              if (cantidadEnCarrito > 0) {
+                                addToCart({
+                                  id: producto.id,
+                                  nombre: producto.nombre,
+                                  precio: producto.precio,
+                                  cantidad: -1,
+                                  imagen: producto.imagenes && producto.imagenes[0]
+                                }, undefined, subdominio || undefined);
+                              }
+                            }}
+                            disabled={cantidadEnCarrito === 0}
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              background: cantidadEnCarrito === 0 
+                                ? '#e5e7eb' 
+                                : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '16px',
+                              fontWeight: '700',
+                              cursor: cantidadEnCarrito === 0 ? 'not-allowed' : 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.2s ease',
+                              opacity: cantidadEnCarrito === 0 ? 0.5 : 1
+                            }}
+                            onMouseOver={(e) => {
+                              if (cantidadEnCarrito > 0) {
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
+                              }
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            -
+                          </button>
+                          
+                          <span style={{
+                            minWidth: '32px',
+                            textAlign: 'center',
+                            fontSize: '16px',
+                            fontWeight: '700',
+                            color: '#1e293b',
+                            background: 'white',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            border: '1px solid #d1d5db'
+                          }}>
+                            {cantidadEnCarrito}
+                          </span>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (cantidadEnCarrito < producto.stock) {
+                                addToCart({
+                                  id: producto.id,
+                                  nombre: producto.nombre,
+                                  precio: producto.precio,
+                                  cantidad: 1,
+                                  imagen: producto.imagenes && producto.imagenes[0]
+                                }, undefined, subdominio || undefined);
+                              }
+                            }}
+                            disabled={cantidadEnCarrito >= producto.stock}
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              background: cantidadEnCarrito >= producto.stock
+                                ? '#e5e7eb'
+                                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '16px',
+                              fontWeight: '700',
+                              cursor: cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.2s ease',
+                              opacity: cantidadEnCarrito >= producto.stock ? 0.5 : 1
+                            }}
+                            onMouseOver={(e) => {
+                              if (cantidadEnCarrito < producto.stock) {
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                              }
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Botón agregar al carrito mejorado */}
+                        <button
+                          disabled={producto.stock === 0}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            background: producto.stock === 0 
+                              ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+                              : cantidadEnCarrito > 0
+                                ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                                : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '12px',
+                            fontSize: '15px',
+                            fontWeight: '700',
+                            cursor: producto.stock === 0 ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.3s ease',
+                            opacity: producto.stock === 0 ? 0.6 : 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            position: 'relative',
+                            overflow: 'hidden'
+                          }}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            
+                            if (producto.stock === 0) {
+                              toast.error('Este producto está agotado');
+                              return;
+                            }
+                            
+                            if (typeof producto.precio !== 'number' || isNaN(producto.precio)) {
+                              alert('Este producto no tiene un precio válido y no puede ser agregado al carrito.');
+                              return;
+                            }
+                            
+                            // Si no hay cantidad en carrito, agregar 1
+                            if (cantidadEnCarrito === 0) {
+                              const agregado = await addToCart({
+                                id: producto.id,
+                                nombre: producto.nombre,
+                                precio: producto.precio,
+                                cantidad: 1,
+                                imagen: producto.imagenes && producto.imagenes[0]
+                              }, undefined, subdominio || undefined);
+                              
+                              if (agregado) {
+                                toast.success('Producto agregado al carrito');
+                              }
+                            } else {
+                              // Si ya hay cantidad, mostrar mensaje
+                              toast.success(`Tienes ${cantidadEnCarrito} unidades en el carrito`);
+                            }
+                          }}
+                          onMouseOver={(e) => {
+                            if (producto.stock !== 0) {
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                              e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.3)';
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
+                        >
+                          {producto.stock === 0 ? (
+                            <>
+                              <span>❌</span>
+                              <span>Agotado</span>
+                            </>
+                          ) : cantidadEnCarrito > 0 ? (
+                            <>
+                              <span>🛒</span>
+                              <span>{cantidadEnCarrito} en carrito</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🛒</span>
+                              <span>Agregar al carrito</span>
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
-
-                    {/* Botón agregar al carrito */}
-                    <button
-                      disabled={producto.stock === 0 || maximoAlcanzado}
-                      style={{
-                        width: vistaCuadricula ? '100%' : 'auto',
-                        minWidth: vistaCuadricula ? 'auto' : '140px',
-                        background: producto.stock === 0 
-                          ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-                          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '12px',
-                        padding: vistaCuadricula ? '12px 20px' : '8px 16px',
-                        fontSize: vistaCuadricula ? '16px' : '14px',
-                        fontWeight: '600',
-                        cursor: producto.stock === 0 || maximoAlcanzado ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        opacity: producto.stock === 0 || maximoAlcanzado ? 0.6 : 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px'
-                      }}
-                      onClick={async (e) => {
-                        e.stopPropagation(); // Prevenir que se propague el clic al contenedor
-                        
-                        if (producto.stock === 0) {
-                          toast.error('Este producto está agotado');
-                          return;
-                        }
-                        if (maximoAlcanzado) {
-                          toast.error('Ya tienes el máximo disponible en el carrito');
-                          return;
-                        }
-                        if (typeof producto.precio !== 'number' || isNaN(producto.precio)) {
-                          alert('Este producto no tiene un precio válido y no puede ser agregado al carrito.');
-                          return;
-                        }
-                        
-                        console.log(`Intentando agregar producto: ${producto.nombre} (stock: ${producto.stock})`);
-                        
-                        const agregado = await addToCart({
-                          id: producto.id,
-                          nombre: producto.nombre,
-                          precio: producto.precio,
-                          cantidad: 1,
-                          imagen: producto.imagenes && producto.imagenes[0]
-                        }, undefined, subdominio || undefined);
-                        
-                        if (agregado) {
-                          toast.success('Producto agregado al carrito');
-                        } else {
-                          console.log('No se pudo agregar el producto al carrito');
-                        }
-                      }}
-                      onMouseOver={(e) => {
-                        if (producto.stock !== 0 && !maximoAlcanzado) {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
-                        }
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
-                    >
-                      {producto.stock === 0 ? '❌ Agotado' : maximoAlcanzado ? '🛒 Máximo en carrito' : '🛒 Agregar al carrito'}
-                    </button>
                   </div>
                 </div>
               );

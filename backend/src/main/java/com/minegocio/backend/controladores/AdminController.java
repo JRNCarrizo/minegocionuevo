@@ -103,39 +103,20 @@ public class AdminController {
                 return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
             }
             
-            // Actualizar datos de la empresa
-            empresa.setNombre(empresaDTO.getNombre());
-            empresa.setDescripcion(empresaDTO.getDescripcion());
-            empresa.setEmail(empresaDTO.getEmail());
-            empresa.setTelefono(empresaDTO.getTelefono());
-            empresa.setColorPrimario(empresaDTO.getColorPrimario());
-            empresa.setColorSecundario(empresaDTO.getColorSecundario());
-            empresa.setMoneda(empresaDTO.getMoneda());
-            
-            // El subdominio no se puede cambiar por ahora
-            // empresa.setSubdominio(empresaDTO.getSubdominio());
-            
-            Empresa empresaActualizada = empresaService.guardar(empresa);
-            
-            // Devolver empresa actualizada
-            EmpresaDTO empresaActualizadaDTO = new EmpresaDTO();
-            empresaActualizadaDTO.setId(empresaActualizada.getId());
-            empresaActualizadaDTO.setNombre(empresaActualizada.getNombre());
-            empresaActualizadaDTO.setDescripcion(empresaActualizada.getDescripcion());
-            empresaActualizadaDTO.setSubdominio(empresaActualizada.getSubdominio());
-            empresaActualizadaDTO.setEmail(empresaActualizada.getEmail());
-            empresaActualizadaDTO.setTelefono(empresaActualizada.getTelefono());
-            empresaActualizadaDTO.setLogoUrl(empresaActualizada.getLogoUrl());
-            empresaActualizadaDTO.setColorPrimario(empresaActualizada.getColorPrimario());
-            empresaActualizadaDTO.setColorSecundario(empresaActualizada.getColorSecundario());
-            empresaActualizadaDTO.setMoneda(empresaActualizada.getMoneda());
+            // Usar el nuevo método con validaciones
+            EmpresaDTO empresaActualizadaDTO = empresaService.actualizarConfiguracionEmpresa(empresa.getId(), empresaDTO);
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Empresa actualizada correctamente",
                 "data", empresaActualizadaDTO
             ));
             
+        } catch (RuntimeException e) {
+            // Errores de validación (subdominio en uso, email duplicado, etc.)
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
+            System.err.println("Error al actualizar empresa: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("error", "Error interno del servidor"));
         }
     }
@@ -172,6 +153,51 @@ public class AdminController {
                 "data", Map.of(
                     "totalVentas", totalVentas != null ? totalVentas : 0.0
                 )
+            ));
+            
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+
+    /**
+     * Verificar disponibilidad de subdominio
+     */
+    @GetMapping("/verificar-subdominio/{subdominio}")
+    public ResponseEntity<?> verificarSubdominio(@PathVariable String subdominio, HttpServletRequest request) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido"));
+            }
+            
+            token = token.substring(7);
+            String email = jwtUtils.extractUsername(token);
+            
+            Optional<Usuario> usuario = autenticacionService.obtenerPorEmail(email);
+            if (usuario.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            }
+            
+            Empresa empresa = usuario.get().getEmpresa();
+            if (empresa == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
+            }
+            
+            // Si el subdominio es el mismo que tiene la empresa, está disponible
+            if (subdominio.toLowerCase().equals(empresa.getSubdominio())) {
+                return ResponseEntity.ok(Map.of(
+                    "disponible", true,
+                    "mensaje", "Este es tu subdominio actual"
+                ));
+            }
+            
+            // Verificar disponibilidad
+            boolean disponible = empresaService.verificarDisponibilidadSubdominio(subdominio);
+            
+            return ResponseEntity.ok(Map.of(
+                "disponible", disponible,
+                "mensaje", disponible ? "Subdominio disponible" : "Subdominio no disponible"
             ));
             
         } catch (Exception e) {

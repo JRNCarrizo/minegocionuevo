@@ -34,6 +34,10 @@ const EditarProducto: React.FC = () => {
   const [categorias, setCategorias] = useState<string[]>([]);
   const [cargandoCategorias, setCargandoCategorias] = useState(true);
   const [mostrarOtraCategoria, setMostrarOtraCategoria] = useState(false);
+  const [marcas, setMarcas] = useState<string[]>([]);
+  const [cargandoMarcas, setCargandoMarcas] = useState(true);
+  const [marcasFiltradas, setMarcasFiltradas] = useState<string[]>([]);
+  const [mostrarSugerenciasMarca, setMostrarSugerenciasMarca] = useState(false);
 
   const manejarCambioImagenes = (imagenes: string[]) => {
     setFormulario(prev => ({
@@ -59,20 +63,10 @@ const EditarProducto: React.FC = () => {
       setCargando(true);
       setError('');
       
-      console.log('Cargando producto para edición:', id, 'empresaId:', empresaId);
-      
-      const response = await ApiService.obtenerProducto(empresaId, parseInt(id), true); // incluirInactivos = true
-      
-      console.log('Respuesta al cargar producto:', response);
+      const response = await ApiService.obtenerProducto(empresaId, parseInt(id), true);
       
       if (response && response.data) {
         const producto = response.data;
-        console.log('Producto cargado para edición:', producto);
-        console.log('=== DEBUG IMÁGENES ===');
-        console.log('Imágenes en el producto:', producto.imagenes);
-        console.log('Cantidad de imágenes:', producto.imagenes?.length || 0);
-        console.log('Tipos de imágenes:', producto.imagenes?.map(img => typeof img));
-        console.log('=== FIN DEBUG IMÁGENES ===');
         
         setFormulario({
           nombre: producto.nombre,
@@ -88,7 +82,6 @@ const EditarProducto: React.FC = () => {
           imagenes: producto.imagenes || []
         });
       } else {
-        console.log('Respuesta inesperada:', response);
         setError('Producto no encontrado o respuesta inválida del servidor');
       }
     } catch (error) {
@@ -98,7 +91,6 @@ const EditarProducto: React.FC = () => {
       
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number; data?: unknown } };
-        console.error('Respuesta del servidor:', axiosError.response);
         
         if (axiosError.response?.status === 404) {
           mensajeError = 'Producto no encontrado. Puede haber sido eliminado.';
@@ -121,22 +113,57 @@ const EditarProducto: React.FC = () => {
       const response = await ApiService.obtenerCategorias(empresaId);
       if (response.data) {
         setCategorias(response.data);
-        console.log('Categorías cargadas:', response.data);
       }
     } catch (error) {
       console.error('Error al cargar categorías:', error);
-      // No mostramos error porque las categorías son opcionales
     } finally {
       setCargandoCategorias(false);
     }
   }, [empresaId]);
+
+  const cargarMarcas = useCallback(async () => {
+    try {
+      setCargandoMarcas(true);
+      const response = await ApiService.obtenerMarcas(empresaId);
+      if (response.data) {
+        setMarcas(response.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar marcas:', error);
+    } finally {
+      setCargandoMarcas(false);
+    }
+  }, [empresaId]);
+
+  const manejarCambioMarca = (valor: string) => {
+    manejarCambio('marca', valor);
+    
+    // Filtrar marcas que coincidan con lo que se está escribiendo
+    if (valor.trim()) {
+      const filtradas = marcas.filter(marca => 
+        marca.toLowerCase().includes(valor.toLowerCase())
+      );
+      setMarcasFiltradas(filtradas);
+      setMostrarSugerenciasMarca(filtradas.length > 0);
+    } else {
+      setMarcasFiltradas([]);
+      setMostrarSugerenciasMarca(false);
+    }
+  };
+
+  const seleccionarMarca = (marca: string) => {
+    manejarCambio('marca', marca);
+    setMarcasFiltradas([]);
+    setMostrarSugerenciasMarca(false);
+  };
 
   useEffect(() => {
     if (id) {
       cargarProducto();
     }
     cargarCategorias();
-  }, [id, cargarProducto, cargarCategorias]);
+    cargarMarcas();
+  }, [id, cargarProducto, cargarCategorias, cargarMarcas]);
 
   const manejarCambio = (campo: string, valor: string | number | boolean) => {
     setFormulario({ ...formulario, [campo]: valor });
@@ -174,27 +201,18 @@ const EditarProducto: React.FC = () => {
       };
 
       if (id) {
-        // Editar producto existente
-        console.log('Actualizando producto con datos:', datosProducto);
-        
         const response = await ApiService.actualizarProducto(empresaId, parseInt(id), datosProducto);
         
-        console.log('Respuesta de actualización:', response);
-        
         if (response && response.data) {
-          console.log('Producto actualizado exitosamente:', response.data);
           setExito('Producto actualizado correctamente');
           
-          // Navegar de vuelta a la lista de productos después de mostrar el mensaje de éxito
           setTimeout(() => {
             navigate('/admin/productos');
           }, 1500);
         } else {
-          console.log('Respuesta inesperada al actualizar:', response);
           setError('Respuesta inesperada del servidor');
         }
       } else {
-        // Crear nuevo producto
         const response = await ApiService.crearProducto(empresaId, datosProducto);
         
         if (response.data) {
@@ -211,7 +229,6 @@ const EditarProducto: React.FC = () => {
       
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number; data?: { error?: string } } };
-        console.error('Respuesta del servidor:', axiosError.response);
         
         if (axiosError.response?.data?.error) {
           mensajeError = axiosError.response.data.error;
@@ -228,203 +245,594 @@ const EditarProducto: React.FC = () => {
       
       setError(mensajeError);
       
-      // Limpiar mensaje de error después de 5 segundos
       setTimeout(() => {
         setError('');
       }, 5000);
-      console.error('Error:', error);
     } finally {
       setGuardando(false);
     }
   };
 
+  const cerrarSesion = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/admin/login');
+  };
+
   if (cargando) {
     return (
-      <div className="pagina-editar-producto">
-        <div className="contenedor-principal">
-          <div className="cargando">
-            <div className="spinner"></div>
-            <p>Cargando producto...</p>
-          </div>
+      <div style={{ 
+        minHeight: '100vh', 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          background: 'white',
+          padding: '40px',
+          borderRadius: '16px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #e2e8f0',
+            borderTop: '4px solid #3b82f6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          <p style={{ color: '#64748b', fontSize: '16px' }}>Cargando producto...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-pantalla-minimo" style={{ backgroundColor: '#f8fafc' }}>
-      {/* Navegación */}
-      <nav className="navbar">
-        <div className="contenedor">
-          <div className="navbar-contenido">
+    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+      {/* Navbar */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        padding: '16px 24px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          maxWidth: '1400px',
+          margin: '0 auto'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
             <button 
               onClick={() => navigate('/admin/productos')}
-              className="logo"
-              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+              }}
             >
-              ← miNegocio - Admin
+              ← Volver
+            </button>
+            
+            <div style={{
+              height: '24px',
+              width: '1px',
+              background: 'rgba(255,255,255,0.3)'
+            }}></div>
+            
+            <h1 style={{
+              color: 'white',
+              fontSize: '20px',
+              fontWeight: '600',
+              margin: 0
+            }}>
+              ✏️ {id ? 'Editar Producto' : 'Nuevo Producto'}
+            </h1>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {user && (
+              <div style={{
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}>
+                👤 {user.nombre || user.email}
+              </div>
+            )}
+            
+            <button 
+              onClick={cerrarSesion}
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+              }}
+            >
+              🚪 Cerrar Sesión
             </button>
           </div>
         </div>
-      </nav>
+      </div>
 
       {/* Contenido principal */}
-      <div className="contenedor py-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-8">
-            <h1 className="titulo-2 mb-2">{id ? 'Editar Producto' : 'Nuevo Producto'}</h1>
-            <p className="texto-gris">
-              {id ? 'Modifica los datos del producto.' : 'Completa los datos del producto para añadirlo a tu inventario.'}
-            </p>
+      <div style={{
+        maxWidth: '800px',
+        margin: '0 auto',
+        padding: '32px 24px'
+      }}>
+        {/* Header */}
+        <div style={{ marginBottom: '32px' }}>
+          <h2 style={{
+            fontSize: '28px',
+            fontWeight: '700',
+            color: '#1e293b',
+            margin: '0 0 8px 0',
+            lineHeight: '1.2'
+          }}>
+            {id ? 'Editar Producto' : 'Crear Nuevo Producto'}
+          </h2>
+          <p style={{
+            color: '#64748b',
+            fontSize: '16px',
+            margin: 0
+          }}>
+            {id ? 'Modifica los datos del producto para actualizar tu inventario.' : 'Completa los datos del producto para añadirlo a tu catálogo.'}
+          </p>
+        </div>
+
+        {/* Mensajes de estado */}
+        {error && (
+          <div style={{
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#dc2626',
+            padding: '16px',
+            borderRadius: '8px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            ⚠️ {error}
           </div>
+        )}
 
-          {error && (
-            <div className="mensaje-error mb-6">
-              {error}
-            </div>
-          )}
+        {exito && (
+          <div style={{
+            background: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            color: '#16a34a',
+            padding: '16px',
+            borderRadius: '8px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            ✅ {exito}
+          </div>
+        )}
 
-          {exito && (
-            <div className="mensaje-exito mb-6">
-              {exito}
-            </div>
-          )}
-
-          <div className="tarjeta">
-            <form onSubmit={manejarSubmit} className="space-y-6">
-              {/* Nombre */}
-              <div>
-                <label htmlFor="nombre" className="etiqueta">
-                  Nombre del Producto *
-                </label>
-                <input
-                  type="text"
-                  id="nombre"
-                  name="nombre"
-                  value={formulario.nombre}
-                  onChange={(e) => manejarCambio('nombre', e.target.value)}
-                  className="campo"
-                  placeholder="Ej: Camiseta Básica Algodón"
-                  required
-                />
-              </div>
-
-              {/* Marca */}
-              <div>
-                <label htmlFor="marca" className="etiqueta">
-                  Marca
-                </label>
-                <input
-                  type="text"
-                  id="marca"
-                  name="marca"
-                  value={formulario.marca}
-                  onChange={(e) => manejarCambio('marca', e.target.value)}
-                  className="campo"
-                  placeholder="Ej: Nike, Apple, Samsung..."
-                />
-              </div>
-
-              {/* Descripción */}
-              <div>
-                <label htmlFor="descripcion" className="etiqueta">
-                  Descripción
-                </label>
-                <textarea
-                  id="descripcion"
-                  name="descripcion"
-                  value={formulario.descripcion}
-                  onChange={(e) => manejarCambio('descripcion', e.target.value)}
-                  rows={4}
-                  className="campo"
-                  placeholder="Describe las características del producto..."
-                />
-              </div>
-
-              {/* Precio y Unidad */}
-              <div className="grid grid-2">
+        {/* Formulario */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '32px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+          border: '1px solid #e2e8f0'
+        }}>
+          <form onSubmit={manejarSubmit} style={{ display: 'grid', gap: '24px' }}>
+            {/* Información Básica */}
+            <div>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#1e293b',
+                margin: '0 0 20px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                📋 Información Básica
+              </h3>
+              
+              <div style={{ display: 'grid', gap: '20px' }}>
+                {/* Nombre */}
                 <div>
-                  <label htmlFor="precio" className="etiqueta">
+                  <label htmlFor="nombre" style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
+                    Nombre del Producto *
+                  </label>
+                  <input
+                    type="text"
+                    id="nombre"
+                    value={formulario.nombre}
+                    onChange={(e) => manejarCambio('nombre', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    placeholder="Ej: Camiseta Básica Algodón"
+                    required
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Marca */}
+                <div style={{ position: 'relative' }}>
+                  <label htmlFor="marca" style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
+                    Marca
+                  </label>
+                  <input
+                    type="text"
+                    id="marca"
+                    value={formulario.marca}
+                    onChange={(e) => manejarCambioMarca(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    placeholder="Ej: Nike, Apple, Samsung..."
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                      setTimeout(() => {
+                        setMostrarSugerenciasMarca(false);
+                      }, 100);
+                    }}
+                  />
+                  {mostrarSugerenciasMarca && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      maxHeight: '150px',
+                      overflowY: 'auto',
+                      zIndex: 1000,
+                      marginTop: '2px'
+                    }}>
+                      {marcasFiltradas.map(marca => (
+                        <div
+                          key={marca}
+                          style={{
+                            padding: '8px 12px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            color: '#374151',
+                            borderBottom: '1px solid #f3f4f6',
+                            transition: 'background-color 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f8fafc';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                          onClick={() => seleccionarMarca(marca)}
+                        >
+                          {marca}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Descripción */}
+                <div>
+                  <label htmlFor="descripcion" style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
+                    Descripción
+                  </label>
+                  <textarea
+                    id="descripcion"
+                    value={formulario.descripcion}
+                    onChange={(e) => manejarCambio('descripcion', e.target.value)}
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      resize: 'vertical',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'inherit'
+                    }}
+                    placeholder="Describe las características del producto..."
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Precios y Stock */}
+            <div>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#1e293b',
+                margin: '0 0 20px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                💰 Precios y Stock
+              </h3>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                {/* Precio */}
+                <div>
+                  <label htmlFor="precio" style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
                     Precio ($) *
                   </label>
                   <input
                     type="number"
                     id="precio"
-                    name="precio"
                     value={formulario.precio}
                     onChange={(e) => manejarCambio('precio', e.target.value)}
-                    className="campo"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      transition: 'all 0.2s ease'
+                    }}
                     placeholder="0.00"
                     min="0"
                     step="0.01"
                     required
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                    }}
                   />
                 </div>
+
+                {/* Unidad */}
                 <div>
-                  <label htmlFor="unidad" className="etiqueta">
+                  <label htmlFor="unidad" style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
                     Unidad
                   </label>
                   <input
                     type="text"
                     id="unidad"
-                    name="unidad"
                     value={formulario.unidad}
                     onChange={(e) => manejarCambio('unidad', e.target.value)}
-                    className="campo"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      transition: 'all 0.2s ease'
+                    }}
                     placeholder="ej: kg, litro, unidad"
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                    }}
                   />
                 </div>
-              </div>
 
-              {/* Stock y Stock Mínimo */}
-              <div className="grid grid-2">
+                {/* Stock Actual */}
                 <div>
-                  <label htmlFor="stock" className="etiqueta">
+                  <label htmlFor="stock" style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
                     Stock Actual *
                   </label>
                   <input
                     type="number"
                     id="stock"
-                    name="stock"
                     value={formulario.stock}
                     onChange={(e) => manejarCambio('stock', e.target.value)}
-                    className="campo"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      transition: 'all 0.2s ease'
+                    }}
                     placeholder="0"
                     min="0"
                     required
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                    }}
                   />
                 </div>
+
+                {/* Stock Mínimo */}
                 <div>
-                  <label htmlFor="stockMinimo" className="etiqueta">
+                  <label htmlFor="stockMinimo" style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
                     Stock Mínimo
                   </label>
                   <input
                     type="number"
                     id="stockMinimo"
-                    name="stockMinimo"
                     value={formulario.stockMinimo}
                     onChange={(e) => manejarCambio('stockMinimo', e.target.value)}
-                    className="campo"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      transition: 'all 0.2s ease'
+                    }}
                     placeholder="5"
                     min="0"
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                    }}
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Categoría */}
+            {/* Categoría */}
+            <div>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#1e293b',
+                margin: '0 0 20px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                📂 Categoría
+              </h3>
+              
               <div>
-                <label htmlFor="categoria" className="etiqueta">
+                <label htmlFor="categoria" style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
                   Categoría *
                 </label>
                 {cargandoCategorias ? (
-                  <div className="campo" style={{ padding: '12px', color: '#666' }}>
+                  <div style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    color: '#64748b',
+                    background: '#f8fafc'
+                  }}>
                     Cargando categorías...
                   </div>
                 ) : (
                   <>
                     <select
                       id="categoria"
-                      name="categoria"
                       value={mostrarOtraCategoria ? '__nueva__' : formulario.categoria}
                       onChange={(e) => {
                         if (e.target.value === '__nueva__') {
@@ -435,8 +843,24 @@ const EditarProducto: React.FC = () => {
                           manejarCambio('categoria', e.target.value);
                         }
                       }}
-                      className="campo"
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        transition: 'all 0.2s ease',
+                        background: 'white'
+                      }}
                       required
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#3b82f6';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#e2e8f0';
+                        e.target.style.boxShadow = 'none';
+                      }}
                     >
                       <option value="">Selecciona una categoría</option>
                       {categorias.map(categoria => (
@@ -448,87 +872,249 @@ const EditarProducto: React.FC = () => {
                     </select>
                     
                     {mostrarOtraCategoria && (
-                      <div style={{ marginTop: '10px' }}>
+                      <div style={{ marginTop: '12px' }}>
                         <input
                           type="text"
                           placeholder="Escribe el nombre de la nueva categoría"
-                          className="campo"
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            border: '2px solid #e2e8f0',
+                            borderRadius: '8px',
+                            fontSize: '16px',
+                            transition: 'all 0.2s ease'
+                          }}
                           value={formulario.categoria}
                           onChange={(e) => manejarCambio('categoria', e.target.value)}
                           autoFocus
+                          onFocus={(e) => {
+                            e.target.style.borderColor = '#3b82f6';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = '#e2e8f0';
+                            e.target.style.boxShadow = 'none';
+                          }}
                         />
                       </div>
                     )}
                   </>
                 )}
               </div>
+            </div>
 
-              {/* Imágenes */}
-              <div>
-                <GestorImagenes
-                  empresaId={empresaId}
-                  imagenesIniciales={formulario.imagenes}
-                  onChange={manejarCambioImagenes}
-                  maxImagenes={5}
-                  disabled={guardando}
-                />
-              </div>
+            {/* Imágenes */}
+            <div>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#1e293b',
+                margin: '0 0 20px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                🖼️ Imágenes del Producto
+              </h3>
+              
+              <GestorImagenes
+                empresaId={empresaId}
+                imagenesIniciales={formulario.imagenes}
+                onChange={manejarCambioImagenes}
+                maxImagenes={5}
+                disabled={guardando}
+              />
+            </div>
 
-              {/* Checkboxes para estado del producto */}
-              <div className="space-y-4">
-                <div className="flex items-center">
+            {/* Configuración del Producto */}
+            <div>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#1e293b',
+                margin: '0 0 20px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                ⚙️ Configuración
+              </h3>
+              
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {/* Producto Activo */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '16px',
+                  background: '#f8fafc',
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0'
+                }}>
                   <input
                     type="checkbox"
                     id="activo"
                     checked={formulario.activo}
                     onChange={(e) => manejarCambio('activo', e.target.checked)}
-                    className="mr-2"
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      accentColor: '#3b82f6'
+                    }}
                   />
-                  <label htmlFor="activo" className="etiqueta" style={{ margin: 0 }}>
-                    Producto activo
-                  </label>
+                  <div>
+                    <label htmlFor="activo" style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#1e293b',
+                      cursor: 'pointer'
+                    }}>
+                      Producto activo
+                    </label>
+                    <p style={{
+                      fontSize: '14px',
+                      color: '#64748b',
+                      margin: '4px 0 0 0'
+                    }}>
+                      El producto aparecerá en el catálogo público
+                    </p>
+                  </div>
                 </div>
-                <p className="texto-pequeno texto-gris -mt-1">
-                  El producto aparecerá en el catálogo público
-                </p>
 
-                <div className="flex items-center">
+                {/* Producto Destacado */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '16px',
+                  background: '#f8fafc',
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0'
+                }}>
                   <input
                     type="checkbox"
                     id="destacado"
                     checked={formulario.destacado}
                     onChange={(e) => manejarCambio('destacado', e.target.checked)}
-                    className="mr-2"
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      accentColor: '#f97316'
+                    }}
                   />
-                  <label htmlFor="destacado" className="etiqueta" style={{ margin: 0 }}>
-                    Producto destacado
-                  </label>
+                  <div>
+                    <label htmlFor="destacado" style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#1e293b',
+                      cursor: 'pointer'
+                    }}>
+                      Producto destacado
+                    </label>
+                    <p style={{
+                      fontSize: '14px',
+                      color: '#64748b',
+                      margin: '4px 0 0 0'
+                    }}>
+                      El producto aparecerá en secciones especiales
+                    </p>
+                  </div>
                 </div>
-                <p className="texto-pequeno texto-gris -mt-1">
-                  El producto aparecerá en secciones especiales
-                </p>
               </div>
+            </div>
 
-              {/* Botones */}
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={guardando}
-                  className="boton boton-primario flex-1"
-                >
-                  {guardando ? (id ? 'Actualizando...' : 'Creando...') : (id ? 'Actualizar Producto' : 'Crear Producto')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate('/admin/productos')}
-                  className="boton boton-secundario flex-1"
-                  disabled={guardando}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
+            {/* Botones de acción */}
+            <div style={{
+              display: 'flex',
+              gap: '16px',
+              paddingTop: '16px',
+              borderTop: '1px solid #e2e8f0'
+            }}>
+              <button
+                type="submit"
+                disabled={guardando}
+                style={{
+                  flex: 1,
+                  background: guardando ? '#9ca3af' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '16px 24px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: guardando ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                onMouseOver={(e) => {
+                  if (!guardando) {
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!guardando) {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }
+                }}
+              >
+                {guardando ? (
+                  <>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      borderTop: '2px solid white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    {id ? 'Actualizando...' : 'Creando...'}
+                  </>
+                ) : (
+                  <>
+                    {id ? '✅ Actualizar Producto' : '➕ Crear Producto'}
+                  </>
+                )}
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => navigate('/admin/productos')}
+                disabled={guardando}
+                style={{
+                  flex: 1,
+                  background: guardando ? '#9ca3af' : 'white',
+                  color: guardando ? '#6b7280' : '#374151',
+                  border: '2px solid',
+                  borderColor: guardando ? '#9ca3af' : '#e2e8f0',
+                  borderRadius: '8px',
+                  padding: '16px 24px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: guardando ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  if (!guardando) {
+                    e.currentTarget.style.background = '#f8fafc';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!guardando) {
+                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                  }
+                }}
+              >
+                ❌ Cancelar
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

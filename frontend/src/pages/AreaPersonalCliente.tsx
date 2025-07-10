@@ -5,6 +5,7 @@ import { useSubdominio } from '../hooks/useSubdominio';
 import { useCart } from '../hooks/useCart';
 import CartIcon from '../components/CartIcon';
 import CartModal from '../components/CartModal';
+import NavbarCliente from '../components/NavbarCliente';
 import api from '../services/api';
 import type { Pedido, DetallePedido } from '../types';
 
@@ -938,50 +939,13 @@ export default function AreaPersonalCliente() {
       minHeight: '100vh',
       paddingBottom: '40px'
     }}>
-      {/* Header de la tienda */}
-      <header className="header-tienda">
-        <div className="contenedor">
-          <div className="info-empresa">
-            {empresa.logoUrl && (
-              <img 
-                src={empresa.logoUrl} 
-                alt={`Logo de ${empresa.nombre}`}
-                className="logo-empresa"
-              />
-            )}
-            <div>
-              <h1 className="nombre-empresa">{empresa.nombre}</h1>
-              {empresa.descripcion && (
-                <p className="descripcion-empresa">{empresa.descripcion}</p>
-              )}
-            </div>
-          </div>
-          
-          <nav className="nav-tienda">
-            <Link to="/" className="nav-link">Inicio</Link>
-            <span className="nav-link" style={{ position: 'relative' }}>
-              <CartIcon onClick={() => setShowCart(true)} />
-            </span>
-            {clienteInfo ? (
-              <>
-                <Link to="/cuenta" className="nav-link">Mi Cuenta</Link>
-                <span className="nav-link" style={{ color: '#28a745' }}>
-                  ¡Hola, {clienteInfo.nombre}!
-                </span>
-            <button 
-              onClick={cerrarSesion}
-                  className="nav-link"
-                  style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer' }}
-            >
-              Cerrar Sesión
-            </button>
-              </>
-            ) : (
-              <Link to="/login" className="nav-link">Iniciar Sesión</Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      {/* Navbar del cliente */}
+      <NavbarCliente
+        empresa={empresa}
+        clienteInfo={clienteInfo}
+        onCerrarSesion={cerrarSesion}
+        onShowCart={() => setShowCart(true)}
+      />
       <CartModal open={showCart} onClose={() => setShowCart(false)} />
 
       <main className="contenedor">

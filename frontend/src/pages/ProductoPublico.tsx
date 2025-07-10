@@ -5,6 +5,7 @@ import apiService from '../services/api';
 import type { Producto } from '../types';
 import CartIcon from '../components/CartIcon';
 import CartModal from '../components/CartModal';
+import NavbarCliente from '../components/NavbarCliente';
 import { useCart } from '../hooks/useCart';
 import toast from 'react-hot-toast';
 
@@ -148,51 +149,17 @@ export default function ProductoPublico() {
 
   return (
     <div className="producto-publico">
-      {/* Header de la tienda */}
-      <header className="header-tienda">
-        <div className="contenedor">
-          <div className="info-empresa">
-            {empresa.logoUrl && (
-              <img 
-                src={empresa.logoUrl} 
-                alt={`Logo de ${empresa.nombre}`}
-                className="logo-empresa"
-              />
-            )}
-            <div>
-              <h1 className="nombre-empresa">{empresa.nombre}</h1>
-            </div>
-          </div>
-          
-          <nav className="nav-tienda">
-            <Link to="/" className="nav-link">Catálogo</Link>
-            <span className="nav-link" style={{ position: 'relative' }}>
-              <CartIcon onClick={() => setShowCart(true)} />
-            </span>
-            {clienteInfo ? (
-              <>
-                <Link to="/cuenta" className="nav-link">Mi Cuenta</Link>
-                <span className="nav-link" style={{ color: '#28a745' }}>
-                  ¡Hola, {clienteInfo.nombre}!
-                </span>
-                <button 
-                  onClick={() => {
-                    localStorage.removeItem('clienteToken');
-                    localStorage.removeItem('clienteInfo');
-                    setClienteInfo(null);
-                  }}
-                  className="nav-link"
-                  style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer' }}
-                >
-                  Cerrar Sesión
-                </button>
-              </>
-            ) : (
-              <Link to="/login" className="nav-link">Iniciar Sesión</Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      {/* Navbar del cliente */}
+      <NavbarCliente
+        empresa={empresa}
+        clienteInfo={clienteInfo}
+        onCerrarSesion={() => {
+          localStorage.removeItem('clienteToken');
+          localStorage.removeItem('clienteInfo');
+          setClienteInfo(null);
+        }}
+        onShowCart={() => setShowCart(true)}
+      />
       <CartModal open={showCart} onClose={() => setShowCart(false)} />
 
       <main className="contenedor">
@@ -230,168 +197,468 @@ export default function ProductoPublico() {
             </Link>
           </div>
         ) : (
-          <div className="detalle-producto">
-            <div className="galeria-producto">
-              {producto.imagenes && producto.imagenes.length > 0 ? (
-                <>
-                  <div className="imagen-principal">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : 'minmax(0, 1fr) minmax(0, 1fr)',
+            gap: window.innerWidth <= 768 ? '24px' : '48px',
+            alignItems: 'start',
+            background: 'white',
+            padding: '32px 24px',
+            borderRadius: '16px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            border: '1px solid #e2e8f0',
+            maxWidth: '1400px',
+            margin: '0 auto'
+          }}>
+            {/* Galería de imágenes */}
+            <div style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+              border: '1px solid #e2e8f0',
+              minWidth: 0
+            }}>
+              <div style={{ position: 'relative' }}>
+                {producto.imagenes && producto.imagenes.length > 0 ? (
+                  <>
                     <img 
                       src={producto.imagenes[imagenActual]} 
                       alt={producto.nombre}
+                      style={{
+                        width: '100%',
+                        height: '400px',
+                        objectFit: 'cover',
+                        borderRadius: '12px',
+                        border: '2px solid #e2e8f0'
+                      }}
                     />
+                    
+                    {producto.imagenes.length > 1 && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '16px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'rgba(0,0,0,0.7)',
+                        color: 'white',
+                        padding: '8px 16px',
+                        borderRadius: '20px',
+                        fontSize: '14px',
+                        fontWeight: '500'
+                      }}>
+                        {imagenActual + 1} / {producto.imagenes.length}
+                      </div>
+                    )}
+                    
+                    {producto.imagenes.length > 1 && (
+                      <div style={{
+                        display: 'flex',
+                        gap: '8px',
+                        marginTop: '16px',
+                        justifyContent: 'center',
+                        flexWrap: 'wrap'
+                      }}>
+                        {producto.imagenes.map((imagen, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setImagenActual(index)}
+                            style={{
+                              width: '60px',
+                              height: '60px',
+                              borderRadius: '8px',
+                              overflow: 'hidden',
+                              border: index === imagenActual ? '3px solid #3b82f6' : '2px solid #e2e8f0',
+                              cursor: 'pointer',
+                              padding: 0,
+                              background: 'none',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => {
+                              if (index !== imagenActual) {
+                                e.currentTarget.style.borderColor = '#3b82f6';
+                              }
+                            }}
+                            onMouseOut={(e) => {
+                              if (index !== imagenActual) {
+                                e.currentTarget.style.borderColor = '#e2e8f0';
+                              }
+                            }}
+                          >
+                            <img 
+                              src={imagen} 
+                              alt={`${producto.nombre} ${index + 1}`}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover'
+                              }}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{
+                    width: '100%',
+                    height: '400px',
+                    background: '#f9fafb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#9ca3af',
+                    fontSize: '18px',
+                    border: '2px dashed #d1d5db',
+                    borderRadius: '12px'
+                  }}>
+                    📷 Sin imagen disponible
                   </div>
-                  
-                  {producto.imagenes.length > 1 && (
-                    <div className="miniaturas">
-                      {producto.imagenes.map((imagen, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setImagenActual(index)}
-                          className={`miniatura ${index === imagenActual ? 'activa' : ''}`}
-                        >
-                          <img src={imagen} alt={`${producto.nombre} ${index + 1}`} />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="sin-imagen-detalle">
-                  <span>Sin imagen disponible</span>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            <div className="info-producto">
-              <div className="cabecera-producto">
-                <h1>{producto.nombre}</h1>
-                {producto.destacado && (
-                  <span className="badge-destacado">Destacado</span>
-                )}
-              </div>
-
-              <div className="precio-producto">
-                <span className="precio-actual">
-                  {formatearPrecio(producto.precio, empresa.moneda)}
-                </span>
-              </div>
-
-              <div className="metadatos-producto">
-                {producto.categoria && (
-                  <div className="metadato">
-                    <span className="etiqueta">Categoría:</span>
-                    <span className="valor">{producto.categoria}</span>
-                  </div>
-                )}
-                
-                {producto.marca && (
-                  <div className="metadato">
-                    <span className="etiqueta">Marca:</span>
-                    <span className="valor">{producto.marca}</span>
-                  </div>
-                )}
-                
-                {producto.unidad && (
-                  <div className="metadato">
-                    <span className="etiqueta">Unidad:</span>
-                    <span className="valor">{producto.unidad}</span>
-                  </div>
-                )}
-              </div>
-
-              {producto.descripcion && (
-                <div className="descripcion-producto">
-                  <h3>Descripción</h3>
-                  <p>{producto.descripcion}</p>
-                </div>
-              )}
-
-              <div className="stock-producto">
-                {producto.stock > 0 ? (
-                  <span className="stock-disponible">
-                    ✓ {producto.stock} disponibles
-                  </span>
-                ) : (
-                  <span className="stock-agotado">
-                    ✗ Producto agotado
-                  </span>
-                )}
-              </div>
-
-              {producto.stock > 0 && (
-                <div className="controles-compra">
-                  <div className="selector-cantidad">
-                    <label htmlFor="cantidad">Cantidad:</label>
-                    <input
-                      type="number"
-                      id="cantidad"
-                      min="1"
-                      max={producto.stock}
-                      value={cantidad}
-                      onChange={(e) => setCantidad(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="input-cantidad"
-                    />
-                  </div>
-
-                  {/* Mostrar información del carrito */}
-                  {(() => {
-                    const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                    const maximoAlcanzado = cantidadEnCarrito >= producto.stock;
-                    
-                    return (
-                      <div className="info-carrito" style={{ 
-                        marginBottom: '16px',
-                        padding: '8px 12px',
-                        background: maximoAlcanzado ? '#fef2f2' : '#f0f9ff',
-                        border: `1px solid ${maximoAlcanzado ? '#fecaca' : '#bae6fd'}`,
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        color: maximoAlcanzado ? '#dc2626' : '#0369a1'
+            {/* Información del producto */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
+              minWidth: 0
+            }}>
+              {/* Información básica del producto */}
+              <div style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '24px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                border: '1px solid #e2e8f0',
+                minWidth: 0
+              }}>
+                {/* Encabezado */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  marginBottom: '16px',
+                  gap: '12px',
+                  flexWrap: 'wrap'
+                }}>
+                  <h1 style={{
+                    fontSize: '28px',
+                    fontWeight: '700',
+                    color: '#1e293b',
+                    margin: 0,
+                    lineHeight: '1.2',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word'
+                  }}>
+                    {producto.nombre}
+                  </h1>
+                  
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    flexWrap: 'wrap'
+                  }}>
+                    {producto.destacado && (
+                      <span style={{
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                        color: 'white',
+                        padding: '6px 12px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '600'
                       }}>
-                        {cantidadEnCarrito > 0 ? (
-                          maximoAlcanzado ? (
-                            <span>🛒 Ya tienes el máximo disponible en el carrito ({cantidadEnCarrito}/{producto.stock})</span>
-                          ) : (
-                            <span>🛒 Tienes {cantidadEnCarrito} en el carrito. Puedes agregar {producto.stock - cantidadEnCarrito} más.</span>
-                          )
-                        ) : (
-                          <span>🛒 Puedes agregar hasta {producto.stock} unidades al carrito</span>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  <div className="botones-compra">
-                    <button
-                      onClick={agregarAlCarrito}
-                      disabled={(() => {
-                        const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                        return cantidadEnCarrito >= producto.stock;
-                      })()}
-                      className="boton boton-secundario boton-completo"
-                      style={{
-                        opacity: (() => {
-                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                          return cantidadEnCarrito >= producto.stock ? 0.6 : 1;
-                        })(),
-                        cursor: (() => {
-                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                          return cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer';
-                        })()
-                      }}
-                    >
-                      {(() => {
-                        const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-                        return cantidadEnCarrito >= producto.stock ? 'Máximo en carrito' : 'Agregar al carrito';
-                      })()}
-                    </button>
+                        ⭐ Destacado
+                      </span>
+                    )}
                     
-                    <button
-                      onClick={comprarAhora}
-                      className="boton boton-primario boton-completo"
-                    >
-                      Comprar ahora
-                    </button>
+                    {producto.stock <= 5 && producto.stock > 0 && (
+                      <span style={{
+                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                        color: 'white',
+                        padding: '6px 12px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}>
+                        ⚠️ Últimas unidades
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{
+                  fontSize: '32px',
+                  fontWeight: '700',
+                  color: '#059669',
+                  marginBottom: '16px'
+                }}>
+                  {formatearPrecio(producto.precio, empresa.moneda)}
+                  {producto.unidad && (
+                    <span style={{
+                      fontSize: '16px',
+                      color: '#64748b',
+                      fontWeight: '500'
+                    }}>
+                      / {producto.unidad}
+                    </span>
+                  )}
+                </div>
+
+                {/* Metadatos */}
+                <div style={{ display: 'grid', gap: '12px', marginBottom: '16px' }}>
+                  {producto.categoria && (
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      padding: '12px 0', 
+                      borderBottom: '1px solid #f1f5f9',
+                      flexWrap: 'wrap',
+                      gap: '8px'
+                    }}>
+                      <span style={{ color: '#64748b', fontWeight: '500', flexShrink: 0 }}>Categoría:</span>
+                      <span style={{ 
+                        color: '#1e293b', 
+                        fontWeight: '600',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        textAlign: 'right'
+                      }}>{producto.categoria}</span>
+                    </div>
+                  )}
+                  
+                  {producto.marca && (
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      padding: '12px 0', 
+                      borderBottom: '1px solid #f1f5f9',
+                      flexWrap: 'wrap',
+                      gap: '8px'
+                    }}>
+                      <span style={{ color: '#64748b', fontWeight: '500', flexShrink: 0 }}>Marca:</span>
+                      <span style={{ 
+                        color: '#1e293b', 
+                        fontWeight: '600',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        textAlign: 'right'
+                      }}>{producto.marca}</span>
+                    </div>
+                  )}
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    padding: '12px 0',
+                    flexWrap: 'wrap',
+                    gap: '8px'
+                  }}>
+                    <span style={{ color: '#64748b', fontWeight: '500', flexShrink: 0 }}>Stock:</span>
+                    <span style={{ 
+                      color: producto.stock > 0 ? '#059669' : '#ef4444', 
+                      fontWeight: '600',
+                      wordWrap: 'break-word',
+                      overflowWrap: 'break-word',
+                      textAlign: 'right'
+                    }}>
+                      {producto.stock > 0 ? `✓ ${producto.stock} disponibles` : '✗ Producto agotado'}
+                    </span>
+                  </div>
+                </div>
+
+                {producto.descripcion && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '16px',
+                    background: '#f8fafc',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <h4 style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#1e293b',
+                      margin: '0 0 8px 0'
+                    }}>
+                      📝 Descripción
+                    </h4>
+                    <p style={{
+                      color: '#64748b',
+                      fontSize: '14px',
+                      lineHeight: '1.6',
+                      margin: 0,
+                      wordWrap: 'break-word',
+                      overflowWrap: 'break-word',
+                      whiteSpace: 'pre-wrap'
+                    }}>
+                      {producto.descripcion}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Controles de compra */}
+              {producto.stock > 0 && (
+                <div style={{
+                  background: 'white',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                  border: '1px solid #e2e8f0'
+                }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    margin: '0 0 20px 0'
+                  }}>
+                    🛒 Comprar Producto
+                  </h3>
+                  
+                  <div style={{ display: 'grid', gap: '16px' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <label htmlFor="cantidad" style={{
+                        color: '#374151',
+                        fontWeight: '500',
+                        fontSize: '14px',
+                        minWidth: '80px'
+                      }}>
+                        Cantidad:
+                      </label>
+                      <input
+                        type="number"
+                        id="cantidad"
+                        min="1"
+                        max={producto.stock}
+                        value={cantidad}
+                        onChange={(e) => setCantidad(Math.max(1, parseInt(e.target.value) || 1))}
+                        style={{
+                          width: '100px',
+                          padding: '8px 12px',
+                          border: '2px solid #e2e8f0',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          textAlign: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e2e8f0';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+
+                    {/* Información del carrito */}
+                    {(() => {
+                      const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                      const maximoAlcanzado = cantidadEnCarrito >= producto.stock;
+                      
+                      return (
+                        <div style={{ 
+                          padding: '12px 16px',
+                          background: maximoAlcanzado ? '#fef2f2' : '#f0f9ff',
+                          border: `1px solid ${maximoAlcanzado ? '#fecaca' : '#bae6fd'}`,
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          color: maximoAlcanzado ? '#dc2626' : '#0369a1',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          {cantidadEnCarrito > 0 ? (
+                            maximoAlcanzado ? (
+                              <span>🛒 Ya tienes el máximo disponible en el carrito ({cantidadEnCarrito}/{producto.stock})</span>
+                            ) : (
+                              <span>🛒 Tienes {cantidadEnCarrito} en el carrito. Puedes agregar {producto.stock - cantidadEnCarrito} más.</span>
+                            )
+                          ) : (
+                            <span>🛒 Puedes agregar hasta {producto.stock} unidades al carrito</span>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <button
+                        onClick={agregarAlCarrito}
+                        disabled={(() => {
+                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                          return cantidadEnCarrito >= producto.stock;
+                        })()}
+                        style={{
+                          width: '100%',
+                          padding: '12px 24px',
+                          background: '#f1f5f9',
+                          color: '#3b82f6',
+                          border: '1px solid #3b82f6',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          cursor: (() => {
+                            const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                            return cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer';
+                          })(),
+                          opacity: (() => {
+                            const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                            return cantidadEnCarrito >= producto.stock ? 0.6 : 1;
+                          })(),
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                          if (cantidadEnCarrito < producto.stock) {
+                            e.currentTarget.style.background = '#3b82f6';
+                            e.currentTarget.style.color = 'white';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                          if (cantidadEnCarrito < producto.stock) {
+                            e.currentTarget.style.background = '#f1f5f9';
+                            e.currentTarget.style.color = '#3b82f6';
+                          }
+                        }}
+                      >
+                        {(() => {
+                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                          return cantidadEnCarrito >= producto.stock ? 'Máximo en carrito' : 'Agregar al carrito';
+                        })()}
+                      </button>
+                      
+                      <button
+                        onClick={comprarAhora}
+                        style={{
+                          width: '100%',
+                          padding: '12px 24px',
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
+                        }}
+                      >
+                        Comprar ahora
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

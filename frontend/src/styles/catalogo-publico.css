@@ -271,6 +271,15 @@
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.info-producto {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0; /* Permite que el contenido se ajuste */
 }
 
 .galeria-producto {
@@ -372,33 +381,47 @@
 .metadato {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .metadato .etiqueta {
   color: #6b7280;
   font-weight: 500;
   min-width: 80px;
+  flex-shrink: 0;
 }
 
 .metadato .valor {
   color: #1e293b;
   font-weight: 600;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .descripcion-producto {
   margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .descripcion-producto h3 {
   color: #1e293b;
   margin: 0 0 0.5rem 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .descripcion-producto p {
-  color: #4b5563;
+  color: #64748b;
   line-height: 1.6;
   margin: 0;
+  font-size: 0.9rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .stock-producto {
@@ -614,19 +637,53 @@
     grid-template-columns: 1fr;
     gap: 2rem;
     padding: 1rem;
+    margin: 0 1rem;
+  }
+  
+  .info-producto {
+    gap: 1rem;
   }
   
   .cabecera-producto {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.5rem;
   }
   
   .cabecera-producto h1 {
     font-size: 1.5rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   
   .precio-actual {
     font-size: 1.5rem;
+  }
+  
+  .metadatos-producto {
+    gap: 0.75rem;
+  }
+  
+  .metadato {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .metadato .etiqueta {
+    min-width: auto;
+  }
+  
+  .descripcion-producto {
+    padding: 0.75rem;
+  }
+  
+  .descripcion-producto h3 {
+    font-size: 1rem;
+  }
+  
+  .descripcion-producto p {
+    font-size: 0.85rem;
   }
   
   .acciones-error {

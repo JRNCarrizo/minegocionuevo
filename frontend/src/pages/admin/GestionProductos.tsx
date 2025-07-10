@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
+import NavbarAdmin from '../../components/NavbarAdmin';
 import type { Producto } from '../../types';
 import '../../styles/gestion-productos.css';
 
@@ -25,6 +26,8 @@ const GestionProductos: React.FC = () => {
   const [categorias, setCategorias] = useState<string[]>([]);
   const [marcas, setMarcas] = useState<string[]>([]);
   const [empresaId, setEmpresaId] = useState<number | null>(null);
+  const [empresaNombre, setEmpresaNombre] = useState<string>('');
+  const [nombreAdministrador, setNombreAdministrador] = useState<string>('');
   // Estados para paginación (TODO: implementar cuando sea necesario)
   // const [paginaActual, setPaginaActual] = useState(0);
   // const [totalPaginas, setTotalPaginas] = useState(1);
@@ -52,6 +55,8 @@ const GestionProductos: React.FC = () => {
       
       if (user.empresaId) {
         setEmpresaId(user.empresaId);
+        setEmpresaNombre(user.empresaNombre || '');
+        setNombreAdministrador(user.nombre || '');
         console.log('Debug - empresaId establecido:', user.empresaId);
       } else {
         console.log('Debug - No se encontró empresaId en el usuario');
@@ -266,13 +271,24 @@ const GestionProductos: React.FC = () => {
     }
   };
 
+  const cerrarSesion = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/admin/login';
+  };
+
   if (cargando) {
     return (
-      <div className="pagina-productos">
-        <div className="contenedor-principal">
-          <div className="cargando">
-            <div className="spinner"></div>
-            <p>Cargando productos...</p>
+      <div className="h-pantalla-minimo" style={{ backgroundColor: '#f8fafc' }}>
+        <NavbarAdmin 
+          onCerrarSesion={cerrarSesion}
+          empresaNombre={empresaNombre}
+          nombreAdministrador={nombreAdministrador}
+        />
+        <div className="contenedor py-8">
+          <div className="tarjeta text-center py-12">
+            <div className="spinner mx-auto mb-4"></div>
+            <p className="texto-gris">Cargando productos...</p>
           </div>
         </div>
       </div>
@@ -280,129 +296,321 @@ const GestionProductos: React.FC = () => {
   }
 
   return (
-    <div className="pagina-productos">
-      <div className="contenedor-principal">
-        {/* Navegación superior */}
-        <div className="navegacion-superior">
-          <button 
-            onClick={() => navigate('/admin/dashboard')}
-            className="boton-volver"
-          >
-            ← Volver al Dashboard
-          </button>
+    <div className="h-pantalla-minimo" style={{ backgroundColor: '#f8fafc' }}>
+      {/* Navegación */}
+      <NavbarAdmin 
+        onCerrarSesion={cerrarSesion}
+        empresaNombre={empresaNombre}
+        nombreAdministrador={nombreAdministrador}
+      />
+
+      {/* Contenido principal */}
+      <div className="contenedor py-8" style={{paddingTop: '32px'}}>
+        {/* Header mejorado */}
+        <div className="mb-8" style={{marginBottom: '32px'}}>
+          <div className="flex items-center justify-between mb-6" style={{alignItems: 'flex-start'}}>
+            <div>
+              <h1 className="titulo-2 mb-2" style={{ 
+                fontSize: '32px', 
+                fontWeight: '700', 
+                color: '#1e293b',
+                letterSpacing: '-0.025em',
+                lineHeight: '1.2'
+              }}>
+                📦 Gestión de Productos
+              </h1>
+              <p className="texto-gris" style={{ 
+                fontSize: '16px', 
+                color: '#64748b',
+                marginBottom: '8px'
+              }}>
+                Administra tu inventario y catálogo de productos de manera eficiente
+              </p>
+              <div style={{
+                height: '4px',
+                width: '60px',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                borderRadius: '2px',
+                marginTop: '16px'
+              }}></div>
+            </div>
+            <div style={{flex: 'none', display: 'flex', justifyContent: 'flex-end', width: '260px'}}>
+              <button 
+                className="boton boton-primario"
+                onClick={() => navigate('/admin/productos/nuevo')}
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 6px rgba(16,185,129,0.18)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  height: '40px',
+                  minWidth: 'auto',
+                  marginLeft: 0,
+                  marginTop: 0
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(16,185,129,0.25)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 6px rgba(16,185,129,0.18)';
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>➕</span>
+                Nuevo Producto
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Encabezado */}
-        <div className="encabezado-productos">
-          <div className="titulo-seccion">
-            <h1>Gestión de Productos</h1>
-            <p>Administra tu inventario y catálogo de productos</p>
-          </div>
-          
-          <div className="acciones-principales">
-            <button 
-              className="boton-primario"
-              onClick={() => navigate('/admin/productos/nuevo')}
-            >
-              <span className="icono">+</span>
-              Nuevo Producto
-            </button>
-          </div>
-        </div>
-
+        {/* Mensaje de error mejorado */}
         {error && (
-          <div className="mensaje-error">
-            <p>{error}</p>
-            <p>EmpresaId: {empresaId}</p>
-            <p>Token: {localStorage.getItem('token') ? 'Presente' : 'Ausente'}</p>
-            {localStorage.getItem('token') && (
-              <details>
-                <summary>Ver token (debug)</summary>
-                <small style={{wordBreak: 'break-all'}}>{localStorage.getItem('token')}</small>
-              </details>
-            )}
+          <div className="tarjeta mb-6" style={{
+            background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+            border: '1px solid #fecaca',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <div className="flex items-center mb-4">
+              <span style={{ fontSize: '24px', marginRight: '12px' }}>⚠️</span>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#dc2626' }}>
+                Error al cargar productos
+              </h3>
+            </div>
+            <p style={{ margin: '0 0 12px 0', color: '#991b1b', fontSize: '14px' }}>
+              {error}
+            </p>
+            <details style={{ fontSize: '12px', color: '#7f1d1d' }}>
+              <summary style={{ cursor: 'pointer', fontWeight: '500' }}>Información de debug</summary>
+              <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '4px' }}>
+                <p>EmpresaId: {empresaId}</p>
+                <p>Token: {localStorage.getItem('token') ? 'Presente' : 'Ausente'}</p>
+                {localStorage.getItem('token') && (
+                  <div>
+                    <p>Token (primeros 50 caracteres):</p>
+                    <code style={{ wordBreak: 'break-all', fontSize: '10px' }}>
+                      {localStorage.getItem('token')?.substring(0, 50)}...
+                    </code>
+                  </div>
+                )}
+              </div>
+            </details>
           </div>
         )}
 
-        {/* Barra de búsqueda y filtros */}
+        {/* Filtros y controles mejorados */}
         {productos.length > 0 && (
-          <div className="controles-productos">
-            <div className="barra-busqueda">
-              <input
-                type="text"
-                placeholder="Buscar productos..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="input-busqueda"
-              />
-            </div>
-
-            <div className="filtros-productos">
-              <select 
-                value={filtros.categoria || ''} 
-                onChange={(e) => setFiltros({...filtros, categoria: e.target.value || undefined})}
-                className="select-filtro"
-              >
-                <option value="">Todas las categorías</option>
-                {categorias.map(categoria => (
-                  <option key={categoria} value={categoria}>{categoria}</option>
-                ))}
-              </select>
-
-              <select 
-                value={filtros.marca || ''} 
-                onChange={(e) => setFiltros({...filtros, marca: e.target.value || undefined})}
-                className="select-filtro"
-              >
-                <option value="">Todas las marcas</option>
-                {marcas.map(marca => (
-                  <option key={marca} value={marca}>{marca}</option>
-                ))}
-              </select>
-
-              <select 
-                value={filtros.activo === undefined ? '' : filtros.activo.toString()} 
-                onChange={(e) => setFiltros({...filtros, activo: e.target.value === '' ? undefined : e.target.value === 'true'})}
-                className="select-filtro"
-              >
-                <option value="">Todos los estados</option>
-                <option value="true">Activos</option>
-                <option value="false">Inactivos</option>
-              </select>
-
-              <label className="filtro-checkbox">
-                <input
-                  type="checkbox"
-                  checked={filtros.stockBajo || false}
-                  onChange={(e) => setFiltros({...filtros, stockBajo: e.target.checked || undefined})}
-                />
-                Solo stock bajo
-              </label>
-
-              {(busqueda || Object.keys(filtros).length > 0) && (
-                <button onClick={limpiarFiltros} className="boton-limpiar">
-                  Limpiar filtros
-                </button>
-              )}
-            </div>
-
-            <div className="controles-vista">
-              <div className="info-resultados">
-                {productosFiltrados.length} de {productos.length} productos
-              </div>
+          <div className="tarjeta mb-6" style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <div className="mb-6">
+              <h3 className="titulo-3 mb-4" style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#1e293b',
+                marginBottom: '16px'
+              }}>
+                🔍 Filtros y Búsqueda
+              </h3>
               
-              <div className="selector-vista">
+              {/* Barra de búsqueda */}
+              <div className="mb-4">
+                <div className="relative">
+                  <div className="absolute" style={{ top: '50%', left: '16px', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                    <span style={{ color: '#64748b', fontSize: '18px' }}>🔍</span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Buscar productos por nombre o descripción..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    className="campo"
+                    style={{ 
+                      paddingLeft: '48px',
+                      fontSize: '16px',
+                      borderRadius: '12px',
+                      border: '2px solid #e2e8f0',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Filtros */}
+              <div className="grid grid-3 gap-4 mb-4">
+                <select 
+                  value={filtros.categoria || ''} 
+                  onChange={(e) => setFiltros({...filtros, categoria: e.target.value || undefined})}
+                  className="campo"
+                  style={{ 
+                    fontSize: '14px',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    background: 'white'
+                  }}
+                >
+                  <option value="">📂 Todas las categorías</option>
+                  {categorias.map(categoria => (
+                    <option key={categoria} value={categoria}>{categoria}</option>
+                  ))}
+                </select>
+
+                <select 
+                  value={filtros.marca || ''} 
+                  onChange={(e) => setFiltros({...filtros, marca: e.target.value || undefined})}
+                  className="campo"
+                  style={{ 
+                    fontSize: '14px',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    background: 'white'
+                  }}
+                >
+                  <option value="">🏷️ Todas las marcas</option>
+                  {marcas.map(marca => (
+                    <option key={marca} value={marca}>{marca}</option>
+                  ))}
+                </select>
+
+                <select 
+                  value={filtros.activo === undefined ? '' : filtros.activo.toString()} 
+                  onChange={(e) => setFiltros({...filtros, activo: e.target.value === '' ? undefined : e.target.value === 'true'})}
+                  className="campo"
+                  style={{ 
+                    fontSize: '14px',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    background: 'white'
+                  }}
+                >
+                  <option value="">🔄 Todos los estados</option>
+                  <option value="true">✅ Activos</option>
+                  <option value="false">❌ Inactivos</option>
+                </select>
+              </div>
+
+              {/* Filtros adicionales */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filtros.stockBajo || false}
+                      onChange={(e) => setFiltros({...filtros, stockBajo: e.target.checked || undefined})}
+                      style={{ 
+                        width: '18px',
+                        height: '18px',
+                        accentColor: '#ef4444'
+                      }}
+                    />
+                    <span style={{ fontSize: '14px', color: '#374151' }}>
+                      📉 Solo stock bajo
+                    </span>
+                  </label>
+                </div>
+
+                {(busqueda || Object.keys(filtros).length > 0) && (
+                  <button 
+                    onClick={limpiarFiltros} 
+                    className="boton boton-secundario"
+                    style={{
+                      background: 'white',
+                      color: '#64748b',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      padding: '8px 16px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.borderColor = '#3b82f6';
+                      e.currentTarget.style.color = '#3b82f6';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.color = '#64748b';
+                    }}
+                  >
+                    🗑️ Limpiar filtros
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Controles de vista */}
+            <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid #e2e8f0' }}>
+              <div className="flex items-center gap-4" style={{flex: 1}}>
+                <div style={{
+                  background: '#f1f5f9',
+                  color: '#64748b',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  fontWeight: '500'
+                }}>
+                  📊 {productosFiltrados.length} de {productos.length} productos
+                </div>
+              </div>
+              <div className="flex items-center gap-2" style={{flex: 'none', justifyContent: 'flex-end', minWidth: '260px'}}>
+                <span style={{ fontSize: '14px', color: '#64748b', marginRight: '8px' }}>Vista:</span>
                 <button 
-                  className={`boton-vista ${vista === 'lista' ? 'activo' : ''}`}
+                  className={`boton ${vista === 'lista' ? 'boton-primario' : 'boton-secundario'}`}
                   onClick={() => setVista('lista')}
                   title="Vista de lista"
+                  style={{
+                    background: vista === 'lista' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                    color: vista === 'lista' ? 'white' : '#64748b',
+                    border: '2px solid',
+                    borderColor: vista === 'lista' ? '#3b82f6' : '#e2e8f0',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
                 >
                   ☰
                 </button>
                 <button 
-                  className={`boton-vista ${vista === 'cuadricula' ? 'activo' : ''}`}
+                  className={`boton ${vista === 'cuadricula' ? 'boton-primario' : 'boton-secundario'}`}
                   onClick={() => setVista('cuadricula')}
                   title="Vista de cuadrícula"
+                  style={{
+                    background: vista === 'cuadricula' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                    color: vista === 'cuadricula' ? 'white' : '#64748b',
+                    border: '2px solid',
+                    borderColor: vista === 'cuadricula' ? '#3b82f6' : '#e2e8f0',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
                 >
                   ⊞
                 </button>
@@ -411,27 +619,72 @@ const GestionProductos: React.FC = () => {
           </div>
         )}
 
+        {/* Mensajes de estado mejorados */}
         {productosFiltrados.length === 0 && !cargando && !error && productos.length > 0 && (
-          <div className="sin-resultados">
-            <div className="ilustracion">🔍</div>
-            <h3>No se encontraron productos</h3>
-            <p>Intenta ajustar los filtros de búsqueda</p>
-            <button onClick={limpiarFiltros} className="boton-secundario">
-              Limpiar filtros
+          <div className="tarjeta text-center py-12" style={{
+            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+            border: '1px solid #bae6fd',
+            borderRadius: '16px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.7 }}>🔍</div>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
+              No se encontraron productos
+            </h3>
+            <p style={{ margin: '0 0 16px 0', color: '#64748b', fontSize: '16px' }}>
+              Intenta ajustar los filtros de búsqueda
+            </p>
+            <button 
+              onClick={limpiarFiltros} 
+              className="boton boton-secundario"
+              style={{
+                background: 'white',
+                color: '#3b82f6',
+                border: '2px solid #3b82f6',
+                borderRadius: '8px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              🗑️ Limpiar filtros
             </button>
           </div>
         )}
 
         {productos.length === 0 && !cargando && !error && (
-          <div className="sin-productos">
-            <div className="ilustracion">📦</div>
-            <h3>No se encontraron productos</h3>
-            <p>Comienza agregando tu primer producto al catálogo</p>
+          <div className="tarjeta text-center py-12" style={{
+            background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+            border: '1px solid #bbf7d0',
+            borderRadius: '16px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.7 }}>📦</div>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
+              No hay productos en tu catálogo
+            </h3>
+            <p style={{ margin: '0 0 16px 0', color: '#64748b', fontSize: '16px' }}>
+              Comienza agregando tu primer producto al catálogo
+            </p>
             <button 
-              className="boton-primario"
+              className="boton boton-primario"
               onClick={() => navigate('/admin/productos/nuevo')}
+              style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '12px 24px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 12px rgba(16,185,129,0.3)'
+              }}
             >
-              Agregar Producto
+              ➕ Agregar Producto
             </button>
           </div>
         )}
@@ -440,103 +693,344 @@ const GestionProductos: React.FC = () => {
         {productosFiltrados.length > 0 && (
           <>
             {vista === 'lista' ? (
-              <div className="vista-lista">
+              <div className="tarjeta" style={{
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '0',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                overflow: 'hidden'
+              }}>
                 <div className="tabla-productos">
-                  <div className="encabezado-tabla">
-                    <div className="columna-imagen">Imagen</div>
-                    <div className="columna-nombre">Producto</div>
-                    <div className="columna-precio">Precio</div>
-                    <div className="columna-stock">Stock</div>
-                    <div className="columna-categoria">Categoría</div>
-                    <div className="columna-estado">Estado</div>
-                    <div className="columna-acciones">Acciones</div>
+                  <div className="encabezado-tabla" style={{
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                    padding: '16px 24px',
+                    borderBottom: '2px solid #e2e8f0',
+                    display: 'grid',
+                    gridTemplateColumns: '80px 2fr 1fr 1fr 1fr 1fr 1fr',
+                    gap: '16px',
+                    alignItems: 'center',
+                    fontWeight: '600',
+                    color: '#374151',
+                    fontSize: '14px'
+                  }}>
+                    <div>🖼️ Imagen</div>
+                    <div>📦 Producto</div>
+                    <div>💰 Precio</div>
+                    <div>📊 Stock</div>
+                    <div>📂 Categoría</div>
+                    <div>🔄 Estado</div>
+                    <div>⚙️ Acciones</div>
                   </div>
                   
                   {productosFiltrados.map(producto => (
-                    <div key={producto.id} className="fila-producto">
-                      <div className="columna-imagen">
-                        <img 
-                          src={producto.imagenes?.[0] || '/api/placeholder/60/60'} 
-                          alt={producto.nombre}
-                          className="imagen-producto-mini"
-                        />
+                    <div key={producto.id} className="fila-producto" style={{
+                      padding: '0 24px',
+                      borderBottom: '1px solid #f1f5f9',
+                      display: 'grid',
+                      gridTemplateColumns: '80px 2fr 1fr 1fr 1fr 1fr 1fr',
+                      gap: '16px',
+                      alignItems: 'center',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      height: '80px'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f8fafc';
+                      e.currentTarget.style.transform = 'translateX(4px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.transform = 'translateX(0)';
+                    }}
+                    >
+                      <div className="columna-imagen" style={{
+                        height: '100%',
+                        width: '80px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: '#f8fafc',
+                        borderRadius: '0',
+                        border: 'none',
+                        overflow: 'hidden',
+                        margin: 0,
+                        padding: 0
+                      }}>
+                        {producto.imagenes?.[0] ? (
+                          <img
+                            src={producto.imagenes[0]}
+                            alt={producto.nombre}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              borderRadius: '0',
+                              display: 'block',
+                              margin: 0,
+                              padding: 0
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#cbd5e1',
+                            fontSize: '1.5rem',
+                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                            borderRadius: '0',
+                            margin: 0,
+                            padding: 0
+                          }}>
+                            📷
+                          </div>
+                        )}
                       </div>
                       
                       <div className="columna-nombre">
-                        <div className="info-producto">
-                          <h3 onClick={() => irADetalle(producto)}>{producto.nombre}</h3>
-                          <p>{producto.descripcion}</p>
-                          {producto.marca && <span className="marca">Marca: {producto.marca}</span>}
-                        </div>
+                        <h4 style={{
+                          margin: '0 0 4px 0',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          color: '#1e293b',
+                          cursor: 'pointer'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.color = '#3b82f6'}
+                        onMouseOut={(e) => e.currentTarget.style.color = '#1e293b'}
+                        onClick={() => irADetalle(producto)}
+                        >
+                          {producto.nombre}
+                        </h4>
+                        <p style={{
+                          margin: 0,
+                          fontSize: '13px',
+                          color: '#64748b',
+                          lineHeight: '1.4',
+                          fontWeight: 500
+                        }}>
+                          {producto.marca || '-'}
+                        </p>
+                        {producto.destacado && (
+                          <span style={{
+                            background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                            color: 'white',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '10px',
+                            fontWeight: '600',
+                            marginTop: '4px',
+                            display: 'inline-block'
+                          }}>
+                            ⭐ Destacado
+                          </span>
+                        )}
                       </div>
                       
                       <div className="columna-precio">
-                        <span className="precio">${producto.precio.toLocaleString()}</span>
-                        {producto.unidad && <span className="unidad">/ {producto.unidad}</span>}
+                        <div style={{
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#059669'
+                        }}>
+                          ${producto.precio.toFixed(2)}
+                        </div>
                       </div>
                       
                       <div className="columna-stock">
-                        <div className="control-stock">
-                          <button 
-                            onClick={() => cambiarStock(producto, -1)}
+                        <div className="control-stock" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              cambiarStock(producto, -1);
+                            }}
                             className="boton-stock"
-                            disabled={producto.stock <= 0}
+                            style={{
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              width: '24px',
+                              height: '24px',
+                              fontSize: '14px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
                           >
                             -
                           </button>
-                          <span className={`stock ${producto.stock <= producto.stockMinimo ? 'stock-bajo' : ''}`}>
+                          
+                          <span className="stock" style={{
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: producto.stock <= producto.stockMinimo ? '#ef4444' : '#059669',
+                            minWidth: '30px',
+                            textAlign: 'center'
+                          }}>
                             {producto.stock}
                           </span>
-                          <button 
-                            onClick={() => cambiarStock(producto, 1)}
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              cambiarStock(producto, 1);
+                            }}
                             className="boton-stock"
+                            style={{
+                              background: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              width: '24px',
+                              height: '24px',
+                              fontSize: '14px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
                           >
                             +
                           </button>
                         </div>
+                        
                         {producto.stock <= producto.stockMinimo && (
-                          <span className="alerta-stock">¡Stock bajo!</span>
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#ef4444',
+                            fontWeight: '500',
+                            marginTop: '4px'
+                          }}>
+                            ⚠️ Stock bajo
+                          </div>
                         )}
                       </div>
                       
                       <div className="columna-categoria">
-                        {producto.categoria || 'Sin categoría'}
+                        <div style={{
+                          background: '#f1f5f9',
+                          color: '#374151',
+                          padding: '4px 12px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          textAlign: 'center'
+                        }}>
+                          {producto.categoria}
+                        </div>
+                        {producto.marca && (
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#64748b',
+                            marginTop: '4px'
+                          }}>
+                            {producto.marca}
+                          </div>
+                        )}
                       </div>
                       
                       <div className="columna-estado">
-                        <span className={`estado ${producto.activo ? 'activo' : 'inactivo'}`}>
-                          {producto.activo ? 'Activo' : 'Inactivo'}
+                        <span style={{
+                          background: producto.activo ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                          color: 'white',
+                          padding: '6px 12px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          display: 'inline-block'
+                        }}>
+                          {producto.activo ? '✅ Activo' : '❌ Inactivo'}
                         </span>
-                        {producto.destacado && <span className="destacado">Destacado</span>}
                       </div>
                       
                       <div className="columna-acciones">
-                        <div className="acciones-producto">
-                          <button 
-                            onClick={() => irADetalle(producto)}
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              irADetalle(producto);
+                            }}
                             className="boton-accion"
-                            title="Ver detalle"
-                          >
-                            👁️
-                          </button>
-                          <button 
-                            onClick={() => irAEditar(producto)}
-                            className="boton-accion"
-                            title="Editar"
-                          >
-                            ✏️
-                          </button>
-                          <button 
-                            onClick={() => eliminarProducto(producto)}
-                            className="boton-accion boton-eliminar"
-                            title="Eliminar"
                             style={{
-                              backgroundColor: '#ef4444',
+                              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                               color: 'white',
-                              border: '1px solid #dc2626'
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '6px 10px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(59,130,246,0.3)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
                             }}
                           >
-                            🗑️
+                            👁️ Ver
+                          </button>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              irAEditar(producto);
+                            }}
+                            className="boton-accion"
+                            style={{
+                              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '6px 10px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(139,92,246,0.3)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            ✏️ Editar
+                          </button>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              eliminarProducto(producto);
+                            }}
+                            className="boton-accion"
+                            style={{
+                              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '6px 10px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(239,68,68,0.3)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            🗑️ Eliminar
                           </button>
                         </div>
                       </div>
@@ -546,77 +1040,301 @@ const GestionProductos: React.FC = () => {
               </div>
             ) : (
               <div className="vista-cuadricula">
-                <div className="grid-productos">
+                <div className="grilla-productos" style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+                  gap: '24px'
+                }}>
                   {productosFiltrados.map(producto => (
-                    <div key={producto.id} className="tarjeta-producto">
-                      <div className="imagen-tarjeta">
-                        <img 
-                          src={producto.imagenes?.[0] || '/api/placeholder/200/200'} 
-                          alt={producto.nombre}
-                          onClick={() => irADetalle(producto)}
-                        />
-                        {producto.destacado && <span className="badge-destacado">Destacado</span>}
-                        {!producto.activo && <span className="badge-inactivo">Inactivo</span>}
-                        {producto.stock <= producto.stockMinimo && <span className="badge-stock-bajo">Stock bajo</span>}
+                    <div key={producto.id} className="tarjeta-producto" style={{
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '16px',
+                      padding: '0',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.borderColor = '#3b82f6';
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(59,130,246,0.15)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                    }}
+                    >
+                      {/* Badges de estado */}
+                      <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                        {producto.destacado && (
+                          <span style={{
+                            background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                            color: 'white',
+                            padding: '3px 6px',
+                            borderRadius: '8px',
+                            fontSize: '9px',
+                            fontWeight: '600'
+                          }}>
+                            ⭐
+                          </span>
+                        )}
+                        <span style={{
+                          background: producto.activo ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                          color: 'white',
+                          padding: '3px 6px',
+                          borderRadius: '8px',
+                          fontSize: '9px',
+                          fontWeight: '600'
+                        }}>
+                          {producto.activo ? '✅' : '❌'}
+                        </span>
                       </div>
 
-                      <div className="contenido-tarjeta">
-                        <div className="info-principal">
-                          <h3 onClick={() => irADetalle(producto)}>{producto.nombre}</h3>
-                          <p className="descripcion">{producto.descripcion}</p>
-                          {producto.marca && <span className="marca">Marca: {producto.marca}</span>}
-                          <span className="categoria">{producto.categoria}</span>
-                        </div>
-
-                        <div className="precio-stock">
-                          <div className="precio">
-                            <span className="valor">${producto.precio.toLocaleString()}</span>
-                            {producto.unidad && <span className="unidad">/ {producto.unidad}</span>}
-                          </div>
-
-                          <div className="control-stock">
-                            <button 
-                              onClick={() => cambiarStock(producto, -1)}
-                              className="boton-stock"
-                              disabled={producto.stock <= 0}
-                            >
-                              -
-                            </button>
-                            <span className={`stock ${producto.stock <= producto.stockMinimo ? 'stock-bajo' : ''}`}>
-                              {producto.stock}
-                            </span>
-                            <button 
-                              onClick={() => cambiarStock(producto, 1)}
-                              className="boton-stock"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="acciones-tarjeta">
-                          <button 
-                            onClick={() => irADetalle(producto)}
-                            className="boton-accion-tarjeta boton-detalle"
-                          >
-                            Ver detalle
-                          </button>
-                          <button 
-                            onClick={() => irAEditar(producto)}
-                            className="boton-accion-tarjeta boton-editar"
-                          >
-                            Editar
-                          </button>
-                          <button 
-                            onClick={() => eliminarProducto(producto)}
-                            className="boton-accion-tarjeta boton-eliminar"
+                      {/* Imagen del producto */}
+                      <div className="imagen-container" style={{ 
+                        width: '100%',
+                        position: 'relative',
+                        paddingBottom: '100%',
+                        overflow: 'hidden',
+                        borderRadius: '12px 12px 0 0'
+                      }}>
+                        {producto.imagenes?.[0] ? (
+                          <img 
+                            src={producto.imagenes[0]} 
+                            alt={producto.nombre}
                             style={{
-                              backgroundColor: '#ef4444',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              borderRadius: '12px 12px 0 0',
+                              border: 'none',
+                              boxShadow: 'none'
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#64748b',
+                            fontSize: '16px',
+                            borderRadius: '12px 12px 0 0',
+                            flexDirection: 'column',
+                            gap: '4px'
+                          }}>
+                            <span style={{ fontSize: '2rem' }}>📷</span>
+                            <span style={{ fontSize: '0.875rem' }}>Sin imagen disponible</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Información del producto */}
+                      <div className="info-tarjeta" style={{ padding: '16px' }}>
+                        <h3 style={{
+                          margin: '0 0 8px 0',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          color: '#1e293b',
+                          lineHeight: '1.3'
+                        }}
+                        onClick={() => irADetalle(producto)}
+                        >
+                          {producto.nombre}
+                        </h3>
+                        
+                        <p style={{
+                          margin: '0 0 12px 0',
+                          fontSize: '13px',
+                          color: '#64748b',
+                          lineHeight: '1.4',
+                          fontWeight: '500'
+                        }}>
+                          {producto.marca || 'Sin marca'}
+                        </p>
+
+                        {/* Precio y stock */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <div>
+                            <div style={{
+                              fontSize: '18px',
+                              fontWeight: '700',
+                              color: '#059669'
+                            }}>
+                              ${producto.precio.toFixed(2)}
+                            </div>
+                            <div style={{
+                              fontSize: '11px',
+                              color: '#64748b'
+                            }}>
+                              {producto.unidad}
+                            </div>
+                          </div>
+                          
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: producto.stock <= producto.stockMinimo ? '#ef4444' : '#059669'
+                            }}>
+                              Stock: {producto.stock}
+                            </div>
+                            {producto.stock <= producto.stockMinimo && (
+                              <div style={{
+                                fontSize: '9px',
+                                color: '#ef4444',
+                                fontWeight: '500'
+                              }}>
+                                ⚠️ Bajo
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Categoría */}
+                        <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+                          <span style={{
+                            background: '#f1f5f9',
+                            color: '#374151',
+                            padding: '3px 6px',
+                            borderRadius: '6px',
+                            fontSize: '10px',
+                            fontWeight: '500'
+                          }}>
+                            {producto.categoria}
+                          </span>
+                        </div>
+
+                        {/* Controles de stock */}
+                        <div className="control-stock-mini" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              cambiarStock(producto, -1);
+                            }}
+                            style={{
+                              background: '#ef4444',
                               color: 'white',
-                              border: '1px solid #dc2626'
+                              border: 'none',
+                              borderRadius: '4px',
+                              width: '24px',
+                              height: '24px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
                             }}
                           >
-                            🗑️ Eliminar
+                            -
+                          </button>
+                          
+                          <span style={{
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#374151',
+                            minWidth: '16px',
+                            textAlign: 'center'
+                          }}>
+                            {producto.stock}
+                          </span>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              cambiarStock(producto, 1);
+                            }}
+                            style={{
+                              background: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              width: '24px',
+                              height: '24px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Botones de acción */}
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              irADetalle(producto);
+                            }}
+                            style={{
+                              flex: 1,
+                              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '6px 8px',
+                              fontSize: '11px',
+                              fontWeight: '500',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            👁️ Ver
+                          </button>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              irAEditar(producto);
+                            }}
+                            style={{
+                              flex: 1,
+                              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '6px 8px',
+                              fontSize: '11px',
+                              fontWeight: '500',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            ✏️ Editar
+                          </button>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              eliminarProducto(producto);
+                            }}
+                            style={{
+                              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '6px 8px',
+                              fontSize: '11px',
+                              fontWeight: '500',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            🗑️
                           </button>
                         </div>
                       </div>

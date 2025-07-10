@@ -369,17 +369,58 @@ public class ProductoController {
     }
 
     /**
-     * Obtiene todas las categorías de productos de la empresa
+     * Obtiene categorías únicas de productos de una empresa
      */
     @GetMapping("/categorias")
     public ResponseEntity<?> obtenerCategorias(@PathVariable Long empresaId) {
         try {
-            List<String> categorias = productoService.obtenerCategoriasPorEmpresa(empresaId);
+            List<ProductoDTO> productos = productoService.obtenerTodosLosProductosIncluirInactivos(empresaId);
             
-            return ResponseEntity.ok(Map.of("data", categorias));
+            // Extraer categorías únicas
+            List<String> categorias = productos.stream()
+                .map(ProductoDTO::getCategoria)
+                .filter(categoria -> categoria != null && !categoria.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(java.util.Map.of(
+                "mensaje", "Categorías obtenidas exitosamente",
+                "data", categorias
+            ));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("mensaje", "Error al obtener categorías: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(java.util.Map.of(
+                "error", "Error al obtener categorías",
+                "mensaje", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Obtiene marcas únicas de productos de una empresa
+     */
+    @GetMapping("/marcas")
+    public ResponseEntity<?> obtenerMarcas(@PathVariable Long empresaId) {
+        try {
+            List<ProductoDTO> productos = productoService.obtenerTodosLosProductosIncluirInactivos(empresaId);
+            
+            // Extraer marcas únicas
+            List<String> marcas = productos.stream()
+                .map(ProductoDTO::getMarca)
+                .filter(marca -> marca != null && !marca.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(java.util.Map.of(
+                "mensaje", "Marcas obtenidas exitosamente",
+                "data", marcas
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(java.util.Map.of(
+                "error", "Error al obtener marcas",
+                "mensaje", e.getMessage()
+            ));
         }
     }
 

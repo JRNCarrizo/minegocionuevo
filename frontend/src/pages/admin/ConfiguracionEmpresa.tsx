@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
+import NavbarAdmin from '../../components/NavbarAdmin';
 import type { Empresa } from '../../types';
 
 interface ConfiguracionEmpresa {
@@ -249,10 +250,30 @@ export default function ConfiguracionEmpresa() {
   });
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [verificandoSubdominio, setVerificandoSubdominio] = useState(false);
+  const [subdominioDisponible, setSubdominioDisponible] = useState<boolean | null>(null);
+  const [empresaNombre, setEmpresaNombre] = useState<string>('');
+  const [nombreAdministrador, setNombreAdministrador] = useState<string>('');
 
   useEffect(() => {
-    cargarConfiguracion();
+    // Obtener datos del usuario logueado
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setEmpresaNombre(user.empresaNombre || '');
+        setNombreAdministrador(user.nombre || '');
+      } catch {}
+    }
+    
+    cargarConfiguracion(false); // No mostrar toast al cargar la página
   }, []);
+
+  const cerrarSesion = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/admin/login';
+  };
 
   const cargarConfiguracion = async (mostrarToast = true) => {
     try {
@@ -308,6 +329,28 @@ export default function ConfiguracionEmpresa() {
         ...prev,
         [name]: value
       }));
+      
+      // Verificar subdominio si se está cambiando
+      if (name === 'subdominio' && value.trim().length >= 3) {
+        verificarDisponibilidadSubdominio(value.trim());
+      } else if (name === 'subdominio') {
+        setSubdominioDisponible(null);
+      }
+    }
+  }, []);
+
+  const verificarDisponibilidadSubdominio = useCallback(async (subdominio: string) => {
+    if (subdominio.length < 3) return;
+    
+    setVerificandoSubdominio(true);
+    try {
+      const response = await ApiService.verificarSubdominio(subdominio);
+      setSubdominioDisponible(response.disponible);
+    } catch (error) {
+      console.error('Error al verificar subdominio:', error);
+      setSubdominioDisponible(false);
+    } finally {
+      setVerificandoSubdominio(false);
     }
   }, []);
 
@@ -329,12 +372,24 @@ export default function ConfiguracionEmpresa() {
       toast.error('El subdominio es obligatorio');
       return false;
     }
+    if (configuracion.subdominio.trim().length < 3) {
+      toast.error('El subdominio debe tener al menos 3 caracteres');
+      return false;
+    }
+    if (!configuracion.subdominio.trim().match(/^[a-z0-9-]+$/)) {
+      toast.error('El subdominio solo puede contener letras minúsculas, números y guiones');
+      return false;
+    }
+    if (subdominioDisponible === false) {
+      toast.error('El subdominio no está disponible');
+      return false;
+    }
     if (!configuracion.email.trim() || !configuracion.email.includes('@')) {
       toast.error('El email debe ser válido');
       return false;
     }
     return true;
-  }, [configuracion]);
+  }, [configuracion, subdominioDisponible]);
 
   const guardarConfiguracion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -349,6 +404,7 @@ export default function ConfiguracionEmpresa() {
       const datosEmpresa = {
         nombre: configuracion.nombre,
         descripcion: configuracion.descripcion,
+        subdominio: configuracion.subdominio,
         email: configuracion.email,
         telefono: configuracion.telefono,
         colorPrimario: configuracion.colorPrimario,
@@ -366,9 +422,21 @@ export default function ConfiguracionEmpresa() {
       } else {
         toast.error('Error al guardar la configuración');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al guardar la configuración:', error);
-      toast.error('Error al guardar la configuración');
+      
+      // Manejar errores específicos del backend
+      if (error.response?.status === 400) {
+        // Error de validación (subdominio en uso, email duplicado, etc.)
+        const errorMessage = error.response.data?.error || 'Error de validación';
+        toast.error(errorMessage);
+      } else if (error.response?.status === 401) {
+        toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      } else if (error.response?.status === 404) {
+        toast.error('Empresa no encontrada');
+      } else {
+        toast.error('Error al guardar la configuración');
+      }
     } finally {
       setGuardando(false);
     }
@@ -386,15 +454,11 @@ export default function ConfiguracionEmpresa() {
   if (cargando) {
     return (
       <div className="h-pantalla-minimo" style={{ backgroundColor: 'var(--color-fondo)' }}>
-        <nav className="navbar">
-          <div className="contenedor">
-            <div className="navbar-contenido">
-              <Link to="/admin/dashboard" className="logo">
-                ← miNegocio - Admin
-              </Link>
-            </div>
-          </div>
-        </nav>
+        <NavbarAdmin 
+          onCerrarSesion={cerrarSesion}
+          empresaNombre={empresaNombre}
+          nombreAdministrador={nombreAdministrador}
+        />
         <div className="contenedor py-8">
           <div className="tarjeta text-center py-12">
             <div className="spinner mx-auto mb-4"></div>
@@ -408,15 +472,11 @@ export default function ConfiguracionEmpresa() {
   return (
     <div className="h-pantalla-minimo" style={{ backgroundColor: 'var(--color-fondo)' }}>
       {/* Navegación */}
-      <nav className="navbar">
-        <div className="contenedor">
-          <div className="navbar-contenido">
-            <Link to="/admin/dashboard" className="logo">
-              ← miNegocio - Admin
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <NavbarAdmin 
+        onCerrarSesion={cerrarSesion}
+        empresaNombre={empresaNombre}
+        nombreAdministrador={nombreAdministrador}
+      />
 
       {/* Contenido principal */}
       <div className="contenedor py-8">
@@ -478,6 +538,14 @@ export default function ConfiguracionEmpresa() {
                       .minegocio.com
                     </span>
                   </div>
+                  {verificandoSubdominio && (
+                    <p className="texto-pequeno texto-gris mt-2">Verificando disponibilidad...</p>
+                  )}
+                  {subdominioDisponible !== null && (
+                    <p className={`texto-pequeno ${subdominioDisponible ? 'texto-verde' : 'texto-rojo'} mt-2`}>
+                      {subdominioDisponible ? '✅ Subdominio disponible' : '❌ Subdominio no disponible'}
+                    </p>
+                  )}
                 </div>
               </div>
 

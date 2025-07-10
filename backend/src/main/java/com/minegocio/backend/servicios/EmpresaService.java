@@ -144,6 +144,72 @@ public class EmpresaService {
     }
 
     /**
+     * Actualiza la configuración de una empresa con validaciones
+     */
+    public EmpresaDTO actualizarConfiguracionEmpresa(Long empresaId, EmpresaDTO empresaDTO) {
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+
+        // Validar subdominio si se está cambiando
+        if (empresaDTO.getSubdominio() != null && 
+            !empresaDTO.getSubdominio().equals(empresa.getSubdominio())) {
+            
+            String nuevoSubdominio = empresaDTO.getSubdominio().toLowerCase();
+            
+            // Validar formato del subdominio
+            if (!nuevoSubdominio.matches("^[a-z0-9-]+$")) {
+                throw new RuntimeException("El subdominio solo puede contener letras minúsculas, números y guiones");
+            }
+            
+            if (nuevoSubdominio.length() < 3 || nuevoSubdominio.length() > 50) {
+                throw new RuntimeException("El subdominio debe tener entre 3 y 50 caracteres");
+            }
+            
+            // Verificar disponibilidad
+            if (empresaRepository.existsBySubdominio(nuevoSubdominio)) {
+                throw new RuntimeException("El subdominio '" + nuevoSubdominio + "' ya está en uso");
+            }
+            
+            empresa.setSubdominio(nuevoSubdominio);
+        }
+
+        // Validar email si se está cambiando
+        if (empresaDTO.getEmail() != null && 
+            !empresaDTO.getEmail().equals(empresa.getEmail())) {
+            
+            // Verificar que el email no esté en uso por otra empresa
+            if (empresaRepository.existsByEmail(empresaDTO.getEmail())) {
+                throw new RuntimeException("El email '" + empresaDTO.getEmail() + "' ya está registrado");
+            }
+            
+            empresa.setEmail(empresaDTO.getEmail());
+        }
+
+        // Actualizar otros campos
+        if (empresaDTO.getNombre() != null) {
+            empresa.setNombre(empresaDTO.getNombre());
+        }
+        if (empresaDTO.getDescripcion() != null) {
+            empresa.setDescripcion(empresaDTO.getDescripcion());
+        }
+        if (empresaDTO.getTelefono() != null) {
+            empresa.setTelefono(empresaDTO.getTelefono());
+        }
+        if (empresaDTO.getColorPrimario() != null) {
+            empresa.setColorPrimario(empresaDTO.getColorPrimario());
+        }
+        if (empresaDTO.getColorSecundario() != null) {
+            empresa.setColorSecundario(empresaDTO.getColorSecundario());
+        }
+        if (empresaDTO.getMoneda() != null) {
+            empresa.setMoneda(empresaDTO.getMoneda());
+        }
+
+        empresa = empresaRepository.save(empresa);
+        return new EmpresaDTO(empresa);
+    }
+
+    /**
      * Verifica si una empresa está activa y dentro del período de prueba/suscripción
      */
     public boolean verificarEstadoEmpresa(Long empresaId) {

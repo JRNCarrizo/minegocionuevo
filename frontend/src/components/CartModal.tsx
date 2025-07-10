@@ -185,7 +185,7 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
 
           {/* Content */}
           <div style={{ padding: '32px', maxHeight: 'calc(85vh - 140px)', overflow: 'auto' }}>
-            {items.length === 0 ? (
+          {items.length === 0 ? (
               <div style={{
                 textAlign: 'center',
                 padding: '60px 20px',
@@ -211,8 +211,8 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
                   Agrega algunos productos para comenzar a comprar
                 </p>
               </div>
-            ) : (
-              <>
+          ) : (
+            <>
                 {/* Productos */}
                 <div style={{ marginBottom: '32px' }}>
                   {items.map((item, index) => (
@@ -285,7 +285,7 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
                           }}>
-                            {item.nombre}
+                        {item.nombre}
                           </h4>
                           <p style={{ 
                             margin: '0 0 12px 0', 
@@ -327,10 +327,10 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
                               -
                             </button>
                             
-                            <input
-                              type="number"
-                              min={1}
-                              value={item.cantidad}
+                        <input
+                          type="number"
+                          min={1}
+                          value={item.cantidad}
                               onChange={async e => {
                                 const nuevaCantidad = Number(e.target.value);
                                 await updateQuantity(item.id, nuevaCantidad, undefined, empresa?.subdominio);
@@ -495,7 +495,7 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
                       }}
                     >
                       {loading ? '⏳ Procesando...' : '💳 Finalizar Compra'}
-                    </button>
+              </button>
                   </div>
                   
                   {compraRealizada && (
@@ -513,8 +513,8 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
                     </div>
                   )}
                 </div>
-              </>
-            )}
+            </>
+          )}
           </div>
         </div>
       </div>

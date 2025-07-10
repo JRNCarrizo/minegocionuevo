@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import NavbarAdmin from '../../components/NavbarAdmin';
 import type { Pedido } from '../../types';
 import type { DetallePedido } from '../../types';
 
@@ -705,6 +706,8 @@ export default function GestionPedidos() {
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState<Pedido | null>(null);
   const [mostrarDetalle, setMostrarDetalle] = useState(false);
+  const [empresaNombre, setEmpresaNombre] = useState<string>('');
+  const [nombreAdministrador, setNombreAdministrador] = useState<string>('');
 
   useEffect(() => {
     // Obtener empresaId del usuario logueado
@@ -713,9 +716,17 @@ export default function GestionPedidos() {
       try {
         const user = JSON.parse(userStr);
         setEmpresaId(user.empresaId);
+        setEmpresaNombre(user.empresaNombre || '');
+        setNombreAdministrador(user.nombre || '');
       } catch {}
     }
   }, []);
+
+  const cerrarSesion = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/admin/login';
+  };
 
   useEffect(() => {
     if (empresaId) {
@@ -814,15 +825,11 @@ export default function GestionPedidos() {
   if (cargando) {
     return (
       <div className="h-pantalla-minimo" style={{ backgroundColor: '#f8fafc' }}>
-        <nav className="navbar">
-          <div className="contenedor">
-            <div className="navbar-contenido">
-              <Link to="/admin/dashboard" className="logo">
-                ← miNegocio - Admin
-              </Link>
-            </div>
-          </div>
-        </nav>
+        <NavbarAdmin 
+          onCerrarSesion={cerrarSesion}
+          empresaNombre={empresaNombre}
+          nombreAdministrador={nombreAdministrador}
+        />
         <div className="contenedor py-8">
           <div className="tarjeta text-center py-12">
             <div className="spinner mx-auto mb-4"></div>
@@ -836,15 +843,11 @@ export default function GestionPedidos() {
   return (
     <div className="h-pantalla-minimo" style={{ backgroundColor: '#f8fafc' }}>
       {/* Navegación */}
-      <nav className="navbar">
-        <div className="contenedor">
-          <div className="navbar-contenido">
-            <Link to="/admin/dashboard" className="logo">
-              ← miNegocio - Admin
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <NavbarAdmin 
+        onCerrarSesion={cerrarSesion}
+        empresaNombre={empresaNombre}
+        nombreAdministrador={nombreAdministrador}
+      />
 
       {/* Contenido principal */}
       <div className="contenedor py-8">

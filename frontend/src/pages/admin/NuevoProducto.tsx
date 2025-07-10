@@ -23,6 +23,9 @@ const CampoFormulario = memo(({
   nuevaCategoria,
   setNuevaCategoria,
   categorias,
+  mostrarSugerenciasMarca,
+  marcasFiltradas,
+  seleccionarMarca,
   ...props 
 }: {
   label: string;
@@ -32,16 +35,19 @@ const CampoFormulario = memo(({
   required?: boolean;
   error?: string;
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   onSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onNuevaCategoria: (e: React.KeyboardEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>) => void;
   mostrarNuevaCategoria: boolean;
   nuevaCategoria: string;
   setNuevaCategoria: (value: string) => void;
   categorias: string[];
+  mostrarSugerenciasMarca?: boolean;
+  marcasFiltradas?: string[];
+  seleccionarMarca?: (marca: string) => void;
   [key: string]: any;
 }) => (
-  <div className="campo-grupo">
+  <div className="campo-grupo" style={{ position: 'relative' }}>
     <label htmlFor={name} className="campo-label">
       {label} {required && <span className="campo-requerido">*</span>}
     </label>
@@ -92,16 +98,31 @@ const CampoFormulario = memo(({
         )}
       </>
     ) : (
-      <input
-        type={type}
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        className={`campo-input ${error ? 'campo-error' : ''}`}
-        placeholder={placeholder}
-        {...props}
-      />
+      <>
+        <input
+          type={type}
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          className={`campo-input ${error ? 'campo-error' : ''}`}
+          placeholder={placeholder}
+          {...props}
+        />
+        {mostrarSugerenciasMarca && marcasFiltradas && seleccionarMarca && (
+          <div className="sugerencias-marca">
+            {marcasFiltradas.map((marca, index) => (
+              <div
+                key={index}
+                className="sugerencia-marca"
+                onClick={() => seleccionarMarca(marca)}
+              >
+                {marca}
+              </div>
+            ))}
+          </div>
+        )}
+      </>
     )}
     {error && <div className="campo-mensaje-error">{error}</div>}
   </div>
@@ -133,6 +154,10 @@ export default function NuevoProducto() {
   const [errores, setErrores] = useState<{[key: string]: string}>({});
   const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
   const [nuevaCategoria, setNuevaCategoria] = useState('');
+  const [marcas, setMarcas] = useState<string[]>([]);
+  const [cargandoMarcas, setCargandoMarcas] = useState(true);
+  const [marcasFiltradas, setMarcasFiltradas] = useState<string[]>([]);
+  const [mostrarSugerenciasMarca, setMostrarSugerenciasMarca] = useState(false);
 
   const cargarCategorias = useCallback(async () => {
     try {
@@ -148,9 +173,60 @@ export default function NuevoProducto() {
     }
   }, [empresaId]);
 
+  const cargarMarcas = useCallback(async () => {
+    try {
+      setCargandoMarcas(true);
+      const response = await ApiService.obtenerMarcas(empresaId);
+      if (response.data) {
+        setMarcas(response.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar marcas:', error);
+    } finally {
+      setCargandoMarcas(false);
+    }
+  }, [empresaId]);
+
+  const manejarCambioMarca = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormulario(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Limpiar error del campo cuando el usuario empiece a escribir
+    setErrores(prev => {
+      const nuevosErrores = { ...prev };
+      delete nuevosErrores[name];
+      return nuevosErrores;
+    });
+    
+    // Filtrar marcas que coincidan con lo que se está escribiendo
+    if (value.trim()) {
+      const filtradas = marcas.filter(marca => 
+        marca.toLowerCase().includes(value.toLowerCase())
+      );
+      setMarcasFiltradas(filtradas);
+      setMostrarSugerenciasMarca(filtradas.length > 0);
+    } else {
+      setMarcasFiltradas([]);
+      setMostrarSugerenciasMarca(false);
+    }
+  }, [marcas]);
+
+  const seleccionarMarca = useCallback((marca: string) => {
+    setFormulario(prev => ({
+      ...prev,
+      marca
+    }));
+    setMarcasFiltradas([]);
+    setMostrarSugerenciasMarca(false);
+  }, []);
+
   useEffect(() => {
     cargarCategorias();
-  }, [cargarCategorias]);
+    cargarMarcas();
+  }, [cargarCategorias, cargarMarcas]);
 
   const manejarCambio = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -327,15 +403,10 @@ export default function NuevoProducto() {
 
   return (
     <div className="pagina-crear-producto">
-      <NavbarAdmin 
-        onCerrarSesion={() => {
-          cerrarSesion();
-          toast.success('Sesión cerrada correctamente');
-        }}
+      <NavbarAdmin
+        onCerrarSesion={cerrarSesion}
         empresaNombre={datosUsuario?.empresaNombre}
         nombreAdministrador={datosUsuario?.nombre}
-        mostrarVolver={true}
-        urlVolver="/admin/productos"
       />
 
       <div className="contenedor-principal">
@@ -406,30 +477,34 @@ export default function NuevoProducto() {
                         placeholder="Ej: Nike, Apple, Samsung..."
                         error={errores.marca}
                         value={formulario.marca}
-                        onChange={manejarCambio}
+                        onChange={manejarCambioMarca}
                         onSelectChange={manejarCambioSelect}
                         onNuevaCategoria={manejarNuevaCategoria}
                         mostrarNuevaCategoria={mostrarNuevaCategoria}
                         nuevaCategoria={nuevaCategoria}
                         setNuevaCategoria={setNuevaCategoria}
                         categorias={categorias}
-                      />
-                      <CampoFormulario
-                        label="Categoría"
-                        name="categoria"
-                        type="select"
-                        required
-                        error={errores.categoria}
-                        value={formulario.categoria}
-                        onChange={manejarCambio}
-                        onSelectChange={manejarCambioSelect}
-                        onNuevaCategoria={manejarNuevaCategoria}
-                        mostrarNuevaCategoria={mostrarNuevaCategoria}
-                        nuevaCategoria={nuevaCategoria}
-                        setNuevaCategoria={setNuevaCategoria}
-                        categorias={categorias}
+                        mostrarSugerenciasMarca={mostrarSugerenciasMarca}
+                        marcasFiltradas={marcasFiltradas}
+                        seleccionarMarca={seleccionarMarca}
                       />
                     </div>
+
+                    <CampoFormulario
+                      label="Categoría"
+                      name="categoria"
+                      type="select"
+                      required
+                      error={errores.categoria}
+                      value={formulario.categoria}
+                      onChange={manejarCambio}
+                      onSelectChange={manejarCambioSelect}
+                      onNuevaCategoria={manejarNuevaCategoria}
+                      mostrarNuevaCategoria={mostrarNuevaCategoria}
+                      nuevaCategoria={nuevaCategoria}
+                      setNuevaCategoria={setNuevaCategoria}
+                      categorias={categorias}
+                    />
 
                     <CampoFormulario
                       label="Descripción"
@@ -984,6 +1059,34 @@ export default function NuevoProducto() {
           background: #ef4444;
           color: white;
           transform: translateY(-1px);
+        }
+
+        .sugerencias-marca {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 0.5rem;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          max-height: 150px;
+          overflow-y: auto;
+          z-index: 10;
+          margin-top: 2px;
+        }
+
+        .sugerencia-marca {
+          padding: 8px 12px;
+          cursor: pointer;
+          font-size: 0.875rem;
+          color: #374151;
+          transition: background-color 0.2s ease;
+          border-bottom: 1px solid #f3f4f6;
+        }
+
+        .sugerencia-marca:hover {
+          background-color: #f8fafc;
         }
 
         @media (max-width: 768px) {

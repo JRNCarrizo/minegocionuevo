@@ -97,7 +97,7 @@ class ApiService {
     return response.data;
   }
 
-  async verificarSubdominio(subdominio: string): Promise<{ disponible: boolean }> {
+  async verificarSubdominio(subdominio: string): Promise<{ disponible: boolean; mensaje: string }> {
     const response = await this.api.get(`/empresas/verificar-subdominio/${subdominio}`);
     return response.data;
   }
@@ -220,9 +220,15 @@ class ApiService {
     }
   }
 
-  async obtenerMarcas(): Promise<ApiResponse<string[]>> {
-    const response = await this.api.get('/productos/marcas');
-    return response.data;
+  async obtenerMarcas(empresaId?: number): Promise<ApiResponse<string[]>> {
+    if (empresaId) {
+      const response = await this.api.get(`/empresas/${empresaId}/productos/marcas`);
+      return response.data;
+    } else {
+      // Fallback temporal para compatibilidad
+      const response = await this.api.get('/productos/marcas');
+      return response.data;
+    }
   }
 
   // Métodos de clientes (requieren empresaId)
