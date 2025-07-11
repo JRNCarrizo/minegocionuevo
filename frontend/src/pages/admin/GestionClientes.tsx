@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
@@ -366,22 +365,14 @@ export default function GestionClientes() {
     window.location.href = '/admin/login';
   };
 
-  useEffect(() => {
-    if (empresaId) {
-      cargarClientes();
-    }
-  }, [empresaId]);
-
-  const cargarClientes = async () => {
+  const cargarClientes = useCallback(async () => {
     if (!empresaId) return;
     setCargando(true);
     try {
       console.log('=== DEBUG CARGAR CLIENTES ===');
       console.log('EmpresaId:', empresaId);
-      
       const response = await api.obtenerClientesPaginado(empresaId, 0, 100);
       console.log('Respuesta completa:', response);
-      
       const clientesApi: Cliente[] = response.content || [];
       console.log('Clientes cargados:', clientesApi);
       console.log('Estadísticas de clientes:', clientesApi.map(c => ({
@@ -390,7 +381,6 @@ export default function GestionClientes() {
         totalPedidos: c.totalPedidos,
         totalCompras: c.totalCompras
       })));
-      
       setClientes(clientesApi);
     } catch (error) {
       console.error('Error al cargar clientes:', error);
@@ -398,7 +388,13 @@ export default function GestionClientes() {
     } finally {
       setCargando(false);
     }
-  };
+  }, [empresaId]);
+
+  useEffect(() => {
+    if (empresaId) {
+      cargarClientes();
+    }
+  }, [empresaId, cargarClientes]);
 
   const alternarEstadoCliente = async (id: number) => {
     try {
@@ -470,7 +466,6 @@ export default function GestionClientes() {
 
   // Calcular estadísticas generales
   const totalCompras = clientes.reduce((total, cliente) => total + (cliente.totalCompras || 0), 0);
-  const promedioCompras = clientes.length > 0 ? totalCompras / clientes.length : 0;
 
   console.log('Estado del modal:', { mostrarDetalle, clienteSeleccionado: !!clienteSeleccionado, pedidosCliente: pedidosCliente.length });
 
@@ -527,46 +522,6 @@ export default function GestionClientes() {
             borderRadius: '2px',
             marginTop: '16px'
           }}></div>
-          
-          {/* Botón temporal de debug */}
-          <button 
-            onClick={async () => {
-              console.log('=== DEBUG AUTH STATE ===');
-              console.log('Token admin:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
-              console.log('Token cliente:', localStorage.getItem('clienteToken') ? 'Presente' : 'Ausente');
-              console.log('User data:', localStorage.getItem('user'));
-              console.log('EmpresaId:', empresaId);
-              
-              if (empresaId) {
-                try {
-                  console.log('Probando endpoint público...');
-                  const publicResponse = await api.debugPublic(empresaId);
-                  console.log('Public endpoint response:', publicResponse);
-                } catch (error) {
-                  console.error('Error en endpoint público:', error);
-                }
-                
-                try {
-                  console.log('Probando endpoint autenticado...');
-                  const authResponse = await api.debugAuth(empresaId);
-                  console.log('Auth endpoint response:', authResponse);
-                } catch (error) {
-                  console.error('Error en endpoint autenticado:', error);
-                }
-              }
-            }}
-            style={{
-              marginTop: '16px',
-              padding: '8px 16px',
-              backgroundColor: '#f59e0b',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer'
-            }}
-          >
-            🔍 Debug Auth
-          </button>
         </div>
 
         {/* Estadísticas rápidas */}

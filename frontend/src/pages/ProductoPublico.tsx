@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { useSubdominio } from '../hooks/useSubdominio';
 import apiService from '../services/api';
 import type { Producto } from '../types';
-import CartIcon from '../components/CartIcon';
 import CartModal from '../components/CartModal';
 import NavbarCliente from '../components/NavbarCliente';
 import { useCart } from '../hooks/useCart';
@@ -219,9 +218,9 @@ export default function ProductoPublico() {
               border: '1px solid #e2e8f0',
               minWidth: 0
             }}>
-              <div style={{ position: 'relative' }}>
-                {producto.imagenes && producto.imagenes.length > 0 ? (
-                  <>
+              {producto.imagenes && producto.imagenes.length > 0 ? (
+                <>
+                  <div style={{ position: 'relative' }}>
                     <img 
                       src={producto.imagenes[imagenActual]} 
                       alt={producto.nombre}
@@ -233,89 +232,88 @@ export default function ProductoPublico() {
                         border: '2px solid #e2e8f0'
                       }}
                     />
-                    
-                    {producto.imagenes.length > 1 && (
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '16px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        background: 'rgba(0,0,0,0.7)',
-                        color: 'white',
-                        padding: '8px 16px',
-                        borderRadius: '20px',
-                        fontSize: '14px',
-                        fontWeight: '500'
-                      }}>
-                        {imagenActual + 1} / {producto.imagenes.length}
-                      </div>
-                    )}
-                    
-                    {producto.imagenes.length > 1 && (
-                      <div style={{
-                        display: 'flex',
-                        gap: '8px',
-                        marginTop: '16px',
-                        justifyContent: 'center',
-                        flexWrap: 'wrap'
-                      }}>
-                        {producto.imagenes.map((imagen, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setImagenActual(index)}
-                            style={{
-                              width: '60px',
-                              height: '60px',
-                              borderRadius: '8px',
-                              overflow: 'hidden',
-                              border: index === imagenActual ? '3px solid #3b82f6' : '2px solid #e2e8f0',
-                              cursor: 'pointer',
-                              padding: 0,
-                              background: 'none',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseOver={(e) => {
-                              if (index !== imagenActual) {
-                                e.currentTarget.style.borderColor = '#3b82f6';
-                              }
-                            }}
-                            onMouseOut={(e) => {
-                              if (index !== imagenActual) {
-                                e.currentTarget.style.borderColor = '#e2e8f0';
-                              }
-                            }}
-                          >
-                            <img 
-                              src={imagen} 
-                              alt={`${producto.nombre} ${index + 1}`}
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover'
-                              }}
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '400px',
-                    background: '#f9fafb',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#9ca3af',
-                    fontSize: '18px',
-                    border: '2px dashed #d1d5db',
-                    borderRadius: '12px'
-                  }}>
-                    📷 Sin imagen disponible
+                    {/* Indicador dentro de la imagen principal */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '16px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: 'rgba(0,0,0,0.7)',
+                      color: 'white',
+                      padding: '8px 16px',
+                      borderRadius: '20px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      pointerEvents: 'none'
+                    }}>
+                      {imagenActual + 1} / {producto.imagenes.length}
+                    </div>
                   </div>
-                )}
-              </div>
+                  {/* Miniaturas */}
+                  {producto.imagenes.length > 1 && (
+                    <div style={{
+                      display: 'flex',
+                      gap: '8px',
+                      marginTop: '16px',
+                      justifyContent: 'center',
+                      flexWrap: 'wrap'
+                    }}>
+                      {producto.imagenes.map((imagen, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setImagenActual(index)}
+                          style={{
+                            width: '60px',
+                            height: '60px',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            border: index === imagenActual ? '3px solid #3b82f6' : '2px solid #e2e8f0',
+                            cursor: 'pointer',
+                            padding: 0,
+                            background: 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseOver={(e) => {
+                            if (index !== imagenActual) {
+                              e.currentTarget.style.borderColor = '#3b82f6';
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (index !== imagenActual) {
+                              e.currentTarget.style.borderColor = '#e2e8f0';
+                            }
+                          }}
+                        >
+                          <img 
+                            src={imagen} 
+                            alt={`${producto.nombre} ${index + 1}`}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{
+                  width: '100%',
+                  height: '400px',
+                  background: '#f9fafb',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#9ca3af',
+                  fontSize: '18px',
+                  border: '2px dashed #d1d5db',
+                  borderRadius: '12px'
+                }}>
+                  📷 Sin imagen disponible
+                </div>
+              )}
             </div>
 
             {/* Información del producto */}

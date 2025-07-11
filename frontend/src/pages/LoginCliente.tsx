@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useSubdominio } from '../hooks/useSubdominio';
-import NavbarCliente from '../components/NavbarCliente';
 import api from '../services/api';
 
 interface LoginClienteForm {
@@ -152,6 +151,35 @@ export default function LoginCliente() {
       position: 'relative',
       overflow: 'hidden'
     }}>
+      {/* Botón catálogo arriba a la derecha solo texto blanco */}
+      <div style={{
+        position: 'absolute',
+        top: '2rem',
+        right: '2rem',
+        zIndex: 10
+      }}>
+        <Link to="/catalogo" style={{
+          background: 'none',
+          color: 'white',
+          textDecoration: 'underline',
+          border: 'none',
+          fontWeight: '600',
+          fontSize: '1.1rem',
+          padding: 0,
+          boxShadow: 'none',
+          cursor: 'pointer',
+          transition: 'color 0.2s ease'
+        }}
+        onMouseOver={e => {
+          e.currentTarget.style.color = brandColors.primary;
+        }}
+        onMouseOut={e => {
+          e.currentTarget.style.color = 'white';
+        }}>
+          Ir al catálogo
+        </Link>
+      </div>
+      
       {/* Patrón de fondo */}
       <div style={{
         background: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
@@ -184,14 +212,6 @@ export default function LoginCliente() {
         borderRadius: '50%',
         animation: 'float 8s ease-in-out infinite reverse'
       }} />
-
-      {/* Navbar del cliente */}
-      <NavbarCliente
-        empresa={empresa}
-        clienteInfo={null}
-        onCerrarSesion={() => {}}
-        onShowCart={() => {}}
-      />
 
       {/* Contenido principal */}
       <main style={{

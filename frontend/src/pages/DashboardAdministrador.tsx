@@ -14,6 +14,10 @@ export default function DashboardAdministrador() {
     ventas: 0
   });
   const [cargandoEstadisticas, setCargandoEstadisticas] = useState(true);
+  const [mostrarVentas, setMostrarVentas] = useState(() => {
+    const guardado = localStorage.getItem('mostrarVentas');
+    return guardado === null ? true : guardado === 'true';
+  });
 
   useEffect(() => {
     const cargarEstadisticas = async () => {
@@ -99,10 +103,11 @@ export default function DashboardAdministrador() {
     },
     {
       titulo: 'Ventas',
-      valor: `$${estadisticas.ventas.toLocaleString()}`,
+      valor: mostrarVentas ? `$${estadisticas.ventas.toLocaleString()}` : '****',
       icono: '💰',
       color: '#8b5cf6',
-      gradiente: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
+      gradiente: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+      mostrarOjito: true
     }
   ];
 
@@ -143,6 +148,13 @@ export default function DashboardAdministrador() {
       color: '#6b7280'
     }
   ];
+
+  const alternarMostrarVentas = () => {
+    setMostrarVentas(prev => {
+      localStorage.setItem('mostrarVentas', (!prev).toString());
+      return !prev;
+    });
+  };
 
   return (
     <div style={{
@@ -337,69 +349,38 @@ export default function DashboardAdministrador() {
             >
               {tarjeta.titulo === 'Ventas' ? (
                 // Diseño especial para la tarjeta de ventas
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  height: '100%'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '1rem'
-                  }}>
-                    <h3 style={{
-                      fontSize: '0.875rem',
-                      color: '#64748b',
-                      margin: 0,
-                      fontWeight: '500',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <h3 style={{ fontSize: '0.875rem', color: '#64748b', margin: 0, fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       {tarjeta.titulo}
                     </h3>
-                    <div style={{
-                      width: '3rem',
-                      height: '3rem',
-                      background: tarjeta.gradiente,
-                      borderRadius: '0.75rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.5rem',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                      flexShrink: 0
-                    }}>
-                      {tarjeta.icono}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '3rem', height: '3rem', background: tarjeta.gradiente, borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)', flexShrink: 0 }}>
+                        {tarjeta.icono}
+                      </div>
+                      {/* Ojito para mostrar/ocultar monto */}
+                      <button
+                        onClick={alternarMostrarVentas}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '1.5rem',
+                          marginLeft: '4px',
+                          color: mostrarVentas ? '#64748b' : '#d1d5db',
+                          outline: 'none',
+                          padding: 0
+                        }}
+                        title={mostrarVentas ? 'Ocultar monto' : 'Mostrar monto'}
+                      >
+                        {mostrarVentas ? '👁️' : '🙈'}
+                      </button>
                     </div>
                   </div>
-                  <div style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <p style={{
-                      fontSize: 'clamp(2.2rem, 6vw, 3.2rem)',
-                      fontWeight: '800',
-                      color: tarjeta.color,
-                      margin: 0,
-                      lineHeight: '1',
-                      textAlign: 'center',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '100%'
-                    }}>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <p style={{ fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', fontWeight: '800', color: tarjeta.color, margin: 0, lineHeight: '1', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
                       {cargandoEstadisticas ? (
-                        <div style={{
-                          width: '80px',
-                          height: '50px',
-                          background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
-                          backgroundSize: '200% 100%',
-                          animation: 'loading 1.5s infinite',
-                          borderRadius: '0.5rem'
-                        }} />
+                        <div style={{ width: '80px', height: '50px', background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'loading 1.5s infinite', borderRadius: '0.5rem' }} />
                       ) : (
                         tarjeta.valor
                       )}
