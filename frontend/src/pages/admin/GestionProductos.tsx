@@ -9,6 +9,9 @@ interface FiltrosProductos {
   nombre?: string;
   categoria?: string;
   marca?: string;
+  sectorAlmacenamiento?: string;
+  codigoPersonalizado?: string;
+  codigoBarras?: string;
   activo?: boolean;
   stockBajo?: boolean;
 }
@@ -25,6 +28,9 @@ const GestionProductos: React.FC = () => {
   const [busqueda, setBusqueda] = useState('');
   const [categorias, setCategorias] = useState<string[]>([]);
   const [marcas, setMarcas] = useState<string[]>([]);
+  const [sectoresAlmacenamiento, setSectoresAlmacenamiento] = useState<string[]>([]);
+  const [codigosPersonalizados, setCodigosPersonalizados] = useState<string[]>([]);
+  const [codigosBarras, setCodigosBarras] = useState<string[]>([]);
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [empresaNombre, setEmpresaNombre] = useState<string>('');
   const [nombreAdministrador, setNombreAdministrador] = useState<string>('');
@@ -82,26 +88,43 @@ const GestionProductos: React.FC = () => {
       
       let productos: Producto[] = [];
       
+      // Usar el endpoint específico para filtrar por código de barras si se especifica
+      if (filtros.codigoBarras) {
+        console.log('Filtrando por código de barras:', filtros.codigoBarras);
+        productos = await ApiService.obtenerProductosPorCodigoBarras(empresaId, filtros.codigoBarras, filtros.activo);
+      }
+      // Usar el endpoint específico para filtrar por código personalizado si se especifica
+      else if (filtros.codigoPersonalizado) {
+        console.log('Filtrando por código personalizado:', filtros.codigoPersonalizado);
+        productos = await ApiService.obtenerProductosPorCodigo(empresaId, filtros.codigoPersonalizado, filtros.activo);
+      }
+      // Usar el endpoint específico para filtrar por sector si se especifica
+      else if (filtros.sectorAlmacenamiento) {
+        console.log('Filtrando por sector:', filtros.sectorAlmacenamiento);
+        productos = await ApiService.obtenerProductosPorSector(empresaId, filtros.sectorAlmacenamiento, filtros.activo);
+      }
       // Usar el endpoint específico para filtrar por estado si se especifica
-      if (filtros.activo !== undefined) {
+      else if (filtros.activo !== undefined) {
         console.log('Filtrando por estado activo:', filtros.activo);
         productos = await ApiService.obtenerProductosPorEstado(empresaId, filtros.activo);
       } else {
         // Obtener todos los productos (activos e inactivos)
         console.log('Obteniendo todos los productos (activos e inactivos)');
         const response = await ApiService.obtenerTodosLosProductosIncluirInactivos(empresaId);
-        productos = Array.isArray(response) ? response : [];
+        productos = response.data || [];
       }
 
       console.log('Productos cargados del backend:', productos.length, 'productos');
       setProductos(productos);
       
-      // Extraer categorías y marcas únicas de los productos obtenidos
+      // Extraer categorías, marcas y sectores únicos de los productos obtenidos
       const categoriasUnicas = [...new Set(productos.map((p: Producto) => p.categoria).filter(Boolean) as string[])];
       const marcasUnicas = [...new Set(productos.map((p: Producto) => p.marca).filter(Boolean) as string[])];
+      const sectoresUnicos = [...new Set(productos.map((p: Producto) => p.sectorAlmacenamiento).filter(Boolean) as string[])];
       
       setCategorias(categoriasUnicas);
       setMarcas(marcasUnicas);
+      setSectoresAlmacenamiento(sectoresUnicos);
         
     } catch (error: unknown) {
       console.error('Error al cargar productos:', error);
@@ -126,18 +149,88 @@ const GestionProductos: React.FC = () => {
     }
   }, [empresaId, filtros]);
 
+  const cargarSectoresAlmacenamiento = useCallback(async () => {
+    if (!empresaId) return;
+    
+    try {
+      const response = await ApiService.obtenerSectoresAlmacenamiento(empresaId);
+      if (response.data) {
+        setSectoresAlmacenamiento(response.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar sectores de almacenamiento:', error);
+    }
+  }, [empresaId]);
+
+  const cargarCodigosPersonalizados = useCallback(async () => {
+    if (!empresaId) return;
+    
+    try {
+      const response = await ApiService.obtenerCodigosPersonalizados(empresaId);
+      if (response.data) {
+        setCodigosPersonalizados(response.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar códigos personalizados:', error);
+    }
+  }, [empresaId]);
+
+  const cargarCodigosBarras = useCallback(async () => {
+    if (!empresaId) return;
+    
+    try {
+      const response = await ApiService.obtenerCodigosBarras(empresaId);
+      if (response.data) {
+        setCodigosBarras(response.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar códigos de barras:', error);
+    }
+  }, [empresaId]);
+
   useEffect(() => {
     if (empresaId) {
       cargarProductos();
+      cargarSectoresAlmacenamiento();
+      cargarCodigosPersonalizados();
+      cargarCodigosBarras();
     }
-  }, [empresaId, cargarProductos]);
+  }, [empresaId, cargarProductos, cargarSectoresAlmacenamiento, cargarCodigosPersonalizados, cargarCodigosBarras]);
 
   // Función para filtrar productos
   const productosFiltrados = productos.filter(producto => {
-    // Filtro por búsqueda
-    if (busqueda && !producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
-        !(producto.descripcion?.toLowerCase().includes(busqueda.toLowerCase()))) {
-      return false;
+    // Filtro por búsqueda (si hay sector o código seleccionado, solo buscar en ese sector/código)
+    if (busqueda) {
+      const textoBusqueda = busqueda.toLowerCase();
+      const coincideNombre = producto.nombre.toLowerCase().includes(textoBusqueda);
+      const coincideDescripcion = producto.descripcion?.toLowerCase().includes(textoBusqueda);
+      const coincideCodigo = producto.codigoPersonalizado?.toLowerCase().includes(textoBusqueda);
+      const coincideCodigoBarras = producto.codigoBarras?.toLowerCase().includes(textoBusqueda);
+      
+      // Si hay sector seleccionado, verificar que el producto pertenezca a ese sector
+      if (filtros.sectorAlmacenamiento) {
+        if (producto.sectorAlmacenamiento !== filtros.sectorAlmacenamiento) {
+          return false;
+        }
+      }
+      
+      // Si hay código personalizado seleccionado, verificar que el producto tenga ese código
+      if (filtros.codigoPersonalizado) {
+        if (producto.codigoPersonalizado !== filtros.codigoPersonalizado) {
+          return false;
+        }
+      }
+      
+      // Si hay código de barras seleccionado, verificar que el producto tenga ese código
+      if (filtros.codigoBarras) {
+        if (producto.codigoBarras !== filtros.codigoBarras) {
+          return false;
+        }
+      }
+      
+      if (!coincideNombre && !coincideDescripcion && !coincideCodigo && !coincideCodigoBarras) {
+        return false;
+      }
     }
 
     // Filtro por categoría
@@ -147,6 +240,21 @@ const GestionProductos: React.FC = () => {
 
     // Filtro por marca
     if (filtros.marca && producto.marca !== filtros.marca) {
+      return false;
+    }
+
+    // Filtro por sector de almacenamiento (si no hay búsqueda activa)
+    if (filtros.sectorAlmacenamiento && !busqueda && producto.sectorAlmacenamiento !== filtros.sectorAlmacenamiento) {
+      return false;
+    }
+
+    // Filtro por código personalizado (si no hay búsqueda activa)
+    if (filtros.codigoPersonalizado && !busqueda && producto.codigoPersonalizado !== filtros.codigoPersonalizado) {
+      return false;
+    }
+
+    // Filtro por código de barras (si no hay búsqueda activa)
+    if (filtros.codigoBarras && !busqueda && producto.codigoBarras !== filtros.codigoBarras) {
       return false;
     }
 
@@ -460,7 +568,10 @@ const GestionProductos: React.FC = () => {
               </div>
 
               {/* Filtros */}
-              <div className="grid grid-3 gap-4 mb-4">
+              <div className={`grid ${
+                (sectoresAlmacenamiento.length > 0 && codigosPersonalizados.length > 0 && codigosBarras.length > 0) ? 'grid-6' :
+                (sectoresAlmacenamiento.length > 0 && codigosPersonalizados.length > 0) ? 'grid-5' : 'grid-4'
+              } gap-4 mb-4`}>
                 <select 
                   value={filtros.categoria || ''} 
                   onChange={(e) => setFiltros({...filtros, categoria: e.target.value || undefined})}
@@ -494,6 +605,63 @@ const GestionProductos: React.FC = () => {
                     <option key={marca} value={marca}>{marca}</option>
                   ))}
                 </select>
+
+                {sectoresAlmacenamiento.length > 0 && (
+                  <select 
+                    value={filtros.sectorAlmacenamiento || ''} 
+                    onChange={(e) => setFiltros({...filtros, sectorAlmacenamiento: e.target.value || undefined})}
+                    className="campo"
+                    style={{ 
+                      fontSize: '14px',
+                      borderRadius: '8px',
+                      border: '2px solid #e2e8f0',
+                      background: 'white'
+                    }}
+                  >
+                    <option value="">🏢 Todos los sectores</option>
+                    {sectoresAlmacenamiento.map(sector => (
+                      <option key={sector} value={sector}>{sector}</option>
+                    ))}
+                  </select>
+                )}
+
+                {codigosPersonalizados.length > 0 && (
+                  <select 
+                    value={filtros.codigoPersonalizado || ''} 
+                    onChange={(e) => setFiltros({...filtros, codigoPersonalizado: e.target.value || undefined})}
+                    className="campo"
+                    style={{ 
+                      fontSize: '14px',
+                      borderRadius: '8px',
+                      border: '2px solid #e2e8f0',
+                      background: 'white'
+                    }}
+                  >
+                    <option value="">🔢 Todos los códigos</option>
+                    {codigosPersonalizados.map(codigo => (
+                      <option key={codigo} value={codigo}>{codigo}</option>
+                    ))}
+                  </select>
+                )}
+
+                {codigosBarras.length > 0 && (
+                  <select 
+                    value={filtros.codigoBarras || ''} 
+                    onChange={(e) => setFiltros({...filtros, codigoBarras: e.target.value || undefined})}
+                    className="campo"
+                    style={{ 
+                      fontSize: '14px',
+                      borderRadius: '8px',
+                      border: '2px solid #e2e8f0',
+                      background: 'white'
+                    }}
+                  >
+                    <option value="">📊 Todos los códigos de barras</option>
+                    {codigosBarras.map(codigo => (
+                      <option key={codigo} value={codigo}>{codigo}</option>
+                    ))}
+                  </select>
+                )}
 
                 <select 
                   value={filtros.activo === undefined ? '' : filtros.activo.toString()} 
@@ -922,15 +1090,6 @@ const GestionProductos: React.FC = () => {
                         }}>
                           {producto.categoria}
                         </div>
-                        {producto.marca && (
-                          <div style={{
-                            fontSize: '12px',
-                            color: '#64748b',
-                            marginTop: '4px'
-                          }}>
-                            {producto.marca}
-                          </div>
-                        )}
                       </div>
                       
                       <div className="columna-estado">
@@ -1042,8 +1201,8 @@ const GestionProductos: React.FC = () => {
               <div className="vista-cuadricula">
                 <div className="grilla-productos" style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-                  gap: '24px'
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                  gap: '16px'
                 }}>
                   {productosFiltrados.map(producto => (
                     <div key={producto.id} className="tarjeta-producto" style={{
@@ -1097,7 +1256,7 @@ const GestionProductos: React.FC = () => {
                       <div className="imagen-container" style={{ 
                         width: '100%',
                         position: 'relative',
-                        paddingBottom: '100%',
+                        paddingBottom: '90%',
                         overflow: 'hidden',
                         borderRadius: '12px 12px 0 0'
                       }}>
@@ -1202,79 +1361,103 @@ const GestionProductos: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Categoría */}
-                        <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+                        {/* Información secundaria */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                           <span style={{
-                            background: '#f1f5f9',
+                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
                             color: '#374151',
-                            padding: '3px 6px',
-                            borderRadius: '6px',
-                            fontSize: '10px',
-                            fontWeight: '500'
+                            padding: '4px 8px',
+                            borderRadius: '8px',
+                            fontSize: '11px',
+                            fontWeight: '500',
+                            border: '1px solid #e2e8f0'
                           }}>
-                            {producto.categoria}
-                          </span>
-                        </div>
-
-                        {/* Controles de stock */}
-                        <div className="control-stock-mini" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              cambiarStock(producto, -1);
-                            }}
-                            style={{
-                              background: '#ef4444',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              width: '24px',
-                              height: '24px',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >
-                            -
-                          </button>
-                          
-                          <span style={{
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#374151',
-                            minWidth: '16px',
-                            textAlign: 'center'
-                          }}>
-                            {producto.stock}
+                            📂 {producto.categoria}
                           </span>
                           
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              cambiarStock(producto, 1);
-                            }}
-                            style={{
-                              background: '#10b981',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              width: '24px',
-                              height: '24px',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >
-                            +
-                          </button>
+                          <div className="control-stock-mini" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                cambiarStock(producto, -1);
+                              }}
+                              style={{
+                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                width: '28px',
+                                height: '28px',
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                boxShadow: '0 2px 4px rgba(239,68,68,0.2)'
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(239,68,68,0.3)';
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(239,68,68,0.2)';
+                              }}
+                            >
+                              -
+                            </button>
+                            
+                            <span style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: '#374151',
+                              minWidth: '20px',
+                              textAlign: 'center',
+                              background: '#f8fafc',
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              border: '1px solid #e2e8f0'
+                            }}>
+                              {producto.stock}
+                            </span>
+                            
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                cambiarStock(producto, 1);
+                              }}
+                              style={{
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                width: '28px',
+                                height: '28px',
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                boxShadow: '0 2px 4px rgba(16,185,129,0.2)'
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(16,185,129,0.3)';
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(16,185,129,0.2)';
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
 
                         {/* Botones de acción */}
-                        <div style={{ display: 'flex', gap: '6px' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1285,15 +1468,29 @@ const GestionProductos: React.FC = () => {
                               background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                               color: 'white',
                               border: 'none',
-                              borderRadius: '6px',
-                              padding: '6px 8px',
-                              fontSize: '11px',
-                              fontWeight: '500',
+                              borderRadius: '8px',
+                              padding: '8px 12px',
+                              fontSize: '12px',
+                              fontWeight: '600',
                               cursor: 'pointer',
-                              transition: 'all 0.2s ease'
+                              transition: 'all 0.3s ease',
+                              boxShadow: '0 2px 8px rgba(59,130,246,0.2)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '4px'
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.3)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(59,130,246,0.2)';
                             }}
                           >
-                            👁️ Ver
+                            <span style={{ fontSize: '14px' }}>👁️</span>
+                            Ver
                           </button>
                           
                           <button
@@ -1306,15 +1503,29 @@ const GestionProductos: React.FC = () => {
                               background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                               color: 'white',
                               border: 'none',
-                              borderRadius: '6px',
-                              padding: '6px 8px',
-                              fontSize: '11px',
-                              fontWeight: '500',
+                              borderRadius: '8px',
+                              padding: '8px 12px',
+                              fontSize: '12px',
+                              fontWeight: '600',
                               cursor: 'pointer',
-                              transition: 'all 0.2s ease'
+                              transition: 'all 0.3s ease',
+                              boxShadow: '0 2px 8px rgba(139,92,246,0.2)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '4px'
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(139,92,246,0.3)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(139,92,246,0.2)';
                             }}
                           >
-                            ✏️ Editar
+                            <span style={{ fontSize: '14px' }}>✏️</span>
+                            Editar
                           </button>
                           
                           <button
@@ -1326,12 +1537,25 @@ const GestionProductos: React.FC = () => {
                               background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                               color: 'white',
                               border: 'none',
-                              borderRadius: '6px',
-                              padding: '6px 8px',
-                              fontSize: '11px',
-                              fontWeight: '500',
+                              borderRadius: '8px',
+                              padding: '8px 12px',
+                              fontSize: '12px',
+                              fontWeight: '600',
                               cursor: 'pointer',
-                              transition: 'all 0.2s ease'
+                              transition: 'all 0.3s ease',
+                              boxShadow: '0 2px 8px rgba(239,68,68,0.2)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minWidth: '44px'
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.3)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(239,68,68,0.2)';
                             }}
                           >
                             🗑️

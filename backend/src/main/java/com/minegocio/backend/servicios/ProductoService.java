@@ -86,6 +86,10 @@ public class ProductoService {
         
         producto.setCategoria(productoDTO.getCategoria());
         producto.setMarca(productoDTO.getMarca());
+        producto.setUnidad(productoDTO.getUnidad());
+        producto.setSectorAlmacenamiento(productoDTO.getSectorAlmacenamiento());
+        producto.setCodigoPersonalizado(productoDTO.getCodigoPersonalizado());
+        producto.setCodigoBarras(productoDTO.getCodigoBarras());
         producto.setActivo(true);
         producto.setEmpresa(empresa);
 
@@ -125,6 +129,22 @@ public class ProductoService {
         
         if (productoDTO.getMarca() != null) {
             producto.setMarca(productoDTO.getMarca());
+        }
+        
+        if (productoDTO.getUnidad() != null) {
+            producto.setUnidad(productoDTO.getUnidad());
+        }
+        
+        if (productoDTO.getSectorAlmacenamiento() != null) {
+            producto.setSectorAlmacenamiento(productoDTO.getSectorAlmacenamiento());
+        }
+        
+        if (productoDTO.getCodigoPersonalizado() != null) {
+            producto.setCodigoPersonalizado(productoDTO.getCodigoPersonalizado());
+        }
+        
+        if (productoDTO.getCodigoBarras() != null) {
+            producto.setCodigoBarras(productoDTO.getCodigoBarras());
         }
         
         if (productoDTO.getActivo() != null) {
@@ -235,6 +255,110 @@ public class ProductoService {
         return productoRepository.findCategoriasPorEmpresa(empresaOpt.get());
     }
 
+    /**
+     * Obtiene todos los sectores de almacenamiento únicos de productos de una empresa
+     */
+    public List<String> obtenerSectoresAlmacenamientoPorEmpresa(Long empresaId) {
+        Optional<Empresa> empresaOpt = empresaRepository.findById(empresaId);
+        if (empresaOpt.isEmpty()) {
+            throw new RuntimeException("Empresa no encontrada");
+        }
+        
+        return productoRepository.findSectoresAlmacenamientoPorEmpresa(empresaOpt.get());
+    }
+
+    /**
+     * Obtiene productos por empresa y sector de almacenamiento
+     */
+    public List<ProductoDTO> obtenerProductosPorSector(Long empresaId, String sectorAlmacenamiento) {
+        List<Producto> productos = productoRepository.findByEmpresaIdAndSectorAlmacenamiento(empresaId, sectorAlmacenamiento);
+        return productos.stream()
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene productos por empresa, sector de almacenamiento y estado
+     */
+    public List<ProductoDTO> obtenerProductosPorSectorYEstado(Long empresaId, String sectorAlmacenamiento, Boolean activo) {
+        List<Producto> productos = productoRepository.findByEmpresaIdAndSectorAlmacenamientoAndActivo(empresaId, sectorAlmacenamiento, activo);
+        return productos.stream()
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene todos los códigos personalizados únicos de productos de una empresa
+     */
+    public List<String> obtenerCodigosPersonalizadosPorEmpresa(Long empresaId) {
+        Optional<Empresa> empresaOpt = empresaRepository.findById(empresaId);
+        if (empresaOpt.isEmpty()) {
+            throw new RuntimeException("Empresa no encontrada");
+        }
+        
+        return productoRepository.findCodigosPersonalizadosPorEmpresa(empresaOpt.get());
+    }
+
+    /**
+     * Obtiene productos por empresa y código personalizado
+     */
+    public List<ProductoDTO> obtenerProductosPorCodigo(Long empresaId, String codigoPersonalizado) {
+        List<Producto> productos = productoRepository.findByEmpresaIdAndCodigoPersonalizado(empresaId, codigoPersonalizado);
+        return productos.stream()
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene productos por empresa, código personalizado y estado
+     */
+    public List<ProductoDTO> obtenerProductosPorCodigoYEstado(Long empresaId, String codigoPersonalizado, Boolean activo) {
+        List<Producto> productos = productoRepository.findByEmpresaIdAndCodigoPersonalizadoAndActivo(empresaId, codigoPersonalizado, activo);
+        return productos.stream()
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene todos los códigos de barras únicos de productos de una empresa
+     */
+    public List<String> obtenerCodigosBarrasPorEmpresa(Long empresaId) {
+        Optional<Empresa> empresaOpt = empresaRepository.findById(empresaId);
+        if (empresaOpt.isEmpty()) {
+            throw new RuntimeException("Empresa no encontrada");
+        }
+        
+        return productoRepository.findCodigosBarrasPorEmpresa(empresaOpt.get());
+    }
+
+    /**
+     * Obtiene productos por empresa y código de barras
+     */
+    public List<ProductoDTO> obtenerProductosPorCodigoBarras(Long empresaId, String codigoBarras) {
+        List<Producto> productos = productoRepository.findByEmpresaIdAndCodigoBarras(empresaId, codigoBarras);
+        return productos.stream()
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene productos por empresa, código de barras y estado
+     */
+    public List<ProductoDTO> obtenerProductosPorCodigoBarrasYEstado(Long empresaId, String codigoBarras, Boolean activo) {
+        List<Producto> productos = productoRepository.findByEmpresaIdAndCodigoBarrasAndActivo(empresaId, codigoBarras, activo);
+        return productos.stream()
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Busca un producto por código de barras (para verificar duplicados)
+     */
+    public Optional<ProductoDTO> buscarProductoPorCodigoBarras(Long empresaId, String codigoBarras) {
+        Optional<Producto> producto = productoRepository.findByEmpresaIdAndCodigoBarras(empresaId, codigoBarras).stream().findFirst();
+        return producto.map(this::convertirADTO);
+    }
+
     private ProductoDTO convertirADTO(Producto producto) {
         ProductoDTO dto = new ProductoDTO();
         dto.setId(producto.getId());
@@ -247,6 +371,10 @@ public class ProductoService {
         dto.setImagenes(new ArrayList<>(producto.getImagenes()));
         dto.setCategoria(producto.getCategoria());
         dto.setMarca(producto.getMarca());
+        dto.setUnidad(producto.getUnidad());
+        dto.setSectorAlmacenamiento(producto.getSectorAlmacenamiento());
+        dto.setCodigoPersonalizado(producto.getCodigoPersonalizado());
+        dto.setCodigoBarras(producto.getCodigoBarras());
         dto.setActivo(producto.getActivo());
         dto.setDestacado(producto.getDestacado());
         dto.setEmpresaId(producto.getEmpresa().getId());

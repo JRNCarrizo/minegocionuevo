@@ -113,6 +113,20 @@ export default function DashboardAdministrador() {
 
   const accionesRapidas = [
     {
+      titulo: 'Caja Rápida',
+      descripcion: 'Sistema de caja Mostrador',
+      icono: '💰',
+      enlace: '/admin/caja-rapida',
+      color: '#10b981'
+    },
+    {
+      titulo: 'Historial de Ventas',
+      descripcion: 'Consulta el historial de caja rápida',
+      icono: '📊',
+      enlace: '/admin/historial-ventas',
+      color: '#8b5cf6'
+    },
+    {
       titulo: 'Gestionar Productos',
       descripcion: 'Administra tu catálogo de productos',
       icono: '📦',
@@ -124,7 +138,7 @@ export default function DashboardAdministrador() {
       descripcion: 'Añade un nuevo producto a tu inventario',
       icono: '➕',
       enlace: '/admin/productos/nuevo',
-      color: '#10b981'
+      color: '#059669'
     },
     {
       titulo: 'Ver Pedidos',
@@ -315,6 +329,30 @@ export default function DashboardAdministrador() {
             >
               ⚙️ Configuración
             </Link>
+            <Link 
+              to="/admin/caja-rapida" 
+              style={{
+                padding: '0.875rem 1.5rem',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '1rem',
+                fontWeight: '600',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+              }}
+            >
+              💰 Caja Rápida
+            </Link>
           </div>
         </div>
 
@@ -378,13 +416,13 @@ export default function DashboardAdministrador() {
                     </div>
                   </div>
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <p style={{ fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', fontWeight: '800', color: tarjeta.color, margin: 0, lineHeight: '1', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                    <div style={{ fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', fontWeight: '800', color: tarjeta.color, margin: 0, lineHeight: '1', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
                       {cargandoEstadisticas ? (
                         <div style={{ width: '80px', height: '50px', background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'loading 1.5s infinite', borderRadius: '0.5rem' }} />
                       ) : (
                         tarjeta.valor
                       )}
-                    </p>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -410,7 +448,7 @@ export default function DashboardAdministrador() {
                     }}>
                       {tarjeta.titulo}
                     </h3>
-                    <p style={{
+                    <div style={{
                       fontSize: '2rem',
                       fontWeight: '800',
                       color: tarjeta.color,
@@ -429,7 +467,7 @@ export default function DashboardAdministrador() {
                       ) : (
                         tarjeta.valor
                       )}
-                    </p>
+                    </div>
                   </div>
                   <div style={{
                     width: '4rem',

@@ -34,17 +34,10 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                                   FilterChain filterChain) throws ServletException, IOException {
         try {
             String requestPath = request.getRequestURI();
-            String method = request.getMethod();
-            
-            System.out.println("=== DEBUG AuthTokenFilter ===");
-            System.out.println("Request: " + method + " " + requestPath);
-            System.out.println("Query string: " + request.getQueryString());
-            System.out.println("Context path: " + request.getContextPath());
-            System.out.println("Servlet path: " + request.getServletPath());
             
             // Skip authentication for public endpoints
             if (isPublicEndpoint(requestPath)) {
-                System.out.println("Skipping auth for public endpoint: " + method + " " + requestPath);
+                System.out.println("Skipping auth for public endpoint: " + requestPath);
                 filterChain.doFilter(request, response);
                 return;
             }

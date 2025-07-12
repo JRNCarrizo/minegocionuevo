@@ -31,17 +31,12 @@ class ApiService {
     // Interceptor para agregar token de autenticación
     this.api.interceptors.request.use(
       (config) => {
-        console.log('=== DEBUG API INTERCEPTOR ===');
-        console.log('URL:', config.url);
-        console.log('Method:', config.method);
-        
         // Solo omitir token en endpoints realmente públicos (productos y empresa)
         if (
           config.url &&
           (/\/publico\/[^/]+\/productos/.test(config.url) ||
            /\/publico\/[^/]+\/empresa/.test(config.url))
         ) {
-          console.log('Endpoint público - omitiendo token');
           delete config.headers.Authorization;
           return config;
         }
@@ -51,18 +46,10 @@ class ApiService {
         const tokenCliente = localStorage.getItem('clienteToken');
         const token = tokenAdmin || tokenCliente;
         
-        console.log('Token admin:', tokenAdmin ? 'Presente' : 'Ausente');
-        console.log('Token cliente:', tokenCliente ? 'Presente' : 'Ausente');
-        console.log('Token final:', token ? 'Presente' : 'Ausente');
-        
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
-          console.log('Authorization header agregado');
-        } else {
-          console.log('No se encontró token - request sin autorización');
         }
         
-        console.log('Headers finales:', config.headers);
         return config;
       },
       (error) => Promise.reject(error)
@@ -229,6 +216,80 @@ class ApiService {
       const response = await this.api.get('/productos/marcas');
       return response.data;
     }
+  }
+
+  async obtenerSectoresAlmacenamiento(empresaId?: number): Promise<ApiResponse<string[]>> {
+    if (empresaId) {
+      const response = await this.api.get(`/empresas/${empresaId}/productos/sectores-almacenamiento`);
+      return response.data;
+    } else {
+      // Fallback temporal para compatibilidad
+      const response = await this.api.get('/productos/sectores-almacenamiento');
+      return response.data;
+    }
+  }
+
+  async obtenerProductosPorSector(empresaId: number, sector: string, activo?: boolean): Promise<Producto[]> {
+    const params = new URLSearchParams();
+    params.append('sector', sector);
+    if (activo !== undefined) {
+      params.append('activo', activo.toString());
+    }
+    
+    const response = await this.api.get(`/empresas/${empresaId}/productos/por-sector?${params}`);
+    return response.data;
+  }
+
+  async obtenerCodigosPersonalizados(empresaId?: number): Promise<ApiResponse<string[]>> {
+    if (empresaId) {
+      const response = await this.api.get(`/empresas/${empresaId}/productos/codigos-personalizados`);
+      return response.data;
+    } else {
+      // Fallback temporal para compatibilidad
+      const response = await this.api.get('/productos/codigos-personalizados');
+      return response.data;
+    }
+  }
+
+  async obtenerProductosPorCodigo(empresaId: number, codigo: string, activo?: boolean): Promise<Producto[]> {
+    const params = new URLSearchParams();
+    params.append('codigo', codigo);
+    if (activo !== undefined) {
+      params.append('activo', activo.toString());
+    }
+    
+    const response = await this.api.get(`/empresas/${empresaId}/productos/por-codigo?${params}`);
+    return response.data;
+  }
+
+  async obtenerCodigosBarras(empresaId?: number): Promise<ApiResponse<string[]>> {
+    if (empresaId) {
+      const response = await this.api.get(`/empresas/${empresaId}/productos/codigos-barras`);
+      return response.data;
+    } else {
+      // Fallback temporal para compatibilidad
+      const response = await this.api.get('/productos/codigos-barras');
+      return response.data;
+    }
+  }
+
+  async obtenerProductosPorCodigoBarras(empresaId: number, codigoBarras: string, activo?: boolean): Promise<Producto[]> {
+    const params = new URLSearchParams();
+    params.append('codigoBarras', codigoBarras);
+    if (activo !== undefined) {
+      params.append('activo', activo.toString());
+    }
+    
+    const response = await this.api.get(`/empresas/${empresaId}/productos/por-codigo-barras?${params}`);
+    return response.data;
+  }
+
+  async buscarProductoPorCodigoBarras(empresaId: number, codigoBarras: string): Promise<ApiResponse<Producto | null>> {
+    const params = new URLSearchParams();
+    params.append('codigoBarras', codigoBarras);
+    
+    const response = await this.api.get(`/empresas/${empresaId}/productos/buscar-por-codigo-barras?${params}`);
+    return response.data;
   }
 
   // Métodos de clientes (requieren empresaId)
@@ -442,6 +503,58 @@ class ApiService {
   
   async obtenerEstadisticasVentas() {
     const response = await this.api.get('/admin/estadisticas-ventas');
+    return response.data;
+  }
+
+  // Métodos para venta rápida
+  async procesarVentaRapida(ventaData: {
+    clienteNombre: string;
+    clienteEmail?: string;
+    total: number;
+    subtotal: number;
+    metodoPago: string;
+    montoRecibido?: number;
+    vuelto?: number;
+    observaciones?: string;
+    detalles: Array<{
+      productoId: number;
+      productoNombre: string;
+      cantidad: number;
+      precioUnitario: number;
+      subtotal: number;
+    }>;
+  }) {
+    const response = await this.api.post('/admin/venta-rapida/procesar', ventaData);
+    return response.data;
+  }
+
+  async debugVentaRapida(ventaData: {
+    clienteNombre: string;
+    clienteEmail?: string;
+    total: number;
+    subtotal: number;
+    metodoPago: string;
+    montoRecibido?: number;
+    vuelto?: number;
+    observaciones?: string;
+    detalles: Array<{
+      productoId: number;
+      productoNombre: string;
+      cantidad: number;
+      precioUnitario: number;
+      subtotal: number;
+    }>;
+  }) {
+    const response = await this.api.post('/admin/venta-rapida/debug', ventaData);
+    return response.data;
+  }
+
+  async obtenerEstadisticasVentaRapida(fechaInicio?: string, fechaFin?: string) {
+    const params = new URLSearchParams();
+    if (fechaInicio) params.append('fechaInicio', fechaInicio);
+    if (fechaFin) params.append('fechaFin', fechaFin);
+    
+    const response = await this.api.get(`/admin/venta-rapida/estadisticas?${params}`);
     return response.data;
   }
 }

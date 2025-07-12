@@ -139,4 +139,13 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
      */
     @Query("SELECT p FROM Pedido p WHERE p.cliente = :cliente AND p.empresa = :empresa ORDER BY p.fechaCreacion DESC")
     List<Pedido> findPedidosCompletosPorCliente(@Param("cliente") Cliente cliente, @Param("empresa") Empresa empresa);
+    
+    /**
+     * Busca pedidos por empresa, rango de fechas y observaciones que contengan un texto específico
+     */
+    @Query("SELECT p FROM Pedido p WHERE p.empresa.id = :empresaId AND p.fechaCreacion BETWEEN :fechaInicio AND :fechaFin AND p.observaciones LIKE %:observacion% ORDER BY p.fechaCreacion DESC")
+    List<Pedido> findByEmpresaIdAndFechaCreacionBetweenAndObservacionesContaining(@Param("empresaId") Long empresaId, 
+                                                                                  @Param("fechaInicio") LocalDateTime fechaInicio, 
+                                                                                  @Param("fechaFin") LocalDateTime fechaFin, 
+                                                                                  @Param("observacion") String observacion);
 }

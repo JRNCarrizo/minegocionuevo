@@ -205,6 +205,17 @@ public class EmpresaService {
             empresa.setMoneda(empresaDTO.getMoneda());
         }
 
+        // Actualizar redes sociales
+        if (empresaDTO.getInstagramUrl() != null) {
+            empresa.setInstagramUrl(empresaDTO.getInstagramUrl());
+        }
+        if (empresaDTO.getFacebookUrl() != null) {
+            empresa.setFacebookUrl(empresaDTO.getFacebookUrl());
+        }
+        if (empresaDTO.getMercadolibreUrl() != null) {
+            empresa.setMercadolibreUrl(empresaDTO.getMercadolibreUrl());
+        }
+
         empresa = empresaRepository.save(empresa);
         return new EmpresaDTO(empresa);
     }

@@ -70,3 +70,24 @@ UPDATE detalle_pedidos SET marca_producto = 'Logitech' WHERE nombre_producto LIK
 UPDATE detalle_pedidos SET marca_producto = 'Corsair' WHERE nombre_producto LIKE '%RGB%';
 UPDATE detalle_pedidos SET marca_producto = 'Samsung' WHERE nombre_producto LIKE '%Monitor%';
 UPDATE detalle_pedidos SET marca_producto = 'Herman Miller' WHERE nombre_producto LIKE '%Silla%';
+
+-- Agregar columna sector_almacenamiento si no existe
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS sector_almacenamiento VARCHAR(100);
+
+-- Agregar columna codigo_personalizado a la tabla productos
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS codigo_personalizado VARCHAR(50);
+
+-- Comentario sobre la nueva columna
+COMMENT ON COLUMN productos.codigo_personalizado IS 'Código personalizado del producto definido por la empresa (ej: 330, 420, EL001, ROP001)';
+
+-- Agregar columna codigo_barras a la tabla productos
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS codigo_barras VARCHAR(50);
+
+-- Comentario sobre la nueva columna
+COMMENT ON COLUMN productos.codigo_barras IS 'Código de barras del producto (EAN-13, UPC, etc.)';
+
+-- Datos de ejemplo para empresas
+INSERT INTO empresas (nombre, subdominio, email, telefono, descripcion, logo_url, color_primario, color_secundario, moneda, estado_suscripcion, fecha_fin_prueba, activa, fecha_creacion, fecha_actualizacion) VALUES
+('Mi Tienda Ejemplo', 'mitienda', 'admin@mitienda.com', '+1234567890', 'Tienda de ejemplo para demostración', 'https://via.placeholder.com/150', '#3B82F6', '#1E40AF', 'USD', 'PRUEBA', '2024-12-31', true, NOW(), NOW()),
+('Electrónicos Pro', 'electronicospro', 'info@electronicospro.com', '+1987654321', 'Especialistas en electrónica', 'https://via.placeholder.com/150', '#10B981', '#059669', 'USD', 'ACTIVA', '2025-12-31', true, NOW(), NOW()),
+('Ropa Fashion', 'ropafashion', 'ventas@ropafashion.com', '+1122334455', 'Moda y tendencias', 'https://via.placeholder.com/150', '#F59E0B', '#D97706', 'USD', 'ACTIVA', '2025-12-31', true, NOW(), NOW());

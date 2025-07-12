@@ -11,6 +11,9 @@ export interface Empresa {
   colorPrimario: string;
   colorSecundario: string;
   moneda: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  mercadolibreUrl?: string;
   estadoSuscripcion: 'PRUEBA' | 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA';
   fechaFinPrueba: string;
   activa: boolean;
@@ -46,6 +49,9 @@ export interface Producto {
   categoria?: string;
   marca?: string;
   unidad?: string;
+  sectorAlmacenamiento?: string;
+  codigoPersonalizado?: string;
+  codigoBarras?: string;
   activo: boolean;
   destacado: boolean;
   imagenes: string[];
@@ -159,6 +165,9 @@ export interface ProductoFormDTO {
   categoria?: string;
   marca?: string;
   unidad?: string;
+  sectorAlmacenamiento?: string;
+  codigoPersonalizado?: string;
+  codigoBarras?: string;
   destacado: boolean;
   imagenes: string[];
 }

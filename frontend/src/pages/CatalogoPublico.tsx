@@ -4,10 +4,12 @@ import { useSubdominio } from '../hooks/useSubdominio';
 import { useCart } from '../hooks/useCart';
 import CartIcon from '../components/CartIcon';
 import CartModal from '../components/CartModal';
+import ProductoDetalleModal from '../components/ProductoDetalleModal';
 import NavbarCliente from '../components/NavbarCliente';
 import apiService from '../services/api';
 import type { Producto } from '../types';
 import toast from 'react-hot-toast';
+import { FaInstagram, FaFacebook, FaShoppingCart } from 'react-icons/fa';
 
 export default function CatalogoPublico() {
   const { empresa, subdominio, cargando: cargandoEmpresa } = useSubdominio();
@@ -22,6 +24,8 @@ export default function CatalogoPublico() {
   const [clienteInfo, setClienteInfo] = useState<{ nombre: string; email: string } | null>(null);
   const [showCart, setShowCart] = useState(false);
   const [vistaCuadricula, setVistaCuadricula] = useState(true);
+  const [showProductoModal, setShowProductoModal] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] = useState<number | null>(null);
 
   // Verificar si hay un cliente logueado
   useEffect(() => {
@@ -134,8 +138,117 @@ export default function CatalogoPublico() {
         onShowCart={() => setShowCart(true)}
       />
       <CartModal open={showCart} onClose={() => setShowCart(false)} />
+      <ProductoDetalleModal 
+        open={showProductoModal} 
+        onClose={() => {
+          setShowProductoModal(false);
+          setProductoSeleccionado(null);
+        }}
+        productoId={productoSeleccionado}
+        subdominio={subdominio || ''}
+        empresa={empresa}
+      />
 
-      <main className="contenedor">
+      {/* Carrito flotante */}
+      {clienteInfo && (
+        <div style={{
+          position: 'fixed',
+          bottom: '30px',
+          right: '30px',
+          zIndex: 1000,
+          cursor: 'pointer'
+        }}>
+          <div
+            onClick={() => setShowCart(true)}
+            style={{
+              width: '70px',
+              height: '70px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)',
+              transition: 'all 0.3s ease',
+              position: 'relative'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.boxShadow = '0 12px 35px rgba(102, 126, 234, 0.6)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+            }}
+          >
+            <FaShoppingCart size={28} color="white" />
+            
+            {/* Badge con cantidad de items */}
+            {items.length > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                background: '#ef4444',
+                color: 'white',
+                borderRadius: '50%',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '700',
+                border: '3px solid white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}>
+                {items.length}
+              </div>
+            )}
+          </div>
+          
+          {/* Tooltip */}
+          <div style={{
+            position: 'absolute',
+            bottom: '80px',
+            right: '0',
+            background: '#1e293b',
+            color: 'white',
+            padding: '8px 12px',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '500',
+            whiteSpace: 'nowrap',
+            opacity: 0,
+            transform: 'translateY(10px)',
+            transition: 'all 0.3s ease',
+            pointerEvents: 'none'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.opacity = '1';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.opacity = '0';
+            e.currentTarget.style.transform = 'translateY(10px)';
+          }}
+          >
+            Ver carrito ({items.length} items)
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              right: '20px',
+              width: '0',
+              height: '0',
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderTop: '6px solid #1e293b'
+            }} />
+          </div>
+        </div>
+      )}
+
+      <main className="contenedor" style={{ paddingTop: '60px' }}>
         {/* Cabecera del catálogo */}
         <div style={{
           textAlign: 'center',
@@ -145,8 +258,93 @@ export default function CatalogoPublico() {
           borderRadius: '20px',
           color: 'white',
           boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
-          marginTop: '20px'
+          marginTop: '0px',
+          position: 'relative'
         }}>
+          {/* Enlaces de redes sociales - esquina superior izquierda */}
+          {(empresa.instagramUrl || empresa.facebookUrl) && (
+            <div style={{
+              position: 'absolute',
+              top: '20px',
+              left: '20px',
+              display: 'flex',
+              gap: '8px',
+              zIndex: 10
+            }}>
+              {empresa.instagramUrl && (
+                <a
+                  href={empresa.instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: 'white',
+                    textDecoration: 'none',
+                    fontSize: '20px',
+                    padding: '8px',
+                    borderRadius: '50%',
+                    transition: 'all 0.2s ease',
+                    background: 'rgba(255,255,255,0.15)',
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.2)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                  title="Síguenos en Instagram"
+                >
+                  <FaInstagram size={18} />
+                </a>
+              )}
+              
+              {empresa.facebookUrl && (
+                <a
+                  href={empresa.facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: 'white',
+                    textDecoration: 'none',
+                    fontSize: '20px',
+                    padding: '8px',
+                    borderRadius: '50%',
+                    transition: 'all 0.2s ease',
+                    background: 'rgba(255,255,255,0.15)',
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.2)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                  title="Síguenos en Facebook"
+                >
+                  <FaFacebook size={18} />
+                </a>
+              )}
+              
+
+            </div>
+          )}
+
           <div style={{
             width: '80px',
             height: '80px',
@@ -160,25 +358,47 @@ export default function CatalogoPublico() {
           }}>
             🛍️
           </div>
-          <h1 style={{ 
-            margin: '0 0 8px 0', 
-            fontSize: '32px', 
-            fontWeight: '700',
-            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          
+          {/* Bienvenida */}
+          <div style={{
+            marginBottom: '24px'
           }}>
-            Catálogo de Productos
-          </h1>
-          <p style={{ 
-            margin: 0, 
-            fontSize: '18px', 
-            opacity: 0.9,
-            fontWeight: '300'
-          }}>
-            Descubre nuestra increíble selección de productos
-          </p>
+            <h1 style={{ 
+              margin: '0 0 12px 0', 
+              fontSize: '32px', 
+              fontWeight: '700',
+              textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              Bienvenido a {empresa.nombre}
+            </h1>
+            
+            {empresa.descripcion && (
+              <div style={{
+                background: 'rgba(255,255,255,0.15)',
+                borderRadius: '16px',
+                padding: '20px',
+                marginBottom: '16px',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                maxWidth: '600px',
+                margin: '0 auto 16px'
+              }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: '16px', 
+                  lineHeight: '1.6',
+                  opacity: 0.95,
+                  fontWeight: '400',
+                  textAlign: 'center'
+                }}>
+                  {empresa.descripcion}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Filtros modernos */}
+        {/* Filtros y controles combinados */}
         <div style={{
           background: '#fff',
           borderRadius: '16px',
@@ -187,6 +407,36 @@ export default function CatalogoPublico() {
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
           border: '1px solid rgba(255,255,255,0.2)'
         }}>
+          {/* Título del catálogo */}
+          <div style={{
+            textAlign: 'center',
+            marginBottom: '24px',
+            paddingBottom: '20px',
+            borderBottom: '2px solid #f1f5f9'
+          }}>
+            <h2 style={{ 
+              margin: '0 0 8px 0', 
+              fontSize: '28px', 
+              fontWeight: '700', 
+              color: '#1e293b',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              Catálogo de Productos
+            </h2>
+            <p style={{ 
+              margin: 0, 
+              fontSize: '16px', 
+              color: '#64748b',
+              fontWeight: '400'
+            }}>
+              Descubre nuestra increíble selección de productos
+            </p>
+          </div>
+
+          {/* Sección de filtros */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -206,15 +456,16 @@ export default function CatalogoPublico() {
             }}>
               🔍
             </div>
-            <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
               Filtros de Búsqueda
-            </h2>
+            </h3>
           </div>
           
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '16px'
+            gap: '16px',
+            marginBottom: '24px'
           }}>
             <div>
               <label style={{
@@ -284,97 +535,99 @@ export default function CatalogoPublico() {
               </select>
             </div>
           </div>
-        </div>
 
-        {/* Controles de vista */}
-        <div style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '20px',
-          marginBottom: '24px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
+          {/* Separador */}
+          <div style={{
+            height: '1px',
+            background: 'linear-gradient(90deg, transparent 0%, #e2e8f0 50%, transparent 100%)',
+            margin: '0 -24px 24px -24px'
+          }} />
+
+          {/* Sección de controles de vista */}
           <div style={{
             display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
+            justifyContent: 'space-between',
+            alignItems: 'center'
           }}>
-            <span style={{
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#64748b'
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
             }}>
-              Vista:
-            </span>
-            <button
-              onClick={() => setVistaCuadricula(true)}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: '2px solid',
-                background: vistaCuadricula ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
-                borderColor: vistaCuadricula ? '#667eea' : '#e2e8f0',
-                color: vistaCuadricula ? 'white' : '#64748b',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-              onMouseOver={(e) => {
-                if (!vistaCuadricula) {
-                  e.currentTarget.style.borderColor = '#667eea';
-                  e.currentTarget.style.color = '#667eea';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!vistaCuadricula) {
-                  e.currentTarget.style.borderColor = '#e2e8f0';
-                  e.currentTarget.style.color = '#64748b';
-                }
-              }}
-            >
-              📱 Cuadrícula
-            </button>
-            <button
-              onClick={() => setVistaCuadricula(false)}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: '2px solid',
-                background: !vistaCuadricula ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
-                borderColor: !vistaCuadricula ? '#667eea' : '#e2e8f0',
-                color: !vistaCuadricula ? 'white' : '#64748b',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-              onMouseOver={(e) => {
-                if (vistaCuadricula) {
-                  e.currentTarget.style.borderColor = '#667eea';
-                  e.currentTarget.style.color = '#667eea';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (vistaCuadricula) {
-                  e.currentTarget.style.borderColor = '#e2e8f0';
-                  e.currentTarget.style.color = '#64748b';
-                }
-              }}
-            >
-              📋 Lista
-            </button>
-          </div>
-          
-          <div style={{
-            fontSize: '14px',
-            color: '#64748b',
-            fontWeight: '500'
-          }}>
-            {productos.length} producto{productos.length !== 1 ? 's' : ''} encontrado{productos.length !== 1 ? 's' : ''}
+              <span style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#64748b'
+              }}>
+                Vista:
+              </span>
+              <button
+                onClick={() => setVistaCuadricula(true)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '2px solid',
+                  background: vistaCuadricula ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                  borderColor: vistaCuadricula ? '#667eea' : '#e2e8f0',
+                  color: vistaCuadricula ? 'white' : '#64748b',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}
+                onMouseOver={(e) => {
+                  if (!vistaCuadricula) {
+                    e.currentTarget.style.borderColor = '#667eea';
+                    e.currentTarget.style.color = '#667eea';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!vistaCuadricula) {
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.color = '#64748b';
+                  }
+                }}
+              >
+                📱 Cuadrícula
+              </button>
+              <button
+                onClick={() => setVistaCuadricula(false)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '2px solid',
+                  background: !vistaCuadricula ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                  borderColor: !vistaCuadricula ? '#667eea' : '#e2e8f0',
+                  color: !vistaCuadricula ? 'white' : '#64748b',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}
+                onMouseOver={(e) => {
+                  if (vistaCuadricula) {
+                    e.currentTarget.style.borderColor = '#667eea';
+                    e.currentTarget.style.color = '#667eea';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (vistaCuadricula) {
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.color = '#64748b';
+                  }
+                }}
+              >
+                📋 Lista
+              </button>
+            </div>
+            
+            <div style={{
+              fontSize: '14px',
+              color: '#64748b',
+              fontWeight: '500'
+            }}>
+              {productos.length} producto{productos.length !== 1 ? 's' : ''} encontrado{productos.length !== 1 ? 's' : ''}
+            </div>
           </div>
         </div>
 
@@ -474,9 +727,9 @@ export default function CatalogoPublico() {
         ) : (
           <div style={{
             display: vistaCuadricula ? 'grid' : 'flex',
-            gridTemplateColumns: vistaCuadricula ? 'repeat(auto-fill, minmax(280px, 1fr))' : 'none',
+            gridTemplateColumns: vistaCuadricula ? 'repeat(auto-fill, minmax(250px, 1fr))' : 'none',
             flexDirection: vistaCuadricula ? 'unset' : 'column',
-            gap: vistaCuadricula ? '24px' : '16px',
+            gap: vistaCuadricula ? '20px' : '16px',
             marginBottom: '40px'
           }}>
             {productos.map(producto => {
@@ -499,9 +752,10 @@ export default function CatalogoPublico() {
                   height: vistaCuadricula ? 'auto' : '160px'
                 }}
                 onClick={(e) => {
-                  // Solo navegar si no se hizo clic en el botón de agregar al carrito
+                  // Solo abrir modal si no se hizo clic en el botón de agregar al carrito
                   if (!(e.target as HTMLElement).closest('button')) {
-                    window.location.href = `/producto/${producto.id}`;
+                    setProductoSeleccionado(producto.id);
+                    setShowProductoModal(true);
                   }
                 }}
                 onMouseOver={(e) => {
@@ -1029,9 +1283,101 @@ export default function CatalogoPublico() {
           <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
             ¡Gracias por visitarnos!
           </h3>
-          <p style={{ margin: 0, fontSize: '16px', color: '#64748b' }}>
+          <p style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#64748b' }}>
             Encuentra los mejores productos al mejor precio
           </p>
+          
+          {/* Redes sociales en el footer */}
+          {(empresa.instagramUrl || empresa.facebookUrl) && (
+            <div style={{
+              marginTop: '24px',
+              paddingTop: '24px',
+              borderTop: '1px solid #e2e8f0'
+            }}>
+              <p style={{ 
+                margin: '0 0 16px 0', 
+                fontSize: '16px', 
+                fontWeight: '600', 
+                color: '#374151' 
+              }}>
+                Síguenos en nuestras redes sociales
+              </p>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '16px',
+                flexWrap: 'wrap'
+              }}>
+                {empresa.instagramUrl && (
+                  <a
+                    href={empresa.instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '12px 20px',
+                      background: 'linear-gradient(135deg, #e4405f 0%, #c13584 100%)',
+                      color: 'white',
+                      textDecoration: 'none',
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 12px rgba(228, 64, 95, 0.3)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(228, 64, 95, 0.4)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(228, 64, 95, 0.3)';
+                    }}
+                  >
+                    <FaInstagram size={18} />
+                    <span>Instagram</span>
+                  </a>
+                )}
+                
+                {empresa.facebookUrl && (
+                  <a
+                    href={empresa.facebookUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '12px 20px',
+                      background: 'linear-gradient(135deg, #1877f2 0%, #0d6efd 100%)',
+                      color: 'white',
+                      textDecoration: 'none',
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 12px rgba(24, 119, 242, 0.3)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(24, 119, 242, 0.4)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(24, 119, 242, 0.3)';
+                    }}
+                  >
+                    <FaFacebook size={18} />
+                    <span>Facebook</span>
+                  </a>
+                )}
+                
+
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import GestorImagenes from '../../components/GestorImagenes';
+import BarcodeScanner from '../../components/BarcodeScanner';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import '../../styles/gestor-imagenes.css';
@@ -145,6 +146,9 @@ export default function NuevoProducto() {
     stockMinimo: '5',
     unidad: '',
     categoria: '',
+    sectorAlmacenamiento: '',
+    codigoPersonalizado: '',
+    codigoBarras: '',
     imagenes: [] as string[]
   });
   const [cargando, setCargando] = useState(false);
@@ -158,6 +162,15 @@ export default function NuevoProducto() {
   const [cargandoMarcas, setCargandoMarcas] = useState(true);
   const [marcasFiltradas, setMarcasFiltradas] = useState<string[]>([]);
   const [mostrarSugerenciasMarca, setMostrarSugerenciasMarca] = useState(false);
+  const [sectoresAlmacenamiento, setSectoresAlmacenamiento] = useState<string[]>([]);
+  const [cargandoSectores, setCargandoSectores] = useState(true);
+  const [sectoresFiltrados, setSectoresFiltrados] = useState<string[]>([]);
+  const [mostrarSugerenciasSector, setMostrarSugerenciasSector] = useState(false);
+  const [codigosPersonalizados, setCodigosPersonalizados] = useState<string[]>([]);
+  const [cargandoCodigos, setCargandoCodigos] = useState(true);
+  const [codigosFiltrados, setCodigosFiltrados] = useState<string[]>([]);
+  const [mostrarSugerenciasCodigo, setMostrarSugerenciasCodigo] = useState(false);
+  const [mostrarScanner, setMostrarScanner] = useState(false);
 
   const cargarCategorias = useCallback(async () => {
     try {
@@ -184,6 +197,34 @@ export default function NuevoProducto() {
       console.error('Error al cargar marcas:', error);
     } finally {
       setCargandoMarcas(false);
+    }
+  }, [empresaId]);
+
+  const cargarSectoresAlmacenamiento = useCallback(async () => {
+    try {
+      setCargandoSectores(true);
+      const response = await ApiService.obtenerSectoresAlmacenamiento(empresaId);
+      if (response.data) {
+        setSectoresAlmacenamiento(response.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar sectores de almacenamiento:', error);
+    } finally {
+      setCargandoSectores(false);
+    }
+  }, [empresaId]);
+
+  const cargarCodigosPersonalizados = useCallback(async () => {
+    try {
+      setCargandoCodigos(true);
+      const response = await ApiService.obtenerCodigosPersonalizados(empresaId);
+      if (response.data) {
+        setCodigosPersonalizados(response.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar códigos personalizados:', error);
+    } finally {
+      setCargandoCodigos(false);
     }
   }, [empresaId]);
 
@@ -223,10 +264,77 @@ export default function NuevoProducto() {
     setMostrarSugerenciasMarca(false);
   }, []);
 
+  const manejarCambioSectorAlmacenamiento = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { value } = e.target;
+    setFormulario(prev => ({ ...prev, sectorAlmacenamiento: value }));
+    
+    // Filtrar sectores que coincidan con lo que está escribiendo
+    if (value.trim()) {
+      const filtrados = sectoresAlmacenamiento.filter(sector =>
+        sector.toLowerCase().includes(value.toLowerCase())
+      );
+      setSectoresFiltrados(filtrados);
+      setMostrarSugerenciasSector(filtrados.length > 0);
+    } else {
+      setMostrarSugerenciasSector(false);
+    }
+    
+    // Limpiar error del campo
+    setErrores(prev => {
+      const nuevosErrores = { ...prev };
+      delete nuevosErrores.sectorAlmacenamiento;
+      return nuevosErrores;
+    });
+  }, [sectoresAlmacenamiento]);
+
+  const seleccionarSector = useCallback((sector: string) => {
+    setFormulario(prev => ({ ...prev, sectorAlmacenamiento: sector }));
+    setMostrarSugerenciasSector(false);
+  }, []);
+
+  const manejarCambioCodigoPersonalizado = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { value } = e.target;
+    setFormulario(prev => ({ ...prev, codigoPersonalizado: value }));
+    
+    // Filtrar códigos que coincidan con lo que está escribiendo
+    if (value.trim()) {
+      const filtrados = codigosPersonalizados.filter(codigo =>
+        codigo.toLowerCase().includes(value.toLowerCase())
+      );
+      setCodigosFiltrados(filtrados);
+      setMostrarSugerenciasCodigo(filtrados.length > 0);
+    } else {
+      setMostrarSugerenciasCodigo(false);
+    }
+    
+    // Limpiar error del campo
+    setErrores(prev => {
+      const nuevosErrores = { ...prev };
+      delete nuevosErrores.codigoPersonalizado;
+      return nuevosErrores;
+    });
+  }, [codigosPersonalizados]);
+
+  const seleccionarCodigo = useCallback((codigo: string) => {
+    setFormulario(prev => ({ ...prev, codigoPersonalizado: codigo }));
+    setMostrarSugerenciasCodigo(false);
+  }, []);
+
+  const manejarEscaneoBarras = useCallback((codigoBarras: string) => {
+    setFormulario(prev => ({ ...prev, codigoBarras }));
+    setMostrarScanner(false);
+  }, []);
+
+  const abrirScanner = useCallback(() => {
+    setMostrarScanner(true);
+  }, []);
+
   useEffect(() => {
     cargarCategorias();
     cargarMarcas();
-  }, [cargarCategorias, cargarMarcas]);
+    cargarSectoresAlmacenamiento();
+    cargarCodigosPersonalizados();
+  }, [cargarCategorias, cargarMarcas, cargarSectoresAlmacenamiento, cargarCodigosPersonalizados]);
 
   const manejarCambio = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -357,6 +465,9 @@ export default function NuevoProducto() {
         categoria: formulario.categoria || undefined,
         marca: formulario.marca.trim() || undefined,
         unidad: formulario.unidad.trim() || undefined,
+        sectorAlmacenamiento: formulario.sectorAlmacenamiento.trim() || undefined,
+        codigoPersonalizado: formulario.codigoPersonalizado.trim() || undefined,
+        codigoBarras: formulario.codigoBarras.trim() || undefined,
         activo: true,
         destacado: false,
         imagenes: formulario.imagenes
@@ -488,6 +599,78 @@ export default function NuevoProducto() {
                         marcasFiltradas={marcasFiltradas}
                         seleccionarMarca={seleccionarMarca}
                       />
+                      <div className="campo-grupo" style={{ position: 'relative' }}>
+                        <label htmlFor="codigoPersonalizado" className="campo-label">
+                          Código Personalizado <span className="campo-opcional">(Opcional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="codigoPersonalizado"
+                          name="codigoPersonalizado"
+                          value={formulario.codigoPersonalizado}
+                          onChange={manejarCambioCodigoPersonalizado}
+                          className="campo-input"
+                          placeholder="Ej: 330, 420, EL001, ROP001"
+                        />
+                        {mostrarSugerenciasCodigo && codigosFiltrados && (
+                          <div className="sugerencias-marca">
+                            {codigosFiltrados.map((codigo, index) => (
+                              <div
+                                key={index}
+                                className="sugerencia-marca"
+                                onClick={() => seleccionarCodigo(codigo)}
+                              >
+                                {codigo}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="campo-grupo" style={{ position: 'relative' }}>
+                        <label htmlFor="codigoBarras" className="campo-label">
+                          Código de Barras <span className="campo-opcional">(Opcional)</span>
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <input
+                            type="text"
+                            id="codigoBarras"
+                            name="codigoBarras"
+                            value={formulario.codigoBarras}
+                            onChange={(e) => setFormulario(prev => ({ ...prev, codigoBarras: e.target.value }))}
+                            className="campo-input"
+                            placeholder="Ej: 1234567890123"
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            type="button"
+                            onClick={abrirScanner}
+                            style={{
+                              background: '#3b82f6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              padding: '8px 12px',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                            title="Escanear código de barras"
+                          >
+                            📷
+                          </button>
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#64748b',
+                          marginTop: '4px'
+                        }}>
+                          Escanea con la cámara o ingresa manualmente
+                        </div>
+                      </div>
                     </div>
 
                     <CampoFormulario
@@ -620,12 +803,47 @@ export default function NuevoProducto() {
                       />
                     </div>
 
+                    <div className="campo-grupo" style={{ position: 'relative' }}>
+                      <label htmlFor="sectorAlmacenamiento" className="campo-label">
+                        Sector de Almacenamiento <span className="campo-opcional">(Opcional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="sectorAlmacenamiento"
+                        name="sectorAlmacenamiento"
+                        value={formulario.sectorAlmacenamiento}
+                        onChange={manejarCambioSectorAlmacenamiento}
+                        className="campo-input"
+                        placeholder="Ej: depósito2, habitación A33, góndola 4, estante 23"
+                      />
+                      {mostrarSugerenciasSector && sectoresFiltrados && (
+                        <div className="sugerencias-marca">
+                          {sectoresFiltrados.map((sector, index) => (
+                            <div
+                              key={index}
+                              className="sugerencia-marca"
+                              onClick={() => seleccionarSector(sector)}
+                            >
+                              {sector}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="info-inventario">
                       <div className="info-card">
                         <div className="info-icono">📈</div>
                         <div className="info-contenido">
                           <h4>Stock Mínimo</h4>
                           <p>Recibirás alertas cuando el stock baje de este nivel</p>
+                        </div>
+                      </div>
+                      <div className="info-card">
+                        <div className="info-icono">🏢</div>
+                        <div className="info-contenido">
+                          <h4>Sector de Almacenamiento</h4>
+                          <p>Organiza tu inventario asignando ubicaciones específicas. Los sectores se guardan para reutilizarlos en futuras creaciones.</p>
                         </div>
                       </div>
                     </div>
@@ -1120,6 +1338,13 @@ export default function NuevoProducto() {
           }
         }
       `}</style>
+
+      {/* Componente de escáner de códigos de barras */}
+      <BarcodeScanner
+        isOpen={mostrarScanner}
+        onScan={manejarEscaneoBarras}
+        onClose={() => setMostrarScanner(false)}
+      />
     </div>
   );
 }

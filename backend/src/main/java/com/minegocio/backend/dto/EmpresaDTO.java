@@ -19,6 +19,11 @@ public class EmpresaDTO {
     private String colorPrimario;
     private String colorSecundario;
     private String moneda;
+    
+    // Redes sociales
+    private String instagramUrl;
+    private String facebookUrl;
+    
     private Empresa.EstadoSuscripcion estadoSuscripcion;
     private LocalDateTime fechaFinPrueba;
     private Boolean activa;
@@ -45,6 +50,8 @@ public class EmpresaDTO {
         this.colorPrimario = empresa.getColorPrimario();
         this.colorSecundario = empresa.getColorSecundario();
         this.moneda = empresa.getMoneda();
+        this.instagramUrl = empresa.getInstagramUrl();
+        this.facebookUrl = empresa.getFacebookUrl();
         this.estadoSuscripcion = empresa.getEstadoSuscripcion();
         this.fechaFinPrueba = empresa.getFechaFinPrueba();
         this.activa = empresa.getActiva();
@@ -82,6 +89,14 @@ public class EmpresaDTO {
 
     public String getMoneda() { return moneda; }
     public void setMoneda(String moneda) { this.moneda = moneda; }
+
+    public String getInstagramUrl() { return instagramUrl; }
+    public void setInstagramUrl(String instagramUrl) { this.instagramUrl = instagramUrl; }
+
+    public String getFacebookUrl() { return facebookUrl; }
+    public void setFacebookUrl(String facebookUrl) { this.facebookUrl = facebookUrl; }
+
+
 
     public Empresa.EstadoSuscripcion getEstadoSuscripcion() { return estadoSuscripcion; }
     public void setEstadoSuscripcion(Empresa.EstadoSuscripcion estadoSuscripcion) { this.estadoSuscripcion = estadoSuscripcion; }

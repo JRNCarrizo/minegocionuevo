@@ -49,12 +49,25 @@ public class ProductoController {
      * Obtiene todos los productos de una empresa (incluye inactivos)
      */
     @GetMapping("/todos")
-    public ResponseEntity<List<ProductoDTO>> obtenerTodosLosProductosIncluirInactivos(@PathVariable Long empresaId) {
+    public ResponseEntity<?> obtenerTodosLosProductosIncluirInactivos(@PathVariable Long empresaId) {
         try {
             List<ProductoDTO> productos = productoService.obtenerTodosLosProductosIncluirInactivos(empresaId);
-            return ResponseEntity.ok(productos);
+            
+            // Devolver en el formato esperado por el frontend
+            var respuesta = java.util.Map.of(
+                "data", productos
+            );
+            
+            return ResponseEntity.ok(respuesta);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            System.err.println("Error al obtener productos: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error al obtener productos: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
@@ -419,6 +432,208 @@ public class ProductoController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(java.util.Map.of(
                 "error", "Error al obtener marcas",
+                "mensaje", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Obtiene sectores de almacenamiento únicos de productos de una empresa
+     */
+    @GetMapping("/sectores-almacenamiento")
+    public ResponseEntity<?> obtenerSectoresAlmacenamiento(@PathVariable Long empresaId) {
+        try {
+            List<ProductoDTO> productos = productoService.obtenerTodosLosProductosIncluirInactivos(empresaId);
+            
+            // Extraer sectores de almacenamiento únicos
+            List<String> sectores = productos.stream()
+                .map(ProductoDTO::getSectorAlmacenamiento)
+                .filter(sector -> sector != null && !sector.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(java.util.Map.of(
+                "mensaje", "Sectores de almacenamiento obtenidos exitosamente",
+                "data", sectores
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(java.util.Map.of(
+                "error", "Error al obtener sectores de almacenamiento",
+                "mensaje", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Obtiene productos por sector de almacenamiento
+     */
+    @GetMapping("/por-sector")
+    public ResponseEntity<List<ProductoDTO>> obtenerProductosPorSector(
+            @PathVariable Long empresaId,
+            @RequestParam String sector,
+            @RequestParam(required = false) Boolean activo) {
+        try {
+            List<ProductoDTO> productos;
+            
+            if (activo != null) {
+                productos = productoService.obtenerProductosPorSectorYEstado(empresaId, sector, activo);
+            } else {
+                productos = productoService.obtenerProductosPorSector(empresaId, sector);
+            }
+            
+            return ResponseEntity.ok(productos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Obtiene códigos personalizados únicos de productos de una empresa
+     */
+    @GetMapping("/codigos-personalizados")
+    public ResponseEntity<?> obtenerCodigosPersonalizados(@PathVariable Long empresaId) {
+        try {
+            List<ProductoDTO> productos = productoService.obtenerTodosLosProductosIncluirInactivos(empresaId);
+            
+            // Extraer códigos personalizados únicos
+            List<String> codigos = productos.stream()
+                .map(ProductoDTO::getCodigoPersonalizado)
+                .filter(codigo -> codigo != null && !codigo.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(java.util.Map.of(
+                "mensaje", "Códigos personalizados obtenidos exitosamente",
+                "data", codigos
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(java.util.Map.of(
+                "error", "Error al obtener códigos personalizados",
+                "mensaje", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Obtiene productos por código personalizado
+     */
+    @GetMapping("/por-codigo")
+    public ResponseEntity<List<ProductoDTO>> obtenerProductosPorCodigo(
+            @PathVariable Long empresaId,
+            @RequestParam String codigo,
+            @RequestParam(required = false) Boolean activo) {
+        try {
+            List<ProductoDTO> productos;
+            
+            if (activo != null) {
+                productos = productoService.obtenerProductosPorCodigoYEstado(empresaId, codigo, activo);
+            } else {
+                productos = productoService.obtenerProductosPorCodigo(empresaId, codigo);
+            }
+            
+            return ResponseEntity.ok(productos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Obtiene códigos de barras únicos de productos de una empresa
+     */
+    @GetMapping("/codigos-barras")
+    public ResponseEntity<?> obtenerCodigosBarras(@PathVariable Long empresaId) {
+        try {
+            List<ProductoDTO> productos = productoService.obtenerTodosLosProductosIncluirInactivos(empresaId);
+            
+            // Extraer códigos de barras únicos
+            List<String> codigos = productos.stream()
+                .map(ProductoDTO::getCodigoBarras)
+                .filter(codigo -> codigo != null && !codigo.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(java.util.Map.of(
+                "mensaje", "Códigos de barras obtenidos exitosamente",
+                "data", codigos
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(java.util.Map.of(
+                "error", "Error al obtener códigos de barras",
+                "mensaje", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Obtiene productos por código de barras
+     */
+    @GetMapping("/por-codigo-barras")
+    public ResponseEntity<List<ProductoDTO>> obtenerProductosPorCodigoBarras(
+            @PathVariable Long empresaId,
+            @RequestParam String codigoBarras,
+            @RequestParam(required = false) Boolean activo) {
+        try {
+            System.out.println("=== DEBUG OBTENER POR CÓDIGO DE BARRAS ===");
+            System.out.println("EmpresaId: " + empresaId);
+            System.out.println("Código de barras: " + codigoBarras);
+            System.out.println("Activo: " + activo);
+            
+            List<ProductoDTO> productos;
+            
+            if (activo != null) {
+                productos = productoService.obtenerProductosPorCodigoBarrasYEstado(empresaId, codigoBarras, activo);
+            } else {
+                productos = productoService.obtenerProductosPorCodigoBarras(empresaId, codigoBarras);
+            }
+            
+            System.out.println("Productos encontrados: " + productos.size());
+            if (!productos.isEmpty()) {
+                System.out.println("Primer producto: " + productos.get(0).getNombre());
+            }
+            
+            return ResponseEntity.ok(productos);
+        } catch (Exception e) {
+            System.err.println("Error al obtener productos por código de barras: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Busca un producto específico por código de barras
+     */
+    @GetMapping("/buscar-por-codigo-barras")
+    public ResponseEntity<?> buscarProductoPorCodigoBarras(
+            @PathVariable Long empresaId,
+            @RequestParam String codigoBarras) {
+        try {
+            System.out.println("=== DEBUG BUSCAR POR CÓDIGO DE BARRAS ===");
+            System.out.println("EmpresaId: " + empresaId);
+            System.out.println("Código de barras: " + codigoBarras);
+            
+            Optional<ProductoDTO> producto = productoService.buscarProductoPorCodigoBarras(empresaId, codigoBarras);
+            
+            if (producto.isPresent()) {
+                System.out.println("Producto encontrado: " + producto.get().getNombre());
+                return ResponseEntity.ok(java.util.Map.of(
+                    "mensaje", "Producto encontrado",
+                    "data", producto.get()
+                ));
+            } else {
+                System.out.println("No se encontró producto con código: " + codigoBarras);
+                return ResponseEntity.ok(java.util.Map.of(
+                    "mensaje", "No se encontró ningún producto con ese código de barras",
+                    "data", null
+                ));
+            }
+        } catch (Exception e) {
+            System.err.println("Error al buscar producto por código de barras: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(java.util.Map.of(
+                "error", "Error al buscar producto por código de barras",
                 "mensaje", e.getMessage()
             ));
         }

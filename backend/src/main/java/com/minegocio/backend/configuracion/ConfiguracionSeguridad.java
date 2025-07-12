@@ -64,14 +64,13 @@ public class ConfiguracionSeguridad {
             .authorizeHttpRequests(auth -> {
                 auth.requestMatchers("/api/publico/**").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
-                    .requestMatchers("/api/debug/**").permitAll() // Permitir endpoints de debug
-                    .requestMatchers("/api/empresas/*/clientes/debug/public").permitAll() // Endpoint público de debug
+                    .requestMatchers("/api/debug/**").permitAll()
                     .requestMatchers("/api/empresas/registro").permitAll()
                     .requestMatchers("/api/empresas/verificar-subdominio/**").permitAll()
-                    .requestMatchers("/api/empresas/**").hasRole("ADMINISTRADOR") // Todos los endpoints de empresas para admins
                     .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("ADMINISTRADOR")
+                    .requestMatchers("/api/empresas/**").hasRole("ADMINISTRADOR")
                     .anyRequest().authenticated();
             });
 
@@ -79,27 +78,9 @@ public class ConfiguracionSeguridad {
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         http.authenticationProvider(authenticationProvider());
-        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
         
-        // Agregar filtro de debug temporal
-        http.addFilterBefore(new org.springframework.web.filter.OncePerRequestFilter() {
-            @Override
-            protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest request, 
-                                          jakarta.servlet.http.HttpServletResponse response, 
-                                          jakarta.servlet.FilterChain filterChain) throws jakarta.servlet.ServletException, java.io.IOException {
-                System.out.println("=== DEBUG SECURITY FILTER ===");
-                System.out.println("Request URI: " + request.getRequestURI());
-                System.out.println("Method: " + request.getMethod());
-                
-                var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-                System.out.println("Authentication before filter: " + (auth != null ? auth.getName() + " - " + auth.getAuthorities() : "null"));
-                
-                filterChain.doFilter(request, response);
-                
-                System.out.println("Response status: " + response.getStatus());
-                System.out.println("=== END DEBUG SECURITY FILTER ===");
-            }
-        }, UsernamePasswordAuthenticationFilter.class);
+        // Solo agregar el filtro JWT para endpoints que no sean públicos
+        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

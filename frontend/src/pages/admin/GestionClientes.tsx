@@ -355,7 +355,12 @@ export default function GestionClientes() {
         setEmpresaId(user.empresaId);
         setEmpresaNombre(user.empresaNombre || '');
         setNombreAdministrador(user.nombre || '');
-      } catch {}
+      } catch (error) {
+        console.log(error);
+        // Error al parsear usuario, ignorado
+        // Puedes loguear el error si lo deseas:
+        // console.error('Error al parsear usuario:', error);
+      }
     }
   }, []);
 

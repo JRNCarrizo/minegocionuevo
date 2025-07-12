@@ -1,6 +1,7 @@
 package com.minegocio.backend.controladores;
 
 import com.minegocio.backend.entidades.Empresa;
+import com.minegocio.backend.dto.EmpresaDTO;
 import com.minegocio.backend.dto.ProductoDTO;
 import com.minegocio.backend.servicios.EmpresaService;
 import com.minegocio.backend.servicios.ProductoService;
@@ -58,21 +59,23 @@ public class PublicoController {
             System.out.println("Empresa encontrada: " + empresa.getNombre());
             
             // Crear respuesta manual para evitar problemas de serialización
-            Map<String, Object> empresaData = Map.of(
-                "id", empresa.getId() != null ? empresa.getId() : 0L,
-                "nombre", empresa.getNombre() != null ? empresa.getNombre() : "",
-                "descripcion", empresa.getDescripcion() != null ? empresa.getDescripcion() : "",
-                "subdominio", empresa.getSubdominio() != null ? empresa.getSubdominio() : "",
-                "logoUrl", empresa.getLogoUrl() != null ? empresa.getLogoUrl() : "",
-                "colorPrimario", empresa.getColorPrimario() != null ? empresa.getColorPrimario() : "#3B82F6",
-                "colorSecundario", empresa.getColorSecundario() != null ? empresa.getColorSecundario() : "#1F2937",
-                "moneda", empresa.getMoneda() != null ? empresa.getMoneda() : "USD"
-            );
+            Map<String, Object> empresaData = new java.util.HashMap<>();
+            empresaData.put("id", empresa.getId() != null ? empresa.getId() : 0L);
+            empresaData.put("nombre", empresa.getNombre() != null ? empresa.getNombre() : "");
+            empresaData.put("descripcion", empresa.getDescripcion() != null ? empresa.getDescripcion() : "");
+            empresaData.put("subdominio", empresa.getSubdominio() != null ? empresa.getSubdominio() : "");
+            empresaData.put("logoUrl", empresa.getLogoUrl() != null ? empresa.getLogoUrl() : "");
+            empresaData.put("colorPrimario", empresa.getColorPrimario() != null ? empresa.getColorPrimario() : "#3B82F6");
+            empresaData.put("colorSecundario", empresa.getColorSecundario() != null ? empresa.getColorSecundario() : "#1F2937");
+            empresaData.put("moneda", empresa.getMoneda() != null ? empresa.getMoneda() : "USD");
+            empresaData.put("instagramUrl", empresa.getInstagramUrl() != null ? empresa.getInstagramUrl() : "");
+            empresaData.put("facebookUrl", empresa.getFacebookUrl() != null ? empresa.getFacebookUrl() : "");
+            empresaData.put("mercadolibreUrl", empresa.getMercadolibreUrl() != null ? empresa.getMercadolibreUrl() : "");
             
-            return ResponseEntity.ok(Map.of(
-                "mensaje", "Empresa encontrada",
-                "data", empresaData
-            ));
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("mensaje", "Empresa encontrada");
+            response.put("data", empresaData);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("Error al buscar empresa: " + e.getMessage());
             e.printStackTrace();
@@ -92,14 +95,15 @@ public class PublicoController {
             // Verificar si ya existe
             Optional<Empresa> existente = empresaService.obtenerPorSubdominio("minegocio");
             if (existente.isPresent()) {
-                return ResponseEntity.ok(Map.of(
-                    "mensaje", "La empresa 'minegocio' ya existe",
-                    "empresa", Map.of(
-                        "id", existente.get().getId(),
-                        "nombre", existente.get().getNombre(),
-                        "subdominio", existente.get().getSubdominio()
-                    )
-                ));
+                Map<String, Object> empresaMap = new java.util.HashMap<>();
+                empresaMap.put("id", existente.get().getId());
+                empresaMap.put("nombre", existente.get().getNombre());
+                empresaMap.put("subdominio", existente.get().getSubdominio());
+                
+                Map<String, Object> response = new java.util.HashMap<>();
+                response.put("mensaje", "La empresa 'minegocio' ya existe");
+                response.put("empresa", empresaMap);
+                return ResponseEntity.ok(response);
             }
             
             // Crear nueva empresa
@@ -116,15 +120,16 @@ public class PublicoController {
             
             Empresa empresaGuardada = empresaService.guardar(empresa);
             
-            return ResponseEntity.ok(Map.of(
-                "mensaje", "Empresa demo creada exitosamente",
-                "empresa", Map.of(
-                    "id", empresaGuardada.getId(),
-                    "nombre", empresaGuardada.getNombre(),
-                    "subdominio", empresaGuardada.getSubdominio(),
-                    "email", empresaGuardada.getEmail()
-                )
-            ));
+            Map<String, Object> empresaMap = new java.util.HashMap<>();
+            empresaMap.put("id", empresaGuardada.getId());
+            empresaMap.put("nombre", empresaGuardada.getNombre());
+            empresaMap.put("subdominio", empresaGuardada.getSubdominio());
+            empresaMap.put("email", empresaGuardada.getEmail());
+            
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("mensaje", "Empresa demo creada exitosamente");
+            response.put("empresa", empresaMap);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("Error al crear empresa demo: " + e.getMessage());
             e.printStackTrace();
@@ -162,6 +167,77 @@ public class PublicoController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
                 "error", "Error al obtener empresas: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Endpoint temporal para debug - verificar productos de una empresa
+     */
+    @GetMapping("/debug/productos/{empresaId}")
+    public ResponseEntity<?> verificarProductos(@PathVariable Long empresaId) {
+        try {
+            System.out.println("Verificando productos para empresa ID: " + empresaId);
+            
+            // Verificar si la empresa existe
+            Optional<EmpresaDTO> empresaOpt = empresaService.obtenerPorId(empresaId);
+            if (empresaOpt.isEmpty()) {
+                Map<String, Object> error = new java.util.HashMap<>();
+                error.put("error", "Empresa no encontrada");
+                error.put("empresaId", empresaId);
+                return ResponseEntity.status(404).body(error);
+            }
+            
+            EmpresaDTO empresa = empresaOpt.get();
+            System.out.println("Empresa encontrada: " + empresa.getNombre());
+            
+            // Obtener productos
+            List<ProductoDTO> productos = productoService.obtenerTodosLosProductos(empresaId);
+            System.out.println("Total de productos obtenidos: " + productos.size());
+            
+            // Contar por estado
+            long totalProductos = productos.size();
+            long productosActivos = productos.stream().filter(p -> p.getActivo() != null && p.getActivo()).count();
+            long productosConStock = productos.stream().filter(p -> p.getActivo() != null && p.getActivo() && p.getStock() > 0).count();
+            
+            // Listar productos activos con stock
+            List<Map<String, Object>> productosActivosList = productos.stream()
+                .filter(p -> p.getActivo() != null && p.getActivo() && p.getStock() > 0)
+                .map(p -> {
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("id", p.getId());
+                    map.put("nombre", p.getNombre());
+                    map.put("codigoPersonalizado", p.getCodigoPersonalizado());
+                    map.put("codigoBarras", p.getCodigoBarras());
+                    map.put("stock", p.getStock());
+                    map.put("precio", p.getPrecio());
+                    map.put("activo", p.getActivo());
+                    return map;
+                })
+                .collect(Collectors.toList());
+            
+            Map<String, Object> empresaMap = new java.util.HashMap<>();
+            empresaMap.put("id", empresa.getId());
+            empresaMap.put("nombre", empresa.getNombre());
+            empresaMap.put("subdominio", empresa.getSubdominio());
+            
+            Map<String, Object> estadisticasMap = new java.util.HashMap<>();
+            estadisticasMap.put("totalProductos", totalProductos);
+            estadisticasMap.put("productosActivos", productosActivos);
+            estadisticasMap.put("productosConStock", productosConStock);
+            
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("mensaje", "Verificación completada");
+            response.put("empresa", empresaMap);
+            response.put("estadisticas", estadisticasMap);
+            response.put("productosActivos", productosActivosList);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("Error al verificar productos: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Error al verificar productos",
+                "detalle", e.getMessage()
             ));
         }
     }
@@ -369,11 +445,11 @@ public class PublicoController {
                 producto1.setMarca("Demo Brand");
                 
                 ProductoDTO creado1 = productoService.crearProducto(empresaId, producto1);
-                productosCreados.add(Map.of(
-                    "id", creado1.getId(),
-                    "nombre", creado1.getNombre(),
-                    "precio", creado1.getPrecio()
-                ));
+                Map<String, Object> producto1Map = new java.util.HashMap<>();
+                producto1Map.put("id", creado1.getId());
+                producto1Map.put("nombre", creado1.getNombre());
+                producto1Map.put("precio", creado1.getPrecio());
+                productosCreados.add(producto1Map);
             } catch (Exception e) {
                 System.out.println("Error creando producto 1: " + e.getMessage());
             }
@@ -390,11 +466,11 @@ public class PublicoController {
                 producto2.setMarca("Demo Brand");
                 
                 ProductoDTO creado2 = productoService.crearProducto(empresaId, producto2);
-                productosCreados.add(Map.of(
-                    "id", creado2.getId(),
-                    "nombre", creado2.getNombre(),
-                    "precio", creado2.getPrecio()
-                ));
+                Map<String, Object> producto2Map = new java.util.HashMap<>();
+                producto2Map.put("id", creado2.getId());
+                producto2Map.put("nombre", creado2.getNombre());
+                producto2Map.put("precio", creado2.getPrecio());
+                productosCreados.add(producto2Map);
             } catch (Exception e) {
                 System.out.println("Error creando producto 2: " + e.getMessage());
             }
@@ -411,21 +487,21 @@ public class PublicoController {
                 producto3.setMarca("Demo Sports");
                 
                 ProductoDTO creado3 = productoService.crearProducto(empresaId, producto3);
-                productosCreados.add(Map.of(
-                    "id", creado3.getId(),
-                    "nombre", creado3.getNombre(),
-                    "precio", creado3.getPrecio()
-                ));
+                Map<String, Object> producto3Map = new java.util.HashMap<>();
+                producto3Map.put("id", creado3.getId());
+                producto3Map.put("nombre", creado3.getNombre());
+                producto3Map.put("precio", creado3.getPrecio());
+                productosCreados.add(producto3Map);
             } catch (Exception e) {
                 System.out.println("Error creando producto 3: " + e.getMessage());
             }
             
-            return ResponseEntity.ok(Map.of(
-                "mensaje", "Productos demo creados exitosamente",
-                "empresa", empresa.getNombre(),
-                "subdominio", subdominio,
-                "productos", productosCreados
-            ));
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("mensaje", "Productos demo creados exitosamente");
+            response.put("empresa", empresa.getNombre());
+            response.put("subdominio", subdominio);
+            response.put("productos", productosCreados);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("Error al crear productos demo: " + e.getMessage());
             e.printStackTrace();

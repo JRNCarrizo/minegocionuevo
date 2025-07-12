@@ -57,6 +57,15 @@ public class Empresa {
     @Column(name = "moneda", length = 10)
     private String moneda = "USD"; // Moneda por defecto
 
+    // Redes sociales
+    @Column(name = "instagram_url", length = 255)
+    private String instagramUrl;
+
+    @Column(name = "facebook_url", length = 255)
+    private String facebookUrl;
+
+
+
     // Estado de la suscripción
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_suscripcion")
@@ -132,6 +141,14 @@ public class Empresa {
 
     public String getMoneda() { return moneda; }
     public void setMoneda(String moneda) { this.moneda = moneda; }
+
+    public String getInstagramUrl() { return instagramUrl; }
+    public void setInstagramUrl(String instagramUrl) { this.instagramUrl = instagramUrl; }
+
+    public String getFacebookUrl() { return facebookUrl; }
+    public void setFacebookUrl(String facebookUrl) { this.facebookUrl = facebookUrl; }
+
+
 
     public EstadoSuscripcion getEstadoSuscripcion() { return estadoSuscripcion; }
     public void setEstadoSuscripcion(EstadoSuscripcion estadoSuscripcion) { this.estadoSuscripcion = estadoSuscripcion; }

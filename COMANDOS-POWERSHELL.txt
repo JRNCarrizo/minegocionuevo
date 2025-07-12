@@ -1,0 +1,35 @@
+# COMANDOS PARA POWERSHELL - MI NEGOCIO
+
+## 1. INICIAR BACKEND
+cd backend
+mvn spring-boot:run
+
+## 2. INICIAR FRONTEND (en otra terminal)
+cd frontend
+npm run dev
+
+## 3. O usar el script PowerShell:
+.\INICIAR-FRONTEND-POWERSHELL.ps1
+
+## 4. PROBAR ENDPOINTS
+.\TEST-ENDPOINTS.bat
+
+## 5. VERIFICAR PRODUCTOS EN BASE DE DATOS
+# Ejecutar el contenido de VERIFICAR-PRODUCTOS.sql en MySQL
+
+## 6. AGREGAR PRODUCTOS DE PRUEBA
+# Ejecutar el contenido de DATOS-PRUEBA-CAJA-RAPIDA.sql en MySQL
+
+## COMANDOS ALTERNATIVOS PARA POWERSHELL:
+
+# Cambiar directorio
+Set-Location frontend
+
+# Instalar dependencias
+npm install
+
+# Iniciar servidor
+npm run dev
+
+# Verificar que el backend responde
+Invoke-WebRequest -Uri "http://localhost:8080/api/empresas/1/productos" -Method GET 

@@ -43,6 +43,18 @@ public class ProductoDTO {
     @Size(max = 100, message = "La marca no puede exceder 100 caracteres")
     private String marca;
     
+    @Size(max = 50, message = "La unidad no puede exceder 50 caracteres")
+    private String unidad;
+    
+    @Size(max = 100, message = "El sector de almacenamiento no puede exceder 100 caracteres")
+    private String sectorAlmacenamiento;
+    
+    @Size(max = 50, message = "El código personalizado no puede exceder 50 caracteres")
+    private String codigoPersonalizado;
+    
+    @Size(max = 50, message = "El código de barras no puede exceder 50 caracteres")
+    private String codigoBarras;
+    
     private Boolean activo;
     
     private Boolean destacado;
@@ -159,6 +171,38 @@ public class ProductoDTO {
     
     public void setMarca(String marca) {
         this.marca = marca;
+    }
+    
+    public String getUnidad() {
+        return unidad;
+    }
+    
+    public void setUnidad(String unidad) {
+        this.unidad = unidad;
+    }
+    
+    public String getSectorAlmacenamiento() {
+        return sectorAlmacenamiento;
+    }
+    
+    public void setSectorAlmacenamiento(String sectorAlmacenamiento) {
+        this.sectorAlmacenamiento = sectorAlmacenamiento;
+    }
+    
+    public String getCodigoPersonalizado() {
+        return codigoPersonalizado;
+    }
+    
+    public void setCodigoPersonalizado(String codigoPersonalizado) {
+        this.codigoPersonalizado = codigoPersonalizado;
+    }
+    
+    public String getCodigoBarras() {
+        return codigoBarras;
+    }
+    
+    public void setCodigoBarras(String codigoBarras) {
+        this.codigoBarras = codigoBarras;
     }
     
     public Boolean getActivo() {

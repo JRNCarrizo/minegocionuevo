@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom';
 import CartIcon from './CartIcon';
+import { FaInstagram, FaFacebook, FaShoppingCart } from 'react-icons/fa';
 
 interface NavbarClienteProps {
   empresa: {
     nombre: string;
     descripcion?: string;
     logoUrl?: string;
+    instagramUrl?: string;
+    facebookUrl?: string;
   };
   clienteInfo?: {
     nombre: string;
@@ -25,8 +28,10 @@ export default function NavbarCliente({
     <header style={{
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
-      position: 'sticky',
+      position: 'fixed',
       top: 0,
+      left: 0,
+      right: 0,
       zIndex: 1000
     }}>
       <div style={{
@@ -69,28 +74,13 @@ export default function NavbarCliente({
             }}>
               {empresa.logoUrl ? '🏢' : '🛍️'}
             </div>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start'
+            <span style={{
+              fontSize: '18px',
+              fontWeight: '700',
+              color: 'white'
             }}>
-              <span style={{
-                fontSize: '18px',
-                fontWeight: '700',
-                color: 'white'
-              }}>
-                {empresa.nombre}
-              </span>
-              {empresa.descripcion && (
-                <span style={{
-                  fontSize: '12px',
-                  color: 'rgba(255,255,255,0.8)',
-                  fontWeight: '400'
-                }}>
-                  {empresa.descripcion.length > 30 ? empresa.descripcion.substring(0, 30) + '...' : empresa.descripcion}
-                </span>
-              )}
-            </div>
+              {empresa.nombre}
+            </span>
           </Link>
         </div>
 
@@ -122,16 +112,85 @@ export default function NavbarCliente({
               🏠 Inicio
             </Link>
             
-            {/* Carrito - solo mostrar si hay cliente logueado */}
-            {clienteInfo && (
-              <div style={{
-                position: 'relative',
-                cursor: 'pointer'
-              }}>
-                <CartIcon onClick={onShowCart} />
-              </div>
-            )}
+
           </div>
+
+          {/* Redes sociales */}
+          {(empresa.instagramUrl || empresa.facebookUrl) && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              {empresa.instagramUrl && (
+                <a
+                  href={empresa.instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: 'white',
+                    textDecoration: 'none',
+                    fontSize: '18px',
+                    padding: '6px',
+                    borderRadius: '50%',
+                    transition: 'all 0.2s ease',
+                    background: 'rgba(255,255,255,0.1)',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                  title="Síguenos en Instagram"
+                >
+                  <FaInstagram size={16} />
+                </a>
+              )}
+              
+              {empresa.facebookUrl && (
+                <a
+                  href={empresa.facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: 'white',
+                    textDecoration: 'none',
+                    fontSize: '18px',
+                    padding: '6px',
+                    borderRadius: '50%',
+                    transition: 'all 0.2s ease',
+                    background: 'rgba(255,255,255,0.1)',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                  title="Síguenos en Facebook"
+                >
+                  <FaFacebook size={16} />
+                </a>
+              )}
+              
+
+            </div>
+          )}
 
           {/* Información del cliente */}
           {clienteInfo ? (

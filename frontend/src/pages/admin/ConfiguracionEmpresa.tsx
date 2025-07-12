@@ -31,6 +31,9 @@ interface ConfiguracionEmpresa {
   mostrarStock: boolean;
   permitirResenas: boolean;
   mostrarCategorias: boolean;
+  // Redes sociales
+  instagramUrl: string;
+  facebookUrl: string;
 }
 
 // Componente para el selector de color mejorado
@@ -246,7 +249,9 @@ export default function ConfiguracionEmpresa() {
     mostrarPrecios: true,
     mostrarStock: true,
     permitirResenas: true,
-    mostrarCategorias: true
+    mostrarCategorias: true,
+    instagramUrl: '',
+    facebookUrl: ''
   });
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -301,7 +306,9 @@ export default function ConfiguracionEmpresa() {
         telefono: empresa.telefono || '',
         colorPrimario: empresa.colorPrimario || '#2563eb',
         colorSecundario: empresa.colorSecundario || '#64748b',
-        moneda: empresa.moneda || 'ARS'
+        moneda: empresa.moneda || 'ARS',
+              instagramUrl: empresa.instagramUrl || '',
+      facebookUrl: empresa.facebookUrl || ''
       }));
       
       if (mostrarToast) {
@@ -409,7 +416,10 @@ export default function ConfiguracionEmpresa() {
         telefono: configuracion.telefono,
         colorPrimario: configuracion.colorPrimario,
         colorSecundario: configuracion.colorSecundario,
-        moneda: configuracion.moneda
+        moneda: configuracion.moneda,
+        instagramUrl: configuracion.instagramUrl,
+        facebookUrl: configuracion.facebookUrl,
+
       };
       
       console.log('Guardando configuración:', datosEmpresa);
@@ -655,6 +665,44 @@ export default function ConfiguracionEmpresa() {
                   onChange={manejarCambio}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Redes Sociales */}
+          <div className="tarjeta">
+            <div className="p-6 border-bottom" style={{ borderBottom: '1px solid var(--color-borde)', backgroundColor: 'var(--color-fondo-hover)' }}>
+              <div className="flex items-centro">
+                <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>📱</span>
+                <h3 className="titulo-3" style={{ marginBottom: '0' }}>Redes Sociales</h3>
+              </div>
+            </div>
+            <div className="p-6 space-y-6">
+              <p className="texto-gris" style={{ marginBottom: '1rem' }}>
+                Agrega los enlaces a tus redes sociales para que aparezcan en el catálogo público de tu tienda.
+              </p>
+              
+              <div className="grid grid-2">
+                <InputField
+                  icon="📸"
+                  label="Instagram"
+                  type="url"
+                  name="instagramUrl"
+                  value={configuracion.instagramUrl}
+                  onChange={manejarCambio}
+                  placeholder="https://instagram.com/tuempresa"
+                />
+                <InputField
+                  icon="👥"
+                  label="Facebook"
+                  type="url"
+                  name="facebookUrl"
+                  value={configuracion.facebookUrl}
+                  onChange={manejarCambio}
+                  placeholder="https://facebook.com/tuempresa"
+                />
+              </div>
+
+
             </div>
           </div>
 

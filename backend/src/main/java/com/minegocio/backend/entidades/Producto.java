@@ -57,6 +57,18 @@ public class Producto {
     @Column(length = 50)
     private String unidad; // ej: "kg", "litros", "unidades"
 
+    @Size(max = 100, message = "El sector de almacenamiento no puede exceder 100 caracteres")
+    @Column(name = "sector_almacenamiento", length = 100)
+    private String sectorAlmacenamiento; // ej: "depósito2", "habitación A33", "góndola 4", "estante 23"
+
+    @Size(max = 50, message = "El código personalizado no puede exceder 50 caracteres")
+    @Column(name = "codigo_personalizado", length = 50)
+    private String codigoPersonalizado; // ej: "330", "420", "EL001", "ROP001"
+
+    @Size(max = 50, message = "El código de barras no puede exceder 50 caracteres")
+    @Column(name = "codigo_barras", length = 50)
+    private String codigoBarras; // ej: "1234567890123", "7891234567890"
+
     @Column(name = "activo")
     private Boolean activo = true;
 
@@ -150,6 +162,15 @@ public class Producto {
 
     public String getUnidad() { return unidad; }
     public void setUnidad(String unidad) { this.unidad = unidad; }
+
+    public String getSectorAlmacenamiento() { return sectorAlmacenamiento; }
+    public void setSectorAlmacenamiento(String sectorAlmacenamiento) { this.sectorAlmacenamiento = sectorAlmacenamiento; }
+
+    public String getCodigoPersonalizado() { return codigoPersonalizado; }
+    public void setCodigoPersonalizado(String codigoPersonalizado) { this.codigoPersonalizado = codigoPersonalizado; }
+
+    public String getCodigoBarras() { return codigoBarras; }
+    public void setCodigoBarras(String codigoBarras) { this.codigoBarras = codigoBarras; }
 
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }

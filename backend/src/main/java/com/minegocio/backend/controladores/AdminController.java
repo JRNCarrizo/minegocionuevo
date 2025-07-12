@@ -68,6 +68,9 @@ public class AdminController {
             empresaDTO.setColorPrimario(empresa.getColorPrimario());
             empresaDTO.setColorSecundario(empresa.getColorSecundario());
             empresaDTO.setMoneda(empresa.getMoneda());
+            empresaDTO.setInstagramUrl(empresa.getInstagramUrl());
+            empresaDTO.setFacebookUrl(empresa.getFacebookUrl());
+            empresaDTO.setMercadolibreUrl(empresa.getMercadolibreUrl());
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Empresa obtenida correctamente",

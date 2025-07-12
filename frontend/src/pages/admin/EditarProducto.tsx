@@ -26,6 +26,9 @@ const EditarProducto: React.FC = () => {
     categoria: '',
     marca: '',
     unidad: '',
+    sectorAlmacenamiento: '',
+    codigoPersonalizado: '',
+    codigoBarras: '',
     activo: true,
     destacado: false,
     imagenes: [] as string[]
@@ -77,6 +80,9 @@ const EditarProducto: React.FC = () => {
           categoria: producto.categoria || '',
           marca: producto.marca || '',
           unidad: producto.unidad || '',
+          sectorAlmacenamiento: producto.sectorAlmacenamiento || '',
+          codigoPersonalizado: producto.codigoPersonalizado || '',
+          codigoBarras: producto.codigoBarras || '',
           activo: producto.activo,
           destacado: producto.destacado,
           imagenes: producto.imagenes || []
@@ -705,6 +711,114 @@ const EditarProducto: React.FC = () => {
                       transition: 'all 0.2s ease'
                     }}
                     placeholder="ej: kg, litro, unidad"
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Sector de Almacenamiento */}
+                <div>
+                  <label htmlFor="sectorAlmacenamiento" style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
+                    Sector de Almacenamiento <span style={{ color: '#6b7280', fontWeight: '400' }}>(Opcional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="sectorAlmacenamiento"
+                    value={formulario.sectorAlmacenamiento}
+                    onChange={(e) => manejarCambio('sectorAlmacenamiento', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    placeholder="Ej: depósito2, habitación A33, góndola 4, estante 23"
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Código Personalizado */}
+                <div>
+                  <label htmlFor="codigoPersonalizado" style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
+                    Código Personalizado <span style={{ color: '#6b7280', fontWeight: '400' }}>(Opcional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="codigoPersonalizado"
+                    value={formulario.codigoPersonalizado}
+                    onChange={(e) => manejarCambio('codigoPersonalizado', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    placeholder="Ej: 330, 420, EL001, ROP001"
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Código de Barras */}
+                <div>
+                  <label htmlFor="codigoBarras" style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
+                    Código de Barras <span style={{ color: '#6b7280', fontWeight: '400' }}>(Opcional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="codigoBarras"
+                    value={formulario.codigoBarras}
+                    onChange={(e) => manejarCambio('codigoBarras', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    placeholder="Ej: 1234567890123"
                     onFocus={(e) => {
                       e.target.style.borderColor = '#3b82f6';
                       e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';

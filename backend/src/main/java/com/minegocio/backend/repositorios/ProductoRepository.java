@@ -88,6 +88,12 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<String> findMarcasPorEmpresa(@Param("empresa") Empresa empresa);
 
     /**
+     * Obtiene todos los sectores de almacenamiento únicos de una empresa
+     */
+    @Query("SELECT DISTINCT p.sectorAlmacenamiento FROM Producto p WHERE p.empresa = :empresa AND p.sectorAlmacenamiento IS NOT NULL ORDER BY p.sectorAlmacenamiento")
+    List<String> findSectoresAlmacenamientoPorEmpresa(@Param("empresa") Empresa empresa);
+
+    /**
      * Busca productos más vendidos por empresa
      */
     @Query("SELECT p FROM Producto p JOIN p.detallesPedidos dp GROUP BY p ORDER BY SUM(dp.cantidad) DESC")
@@ -147,6 +153,48 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      * Busca productos por empresa ID y estado específico con paginación
      */
     Page<Producto> findByEmpresaIdAndActivo(Long empresaId, Boolean activo, Pageable pageable);
+    
+    /**
+     * Busca productos por empresa ID y sector de almacenamiento
+     */
+    List<Producto> findByEmpresaIdAndSectorAlmacenamiento(Long empresaId, String sectorAlmacenamiento);
+    
+    /**
+     * Busca productos por empresa ID, sector de almacenamiento y estado
+     */
+    List<Producto> findByEmpresaIdAndSectorAlmacenamientoAndActivo(Long empresaId, String sectorAlmacenamiento, Boolean activo);
+    
+    /**
+     * Obtiene todos los códigos personalizados únicos de una empresa
+     */
+    @Query("SELECT DISTINCT p.codigoPersonalizado FROM Producto p WHERE p.empresa = :empresa AND p.codigoPersonalizado IS NOT NULL ORDER BY p.codigoPersonalizado")
+    List<String> findCodigosPersonalizadosPorEmpresa(@Param("empresa") Empresa empresa);
+    
+    /**
+     * Busca productos por empresa ID y código personalizado
+     */
+    List<Producto> findByEmpresaIdAndCodigoPersonalizado(Long empresaId, String codigoPersonalizado);
+    
+    /**
+     * Busca productos por empresa ID, código personalizado y estado
+     */
+    List<Producto> findByEmpresaIdAndCodigoPersonalizadoAndActivo(Long empresaId, String codigoPersonalizado, Boolean activo);
+    
+    /**
+     * Obtiene todos los códigos de barras únicos de una empresa
+     */
+    @Query("SELECT DISTINCT p.codigoBarras FROM Producto p WHERE p.empresa = :empresa AND p.codigoBarras IS NOT NULL ORDER BY p.codigoBarras")
+    List<String> findCodigosBarrasPorEmpresa(@Param("empresa") Empresa empresa);
+    
+    /**
+     * Busca productos por empresa ID y código de barras
+     */
+    List<Producto> findByEmpresaIdAndCodigoBarras(Long empresaId, String codigoBarras);
+    
+    /**
+     * Busca productos por empresa ID, código de barras y estado
+     */
+    List<Producto> findByEmpresaIdAndCodigoBarrasAndActivo(Long empresaId, String codigoBarras, Boolean activo);
     
     /**
      * Busca TODOS los productos por empresa ID (activos e inactivos)
