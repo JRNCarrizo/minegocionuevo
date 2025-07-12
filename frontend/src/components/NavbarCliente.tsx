@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import CartIcon from './CartIcon';
 import { FaInstagram, FaFacebook, FaShoppingCart } from 'react-icons/fa';
 
@@ -24,6 +24,8 @@ export default function NavbarCliente({
   onCerrarSesion, 
   onShowCart 
 }: NavbarClienteProps) {
+  const location = useLocation();
+  const estaEnCuenta = location.pathname === '/cuenta';
   return (
     <header style={{
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -49,39 +51,115 @@ export default function NavbarCliente({
           alignItems: 'center',
           gap: '12px'
         }}>
-          <Link to="/" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            textDecoration: 'none',
-            color: 'white',
-            fontWeight: '700',
-            fontSize: '18px',
-            transition: 'transform 0.2s ease'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-          onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <div style={{
-              width: '40px',
-              height: '40px',
-              background: 'rgba(255,255,255,0.2)',
-              borderRadius: '10px',
+          {estaEnCuenta ? (
+            <Link to="/" style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px'
-            }}>
-              {empresa.logoUrl ? '🏢' : '🛍️'}
-            </div>
-            <span style={{
-              fontSize: '18px',
+              gap: '12px',
+              textDecoration: 'none',
+              color: 'white',
               fontWeight: '700',
-              color: 'white'
-            }}>
-              {empresa.nombre}
-            </span>
-          </Link>
+              fontSize: '18px',
+              transition: 'transform 0.2s ease',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '0'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            title="Volver al catálogo"
+            >
+              <div style={{
+                width: '50px',
+                height: '50px',
+                background: 'transparent',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                overflow: 'hidden'
+              }}>
+                {empresa.logoUrl ? (
+                  <img
+                    src={empresa.logoUrl}
+                    alt={`Logo de ${empresa.nombre}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      borderRadius: '50%'
+                    }}
+                  />
+                ) : (
+                  '🛍️'
+                )}
+              </div>
+              <span style={{
+                fontSize: '18px',
+                fontWeight: '700',
+                color: 'white'
+              }}>
+                {empresa.nombre}
+              </span>
+            </Link>
+          ) : (
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                textDecoration: 'none',
+                color: 'white',
+                fontWeight: '700',
+                fontSize: '18px',
+                transition: 'transform 0.2s ease',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              title="Volver arriba"
+              >
+              <div style={{
+                width: '50px',
+                height: '50px',
+                background: 'transparent',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                overflow: 'hidden'
+              }}>
+                {empresa.logoUrl ? (
+                  <img
+                    src={empresa.logoUrl}
+                    alt={`Logo de ${empresa.nombre}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      borderRadius: '50%'
+                    }}
+                  />
+                ) : (
+                  '🛍️'
+                )}
+              </div>
+              <span style={{
+                fontSize: '18px',
+                fontWeight: '700',
+                color: 'white'
+              }}>
+                {empresa.nombre}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Navegación y controles */}
@@ -96,21 +174,7 @@ export default function NavbarCliente({
             alignItems: 'center',
             gap: '16px'
           }}>
-            <Link to="/" style={{
-              color: 'white',
-              textDecoration: 'none',
-              fontSize: '14px',
-              fontWeight: '600',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              transition: 'all 0.2s ease',
-              background: 'rgba(255,255,255,0.1)'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-            >
-              🏠 Inicio
-            </Link>
+
             
 
           </div>

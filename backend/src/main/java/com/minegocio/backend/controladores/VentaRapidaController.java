@@ -90,6 +90,67 @@ public class VentaRapidaController {
     }
 
     /**
+     * Procesa una venta rápida usando la información del usuario autenticado como cliente
+     */
+    @PostMapping("/procesar-con-usuario")
+    public ResponseEntity<?> procesarVentaRapidaConUsuario(@Valid @RequestBody VentaRapidaDTO ventaDTO) {
+        try {
+            System.out.println("=== PROCESANDO VENTA RÁPIDA CON USUARIO ===");
+            
+            // Obtener el ID de la empresa del usuario autenticado
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
+            }
+
+            // Obtener empresaId del usuario autenticado
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long empresaId = usuarioPrincipal.getEmpresaId();
+
+            if (empresaId == null) {
+                return ResponseEntity.status(400).body(Map.of("error", "ID de empresa no válido"));
+            }
+
+            // Usar la información del usuario autenticado para el cliente
+            String nombreUsuario = usuarioPrincipal.getNombreCompleto();
+            String emailUsuario = usuarioPrincipal.getUsername();
+
+            // Crear un DTO modificado con la información del usuario
+            VentaRapidaDTO ventaConUsuario = new VentaRapidaDTO();
+            ventaConUsuario.setClienteNombre(nombreUsuario);
+            ventaConUsuario.setClienteEmail(emailUsuario);
+            ventaConUsuario.setTotal(ventaDTO.getTotal());
+            ventaConUsuario.setSubtotal(ventaDTO.getSubtotal());
+            ventaConUsuario.setMetodoPago(ventaDTO.getMetodoPago());
+            ventaConUsuario.setMontoRecibido(ventaDTO.getMontoRecibido());
+            ventaConUsuario.setVuelto(ventaDTO.getVuelto());
+            ventaConUsuario.setObservaciones(ventaDTO.getObservaciones());
+            ventaConUsuario.setDetalles(ventaDTO.getDetalles());
+
+            // Procesar la venta
+            VentaRapida ventaRapida = ventaRapidaService.procesarVentaRapida(empresaId, ventaConUsuario);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("mensaje", "Venta procesada correctamente con usuario autenticado");
+            response.put("ventaId", ventaRapida.getId());
+            response.put("numeroComprobante", ventaRapida.getNumeroComprobante());
+            response.put("total", ventaRapida.getTotal());
+            response.put("fechaVenta", ventaRapida.getFechaVenta());
+            response.put("cliente", nombreUsuario);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            System.err.println("=== ERROR PROCESANDO VENTA RÁPIDA CON USUARIO ===");
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al procesar la venta: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
      * Obtiene el historial completo de ventas rápidas
      */
     @GetMapping("/historial")
@@ -389,6 +450,34 @@ public class VentaRapidaController {
         response.put("vuelto", ventaDTO.getVuelto());
         response.put("cantidadDetalles", ventaDTO.getDetalles() != null ? ventaDTO.getDetalles().size() : 0);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Obtiene información del usuario autenticado para usar en ventas
+     */
+    @GetMapping("/usuario-info")
+    public ResponseEntity<?> obtenerInformacionUsuario() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
+            }
+
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            
+            Map<String, Object> usuarioInfo = new HashMap<>();
+            usuarioInfo.put("nombre", usuarioPrincipal.getUsuario().getNombre());
+            usuarioInfo.put("apellidos", usuarioPrincipal.getUsuario().getApellidos());
+            usuarioInfo.put("nombreCompleto", usuarioPrincipal.getNombreCompleto());
+            usuarioInfo.put("email", usuarioPrincipal.getUsername());
+            usuarioInfo.put("empresaId", usuarioPrincipal.getEmpresaId());
+            
+            return ResponseEntity.ok(usuarioInfo);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al obtener información del usuario: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
 
 } 

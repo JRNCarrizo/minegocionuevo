@@ -79,7 +79,7 @@ public class ConfiguracionSeguridad {
 
         http.authenticationProvider(authenticationProvider());
         
-        // Solo agregar el filtro JWT para endpoints que no sean públicos
+        // Agregar el filtro JWT después de la configuración de autorización
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

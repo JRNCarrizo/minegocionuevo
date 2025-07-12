@@ -34,10 +34,26 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                                   FilterChain filterChain) throws ServletException, IOException {
         try {
             String requestPath = request.getRequestURI();
+            String method = request.getMethod();
+            
+            System.out.println("=== AuthTokenFilter Debug ===");
+            System.out.println("Request: " + method + " " + requestPath);
             
             // Skip authentication for public endpoints
             if (isPublicEndpoint(requestPath)) {
-                System.out.println("Skipping auth for public endpoint: " + requestPath);
+                System.out.println("✅ Skipping auth for public endpoint: " + requestPath);
+                filterChain.doFilter(request, response);
+                return;
+            }
+            
+            // Log específico para endpoints de estadísticas
+            if (requestPath.contains("/estadisticas")) {
+                System.out.println("📊 Endpoint de estadísticas detectado: " + requestPath);
+            }
+            
+            // Skip authentication for OPTIONS requests (CORS preflight)
+            if ("OPTIONS".equalsIgnoreCase(method)) {
+                System.out.println("✅ Skipping auth for OPTIONS request");
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -49,24 +65,31 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 String email = jwtUtils.getEmailFromJwtToken(jwt);
                 System.out.println("Email extraído del JWT: " + email);
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                System.out.println("UserDetails cargado para: " + email);
-                System.out.println("Authorities: " + userDetails.getAuthorities());
-                
-                // Verificar si es UsuarioPrincipal para obtener más info
-                if (userDetails instanceof UsuarioPrincipal) {
-                    UsuarioPrincipal principal = (UsuarioPrincipal) userDetails;
-                    System.out.println("EmpresaId del usuario: " + principal.getEmpresaId());
-                    System.out.println("Rol del usuario: " + principal.getUsuario().getRol());
-                }
-                
-                UsernamePasswordAuthenticationToken authentication = 
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                try {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    System.out.println("UserDetails cargado para: " + email);
+                    System.out.println("Authorities: " + userDetails.getAuthorities());
+                    
+                    // Verificar si es UsuarioPrincipal para obtener más info
+                    if (userDetails instanceof UsuarioPrincipal) {
+                        UsuarioPrincipal principal = (UsuarioPrincipal) userDetails;
+                        System.out.println("EmpresaId del usuario: " + principal.getEmpresaId());
+                        System.out.println("Rol del usuario: " + principal.getUsuario().getRol());
+                    }
+                    
+                    UsernamePasswordAuthenticationToken authentication = 
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                System.out.println("Autenticación establecida exitosamente para: " + email);
-                System.out.println("Security Context: " + SecurityContextHolder.getContext().getAuthentication());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    System.out.println("✅ Autenticación establecida exitosamente para: " + email);
+                } catch (Exception e) {
+                    System.err.println("❌ Error al cargar usuario: " + e.getMessage());
+                    logger.error("No se puede establecer la autenticación del usuario: {}", e.getMessage());
+                    // Limpiar el contexto de seguridad si hay error
+                    SecurityContextHolder.clearContext();
+                    System.out.println("🧹 SecurityContext limpiado debido a error de usuario");
+                }
             } else {
                 System.out.println("JWT inválido o ausente - no se estableció autenticación");
                 if (jwt != null) {
@@ -74,13 +97,16 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 } else {
                     System.out.println("No se encontró token en la petición");
                 }
+                // No establecer autenticación, pero continuar con el filtro
             }
         } catch (Exception e) {
-            System.err.println("Error en AuthTokenFilter: " + e.getMessage());
+            System.err.println("❌ Error general en AuthTokenFilter: " + e.getMessage());
             e.printStackTrace();
-            logger.error("No se puede establecer la autenticación del usuario: {}", e.getMessage());
+            logger.error("Error general en AuthTokenFilter: {}", e.getMessage());
+            // Continuar con el filtro incluso si hay error
         }
 
+        System.out.println("=== Fin AuthTokenFilter ===");
         filterChain.doFilter(request, response);
     }
 
@@ -105,13 +131,18 @@ public class AuthTokenFilter extends OncePerRequestFilter {
      * Verifica si el endpoint es público y no requiere autenticación
      */
     private boolean isPublicEndpoint(String requestPath) {
-        return requestPath.startsWith("/api/publico/") ||
-               requestPath.startsWith("/api/auth/") ||
-               requestPath.startsWith("/api/debug/") ||
-               requestPath.startsWith("/api/empresas/registro") ||
-               requestPath.startsWith("/api/empresas/verificar-subdominio/") ||
-               requestPath.startsWith("/h2-console/") ||
-               requestPath.startsWith("/swagger-ui/") ||
-               requestPath.startsWith("/v3/api-docs/");
+        boolean isPublic = requestPath.startsWith("/api/publico/") ||
+                          requestPath.startsWith("/api/auth/") ||
+                          requestPath.startsWith("/api/debug/") ||
+                          requestPath.startsWith("/api/empresas/registro") ||
+                          requestPath.startsWith("/api/empresas/verificar-subdominio/") ||
+                          requestPath.startsWith("/h2-console/") ||
+                          requestPath.startsWith("/swagger-ui/") ||
+                          requestPath.startsWith("/v3/api-docs/") ||
+                          requestPath.equals("/error") ||
+                          requestPath.startsWith("/error");
+        
+        System.out.println("🔍 Checking if endpoint is public: " + requestPath + " -> " + isPublic);
+        return isPublic;
     }
 }

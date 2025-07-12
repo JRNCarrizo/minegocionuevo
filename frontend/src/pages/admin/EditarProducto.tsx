@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 import GestorImagenes from '../../components/GestorImagenes';
+import NavbarAdmin from '../../components/NavbarAdmin';
 import '../../styles/gestor-imagenes.css';
 
 const EditarProducto: React.FC = () => {
@@ -299,106 +300,18 @@ const EditarProducto: React.FC = () => {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
       {/* Navbar */}
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '16px 24px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          maxWidth: '1400px',
-          margin: '0 auto'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <button 
-              onClick={() => navigate('/admin/productos')}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-              }}
-            >
-              ← Volver
-            </button>
-            
-            <div style={{
-              height: '24px',
-              width: '1px',
-              background: 'rgba(255,255,255,0.3)'
-            }}></div>
-            
-            <h1 style={{
-              color: 'white',
-              fontSize: '20px',
-              fontWeight: '600',
-              margin: 0
-            }}>
-              ✏️ {id ? 'Editar Producto' : 'Nuevo Producto'}
-            </h1>
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {user && (
-              <div style={{
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}>
-                👤 {user.nombre || user.email}
-              </div>
-            )}
-            
-            <button 
-              onClick={cerrarSesion}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-              }}
-            >
-              🚪 Cerrar Sesión
-            </button>
-          </div>
-        </div>
-      </div>
+      <NavbarAdmin 
+        onCerrarSesion={cerrarSesion}
+        empresaNombre={user.empresaNombre}
+        nombreAdministrador={user.nombre}
+      />
 
       {/* Contenido principal */}
       <div style={{
         maxWidth: '800px',
         margin: '0 auto',
-        padding: '32px 24px'
+        padding: '32px 24px',
+        paddingTop: '100px'
       }}>
         {/* Header */}
         <div style={{ marginBottom: '32px' }}>

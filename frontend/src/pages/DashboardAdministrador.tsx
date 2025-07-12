@@ -141,7 +141,7 @@ export default function DashboardAdministrador() {
       color: '#059669'
     },
     {
-      titulo: 'Ver Pedidos',
+      titulo: 'Gestionar Pedidos',
       descripcion: 'Gestiona los pedidos pendientes',
       icono: '📋',
       enlace: '/admin/pedidos',

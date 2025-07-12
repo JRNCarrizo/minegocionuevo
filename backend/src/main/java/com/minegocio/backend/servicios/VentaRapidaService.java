@@ -98,8 +98,9 @@ public class VentaRapidaService {
      * Busca un cliente existente o crea uno nuevo para la venta rápida
      */
     private Cliente buscarOCrearCliente(Empresa empresa, String nombre, String email) {
-        // Si no hay email, crear cliente general
-        if (email == null || email.trim().isEmpty()) {
+        // Si no hay email o es muy genérico, crear cliente local
+        if (email == null || email.trim().isEmpty() || 
+            email.contains("venta.local") || email.contains("cliente.local")) {
             email = "venta.local@" + empresa.getSubdominio() + ".com";
         }
 
@@ -107,7 +108,13 @@ public class VentaRapidaService {
         Optional<Cliente> clienteExistente = clienteRepository.findByEmailAndEmpresaIdAndActivoTrue(email, empresa.getId());
         
         if (clienteExistente.isPresent()) {
-            return clienteExistente.get();
+            Cliente cliente = clienteExistente.get();
+            // Actualizar el nombre si es diferente (por si el cliente ya existía con otro nombre)
+            if (!cliente.getNombre().equals(nombre)) {
+                cliente.setNombre(nombre);
+                clienteRepository.save(cliente);
+            }
+            return cliente;
         }
 
         // Crear nuevo cliente
@@ -120,6 +127,41 @@ public class VentaRapidaService {
         nuevoCliente.setActivo(true);
         nuevoCliente.setAceptaMarketing(false);
         nuevoCliente.setEmailVerificado(false);
+
+        return clienteRepository.save(nuevoCliente);
+    }
+
+    /**
+     * Busca un cliente por email en la empresa específica
+     */
+    public Optional<Cliente> buscarClientePorEmail(Long empresaId, String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return Optional.empty();
+        }
+        return clienteRepository.findByEmailAndEmpresaIdAndActivoTrue(email, empresaId);
+    }
+
+    /**
+     * Crea un cliente usando información del usuario autenticado
+     */
+    public Cliente crearClienteDesdeUsuario(Empresa empresa, String nombreUsuario, String emailUsuario) {
+        // Buscar si ya existe un cliente con ese email
+        Optional<Cliente> clienteExistente = clienteRepository.findByEmailAndEmpresaIdAndActivoTrue(emailUsuario, empresa.getId());
+        
+        if (clienteExistente.isPresent()) {
+            return clienteExistente.get();
+        }
+
+        // Crear nuevo cliente con información del usuario
+        Cliente nuevoCliente = new Cliente();
+        nuevoCliente.setEmpresa(empresa);
+        nuevoCliente.setNombre(nombreUsuario);
+        nuevoCliente.setApellidos("Usuario"); // Apellidos por defecto
+        nuevoCliente.setEmail(emailUsuario);
+        nuevoCliente.setTipo(Cliente.TipoCliente.REGULAR);
+        nuevoCliente.setActivo(true);
+        nuevoCliente.setAceptaMarketing(false);
+        nuevoCliente.setEmailVerificado(true); // Si viene del usuario autenticado, asumimos que está verificado
 
         return clienteRepository.save(nuevoCliente);
     }
@@ -203,6 +245,25 @@ public class VentaRapidaService {
     public VentaRapidaEstadisticas obtenerEstadisticasVentasRapidas(Long empresaId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         List<VentaRapida> ventas = ventaRapidaRepository.findByEmpresaIdAndFechaVentaBetweenOrderByFechaVentaDesc(
             empresaId, fechaInicio, fechaFin);
+
+        BigDecimal totalVentas = ventas.stream()
+                .map(VentaRapida::getTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        int totalTransacciones = ventas.size();
+
+        int totalProductos = ventas.stream()
+                .mapToInt(venta -> venta.getDetalles().size())
+                .sum();
+
+        return new VentaRapidaEstadisticas(totalVentas, totalTransacciones, totalProductos, ventas.size());
+    }
+
+    /**
+     * Obtiene estadísticas de ventas rápidas para una empresa (todas las ventas)
+     */
+    public VentaRapidaEstadisticas obtenerEstadisticasVentasRapidas(Long empresaId) {
+        List<VentaRapida> ventas = ventaRapidaRepository.findByEmpresaIdOrderByFechaVentaDesc(empresaId);
 
         BigDecimal totalVentas = ventas.stream()
                 .map(VentaRapida::getTotal)

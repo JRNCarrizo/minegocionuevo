@@ -70,7 +70,7 @@ public class PublicoController {
             empresaData.put("moneda", empresa.getMoneda() != null ? empresa.getMoneda() : "USD");
             empresaData.put("instagramUrl", empresa.getInstagramUrl() != null ? empresa.getInstagramUrl() : "");
             empresaData.put("facebookUrl", empresa.getFacebookUrl() != null ? empresa.getFacebookUrl() : "");
-            empresaData.put("mercadolibreUrl", empresa.getMercadolibreUrl() != null ? empresa.getMercadolibreUrl() : "");
+
             
             Map<String, Object> response = new java.util.HashMap<>();
             response.put("mensaje", "Empresa encontrada");
@@ -670,6 +670,88 @@ public class PublicoController {
             
             var error = java.util.Map.of(
                 "error", "Error al cancelar pedido: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Crea un pedido público (sin autenticación requerida)
+     */
+    @PostMapping("/{subdominio}/pedidos")
+    public ResponseEntity<?> crearPedidoPublico(
+            @PathVariable String subdominio,
+            @RequestBody Map<String, Object> pedidoData) {
+        try {
+            System.out.println("=== DEBUG CREAR PEDIDO PÚBLICO ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("Datos del pedido: " + pedidoData);
+            
+            Optional<Empresa> empresa = empresaService.obtenerPorSubdominio(subdominio);
+            
+            if (empresa.isEmpty()) {
+                var error = java.util.Map.of(
+                    "error", "Empresa no encontrada"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            Long empresaId = empresa.get().getId();
+            
+            // Extraer datos del pedido
+            String clienteNombre = (String) pedidoData.get("clienteNombre");
+            String clienteEmail = (String) pedidoData.get("clienteEmail");
+            String direccionEnvio = (String) pedidoData.get("direccionEnvio");
+            Number totalNumber = (Number) pedidoData.get("total");
+            BigDecimal total = BigDecimal.valueOf(totalNumber.doubleValue());
+            
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> detallesData = (List<Map<String, Object>>) pedidoData.get("detalles");
+            
+            // Crear DTO del pedido
+            com.minegocio.backend.dto.PedidoDTO pedidoDTO = new com.minegocio.backend.dto.PedidoDTO();
+            pedidoDTO.setClienteNombre(clienteNombre);
+            pedidoDTO.setClienteEmail(clienteEmail);
+            pedidoDTO.setDireccionEntrega(direccionEnvio);
+            pedidoDTO.setTotal(total);
+            pedidoDTO.setEmpresaId(empresaId);
+            
+            // Si hay clienteId, establecerlo; si no, dejarlo como null
+            Object clienteIdObj = pedidoData.get("clienteId");
+            if (clienteIdObj != null) {
+                pedidoDTO.setClienteId(((Number) clienteIdObj).longValue());
+            }
+            
+            // Convertir detalles
+            List<com.minegocio.backend.dto.DetallePedidoDTO> detalles = new ArrayList<>();
+            for (Map<String, Object> detalleData : detallesData) {
+                com.minegocio.backend.dto.DetallePedidoDTO detalle = new com.minegocio.backend.dto.DetallePedidoDTO();
+                detalle.setProductoId(((Number) detalleData.get("productoId")).longValue());
+                detalle.setProductoNombre((String) detalleData.get("productoNombre"));
+                detalle.setCantidad(((Number) detalleData.get("cantidad")).intValue());
+                detalle.setPrecioUnitario(BigDecimal.valueOf(((Number) detalleData.get("precioUnitario")).doubleValue()));
+                detalles.add(detalle);
+            }
+            pedidoDTO.setDetalles(detalles);
+            
+            // Crear el pedido
+            com.minegocio.backend.dto.PedidoDTO pedidoCreado = pedidoService.crearPedido(empresaId, pedidoDTO);
+            
+            System.out.println("Pedido creado exitosamente: " + pedidoCreado.getNumeroPedido());
+            
+            var respuesta = java.util.Map.of(
+                "mensaje", "Pedido creado exitosamente",
+                "pedido", pedidoCreado
+            );
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
+        } catch (Exception e) {
+            System.err.println("Error al crear pedido público: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error al crear pedido: " + e.getMessage()
             );
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);

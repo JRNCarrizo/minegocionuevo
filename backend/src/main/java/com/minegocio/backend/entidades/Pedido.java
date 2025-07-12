@@ -55,9 +55,9 @@ public class Pedido {
     @Column(name = "fecha_entrega_real")
     private LocalDateTime fechaEntregaReal;
 
-    // Relación con cliente
+    // Relación con cliente (puede ser null para pedidos públicos)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = false)
+    @JoinColumn(name = "cliente_id", nullable = true)
     private Cliente cliente;
 
     // Relación con empresa

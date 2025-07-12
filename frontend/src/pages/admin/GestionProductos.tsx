@@ -34,6 +34,9 @@ const GestionProductos: React.FC = () => {
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [empresaNombre, setEmpresaNombre] = useState<string>('');
   const [nombreAdministrador, setNombreAdministrador] = useState<string>('');
+  // Estados para el modal de detalle
+  const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+  const [modalDetalleAbierto, setModalDetalleAbierto] = useState(false);
   // Estados para paginación (TODO: implementar cuando sea necesario)
   // const [paginaActual, setPaginaActual] = useState(0);
   // const [totalPaginas, setTotalPaginas] = useState(1);
@@ -326,7 +329,8 @@ const GestionProductos: React.FC = () => {
   };
 
   const irADetalle = (producto: Producto) => {
-    navigate(`/admin/productos/${producto.id}`);
+    setProductoSeleccionado(producto);
+    setModalDetalleAbierto(true);
   };
 
   const irAEditar = (producto: Producto) => {
@@ -1570,6 +1574,562 @@ const GestionProductos: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Modal de Detalle de Producto */}
+      {modalDetalleAbierto && productoSeleccionado && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }}
+        onClick={() => setModalDetalleAbierto(false)}
+        >
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            maxWidth: '900px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header del modal */}
+            <div style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              padding: '20px 24px',
+              borderRadius: '16px 16px 0 0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '24px' }}>📦</span>
+                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700' }}>
+                  Detalle del Producto
+                </h2>
+              </div>
+              <button
+                onClick={() => setModalDetalleAbierto(false)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '36px',
+                  height: '36px',
+                  color: 'white',
+                  fontSize: '18px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenido del modal */}
+            <div style={{ 
+              padding: '24px', 
+              overflow: 'auto',
+              flex: 1,
+              display: 'flex',
+              gap: '24px'
+            }}>
+              {/* Columna izquierda - Imagen y información principal */}
+              <div style={{ flex: '0 0 300px' }}>
+                {/* Imagen del producto */}
+                <div style={{
+                  textAlign: 'center',
+                  marginBottom: '20px'
+                }}>
+                  {productoSeleccionado.imagenes && productoSeleccionado.imagenes.length > 0 ? (
+                    <img
+                      src={productoSeleccionado.imagenes[0]}
+                      alt={productoSeleccionado.nombre}
+                      style={{
+                        width: '100%',
+                        maxHeight: '250px',
+                        borderRadius: '12px',
+                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
+                        objectFit: 'contain'
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '100%',
+                      height: '200px',
+                      background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '48px'
+                    }}>
+                      📦
+                    </div>
+                  )}
+                </div>
+
+                {/* Información principal */}
+                <div style={{ marginBottom: '20px' }}>
+                  <h3 style={{
+                    fontSize: '22px',
+                    fontWeight: '700',
+                    color: '#1e293b',
+                    margin: '0 0 16px 0',
+                    textAlign: 'center',
+                    lineHeight: '1.3'
+                  }}>
+                    {productoSeleccionado.nombre}
+                  </h3>
+
+                  {/* Precio destacado */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: 'white',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    textAlign: 'center',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '4px' }}>
+                      PRECIO
+                    </div>
+                    <div style={{ fontSize: '28px', fontWeight: '800' }}>
+                      ${productoSeleccionado.precio?.toLocaleString()}
+                    </div>
+                  </div>
+
+                  {/* Estado y stock */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '12px',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{
+                      background: productoSeleccionado.activo ? '#dcfce7' : '#fee2e2',
+                      color: productoSeleccionado.activo ? '#166534' : '#991b1b',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>
+                        ESTADO
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: '700' }}>
+                        {productoSeleccionado.activo ? '✅ Activo' : '❌ Inactivo'}
+                      </div>
+                    </div>
+
+                    <div style={{
+                      background: productoSeleccionado.stock > 10 ? '#dcfce7' : productoSeleccionado.stock > 0 ? '#fef3c7' : '#fee2e2',
+                      color: productoSeleccionado.stock > 10 ? '#166534' : productoSeleccionado.stock > 0 ? '#92400e' : '#991b1b',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>
+                        STOCK
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: '700' }}>
+                        {productoSeleccionado.stock} u.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Columna derecha - Información detallada */}
+              <div style={{ flex: 1 }}>
+                {/* Información básica */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    color: '#1e293b',
+                    margin: '0 0 16px 0',
+                    borderBottom: '2px solid #e2e8f0',
+                    paddingBottom: '8px'
+                  }}>
+                    📋 Información Básica
+                  </h4>
+                  
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px'
+                  }}>
+                    <div>
+                      <label style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        display: 'block',
+                        marginBottom: '4px'
+                      }}>
+                        Categoría
+                      </label>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#1e293b',
+                        background: '#f8fafc',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        {productoSeleccionado.categoria || 'Sin categoría'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        display: 'block',
+                        marginBottom: '4px'
+                      }}>
+                        Marca
+                      </label>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#1e293b',
+                        background: '#f8fafc',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        {productoSeleccionado.marca || 'Sin marca'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        display: 'block',
+                        marginBottom: '4px'
+                      }}>
+                        Sector
+                      </label>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#1e293b',
+                        background: '#f8fafc',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        {productoSeleccionado.sectorAlmacenamiento || 'Sin sector'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        display: 'block',
+                        marginBottom: '4px'
+                      }}>
+                        Stock Mínimo
+                      </label>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#1e293b',
+                        background: '#f8fafc',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        {productoSeleccionado.stockMinimo} unidades
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Códigos */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    color: '#1e293b',
+                    margin: '0 0 16px 0',
+                    borderBottom: '2px solid #e2e8f0',
+                    paddingBottom: '8px'
+                  }}>
+                    🏷️ Códigos de Identificación
+                  </h4>
+                  
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                    gap: '16px'
+                  }}>
+                    <div>
+                      <label style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        display: 'block',
+                        marginBottom: '4px'
+                      }}>
+                        Código Personalizado
+                      </label>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#1e293b',
+                        fontFamily: 'monospace',
+                        background: '#f8fafc',
+                        padding: '10px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        wordBreak: 'break-all'
+                      }}>
+                        {productoSeleccionado.codigoPersonalizado || 'Sin código'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        display: 'block',
+                        marginBottom: '4px'
+                      }}>
+                        Código de Barras
+                      </label>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#1e293b',
+                        fontFamily: 'monospace',
+                        background: '#f8fafc',
+                        padding: '10px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        wordBreak: 'break-all'
+                      }}>
+                        {productoSeleccionado.codigoBarras || 'Sin código de barras'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Descripción */}
+                {productoSeleccionado.descripcion && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <h4 style={{
+                      fontSize: '16px',
+                      fontWeight: '700',
+                      color: '#1e293b',
+                      margin: '0 0 16px 0',
+                      borderBottom: '2px solid #e2e8f0',
+                      paddingBottom: '8px'
+                    }}>
+                      📝 Descripción
+                    </h4>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#374151',
+                      lineHeight: '1.6',
+                      background: '#f8fafc',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      {productoSeleccionado.descripcion}
+                    </div>
+                  </div>
+                )}
+
+                {/* Fechas */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    color: '#1e293b',
+                    margin: '0 0 16px 0',
+                    borderBottom: '2px solid #e2e8f0',
+                    paddingBottom: '8px'
+                  }}>
+                    📅 Fechas
+                  </h4>
+                  
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px'
+                  }}>
+                    <div>
+                      <label style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        display: 'block',
+                        marginBottom: '4px'
+                      }}>
+                        Fecha de Creación
+                      </label>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#1e293b',
+                        background: '#f8fafc',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        {new Date(productoSeleccionado.fechaCreacion).toLocaleDateString('es-CL')}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        display: 'block',
+                        marginBottom: '4px'
+                      }}>
+                        Última Actualización
+                      </label>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#1e293b',
+                        background: '#f8fafc',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        {new Date(productoSeleccionado.fechaActualizacion).toLocaleDateString('es-CL')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer con botones */}
+            <div style={{
+              background: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              padding: '20px 24px',
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end',
+              flexShrink: 0
+            }}>
+              <button
+                onClick={() => setModalDetalleAbierto(false)}
+                style={{
+                  background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 2px 8px rgba(107,114,128,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(107,114,128,0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(107,114,128,0.3)';
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>✕</span>
+                Cerrar
+              </button>
+
+              <button
+                onClick={() => {
+                  setModalDetalleAbierto(false);
+                  irAEditar(productoSeleccionado);
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 2px 8px rgba(139,92,246,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(139,92,246,0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(139,92,246,0.3)';
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>✏️</span>
+                Editar Producto
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

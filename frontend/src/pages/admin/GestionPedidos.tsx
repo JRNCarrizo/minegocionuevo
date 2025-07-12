@@ -37,6 +37,13 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
     return textos[estado] || estado;
   };
 
+  const formatearMoneda = (monto: number) => {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP'
+    }).format(monto);
+  };
+
   const verDetalleProducto = (detalle: DetallePedido) => {
     setProductoSeleccionado(detalle);
     setMostrarProducto(true);
@@ -735,6 +742,13 @@ export default function GestionPedidos() {
   const [mostrarDetalle, setMostrarDetalle] = useState(false);
   const [empresaNombre, setEmpresaNombre] = useState<string>('');
   const [nombreAdministrador, setNombreAdministrador] = useState<string>('');
+  
+  // Estados para estadísticas
+  const [estadisticas, setEstadisticas] = useState<any>(null);
+  const [estadisticasDiarias, setEstadisticasDiarias] = useState<any>(null);
+  const [estadisticasMensuales, setEstadisticasMensuales] = useState<any>(null);
+  const [estadisticasAnuales, setEstadisticasAnuales] = useState<any>(null);
+  const [cargandoEstadisticas, setCargandoEstadisticas] = useState(false);
 
   useEffect(() => {
     // Obtener empresaId del usuario logueado
@@ -757,9 +771,88 @@ export default function GestionPedidos() {
 
   useEffect(() => {
     if (empresaId) {
+      console.log('useEffect ejecutado con empresaId:', empresaId);
       cargarPedidos();
+      cargarEstadisticas();
     }
   }, [empresaId]);
+
+  const cargarEstadisticas = async () => {
+    if (!empresaId) return;
+    
+    try {
+      setCargandoEstadisticas(true);
+      console.log('Cargando estadísticas para empresa:', empresaId);
+      
+      // Verificar token
+      const token = localStorage.getItem('token');
+      console.log('Token disponible:', token ? 'Sí' : 'No');
+      if (token) {
+        console.log('Token (primeros 20 chars):', token.substring(0, 20) + '...');
+      }
+      
+      // Primero probar la conectividad
+      try {
+        const testResponse = await api.testEstadisticasPedidos(empresaId);
+        console.log('Test de conectividad exitoso:', testResponse);
+      } catch (testErr) {
+        console.error('Error en test de conectividad:', testErr);
+      }
+      
+      const response = await api.obtenerEstadisticasPedidos(empresaId);
+      console.log('Respuesta de estadísticas:', response);
+      if (response) {
+        setEstadisticas(response);
+        console.log('Estadísticas cargadas:', response);
+      }
+    } catch (err) {
+      console.error('Error al cargar estadísticas:', err);
+    } finally {
+      setCargandoEstadisticas(false);
+    }
+  };
+
+  const cargarEstadisticasDiarias = async () => {
+    if (!empresaId) return;
+    
+    const fecha = new Date().toISOString();
+    try {
+      const response = await api.obtenerEstadisticasPedidosDiarias(empresaId, fecha);
+      if (response.data) {
+        setEstadisticasDiarias(response.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar estadísticas diarias:', err);
+    }
+  };
+
+  const cargarEstadisticasMensuales = async () => {
+    if (!empresaId) return;
+    
+    const fecha = new Date();
+    try {
+      const response = await api.obtenerEstadisticasPedidosMensuales(empresaId, fecha.getFullYear(), fecha.getMonth() + 1);
+      if (response.data) {
+        setEstadisticasMensuales(response.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar estadísticas mensuales:', err);
+    }
+  };
+
+  const cargarEstadisticasAnuales = async () => {
+    if (!empresaId) return;
+    
+    const fecha = new Date();
+    try {
+      const response = await api.obtenerEstadisticasPedidosAnuales(empresaId, fecha.getFullYear());
+      if (response.data) {
+        setEstadisticasAnuales(response.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar estadísticas anuales:', err);
+    }
+  };
 
   const cargarPedidos = async () => {
     if (!empresaId) return;
@@ -845,6 +938,13 @@ export default function GestionPedidos() {
     return textos[estado] || estado;
   };
 
+  const formatearMoneda = (monto: number) => {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP'
+    }).format(monto);
+  };
+
   const pedidosFiltrados = filtroEstado === 'todos'
     ? pedidos
     : pedidos.filter(pedido => pedido.estado === filtroEstado.toUpperCase());
@@ -903,6 +1003,121 @@ export default function GestionPedidos() {
             marginTop: '16px'
           }}></div>
         </div>
+
+        {/* Estadísticas Generales */}
+        {cargandoEstadisticas ? (
+          <div style={{
+            background: 'white',
+            borderRadius: '1rem',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #e2e8f0',
+            marginBottom: '2rem',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '4px solid #e2e8f0',
+              borderTop: '4px solid #3b82f6',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 1rem'
+            }} />
+            <p style={{ color: '#64748b', margin: 0 }}>Cargando estadísticas...</p>
+          </div>
+        ) : estadisticas ? (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '1.5rem',
+            marginBottom: '2rem'
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '1rem',
+              padding: '1.5rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #e2e8f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>💰</span>
+                <div>
+                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Total Pedidos</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
+                    {formatearMoneda(estadisticas.totalPedidos || 0)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'white',
+              borderRadius: '1rem',
+              padding: '1.5rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #e2e8f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>🛒</span>
+                <div>
+                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Transacciones</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
+                    {estadisticas.totalTransacciones || 0}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'white',
+              borderRadius: '1rem',
+              padding: '1.5rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #e2e8f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>📦</span>
+                <div>
+                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Productos Vendidos</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
+                    {estadisticas.totalProductos || 0}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'white',
+              borderRadius: '1rem',
+              padding: '1.5rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #e2e8f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>📊</span>
+                <div>
+                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Cantidad Pedidos</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
+                    {estadisticas.cantidadPedidos || 0}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            background: 'white',
+            borderRadius: '1rem',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #e2e8f0',
+            marginBottom: '2rem',
+            textAlign: 'center'
+          }}>
+            <p style={{ color: '#64748b', margin: 0 }}>No se pudieron cargar las estadísticas</p>
+          </div>
+        )}
 
         {/* Filtros */}
         <div className="tarjeta mb-6" style={{

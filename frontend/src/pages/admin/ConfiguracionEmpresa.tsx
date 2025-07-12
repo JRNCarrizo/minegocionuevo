@@ -408,6 +408,20 @@ export default function ConfiguracionEmpresa() {
     setGuardando(true);
     
     try {
+      // Primero subir el logo si se seleccionó uno
+      if (configuracion.logo) {
+        try {
+          const logoResponse = await ApiService.subirLogoEmpresa(configuracion.logo);
+          console.log('Logo subido exitosamente:', logoResponse.data?.logoUrl);
+        } catch (error: any) {
+          console.error('Error al subir logo:', error);
+          const errorMessage = error.response?.data?.error || 'Error al subir el logo';
+          toast.error(errorMessage);
+          setGuardando(false);
+          return;
+        }
+      }
+
       const datosEmpresa = {
         nombre: configuracion.nombre,
         descripcion: configuracion.descripcion,
@@ -419,7 +433,6 @@ export default function ConfiguracionEmpresa() {
         moneda: configuracion.moneda,
         instagramUrl: configuracion.instagramUrl,
         facebookUrl: configuracion.facebookUrl,
-
       };
       
       console.log('Guardando configuración:', datosEmpresa);
@@ -428,6 +441,8 @@ export default function ConfiguracionEmpresa() {
       
       if (response.data) {
         toast.success('Configuración guardada exitosamente');
+        // Limpiar el logo seleccionado después de guardar
+        setConfiguracion(prev => ({ ...prev, logo: null }));
         cargarConfiguracion(false); // No mostrar toast al recargar
       } else {
         toast.error('Error al guardar la configuración');
@@ -571,7 +586,7 @@ export default function ConfiguracionEmpresa() {
 
               <div className="grupo-campo">
                 <label className="etiqueta">Logo de la Empresa</label>
-                <div className="flex items-centro" style={{ gap: '1rem' }}>
+                <div className="flex items-centro" style={{ gap: '1rem', flexWrap: 'wrap' }}>
                   <div className="relative">
                     <input
                       type="file"
@@ -589,12 +604,47 @@ export default function ConfiguracionEmpresa() {
                       📁 Seleccionar Logo
                     </label>
                   </div>
-                  {configuracion.logo && (
-                    <span className="texto-pequeno texto-gris">
-                      ✅ {configuracion.logo.name}
-                    </span>
-                  )}
+                  
+                  {/* Vista previa del logo */}
+                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                    <div style={{
+                      width: '60px',
+                      height: '60px',
+                      border: '2px dashed var(--color-borde)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'var(--color-fondo-hover)',
+                      overflow: 'hidden'
+                    }}>
+                      {configuracion.logo ? (
+                        <img
+                          src={URL.createObjectURL(configuracion.logo)}
+                          alt="Vista previa del logo"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            objectFit: 'contain'
+                          }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: '1.5rem', color: 'var(--color-texto-secundario)' }}>
+                          🏢
+                        </span>
+                      )}
+                    </div>
+                    {configuracion.logo && (
+                      <span className="texto-pequeno texto-gris">
+                        ✅ {configuracion.logo.name}
+                      </span>
+                    )}
+                  </div>
                 </div>
+                <p className="texto-pequeno texto-gris" style={{ marginTop: '0.5rem' }}>
+                  El logo aparecerá en el navbar, la tarjeta de presentación y el login de clientes. 
+                  Formatos recomendados: PNG, JPG. Tamaño máximo: 2MB.
+                </p>
               </div>
             </div>
           </div>

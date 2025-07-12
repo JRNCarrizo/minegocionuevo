@@ -31,23 +31,64 @@ class ApiService {
     // Interceptor para agregar token de autenticación
     this.api.interceptors.request.use(
       (config) => {
-        // Solo omitir token en endpoints realmente públicos (productos y empresa)
+        console.log('🌐 API Request:', config.method?.toUpperCase(), config.url);
+        
+        // Endpoints completamente públicos (no requieren token)
         if (
           config.url &&
           (/\/publico\/[^/]+\/productos/.test(config.url) ||
-           /\/publico\/[^/]+\/empresa/.test(config.url))
+           /\/publico\/[^/]+\/empresa/.test(config.url) ||
+           /\/auth\/login/.test(config.url) ||
+           /\/empresas\/registro/.test(config.url) ||
+           /\/empresas\/verificar-subdominio/.test(config.url))
         ) {
+          console.log('🔓 Endpoint público - sin token');
           delete config.headers.Authorization;
           return config;
         }
         
-        // Intentar obtener token de administrador o cliente
+        // Endpoints de administrador (requieren token de admin)
+        if (
+          config.url &&
+          (/\/admin\//.test(config.url) ||
+           /\/empresas\/\d+\//.test(config.url))
+        ) {
+          const tokenAdmin = localStorage.getItem('token');
+          if (tokenAdmin) {
+            console.log('👨‍💼 Token admin agregado');
+            config.headers.Authorization = `Bearer ${tokenAdmin}`;
+          } else {
+            console.log('❌ Token admin requerido pero no encontrado');
+          }
+          return config;
+        }
+        
+        // Endpoints de cliente (requieren token de cliente)
+        if (
+          config.url &&
+          (/\/cliente\//.test(config.url) ||
+           /\/pedidos\/cliente/.test(config.url))
+        ) {
+          const tokenCliente = localStorage.getItem('clienteToken');
+          if (tokenCliente) {
+            console.log('👤 Token cliente agregado');
+            config.headers.Authorization = `Bearer ${tokenCliente}`;
+          } else {
+            console.log('❌ Token cliente requerido pero no encontrado');
+          }
+          return config;
+        }
+        
+        // Para otros endpoints, intentar con cualquier token disponible
         const tokenAdmin = localStorage.getItem('token');
         const tokenCliente = localStorage.getItem('clienteToken');
         const token = tokenAdmin || tokenCliente;
         
         if (token) {
+          console.log('🔑 Token genérico agregado');
           config.headers.Authorization = `Bearer ${token}`;
+        } else {
+          console.log('⚠️ No se encontró token para endpoint:', config.url);
         }
         
         return config;
@@ -102,6 +143,18 @@ class ApiService {
 
   async actualizarEmpresaAdmin(data: Partial<Empresa>): Promise<ApiResponse<Empresa>> {
     const response = await this.api.put('/admin/empresa', data);
+    return response.data;
+  }
+
+  async subirLogoEmpresa(archivo: File): Promise<ApiResponse<{ logoUrl: string }>> {
+    const formData = new FormData();
+    formData.append('logo', archivo);
+    
+    const response = await this.api.post('/admin/empresa/logo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   }
 
@@ -356,6 +409,23 @@ class ApiService {
     return response.data;
   }
 
+  async crearPedidoPublico(subdominio: string, pedido: {
+    clienteId?: number;
+    clienteNombre: string;
+    clienteEmail: string;
+    direccionEnvio: string;
+    detalles: Array<{
+      productoId: number;
+      productoNombre: string;
+      cantidad: number;
+      precioUnitario: number;
+    }>;
+    total: number;
+  }): Promise<ApiResponse<unknown>> {
+    const response = await this.api.post(`/publico/${subdominio}/pedidos`, pedido);
+    return response.data;
+  }
+
   // Métodos de mensajes (requieren empresaId)
   async obtenerMensajes(empresaId: number, page = 0, size = 10): Promise<PaginatedResponse<{ id: number; asunto: string; mensaje: string; leido: boolean }>> {
     const response = await this.api.get(`/empresas/${empresaId}/mensajes?page=${page}&size=${size}`);
@@ -463,17 +533,48 @@ class ApiService {
     return response.data;
   }
 
-  // Obtener pedidos de un cliente (endpoint público)
-  async obtenerPedidosClientePublico(subdominio: string, clienteId: number): Promise<ApiResponse<Pedido[]>> {
-    const response = await this.api.get(`/publico/${subdominio}/pedidos/cliente/${clienteId}`);
-    return response.data;
-  }
+      // Obtener pedidos de un cliente (endpoint público)
+    async obtenerPedidosClientePublico(subdominio: string, clienteId: number): Promise<ApiResponse<Pedido[]>> {
+        const response = await this.api.get(`/publico/${subdominio}/pedidos/cliente/${clienteId}`);
+        return response.data;
+    }
 
-  // Cancelar pedido del cliente (endpoint público)
-  async cancelarPedidoCliente(subdominio: string, pedidoId: number, clienteId: number): Promise<ApiResponse<Pedido>> {
-    const response = await this.api.put(`/publico/${subdominio}/pedidos/${pedidoId}/cancelar?clienteId=${clienteId}`);
-    return response.data;
-  }
+    // Cancelar pedido del cliente (endpoint público)
+    async cancelarPedidoCliente(subdominio: string, pedidoId: number, clienteId: number): Promise<ApiResponse<Pedido>> {
+        const response = await this.api.put(`/publico/${subdominio}/pedidos/${pedidoId}/cancelar?clienteId=${clienteId}`);
+        return response.data;
+    }
+
+    // Métodos de estadísticas de pedidos
+    async obtenerEstadisticasPedidos(empresaId: number): Promise<ApiResponse<any>> {
+        const response = await this.api.get(`/empresas/${empresaId}/pedidos/estadisticas`);
+        return response.data;
+    }
+
+    async obtenerEstadisticasPedidosPorFecha(empresaId: number, fechaInicio: string, fechaFin: string): Promise<ApiResponse<any>> {
+        const response = await this.api.get(`/empresas/${empresaId}/pedidos/estadisticas/por-fecha?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+        return response.data;
+    }
+
+    async obtenerEstadisticasPedidosDiarias(empresaId: number, fecha: string): Promise<ApiResponse<any>> {
+        const response = await this.api.get(`/empresas/${empresaId}/pedidos/estadisticas/diarias?fecha=${fecha}`);
+        return response.data;
+    }
+
+    async obtenerEstadisticasPedidosMensuales(empresaId: number, año: number, mes: number): Promise<ApiResponse<any>> {
+        const response = await this.api.get(`/empresas/${empresaId}/pedidos/estadisticas/mensuales?año=${año}&mes=${mes}`);
+        return response.data;
+    }
+
+    async obtenerEstadisticasPedidosAnuales(empresaId: number, año: number): Promise<ApiResponse<any>> {
+        const response = await this.api.get(`/empresas/${empresaId}/pedidos/estadisticas/anuales?año=${año}`);
+        return response.data;
+    }
+
+    async testEstadisticasPedidos(empresaId: number): Promise<ApiResponse<any>> {
+        const response = await this.api.get(`/empresas/${empresaId}/pedidos/test-estadisticas`);
+        return response.data;
+    }
 
   // Obtener clientes paginados (para dashboard y conteo real)
   async obtenerClientesPaginado(empresaId: number, page = 0, size = 10) {

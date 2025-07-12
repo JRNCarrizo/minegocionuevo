@@ -470,7 +470,7 @@ function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Ped
                     ⚠️ ¿Necesitas cancelar este pedido?
                   </h4>
                   <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#7f1d1d', lineHeight: '1.5' }}>
-                    Solo puedes cancelar pedidos pendientes o confirmados. Al cancelar, el stock de los productos será restaurado automáticamente.
+                    Solo puedes cancelar pedidos pendientes. Al cancelar, el stock de los productos será restaurado automáticamente.
                   </p>
                   <button 
                     onClick={() => {

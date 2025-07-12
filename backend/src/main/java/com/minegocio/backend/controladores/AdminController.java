@@ -5,13 +5,17 @@ import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.servicios.EmpresaService;
 import com.minegocio.backend.servicios.AutenticacionService;
 import com.minegocio.backend.servicios.PedidoService;
+import com.minegocio.backend.servicios.VentaRapidaService;
+import com.minegocio.backend.servicios.CloudinaryService;
 import com.minegocio.backend.seguridad.JwtUtils;
 import com.minegocio.backend.dto.EmpresaDTO;
+import com.minegocio.backend.servicios.VentaRapidaService.VentaRapidaEstadisticas;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,6 +32,12 @@ public class AdminController {
     
     @Autowired
     private PedidoService pedidoService;
+    
+    @Autowired
+    private VentaRapidaService ventaRapidaService;
+    
+    @Autowired
+    private CloudinaryService cloudinaryService;
     
     @Autowired
     private JwtUtils jwtUtils;
@@ -70,7 +80,7 @@ public class AdminController {
             empresaDTO.setMoneda(empresa.getMoneda());
             empresaDTO.setInstagramUrl(empresa.getInstagramUrl());
             empresaDTO.setFacebookUrl(empresa.getFacebookUrl());
-            empresaDTO.setMercadolibreUrl(empresa.getMercadolibreUrl());
+
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Empresa obtenida correctamente",
@@ -148,17 +158,90 @@ public class AdminController {
                 return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
             }
             
-            // Obtener estadísticas de ventas
-            Double totalVentas = pedidoService.obtenerTotalVentasPorEmpresa(empresa.getId());
+            // Obtener estadísticas de ventas de pedidos
+            Double totalVentasPedidos = pedidoService.obtenerTotalVentasPorEmpresa(empresa.getId());
+            
+            // Obtener estadísticas de ventas rápidas (todas las ventas)
+            VentaRapidaEstadisticas estadisticasVentaRapida = ventaRapidaService.obtenerEstadisticasVentasRapidas(empresa.getId());
+            Double totalVentasRapidas = estadisticasVentaRapida != null ? estadisticasVentaRapida.getTotalVentas().doubleValue() : 0.0;
+            
+            // Sumar ambos totales
+            Double totalVentas = (totalVentasPedidos != null ? totalVentasPedidos : 0.0) + 
+                                (totalVentasRapidas != null ? totalVentasRapidas : 0.0);
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Estadísticas obtenidas correctamente",
                 "data", Map.of(
-                    "totalVentas", totalVentas != null ? totalVentas : 0.0
+                    "totalVentas", totalVentas,
+                    "totalVentasPedidos", totalVentasPedidos != null ? totalVentasPedidos : 0.0,
+                    "totalVentasRapidas", totalVentasRapidas != null ? totalVentasRapidas : 0.0
                 )
             ));
             
         } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+
+    /**
+     * Subir logo de la empresa
+     */
+    @PostMapping("/empresa/logo")
+    public ResponseEntity<?> subirLogoEmpresa(@RequestParam("logo") MultipartFile archivo, HttpServletRequest request) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido"));
+            }
+            
+            token = token.substring(7);
+            String email = jwtUtils.extractUsername(token);
+            
+            Optional<Usuario> usuario = autenticacionService.obtenerPorEmail(email);
+            if (usuario.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            }
+            
+            Empresa empresa = usuario.get().getEmpresa();
+            if (empresa == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
+            }
+            
+            // Validar archivo
+            if (archivo.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se seleccionó ningún archivo"));
+            }
+            
+            if (!archivo.getContentType().startsWith("image/")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El archivo debe ser una imagen"));
+            }
+            
+            if (archivo.getSize() > 2 * 1024 * 1024) { // 2MB
+                return ResponseEntity.badRequest().body(Map.of("error", "El archivo no puede superar 2MB"));
+            }
+            
+            // Eliminar logo anterior si existe
+            if (empresa.getLogoUrl() != null && !empresa.getLogoUrl().isEmpty()) {
+                cloudinaryService.eliminarImagen(empresa.getLogoUrl());
+            }
+            
+            // Subir nueva imagen
+            String urlLogo = cloudinaryService.subirImagen(archivo, empresa.getId());
+            
+            // Actualizar empresa con nueva URL del logo
+            empresa.setLogoUrl(urlLogo);
+            empresaService.guardar(empresa);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Logo subido correctamente",
+                "data", Map.of(
+                    "logoUrl", urlLogo
+                )
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("Error al subir logo: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("error", "Error interno del servidor"));
         }
     }

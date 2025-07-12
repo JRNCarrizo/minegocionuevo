@@ -148,8 +148,12 @@ export default function LoginCliente() {
     <div style={{
       minHeight: '100vh',
       background: `linear-gradient(135deg, ${brandColors.primary} 0%, ${brandColors.secondary} 100%)`,
-      position: 'relative',
-      overflow: 'hidden'
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      overflow: 'auto'
     }}>
       {/* Botón catálogo arriba a la derecha solo texto blanco */}
       <div style={{
@@ -218,10 +222,11 @@ export default function LoginCliente() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 'calc(100vh - 120px)',
+        minHeight: '100vh',
         padding: '2rem 1rem',
         position: 'relative',
-        zIndex: 1
+        zIndex: 1,
+        width: '100%'
       }}>
         <div style={{
           maxWidth: '450px',
@@ -237,6 +242,36 @@ export default function LoginCliente() {
             animation: 'slideInUp 0.8s ease-out'
           }}>
             <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+              {/* Logo de la empresa */}
+              <div style={{
+                width: '120px',
+                height: '120px',
+                background: 'transparent',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 1.5rem',
+                overflow: 'hidden'
+              }}>
+                {empresa.logoUrl ? (
+                  <img
+                    src={empresa.logoUrl}
+                    alt={`Logo de ${empresa.nombre}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      borderRadius: '50%'
+                    }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '3rem', color: brandColors.primary }}>
+                    🏢
+                  </span>
+                )}
+              </div>
+              
               <h2 style={{
                 fontSize: '2rem',
                 fontWeight: '700',

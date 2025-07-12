@@ -89,6 +89,11 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
                                          @Param("fechaFin") LocalDateTime fechaFin);
 
     /**
+     * Busca pedidos por empresa y rango de fechas (método para estadísticas)
+     */
+    List<Pedido> findByEmpresaAndFechaCreacionBetween(Empresa empresa, LocalDateTime fechaInicio, LocalDateTime fechaFin);
+
+    /**
      * Cuenta pedidos por estado y empresa
      */
     @Query("SELECT COUNT(p) FROM Pedido p WHERE p.empresa = :empresa AND p.estado = :estado")

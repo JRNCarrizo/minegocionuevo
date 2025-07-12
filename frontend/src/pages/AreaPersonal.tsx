@@ -95,7 +95,17 @@ export default function AreaPersonal() {
               />
             )}
             <div>
-              <h1 className="nombre-empresa">{empresa.nombre}</h1>
+              <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <h1 className="nombre-empresa" style={{ 
+                  cursor: 'pointer',
+                  transition: 'color 0.2s ease',
+                  margin: '0'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.color = '#667eea'}
+                onMouseOut={(e) => e.currentTarget.style.color = 'inherit'}>
+                  {empresa.nombre}
+                </h1>
+              </Link>
             </div>
           </div>
           

@@ -184,7 +184,7 @@ export default function CatalogoPublico() {
             <FaShoppingCart size={28} color="white" />
             
             {/* Badge con cantidad de items */}
-            {items.length > 0 && (
+            {items.reduce((sum, item) => sum + item.cantidad, 0) > 0 && (
               <div style={{
                 position: 'absolute',
                 top: '-8px',
@@ -202,7 +202,7 @@ export default function CatalogoPublico() {
                 border: '3px solid white',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
               }}>
-                {items.length}
+                {items.reduce((sum, item) => sum + item.cantidad, 0)}
               </div>
             )}
           </div>
@@ -233,7 +233,7 @@ export default function CatalogoPublico() {
             e.currentTarget.style.transform = 'translateY(10px)';
           }}
           >
-            Ver carrito ({items.length} items)
+            Ver carrito ({items.reduce((sum, item) => sum + item.cantidad, 0)} unidades)
             <div style={{
               position: 'absolute',
               top: '100%',
@@ -248,7 +248,7 @@ export default function CatalogoPublico() {
         </div>
       )}
 
-      <main className="contenedor" style={{ paddingTop: '60px' }}>
+      <main className="contenedor" style={{ paddingTop: '20px' }}>
         {/* Cabecera del catálogo */}
         <div style={{
           textAlign: 'center',
@@ -346,17 +346,31 @@ export default function CatalogoPublico() {
           )}
 
           <div style={{
-            width: '80px',
-            height: '80px',
-            background: 'rgba(255,255,255,0.2)',
+            width: '140px',
+            height: '140px',
+            background: 'transparent',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 20px',
-            fontSize: '32px'
+            fontSize: '56px',
+            overflow: 'hidden'
           }}>
-            🛍️
+            {empresa.logoUrl ? (
+              <img
+                src={empresa.logoUrl}
+                alt={`Logo de ${empresa.nombre}`}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  borderRadius: '50%'
+                }}
+              />
+            ) : (
+              '🛍️'
+            )}
           </div>
           
           {/* Bienvenida */}

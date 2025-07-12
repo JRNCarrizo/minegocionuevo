@@ -3,7 +3,7 @@ import React, { useState } from "react";
 interface ConfirmarCompraProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (datos: { nombre: string; email: string; direccion: string }) => void;
+  onConfirm: (datos: { nombre: string; email: string; direccion: string; acordarConVendedor?: boolean }) => void;
   usuario?: { nombre: string; email: string } | null;
   loading?: boolean;
 }
@@ -18,6 +18,7 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
   const [nombre, setNombre] = useState(usuario?.nombre || "");
   const [email, setEmail] = useState(usuario?.email || "");
   const [direccion, setDireccion] = useState("");
+  const [acordarConVendedor, setAcordarConVendedor] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   const validateForm = () => {
@@ -33,10 +34,13 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
       newErrors.email = 'El email no es válido';
     }
     
-    if (!direccion.trim()) {
-      newErrors.direccion = 'La dirección es requerida';
-    } else if (direccion.trim().length < 10) {
-      newErrors.direccion = 'La dirección debe tener al menos 10 caracteres';
+    // La dirección solo es requerida si no se selecciona "acordar con vendedor"
+    if (!acordarConVendedor) {
+      if (!direccion.trim()) {
+        newErrors.direccion = 'La dirección es requerida';
+      } else if (direccion.trim().length < 10) {
+        newErrors.direccion = 'La dirección debe tener al menos 10 caracteres';
+      }
     }
     
     setErrors(newErrors);
@@ -46,7 +50,12 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onConfirm({ nombre: nombre.trim(), email: email.trim(), direccion: direccion.trim() });
+      onConfirm({ 
+        nombre: nombre.trim(), 
+        email: email.trim(), 
+        direccion: acordarConVendedor ? "Acordar con vendedor" : direccion.trim(),
+        acordarConVendedor 
+      });
     }
   };
 
@@ -273,58 +282,137 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                 📍 Dirección de Envío
               </h3>
               
-              <div>
+              {/* Opción de acordar con vendedor */}
+              <div style={{ marginBottom: '20px' }}>
                 <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#374151'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  background: acordarConVendedor ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' : 'white',
+                  border: `2px solid ${acordarConVendedor ? '#3b82f6' : '#e2e8f0'}`,
+                  transition: 'all 0.2s ease'
                 }}>
-                  Dirección completa *
+                  <input
+                    type="checkbox"
+                    checked={acordarConVendedor}
+                    onChange={(e) => {
+                      setAcordarConVendedor(e.target.checked);
+                      if (e.target.checked) {
+                        setDireccion('');
+                        setErrors(prev => ({ ...prev, direccion: '' }));
+                      }
+                    }}
+                    disabled={loading}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      accentColor: '#3b82f6'
+                    }}
+                  />
+                  <div>
+                    <div style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#1e293b',
+                      marginBottom: '4px'
+                    }}>
+                      🤝 Acordar con el vendedor
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#64748b'
+                    }}>
+                      Coordinar entrega directamente con el vendedor
+                    </div>
+                  </div>
                 </label>
-                <textarea
-                  value={direccion}
-                  onChange={e => {
-                    setDireccion(e.target.value);
-                    if (errors.direccion) {
-                      setErrors(prev => ({ ...prev, direccion: '' }));
-                    }
-                  }}
-                  disabled={loading}
-                  rows={4}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: `2px solid ${errors.direccion ? '#ef4444' : '#d1d5db'}`,
-                    borderRadius: '12px',
-                    fontSize: '16px',
-                    background: 'white',
-                    transition: 'all 0.2s ease',
-                    boxSizing: 'border-box',
-                    resize: 'vertical',
-                    fontFamily: 'inherit'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#8b5cf6';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = errors.direccion ? '#ef4444' : '#d1d5db';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                  placeholder="Ingresa tu dirección completa para el envío..."
-                />
-                {errors.direccion && (
-                  <p style={{
-                    margin: '4px 0 0 0',
-                    fontSize: '14px',
-                    color: '#ef4444'
-                  }}>
-                    {errors.direccion}
-                  </p>
-                )}
               </div>
+              
+              {/* Campo de dirección (solo si no se selecciona acordar con vendedor) */}
+              {!acordarConVendedor && (
+                <div>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151'
+                  }}>
+                    Dirección completa *
+                  </label>
+                  <textarea
+                    value={direccion}
+                    onChange={e => {
+                      setDireccion(e.target.value);
+                      if (errors.direccion) {
+                        setErrors(prev => ({ ...prev, direccion: '' }));
+                      }
+                    }}
+                    disabled={loading}
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: `2px solid ${errors.direccion ? '#ef4444' : '#d1d5db'}`,
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      background: 'white',
+                      transition: 'all 0.2s ease',
+                      boxSizing: 'border-box',
+                      resize: 'vertical',
+                      fontFamily: 'inherit'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#8b5cf6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = errors.direccion ? '#ef4444' : '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                    placeholder="Ingresa tu dirección completa para el envío..."
+                  />
+                  {errors.direccion && (
+                    <p style={{
+                      margin: '4px 0 0 0',
+                      fontSize: '14px',
+                      color: '#ef4444'
+                    }}>
+                      {errors.direccion}
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              {/* Mensaje informativo cuando se selecciona acordar con vendedor */}
+              {acordarConVendedor && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  border: '2px solid #f59e0b',
+                  marginTop: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>💡</span>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#92400e' }}>
+                      Información importante
+                    </span>
+                  </div>
+                  <p style={{
+                    margin: 0,
+                    fontSize: '14px',
+                    color: '#92400e',
+                    lineHeight: '1.5'
+                  }}>
+                    Al seleccionar esta opción, el vendedor se pondrá en contacto contigo para coordinar la entrega. 
+                    No es necesario proporcionar una dirección ahora.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Información adicional */}
@@ -351,6 +439,11 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                 <li>Recibirás una confirmación por email</li>
                 <li>Puedes hacer seguimiento desde "Mi Cuenta"</li>
                 <li>El stock se descuenta automáticamente al confirmar</li>
+                {acordarConVendedor && (
+                  <li style={{ fontWeight: '600', color: '#dc2626' }}>
+                    ⚠️ Al seleccionar "Acordar con vendedor", el vendedor se pondrá en contacto contigo para coordinar la entrega
+                  </li>
+                )}
               </ul>
             </div>
 
@@ -434,7 +527,7 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                     Procesando...
                   </span>
                 ) : (
-                  '💳 Confirmar Compra'
+                  acordarConVendedor ? '🤝 Confirmar y Acordar Entrega' : '💳 Confirmar Compra'
                 )}
               </button>
             </div>

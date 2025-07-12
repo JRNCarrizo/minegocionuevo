@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/empresas/{empresaId}/pedidos")
@@ -167,5 +169,147 @@ public class PedidoController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
         }
+    }
+
+    /**
+     * Obtiene estadísticas generales de pedidos
+     */
+    @GetMapping("/estadisticas")
+    public ResponseEntity<?> obtenerEstadisticasPedidos(@PathVariable Long empresaId) {
+        try {
+            PedidoService.PedidoEstadisticas estadisticas = pedidoService.obtenerEstadisticasPedidos(empresaId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("totalPedidos", estadisticas.getTotalPedidos());
+            response.put("totalTransacciones", estadisticas.getTotalTransacciones());
+            response.put("totalProductos", estadisticas.getTotalProductos());
+            response.put("cantidadPedidos", estadisticas.getCantidadPedidos());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al obtener estadísticas: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
+     * Obtiene estadísticas de pedidos por rango de fechas
+     */
+    @GetMapping("/estadisticas/por-fecha")
+    public ResponseEntity<?> obtenerEstadisticasPorFecha(
+            @PathVariable Long empresaId,
+            @RequestParam String fechaInicio,
+            @RequestParam String fechaFin) {
+        try {
+            LocalDateTime inicio = LocalDateTime.parse(fechaInicio);
+            LocalDateTime fin = LocalDateTime.parse(fechaFin);
+            
+            PedidoService.PedidoEstadisticas estadisticas = pedidoService.obtenerEstadisticasPedidosPorFecha(empresaId, inicio, fin);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("totalPedidos", estadisticas.getTotalPedidos());
+            response.put("totalTransacciones", estadisticas.getTotalTransacciones());
+            response.put("totalProductos", estadisticas.getTotalProductos());
+            response.put("cantidadPedidos", estadisticas.getCantidadPedidos());
+            response.put("fechaInicio", inicio);
+            response.put("fechaFin", fin);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al obtener estadísticas por fecha: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
+     * Obtiene estadísticas diarias de pedidos
+     */
+    @GetMapping("/estadisticas/diarias")
+    public ResponseEntity<?> obtenerEstadisticasDiarias(
+            @PathVariable Long empresaId,
+            @RequestParam String fecha) {
+        try {
+            LocalDateTime fechaConsulta = LocalDateTime.parse(fecha);
+            PedidoService.PedidoEstadisticas estadisticas = pedidoService.obtenerEstadisticasDiarias(empresaId, fechaConsulta);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("totalPedidos", estadisticas.getTotalPedidos());
+            response.put("totalTransacciones", estadisticas.getTotalTransacciones());
+            response.put("totalProductos", estadisticas.getTotalProductos());
+            response.put("cantidadPedidos", estadisticas.getCantidadPedidos());
+            response.put("fecha", fechaConsulta.toLocalDate());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al obtener estadísticas diarias: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
+     * Obtiene estadísticas mensuales de pedidos
+     */
+    @GetMapping("/estadisticas/mensuales")
+    public ResponseEntity<?> obtenerEstadisticasMensuales(
+            @PathVariable Long empresaId,
+            @RequestParam int año,
+            @RequestParam int mes) {
+        try {
+            PedidoService.PedidoEstadisticas estadisticas = pedidoService.obtenerEstadisticasMensuales(empresaId, año, mes);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("totalPedidos", estadisticas.getTotalPedidos());
+            response.put("totalTransacciones", estadisticas.getTotalTransacciones());
+            response.put("totalProductos", estadisticas.getTotalProductos());
+            response.put("cantidadPedidos", estadisticas.getCantidadPedidos());
+            response.put("año", año);
+            response.put("mes", mes);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al obtener estadísticas mensuales: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
+     * Obtiene estadísticas anuales de pedidos
+     */
+    @GetMapping("/estadisticas/anuales")
+    public ResponseEntity<?> obtenerEstadisticasAnuales(
+            @PathVariable Long empresaId,
+            @RequestParam int año) {
+        try {
+            PedidoService.PedidoEstadisticas estadisticas = pedidoService.obtenerEstadisticasAnuales(empresaId, año);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("totalPedidos", estadisticas.getTotalPedidos());
+            response.put("totalTransacciones", estadisticas.getTotalTransacciones());
+            response.put("totalProductos", estadisticas.getTotalProductos());
+            response.put("cantidadPedidos", estadisticas.getCantidadPedidos());
+            response.put("año", año);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al obtener estadísticas anuales: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
+     * Endpoint de prueba para verificar que el controlador funciona
+     */
+    @GetMapping("/test-estadisticas")
+    public ResponseEntity<?> testEstadisticas(@PathVariable Long empresaId) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensaje", "Controlador de estadísticas de pedidos funcionando correctamente");
+        response.put("empresaId", empresaId);
+        response.put("timestamp", LocalDateTime.now());
+        return ResponseEntity.ok(response);
     }
 }

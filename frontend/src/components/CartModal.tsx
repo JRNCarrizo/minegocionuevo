@@ -28,9 +28,9 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
   const [compraRealizada, setCompraRealizada] = useState(false);
   const [loading, setLoading] = useState(false);
   const usuario = getClienteInfo();
-  const { empresa } = useSubdominio();
+  const { empresa, subdominio } = useSubdominio();
 
-  const handleConfirmarCompra = async (datos: { nombre: string; email: string; direccion: string }) => {
+  const handleConfirmarCompra = async (datos: { nombre: string; email: string; direccion: string; acordarConVendedor?: boolean }) => {
     if (!usuario || !items.length || !empresa?.id) {
       toast.error('Faltan datos del usuario, empresa o carrito vacío.');
       return;
@@ -51,21 +51,21 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
       return;
     }
     
-    if (!datos.direccion || datos.direccion.length < 5) {
-      toast.error('Debes ingresar una dirección de envío válida.');
+    // Solo validar dirección si no se selecciona acordar con vendedor
+    if (!datos.acordarConVendedor && (!datos.direccion || datos.direccion.length < 5)) {
+      toast.error('Debes ingresar una dirección de envío válida o seleccionar "Acordar con vendedor".');
       return;
     }
 
     setLoading(true);
     try {
-      const clienteId = usuario && typeof usuario.id === 'number' && !isNaN(usuario.id) ? usuario.id : undefined;
-      if (!clienteId) {
-        toast.error('No se pudo obtener el ID del cliente. Por favor, vuelve a iniciar sesión.');
+      if (!subdominio) {
+        toast.error('No se pudo identificar la tienda. Por favor, recarga la página.');
         return;
       }
       
-      await apiService.crearPedido(Number(empresa.id), {
-        clienteId: usuario.id,
+      await apiService.crearPedidoPublico(subdominio, {
+        clienteId: usuario?.id,
         clienteNombre: datos.nombre,
         clienteEmail: datos.email,
         direccionEnvio: datos.direccion,

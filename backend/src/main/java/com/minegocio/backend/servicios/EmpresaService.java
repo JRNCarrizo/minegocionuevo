@@ -212,9 +212,7 @@ public class EmpresaService {
         if (empresaDTO.getFacebookUrl() != null) {
             empresa.setFacebookUrl(empresaDTO.getFacebookUrl());
         }
-        if (empresaDTO.getMercadolibreUrl() != null) {
-            empresa.setMercadolibreUrl(empresaDTO.getMercadolibreUrl());
-        }
+        
 
         empresa = empresaRepository.save(empresa);
         return new EmpresaDTO(empresa);

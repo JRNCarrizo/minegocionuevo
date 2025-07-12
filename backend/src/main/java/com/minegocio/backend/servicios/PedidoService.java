@@ -46,15 +46,20 @@ public class PedidoService {
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
         System.out.println("Empresa encontrada: " + empresa.getNombre());
         
-        // Buscar cliente
-        Cliente cliente = clienteRepository.findById(pedidoDTO.getClienteId())
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
-        System.out.println("Cliente encontrado: " + cliente.getNombre() + " " + cliente.getApellidos());
+        // Buscar cliente (puede ser null para pedidos públicos)
+        Cliente cliente = null;
+        if (pedidoDTO.getClienteId() != null) {
+            cliente = clienteRepository.findById(pedidoDTO.getClienteId())
+                    .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+            System.out.println("Cliente encontrado: " + cliente.getNombre() + " " + cliente.getApellidos());
+        } else {
+            System.out.println("Pedido público - sin cliente registrado");
+        }
         
         // Crear entidad Pedido
         Pedido pedido = new Pedido();
         pedido.setEmpresa(empresa);
-        pedido.setCliente(cliente);
+        pedido.setCliente(cliente); // Puede ser null para pedidos públicos
         pedido.setDireccionEntrega(pedidoDTO.getDireccionEntrega());
         pedido.setEstado(Pedido.EstadoPedido.PENDIENTE);
         pedido.setObservaciones(pedidoDTO.getNotas());
@@ -109,8 +114,12 @@ public class PedidoService {
         System.out.println("Pedido guardado con ID: " + guardado.getId());
         
         // Verificar que se guardó correctamente
-        List<Pedido> pedidosVerificacion = pedidoRepository.findByClienteAndEmpresa(cliente, empresa);
-        System.out.println("Pedidos del cliente después de guardar: " + pedidosVerificacion.size());
+        if (cliente != null) {
+            List<Pedido> pedidosVerificacion = pedidoRepository.findByClienteAndEmpresa(cliente, empresa);
+            System.out.println("Pedidos del cliente después de guardar: " + pedidosVerificacion.size());
+        } else {
+            System.out.println("Pedido público guardado - sin cliente asociado");
+        }
         
         // Devolver DTO
         PedidoDTO resultado = convertirADTO(guardado);
@@ -293,5 +302,110 @@ public class PedidoService {
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
         
         return pedidoRepository.sumaTotalVentasPorEmpresa(empresa);
+    }
+
+    /**
+     * Clase interna para estadísticas de pedidos
+     */
+    public static class PedidoEstadisticas {
+        private final BigDecimal totalPedidos;
+        private final int totalTransacciones;
+        private final int totalProductos;
+        private final int cantidadPedidos;
+
+        public PedidoEstadisticas(BigDecimal totalPedidos, int totalTransacciones, int totalProductos, int cantidadPedidos) {
+            this.totalPedidos = totalPedidos;
+            this.totalTransacciones = totalTransacciones;
+            this.totalProductos = totalProductos;
+            this.cantidadPedidos = cantidadPedidos;
+        }
+
+        public BigDecimal getTotalPedidos() { return totalPedidos; }
+        public int getTotalTransacciones() { return totalTransacciones; }
+        public int getTotalProductos() { return totalProductos; }
+        public int getCantidadPedidos() { return cantidadPedidos; }
+    }
+
+    /**
+     * Obtiene estadísticas generales de pedidos por empresa
+     */
+    public PedidoEstadisticas obtenerEstadisticasPedidos(Long empresaId) {
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        
+        List<Pedido> pedidos = pedidoRepository.findByEmpresaOrderByFechaCreacionDesc(empresa);
+        
+        BigDecimal totalPedidos = pedidos.stream()
+                .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)
+                .map(Pedido::getTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        int totalTransacciones = (int) pedidos.stream()
+                .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)
+                .count();
+        
+        int totalProductos = pedidos.stream()
+                .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)
+                .flatMapToInt(pedido -> pedido.getDetalles().stream().mapToInt(DetallePedido::getCantidad))
+                .sum();
+        
+        int cantidadPedidos = pedidos.size();
+        
+        return new PedidoEstadisticas(totalPedidos, totalTransacciones, totalProductos, cantidadPedidos);
+    }
+
+    /**
+     * Obtiene estadísticas de pedidos por rango de fechas
+     */
+    public PedidoEstadisticas obtenerEstadisticasPedidosPorFecha(Long empresaId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        
+        List<Pedido> pedidos = pedidoRepository.findByEmpresaAndFechaCreacionBetween(empresa, fechaInicio, fechaFin);
+        
+        BigDecimal totalPedidos = pedidos.stream()
+                .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)
+                .map(Pedido::getTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        int totalTransacciones = (int) pedidos.stream()
+                .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)
+                .count();
+        
+        int totalProductos = pedidos.stream()
+                .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)
+                .flatMapToInt(pedido -> pedido.getDetalles().stream().mapToInt(DetallePedido::getCantidad))
+                .sum();
+        
+        int cantidadPedidos = pedidos.size();
+        
+        return new PedidoEstadisticas(totalPedidos, totalTransacciones, totalProductos, cantidadPedidos);
+    }
+
+    /**
+     * Obtiene estadísticas diarias de pedidos
+     */
+    public PedidoEstadisticas obtenerEstadisticasDiarias(Long empresaId, LocalDateTime fecha) {
+        LocalDateTime inicio = fecha.toLocalDate().atStartOfDay();
+        LocalDateTime fin = fecha.toLocalDate().atTime(23, 59, 59);
+        return obtenerEstadisticasPedidosPorFecha(empresaId, inicio, fin);
+    }
+
+    /**
+     * Obtiene estadísticas mensuales de pedidos
+     */
+    public PedidoEstadisticas obtenerEstadisticasMensuales(Long empresaId, int año, int mes) {
+        LocalDateTime inicio = LocalDateTime.of(año, mes, 1, 0, 0, 0);
+        LocalDateTime fin = inicio.plusMonths(1).minusSeconds(1);
+        return obtenerEstadisticasPedidosPorFecha(empresaId, inicio, fin);
+    }
+
+    /**
+     * Obtiene estadísticas anuales de pedidos
+     */
+    public PedidoEstadisticas obtenerEstadisticasAnuales(Long empresaId, int año) {
+        LocalDateTime inicio = LocalDateTime.of(año, 1, 1, 0, 0, 0);
+        LocalDateTime fin = LocalDateTime.of(año, 12, 31, 23, 59, 59);
+        return obtenerEstadisticasPedidosPorFecha(empresaId, inicio, fin);
     }
 }
