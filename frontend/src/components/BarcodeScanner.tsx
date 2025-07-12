@@ -23,12 +23,34 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose, isOpen
         scannerRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isOpen]); // Removed initializeScanner from dependencies to prevent infinite loops
+
+  // Cleanup effect when component unmounts or isOpen changes to false
+  useEffect(() => {
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      }
+    };
+  }, []);
 
   const initializeScanner = () => {
+    // Prevent multiple scanner instances
+    if (scannerRef.current) {
+      scannerRef.current.clear();
+      scannerRef.current = null;
+    }
+
     try {
       setError(null);
       setIsScanning(true);
+
+      // Clear any existing content in the scanner div
+      const scannerElement = document.getElementById("barcode-scanner");
+      if (scannerElement) {
+        scannerElement.innerHTML = '';
+      }
 
       scannerRef.current = new Html5QrcodeScanner(
         "barcode-scanner",
@@ -60,6 +82,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose, isOpen
       scannerRef.current.render(
         (decodedText: string) => {
           // Código escaneado exitosamente
+          console.log("✅ Código escaneado:", decodedText);
           onScan(decodedText);
           closeScanner();
         },
@@ -67,7 +90,8 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose, isOpen
           // Solo mostrar errores que no sean de "no encontrado" para evitar spam
           if (!errorMessage.includes("NotFoundException") && 
               !errorMessage.includes("No MultiFormat Readers") &&
-              !errorMessage.includes("QR code parse error")) {
+              !errorMessage.includes("QR code parse error") &&
+              !errorMessage.includes("QR code not found")) {
             console.log("⚠️ Error de escaneo:", errorMessage);
           }
         }
@@ -81,10 +105,22 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose, isOpen
   };
 
   const closeScanner = () => {
+    console.log("🔒 Cerrando escáner...");
     if (scannerRef.current) {
-      scannerRef.current.clear();
+      try {
+        scannerRef.current.clear();
+      } catch (err) {
+        console.log("⚠️ Error al limpiar escáner:", err);
+      }
       scannerRef.current = null;
     }
+    
+    // Clear the scanner div content
+    const scannerElement = document.getElementById("barcode-scanner");
+    if (scannerElement) {
+      scannerElement.innerHTML = '';
+    }
+    
     setIsScanning(false);
     onClose();
   };

@@ -249,6 +249,11 @@ class ApiService {
     return response.data;
   }
 
+  async reactivarProducto(empresaId: number, id: number): Promise<ApiResponse<Producto>> {
+    const response = await this.api.put(`/empresas/${empresaId}/productos/${id}/reactivar`);
+    return response.data;
+  }
+
   async obtenerCategorias(empresaId?: number): Promise<ApiResponse<string[]>> {
     if (empresaId) {
       const response = await this.api.get(`/empresas/${empresaId}/productos/categorias`);

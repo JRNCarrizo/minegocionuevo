@@ -263,6 +263,26 @@ public class ProductoController {
     }
 
     /**
+     * Reactiva un producto (marca como activo)
+     */
+    @PutMapping("/{id}/reactivar")
+    public ResponseEntity<?> reactivarProducto(
+            @PathVariable Long empresaId,
+            @PathVariable Long id) {
+        try {
+            ProductoDTO productoReactivo = productoService.reactivarProducto(empresaId, id);
+            return ResponseEntity.ok(java.util.Map.of(
+                "mensaje", "Producto reactivado exitosamente",
+                "data", productoReactivo
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
      * Actualiza el stock de un producto
      */
     @PatchMapping("/{id}/stock")

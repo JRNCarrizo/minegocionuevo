@@ -181,6 +181,15 @@ public class ProductoService {
         productoRepository.save(producto);
     }
 
+    public ProductoDTO reactivarProducto(Long empresaId, Long id) {
+        Producto producto = productoRepository.findByIdAndEmpresaId(id, empresaId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        producto.setActivo(true);
+        Producto productoReactivo = productoRepository.save(producto);
+        return convertirADTO(productoReactivo);
+    }
+
     public void actualizarStock(Long empresaId, Long id, Integer nuevoStock) {
         // Usar findByIdAndEmpresaId para permitir actualizar stock de productos inactivos
         Producto producto = productoRepository.findByIdAndEmpresaId(id, empresaId)

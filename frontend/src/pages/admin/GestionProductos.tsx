@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
+import BarcodeScanner from '../../components/BarcodeScanner';
 import type { Producto } from '../../types';
 import '../../styles/gestion-productos.css';
 
@@ -37,6 +38,8 @@ const GestionProductos: React.FC = () => {
   // Estados para el modal de detalle
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [modalDetalleAbierto, setModalDetalleAbierto] = useState(false);
+  // Estados para el escáner de códigos de barras
+  const [mostrarScanner, setMostrarScanner] = useState(false);
   // Estados para paginación (TODO: implementar cuando sea necesario)
   // const [paginaActual, setPaginaActual] = useState(0);
   // const [totalPaginas, setTotalPaginas] = useState(1);
@@ -345,7 +348,11 @@ const GestionProductos: React.FC = () => {
 
     // Confirmar eliminación
     const confirmar = window.confirm(
-      `¿Estás seguro de que quieres eliminar "${producto.nombre}"?\n\n⚠️ Esta acción marcará el producto como inactivo y no se mostrará en el catálogo público.\n\nEl producto se puede reactivar más tarde desde la vista de productos inactivos.`
+      `¿Estás seguro de que quieres eliminar "${producto.nombre}"?\n\n⚠️ Esta acción marcará el producto como inactivo y:\n` +
+      `• No se mostrará en el catálogo público\n` +
+      `• No aparecerá en búsquedas por escáner\n` +
+      `• No estará disponible para ventas\n\n` +
+      `El producto se puede reactivar más tarde desde la vista de productos inactivos.`
     );
     
     if (!confirmar) {
@@ -367,7 +374,11 @@ const GestionProductos: React.FC = () => {
       console.log('Producto eliminado exitosamente');
       
       // Mostrar mensaje de éxito
-      alert(`✅ Producto "${producto.nombre}" eliminado exitosamente.\n\nEl producto ha sido marcado como inactivo y no aparecerá en el catálogo público.`);
+      alert(`✅ Producto "${producto.nombre}" eliminado exitosamente.\n\nEl producto ha sido marcado como inactivo y:\n` +
+        `• No aparecerá en el catálogo público\n` +
+        `• No será encontrado por el escáner\n` +
+        `• No estará disponible para ventas\n\n` +
+        `Para reactivarlo, ve a la vista de productos inactivos.`);
       
     } catch (error) {
       console.error('Error al eliminar producto:', error);
@@ -383,10 +394,73 @@ const GestionProductos: React.FC = () => {
     }
   };
 
+  const reactivarProducto = async (producto: Producto) => {
+    if (!empresaId) {
+      console.error('No hay empresaId para reactivar producto');
+      return;
+    }
+
+    // Confirmar reactivación
+    const confirmar = window.confirm(
+      `¿Estás seguro de que quieres reactivar "${producto.nombre}"?\n\n✅ Esta acción marcará el producto como activo y:\n` +
+      `• Aparecerá en el catálogo público\n` +
+      `• Será encontrado por el escáner\n` +
+      `• Estará disponible para ventas`
+    );
+    
+    if (!confirmar) {
+      return;
+    }
+
+    try {
+      console.log('=== DEBUG REACTIVAR PRODUCTO ===');
+      console.log('EmpresaId:', empresaId);
+      console.log('ProductoId:', producto.id);
+      console.log('Producto:', producto.nombre);
+      
+      // Llamar al endpoint de reactivar
+      const response = await ApiService.reactivarProducto(empresaId, producto.id);
+      
+      // Actualizar la lista local
+      setProductos(productos.map(p => 
+        p.id === producto.id ? { ...p, activo: true } : p
+      ));
+      
+      console.log('Producto reactivado exitosamente');
+      
+      // Mostrar mensaje de éxito
+      alert(`✅ Producto "${producto.nombre}" reactivado exitosamente.\n\nEl producto ahora está activo y disponible para ventas.`);
+      
+    } catch (error) {
+      console.error('Error al reactivar producto:', error);
+      
+      // Mostrar información del error para debug
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: unknown } };
+        console.error('Status del error:', axiosError.response?.status);
+        console.error('Data del error:', axiosError.response?.data);
+      }
+      
+      alert('Error al reactivar el producto. Por favor, intenta nuevamente.');
+    }
+  };
+
   const cerrarSesion = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/admin/login';
+  };
+
+  // Funciones para el escáner de códigos de barras
+  const manejarEscaneoBarras = (codigoBarras: string) => {
+    console.log("✅ Código escaneado en gestión de productos:", codigoBarras);
+    // Solo buscar productos activos cuando se escanea un código de barras
+    setFiltros(prev => ({ ...prev, codigoBarras, activo: true }));
+    setMostrarScanner(false);
+  };
+
+  const abrirScanner = () => {
+    setMostrarScanner(true);
   };
 
   if (cargando) {
@@ -648,24 +722,71 @@ const GestionProductos: React.FC = () => {
                   </select>
                 )}
 
-                {codigosBarras.length > 0 && (
-                  <select 
-                    value={filtros.codigoBarras || ''} 
-                    onChange={(e) => setFiltros({...filtros, codigoBarras: e.target.value || undefined})}
-                    className="campo"
-                    style={{ 
-                      fontSize: '14px',
+                {/* Botón para escanear código de barras */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    onClick={abrirScanner}
+                    style={{
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                      color: 'white',
+                      border: 'none',
                       borderRadius: '8px',
-                      border: '2px solid #e2e8f0',
-                      background: 'white'
+                      padding: '8px 16px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      minHeight: '40px'
                     }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.3)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                    title="Escanear código de barras"
                   >
-                    <option value="">📊 Todos los códigos de barras</option>
-                    {codigosBarras.map(codigo => (
-                      <option key={codigo} value={codigo}>{codigo}</option>
-                    ))}
-                  </select>
-                )}
+                    📷 Escanear
+                  </button>
+                  
+                  {/* Mostrar código escaneado si existe */}
+                  {filtros.codigoBarras && (
+                    <div style={{
+                      background: '#f0f9ff',
+                      border: '1px solid #bae6fd',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      fontSize: '14px',
+                      color: '#0369a1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <span>📊 {filtros.codigoBarras}</span>
+                      <button
+                        onClick={() => setFiltros(prev => ({ ...prev, codigoBarras: undefined }))}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#0369a1',
+                          cursor: 'pointer',
+                          fontSize: '16px',
+                          padding: '0',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        title="Limpiar filtro"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 <select 
                   value={filtros.activo === undefined ? '' : filtros.activo.toString()} 
@@ -1171,11 +1292,17 @@ const GestionProductos: React.FC = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              eliminarProducto(producto);
+                              if (producto.activo) {
+                                eliminarProducto(producto);
+                              } else {
+                                reactivarProducto(producto);
+                              }
                             }}
                             className="boton-accion"
                             style={{
-                              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                              background: producto.activo 
+                                ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                               color: 'white',
                               border: 'none',
                               borderRadius: '6px',
@@ -1186,14 +1313,16 @@ const GestionProductos: React.FC = () => {
                             }}
                             onMouseOver={(e) => {
                               e.currentTarget.style.transform = 'translateY(-1px)';
-                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(239,68,68,0.3)';
+                              e.currentTarget.style.boxShadow = producto.activo 
+                                ? '0 2px 8px rgba(239,68,68,0.3)'
+                                : '0 2px 8px rgba(16,185,129,0.3)';
                             }}
                             onMouseOut={(e) => {
                               e.currentTarget.style.transform = 'translateY(0)';
                               e.currentTarget.style.boxShadow = 'none';
                             }}
                           >
-                            🗑️ Eliminar
+                            {producto.activo ? '🗑️ Eliminar' : '✅ Reactivar'}
                           </button>
                         </div>
                       </div>
@@ -1535,10 +1664,16 @@ const GestionProductos: React.FC = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              eliminarProducto(producto);
+                              if (producto.activo) {
+                                eliminarProducto(producto);
+                              } else {
+                                reactivarProducto(producto);
+                              }
                             }}
                             style={{
-                              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                              background: producto.activo 
+                                ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
@@ -1547,7 +1682,9 @@ const GestionProductos: React.FC = () => {
                               fontWeight: '600',
                               cursor: 'pointer',
                               transition: 'all 0.3s ease',
-                              boxShadow: '0 2px 8px rgba(239,68,68,0.2)',
+                              boxShadow: producto.activo 
+                                ? '0 2px 8px rgba(239,68,68,0.2)'
+                                : '0 2px 8px rgba(16,185,129,0.2)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -1555,14 +1692,18 @@ const GestionProductos: React.FC = () => {
                             }}
                             onMouseOver={(e) => {
                               e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.3)';
+                              e.currentTarget.style.boxShadow = producto.activo 
+                                ? '0 4px 12px rgba(239,68,68,0.3)'
+                                : '0 4px 12px rgba(16,185,129,0.3)';
                             }}
                             onMouseOut={(e) => {
                               e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(239,68,68,0.2)';
+                              e.currentTarget.style.boxShadow = producto.activo 
+                                ? '0 2px 8px rgba(239,68,68,0.2)'
+                                : '0 2px 8px rgba(16,185,129,0.2)';
                             }}
                           >
-                            🗑️
+                            {producto.activo ? '🗑️' : '✅'}
                           </button>
                         </div>
                       </div>
@@ -2130,6 +2271,13 @@ const GestionProductos: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Componente de escáner de códigos de barras */}
+      <BarcodeScanner
+        isOpen={mostrarScanner}
+        onScan={manejarEscaneoBarras}
+        onClose={() => setMostrarScanner(false)}
+      />
     </div>
   );
 };

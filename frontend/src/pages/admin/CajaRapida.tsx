@@ -1369,64 +1369,12 @@ export default function CajaRapida() {
         </div>
       )}
 
-      {/* Modal del scanner de códigos de barras */}
-      {mostrarScanner && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '1rem',
-            padding: '2rem',
-            maxWidth: '500px',
-            width: '90%',
-            maxHeight: '90vh',
-            overflowY: 'auto'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '1.5rem'
-            }}>
-              <h3 style={{
-                fontSize: '1.5rem',
-                fontWeight: '600',
-                color: '#1e293b'
-              }}>
-                📷 Escanear Código de Barras
-              </h3>
-              <button
-                onClick={() => setMostrarScanner(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  color: '#64748b'
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            
-            <BarcodeScanner
-              onScan={procesarCodigoBarras}
-              onClose={() => setMostrarScanner(false)}
-              isOpen={mostrarScanner}
-            />
-          </div>
-        </div>
-      )}
+      {/* Componente de escáner de códigos de barras */}
+      <BarcodeScanner
+        isOpen={mostrarScanner}
+        onScan={procesarCodigoBarras}
+        onClose={() => setMostrarScanner(false)}
+      />
 
       <style>{`
         @keyframes spin {
