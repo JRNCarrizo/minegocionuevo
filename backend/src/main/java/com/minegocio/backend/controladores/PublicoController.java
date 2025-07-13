@@ -57,6 +57,13 @@ public class PublicoController {
             
             Empresa empresa = empresaOpt.get();
             System.out.println("Empresa encontrada: " + empresa.getNombre());
+            System.out.println("Colores de la empresa:");
+            System.out.println("  - Primario: " + empresa.getColorPrimario());
+            System.out.println("  - Secundario: " + empresa.getColorSecundario());
+            System.out.println("  - Acento: " + empresa.getColorAcento());
+            System.out.println("  - Fondo: " + empresa.getColorFondo());
+            System.out.println("  - Texto: " + empresa.getColorTexto());
+            System.out.println("  - Imagen Fondo: " + empresa.getImagenFondoUrl());
             
             // Crear respuesta manual para evitar problemas de serialización
             Map<String, Object> empresaData = new java.util.HashMap<>();
@@ -67,6 +74,10 @@ public class PublicoController {
             empresaData.put("logoUrl", empresa.getLogoUrl() != null ? empresa.getLogoUrl() : "");
             empresaData.put("colorPrimario", empresa.getColorPrimario() != null ? empresa.getColorPrimario() : "#3B82F6");
             empresaData.put("colorSecundario", empresa.getColorSecundario() != null ? empresa.getColorSecundario() : "#1F2937");
+            empresaData.put("colorAcento", empresa.getColorAcento() != null ? empresa.getColorAcento() : "#F59E0B");
+            empresaData.put("colorFondo", empresa.getColorFondo() != null ? empresa.getColorFondo() : "#FFFFFF");
+            empresaData.put("colorTexto", empresa.getColorTexto() != null ? empresa.getColorTexto() : "#1F2937");
+            empresaData.put("imagenFondoUrl", empresa.getImagenFondoUrl() != null ? empresa.getImagenFondoUrl() : "");
             empresaData.put("moneda", empresa.getMoneda() != null ? empresa.getMoneda() : "USD");
             empresaData.put("instagramUrl", empresa.getInstagramUrl() != null ? empresa.getInstagramUrl() : "");
             empresaData.put("facebookUrl", empresa.getFacebookUrl() != null ? empresa.getFacebookUrl() : "");

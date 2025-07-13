@@ -122,9 +122,56 @@ export default function CatalogoPublico() {
     );
   }
 
+  // Aplicar colores personalizados de la empresa
+  const estilosPersonalizados = empresa ? {
+    '--color-primario': empresa.colorPrimario || '#3b82f6',
+    '--color-secundario': empresa.colorSecundario || '#64748b',
+    '--color-acento': empresa.colorAcento || '#f59e0b',
+    '--color-fondo': empresa.colorFondo || '#ffffff',
+    '--color-texto': empresa.colorTexto || '#1f2937'
+  } as React.CSSProperties : {};
+
+  // Debug: Log de los datos de la empresa
+  console.log('=== DEBUG CATÁLOGO PÚBLICO ===');
+  console.log('Datos de la empresa:', empresa);
+  console.log('Colores personalizados:', estilosPersonalizados);
+  console.log('Imagen de fondo URL:', empresa?.imagenFondoUrl);
+
+  // Verificar que los CSS custom properties se estén aplicando
+  console.log('CSS Custom Properties aplicados:', {
+    '--color-primario': empresa?.colorPrimario,
+    '--color-secundario': empresa?.colorSecundario,
+    '--color-acento': empresa?.colorAcento,
+    '--color-fondo': empresa?.colorFondo,
+    '--color-texto': empresa?.colorTexto
+  });
+
+  // Verificar valores específicos
+  console.log('Color Primario:', empresa?.colorPrimario);
+  console.log('Color Secundario:', empresa?.colorSecundario);
+  console.log('Color Acento:', empresa?.colorAcento);
+  console.log('Color Fondo:', empresa?.colorFondo);
+  console.log('Color Texto:', empresa?.colorTexto);
+  console.log('Imagen Fondo URL:', empresa?.imagenFondoUrl);
+  
+  // Verificar si la imagen de fondo se está aplicando
+  if (empresa?.imagenFondoUrl) {
+    console.log('✅ Imagen de fondo detectada, aplicando...');
+    console.log('URL de la imagen:', empresa.imagenFondoUrl);
+  } else {
+    console.log('❌ No hay imagen de fondo configurada');
+  }
+  console.log('=== FIN DEBUG ===');
+
+  // Determinar el fondo principal
+  const fondoPrincipal = empresa?.colorFondo ? 
+    `linear-gradient(135deg, ${empresa.colorFondo} 0%, ${empresa.colorFondo}dd 100%)` :
+    'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
+
   return (
-    <div className="catalogo-publico" style={{
-      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+    <div className="catalogo-publico pagina-con-navbar" style={{
+      ...estilosPersonalizados,
+      background: fondoPrincipal,
       minHeight: '100vh'
     }}>
       <NavbarCliente
@@ -163,22 +210,30 @@ export default function CatalogoPublico() {
             style={{
               width: '70px',
               height: '70px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: empresa?.colorPrimario ? 
+                `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)` :
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)',
+              boxShadow: empresa?.colorPrimario ? 
+                `0 8px 25px ${empresa.colorPrimario}40` :
+                '0 8px 25px rgba(102, 126, 234, 0.4)',
               transition: 'all 0.3s ease',
               position: 'relative'
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.transform = 'scale(1.1)';
-              e.currentTarget.style.boxShadow = '0 12px 35px rgba(102, 126, 234, 0.6)';
+              e.currentTarget.style.boxShadow = empresa?.colorPrimario ? 
+                `0 12px 35px ${empresa.colorPrimario}60` :
+                '0 12px 35px rgba(102, 126, 234, 0.6)';
             }}
             onMouseOut={(e) => {
               e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+              e.currentTarget.style.boxShadow = empresa?.colorPrimario ? 
+                `0 8px 25px ${empresa.colorPrimario}40` :
+                '0 8px 25px rgba(102, 126, 234, 0.4)';
             }}
           >
             <FaShoppingCart size={28} color="white" />
@@ -249,18 +304,39 @@ export default function CatalogoPublico() {
       )}
 
       <main className="contenedor" style={{ paddingTop: '20px' }}>
+                  {/* Cabecera del catálogo */}
         {/* Cabecera del catálogo */}
         <div style={{
           textAlign: 'center',
           marginBottom: '40px',
-          padding: '40px 20px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          padding: '60px 20px',
+          background: empresa?.imagenFondoUrl ? 
+            `url(${empresa.imagenFondoUrl})` :
+            empresa?.colorPrimario ? 
+            `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorPrimario}dd 100%)` :
+            'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
           borderRadius: '20px',
           color: 'white',
           boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
           marginTop: '0px',
-          position: 'relative'
+          position: 'relative',
+          overflow: 'hidden'
         }}>
+          {/* Overlay para mejorar legibilidad del contenido */}
+          {empresa?.imagenFondoUrl && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
+              zIndex: 1
+            }} />
+          )}
+          
           {/* Enlaces de redes sociales - esquina superior izquierda */}
           {(empresa.instagramUrl || empresa.facebookUrl) && (
             <div style={{
@@ -340,100 +416,106 @@ export default function CatalogoPublico() {
                   <FaFacebook size={18} />
                 </a>
               )}
-              
-
             </div>
           )}
 
-          <div style={{
-            width: '140px',
-            height: '140px',
-            background: 'transparent',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 20px',
-            fontSize: '56px',
-            overflow: 'hidden'
-          }}>
-            {empresa.logoUrl ? (
-              <img
-                src={empresa.logoUrl}
-                alt={`Logo de ${empresa.nombre}`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  borderRadius: '50%'
-                }}
-              />
-            ) : (
-              '🛍️'
-            )}
-          </div>
-          
-          {/* Bienvenida */}
-          <div style={{
-            marginBottom: '24px'
-          }}>
-            <h1 style={{ 
-              margin: '0 0 12px 0', 
-              fontSize: '32px', 
-              fontWeight: '700',
-              textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          {/* Contenido de la cabecera */}
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <div style={{
+              width: '140px',
+              height: '140px',
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+              fontSize: '56px',
+              overflow: 'hidden',
+              backdropFilter: 'blur(10px)',
+              border: '2px solid rgba(255,255,255,0.2)'
             }}>
-              Bienvenido a {empresa.nombre}
-            </h1>
+              {empresa.logoUrl ? (
+                <img
+                  src={empresa.logoUrl}
+                  alt={`Logo de ${empresa.nombre}`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    borderRadius: '50%'
+                  }}
+                />
+              ) : (
+                '🛍️'
+              )}
+            </div>
             
-            {empresa.descripcion && (
-              <div style={{
-                background: 'rgba(255,255,255,0.15)',
-                borderRadius: '16px',
-                padding: '20px',
-                marginBottom: '16px',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                maxWidth: '600px',
-                margin: '0 auto 16px'
+            {/* Bienvenida */}
+            <div style={{
+              marginBottom: '24px'
+            }}>
+              <h1 style={{ 
+                margin: '0 0 12px 0', 
+                fontSize: '32px', 
+                fontWeight: '700',
+                color: 'white',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
               }}>
-                <p style={{ 
-                  margin: 0, 
-                  fontSize: '16px', 
-                  lineHeight: '1.6',
-                  opacity: 0.95,
-                  fontWeight: '400',
-                  textAlign: 'center'
+                Bienvenido a {empresa.nombre}
+              </h1>
+              
+              {empresa.descripcion && (
+                <div style={{
+                  background: 'rgba(255,255,255,0.9)',
+                  borderRadius: '16px',
+                  padding: '20px',
+                  marginBottom: '16px',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  maxWidth: '600px',
+                  margin: '0 auto 16px'
                 }}>
-                  {empresa.descripcion}
-                </p>
-              </div>
-            )}
+                  <p style={{ 
+                    margin: 0, 
+                    fontSize: '16px', 
+                    lineHeight: '1.6',
+                    opacity: 0.95,
+                    fontWeight: '400',
+                    textAlign: 'center',
+                    color: empresa?.colorTexto || '#1e293b'
+                  }}>
+                    {empresa.descripcion}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Filtros y controles combinados */}
         <div style={{
-          background: '#fff',
+          background: empresa?.colorAcento || '#fff',
           borderRadius: '16px',
           padding: '24px',
           marginBottom: '32px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          border: '1px solid rgba(255,255,255,0.2)'
+          border: `1px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : 'rgba(255,255,255,0.2)'}`,
+          color: empresa?.colorTexto || '#1e293b'
         }}>
           {/* Título del catálogo */}
           <div style={{
             textAlign: 'center',
             marginBottom: '24px',
             paddingBottom: '20px',
-            borderBottom: '2px solid #f1f5f9'
+            borderBottom: `2px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : '#f1f5f9'}`
           }}>
             <h2 style={{ 
               margin: '0 0 8px 0', 
               fontSize: '28px', 
               fontWeight: '700', 
-              color: '#1e293b',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: empresa?.colorTexto || '#1e293b',
+              background: empresa?.colorPrimario ? `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorPrimario}dd 100%)` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'
@@ -443,7 +525,7 @@ export default function CatalogoPublico() {
             <p style={{ 
               margin: 0, 
               fontSize: '16px', 
-              color: '#64748b',
+              color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b',
               fontWeight: '400'
             }}>
               Descubre nuestra increíble selección de productos
@@ -460,7 +542,7 @@ export default function CatalogoPublico() {
             <div style={{
               width: '40px',
               height: '40px',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#10b981'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#059669'} 100%)`,
               borderRadius: '10px',
               display: 'flex',
               alignItems: 'center',
@@ -470,7 +552,7 @@ export default function CatalogoPublico() {
             }}>
               🔍
             </div>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: empresa?.colorTexto || '#1e293b' }}>
               Filtros de Búsqueda
             </h3>
           </div>
@@ -487,7 +569,7 @@ export default function CatalogoPublico() {
                 marginBottom: '8px',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: '#64748b'
+                color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b'
               }}>
                 Categoría
               </label>
@@ -501,7 +583,7 @@ export default function CatalogoPublico() {
                   border: '2px solid #e2e8f0',
                   fontSize: '14px',
                   background: '#fff',
-                  color: '#1e293b',
+                  color: empresa?.colorTexto || '#1e293b',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
@@ -521,7 +603,7 @@ export default function CatalogoPublico() {
                 marginBottom: '8px',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: '#64748b'
+                color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b'
               }}>
                 Marca
               </label>
@@ -535,7 +617,7 @@ export default function CatalogoPublico() {
                   border: '2px solid #e2e8f0',
                   fontSize: '14px',
                   background: '#fff',
-                  color: '#1e293b',
+                  color: empresa?.colorTexto || '#1e293b',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
@@ -571,7 +653,7 @@ export default function CatalogoPublico() {
               <span style={{
                 fontSize: '16px',
                 fontWeight: '600',
-                color: '#64748b'
+                color: empresa?.colorTexto || '#64748b'
               }}>
                 Vista:
               </span>
@@ -581,9 +663,9 @@ export default function CatalogoPublico() {
                   padding: '8px 12px',
                   borderRadius: '8px',
                   border: '2px solid',
-                  background: vistaCuadricula ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
-                  borderColor: vistaCuadricula ? '#667eea' : '#e2e8f0',
-                  color: vistaCuadricula ? 'white' : '#64748b',
+                  background: vistaCuadricula ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
+                  borderColor: vistaCuadricula ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
+                  color: vistaCuadricula ? 'white' : (empresa?.colorTexto || '#64748b'),
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   fontSize: '14px',
@@ -591,14 +673,14 @@ export default function CatalogoPublico() {
                 }}
                 onMouseOver={(e) => {
                   if (!vistaCuadricula) {
-                    e.currentTarget.style.borderColor = '#667eea';
-                    e.currentTarget.style.color = '#667eea';
+                    e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
+                    e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
                   }
                 }}
                 onMouseOut={(e) => {
                   if (!vistaCuadricula) {
-                    e.currentTarget.style.borderColor = '#e2e8f0';
-                    e.currentTarget.style.color = '#64748b';
+                    e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
+                    e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
                   }
                 }}
               >
@@ -610,24 +692,24 @@ export default function CatalogoPublico() {
                   padding: '8px 12px',
                   borderRadius: '8px',
                   border: '2px solid',
-                  background: !vistaCuadricula ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
-                  borderColor: !vistaCuadricula ? '#667eea' : '#e2e8f0',
-                  color: !vistaCuadricula ? 'white' : '#64748b',
+                  background: !vistaCuadricula ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
+                  borderColor: !vistaCuadricula ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
+                  color: !vistaCuadricula ? 'white' : (empresa?.colorTexto || '#64748b'),
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   fontSize: '14px',
-                  fontWeight: '600'
+              fontWeight: '600'
                 }}
                 onMouseOver={(e) => {
                   if (vistaCuadricula) {
-                    e.currentTarget.style.borderColor = '#667eea';
-                    e.currentTarget.style.color = '#667eea';
+                    e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
+                    e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
                   }
                 }}
                 onMouseOut={(e) => {
                   if (vistaCuadricula) {
-                    e.currentTarget.style.borderColor = '#e2e8f0';
-                    e.currentTarget.style.color = '#64748b';
+                    e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
+                    e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
                   }
                 }}
               >
@@ -637,7 +719,7 @@ export default function CatalogoPublico() {
             
             <div style={{
               fontSize: '14px',
-              color: '#64748b',
+              color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b',
               fontWeight: '500'
             }}>
               {productos.length} producto{productos.length !== 1 ? 's' : ''} encontrado{productos.length !== 1 ? 's' : ''}
@@ -650,7 +732,7 @@ export default function CatalogoPublico() {
           <div style={{
             textAlign: 'center',
             padding: '60px 20px',
-            background: '#fff',
+            background: empresa?.colorAcento || '#fff',
             borderRadius: '16px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
           }}>
@@ -658,12 +740,12 @@ export default function CatalogoPublico() {
               width: '50px',
               height: '50px',
               border: '3px solid #e2e8f0',
-              borderTop: '3px solid #667eea',
+              borderTop: `3px solid ${empresa?.colorPrimario || '#667eea'}`,
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
               margin: '0 auto 20px'
             }} />
-            <p style={{ margin: 0, fontSize: '18px', color: '#64748b', fontWeight: '500' }}>
+            <p style={{ margin: 0, fontSize: '18px', color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b', fontWeight: '500' }}>
               Cargando productos...
             </p>
           </div>
@@ -671,7 +753,7 @@ export default function CatalogoPublico() {
           <div style={{
             textAlign: 'center',
             padding: '40px 20px',
-            background: '#fff',
+            background: empresa?.colorAcento || '#fff',
             borderRadius: '16px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
           }}>
@@ -694,7 +776,7 @@ export default function CatalogoPublico() {
             <button 
               onClick={cargarProductos} 
               style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)`,
                 color: 'white',
                 border: 'none',
                 borderRadius: '12px',
@@ -714,14 +796,14 @@ export default function CatalogoPublico() {
           <div style={{
             textAlign: 'center',
             padding: '60px 20px',
-            background: '#fff',
+            background: empresa?.colorAcento || '#fff',
             borderRadius: '16px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
           }}>
             <div style={{
               width: '80px',
               height: '80px',
-              background: 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)',
+              background: `linear-gradient(135deg, ${empresa?.colorSecundario ? `${empresa.colorSecundario}20` : '#e2e8f0'} 0%, ${empresa?.colorSecundario ? `${empresa.colorSecundario}10` : '#cbd5e1'} 100%)`,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -731,10 +813,10 @@ export default function CatalogoPublico() {
             }}>
               📦
             </div>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '24px', fontWeight: '600', color: '#1e293b' }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '24px', fontWeight: '600', color: empresa?.colorTexto || '#1e293b' }}>
               No hay productos disponibles
             </h3>
-            <p style={{ margin: 0, fontSize: '16px', color: '#64748b' }}>
+            <p style={{ margin: 0, fontSize: '16px', color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b' }}>
               En este momento no tenemos productos en esta categoría.
             </p>
           </div>
@@ -752,18 +834,19 @@ export default function CatalogoPublico() {
 
               return (
                 <div key={producto.id} style={{
-                  background: '#fff',
+                  background: empresa?.colorAcento || '#fff',
                   borderRadius: '20px',
                   overflow: 'hidden',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                  border: '1px solid rgba(255,255,255,0.2)',
+                  border: `1px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : 'rgba(255,255,255,0.2)'}`,
                   transition: 'all 0.3s ease',
                   cursor: 'pointer',
                   position: 'relative',
                   display: vistaCuadricula ? 'block' : 'flex',
                   alignItems: vistaCuadricula ? 'unset' : 'stretch',
                   gap: vistaCuadricula ? 'unset' : '0',
-                  height: vistaCuadricula ? 'auto' : '160px'
+                  height: vistaCuadricula ? 'auto' : '160px',
+                  color: empresa?.colorTexto || '#1e293b'
                 }}
                 onClick={(e) => {
                   // Solo abrir modal si no se hizo clic en el botón de agregar al carrito
@@ -897,7 +980,7 @@ export default function CatalogoPublico() {
                             margin: '0 0 8px 0',
                             fontSize: vistaCuadricula ? '18px' : '16px',
                             fontWeight: '700',
-                            color: '#1e293b',
+                            color: empresa?.colorTexto || '#1e293b',
                             lineHeight: '1.3',
                             display: '-webkit-box',
                             WebkitLineClamp: vistaCuadricula ? 2 : 1,
@@ -953,7 +1036,7 @@ export default function CatalogoPublico() {
                             <span style={{
                               fontSize: vistaCuadricula ? '24px' : '20px',
                               fontWeight: '800',
-                              color: '#059669',
+                              color: empresa?.colorAcento || '#059669',
                               textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                             }}>
                               {formatearPrecio(producto.precio, empresa.moneda)}
@@ -1131,14 +1214,14 @@ export default function CatalogoPublico() {
                           {/* Botón agregar al carrito mejorado */}
                           <button
                             disabled={producto.stock === 0}
-                            style={{
-                              width: '100%',
-                              padding: '12px 16px',
-                              background: producto.stock === 0 
-                                ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-                                : cantidadEnCarrito > 0
-                                  ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
-                                  : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                                                          style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                background: producto.stock === 0 
+                                  ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+                                  : cantidadEnCarrito > 0
+                                    ? `linear-gradient(135deg, ${empresa?.colorAcento || '#f59e0b'} 0%, ${empresa?.colorAcento ? `${empresa.colorAcento}dd` : '#d97706'} 100%)`
+                                    : `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`,
                               color: 'white',
                               border: 'none',
                               borderRadius: '12px',
@@ -1236,7 +1319,7 @@ export default function CatalogoPublico() {
                           <Link to="/login" style={{
                             width: '100%',
                             padding: '12px 16px',
-                            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                            background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`,
                             color: 'white',
                             border: 'none',
                             borderRadius: '10px',
@@ -1294,7 +1377,7 @@ export default function CatalogoPublico() {
           }}>
             🎉
           </div>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
+                      <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600', color: empresa?.colorTexto || '#1e293b' }}>
             ¡Gracias por visitarnos!
           </h3>
           <p style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#64748b' }}>

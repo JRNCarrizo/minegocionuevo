@@ -51,7 +51,8 @@ class ApiService {
         if (
           config.url &&
           (/\/admin\//.test(config.url) ||
-           /\/empresas\/\d+\//.test(config.url))
+           /\/empresas\/\d+\//.test(config.url) ||
+           /\/notificaciones\//.test(config.url))
         ) {
           const tokenAdmin = localStorage.getItem('token');
           if (tokenAdmin) {
@@ -158,6 +159,17 @@ class ApiService {
     return response.data;
   }
 
+  async subirFondoEmpresa(archivo: File): Promise<ApiResponse<{ fondoUrl: string }>> {
+    const formData = new FormData();
+    formData.append('fondo', archivo);
+    const response = await this.api.post('/admin/empresa/fondo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
   async login(data: LoginDTO): Promise<LoginResponse> {
     const response = await this.api.post('/auth/login', data);
     return response.data;
@@ -171,8 +183,16 @@ class ApiService {
   // Métodos de empresa
   async actualizarPersonalizacion(
     empresaId: number, 
-    data: { logoUrl?: string; colorPrimario?: string; colorSecundario?: string }
-  ): Promise<ApiResponse<Empresa>> {
+    data: { 
+      logoUrl?: string; 
+      colorPrimario?: string; 
+      colorSecundario?: string;
+      colorAcento?: string;
+      colorFondo?: string;
+      colorTexto?: string;
+      imagenFondoUrl?: string;
+    }
+  ): Promise<ApiResponse<{ mensaje: string; empresa: Empresa }>> {
     const response = await this.api.put(`/empresas/${empresaId}/personalizacion`, data);
     return response.data;
   }
@@ -466,7 +486,7 @@ class ApiService {
     return response.data;
   }
 
-  async subirImagen(archivo: File, tipo: 'logo' | 'producto'): Promise<ApiResponse<{ url: string }>> {
+  async subirImagen(archivo: File, tipo: 'logo' | 'producto' | 'fondo'): Promise<ApiResponse<{ url: string }>> {
     const formData = new FormData();
     formData.append('archivo', archivo);
     formData.append('tipo', tipo);
@@ -661,6 +681,54 @@ class ApiService {
     if (fechaFin) params.append('fechaFin', fechaFin);
     
     const response = await this.api.get(`/admin/venta-rapida/estadisticas?${params}`);
+    return response.data;
+  }
+
+  // Métodos de notificaciones
+  async obtenerNotificaciones(empresaId: number, pagina = 0, tamano = 10) {
+    const response = await this.api.get(`/notificaciones/empresa/${empresaId}?pagina=${pagina}&tamano=${tamano}`);
+    return response.data;
+  }
+
+  async obtenerNotificacionesRecientes(empresaId: number) {
+    const response = await this.api.get(`/notificaciones/empresa/${empresaId}/recientes`);
+    return response.data;
+  }
+
+  async obtenerNotificacionesNoLeidas(empresaId: number) {
+    const response = await this.api.get(`/notificaciones/empresa/${empresaId}/no-leidas`);
+    return response.data;
+  }
+
+  async contarNotificacionesNoLeidas(empresaId: number) {
+    const response = await this.api.get(`/notificaciones/empresa/${empresaId}/contar-no-leidas`);
+    return response.data;
+  }
+
+  async marcarNotificacionComoLeida(notificacionId: number) {
+    const response = await this.api.put(`/notificaciones/${notificacionId}/marcar-leida`);
+    return response.data;
+  }
+
+  async marcarTodasNotificacionesComoLeidas(empresaId: number) {
+    const response = await this.api.put(`/notificaciones/empresa/${empresaId}/marcar-todas-leidas`);
+    return response.data;
+  }
+
+  async limpiarNotificacionesAntiguas(empresaId: number) {
+    const response = await this.api.delete(`/notificaciones/empresa/${empresaId}/limpiar-antiguas`);
+    return response.data;
+  }
+
+  async eliminarNotificacion(notificacionId: number, empresaId: number) {
+    const response = await this.api.delete(`/notificaciones/${notificacionId}?empresaId=${empresaId}`);
+    return response.data;
+  }
+
+  async eliminarNotificaciones(empresaId: number, notificacionIds: number[]) {
+    const response = await this.api.delete(`/notificaciones/empresa/${empresaId}/eliminar-multiples`, {
+      data: notificacionIds
+    });
     return response.data;
   }
 }

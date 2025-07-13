@@ -94,24 +94,45 @@ public class EmpresaController {
             @PathVariable Long id,
             @RequestBody Map<String, String> personalizacion) {
         try {
+            System.out.println("=== DEBUG: Actualizando personalización ===");
+            System.out.println("Empresa ID: " + id);
+            System.out.println("Datos recibidos: " + personalizacion);
+            System.out.println("Imagen de fondo URL recibida: " + personalizacion.get("imagenFondoUrl"));
+            
             EmpresaDTO empresaDTO = empresaService.actualizarPersonalizacion(
                 id,
                 personalizacion.get("logoUrl"),
                 personalizacion.get("colorPrimario"),
-                personalizacion.get("colorSecundario")
+                personalizacion.get("colorSecundario"),
+                personalizacion.get("colorAcento"),
+                personalizacion.get("colorFondo"),
+                personalizacion.get("colorTexto"),
+                personalizacion.get("imagenFondoUrl")
             );
             
-            return ResponseEntity.ok(Map.of(
+            System.out.println("Personalización actualizada exitosamente");
+            System.out.println("Empresa actualizada: " + empresaDTO);
+            System.out.println("Imagen de fondo guardada: " + empresaDTO.getImagenFondoUrl());
+            
+            Map<String, Object> response = Map.of(
                 "mensaje", "Personalización actualizada exitosamente",
                 "empresa", empresaDTO
-            ));
+            );
+            
+            System.out.println("Respuesta que se envía: " + response);
+            
+            return ResponseEntity.ok(response);
             
         } catch (RuntimeException e) {
+            System.err.println("Error de validación: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                 .body(Map.of("mensaje", e.getMessage()));
         } catch (Exception e) {
+            System.err.println("Error interno: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError()
-                .body(Map.of("mensaje", "Error actualizando personalización"));
+                .body(Map.of("mensaje", "Error actualizando personalización: " + e.getMessage()));
         }
     }
 }

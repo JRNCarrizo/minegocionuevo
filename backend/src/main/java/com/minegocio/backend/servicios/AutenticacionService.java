@@ -77,14 +77,8 @@ public class AutenticacionService {
         System.out.println("========================");
 
         if (!passwordMatches) {
-            System.out.println("CONTRASEÑA NO COINCIDE - Generando nuevo hash para admin123");
-            String nuevoHash = passwordEncoder.encode("admin123");
-            System.out.println("Nuevo hash generado: " + nuevoHash);
-            
-            // Actualizar la contraseña del usuario
-            usuarioEntity.setPassword(nuevoHash);
-            usuarioRepository.save(usuarioEntity);
-            System.out.println("Hash actualizado en base de datos");
+            System.out.println("CONTRASEÑA NO COINCIDE");
+            throw new RuntimeException("Credenciales inválidas");
         }
 
         // Autenticar con Spring Security usando email como username

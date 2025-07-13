@@ -96,7 +96,18 @@ public class EmpresaService {
     /**
      * Actualiza la personalización de una empresa
      */
-    public EmpresaDTO actualizarPersonalizacion(Long empresaId, String logoUrl, String colorPrimario, String colorSecundario) {
+    public EmpresaDTO actualizarPersonalizacion(Long empresaId, String logoUrl, String colorPrimario, String colorSecundario, 
+                                               String colorAcento, String colorFondo, String colorTexto, String imagenFondoUrl) {
+        System.out.println("=== DEBUG SERVICIO PERSONALIZACIÓN ===");
+        System.out.println("Empresa ID: " + empresaId);
+        System.out.println("Logo URL: " + logoUrl);
+        System.out.println("Color Primario: " + colorPrimario);
+        System.out.println("Color Secundario: " + colorSecundario);
+        System.out.println("Color Acento: " + colorAcento);
+        System.out.println("Color Fondo: " + colorFondo);
+        System.out.println("Color Texto: " + colorTexto);
+        System.out.println("Imagen Fondo URL: " + imagenFondoUrl);
+        
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
 
@@ -109,8 +120,23 @@ public class EmpresaService {
         if (colorSecundario != null) {
             empresa.setColorSecundario(colorSecundario);
         }
+        if (colorAcento != null) {
+            empresa.setColorAcento(colorAcento);
+        }
+        if (colorFondo != null) {
+            empresa.setColorFondo(colorFondo);
+        }
+        if (colorTexto != null) {
+            empresa.setColorTexto(colorTexto);
+        }
+        if (imagenFondoUrl != null) {
+            System.out.println("Guardando imagen de fondo URL: " + imagenFondoUrl);
+            empresa.setImagenFondoUrl(imagenFondoUrl);
+        }
 
         empresa = empresaRepository.save(empresa);
+        System.out.println("Empresa guardada. Imagen de fondo final: " + empresa.getImagenFondoUrl());
+        System.out.println("=== FIN DEBUG SERVICIO ===");
         return new EmpresaDTO(empresa);
     }
 

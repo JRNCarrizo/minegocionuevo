@@ -149,7 +149,7 @@ export default function PaginaRegistro() {
   }
 
   return (
-    <div className="h-pantalla-minimo" style={{ backgroundColor: '#f8fafc' }}>
+    <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: '#f8fafc' }}>
       {/* Navegación */}
       <nav className="navbar">
         <div className="contenedor">

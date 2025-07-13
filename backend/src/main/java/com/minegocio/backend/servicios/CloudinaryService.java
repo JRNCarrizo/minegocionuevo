@@ -28,22 +28,69 @@ public class CloudinaryService {
      * @throws IOException Si hay error en la subida
      */
     public String subirImagen(MultipartFile archivo, Long empresaId) throws IOException {
-        // Crear carpeta específica para la empresa
-        String carpeta = "mi-negocio/empresa-" + empresaId + "/productos";
+        return subirImagen(archivo, empresaId, "producto");
+    }
+
+    /**
+     * Sube una imagen a Cloudinary con tipo específico
+     * @param archivo Archivo de imagen a subir
+     * @param empresaId ID de la empresa para organizar las imágenes
+     * @param tipo Tipo de imagen (logo, producto, fondo)
+     * @return URL pública de la imagen subida
+     * @throws IOException Si hay error en la subida
+     */
+    public String subirImagen(MultipartFile archivo, Long empresaId, String tipo) throws IOException {
+        // Crear carpeta específica para la empresa y tipo de imagen
+        String carpeta = "mi-negocio/empresa-" + empresaId + "/" + tipo;
         
-        // Configurar opciones de subida
-        @SuppressWarnings("unchecked")
-        Map<String, Object> opciones = ObjectUtils.asMap(
-            "folder", carpeta,
-            "use_filename", true,
-            "unique_filename", true,
-            "resource_type", "image",
-            "quality", "auto",
-            "fetch_format", "auto",
-            "width", 500,
-            "height", 500,
-            "crop", "limit"
-        );
+        // Configurar opciones de subida según el tipo
+        Map<String, Object> opciones;
+        
+        switch (tipo.toLowerCase()) {
+            case "logo":
+                // Para logos, mantener proporción y optimizar para iconos
+                opciones = ObjectUtils.asMap(
+                    "folder", carpeta,
+                    "use_filename", true,
+                    "unique_filename", true,
+                    "resource_type", "image",
+                    "quality", "auto",
+                    "fetch_format", "auto",
+                    "width", 200,
+                    "height", 200,
+                    "crop", "limit"
+                );
+                break;
+            case "fondo":
+                // Para fondos, permitir imágenes más grandes y mantener proporción
+                opciones = ObjectUtils.asMap(
+                    "folder", carpeta,
+                    "use_filename", true,
+                    "unique_filename", true,
+                    "resource_type", "image",
+                    "quality", "auto",
+                    "fetch_format", "auto",
+                    "width", 1200,
+                    "height", 800,
+                    "crop", "limit"
+                );
+                break;
+            case "producto":
+            default:
+                // Para productos, configuración estándar
+                opciones = ObjectUtils.asMap(
+                    "folder", carpeta,
+                    "use_filename", true,
+                    "unique_filename", true,
+                    "resource_type", "image",
+                    "quality", "auto",
+                    "fetch_format", "auto",
+                    "width", 500,
+                    "height", 500,
+                    "crop", "limit"
+                );
+                break;
+        }
 
         // Subir imagen
         @SuppressWarnings("unchecked")

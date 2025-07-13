@@ -54,6 +54,18 @@ public class Empresa {
     @Column(name = "color_secundario", length = 7)  
     private String colorSecundario = "#1F2937"; // Gris oscuro por defecto
 
+    @Column(name = "color_acento", length = 7)
+    private String colorAcento = "#F59E0B"; // Naranja por defecto
+
+    @Column(name = "color_fondo", length = 7)
+    private String colorFondo = "#FFFFFF"; // Blanco por defecto
+
+    @Column(name = "color_texto", length = 7)
+    private String colorTexto = "#1F2937"; // Gris oscuro por defecto
+
+    @Column(name = "imagen_fondo_url")
+    private String imagenFondoUrl;
+
     @Column(name = "moneda", length = 10)
     private String moneda = "USD"; // Moneda por defecto
 
@@ -138,6 +150,18 @@ public class Empresa {
 
     public String getColorSecundario() { return colorSecundario; }
     public void setColorSecundario(String colorSecundario) { this.colorSecundario = colorSecundario; }
+
+    public String getColorAcento() { return colorAcento; }
+    public void setColorAcento(String colorAcento) { this.colorAcento = colorAcento; }
+
+    public String getColorFondo() { return colorFondo; }
+    public void setColorFondo(String colorFondo) { this.colorFondo = colorFondo; }
+
+    public String getColorTexto() { return colorTexto; }
+    public void setColorTexto(String colorTexto) { this.colorTexto = colorTexto; }
+
+    public String getImagenFondoUrl() { return imagenFondoUrl; }
+    public void setImagenFondoUrl(String imagenFondoUrl) { this.imagenFondoUrl = imagenFondoUrl; }
 
     public String getMoneda() { return moneda; }
     public void setMoneda(String moneda) { this.moneda = moneda; }

@@ -143,7 +143,9 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
         >
           {/* Header */}
           <div style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: empresa?.colorPrimario ? 
+              `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)` :
+              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
             padding: '24px 32px',
             borderTopLeftRadius: '20px',

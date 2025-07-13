@@ -46,6 +46,7 @@ function EstadoBadge({ estado }: { estado: string }) {
 function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Pedido|null, open: boolean, onClose: () => void, onCancelar?: (pedidoId: number) => void }) {
   const [productoSeleccionado, setProductoSeleccionado] = useState<DetallePedido | null>(null);
   const [mostrarProducto, setMostrarProducto] = useState(false);
+  const { empresa } = useSubdominio();
 
   if (!pedido || !open) return null;
 
@@ -106,7 +107,9 @@ function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Ped
         }}>
           {/* Header del modal */}
           <div style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: empresa?.colorPrimario ? 
+              `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)` :
+              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
             padding: '24px 32px',
             borderTopLeftRadius: '16px',
@@ -962,9 +965,14 @@ export default function AreaPersonalCliente() {
 
   return (
     <div className="area-personal-cliente" style={{
-      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+      background: empresa?.imagenFondoUrl
+        ? `url(${empresa.imagenFondoUrl}) center/cover no-repeat`
+        : empresa?.colorFondo
+          ? `linear-gradient(135deg, ${empresa.colorFondo} 0%, ${empresa.colorFondo}dd 100%)`
+          : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
       minHeight: '100vh',
-      paddingBottom: '40px'
+      paddingBottom: '40px',
+      color: empresa?.colorTexto || '#1f2937'
     }}>
       {/* Navbar del cliente */}
       <NavbarCliente
@@ -981,10 +989,14 @@ export default function AreaPersonalCliente() {
           textAlign: 'center',
           marginBottom: '40px',
           padding: '40px 20px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: empresa?.colorPrimario ? 
+            `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)` :
+            'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           borderRadius: '20px',
           color: 'white',
-          boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
+          boxShadow: empresa?.colorPrimario ? 
+            `0 10px 30px ${empresa.colorPrimario}40` :
+            '0 10px 30px rgba(102, 126, 234, 0.3)',
           marginTop: '20px'
         }}>
           <div style={{
@@ -1035,14 +1047,18 @@ export default function AreaPersonalCliente() {
               left: 0,
               right: 0,
               height: '4px',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+              background: empresa?.colorAcento ? 
+                `linear-gradient(135deg, ${empresa.colorAcento} 0%, ${empresa.colorAcento}dd 100%)` :
+                'linear-gradient(135deg, #10b981 0%, #059669 100%)'
             }} />
             
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
               <div style={{
                 width: '50px',
                 height: '50px',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                background: empresa?.colorAcento ? 
+                  `linear-gradient(135deg, ${empresa.colorAcento} 0%, ${empresa.colorAcento}dd 100%)` :
+                  'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                 borderRadius: '12px',
                 display: 'flex',
                 alignItems: 'center',
@@ -1053,7 +1069,7 @@ export default function AreaPersonalCliente() {
               }}>
                 👤
               </div>
-              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>
+              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: empresa?.colorTexto || '#1e293b' }}>
                 Información Personal
               </h2>
                   </div>

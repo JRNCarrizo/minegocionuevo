@@ -75,6 +75,8 @@ export default function LoginAdministrador() {
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      backgroundAttachment: 'fixed',
+      backgroundSize: 'cover',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',

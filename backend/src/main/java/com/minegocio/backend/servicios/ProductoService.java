@@ -25,6 +25,9 @@ public class ProductoService {
 
     @Autowired
     private EmpresaRepository empresaRepository;
+    
+    @Autowired
+    private NotificacionService notificacionService;
 
     public List<ProductoDTO> obtenerTodosLosProductos(Long empresaId) {
         List<Producto> productos = productoRepository.findByEmpresaIdAndActivoTrue(empresaId);
@@ -94,6 +97,10 @@ public class ProductoService {
         producto.setEmpresa(empresa);
 
         Producto productoGuardado = productoRepository.save(producto);
+        
+        // Crear notificación de producto creado
+        notificacionService.crearNotificacionProductoActualizado(empresaId, productoDTO.getNombre(), "Producto creado");
+        
         return convertirADTO(productoGuardado);
     }
 
@@ -170,6 +177,15 @@ public class ProductoService {
         }
 
         Producto productoActualizado = productoRepository.save(producto);
+        
+        // Crear notificación de producto actualizado
+        notificacionService.crearNotificacionProductoActualizado(empresaId, producto.getNombre(), "Producto actualizado");
+        
+        // Verificar si el stock está bajo después de la actualización
+        if (producto.getStock() != null && producto.getStockMinimo() != null && producto.getStock() <= producto.getStockMinimo()) {
+            notificacionService.crearNotificacionStockBajo(empresaId, producto.getNombre(), producto.getStock());
+        }
+        
         return convertirADTO(productoActualizado);
     }
 
@@ -197,6 +213,11 @@ public class ProductoService {
         
         producto.setStock(nuevoStock);
         productoRepository.save(producto);
+        
+        // Verificar si el stock está bajo después de la actualización
+        if (producto.getStockMinimo() != null && nuevoStock <= producto.getStockMinimo()) {
+            notificacionService.crearNotificacionStockBajo(empresaId, producto.getNombre(), nuevoStock);
+        }
     }
 
     public List<ProductoDTO> obtenerProductosConStockBajo(Long empresaId) {

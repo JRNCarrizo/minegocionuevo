@@ -113,4 +113,51 @@ public class AutenticacionController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
+
+    /**
+     * Endpoint de prueba para verificar la autenticación
+     */
+    @PostMapping("/test-login")
+    public ResponseEntity<?> testLogin(@Valid @RequestBody LoginDTO loginDTO) {
+        try {
+            System.out.println("=== TEST LOGIN ===");
+            System.out.println("Email: " + loginDTO.getUsuario());
+            System.out.println("Contraseña: " + loginDTO.getContrasena());
+            
+            JwtRespuestaDTO jwtRespuesta = autenticacionService.autenticarUsuario(loginDTO);
+            
+            System.out.println("✅ Login exitoso");
+            System.out.println("Token: " + jwtRespuesta.getToken().substring(0, 20) + "...");
+            System.out.println("Usuario: " + jwtRespuesta.getNombreUsuario());
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Login exitoso",
+                "token", jwtRespuesta.getToken(),
+                "user", Map.of(
+                    "email", jwtRespuesta.getEmail(),
+                    "nombre", jwtRespuesta.getNombre(),
+                    "apellidos", jwtRespuesta.getApellidos(),
+                    "roles", jwtRespuesta.getRoles(),
+                    "empresaId", jwtRespuesta.getEmpresaId(),
+                    "empresaNombre", jwtRespuesta.getEmpresaNombre()
+                )
+            ));
+        } catch (RuntimeException e) {
+            System.out.println("❌ Error en login: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of(
+                        "success", false,
+                        "error", e.getMessage()
+                    ));
+        } catch (Exception e) {
+            System.out.println("❌ Error inesperado: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                        "success", false,
+                        "error", "Error interno del servidor"
+                    ));
+        }
+    }
 }

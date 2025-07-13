@@ -18,6 +18,10 @@ public class EmpresaDTO {
     private String logoUrl;
     private String colorPrimario;
     private String colorSecundario;
+    private String colorAcento;
+    private String colorFondo;
+    private String colorTexto;
+    private String imagenFondoUrl;
     private String moneda;
     
     // Redes sociales
@@ -49,6 +53,10 @@ public class EmpresaDTO {
         this.logoUrl = empresa.getLogoUrl();
         this.colorPrimario = empresa.getColorPrimario();
         this.colorSecundario = empresa.getColorSecundario();
+        this.colorAcento = empresa.getColorAcento();
+        this.colorFondo = empresa.getColorFondo();
+        this.colorTexto = empresa.getColorTexto();
+        this.imagenFondoUrl = empresa.getImagenFondoUrl();
         this.moneda = empresa.getMoneda();
         this.instagramUrl = empresa.getInstagramUrl();
         this.facebookUrl = empresa.getFacebookUrl();
@@ -86,6 +94,18 @@ public class EmpresaDTO {
 
     public String getColorSecundario() { return colorSecundario; }
     public void setColorSecundario(String colorSecundario) { this.colorSecundario = colorSecundario; }
+
+    public String getColorAcento() { return colorAcento; }
+    public void setColorAcento(String colorAcento) { this.colorAcento = colorAcento; }
+
+    public String getColorFondo() { return colorFondo; }
+    public void setColorFondo(String colorFondo) { this.colorFondo = colorFondo; }
+
+    public String getColorTexto() { return colorTexto; }
+    public void setColorTexto(String colorTexto) { this.colorTexto = colorTexto; }
+
+    public String getImagenFondoUrl() { return imagenFondoUrl; }
+    public void setImagenFondoUrl(String imagenFondoUrl) { this.imagenFondoUrl = imagenFondoUrl; }
 
     public String getMoneda() { return moneda; }
     public void setMoneda(String moneda) { this.moneda = moneda; }

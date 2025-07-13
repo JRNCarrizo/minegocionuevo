@@ -30,6 +30,9 @@ public class ClienteService {
     
     @Autowired
     private PedidoRepository pedidoRepository;
+    
+    @Autowired
+    private NotificacionService notificacionService;
 
     public List<ClienteDTO> obtenerTodosLosClientes(Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId)
@@ -131,6 +134,10 @@ public class ClienteService {
         System.out.println("  Email: '" + cliente.getEmail() + "'");
 
         Cliente clienteGuardado = clienteRepository.save(cliente);
+        
+        // Crear notificación de nuevo cliente
+        notificacionService.crearNotificacionClienteNuevo(empresaId, clienteDTO.getNombre(), clienteDTO.getEmail());
+        
         return convertirADTOConEstadisticas(clienteGuardado);
     }
 

@@ -465,7 +465,7 @@ const GestionProductos: React.FC = () => {
 
   if (cargando) {
     return (
-      <div className="h-pantalla-minimo" style={{ backgroundColor: '#f8fafc' }}>
+      <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
         <NavbarAdmin 
           onCerrarSesion={cerrarSesion}
           empresaNombre={empresaNombre}
@@ -482,7 +482,7 @@ const GestionProductos: React.FC = () => {
   }
 
   return (
-    <div className="h-pantalla-minimo" style={{ backgroundColor: '#f8fafc' }}>
+    <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
       {/* Navegación */}
       <NavbarAdmin 
         onCerrarSesion={cerrarSesion}

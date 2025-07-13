@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
-import type { Empresa } from '../../types';
+import type { Empresa, ApiError } from '../../types';
 
 interface ConfiguracionEmpresa {
   nombre: string;
@@ -21,6 +21,8 @@ interface ConfiguracionEmpresa {
   colorAcento: string;
   colorFondo: string;
   colorTexto: string;
+  imagenFondo: File | null;
+  imagenFondoUrl: string;
   moneda: string;
   idioma: string;
   notificacionesPedidos: boolean;
@@ -225,6 +227,7 @@ const CheckboxField = ({
 );
 
 export default function ConfiguracionEmpresa() {
+  const navigate = useNavigate();
   const [configuracion, setConfiguracion] = useState<ConfiguracionEmpresa>({
     nombre: '',
     descripcion: '',
@@ -234,13 +237,15 @@ export default function ConfiguracionEmpresa() {
     direccion: '',
     ciudad: '',
     codigoPostal: '',
-    pais: 'Argentina',
+    pais: '',
     logo: null,
-    colorPrimario: '#2563eb',
+    colorPrimario: '#3b82f6',
     colorSecundario: '#64748b',
     colorAcento: '#f59e0b',
     colorFondo: '#ffffff',
     colorTexto: '#1f2937',
+    imagenFondo: null,
+    imagenFondoUrl: '',
     moneda: 'ARS',
     idioma: 'es',
     notificacionesPedidos: true,
@@ -253,34 +258,24 @@ export default function ConfiguracionEmpresa() {
     instagramUrl: '',
     facebookUrl: ''
   });
+
+  const [empresaId, setEmpresaId] = useState<number | null>(null);
+  
+  // Estado para el logo actual de la empresa
+  const [logoActual, setLogoActual] = useState<string>('');
+  // Estado para la imagen de fondo actual de la empresa
+  const [imagenFondoActual, setImagenFondoActual] = useState<string>('');
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [verificandoSubdominio, setVerificandoSubdominio] = useState(false);
   const [subdominioDisponible, setSubdominioDisponible] = useState<boolean | null>(null);
+  
+  // Estado para detectar cambios sin guardar
+  const [configuracionOriginal, setConfiguracionOriginal] = useState<ConfiguracionEmpresa | null>(null);
   const [empresaNombre, setEmpresaNombre] = useState<string>('');
   const [nombreAdministrador, setNombreAdministrador] = useState<string>('');
 
-  useEffect(() => {
-    // Obtener datos del usuario logueado
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        setEmpresaNombre(user.empresaNombre || '');
-        setNombreAdministrador(user.nombre || '');
-      } catch {}
-    }
-    
-    cargarConfiguracion(false); // No mostrar toast al cargar la página
-  }, []);
-
-  const cerrarSesion = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/admin/login';
-  };
-
-  const cargarConfiguracion = async (mostrarToast = true) => {
+  const cargarConfiguracion = useCallback(async (mostrarToast = true) => {
     try {
       setCargando(true);
       
@@ -295,10 +290,19 @@ export default function ConfiguracionEmpresa() {
       
       const empresa: Empresa = response.data;
       
+      console.log('=== DEBUG CONFIGURACIÓN EMPRESA ===');
       console.log('Datos de la empresa obtenidos:', empresa);
+      console.log('Colores recibidos:');
+      console.log('  - Primario:', empresa.colorPrimario);
+      console.log('  - Secundario:', empresa.colorSecundario);
+      console.log('  - Acento:', empresa.colorAcento);
+      console.log('  - Fondo:', empresa.colorFondo);
+      console.log('  - Texto:', empresa.colorTexto);
+      console.log('  - Imagen Fondo:', empresa.imagenFondoUrl);
+      console.log('=== FIN DEBUG ===');
       
-      setConfiguracion(prev => ({
-        ...prev,
+      const nuevaConfiguracion = {
+        ...configuracion,
         nombre: empresa.nombre || '',
         descripcion: empresa.descripcion || '',
         subdominio: empresa.subdominio || '',
@@ -306,10 +310,32 @@ export default function ConfiguracionEmpresa() {
         telefono: empresa.telefono || '',
         colorPrimario: empresa.colorPrimario || '#2563eb',
         colorSecundario: empresa.colorSecundario || '#64748b',
+        colorAcento: empresa.colorAcento || '#f59e0b',
+        colorFondo: empresa.colorFondo || '#ffffff',
+        colorTexto: empresa.colorTexto || '#1f2937',
+        imagenFondoUrl: empresa.imagenFondoUrl || '',
         moneda: empresa.moneda || 'ARS',
-              instagramUrl: empresa.instagramUrl || '',
-      facebookUrl: empresa.facebookUrl || ''
-      }));
+        instagramUrl: empresa.instagramUrl || '',
+        facebookUrl: empresa.facebookUrl || ''
+      };
+      
+      setConfiguracion(nuevaConfiguracion);
+      // Guardar la configuración original para detectar cambios
+      setConfiguracionOriginal({ ...nuevaConfiguracion });
+      
+      // Cargar el logo actual si existe
+      if (empresa.logoUrl) {
+        setLogoActual(empresa.logoUrl);
+      } else {
+        setLogoActual('');
+      }
+      
+      // Cargar la imagen de fondo actual si existe
+      if (empresa.imagenFondoUrl) {
+        setImagenFondoActual(empresa.imagenFondoUrl);
+      } else {
+        setImagenFondoActual('');
+      }
       
       if (mostrarToast) {
         toast.success('Configuración cargada correctamente');
@@ -320,6 +346,33 @@ export default function ConfiguracionEmpresa() {
     } finally {
       setCargando(false);
     }
+  }, []);
+
+  useEffect(() => {
+    // Obtener datos del usuario logueado
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setEmpresaNombre(user.empresaNombre || '');
+        setNombreAdministrador(user.nombre || '');
+        setEmpresaId(user.empresaId || null); // Asignar el ID de la empresa
+      } catch (error) {
+        console.error('Error al parsear datos del usuario:', error);
+        // Si hay error, redirigir al login
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/admin/login';
+      }
+    }
+    
+    cargarConfiguracion(false); // No mostrar toast al cargar la página
+  }, [cargarConfiguracion]);
+
+  const cerrarSesion = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/admin/login';
   };
 
   const manejarCambio = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -370,6 +423,62 @@ export default function ConfiguracionEmpresa() {
     }
   }, []);
 
+  const manejarImagenFondo = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      console.log('🖼️ Imagen de fondo seleccionada:', file.name);
+      
+      setConfiguracion(prev => ({
+        ...prev,
+        imagenFondo: file,
+        // Crear URL temporal para vista previa inmediata
+        imagenFondoUrl: URL.createObjectURL(file)
+      }));
+    }
+  }, []);
+
+  // Función para detectar si hay cambios sin guardar
+  const hayCambiosSinGuardar = useCallback(() => {
+    if (!configuracionOriginal) return false;
+    
+    // Comparar campos principales
+    const camposPrincipales = [
+      'nombre', 'descripcion', 'subdominio', 'email', 'telefono',
+      'colorPrimario', 'colorSecundario', 'colorAcento', 'colorFondo', 'colorTexto',
+      'moneda', 'instagramUrl', 'facebookUrl'
+    ];
+    
+    for (const campo of camposPrincipales) {
+      if (configuracion[campo as keyof ConfiguracionEmpresa] !== configuracionOriginal[campo as keyof ConfiguracionEmpresa]) {
+        return true;
+      }
+    }
+    
+    // Verificar si hay un nuevo logo seleccionado
+    if (configuracion.logo) {
+      return true;
+    }
+    
+    // Verificar si hay una nueva imagen de fondo seleccionada
+    if (configuracion.imagenFondo) {
+      return true;
+    }
+    
+    return false;
+  }, [configuracion, configuracionOriginal]);
+
+  // Función para manejar el cancelar con confirmación
+  const manejarCancelar = useCallback(() => {
+    if (hayCambiosSinGuardar()) {
+      const confirmar = window.confirm('¿Estás seguro de que quieres cancelar? Los cambios no guardados se perderán.');
+      if (confirmar) {
+        navigate('/admin/dashboard');
+      }
+    } else {
+      navigate('/admin/dashboard');
+    }
+  }, [hayCambiosSinGuardar, navigate]);
+
   const validarFormulario = useCallback(() => {
     if (!configuracion.nombre.trim()) {
       toast.error('El nombre de la empresa es obligatorio');
@@ -401,69 +510,95 @@ export default function ConfiguracionEmpresa() {
   const guardarConfiguracion = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('=== DEBUG GUARDAR CONFIGURACIÓN ===');
+    console.log('Iniciando guardado de configuración...');
+    
     if (!validarFormulario()) {
+      console.log('❌ Validación del formulario falló');
       return;
     }
 
+    console.log('✅ Validación del formulario exitosa');
     setGuardando(true);
     
     try {
-      // Primero subir el logo si se seleccionó uno
+      // PASO 1: Subir logo si hay uno nuevo
+      let logoUrl = logoActual || '';
       if (configuracion.logo) {
+        console.log('=== PASO 1: Subiendo logo ===');
         try {
           const logoResponse = await ApiService.subirLogoEmpresa(configuracion.logo);
-          console.log('Logo subido exitosamente:', logoResponse.data?.logoUrl);
-        } catch (error: any) {
-          console.error('Error al subir logo:', error);
-          const errorMessage = error.response?.data?.error || 'Error al subir el logo';
+          logoUrl = logoResponse.data?.logoUrl || '';
+          console.log('✅ Logo subido exitosamente:', logoUrl);
+        } catch (error: unknown) {
+          console.error('❌ Error al subir logo:', error);
+          const apiError = error as ApiError;
+          const errorMessage = apiError.response?.data?.error || 'Error al subir el logo';
           toast.error(errorMessage);
           setGuardando(false);
           return;
         }
       }
 
-      const datosEmpresa = {
-        nombre: configuracion.nombre,
-        descripcion: configuracion.descripcion,
-        subdominio: configuracion.subdominio,
-        email: configuracion.email,
-        telefono: configuracion.telefono,
+      // PASO 2: Subir imagen de fondo si hay una nueva
+      let imagenFondoUrl = configuracion.imagenFondoUrl || '';
+      if (configuracion.imagenFondo) {
+        console.log('=== PASO 2: Subiendo imagen de fondo ===');
+        try {
+          const fondoResponse = await ApiService.subirFondoEmpresa(configuracion.imagenFondo);
+          imagenFondoUrl = fondoResponse.data?.fondoUrl || '';
+          console.log('✅ Imagen de fondo subida exitosamente:', imagenFondoUrl);
+          
+          // ACTUALIZAR EL ESTADO CON LA URL REAL
+          setConfiguracion(prev => ({
+            ...prev,
+            imagenFondoUrl: imagenFondoUrl,
+            imagenFondo: null // Limpiar el archivo temporal
+          }));
+          
+          // También actualizar la imagen actual
+          setImagenFondoActual(imagenFondoUrl);
+        } catch (error: unknown) {
+          console.error('❌ Error al subir imagen de fondo:', error);
+          const apiError = error as ApiError;
+          const errorMessage = apiError.response?.data?.error || 'Error al subir la imagen de fondo';
+          toast.error(errorMessage);
+          setGuardando(false);
+          return;
+        }
+      }
+
+      // PASO 3: Preparar datos de personalización
+      const datosPersonalizacion = {
+        logoUrl,
         colorPrimario: configuracion.colorPrimario,
         colorSecundario: configuracion.colorSecundario,
-        moneda: configuracion.moneda,
-        instagramUrl: configuracion.instagramUrl,
-        facebookUrl: configuracion.facebookUrl,
+        colorAcento: configuracion.colorAcento,
+        colorFondo: configuracion.colorFondo,
+        colorTexto: configuracion.colorTexto,
+        imagenFondoUrl
       };
-      
-      console.log('Guardando configuración:', datosEmpresa);
-      
-      const response = await ApiService.actualizarEmpresaAdmin(datosEmpresa);
-      
-      if (response.data) {
-        toast.success('Configuración guardada exitosamente');
-        // Limpiar el logo seleccionado después de guardar
-        setConfiguracion(prev => ({ ...prev, logo: null }));
-        cargarConfiguracion(false); // No mostrar toast al recargar
-      } else {
-        toast.error('Error al guardar la configuración');
+      console.log('📋 Datos de personalización a enviar:', datosPersonalizacion);
+
+      if (!empresaId) {
+        toast.error('Error: No se pudo identificar la empresa');
+        setGuardando(false);
+        return;
       }
-    } catch (error: any) {
-      console.error('Error al guardar la configuración:', error);
-      
-      // Manejar errores específicos del backend
-      if (error.response?.status === 400) {
-        // Error de validación (subdominio en uso, email duplicado, etc.)
-        const errorMessage = error.response.data?.error || 'Error de validación';
-        toast.error(errorMessage);
-      } else if (error.response?.status === 401) {
-        toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-      } else if (error.response?.status === 404) {
-        toast.error('Empresa no encontrada');
-      } else {
-        toast.error('Error al guardar la configuración');
-      }
+
+      // PASO 4: Guardar personalización
+      const response = await ApiService.actualizarPersonalizacion(empresaId, datosPersonalizacion);
+      console.log('✅ Respuesta del servidor:', response);
+      toast.success('Configuración guardada correctamente');
+      cargarConfiguracion(false);
+    } catch (error: unknown) {
+      console.error('❌ Error al guardar configuración:', error);
+      const apiError = error as ApiError;
+      const errorMessage = apiError.response?.data?.error || apiError.response?.data?.mensaje || apiError.message || 'Error al guardar la configuración';
+      toast.error(errorMessage);
     } finally {
       setGuardando(false);
+      console.log('=== FIN DEBUG GUARDAR CONFIGURACIÓN ===');
     }
   };
 
@@ -478,7 +613,7 @@ export default function ConfiguracionEmpresa() {
 
   if (cargando) {
     return (
-      <div className="h-pantalla-minimo" style={{ backgroundColor: 'var(--color-fondo)' }}>
+      <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
         <NavbarAdmin 
           onCerrarSesion={cerrarSesion}
           empresaNombre={empresaNombre}
@@ -495,7 +630,7 @@ export default function ConfiguracionEmpresa() {
   }
 
   return (
-    <div className="h-pantalla-minimo" style={{ backgroundColor: 'var(--color-fondo)' }}>
+    <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
       {/* Navegación */}
       <NavbarAdmin 
         onCerrarSesion={cerrarSesion}
@@ -587,22 +722,34 @@ export default function ConfiguracionEmpresa() {
               <div className="grupo-campo">
                 <label className="etiqueta">Logo de la Empresa</label>
                 <div className="flex items-centro" style={{ gap: '1rem', flexWrap: 'wrap' }}>
-                  <div className="relative">
-                    <input
-                      type="file"
-                      name="logo"
-                      onChange={manejarLogo}
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      id="logo-input"
-                    />
-                    <label
-                      htmlFor="logo-input"
-                      className="boton boton-secundario"
-                      style={{ cursor: 'pointer' }}
-                    >
-                      📁 Seleccionar Logo
-                    </label>
+                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        name="logo"
+                        onChange={manejarLogo}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id="logo-input"
+                      />
+                      <label
+                        htmlFor="logo-input"
+                        className="boton boton-secundario"
+                        style={{ cursor: 'pointer' }}
+                      >
+                        📁 Seleccionar Logo
+                      </label>
+                    </div>
+                    {configuracion.logo && (
+                      <button
+                        type="button"
+                        onClick={() => setConfiguracion(prev => ({ ...prev, logo: null }))}
+                        className="boton boton-outline"
+                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                      >
+                        ❌ Limpiar
+                      </button>
+                    )}
                   </div>
                   
                   {/* Vista previa del logo */}
@@ -621,7 +768,17 @@ export default function ConfiguracionEmpresa() {
                       {configuracion.logo ? (
                         <img
                           src={URL.createObjectURL(configuracion.logo)}
-                          alt="Vista previa del logo"
+                          alt="Vista previa del nuevo logo"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            objectFit: 'contain'
+                          }}
+                        />
+                      ) : logoActual ? (
+                        <img
+                          src={logoActual}
+                          alt="Logo actual de la empresa"
                           style={{
                             maxWidth: '100%',
                             maxHeight: '100%',
@@ -634,11 +791,18 @@ export default function ConfiguracionEmpresa() {
                         </span>
                       )}
                     </div>
-                    {configuracion.logo && (
-                      <span className="texto-pequeno texto-gris">
-                        ✅ {configuracion.logo.name}
-                      </span>
-                    )}
+                    <div className="flex flex-col" style={{ gap: '0.25rem' }}>
+                      {configuracion.logo && (
+                        <span className="texto-pequeno texto-verde">
+                          ✅ Nuevo: {configuracion.logo.name}
+                        </span>
+                      )}
+                      {logoActual && !configuracion.logo && (
+                        <span className="texto-pequeno texto-gris">
+                          📋 Logo actual cargado
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <p className="texto-pequeno texto-gris" style={{ marginTop: '0.5rem' }}>
@@ -781,70 +945,274 @@ export default function ConfiguracionEmpresa() {
                     onChange={manejarCambio}
                   />
                   <ColorPicker
-                    label="Color de Acento"
+                    label="Color de Card Producto"
                     name="colorAcento"
                     value={configuracion.colorAcento}
                     onChange={manejarCambio}
                   />
                   <ColorPicker
-                    label="Color de Fondo"
+                    label="Color de Fondo General"
                     name="colorFondo"
                     value={configuracion.colorFondo}
                     onChange={manejarCambio}
                   />
                   <ColorPicker
-                    label="Color de Texto"
+                    label="Color de Textos Principales"
                     name="colorTexto"
                     value={configuracion.colorTexto}
                     onChange={manejarCambio}
                   />
                 </div>
 
-                {/* Preview del Tema */}
+                {/* Mini Pantalla de Referencia */}
                 <div className="space-y-4">
-                  <h4 className="etiqueta" style={{ marginBottom: '1rem' }}>Vista Previa del Tema</h4>
+                  <h4 className="etiqueta" style={{ marginBottom: '1rem' }}>Vista Previa - Mini Pantalla</h4>
                   <div 
                     className="tarjeta"
-                    style={{ backgroundColor: previewTema.fondo }}
+                    style={{ 
+                      backgroundColor: previewTema.fondo,
+                      padding: '1rem',
+                      borderRadius: '12px',
+                      border: '2px solid var(--color-borde)',
+                      maxWidth: '320px',
+                      backgroundImage: configuracion.imagenFondo
+                        ? `url(${URL.createObjectURL(configuracion.imagenFondo)})`
+                        : imagenFondoActual
+                          ? `url(${imagenFondoActual})`
+                          : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
                   >
+                    {/* Mini Navbar */}
                     <div 
-                      className="boton boton-primario mb-3"
                       style={{ 
                         backgroundColor: previewTema.primario,
                         color: getContrastColor(previewTema.primario),
-                        border: 'none'
+                        padding: '0.5rem 1rem',
+                        borderRadius: '8px 8px 0 0',
+                        marginBottom: '1rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '0.75rem',
+                        fontWeight: '600'
                       }}
                     >
-                      Botón Primario
+                      <span>🏢 {configuracion.nombre || 'Mi Empresa'}</span>
+                      <span>👤 Admin</span>
                     </div>
-                    <div 
-                      className="boton boton-secundario mb-3"
-                      style={{ 
-                        backgroundColor: previewTema.secundario,
-                        color: getContrastColor(previewTema.secundario),
-                        borderColor: previewTema.secundario
-                      }}
-                    >
-                      Botón Secundario
+
+                    {/* Mini Cards de Productos */}
+                    <div style={{ display: 'grid', gap: '0.75rem', gridTemplateColumns: '1fr 1fr' }}>
+                      {/* Card Producto 1 */}
+                      <div 
+                        style={{ 
+                          backgroundColor: previewTema.acento,
+                          color: getContrastColor(previewTema.acento),
+                          padding: '0.75rem',
+                          borderRadius: '8px',
+                          fontSize: '0.7rem',
+                          textAlign: 'center',
+                          border: `1px solid ${previewTema.secundario}20`
+                        }}
+                      >
+                        <div style={{ 
+                          width: '100%', 
+                          height: '40px', 
+                          backgroundColor: previewTema.secundario,
+                          borderRadius: '4px',
+                          marginBottom: '0.5rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.2rem'
+                        }}>
+                          📱
+                        </div>
+                        <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Producto 1</div>
+                        <div style={{ fontSize: '0.6rem', opacity: '0.8' }}>$99.99</div>
+                      </div>
+
+                      {/* Card Producto 2 */}
+                      <div 
+                        style={{ 
+                          backgroundColor: previewTema.acento,
+                          color: getContrastColor(previewTema.acento),
+                          padding: '0.75rem',
+                          borderRadius: '8px',
+                          fontSize: '0.7rem',
+                          textAlign: 'center',
+                          border: `1px solid ${previewTema.secundario}20`
+                        }}
+                      >
+                        <div style={{ 
+                          width: '100%', 
+                          height: '40px', 
+                          backgroundColor: previewTema.secundario,
+                          borderRadius: '4px',
+                          marginBottom: '0.5rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.2rem'
+                        }}>
+                          💻
+                        </div>
+                        <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Producto 2</div>
+                        <div style={{ fontSize: '0.6rem', opacity: '0.8' }}>$149.99</div>
+                      </div>
                     </div>
-                    <div 
-                      className="boton mb-3"
-                      style={{ 
-                        backgroundColor: previewTema.acento,
-                        color: getContrastColor(previewTema.acento),
-                        border: 'none'
-                      }}
-                    >
-                      Elemento de Acento
+
+                    {/* Mini Botones */}
+                    <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                      <button 
+                        style={{ 
+                          backgroundColor: previewTema.primario,
+                          color: getContrastColor(previewTema.primario),
+                          border: 'none',
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '6px',
+                          fontSize: '0.7rem',
+                          fontWeight: '600',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Primario
+                      </button>
+                      <button 
+                        style={{ 
+                          backgroundColor: 'transparent',
+                          color: previewTema.secundario,
+                          border: `1px solid ${previewTema.secundario}`,
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '6px',
+                          fontSize: '0.7rem',
+                          fontWeight: '600',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Secundario
+                      </button>
                     </div>
+
+                    {/* Mini Texto */}
                     <p 
-                      className="texto-medio"
-                      style={{ color: previewTema.texto }}
+                      style={{ 
+                        color: previewTema.texto,
+                        fontSize: '0.7rem',
+                        marginTop: '0.75rem',
+                        marginBottom: '0',
+                        lineHeight: '1.3'
+                      }}
                     >
-                      Este es un ejemplo de texto con el color seleccionado.
+                      Este es un ejemplo de texto con el color seleccionado para textos principales.
                     </p>
                   </div>
+
+                  {/* Leyenda de Colores */}
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-texto-secundario)' }}>
+                    <div style={{ marginBottom: '0.5rem', fontWeight: '600' }}>Referencia de Colores:</div>
+                    <div style={{ display: 'grid', gap: '0.25rem', gridTemplateColumns: '1fr 1fr' }}>
+                      <div>🔵 <strong>Primario:</strong> Navbar, botones principales</div>
+                      <div>🟢 <strong>Secundario:</strong> Bordes, botones secundarios</div>
+                      <div>🟡 <strong>Acento:</strong> Cards de productos</div>
+                      <div>⚪ <strong>Fondo:</strong> Fondo general de la página</div>
+                      <div>⚫ <strong>Texto:</strong> Textos principales</div>
+                    </div>
+                  </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Imagen de Fondo */}
+          <div className="tarjeta">
+            <div className="p-6 border-bottom" style={{ borderBottom: '1px solid var(--color-borde)', backgroundColor: 'var(--color-fondo-hover)' }}>
+              <div className="flex items-centro">
+                <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>🖼️</span>
+                <h3 className="titulo-3" style={{ marginBottom: '0' }}>Imagen de Fondo</h3>
+              </div>
+            </div>
+            <div className="p-6 space-y-6">
+              <p className="texto-gris" style={{ marginBottom: '1rem' }}>
+                Agrega una imagen de fondo para la tarjeta de presentación de la empresa (logo y descripción) en el catálogo público.
+              </p>
+              
+              <div className="grupo-campo">
+                <label className="etiqueta">Imagen de Fondo</label>
+                <div className="flex items-centro" style={{ gap: '1rem', flexWrap: 'wrap' }}>
+                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        name="imagenFondo"
+                        onChange={manejarImagenFondo}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id="imagen-fondo-input"
+                      />
+                      <label
+                        htmlFor="imagen-fondo-input"
+                        className="boton boton-secundario"
+                        style={{ cursor: 'pointer' }}
+                      >
+                        🖼️ Seleccionar Imagen
+                      </label>
+                    </div>
+                    {configuracion.imagenFondo && (
+                      <button
+                        type="button"
+                        onClick={() => setConfiguracion(prev => ({ ...prev, imagenFondo: null }))}
+                        className="boton boton-outline"
+                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                      >
+                        ❌ Limpiar
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Vista previa de la imagen de fondo */}
+                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                    <div style={{
+                      width: '120px',
+                      height: '80px',
+                      border: '2px dashed var(--color-borde)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'var(--color-fondo-hover)',
+                      overflow: 'hidden',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundImage: configuracion.imagenFondoUrl ? 
+                        `url(${configuracion.imagenFondoUrl})` : 'none'
+                    }}>
+                      {!configuracion.imagenFondoUrl && (
+                        <span style={{ fontSize: '1.5rem', color: 'var(--color-texto-secundario)' }}>
+                          🖼️
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col" style={{ gap: '0.25rem' }}>
+                      {configuracion.imagenFondo && (
+                        <span className="texto-pequeno texto-verde">
+                          ✅ Nueva: {configuracion.imagenFondo.name}
+                        </span>
+                      )}
+                      {configuracion.imagenFondoUrl && !configuracion.imagenFondo && (
+                        <span className="texto-pequeno texto-gris">
+                          📋 Imagen guardada
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <p className="texto-pequeno texto-gris" style={{ marginTop: '0.5rem' }}>
+                  La imagen aparecerá como fondo en la tarjeta de presentación de la empresa (logo y descripción) del catálogo público. 
+                  Formatos recomendados: JPG, PNG. Tamaño máximo: 2MB.
+                </p>
               </div>
             </div>
           </div>
@@ -960,12 +1328,16 @@ export default function ConfiguracionEmpresa() {
           </div>
 
           {/* Botones de Acción */}
-          <div className="flex gap-4">
+          <div className="flex gap-4" style={{ justifyContent: 'center', paddingTop: '2rem' }}>
             <button
               type="submit"
               disabled={guardando}
-              className="boton boton-primario boton-completo"
-              style={{ opacity: guardando ? 0.7 : 1 }}
+              className="boton boton-primario"
+              style={{ 
+                opacity: guardando ? 0.7 : 1,
+                minWidth: '200px',
+                padding: '0.75rem 2rem'
+              }}
             >
               {guardando ? (
                 <>
@@ -979,13 +1351,18 @@ export default function ConfiguracionEmpresa() {
                 </>
               )}
             </button>
-            <Link
-              to="/admin/dashboard"
-              className="boton boton-secundario boton-completo text-center"
+            <button
+              type="button"
+              onClick={manejarCancelar}
+              className="boton boton-secundario"
+              style={{ 
+                minWidth: '150px',
+                padding: '0.75rem 2rem'
+              }}
             >
               <span className="mr-2">❌</span>
               Cancelar
-            </Link>
+            </button>
           </div>
         </form>
       </div>

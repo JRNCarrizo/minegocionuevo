@@ -38,6 +38,10 @@ body {
   line-height: 1.6;
   color: var(--color-texto);
   background-color: var(--color-fondo);
+}
+
+/* Clase para páginas con navbar fijo */
+.pagina-con-navbar {
   padding-top: 4rem; /* Compensar navbar fijo */
 }
 

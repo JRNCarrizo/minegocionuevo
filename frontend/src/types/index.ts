@@ -10,6 +10,10 @@ export interface Empresa {
   logoUrl?: string;
   colorPrimario: string;
   colorSecundario: string;
+  colorAcento?: string;
+  colorFondo?: string;
+  colorTexto?: string;
+  imagenFondoUrl?: string;
   moneda: string;
   instagramUrl?: string;
   facebookUrl?: string;
@@ -215,4 +219,28 @@ export interface LoginResponse {
   empresaId: number;
   empresaNombre: string;
   empresaSubdominio: string;
+}
+
+export interface Notificacion {
+  id: number;
+  tipo: 'PEDIDO_NUEVO' | 'PRODUCTO_ACTUALIZADO' | 'CLIENTE_NUEVO' | 'PEDIDO_CANCELADO' | 'VENTA_RAPIDA' | 'STOCK_BAJO' | 'PEDIDO_COMPLETADO' | 'REPORTE_GENERADO';
+  titulo: string;
+  descripcion: string;
+  detalles?: string; // JSON string con información adicional
+  empresaId: number;
+  fechaCreacion: string;
+  leida: boolean;
+  icono?: string;
+  color?: string;
+}
+
+// Tipo para errores de API
+export interface ApiError {
+  response?: {
+    data?: {
+      error?: string;
+      mensaje?: string;
+    };
+  };
+  message?: string;
 }

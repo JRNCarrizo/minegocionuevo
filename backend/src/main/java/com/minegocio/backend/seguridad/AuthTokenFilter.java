@@ -36,8 +36,16 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             String requestPath = request.getRequestURI();
             String method = request.getMethod();
             
+            // Log general para todas las peticiones
+            System.out.println("🌐 REQUEST RECIBIDA: " + method + " " + requestPath);
+            
             System.out.println("=== AuthTokenFilter Debug ===");
             System.out.println("Request: " + method + " " + requestPath);
+            
+            // Log específico para endpoints de archivos
+            if (requestPath.contains("/archivos")) {
+                System.out.println("📁 Endpoint de archivos detectado: " + requestPath);
+            }
             
             // Skip authentication for public endpoints
             if (isPublicEndpoint(requestPath)) {
@@ -136,6 +144,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                           requestPath.startsWith("/api/debug/") ||
                           requestPath.startsWith("/api/empresas/registro") ||
                           requestPath.startsWith("/api/empresas/verificar-subdominio/") ||
+                          requestPath.startsWith("/api/archivos/test") || // Solo el endpoint de prueba es público
                           requestPath.startsWith("/h2-console/") ||
                           requestPath.startsWith("/swagger-ui/") ||
                           requestPath.startsWith("/v3/api-docs/") ||

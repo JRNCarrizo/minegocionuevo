@@ -125,7 +125,7 @@ export default function CajaRapida() {
       } else {
         setProductos([]);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error al cargar productos:', error);
       toast.error('Error al cargar productos');
     } finally {
@@ -248,7 +248,7 @@ export default function CajaRapida() {
           setInputCodigo(''); // Limpiar input después de agregar
           return;
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.log(error);
         // Error silencioso, continuar con siguiente búsqueda
       }
@@ -261,7 +261,7 @@ export default function CajaRapida() {
           setInputCodigo(''); // Limpiar input después de agregar
           return;
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.log(error);
         // Error silencioso, continuar con siguiente búsqueda
       }
@@ -269,7 +269,7 @@ export default function CajaRapida() {
       // Si no se encontró nada
       toast.error('Producto no encontrado');
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error al buscar producto:', error);
       toast.error('Error al buscar producto');
     } finally {
@@ -370,7 +370,7 @@ export default function CajaRapida() {
       try {
         const debugResponse = await ApiService.debugVentaRapida(ventaData);
         console.log('Debug response:', debugResponse);
-      } catch (debugError) {
+      } catch (debugError: unknown) {
         console.error('Error en debug:', debugError);
       }
       
@@ -399,7 +399,7 @@ export default function CajaRapida() {
       
       await cargarProductos();
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error al finalizar venta:', error);
       toast.error('Error al finalizar la venta');
     } finally {
@@ -1153,7 +1153,7 @@ export default function CajaRapida() {
               </label>
               <select
                 value={venta.metodoPago}
-                onChange={(e) => setVenta(prev => ({ ...prev, metodoPago: e.target.value as any }))}
+                onChange={(e) => setVenta(prev => ({ ...prev, metodoPago: e.target.value as 'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA' }))}
                 style={{
                   width: '100%',
                   padding: '1rem',

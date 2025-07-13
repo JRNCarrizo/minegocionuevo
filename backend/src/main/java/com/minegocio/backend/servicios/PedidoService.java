@@ -33,6 +33,9 @@ public class PedidoService {
     private EmpresaRepository empresaRepository;
     @Autowired
     private ProductoRepository productoRepository;
+    
+    @Autowired
+    private NotificacionService notificacionService;
 
     @Transactional
     public PedidoDTO crearPedido(Long empresaId, PedidoDTO pedidoDTO) {
@@ -120,6 +123,10 @@ public class PedidoService {
         } else {
             System.out.println("Pedido público guardado - sin cliente asociado");
         }
+        
+        // Crear notificación de nuevo pedido
+        String nombreCliente = cliente != null ? cliente.getNombre() + " " + cliente.getApellidos() : pedidoDTO.getClienteNombre();
+        notificacionService.crearNotificacionPedidoNuevo(empresaId, nombreCliente, guardado.getTotal().doubleValue());
         
         // Devolver DTO
         PedidoDTO resultado = convertirADTO(guardado);
@@ -223,6 +230,18 @@ public class PedidoService {
         // Guardar cambios
         Pedido pedidoActualizado = pedidoRepository.save(pedido);
         System.out.println("Estado actualizado exitosamente a: " + pedidoActualizado.getEstado());
+        
+        // Crear notificaciones según el estado
+        String nombreCliente = pedido.getCliente() != null ? 
+            pedido.getCliente().getNombre() + " " + pedido.getCliente().getApellidos() : 
+            "Cliente";
+            
+        if (estado == Pedido.EstadoPedido.CANCELADO) {
+            notificacionService.crearNotificacionPedidoCancelado(empresaId, nombreCliente, "Pedido cancelado por el administrador");
+        } else if (estado == Pedido.EstadoPedido.ENTREGADO) {
+            notificacionService.crearNotificacionPedidoCompletado(empresaId, nombreCliente, pedido.getNumeroPedido());
+        }
+        
         System.out.println("=== FIN DEBUG ACTUALIZAR ESTADO PEDIDO ===");
         
         return convertirADTO(pedidoActualizado);

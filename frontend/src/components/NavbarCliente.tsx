@@ -7,6 +7,12 @@ interface NavbarClienteProps {
     nombre: string;
     descripcion?: string;
     logoUrl?: string;
+    colorPrimario?: string;
+    colorSecundario?: string;
+    colorAcento?: string;
+    colorFondo?: string;
+    colorTexto?: string;
+    imagenFondoUrl?: string;
     instagramUrl?: string;
     facebookUrl?: string;
   };
@@ -26,10 +32,14 @@ export default function NavbarCliente({
 }: NavbarClienteProps) {
   const location = useLocation();
   const estaEnCuenta = location.pathname === '/cuenta';
+  // Aplicar colores personalizados
+  const colorPrimario = empresa.colorPrimario || '#667eea';
+  const colorSecundario = empresa.colorSecundario || '#764ba2';
+  
   return (
     <header style={{
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+      background: `linear-gradient(135deg, ${colorPrimario} 0%, ${colorSecundario} 100%)`,
+      boxShadow: `0 4px 20px ${colorPrimario}30`,
       position: 'fixed',
       top: 0,
       left: 0,

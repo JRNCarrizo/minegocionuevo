@@ -18,6 +18,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -66,6 +69,17 @@ public class AdminController {
                 return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
             }
             
+            System.out.println("=== DEBUG ADMIN EMPRESA ===");
+            System.out.println("Empresa encontrada: " + empresa.getNombre());
+            System.out.println("Colores de la empresa:");
+            System.out.println("  - Primario: " + empresa.getColorPrimario());
+            System.out.println("  - Secundario: " + empresa.getColorSecundario());
+            System.out.println("  - Acento: " + empresa.getColorAcento());
+            System.out.println("  - Fondo: " + empresa.getColorFondo());
+            System.out.println("  - Texto: " + empresa.getColorTexto());
+            System.out.println("  - Imagen Fondo: " + empresa.getImagenFondoUrl());
+            System.out.println("=== FIN DEBUG ===");
+            
             // Devolver información completa de la empresa para administradores
             EmpresaDTO empresaDTO = new EmpresaDTO();
             empresaDTO.setId(empresa.getId());
@@ -77,6 +91,10 @@ public class AdminController {
             empresaDTO.setLogoUrl(empresa.getLogoUrl());
             empresaDTO.setColorPrimario(empresa.getColorPrimario());
             empresaDTO.setColorSecundario(empresa.getColorSecundario());
+            empresaDTO.setColorAcento(empresa.getColorAcento());
+            empresaDTO.setColorFondo(empresa.getColorFondo());
+            empresaDTO.setColorTexto(empresa.getColorTexto());
+            empresaDTO.setImagenFondoUrl(empresa.getImagenFondoUrl());
             empresaDTO.setMoneda(empresa.getMoneda());
             empresaDTO.setInstagramUrl(empresa.getInstagramUrl());
             empresaDTO.setFacebookUrl(empresa.getFacebookUrl());
@@ -247,6 +265,131 @@ public class AdminController {
     }
 
     /**
+     * Sube la imagen de fondo de la empresa
+     */
+    @PostMapping("/empresa/fondo")
+    public ResponseEntity<?> subirFondoEmpresa(@RequestParam("fondo") MultipartFile archivo, HttpServletRequest request) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido"));
+            }
+            
+            token = token.substring(7);
+            String email = jwtUtils.extractUsername(token);
+            
+            Optional<Usuario> usuario = autenticacionService.obtenerPorEmail(email);
+            if (usuario.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            }
+            
+            Empresa empresa = usuario.get().getEmpresa();
+            if (empresa == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
+            }
+            
+            // Validar que el archivo no esté vacío
+            if (archivo.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se ha seleccionado ningún archivo"));
+            }
+            // Validar tipo de archivo
+            String tipoContenido = archivo.getContentType();
+            if (tipoContenido == null || !tipoContenido.startsWith("image/")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El archivo debe ser una imagen"));
+            }
+            // Validar tamaño del archivo (máximo 5MB)
+            if (archivo.getSize() > 5 * 1024 * 1024) {
+                return ResponseEntity.badRequest().body(Map.of("error", "La imagen no puede ser mayor a 5MB"));
+            }
+            
+            // Eliminar imagen de fondo anterior si existe
+            if (empresa.getImagenFondoUrl() != null && !empresa.getImagenFondoUrl().isEmpty()) {
+                cloudinaryService.eliminarImagen(empresa.getImagenFondoUrl());
+            }
+            
+            // Subir imagen a Cloudinary con tipo 'fondo'
+            String urlImagen = cloudinaryService.subirImagen(archivo, empresa.getId(), "fondo");
+            
+            // Guardar la URL en la empresa
+            EmpresaDTO empresaDTO = empresaService.actualizarPersonalizacion(empresa.getId(), null, null, null, null, null, null, urlImagen);
+            
+            System.out.println("=== DEBUG SUBIDA FONDO ===");
+            System.out.println("Empresa ID: " + empresa.getId());
+            System.out.println("URL de imagen subida: " + urlImagen);
+            System.out.println("Empresa actualizada: " + empresaDTO.getImagenFondoUrl());
+            System.out.println("=== FIN DEBUG ===");
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Imagen de fondo subida exitosamente",
+                "data", Map.of("fondoUrl", urlImagen),
+                "empresa", empresaDTO
+            ));
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error al subir la imagen: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error inesperado: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint de prueba para actualizar imagen de fondo
+     */
+    @PostMapping("/test-actualizar-fondo")
+    public ResponseEntity<?> testActualizarFondo(HttpServletRequest request) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido"));
+            }
+            
+            token = token.substring(7);
+            String email = jwtUtils.extractUsername(token);
+            
+            Optional<Usuario> usuario = autenticacionService.obtenerPorEmail(email);
+            if (usuario.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            }
+            
+            Empresa empresa = usuario.get().getEmpresa();
+            if (empresa == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
+            }
+            
+            // URL de prueba para la imagen de fondo
+            String urlImagenPrueba = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop";
+            
+            System.out.println("=== TEST ACTUALIZAR FONDO ===");
+            System.out.println("Empresa ID: " + empresa.getId());
+            System.out.println("URL de prueba: " + urlImagenPrueba);
+            System.out.println("Imagen de fondo actual: " + empresa.getImagenFondoUrl());
+            
+            // Actualizar solo la imagen de fondo
+            EmpresaDTO empresaDTO = empresaService.actualizarPersonalizacion(
+                empresa.getId(), 
+                null, null, null, null, null, null, 
+                urlImagenPrueba
+            );
+            
+            System.out.println("Empresa actualizada: " + empresaDTO.getImagenFondoUrl());
+            
+            // Verificar que se guardó correctamente
+            EmpresaDTO empresaVerificada = empresaService.obtenerPorId(empresa.getId()).orElse(null);
+            System.out.println("Empresa verificada desde BD: " + (empresaVerificada != null ? empresaVerificada.getImagenFondoUrl() : "null"));
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Imagen de fondo de prueba actualizada",
+                "empresa", empresaDTO,
+                "verificacion", empresaVerificada != null ? empresaVerificada.getImagenFondoUrl() : "null"
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("Error en test: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error en test: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Verificar disponibilidad de subdominio
      */
     @GetMapping("/verificar-subdominio/{subdominio}")
@@ -288,6 +431,50 @@ public class AdminController {
             
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+
+    /**
+     * Endpoint de debug para verificar el estado de la empresa
+     */
+    @GetMapping("/debug-empresa")
+    public ResponseEntity<?> debugEmpresa(HttpServletRequest request) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido"));
+            }
+            
+            token = token.substring(7);
+            String email = jwtUtils.extractUsername(token);
+            
+            Optional<Usuario> usuario = autenticacionService.obtenerPorEmail(email);
+            if (usuario.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            }
+            
+            Empresa empresa = usuario.get().getEmpresa();
+            if (empresa == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "empresa", Map.of(
+                    "id", empresa.getId(),
+                    "nombre", empresa.getNombre(),
+                    "subdominio", empresa.getSubdominio(),
+                    "logoUrl", empresa.getLogoUrl(),
+                    "imagenFondoUrl", empresa.getImagenFondoUrl(),
+                    "colorPrimario", empresa.getColorPrimario(),
+                    "colorSecundario", empresa.getColorSecundario(),
+                    "colorAcento", empresa.getColorAcento(),
+                    "colorFondo", empresa.getColorFondo(),
+                    "colorTexto", empresa.getColorTexto()
+                )
+            ));
+            
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
         }
     }
 }

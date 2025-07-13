@@ -35,6 +35,9 @@ public class VentaRapidaService {
 
     @Autowired
     private EmpresaRepository empresaRepository;
+    
+    @Autowired
+    private NotificacionService notificacionService;
 
     /**
      * Procesa una venta rápida y la guarda en el historial
@@ -91,7 +94,12 @@ public class VentaRapidaService {
         }
 
         // Guardar la venta rápida
-        return ventaRapidaRepository.save(ventaRapida);
+        VentaRapida ventaGuardada = ventaRapidaRepository.save(ventaRapida);
+        
+        // Crear notificación de venta rápida
+        notificacionService.crearNotificacionVentaRapida(empresaId, ventaDTO.getTotal().doubleValue(), ventaDTO.getMetodoPago());
+        
+        return ventaGuardada;
     }
 
     /**
