@@ -266,12 +266,27 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
                               width: '100%',
                               height: '100%',
                               display: 'flex',
+                              flexDirection: 'column',
                               alignItems: 'center',
                               justifyContent: 'center',
                               color: '#64748b',
-                              fontSize: '12px'
+                              fontSize: '10px',
+                              textAlign: 'center',
+                              padding: '8px'
                             }}>
-                              Sin imagen
+                              <div style={{
+                                fontSize: '20px',
+                                marginBottom: '4px',
+                                opacity: 0.7
+                              }}>
+                                📸
+                              </div>
+                              <div style={{
+                                fontSize: '8px',
+                                opacity: 0.8
+                              }}>
+                                Sin imagen
+                              </div>
                             </div>
                           )}
                         </div>

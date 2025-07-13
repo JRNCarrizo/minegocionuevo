@@ -63,6 +63,12 @@ public class Empresa {
     @Column(name = "color_texto", length = 7)
     private String colorTexto = "#1F2937"; // Gris oscuro por defecto
 
+    @Column(name = "color_titulo_principal", length = 7)
+    private String colorTituloPrincipal = "#1F2937"; // Gris oscuro por defecto
+
+    @Column(name = "color_card_filtros", length = 7)
+    private String colorCardFiltros = "#FFFFFF"; // Blanco por defecto
+
     @Column(name = "imagen_fondo_url")
     private String imagenFondoUrl;
 
@@ -159,6 +165,12 @@ public class Empresa {
 
     public String getColorTexto() { return colorTexto; }
     public void setColorTexto(String colorTexto) { this.colorTexto = colorTexto; }
+
+    public String getColorTituloPrincipal() { return colorTituloPrincipal; }
+    public void setColorTituloPrincipal(String colorTituloPrincipal) { this.colorTituloPrincipal = colorTituloPrincipal; }
+
+    public String getColorCardFiltros() { return colorCardFiltros; }
+    public void setColorCardFiltros(String colorCardFiltros) { this.colorCardFiltros = colorCardFiltros; }
 
     public String getImagenFondoUrl() { return imagenFondoUrl; }
     public void setImagenFondoUrl(String imagenFondoUrl) { this.imagenFondoUrl = imagenFondoUrl; }

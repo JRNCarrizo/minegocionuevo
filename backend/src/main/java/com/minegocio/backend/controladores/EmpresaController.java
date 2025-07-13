@@ -97,7 +97,11 @@ public class EmpresaController {
             System.out.println("=== DEBUG: Actualizando personalización ===");
             System.out.println("Empresa ID: " + id);
             System.out.println("Datos recibidos: " + personalizacion);
+            System.out.println("Color Título Principal recibido: " + personalizacion.get("colorTituloPrincipal"));
+            System.out.println("Color Card Filtros recibido: " + personalizacion.get("colorCardFiltros"));
             System.out.println("Imagen de fondo URL recibida: " + personalizacion.get("imagenFondoUrl"));
+            System.out.println("Instagram URL recibida: " + personalizacion.get("instagramUrl"));
+            System.out.println("Facebook URL recibida: " + personalizacion.get("facebookUrl"));
             
             EmpresaDTO empresaDTO = empresaService.actualizarPersonalizacion(
                 id,
@@ -107,12 +111,20 @@ public class EmpresaController {
                 personalizacion.get("colorAcento"),
                 personalizacion.get("colorFondo"),
                 personalizacion.get("colorTexto"),
-                personalizacion.get("imagenFondoUrl")
+                personalizacion.get("colorTituloPrincipal"),
+                personalizacion.get("colorCardFiltros"),
+                personalizacion.get("imagenFondoUrl"),
+                personalizacion.get("instagramUrl"),
+                personalizacion.get("facebookUrl")
             );
             
             System.out.println("Personalización actualizada exitosamente");
             System.out.println("Empresa actualizada: " + empresaDTO);
+            System.out.println("Color Título Principal guardado: " + empresaDTO.getColorTituloPrincipal());
+            System.out.println("Color Card Filtros guardado: " + empresaDTO.getColorCardFiltros());
             System.out.println("Imagen de fondo guardada: " + empresaDTO.getImagenFondoUrl());
+            System.out.println("Instagram URL guardada: " + empresaDTO.getInstagramUrl());
+            System.out.println("Facebook URL guardada: " + empresaDTO.getFacebookUrl());
             
             Map<String, Object> response = Map.of(
                 "mensaje", "Personalización actualizada exitosamente",

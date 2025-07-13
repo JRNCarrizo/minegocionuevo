@@ -64,6 +64,8 @@ public class PublicoController {
             System.out.println("  - Fondo: " + empresa.getColorFondo());
             System.out.println("  - Texto: " + empresa.getColorTexto());
             System.out.println("  - Imagen Fondo: " + empresa.getImagenFondoUrl());
+            System.out.println("  - Color Título Principal: " + empresa.getColorTituloPrincipal());
+            System.out.println("  - Color Card Filtros: " + empresa.getColorCardFiltros());
             
             // Crear respuesta manual para evitar problemas de serialización
             Map<String, Object> empresaData = new java.util.HashMap<>();
@@ -77,6 +79,8 @@ public class PublicoController {
             empresaData.put("colorAcento", empresa.getColorAcento() != null ? empresa.getColorAcento() : "#F59E0B");
             empresaData.put("colorFondo", empresa.getColorFondo() != null ? empresa.getColorFondo() : "#FFFFFF");
             empresaData.put("colorTexto", empresa.getColorTexto() != null ? empresa.getColorTexto() : "#1F2937");
+            empresaData.put("colorTituloPrincipal", empresa.getColorTituloPrincipal() != null ? empresa.getColorTituloPrincipal() : "#1F2937");
+            empresaData.put("colorCardFiltros", empresa.getColorCardFiltros() != null ? empresa.getColorCardFiltros() : "#FFFFFF");
             empresaData.put("imagenFondoUrl", empresa.getImagenFondoUrl() != null ? empresa.getImagenFondoUrl() : "");
             empresaData.put("moneda", empresa.getMoneda() != null ? empresa.getMoneda() : "USD");
             empresaData.put("instagramUrl", empresa.getInstagramUrl() != null ? empresa.getInstagramUrl() : "");

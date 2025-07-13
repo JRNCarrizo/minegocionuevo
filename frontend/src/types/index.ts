@@ -13,6 +13,8 @@ export interface Empresa {
   colorAcento?: string;
   colorFondo?: string;
   colorTexto?: string;
+  colorTituloPrincipal?: string;
+  colorCardFiltros?: string;
   imagenFondoUrl?: string;
   moneda: string;
   instagramUrl?: string;

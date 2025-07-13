@@ -190,6 +190,8 @@ class ApiService {
       colorAcento?: string;
       colorFondo?: string;
       colorTexto?: string;
+      colorTituloPrincipal?: string;
+      colorCardFiltros?: string;
       imagenFondoUrl?: string;
     }
   ): Promise<ApiResponse<{ mensaje: string; empresa: Empresa }>> {

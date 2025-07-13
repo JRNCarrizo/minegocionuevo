@@ -152,6 +152,8 @@ export default function CatalogoPublico() {
   console.log('Color Acento:', empresa?.colorAcento);
   console.log('Color Fondo:', empresa?.colorFondo);
   console.log('Color Texto:', empresa?.colorTexto);
+  console.log('Color Título Principal:', empresa?.colorTituloPrincipal);
+  console.log('Color Card Filtros:', empresa?.colorCardFiltros);
   console.log('Imagen Fondo URL:', empresa?.imagenFondoUrl);
   
   // Verificar si la imagen de fondo se está aplicando
@@ -422,18 +424,15 @@ export default function CatalogoPublico() {
           {/* Contenido de la cabecera */}
           <div style={{ position: 'relative', zIndex: 2 }}>
             <div style={{
-              width: '140px',
-              height: '140px',
-              background: 'rgba(255,255,255,0.1)',
-              borderRadius: '50%',
+              width: '200px',
+              height: '200px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 20px',
-              fontSize: '56px',
+              fontSize: '80px',
               overflow: 'hidden',
-              backdropFilter: 'blur(10px)',
-              border: '2px solid rgba(255,255,255,0.2)'
+              borderRadius: '50%'
             }}>
               {empresa.logoUrl ? (
                 <img
@@ -459,20 +458,19 @@ export default function CatalogoPublico() {
                 margin: '0 0 12px 0', 
                 fontSize: '32px', 
                 fontWeight: '700',
-                color: 'white',
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                color: empresa?.colorTituloPrincipal || 'white',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                background: empresa?.colorTituloPrincipal ? `linear-gradient(135deg, ${empresa.colorTituloPrincipal} 0%, ${empresa.colorTituloPrincipal}dd 100%)` : 'none',
+                WebkitBackgroundClip: empresa?.colorTituloPrincipal ? 'text' : 'unset',
+                WebkitTextFillColor: empresa?.colorTituloPrincipal ? 'transparent' : 'white',
+                backgroundClip: empresa?.colorTituloPrincipal ? 'text' : 'unset'
               }}>
                 Bienvenido a {empresa.nombre}
               </h1>
               
               {empresa.descripcion && (
                 <div style={{
-                  background: 'rgba(255,255,255,0.9)',
-                  borderRadius: '16px',
-                  padding: '20px',
                   marginBottom: '16px',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255,255,255,0.2)',
                   maxWidth: '600px',
                   margin: '0 auto 16px'
                 }}>
@@ -480,10 +478,10 @@ export default function CatalogoPublico() {
                     margin: 0, 
                     fontSize: '16px', 
                     lineHeight: '1.6',
-                    opacity: 0.95,
                     fontWeight: '400',
                     textAlign: 'center',
-                    color: empresa?.colorTexto || '#1e293b'
+                    color: empresa?.colorTexto || 'white',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.4)'
                   }}>
                     {empresa.descripcion}
                   </p>
@@ -495,7 +493,7 @@ export default function CatalogoPublico() {
 
         {/* Filtros y controles combinados */}
         <div style={{
-          background: empresa?.colorAcento || '#fff',
+          background: empresa?.colorCardFiltros || empresa?.colorAcento || '#fff',
           borderRadius: '16px',
           padding: '24px',
           marginBottom: '32px',
@@ -514,8 +512,9 @@ export default function CatalogoPublico() {
               margin: '0 0 8px 0', 
               fontSize: '28px', 
               fontWeight: '700', 
-              color: empresa?.colorTexto || '#1e293b',
-              background: empresa?.colorPrimario ? `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorPrimario}dd 100%)` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: empresa?.colorTituloPrincipal || empresa?.colorTexto || '#1e293b',
+              background: empresa?.colorTituloPrincipal ? `linear-gradient(135deg, ${empresa.colorTituloPrincipal} 0%, ${empresa.colorTituloPrincipal}dd 100%)` : 
+                empresa?.colorPrimario ? `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorPrimario}dd 100%)` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'
@@ -536,40 +535,48 @@ export default function CatalogoPublico() {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            marginBottom: '20px',
-            gap: '12px'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#10b981'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#059669'} 100%)`,
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px',
-              color: 'white'
-            }}>
-              🔍
-            </div>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: empresa?.colorTexto || '#1e293b' }}>
-              Filtros de Búsqueda
-            </h3>
-          </div>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '16px',
+            gap: '20px',
             marginBottom: '24px'
           }}>
+            {/* Título e icono de filtros */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              minWidth: '200px'
+            }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#10b981'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#059669'} 100%)`,
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '20px',
+                color: 'white'
+              }}>
+                🔍
+              </div>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: empresa?.colorTexto || '#1e293b' }}>
+                Filtros de Búsqueda
+              </h3>
+            </div>
+            
+            {/* Casilleros de búsqueda */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '16px',
+              flex: 1
+            }}>
             <div>
               <label style={{
                 display: 'block',
                 marginBottom: '8px',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b'
+                color: empresa?.colorTexto || '#1e293b'
               }}>
                 Categoría
               </label>
@@ -583,7 +590,7 @@ export default function CatalogoPublico() {
                   border: '2px solid #e2e8f0',
                   fontSize: '14px',
                   background: '#fff',
-                  color: empresa?.colorTexto || '#1e293b',
+                  color: '#000000',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
@@ -603,7 +610,7 @@ export default function CatalogoPublico() {
                 marginBottom: '8px',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b'
+                color: empresa?.colorTexto || '#1e293b'
               }}>
                 Marca
               </label>
@@ -617,7 +624,7 @@ export default function CatalogoPublico() {
                   border: '2px solid #e2e8f0',
                   fontSize: '14px',
                   background: '#fff',
-                  color: empresa?.colorTexto || '#1e293b',
+                  color: '#000000',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
@@ -630,6 +637,7 @@ export default function CatalogoPublico() {
                 ))}
               </select>
             </div>
+          </div>
           </div>
 
           {/* Separador */}
@@ -896,17 +904,32 @@ export default function CatalogoPublico() {
                       <div style={{
                         width: '100%',
                         height: '100%',
-                        background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#64748b',
                         fontSize: vistaCuadricula ? '16px' : '14px',
                         borderRadius: vistaCuadricula ? '12px 12px 0 0' : '0',
                         margin: 0,
-                        padding: 0
+                        padding: '20px',
+                        textAlign: 'center'
                       }}>
-                        📷 Sin imagen
+                        <div style={{
+                          fontSize: vistaCuadricula ? '48px' : '36px',
+                          marginBottom: '8px',
+                          opacity: 0.7
+                        }}>
+                          📸
+                        </div>
+                        <div style={{
+                          fontSize: vistaCuadricula ? '12px' : '10px',
+                          fontWeight: '500',
+                          opacity: 0.8
+                        }}>
+                          Sin imagen
+                        </div>
                       </div>
                     )}
                     
@@ -1036,7 +1059,7 @@ export default function CatalogoPublico() {
                             <span style={{
                               fontSize: vistaCuadricula ? '24px' : '20px',
                               fontWeight: '800',
-                              color: empresa?.colorAcento || '#059669',
+                              color: empresa?.colorTexto || '#1e293b',
                               textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                             }}>
                               {formatearPrecio(producto.precio, empresa.moneda)}

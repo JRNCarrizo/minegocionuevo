@@ -21,6 +21,8 @@ interface ConfiguracionEmpresa {
   colorAcento: string;
   colorFondo: string;
   colorTexto: string;
+  colorTituloPrincipal: string;
+  colorCardFiltros: string;
   imagenFondo: File | null;
   imagenFondoUrl: string;
   moneda: string;
@@ -244,6 +246,8 @@ export default function ConfiguracionEmpresa() {
     colorAcento: '#f59e0b',
     colorFondo: '#ffffff',
     colorTexto: '#1f2937',
+    colorTituloPrincipal: '#1f2937',
+    colorCardFiltros: '#ffffff',
     imagenFondo: null,
     imagenFondoUrl: '',
     moneda: 'ARS',
@@ -313,6 +317,8 @@ export default function ConfiguracionEmpresa() {
         colorAcento: empresa.colorAcento || '#f59e0b',
         colorFondo: empresa.colorFondo || '#ffffff',
         colorTexto: empresa.colorTexto || '#1f2937',
+        colorTituloPrincipal: empresa.colorTituloPrincipal || '#1f2937',
+        colorCardFiltros: empresa.colorCardFiltros || '#ffffff',
         imagenFondoUrl: empresa.imagenFondoUrl || '',
         moneda: empresa.moneda || 'ARS',
         instagramUrl: empresa.instagramUrl || '',
@@ -576,7 +582,11 @@ export default function ConfiguracionEmpresa() {
         colorAcento: configuracion.colorAcento,
         colorFondo: configuracion.colorFondo,
         colorTexto: configuracion.colorTexto,
-        imagenFondoUrl
+        colorTituloPrincipal: configuracion.colorTituloPrincipal,
+        colorCardFiltros: configuracion.colorCardFiltros,
+        imagenFondoUrl,
+        instagramUrl: configuracion.instagramUrl,
+        facebookUrl: configuracion.facebookUrl
       };
       console.log('📋 Datos de personalización a enviar:', datosPersonalizacion);
 
@@ -608,7 +618,9 @@ export default function ConfiguracionEmpresa() {
     secundario: configuracion.colorSecundario,
     acento: configuracion.colorAcento,
     fondo: configuracion.colorFondo,
-    texto: configuracion.colorTexto
+    texto: configuracion.colorTexto,
+    tituloPrincipal: configuracion.colorTituloPrincipal,
+    cardFiltros: configuracion.colorCardFiltros
   }), [configuracion]);
 
   if (cargando) {
@@ -962,6 +974,18 @@ export default function ConfiguracionEmpresa() {
                     value={configuracion.colorTexto}
                     onChange={manejarCambio}
                   />
+                  <ColorPicker
+                    label="Color de Título Principal"
+                    name="colorTituloPrincipal"
+                    value={configuracion.colorTituloPrincipal}
+                    onChange={manejarCambio}
+                  />
+                  <ColorPicker
+                    label="Color de Card de Filtros"
+                    name="colorCardFiltros"
+                    value={configuracion.colorCardFiltros}
+                    onChange={manejarCambio}
+                  />
                 </div>
 
                 {/* Mini Pantalla de Referencia */}
@@ -1001,6 +1025,70 @@ export default function ConfiguracionEmpresa() {
                     >
                       <span>🏢 {configuracion.nombre || 'Mi Empresa'}</span>
                       <span>👤 Admin</span>
+                    </div>
+
+                    {/* Mini Título Principal */}
+                    <div 
+                      style={{ 
+                        color: previewTema.tituloPrincipal,
+                        fontSize: '0.8rem',
+                        fontWeight: '700',
+                        marginBottom: '0.75rem',
+                        textAlign: 'center',
+                        background: `linear-gradient(135deg, ${previewTema.tituloPrincipal} 0%, ${previewTema.tituloPrincipal}dd 100%)`,
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                      }}
+                    >
+                      🛍️ Catálogo de Productos
+                    </div>
+
+                    {/* Mini Card de Filtros */}
+                    <div 
+                      style={{ 
+                        backgroundColor: previewTema.cardFiltros,
+                        padding: '0.5rem',
+                        borderRadius: '6px',
+                        marginBottom: '0.75rem',
+                        border: `1px solid ${previewTema.secundario}20`,
+                        fontSize: '0.6rem'
+                      }}
+                    >
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.25rem',
+                        marginBottom: '0.25rem'
+                      }}>
+                        <span style={{ fontSize: '0.7rem' }}>🔍</span>
+                        <span style={{ fontWeight: '600', color: previewTema.texto }}>Filtros</span>
+                      </div>
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: '1fr 1fr', 
+                        gap: '0.25rem',
+                        fontSize: '0.5rem'
+                      }}>
+                        <div style={{ 
+                          background: '#fff', 
+                          padding: '0.2rem', 
+                          borderRadius: '3px',
+                          border: '1px solid #e2e8f0',
+                          color: previewTema.texto
+                        }}>
+                          Categoría
+                        </div>
+                        <div style={{ 
+                          background: '#fff', 
+                          padding: '0.2rem', 
+                          borderRadius: '3px',
+                          border: '1px solid #e2e8f0',
+                          color: previewTema.texto
+                        }}>
+                          Marca
+                        </div>
+                      </div>
                     </div>
 
                     {/* Mini Cards de Productos */}
@@ -1119,6 +1207,8 @@ export default function ConfiguracionEmpresa() {
                       <div>🟡 <strong>Acento:</strong> Cards de productos</div>
                       <div>⚪ <strong>Fondo:</strong> Fondo general de la página</div>
                       <div>⚫ <strong>Texto:</strong> Textos principales</div>
+                      <div>🟣 <strong>Título Principal:</strong> Títulos del catálogo</div>
+                      <div>🟠 <strong>Card Filtros:</strong> Fondo de filtros de búsqueda</div>
                     </div>
                   </div>
                 </div>

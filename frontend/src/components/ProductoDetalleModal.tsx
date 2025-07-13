@@ -438,16 +438,31 @@ export default function ProductoDetalleModal({
                 <div style={{
                   width: '100%',
                   height: '400px',
-                  background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: '16px',
                   border: '2px solid #e2e8f0',
                   color: '#64748b',
-                  fontSize: '18px'
+                  padding: '40px',
+                  textAlign: 'center'
                 }}>
-                  📷 Sin imagen disponible
+                  <div style={{
+                    fontSize: '80px',
+                    marginBottom: '16px',
+                    opacity: 0.7
+                  }}>
+                    📸
+                  </div>
+                  <div style={{
+                    fontSize: '18px',
+                    fontWeight: '500',
+                    opacity: 0.8
+                  }}>
+                    Sin imagen disponible
+                  </div>
                 </div>
               )}
             </div>

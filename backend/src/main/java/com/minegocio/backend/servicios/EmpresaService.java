@@ -97,7 +97,8 @@ public class EmpresaService {
      * Actualiza la personalización de una empresa
      */
     public EmpresaDTO actualizarPersonalizacion(Long empresaId, String logoUrl, String colorPrimario, String colorSecundario, 
-                                               String colorAcento, String colorFondo, String colorTexto, String imagenFondoUrl) {
+                                               String colorAcento, String colorFondo, String colorTexto, String colorTituloPrincipal, 
+                                               String colorCardFiltros, String imagenFondoUrl, String instagramUrl, String facebookUrl) {
         System.out.println("=== DEBUG SERVICIO PERSONALIZACIÓN ===");
         System.out.println("Empresa ID: " + empresaId);
         System.out.println("Logo URL: " + logoUrl);
@@ -106,10 +107,18 @@ public class EmpresaService {
         System.out.println("Color Acento: " + colorAcento);
         System.out.println("Color Fondo: " + colorFondo);
         System.out.println("Color Texto: " + colorTexto);
+        System.out.println("Color Título Principal: " + colorTituloPrincipal);
+        System.out.println("Color Card Filtros: " + colorCardFiltros);
         System.out.println("Imagen Fondo URL: " + imagenFondoUrl);
+        System.out.println("Instagram URL: " + instagramUrl);
+        System.out.println("Facebook URL: " + facebookUrl);
         
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        // Debug: Verificar si los campos se están guardando
+        System.out.println("=== DEBUG GUARDADO ===");
+        System.out.println("Antes de guardar - Color Título Principal: " + empresa.getColorTituloPrincipal());
+        System.out.println("Antes de guardar - Color Card Filtros: " + empresa.getColorCardFiltros());
 
         if (logoUrl != null) {
             empresa.setLogoUrl(logoUrl);
@@ -129,13 +138,29 @@ public class EmpresaService {
         if (colorTexto != null) {
             empresa.setColorTexto(colorTexto);
         }
+        if (colorTituloPrincipal != null) {
+            empresa.setColorTituloPrincipal(colorTituloPrincipal);
+        }
+        if (colorCardFiltros != null) {
+            empresa.setColorCardFiltros(colorCardFiltros);
+        }
         if (imagenFondoUrl != null) {
             System.out.println("Guardando imagen de fondo URL: " + imagenFondoUrl);
             empresa.setImagenFondoUrl(imagenFondoUrl);
         }
+        if (instagramUrl != null) {
+            System.out.println("Guardando Instagram URL: " + instagramUrl);
+            empresa.setInstagramUrl(instagramUrl);
+        }
+        if (facebookUrl != null) {
+            System.out.println("Guardando Facebook URL: " + facebookUrl);
+            empresa.setFacebookUrl(facebookUrl);
+        }
 
         empresa = empresaRepository.save(empresa);
         System.out.println("Empresa guardada. Imagen de fondo final: " + empresa.getImagenFondoUrl());
+        System.out.println("Después de guardar - Color Título Principal: " + empresa.getColorTituloPrincipal());
+        System.out.println("Después de guardar - Color Card Filtros: " + empresa.getColorCardFiltros());
         System.out.println("=== FIN DEBUG SERVICIO ===");
         return new EmpresaDTO(empresa);
     }
@@ -173,6 +198,11 @@ public class EmpresaService {
      * Actualiza la configuración de una empresa con validaciones
      */
     public EmpresaDTO actualizarConfiguracionEmpresa(Long empresaId, EmpresaDTO empresaDTO) {
+        System.out.println("=== DEBUG ACTUALIZAR CONFIGURACIÓN EMPRESA ===");
+        System.out.println("Empresa ID: " + empresaId);
+        System.out.println("Color Título Principal recibido: " + empresaDTO.getColorTituloPrincipal());
+        System.out.println("Color Card Filtros recibido: " + empresaDTO.getColorCardFiltros());
+        
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
 
@@ -227,6 +257,21 @@ public class EmpresaService {
         if (empresaDTO.getColorSecundario() != null) {
             empresa.setColorSecundario(empresaDTO.getColorSecundario());
         }
+        if (empresaDTO.getColorAcento() != null) {
+            empresa.setColorAcento(empresaDTO.getColorAcento());
+        }
+        if (empresaDTO.getColorFondo() != null) {
+            empresa.setColorFondo(empresaDTO.getColorFondo());
+        }
+        if (empresaDTO.getColorTexto() != null) {
+            empresa.setColorTexto(empresaDTO.getColorTexto());
+        }
+        if (empresaDTO.getColorTituloPrincipal() != null) {
+            empresa.setColorTituloPrincipal(empresaDTO.getColorTituloPrincipal());
+        }
+        if (empresaDTO.getColorCardFiltros() != null) {
+            empresa.setColorCardFiltros(empresaDTO.getColorCardFiltros());
+        }
         if (empresaDTO.getMoneda() != null) {
             empresa.setMoneda(empresaDTO.getMoneda());
         }
@@ -241,6 +286,9 @@ public class EmpresaService {
         
 
         empresa = empresaRepository.save(empresa);
+        System.out.println("Configuración guardada - Color Título Principal: " + empresa.getColorTituloPrincipal());
+        System.out.println("Configuración guardada - Color Card Filtros: " + empresa.getColorCardFiltros());
+        System.out.println("=== FIN DEBUG ACTUALIZAR CONFIGURACIÓN ===");
         return new EmpresaDTO(empresa);
     }
 

@@ -21,6 +21,8 @@ public class EmpresaDTO {
     private String colorAcento;
     private String colorFondo;
     private String colorTexto;
+    private String colorTituloPrincipal;
+    private String colorCardFiltros;
     private String imagenFondoUrl;
     private String moneda;
     
@@ -56,6 +58,8 @@ public class EmpresaDTO {
         this.colorAcento = empresa.getColorAcento();
         this.colorFondo = empresa.getColorFondo();
         this.colorTexto = empresa.getColorTexto();
+        this.colorTituloPrincipal = empresa.getColorTituloPrincipal();
+        this.colorCardFiltros = empresa.getColorCardFiltros();
         this.imagenFondoUrl = empresa.getImagenFondoUrl();
         this.moneda = empresa.getMoneda();
         this.instagramUrl = empresa.getInstagramUrl();
@@ -103,6 +107,12 @@ public class EmpresaDTO {
 
     public String getColorTexto() { return colorTexto; }
     public void setColorTexto(String colorTexto) { this.colorTexto = colorTexto; }
+
+    public String getColorTituloPrincipal() { return colorTituloPrincipal; }
+    public void setColorTituloPrincipal(String colorTituloPrincipal) { this.colorTituloPrincipal = colorTituloPrincipal; }
+
+    public String getColorCardFiltros() { return colorCardFiltros; }
+    public void setColorCardFiltros(String colorCardFiltros) { this.colorCardFiltros = colorCardFiltros; }
 
     public String getImagenFondoUrl() { return imagenFondoUrl; }
     public void setImagenFondoUrl(String imagenFondoUrl) { this.imagenFondoUrl = imagenFondoUrl; }

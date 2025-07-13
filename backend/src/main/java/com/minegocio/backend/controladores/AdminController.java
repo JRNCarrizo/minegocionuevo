@@ -77,6 +77,8 @@ public class AdminController {
             System.out.println("  - Acento: " + empresa.getColorAcento());
             System.out.println("  - Fondo: " + empresa.getColorFondo());
             System.out.println("  - Texto: " + empresa.getColorTexto());
+            System.out.println("  - Título Principal: " + empresa.getColorTituloPrincipal());
+            System.out.println("  - Card Filtros: " + empresa.getColorCardFiltros());
             System.out.println("  - Imagen Fondo: " + empresa.getImagenFondoUrl());
             System.out.println("=== FIN DEBUG ===");
             
@@ -94,6 +96,8 @@ public class AdminController {
             empresaDTO.setColorAcento(empresa.getColorAcento());
             empresaDTO.setColorFondo(empresa.getColorFondo());
             empresaDTO.setColorTexto(empresa.getColorTexto());
+            empresaDTO.setColorTituloPrincipal(empresa.getColorTituloPrincipal());
+            empresaDTO.setColorCardFiltros(empresa.getColorCardFiltros());
             empresaDTO.setImagenFondoUrl(empresa.getImagenFondoUrl());
             empresaDTO.setMoneda(empresa.getMoneda());
             empresaDTO.setInstagramUrl(empresa.getInstagramUrl());
@@ -311,7 +315,7 @@ public class AdminController {
             String urlImagen = cloudinaryService.subirImagen(archivo, empresa.getId(), "fondo");
             
             // Guardar la URL en la empresa
-            EmpresaDTO empresaDTO = empresaService.actualizarPersonalizacion(empresa.getId(), null, null, null, null, null, null, urlImagen);
+            EmpresaDTO empresaDTO = empresaService.actualizarPersonalizacion(empresa.getId(), null, null, null, null, null, null,null,null, urlImagen, null, null);
             
             System.out.println("=== DEBUG SUBIDA FONDO ===");
             System.out.println("Empresa ID: " + empresa.getId());
@@ -366,8 +370,8 @@ public class AdminController {
             // Actualizar solo la imagen de fondo
             EmpresaDTO empresaDTO = empresaService.actualizarPersonalizacion(
                 empresa.getId(), 
-                null, null, null, null, null, null, 
-                urlImagenPrueba
+                null, null, null, null, null, null,null,null,
+                urlImagenPrueba, null, null
             );
             
             System.out.println("Empresa actualizada: " + empresaDTO.getImagenFondoUrl());
