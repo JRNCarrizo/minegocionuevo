@@ -90,35 +90,11 @@ const GestionProductos: React.FC = () => {
       setError('');
       
       console.log('Cargando productos para empresa:', empresaId);
-      console.log('Filtros aplicados:', filtros);
       
-      let productos: Producto[] = [];
-      
-      // Usar el endpoint específico para filtrar por código de barras si se especifica
-      if (filtros.codigoBarras) {
-        console.log('Filtrando por código de barras:', filtros.codigoBarras);
-        productos = await ApiService.obtenerProductosPorCodigoBarras(empresaId, filtros.codigoBarras, filtros.activo);
-      }
-      // Usar el endpoint específico para filtrar por código personalizado si se especifica
-      else if (filtros.codigoPersonalizado) {
-        console.log('Filtrando por código personalizado:', filtros.codigoPersonalizado);
-        productos = await ApiService.obtenerProductosPorCodigo(empresaId, filtros.codigoPersonalizado, filtros.activo);
-      }
-      // Usar el endpoint específico para filtrar por sector si se especifica
-      else if (filtros.sectorAlmacenamiento) {
-        console.log('Filtrando por sector:', filtros.sectorAlmacenamiento);
-        productos = await ApiService.obtenerProductosPorSector(empresaId, filtros.sectorAlmacenamiento, filtros.activo);
-      }
-      // Usar el endpoint específico para filtrar por estado si se especifica
-      else if (filtros.activo !== undefined) {
-        console.log('Filtrando por estado activo:', filtros.activo);
-        productos = await ApiService.obtenerProductosPorEstado(empresaId, filtros.activo);
-      } else {
-        // Obtener todos los productos (activos e inactivos)
-        console.log('Obteniendo todos los productos (activos e inactivos)');
-        const response = await ApiService.obtenerTodosLosProductosIncluirInactivos(empresaId);
-        productos = response.data || [];
-      }
+      // Siempre cargar todos los productos (activos e inactivos) para filtrar localmente
+      console.log('Obteniendo todos los productos (activos e inactivos)');
+      const response = await ApiService.obtenerTodosLosProductosIncluirInactivos(empresaId);
+      const productos = response.data || [];
 
       console.log('Productos cargados del backend:', productos.length, 'productos');
       setProductos(productos);
@@ -153,7 +129,7 @@ const GestionProductos: React.FC = () => {
     } finally {
       setCargando(false);
     }
-  }, [empresaId, filtros]);
+  }, [empresaId]);
 
   const cargarSectoresAlmacenamiento = useCallback(async () => {
     if (!empresaId) return;
@@ -203,36 +179,17 @@ const GestionProductos: React.FC = () => {
     }
   }, [empresaId, cargarProductos, cargarSectoresAlmacenamiento, cargarCodigosPersonalizados, cargarCodigosBarras]);
 
+
+
   // Función para filtrar productos
   const productosFiltrados = productos.filter(producto => {
-    // Filtro por búsqueda (si hay sector o código seleccionado, solo buscar en ese sector/código)
+    // Filtro por búsqueda de texto
     if (busqueda) {
       const textoBusqueda = busqueda.toLowerCase();
       const coincideNombre = producto.nombre.toLowerCase().includes(textoBusqueda);
       const coincideDescripcion = producto.descripcion?.toLowerCase().includes(textoBusqueda);
       const coincideCodigo = producto.codigoPersonalizado?.toLowerCase().includes(textoBusqueda);
       const coincideCodigoBarras = producto.codigoBarras?.toLowerCase().includes(textoBusqueda);
-      
-      // Si hay sector seleccionado, verificar que el producto pertenezca a ese sector
-      if (filtros.sectorAlmacenamiento) {
-        if (producto.sectorAlmacenamiento !== filtros.sectorAlmacenamiento) {
-          return false;
-        }
-      }
-      
-      // Si hay código personalizado seleccionado, verificar que el producto tenga ese código
-      if (filtros.codigoPersonalizado) {
-        if (producto.codigoPersonalizado !== filtros.codigoPersonalizado) {
-          return false;
-        }
-      }
-      
-      // Si hay código de barras seleccionado, verificar que el producto tenga ese código
-      if (filtros.codigoBarras) {
-        if (producto.codigoBarras !== filtros.codigoBarras) {
-          return false;
-        }
-      }
       
       if (!coincideNombre && !coincideDescripcion && !coincideCodigo && !coincideCodigoBarras) {
         return false;
@@ -249,18 +206,18 @@ const GestionProductos: React.FC = () => {
       return false;
     }
 
-    // Filtro por sector de almacenamiento (si no hay búsqueda activa)
-    if (filtros.sectorAlmacenamiento && !busqueda && producto.sectorAlmacenamiento !== filtros.sectorAlmacenamiento) {
+    // Filtro por sector de almacenamiento
+    if (filtros.sectorAlmacenamiento && producto.sectorAlmacenamiento !== filtros.sectorAlmacenamiento) {
       return false;
     }
 
-    // Filtro por código personalizado (si no hay búsqueda activa)
-    if (filtros.codigoPersonalizado && !busqueda && producto.codigoPersonalizado !== filtros.codigoPersonalizado) {
+    // Filtro por código personalizado
+    if (filtros.codigoPersonalizado && producto.codigoPersonalizado !== filtros.codigoPersonalizado) {
       return false;
     }
 
-    // Filtro por código de barras (si no hay búsqueda activa)
-    if (filtros.codigoBarras && !busqueda && producto.codigoBarras !== filtros.codigoBarras) {
+    // Filtro por código de barras
+    if (filtros.codigoBarras && producto.codigoBarras !== filtros.codigoBarras) {
       return false;
     }
 
@@ -278,7 +235,9 @@ const GestionProductos: React.FC = () => {
   });
 
   const limpiarFiltros = () => {
-    setFiltros({});
+    // Mantener solo los filtros que queremos preservar
+    const stockBajoActual = filtros.stockBajo;
+    setFiltros({ stockBajo: stockBajoActual });
     setBusqueda('');
   };
 
@@ -614,42 +573,129 @@ const GestionProductos: React.FC = () => {
                 🔍 Filtros y Búsqueda
               </h3>
               
-              {/* Barra de búsqueda */}
+              {/* Barra de búsqueda con escáner y filtro de stock */}
               <div className="mb-4">
-                <div className="relative">
-                  <div className="absolute" style={{ top: '50%', left: '16px', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                    <span style={{ color: '#64748b', fontSize: '18px' }}>🔍</span>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  {/* Campo de búsqueda por nombre */}
+                  <div className="relative" style={{ flex: 1 }}>
+                    <div className="absolute" style={{ top: '50%', left: '16px', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                      <span style={{ color: '#64748b', fontSize: '18px' }}>🔍</span>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Buscar productos por nombre o descripción..."
+                      value={busqueda}
+                      onChange={(e) => setBusqueda(e.target.value)}
+                      className="campo"
+                      style={{ 
+                        paddingLeft: '48px',
+                        fontSize: '16px',
+                        borderRadius: '12px',
+                        border: '2px solid #e2e8f0',
+                        transition: 'all 0.2s ease',
+                        width: '100%'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#3b82f6';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#e2e8f0';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Buscar productos por nombre o descripción..."
-                    value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
-                    className="campo"
-                    style={{ 
-                      paddingLeft: '48px',
-                      fontSize: '16px',
-                      borderRadius: '12px',
-                      border: '2px solid #e2e8f0',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e2e8f0';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
+
+                  {/* Campo de código de barras con botón de escanear */}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: 'fit-content' }}>
+                    <div className="relative" style={{ minWidth: '200px' }}>
+                      <div className="absolute" style={{ top: '50%', left: '12px', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                        <span style={{ color: '#64748b', fontSize: '16px' }}>📊</span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Código de barras..."
+                        value={filtros.codigoBarras || ''}
+                        onChange={(e) => setFiltros(prev => ({ ...prev, codigoBarras: e.target.value || undefined }))}
+                        className="campo"
+                        style={{ 
+                          paddingLeft: '36px',
+                          fontSize: '14px',
+                          borderRadius: '8px',
+                          border: '2px solid #e2e8f0',
+                          transition: 'all 0.2s ease',
+                          minWidth: '200px'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e2e8f0';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+                    
+                    <button
+                      onClick={abrirScanner}
+                      style={{
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        minHeight: '40px'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.3)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                      title="Escanear código de barras"
+                    >
+                      📷 Escanear
+                    </button>
+                  </div>
+
+                  {/* Checkbox de solo stock bajo */}
+                  <div style={{ minWidth: 'fit-content' }}>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={filtros.stockBajo || false}
+                        onChange={(e) => setFiltros({...filtros, stockBajo: e.target.checked || undefined})}
+                        style={{ 
+                          width: '18px',
+                          height: '18px',
+                          accentColor: '#ef4444'
+                        }}
+                      />
+                      <span style={{ fontSize: '14px', color: '#374151', whiteSpace: 'nowrap' }}>
+                        📉 Solo stock bajo
+                      </span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
               {/* Filtros */}
-              <div className={`grid ${
-                (sectoresAlmacenamiento.length > 0 && codigosPersonalizados.length > 0 && codigosBarras.length > 0) ? 'grid-6' :
-                (sectoresAlmacenamiento.length > 0 && codigosPersonalizados.length > 0) ? 'grid-5' : 'grid-4'
-              } gap-4 mb-4`}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '16px',
+                marginBottom: '16px'
+              }}>
                 <select 
                   value={filtros.categoria || ''} 
                   onChange={(e) => setFiltros({...filtros, categoria: e.target.value || undefined})}
@@ -658,7 +704,20 @@ const GestionProductos: React.FC = () => {
                     fontSize: '14px',
                     borderRadius: '8px',
                     border: '2px solid #e2e8f0',
-                    background: 'white'
+                    background: 'white',
+                    padding: '10px 12px',
+                    minHeight: '44px',
+                    width: '100%',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#3b82f6';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.boxShadow = 'none';
                   }}
                 >
                   <option value="">📂 Todas las categorías</option>
@@ -675,7 +734,20 @@ const GestionProductos: React.FC = () => {
                     fontSize: '14px',
                     borderRadius: '8px',
                     border: '2px solid #e2e8f0',
-                    background: 'white'
+                    background: 'white',
+                    padding: '10px 12px',
+                    minHeight: '44px',
+                    width: '100%',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#3b82f6';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.boxShadow = 'none';
                   }}
                 >
                   <option value="">🏷️ Todas las marcas</option>
@@ -693,7 +765,20 @@ const GestionProductos: React.FC = () => {
                       fontSize: '14px',
                       borderRadius: '8px',
                       border: '2px solid #e2e8f0',
-                      background: 'white'
+                      background: 'white',
+                      padding: '10px 12px',
+                      minHeight: '44px',
+                      width: '100%',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
                     }}
                   >
                     <option value="">🏢 Todos los sectores</option>
@@ -712,7 +797,20 @@ const GestionProductos: React.FC = () => {
                       fontSize: '14px',
                       borderRadius: '8px',
                       border: '2px solid #e2e8f0',
-                      background: 'white'
+                      background: 'white',
+                      padding: '10px 12px',
+                      minHeight: '44px',
+                      width: '100%',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
                     }}
                   >
                     <option value="">🔢 Todos los códigos</option>
@@ -722,72 +820,6 @@ const GestionProductos: React.FC = () => {
                   </select>
                 )}
 
-                {/* Botón para escanear código de barras */}
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <button
-                    onClick={abrirScanner}
-                    style={{
-                      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '8px 16px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      minHeight: '40px'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-1px)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.3)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                    title="Escanear código de barras"
-                  >
-                    📷 Escanear
-                  </button>
-                  
-                  {/* Mostrar código escaneado si existe */}
-                  {filtros.codigoBarras && (
-                    <div style={{
-                      background: '#f0f9ff',
-                      border: '1px solid #bae6fd',
-                      borderRadius: '8px',
-                      padding: '8px 12px',
-                      fontSize: '14px',
-                      color: '#0369a1',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <span>📊 {filtros.codigoBarras}</span>
-                      <button
-                        onClick={() => setFiltros(prev => ({ ...prev, codigoBarras: undefined }))}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#0369a1',
-                          cursor: 'pointer',
-                          fontSize: '16px',
-                          padding: '0',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                        title="Limpiar filtro"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  )}
-                </div>
-
                 <select 
                   value={filtros.activo === undefined ? '' : filtros.activo.toString()} 
                   onChange={(e) => setFiltros({...filtros, activo: e.target.value === '' ? undefined : e.target.value === 'true'})}
@@ -796,7 +828,20 @@ const GestionProductos: React.FC = () => {
                     fontSize: '14px',
                     borderRadius: '8px',
                     border: '2px solid #e2e8f0',
-                    background: 'white'
+                    background: 'white',
+                    padding: '10px 12px',
+                    minHeight: '44px',
+                    width: '100%',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#3b82f6';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.boxShadow = 'none';
                   }}
                 >
                   <option value="">🔄 Todos los estados</option>
@@ -808,24 +853,30 @@ const GestionProductos: React.FC = () => {
               {/* Filtros adicionales */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filtros.stockBajo || false}
-                      onChange={(e) => setFiltros({...filtros, stockBajo: e.target.checked || undefined})}
-                      style={{ 
-                        width: '18px',
-                        height: '18px',
-                        accentColor: '#ef4444'
-                      }}
-                    />
-                    <span style={{ fontSize: '14px', color: '#374151' }}>
-                      📉 Solo stock bajo
-                    </span>
-                  </label>
+                  
                 </div>
 
-                {(busqueda || Object.keys(filtros).length > 0) && (
+              </div>
+            </div>
+
+            {/* Controles de vista */}
+            <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid #e2e8f0' }}>
+              <div className="flex items-center gap-4" style={{flex: 1}}>
+                <div style={{
+                  background: '#f1f5f9',
+                  color: '#64748b',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  fontWeight: '500'
+                }}>
+                  📊 {productosFiltrados.length} de {productos.length} productos
+                </div>
+              </div>
+              
+              {/* Botón Limpiar Filtros centrado */}
+              {(busqueda || Object.keys(filtros).length > 0) && (
+                <div className="flex items-center justify-center" style={{flex: 1}}>
                   <button 
                     onClick={limpiarFiltros} 
                     className="boton boton-secundario"
@@ -851,24 +902,9 @@ const GestionProductos: React.FC = () => {
                   >
                     🗑️ Limpiar filtros
                   </button>
-                )}
-              </div>
-            </div>
-
-            {/* Controles de vista */}
-            <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid #e2e8f0' }}>
-              <div className="flex items-center gap-4" style={{flex: 1}}>
-                <div style={{
-                  background: '#f1f5f9',
-                  color: '#64748b',
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}>
-                  📊 {productosFiltrados.length} de {productos.length} productos
                 </div>
-              </div>
+              )}
+              
               <div className="flex items-center gap-2" style={{flex: 'none', justifyContent: 'flex-end', minWidth: '260px'}}>
                 <span style={{ fontSize: '14px', color: '#64748b', marginRight: '8px' }}>Vista:</span>
                 <button 
