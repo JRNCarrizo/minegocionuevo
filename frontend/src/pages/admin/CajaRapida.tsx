@@ -501,13 +501,14 @@ export default function CajaRapida() {
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: '2rem 1rem'
+        padding: '4rem 1rem 2rem 1rem'
       }}>
         <div style={{
-          marginBottom: '2rem',
+          marginBottom: '3rem',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          paddingTop: '1rem'
         }}>
           <div>
             <h1 style={{
@@ -553,15 +554,15 @@ export default function CajaRapida() {
               e.currentTarget.style.color = '#3b82f6';
             }}
           >
-            ← Volver al Dashboard
+            ← Volver al Panel de Control
           </button>
         </div>
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '400px 1fr',
+          gridTemplateColumns: '350px 1fr 350px',
           gap: '1.5rem',
-          height: 'calc(100vh - 264px)' // Ajustado para navbar fijo
+          height: 'calc(100vh - 320px)' // Ajustado para más espacio del navbar
         }}>
           {/* Panel izquierdo - Controles */}
           <div style={{
@@ -761,109 +762,7 @@ export default function CajaRapida() {
               </div>
             </div>
             
-            {/* Resumen de venta */}
-            <div style={{
-              background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-              borderRadius: '0.75rem',
-              padding: '1.5rem',
-              marginBottom: '1.5rem',
-              border: '2px solid #bbf7d0'
-            }}>
-              <h4 style={{
-                fontSize: '1.125rem',
-                fontWeight: '700',
-                color: '#166534',
-                marginBottom: '1rem',
-                textAlign: 'center'
-              }}>
-                📊 Resumen de Venta
-              </h4>
-              
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginBottom: '0.5rem'
-              }}>
-                <span style={{ color: '#64748b' }}>Productos:</span>
-                <span style={{ fontWeight: '600', color: '#1e293b' }}>{venta.items.length}</span>
-              </div>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginBottom: '0.5rem'
-              }}>
-                <span style={{ color: '#64748b' }}>Unidades:</span>
-                <span style={{ fontWeight: '600', color: '#1e293b' }}>
-                  {venta.items.reduce((sum, item) => sum + item.cantidad, 0)}
-                </span>
-              </div>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                color: '#10b981',
-                borderTop: '2px solid #bbf7d0',
-                paddingTop: '0.75rem',
-                marginTop: '0.75rem'
-              }}>
-                <span>TOTAL:</span>
-                <span>${venta.total.toFixed(2)}</span>
-              </div>
-            </div>
-            
-            {/* Botones de acción */}
-            {venta.items.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <button
-                  onClick={() => setMostrarModalPago(true)}
-                  style={{
-                    width: '100%',
-                    padding: '1rem',
-                    background: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.75rem',
-                    fontSize: '1.125rem',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem'
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.background = '#059669'}
-                  onMouseOut={(e) => e.currentTarget.style.background = '#10b981'}
-                >
-                  💳 Finalizar Venta
-                </button>
-                
-                <button
-                  onClick={limpiarVenta}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.75rem',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem'
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.background = '#dc2626'}
-                  onMouseOut={(e) => e.currentTarget.style.background = '#ef4444'}
-                >
-                  🗑️ Limpiar Venta
-                </button>
-              </div>
-            )}
+
           </div>
           
           {/* Panel derecho - Lista de productos */}
@@ -1053,7 +952,230 @@ export default function CajaRapida() {
             </div>
           </div>
 
+          {/* Panel derecho - Detalles de la cuenta */}
+          <div style={{
+            background: 'white',
+            borderRadius: '1rem',
+            padding: '1.5rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #e2e8f0',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            position: 'sticky',
+            top: '1rem'
+          }}>
+            {/* Título */}
+            <h3 style={{
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              color: '#1e293b',
+              marginBottom: '1.5rem',
+              textAlign: 'center'
+            }}>
+              📊 Detalles de la Cuenta
+            </h3>
 
+            {/* Lista detallada de productos */}
+            <div style={{ 
+              flex: 1, 
+              overflowY: 'auto',
+              marginBottom: '1.5rem'
+            }}>
+              {venta.items.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '2rem',
+                  color: '#64748b'
+                }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📋</div>
+                  <p>No hay productos</p>
+                  <p style={{ fontSize: '0.875rem' }}>Agrega productos para ver detalles</p>
+                </div>
+              ) : (
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '0.75rem'
+                }}>
+                  {venta.items.map((item, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        padding: '0.75rem',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '0.5rem',
+                        background: '#f8fafc',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '0.5rem'
+                      }}>
+                        <div style={{ flex: 1, marginRight: '0.5rem' }}>
+                          <div style={{ 
+                            fontWeight: '600', 
+                            color: '#1e293b',
+                            fontSize: '0.875rem',
+                            lineHeight: '1.3'
+                          }}>
+                            {item.producto.nombre}
+                          </div>
+                          <div style={{ 
+                            fontSize: '0.75rem', 
+                            color: '#64748b',
+                            marginTop: '0.25rem'
+                          }}>
+                            ${item.precioUnitario} c/u
+                          </div>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-end',
+                          gap: '0.25rem'
+                        }}>
+                          <div style={{ 
+                            fontSize: '0.75rem', 
+                            color: '#64748b' 
+                          }}>
+                            {item.cantidad} x ${item.precioUnitario}
+                          </div>
+                          <div style={{ 
+                            fontWeight: '700', 
+                            color: '#1e293b',
+                            fontSize: '0.875rem'
+                          }}>
+                            ${item.subtotal.toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Resumen de totales */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+              borderRadius: '0.75rem',
+              padding: '1.5rem',
+              border: '2px solid #bbf7d0',
+              marginBottom: '1rem'
+            }}>
+              <h4 style={{
+                fontSize: '1.125rem',
+                fontWeight: '700',
+                color: '#166534',
+                marginBottom: '1rem',
+                textAlign: 'center'
+              }}>
+                💰 Resumen de Totales
+              </h4>
+              
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '0.5rem',
+                fontSize: '0.875rem'
+              }}>
+                <span style={{ color: '#64748b' }}>Productos:</span>
+                <span style={{ fontWeight: '600', color: '#1e293b' }}>{venta.items.length}</span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '0.5rem',
+                fontSize: '0.875rem'
+              }}>
+                <span style={{ color: '#64748b' }}>Unidades:</span>
+                <span style={{ fontWeight: '600', color: '#1e293b' }}>
+                  {venta.items.reduce((sum, item) => sum + item.cantidad, 0)}
+                </span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '0.75rem',
+                fontSize: '0.875rem'
+              }}>
+                <span style={{ color: '#64748b' }}>Subtotal:</span>
+                <span style={{ fontWeight: '600', color: '#1e293b' }}>
+                  ${venta.subtotal.toFixed(2)}
+                </span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                color: '#10b981',
+                borderTop: '2px solid #bbf7d0',
+                paddingTop: '0.75rem',
+                marginTop: '0.75rem'
+              }}>
+                <span>TOTAL:</span>
+                <span>${venta.total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Botones de acción */}
+            {venta.items.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <button
+                  onClick={() => setMostrarModalPago(true)}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    background: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.75rem',
+                    fontSize: '1.125rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#059669'}
+                  onMouseOut={(e) => e.currentTarget.style.background = '#10b981'}
+                >
+                  💳 Finalizar Venta
+                </button>
+                
+                <button
+                  onClick={limpiarVenta}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.75rem',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#dc2626'}
+                  onMouseOut={(e) => e.currentTarget.style.background = '#ef4444'}
+                >
+                  🗑️ Limpiar Venta
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
