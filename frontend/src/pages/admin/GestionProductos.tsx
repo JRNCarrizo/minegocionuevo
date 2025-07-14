@@ -40,6 +40,16 @@ const GestionProductos: React.FC = () => {
   const [modalDetalleAbierto, setModalDetalleAbierto] = useState(false);
   // Estados para el escáner de códigos de barras
   const [mostrarScanner, setMostrarScanner] = useState(false);
+  
+  // Estados para el sistema de escáner de stock
+  const [mostrarScannerStock, setMostrarScannerStock] = useState(false);
+  const [mostrarScannerUSB, setMostrarScannerUSB] = useState(false);
+  const [productoEscaneado, setProductoEscaneado] = useState<Producto | null>(null);
+  const [cantidadStock, setCantidadStock] = useState<number>(1);
+  const [productosAgregados, setProductosAgregados] = useState<Array<{producto: Producto, cantidad: number}>>([]);
+  const [mostrarResumen, setMostrarResumen] = useState(false);
+  const [guardandoStock, setGuardandoStock] = useState(false);
+  
   // Estados para paginación (TODO: implementar cuando sea necesario)
   // const [paginaActual, setPaginaActual] = useState(0);
   // const [totalPaginas, setTotalPaginas] = useState(1);
@@ -422,6 +432,125 @@ const GestionProductos: React.FC = () => {
     setMostrarScanner(true);
   };
 
+  // Funciones para el sistema de escáner de stock
+  const abrirScannerStock = () => {
+    setMostrarScannerStock(true);
+    setProductoEscaneado(null);
+    setCantidadStock(1);
+    setProductosAgregados([]);
+    setMostrarResumen(false);
+  };
+
+  const abrirScannerUSB = () => {
+    setMostrarScannerUSB(true);
+    setProductoEscaneado(null);
+    setCantidadStock(1);
+    setProductosAgregados([]);
+    setMostrarResumen(false);
+  };
+
+  const manejarEscaneoStock = async (codigoBarras: string) => {
+    console.log("📦 Código escaneado para agregar stock:", codigoBarras);
+    
+    // Buscar el producto por código de barras
+    const producto = productos.find(p => p.codigoBarras === codigoBarras);
+    
+    if (producto) {
+      // Guardar automáticamente con cantidad por defecto (1)
+      try {
+        setGuardandoStock(true);
+        
+        // Agregar el producto a la lista de productos agregados
+        const nuevoProducto = { producto, cantidad: 1 };
+        setProductosAgregados(prev => [...prev, nuevoProducto]);
+        
+        // Actualizar el stock en el servidor
+        const nuevoStock = producto.stock + 1;
+        await ApiService.actualizarStock(empresaId!, producto.id, nuevoStock);
+        
+        // Actualizar el estado local
+        setProductos(prev => prev.map(p => 
+          p.id === producto.id ? { ...p, stock: nuevoStock } : p
+        ));
+        
+        // Mostrar el producto escaneado con stock actualizado
+        setProductoEscaneado({ ...producto, stock: nuevoStock });
+        setCantidadStock(1);
+        setMostrarScannerStock(false);
+        
+      } catch (error) {
+        console.error('Error al agregar stock:', error);
+        alert('Error al agregar stock. Por favor, intenta nuevamente.');
+      } finally {
+        setGuardandoStock(false);
+      }
+    } else {
+      alert(`❌ Producto no encontrado\n\nEl código de barras "${codigoBarras}" no corresponde a ningún producto en el inventario.`);
+    }
+  };
+
+  const seguirEscaneando = async () => {
+    if (!productoEscaneado || !empresaId) return;
+    
+    try {
+      setGuardandoStock(true);
+      
+      // Actualizar la cantidad del último producto agregado
+      const ultimoProducto = productosAgregados[productosAgregados.length - 1];
+      if (ultimoProducto && ultimoProducto.producto.id === productoEscaneado.id) {
+        // Actualizar la cantidad en la lista
+        setProductosAgregados(prev => prev.map((item, index) => 
+          index === prev.length - 1 ? { ...item, cantidad: cantidadStock } : item
+        ));
+        
+        // Calcular la diferencia de stock
+        const diferenciaStock = cantidadStock - ultimoProducto.cantidad;
+        const nuevoStock = productoEscaneado.stock + diferenciaStock;
+        
+        // Actualizar el stock en el servidor
+        await ApiService.actualizarStock(empresaId, productoEscaneado.id, nuevoStock);
+        
+        // Actualizar el estado local
+        setProductos(prev => prev.map(p => 
+          p.id === productoEscaneado.id ? { ...p, stock: nuevoStock } : p
+        ));
+        
+        // Actualizar el producto escaneado con el nuevo stock
+        setProductoEscaneado({ ...productoEscaneado, stock: nuevoStock });
+      }
+      
+      // Limpiar para el siguiente escaneo
+      setProductoEscaneado(null);
+      setCantidadStock(1);
+      
+      // Volver a abrir el escáner
+      setMostrarScannerStock(true);
+      
+    } catch (error) {
+      console.error('Error al actualizar stock:', error);
+      alert('Error al actualizar stock. Por favor, intenta nuevamente.');
+    } finally {
+      setGuardandoStock(false);
+    }
+  };
+
+  const terminarIngresoStock = () => {
+    setMostrarResumen(true);
+    setMostrarScannerStock(false);
+  };
+
+  const cerrarResumenStock = () => {
+    setMostrarResumen(false);
+    setProductosAgregados([]);
+    setProductoEscaneado(null);
+    setCantidadStock(1);
+  };
+
+  const continuarEscaneando = () => {
+    setMostrarResumen(false);
+    setMostrarScannerStock(true);
+  };
+
   if (cargando) {
     return (
       <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
@@ -450,70 +579,268 @@ const GestionProductos: React.FC = () => {
       />
 
       {/* Contenido principal */}
-      <div className="contenedor py-8" style={{paddingTop: '32px'}}>
-        {/* Header mejorado */}
-        <div className="mb-8" style={{marginBottom: '32px'}}>
-          <div className="flex items-center justify-between mb-6" style={{alignItems: 'flex-start'}}>
-            <div>
-              <h1 className="titulo-2 mb-2" style={{ 
-                fontSize: '32px', 
-                fontWeight: '700', 
-                color: '#1e293b',
-                letterSpacing: '-0.025em',
-                lineHeight: '1.2'
-              }}>
-                📦 Gestión de Productos
-              </h1>
-              <p className="texto-gris" style={{ 
-                fontSize: '16px', 
-                color: '#64748b',
-                marginBottom: '8px'
-              }}>
-                Administra tu inventario y catálogo de productos de manera eficiente
-              </p>
+      <div className="contenedor py-8">
+        {/* Header con título y descripción */}
+        <div style={{
+          marginBottom: '3rem',
+          animation: 'slideInUp 0.6s ease-out 0.1s both'
+        }}>
+          <h1 style={{
+            fontSize: '2.5rem',
+            fontWeight: '700',
+            color: '#1e293b',
+            marginBottom: '1rem',
+            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            Gestión de Productos
+          </h1>
+          <p style={{
+            fontSize: '1.125rem',
+            color: '#64748b',
+            lineHeight: '1.6'
+          }}>
+            Administra tu catálogo de productos, añade nuevos items y gestiona el inventario de tu negocio.
+          </p>
+        </div>
+
+        {/* Acciones rápidas */}
+        <div style={{
+          marginBottom: '3rem',
+          animation: 'slideInUp 0.6s ease-out 0.2s both'
+        }}>
+          <h2 style={{
+            fontSize: '1.875rem',
+            fontWeight: '600',
+            color: '#1e293b',
+            marginBottom: '1.5rem'
+          }}>
+            Acciones Rápidas
+          </h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '1.5rem'
+          }}>
+            {/* Tarjeta Nuevo Producto */}
+            <div 
+              onClick={() => navigate('/admin/productos/nuevo')}
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                animation: 'slideInUp 0.6s ease-out 0.3s both'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = '#667eea';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+              }}
+            >
               <div style={{
-                height: '4px',
-                width: '60px',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                borderRadius: '2px',
-                marginTop: '16px'
-              }}></div>
-            </div>
-            <div style={{flex: 'none', display: 'flex', justifyContent: 'flex-end', width: '260px'}}>
-              <button 
-                className="boton boton-primario"
-                onClick={() => navigate('/admin/productos/nuevo')}
-                style={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 6px rgba(16,185,129,0.18)',
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  borderRadius: '0.75rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  height: '40px',
-                  minWidth: 'auto',
-                  marginLeft: 0,
-                  marginTop: 0
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(16,185,129,0.25)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 6px rgba(16,185,129,0.18)';
-                }}
-              >
-                <span style={{ fontSize: '16px' }}>➕</span>
-                Nuevo Producto
-              </button>
+                  justifyContent: 'center',
+                  fontSize: '1.25rem',
+                  marginRight: '0.75rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}>
+                  ➕
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Nuevo Producto
+                  </h3>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Añade un nuevo producto a tu inventario
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: '#667eea',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                Crear producto →
+              </div>
+            </div>
+
+            {/* Tarjeta Agregar Stock */}
+            <div 
+              onClick={abrirScannerStock}
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                animation: 'slideInUp 0.6s ease-out 0.4s both'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = '#10b981';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.25rem',
+                  marginRight: '0.75rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}>
+                  📦
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Escáner Cámara
+                  </h3>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Escanea códigos de barras para añadir stock
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: '#10b981',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                Escanear productos →
+              </div>
+            </div>
+
+            {/* Tarjeta Escáner USB */}
+            <div 
+              onClick={abrirScannerUSB}
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                animation: 'slideInUp 0.6s ease-out 0.5s both'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = '#3b82f6';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.25rem',
+                  marginRight: '0.75rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}>
+                  🔌
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Escáner USB
+                  </h3>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Usa un escáner físico USB para añadir stock
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: '#3b82f6',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                Conectar escáner →
+              </div>
             </div>
           </div>
         </div>
@@ -2314,6 +2641,679 @@ const GestionProductos: React.FC = () => {
         onScan={manejarEscaneoBarras}
         onClose={() => setMostrarScanner(false)}
       />
+
+      {/* Modal de escáner para agregar stock */}
+      <BarcodeScanner
+        isOpen={mostrarScannerStock}
+        onScan={manejarEscaneoStock}
+        onClose={() => setMostrarScannerStock(false)}
+      />
+
+      {/* Modal de escáner USB para agregar stock */}
+      {mostrarScannerUSB && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            maxWidth: '500px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+              color: 'white',
+              padding: '24px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔗</div>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700' }}>
+                Escáner USB/Bluetooth
+              </h2>
+              <p style={{ margin: 0, fontSize: '16px', opacity: 0.9 }}>
+                Escanea códigos de barras con tu escáner físico
+              </p>
+            </div>
+
+            {/* Contenido */}
+            <div style={{ padding: '24px', flex: 1, overflow: 'auto' }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                border: '1px solid #bae6fd',
+                borderRadius: '12px',
+                padding: '20px',
+                marginBottom: '24px'
+              }}>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+                  📋 Instrucciones:
+                </h3>
+                <ul style={{ margin: 0, paddingLeft: '20px', color: '#374151', lineHeight: '1.6' }}>
+                  <li>Conecta tu escáner USB/Bluetooth al dispositivo</li>
+                  <li>Haz clic en el campo de texto de abajo</li>
+                  <li>Escanea el código de barras del producto</li>
+                  <li>El código se procesará automáticamente</li>
+                </ul>
+              </div>
+
+              {/* Campo de entrada para el escáner */}
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#1e293b',
+                  marginBottom: '12px'
+                }}>
+                  🔗 Código de barras:
+                </label>
+                <input
+                  type="text"
+                  placeholder="Escanea el código aquí..."
+                  autoFocus
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const codigo = e.currentTarget.value.trim();
+                      if (codigo) {
+                        manejarEscaneoStock(codigo);
+                        e.currentTarget.value = '';
+                      }
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    fontSize: '18px',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '8px',
+                    background: 'white',
+                    textAlign: 'center',
+                    fontWeight: '600',
+                    letterSpacing: '1px'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#6366f1';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+                <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: '#64748b', textAlign: 'center' }}>
+                  Presiona Enter o escanea directamente
+                </p>
+              </div>
+
+              {/* Productos ya agregados en esta sesión */}
+              {productosAgregados.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                    📋 Productos agregados en esta sesión:
+                  </h4>
+                  <div style={{ maxHeight: '150px', overflow: 'auto' }}>
+                    {productosAgregados.map((item, index) => (
+                      <div key={index} style={{
+                        background: '#f8fafc',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        marginBottom: '8px',
+                        border: '1px solid #e2e8f0',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                          {item.producto.nombre}
+                        </span>
+                        <span style={{ fontSize: '14px', fontWeight: '600', color: '#059669' }}>
+                          +{item.cantidad}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer con botones */}
+            <div style={{
+              background: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              padding: '20px 24px',
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'space-between'
+            }}>
+              <button
+                onClick={() => setMostrarScannerUSB(false)}
+                style={{
+                  background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 20px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>❌</span>
+                Cancelar
+              </button>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={terminarIngresoStock}
+                  style={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span style={{ fontSize: '16px' }}>✅</span>
+                  Terminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de producto escaneado */}
+      {productoEscaneado && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            maxWidth: '500px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              color: 'white',
+              padding: '24px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>📦</div>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700' }}>
+                Producto Agregado
+              </h2>
+              <p style={{ margin: 0, fontSize: '16px', opacity: 0.9 }}>
+                Ajusta la cantidad si es necesario
+              </p>
+            </div>
+
+                        {/* Contenido */}
+            <div style={{ padding: '24px', flex: 1, overflow: 'auto' }}>
+              {/* Información del producto con cantidad integrada */}
+              <div style={{
+                background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                borderRadius: '12px',
+                padding: '20px',
+                marginBottom: '24px',
+                border: '2px solid #e2e8f0'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                  {/* Imagen del producto */}
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    background: 'white',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '24px',
+                    border: '2px solid #e2e8f0',
+                    flexShrink: 0
+                  }}>
+                    {productoEscaneado.imagenes && productoEscaneado.imagenes.length > 0 ? (
+                      <img 
+                        src={productoEscaneado.imagenes[0]} 
+                        alt={productoEscaneado.nombre}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '6px' }}
+                      />
+                    ) : (
+                      '📦'
+                    )}
+                  </div>
+                  
+                  {/* Información del producto */}
+                  <div style={{ flex: 1, marginBottom: '16px' }}>
+                    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>
+                      {productoEscaneado.nombre}
+                    </h3>
+                    <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#64748b' }}>
+                      Código: {productoEscaneado.codigoBarras || 'Sin código'}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
+                      Stock actual: <strong style={{ color: '#059669' }}>{productoEscaneado.stock}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Cantidad a agregar - integrada en la misma tarjeta */}
+                <div style={{
+                  background: 'white',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  border: '1px solid #e2e8f0'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <label style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#1e293b',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      📊 Ajustar cantidad:
+                    </label>
+                    <input
+                      type="number"
+                      value={cantidadStock}
+                      onChange={(e) => setCantidadStock(Math.max(1, parseInt(e.target.value) || 1))}
+                      min="1"
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        fontSize: '18px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '8px',
+                        background: 'white',
+                        textAlign: 'center',
+                        fontWeight: '600',
+                        maxWidth: '120px'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#f59e0b';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#e2e8f0';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                    <div style={{
+                      background: '#dcfce7',
+                      color: '#059669',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      border: '1px solid #bbf7d0',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      Nuevo: <strong>{productoEscaneado.stock + cantidadStock}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Productos ya agregados en esta sesión */}
+              {productosAgregados.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                    📋 Productos agregados en esta sesión:
+                  </h4>
+                  <div style={{ maxHeight: '150px', overflow: 'auto' }}>
+                    {productosAgregados.map((item, index) => (
+                      <div key={index} style={{
+                        background: '#f8fafc',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        marginBottom: '8px',
+                        border: '1px solid #e2e8f0',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                          {item.producto.nombre}
+                        </span>
+                        <span style={{ fontSize: '14px', fontWeight: '600', color: '#059669' }}>
+                          +{item.cantidad}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer con botones */}
+            <div style={{
+              background: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              padding: '20px 24px',
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'space-between'
+            }}>
+              <button
+                onClick={() => setProductoEscaneado(null)}
+                style={{
+                  background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 20px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>❌</span>
+                Cancelar
+              </button>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={terminarIngresoStock}
+                  style={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span style={{ fontSize: '16px' }}>✅</span>
+                  Terminar
+                </button>
+
+                <button
+                  onClick={seguirEscaneando}
+                  disabled={guardandoStock}
+                  style={{
+                    background: guardandoStock 
+                      ? '#9ca3af' 
+                      : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: guardandoStock ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: guardandoStock ? 0.7 : 1
+                  }}
+                >
+                  {guardandoStock ? (
+                    <>
+                      <div className="spinner" style={{ width: '16px', height: '16px' }}></div>
+                      Actualizando...
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: '16px' }}>📦</span>
+                      Seguir Escaneando
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de resumen final */}
+      {mostrarResumen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: 'white',
+              padding: '24px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>📊</div>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700' }}>
+                Resumen de Ingreso de Stock
+              </h2>
+              <p style={{ margin: 0, fontSize: '16px', opacity: 0.9 }}>
+                Productos agregados exitosamente
+              </p>
+            </div>
+
+            {/* Contenido */}
+            <div style={{ padding: '24px', flex: 1, overflow: 'auto' }}>
+              {productosAgregados.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>📦</div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#374151' }}>
+                    No se agregaron productos
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
+                    No se escanearon productos en esta sesión
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+                      📋 Productos agregados ({productosAgregados.length}):
+                    </h3>
+                    <div style={{ maxHeight: '300px', overflow: 'auto' }}>
+                      {productosAgregados.map((item, index) => (
+                        <div key={index} style={{
+                          background: '#f8fafc',
+                          padding: '16px',
+                          borderRadius: '8px',
+                          marginBottom: '12px',
+                          border: '1px solid #e2e8f0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '16px'
+                        }}>
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            background: 'white',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '16px',
+                            border: '1px solid #e2e8f0'
+                          }}>
+                                                         {item.producto.imagenes && item.producto.imagenes.length > 0 ? (
+                               <img 
+                                 src={item.producto.imagenes[0]} 
+                                 alt={item.producto.nombre}
+                                 style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
+                               />
+                             ) : (
+                               '📦'
+                             )}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                              {item.producto.nombre}
+                            </h4>
+                            <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#64748b' }}>
+                              Código: {item.producto.codigoBarras || 'Sin código'}
+                            </p>
+                            <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
+                              Stock anterior: <strong>{item.producto.stock - item.cantidad}</strong> → 
+                              Stock actual: <strong style={{ color: '#059669' }}>{item.producto.stock}</strong>
+                            </p>
+                          </div>
+                          <div style={{
+                            background: '#dcfce7',
+                            color: '#059669',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            border: '1px solid #bbf7d0'
+                          }}>
+                            +{item.cantidad}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                    border: '1px solid #bbf7d0',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    textAlign: 'center'
+                  }}>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '600', color: '#059669' }}>
+                      ✅ Ingreso completado exitosamente
+                    </h4>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#047857' }}>
+                      Total de productos: {productosAgregados.length} | 
+                      Total de unidades: {productosAgregados.reduce((sum, item) => sum + item.cantidad, 0)}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer con botones */}
+            <div style={{
+              background: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              padding: '20px 24px',
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={cerrarResumenStock}
+                style={{
+                  background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>✕</span>
+                Cerrar
+              </button>
+
+              {productosAgregados.length > 0 && (
+                <button
+                  onClick={continuarEscaneando}
+                  style={{
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '12px 24px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span style={{ fontSize: '16px' }}>📦</span>
+                  Continuar Escaneando
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

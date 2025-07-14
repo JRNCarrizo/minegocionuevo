@@ -12,6 +12,36 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose, isOpen
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Función para reproducir el sonido "pi"
+  const playBeepSound = () => {
+    try {
+      // Crear un contexto de audio
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Crear un oscilador para generar el tono
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      // Configurar el tono (frecuencia de 800Hz para un "pi" agudo)
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      // Configurar el volumen y la duración
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      // Conectar los nodos
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Reproducir el sonido
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+      console.log('No se pudo reproducir el sonido:', error);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && !scannerRef.current) {
       initializeScanner();
@@ -83,6 +113,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose, isOpen
         (decodedText: string) => {
           // Código escaneado exitosamente
           console.log("✅ Código escaneado:", decodedText);
+          playBeepSound(); // Reproducir sonido "pi"
           onScan(decodedText);
           closeScanner();
         },
@@ -128,6 +159,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose, isOpen
   const handleManualInput = () => {
     const manualCode = prompt("Ingresa el código de barras manualmente:");
     if (manualCode && manualCode.trim()) {
+      playBeepSound(); // Reproducir sonido "pi"
       onScan(manualCode.trim());
       onClose();
     }
