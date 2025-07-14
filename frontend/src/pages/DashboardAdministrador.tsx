@@ -518,17 +518,8 @@ export default function DashboardAdministrador() {
                 padding: '2rem',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                 border: '1px solid #e2e8f0',
-                transition: 'all 0.3s ease',
                 animation: `slideInUp 0.6s ease-out ${index * 0.1}s both`,
                 gridColumn: tarjeta.titulo === 'Ventas' ? 'span 2' : 'span 1'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
               }}
             >
               {tarjeta.titulo === 'Ventas' ? (
