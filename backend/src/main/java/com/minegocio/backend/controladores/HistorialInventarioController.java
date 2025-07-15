@@ -297,32 +297,6 @@ public class HistorialInventarioController {
             System.out.println("=== FIN DEBUG ENDPOINT ===");
             
             return ResponseEntity.ok(debugInfo);
-            System.out.println("Total de registros en la tabla: " + todos.size());
-            
-            // Filtrar por empresa
-            List<HistorialInventario> deEstaEmpresa = todos.stream()
-                    .filter(h -> h.getEmpresa().getId().equals(empresaId))
-                    .collect(java.util.stream.Collectors.toList());
-            
-            System.out.println("Registros de esta empresa: " + deEstaEmpresa.size());
-            
-            if (!deEstaEmpresa.isEmpty()) {
-                System.out.println("Último registro:");
-                HistorialInventario ultimo = deEstaEmpresa.get(0);
-                System.out.println("  ID: " + ultimo.getId());
-                System.out.println("  Producto: " + ultimo.getProducto().getNombre());
-                System.out.println("  Tipo: " + ultimo.getTipoOperacion());
-                System.out.println("  Cantidad: " + ultimo.getCantidad());
-                System.out.println("  Fecha: " + ultimo.getFechaOperacion());
-            }
-            
-            System.out.println("=== FIN DEBUG ENDPOINT ===");
-            
-            return ResponseEntity.ok(java.util.Map.of(
-                "totalRegistros", todos.size(),
-                "registrosEmpresa", deEstaEmpresa.size(),
-                "empresaId", empresaId
-            ));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -331,7 +305,7 @@ public class HistorialInventarioController {
     }
     
     /**
-     * Endpoint de prueba para crear un registro de historial manualmente
+     * Endpoint de prueba para crear múltiples registros de historial
      */
     @PostMapping("/test-registro")
     public ResponseEntity<?> testRegistro() {
@@ -339,40 +313,109 @@ public class HistorialInventarioController {
             Long empresaId = obtenerEmpresaIdDelUsuarioAutenticado();
             Long usuarioId = obtenerUsuarioIdDelUsuarioAutenticado();
             
-            System.out.println("=== TEST REGISTRO MANUAL ===");
+            System.out.println("=== CREANDO OPERACIONES DE PRUEBA ===");
             System.out.println("Empresa ID: " + empresaId);
             System.out.println("Usuario ID: " + usuarioId);
             
-            // Crear un request de prueba
-            InventarioRequestDTO request = new InventarioRequestDTO();
-            request.setProductoId(1L); // Asumiendo que existe un producto con ID 1
-            request.setTipoOperacion("INCREMENTO");
-            request.setCantidad(10);
-            request.setPrecioUnitario(new java.math.BigDecimal("100.00"));
-            request.setObservacion("Prueba manual desde endpoint");
-            request.setCodigoBarras("123456789");
-            request.setMetodoEntrada("MANUAL");
+            // Crear múltiples operaciones de prueba
+            List<InventarioRequestDTO> operacionesPrueba = new ArrayList<>();
             
-            // Intentar registrar
-            ApiResponse<HistorialInventarioDTO> response = historialInventarioService
-                    .registrarOperacionInventario(request, usuarioId, empresaId);
+            // Operación 1: Incremento
+            InventarioRequestDTO op1 = new InventarioRequestDTO();
+            op1.setProductoId(1L);
+            op1.setTipoOperacion("INCREMENTO");
+            op1.setCantidad(10);
+            op1.setPrecioUnitario(new BigDecimal("29.99"));
+            op1.setObservacion("Compra de stock inicial");
+            op1.setCodigoBarras("123456789");
+            op1.setMetodoEntrada("manual");
+            operacionesPrueba.add(op1);
             
-            System.out.println("Respuesta del servicio: " + response.isSuccess());
-            System.out.println("Mensaje: " + response.getMensaje());
+            // Operación 2: Decremento
+            InventarioRequestDTO op2 = new InventarioRequestDTO();
+            op2.setProductoId(2L);
+            op2.setTipoOperacion("DECREMENTO");
+            op2.setCantidad(5);
+            op2.setPrecioUnitario(new BigDecimal("79.99"));
+            op2.setObservacion("Venta a cliente");
+            op2.setCodigoBarras("987654321");
+            op2.setMetodoEntrada("manual");
+            operacionesPrueba.add(op2);
             
-            if (response.isSuccess()) {
-                System.out.println("✅ Registro creado exitosamente");
-            } else {
-                System.out.println("❌ Error al crear registro: " + response.getMensaje());
+            // Operación 3: Ajuste
+            InventarioRequestDTO op3 = new InventarioRequestDTO();
+            op3.setProductoId(3L);
+            op3.setTipoOperacion("AJUSTE");
+            op3.setCantidad(15);
+            op3.setStockNuevo(15);
+            op3.setPrecioUnitario(new BigDecimal("199.99"));
+            op3.setObservacion("Ajuste de inventario físico");
+            op3.setCodigoBarras("456789123");
+            op3.setMetodoEntrada("manual");
+            operacionesPrueba.add(op3);
+            
+            // Operación 4: Incremento adicional
+            InventarioRequestDTO op4 = new InventarioRequestDTO();
+            op4.setProductoId(1L);
+            op4.setTipoOperacion("INCREMENTO");
+            op4.setCantidad(20);
+            op4.setPrecioUnitario(new BigDecimal("29.99"));
+            op4.setObservacion("Reposición de stock");
+            op4.setCodigoBarras("123456789");
+            op4.setMetodoEntrada("manual");
+            operacionesPrueba.add(op4);
+            
+            // Operación 5: Decremento adicional
+            InventarioRequestDTO op5 = new InventarioRequestDTO();
+            op5.setProductoId(4L);
+            op5.setTipoOperacion("DECREMENTO");
+            op5.setCantidad(3);
+            op5.setPrecioUnitario(new BigDecimal("199.99"));
+            op5.setObservacion("Venta de monitor");
+            op5.setCodigoBarras("789123456");
+            op5.setMetodoEntrada("manual");
+            operacionesPrueba.add(op5);
+            
+            // Operación 6: Inventario físico
+            InventarioRequestDTO op6 = new InventarioRequestDTO();
+            op6.setProductoId(5L);
+            op6.setTipoOperacion("INVENTARIO_FISICO");
+            op6.setCantidad(8);
+            op6.setStockNuevo(8);
+            op6.setPrecioUnitario(new BigDecimal("299.99"));
+            op6.setObservacion("Conteo físico");
+            op6.setCodigoBarras("321654987");
+            op6.setMetodoEntrada("manual");
+            operacionesPrueba.add(op6);
+            
+            List<HistorialInventarioDTO> operacionesCreadas = new ArrayList<>();
+            
+            for (InventarioRequestDTO operacion : operacionesPrueba) {
+                ApiResponse<HistorialInventarioDTO> response = historialInventarioService
+                        .registrarOperacionInventario(operacion, usuarioId, empresaId);
+                
+                if (response.isSuccess()) {
+                    operacionesCreadas.add(response.getData());
+                    System.out.println("✅ Operación creada: " + operacion.getTipoOperacion() + " - " + operacion.getCantidad() + " unidades");
+                } else {
+                    System.out.println("❌ Error al crear operación: " + response.getMessage());
+                }
             }
             
-            System.out.println("=== FIN TEST REGISTRO MANUAL ===");
+            System.out.println("Total operaciones creadas: " + operacionesCreadas.size());
+            System.out.println("=== FIN CREANDO OPERACIONES DE PRUEBA ===");
             
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Operaciones de prueba creadas",
+                "operacionesCreadas", operacionesCreadas.size(),
+                "detalles", operacionesCreadas
+            ));
+            
         } catch (Exception e) {
+            System.err.println("Error en test-registro: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(java.util.Map.of("error", e.getMessage()));
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error al crear operaciones de prueba: " + e.getMessage()));
         }
     }
     
