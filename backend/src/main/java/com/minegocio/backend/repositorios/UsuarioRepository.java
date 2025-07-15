@@ -68,4 +68,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      */
     @Query("SELECT u FROM Usuario u WHERE u.empresa = :empresa AND u.rol = 'ADMINISTRADOR' ORDER BY u.fechaCreacion ASC")
     Optional<Usuario> findAdministradorPrincipal(@Param("empresa") Empresa empresa);
+
+    /**
+     * Busca usuario por ID y empresa ID
+     */
+    Optional<Usuario> findByIdAndEmpresaId(Long id, Long empresaId);
 }

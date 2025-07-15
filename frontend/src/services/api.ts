@@ -190,8 +190,6 @@ class ApiService {
       colorAcento?: string;
       colorFondo?: string;
       colorTexto?: string;
-      colorTituloPrincipal?: string;
-      colorCardFiltros?: string;
       imagenFondoUrl?: string;
     }
   ): Promise<ApiResponse<{ mensaje: string; empresa: Empresa }>> {
@@ -731,6 +729,62 @@ class ApiService {
     const response = await this.api.delete(`/notificaciones/empresa/${empresaId}/eliminar-multiples`, {
       data: notificacionIds
     });
+    return response.data;
+  }
+
+  // Métodos de inventario
+  async registrarOperacionInventario(request: any) {
+    const response = await this.api.post('/admin/inventario/operacion', request);
+    return response.data;
+  }
+
+  async obtenerHistorialInventario(pagina: number = 0, tamano: number = 20) {
+    const response = await this.api.get(`/admin/inventario/historial?pagina=${pagina}&tamano=${tamano}`);
+    return response.data;
+  }
+
+  async obtenerEstadisticasInventario() {
+    const response = await this.api.get('/admin/inventario/estadisticas');
+    return response.data;
+  }
+
+  async obtenerHistorialInventarioPorProducto(productoId: number) {
+    const response = await this.api.get(`/admin/inventario/historial/producto/${productoId}`);
+    return response.data;
+  }
+
+  async obtenerHistorialInventarioPorFechas(fechaInicio: string, fechaFin: string) {
+    const response = await this.api.get(`/admin/inventario/historial/fechas?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+    return response.data;
+  }
+
+  async obtenerEstadisticasInventarioPorFechas(fechaInicio: string, fechaFin: string) {
+    const response = await this.api.get(`/admin/inventario/estadisticas/fechas?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+    return response.data;
+  }
+
+  async obtenerProductosMasMovidosInventario(limite: number = 10) {
+    const response = await this.api.get(`/admin/inventario/productos-mas-movidos?limite=${limite}`);
+    return response.data;
+  }
+
+  async obtenerUsuariosMasActivosInventario(limite: number = 10) {
+    const response = await this.api.get(`/admin/inventario/usuarios-mas-activos?limite=${limite}`);
+    return response.data;
+  }
+
+  async buscarHistorialPorCodigoBarras(codigoBarras: string) {
+    const response = await this.api.get(`/admin/inventario/buscar/codigo-barras/${codigoBarras}`);
+    return response.data;
+  }
+
+  async debugInventario() {
+    const response = await this.api.get('/admin/inventario/debug');
+    return response.data;
+  }
+
+  async crearOperacionesPrueba() {
+    const response = await this.api.post('/admin/inventario/test-registro');
     return response.data;
   }
 }

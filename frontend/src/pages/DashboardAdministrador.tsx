@@ -159,6 +159,13 @@ export default function DashboardAdministrador() {
       color: '#3b82f6'
     },
     {
+      titulo: 'Control de Inventario',
+      descripcion: 'Realiza conteo físico y control de stock',
+      icono: '🔍',
+      enlace: '/admin/control-inventario',
+      color: '#dc2626'
+    },
+    {
       titulo: 'Gestionar Clientes',
       descripcion: 'Administra tu base de clientes',
       icono: '👤',

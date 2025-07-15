@@ -1,8 +1,10 @@
 package com.minegocio.backend.servicios;
 
 import com.minegocio.backend.dto.ProductoDTO;
+import com.minegocio.backend.dto.InventarioRequestDTO;
 import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Producto;
+import com.minegocio.backend.entidades.HistorialInventario;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,9 @@ public class ProductoService {
     
     @Autowired
     private NotificacionService notificacionService;
+    
+    @Autowired
+    private HistorialInventarioService historialInventarioService;
 
     public List<ProductoDTO> obtenerTodosLosProductos(Long empresaId) {
         List<Producto> productos = productoRepository.findByEmpresaIdAndActivoTrue(empresaId);
@@ -104,10 +109,13 @@ public class ProductoService {
         return convertirADTO(productoGuardado);
     }
 
-    public ProductoDTO actualizarProducto(Long empresaId, Long id, ProductoDTO productoDTO) {
+    public ProductoDTO actualizarProducto(Long empresaId, Long id, ProductoDTO productoDTO, Long usuarioId) {
         // Usar findByIdAndEmpresaId para permitir actualizar productos inactivos
         Producto producto = productoRepository.findByIdAndEmpresaId(id, empresaId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        // Guardar stock anterior para el historial
+        Integer stockAnterior = producto.getStock();
 
         // Solo actualizar campos que no son null
         if (productoDTO.getNombre() != null) {
@@ -178,6 +186,26 @@ public class ProductoService {
 
         Producto productoActualizado = productoRepository.save(producto);
         
+        // Registrar cambio de stock en el historial si hubo cambio
+        if (productoDTO.getStock() != null && !productoDTO.getStock().equals(stockAnterior) && usuarioId != null) {
+            try {
+                InventarioRequestDTO request = new InventarioRequestDTO();
+                request.setProductoId(id);
+                request.setTipoOperacion("AJUSTE");
+                request.setCantidad(Math.abs(productoDTO.getStock() - stockAnterior));
+                request.setStockNuevo(productoDTO.getStock());
+                request.setPrecioUnitario(producto.getPrecio());
+                request.setObservacion("Actualización de producto");
+                request.setCodigoBarras(producto.getCodigoBarras());
+                request.setMetodoEntrada("MANUAL");
+                
+                historialInventarioService.registrarOperacionInventario(request, usuarioId, empresaId);
+            } catch (Exception e) {
+                // Log del error pero no fallar la operación principal
+                System.err.println("Error al registrar historial de inventario: " + e.getMessage());
+            }
+        }
+        
         // Crear notificación de producto actualizado
         notificacionService.crearNotificacionProductoActualizado(empresaId, producto.getNombre(), "Producto actualizado");
         
@@ -187,6 +215,13 @@ public class ProductoService {
         }
         
         return convertirADTO(productoActualizado);
+    }
+    
+    /**
+     * Método sobrecargado para compatibilidad hacia atrás
+     */
+    public ProductoDTO actualizarProducto(Long empresaId, Long id, ProductoDTO productoDTO) {
+        return actualizarProducto(empresaId, id, productoDTO, null);
     }
 
     public void eliminarProducto(Long empresaId, Long id) {
@@ -206,18 +241,44 @@ public class ProductoService {
         return convertirADTO(productoReactivo);
     }
 
-    public void actualizarStock(Long empresaId, Long id, Integer nuevoStock) {
+    public void actualizarStock(Long empresaId, Long id, Integer nuevoStock, Long usuarioId, String observacion) {
         // Usar findByIdAndEmpresaId para permitir actualizar stock de productos inactivos
         Producto producto = productoRepository.findByIdAndEmpresaId(id, empresaId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         
+        Integer stockAnterior = producto.getStock();
         producto.setStock(nuevoStock);
         productoRepository.save(producto);
+        
+        // Registrar la operación en el historial de inventario
+        try {
+            InventarioRequestDTO request = new InventarioRequestDTO();
+            request.setProductoId(id);
+            request.setTipoOperacion("AJUSTE");
+            request.setCantidad(Math.abs(nuevoStock - stockAnterior));
+            request.setStockNuevo(nuevoStock);
+            request.setPrecioUnitario(producto.getPrecio());
+            request.setObservacion(observacion != null ? observacion : "Ajuste de stock manual");
+            request.setCodigoBarras(producto.getCodigoBarras());
+            request.setMetodoEntrada("MANUAL");
+            
+            historialInventarioService.registrarOperacionInventario(request, usuarioId, empresaId);
+        } catch (Exception e) {
+            // Log del error pero no fallar la operación principal
+            System.err.println("Error al registrar historial de inventario: " + e.getMessage());
+        }
         
         // Verificar si el stock está bajo después de la actualización
         if (producto.getStockMinimo() != null && nuevoStock <= producto.getStockMinimo()) {
             notificacionService.crearNotificacionStockBajo(empresaId, producto.getNombre(), nuevoStock);
         }
+    }
+    
+    /**
+     * Método sobrecargado para compatibilidad hacia atrás
+     */
+    public void actualizarStock(Long empresaId, Long id, Integer nuevoStock) {
+        actualizarStock(empresaId, id, nuevoStock, null, null);
     }
 
     public List<ProductoDTO> obtenerProductosConStockBajo(Long empresaId) {

@@ -2,6 +2,7 @@ package com.minegocio.backend.servicios;
 
 import com.minegocio.backend.dto.VentaRapidaDTO;
 import com.minegocio.backend.dto.VentaRapidaHistorialDTO;
+import com.minegocio.backend.dto.InventarioRequestDTO;
 import com.minegocio.backend.entidades.*;
 import com.minegocio.backend.repositorios.ClienteRepository;
 import com.minegocio.backend.repositorios.EmpresaRepository;
@@ -38,12 +39,15 @@ public class VentaRapidaService {
     
     @Autowired
     private NotificacionService notificacionService;
+    
+    @Autowired
+    private HistorialInventarioService historialInventarioService;
 
     /**
      * Procesa una venta rápida y la guarda en el historial
      */
     @Transactional
-    public VentaRapida procesarVentaRapida(Long empresaId, VentaRapidaDTO ventaDTO) {
+    public VentaRapida procesarVentaRapida(Long empresaId, VentaRapidaDTO ventaDTO, Long usuarioId) {
         // Obtener la empresa
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
@@ -90,6 +94,25 @@ public class VentaRapidaService {
             producto.reducirStock(detalleDTO.getCantidad());
             productoRepository.save(producto);
 
+            // Registrar la operación de decremento en el historial de inventario
+            if (usuarioId != null) {
+                try {
+                    InventarioRequestDTO request = new InventarioRequestDTO();
+                    request.setProductoId(detalleDTO.getProductoId());
+                    request.setTipoOperacion("DECREMENTO");
+                    request.setCantidad(detalleDTO.getCantidad());
+                    request.setPrecioUnitario(detalleDTO.getPrecioUnitario());
+                    request.setObservacion("Venta rápida - " + ventaRapida.getNumeroComprobante());
+                    request.setCodigoBarras(producto.getCodigoBarras());
+                    request.setMetodoEntrada("VENTA_RAPIDA");
+                    
+                    historialInventarioService.registrarOperacionInventario(request, usuarioId, empresaId);
+                } catch (Exception e) {
+                    // Log del error pero no fallar la operación principal
+                    System.err.println("Error al registrar historial de inventario en venta rápida: " + e.getMessage());
+                }
+            }
+
             ventaRapida.agregarDetalle(detalle);
         }
 
@@ -100,6 +123,14 @@ public class VentaRapidaService {
         notificacionService.crearNotificacionVentaRapida(empresaId, ventaDTO.getTotal().doubleValue(), ventaDTO.getMetodoPago());
         
         return ventaGuardada;
+    }
+    
+    /**
+     * Método sobrecargado para compatibilidad hacia atrás
+     */
+    @Transactional
+    public VentaRapida procesarVentaRapida(Long empresaId, VentaRapidaDTO ventaDTO) {
+        return procesarVentaRapida(empresaId, ventaDTO, null);
     }
 
     /**

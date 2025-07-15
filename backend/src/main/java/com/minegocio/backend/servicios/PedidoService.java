@@ -3,6 +3,7 @@ package com.minegocio.backend.servicios;
 import com.minegocio.backend.dto.DetallePedidoDTO;
 import com.minegocio.backend.dto.PedidoDTO;
 import com.minegocio.backend.dto.ClienteDTO;
+import com.minegocio.backend.dto.InventarioRequestDTO;
 import com.minegocio.backend.entidades.Cliente;
 import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Pedido;
@@ -36,9 +37,12 @@ public class PedidoService {
     
     @Autowired
     private NotificacionService notificacionService;
+    
+    @Autowired
+    private HistorialInventarioService historialInventarioService;
 
     @Transactional
-    public PedidoDTO crearPedido(Long empresaId, PedidoDTO pedidoDTO) {
+    public PedidoDTO crearPedido(Long empresaId, PedidoDTO pedidoDTO, Long usuarioId) {
         System.out.println("=== DEBUG CREAR PEDIDO ===");
         System.out.println("EmpresaId: " + empresaId);
         System.out.println("ClienteId: " + pedidoDTO.getClienteId());
@@ -128,10 +132,40 @@ public class PedidoService {
         String nombreCliente = cliente != null ? cliente.getNombre() + " " + cliente.getApellidos() : pedidoDTO.getClienteNombre();
         notificacionService.crearNotificacionPedidoNuevo(empresaId, nombreCliente, guardado.getTotal().doubleValue());
         
+        // Registrar historial de inventario para cada detalle
+        for (DetallePedido detalle : guardado.getDetalles()) {
+            try {
+                Producto producto = detalle.getProducto();
+                InventarioRequestDTO request = new InventarioRequestDTO();
+                request.setProductoId(producto.getId());
+                request.setTipoOperacion("DECREMENTO");
+                request.setCantidad(detalle.getCantidad());
+                request.setPrecioUnitario(detalle.getPrecioUnitario());
+                request.setObservacion("Pedido - " + guardado.getNumeroPedido());
+                request.setCodigoBarras(producto.getCodigoBarras());
+                request.setMetodoEntrada("PEDIDO");
+                
+                // Usar el usuarioId del parámetro si existe, sino el ID del cliente
+                Long userId = usuarioId != null ? usuarioId : (guardado.getCliente() != null ? guardado.getCliente().getId() : null);
+                historialInventarioService.registrarOperacionInventario(request, userId, empresaId);
+            } catch (Exception e) {
+                // Log del error pero no fallar la operación principal
+                System.err.println("Error al registrar historial de inventario en pedido: " + e.getMessage());
+            }
+        }
+        
         // Devolver DTO
         PedidoDTO resultado = convertirADTO(guardado);
         System.out.println("=== FIN DEBUG CREAR PEDIDO ===");
         return resultado;
+    }
+    
+    /**
+     * Método sobrecargado para compatibilidad hacia atrás
+     */
+    @Transactional
+    public PedidoDTO crearPedido(Long empresaId, PedidoDTO pedidoDTO) {
+        return crearPedido(empresaId, pedidoDTO, null);
     }
 
     public List<PedidoDTO> obtenerPedidosPorEmpresa(Long empresaId) {

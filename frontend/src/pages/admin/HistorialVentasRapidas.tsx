@@ -220,7 +220,7 @@ const HistorialVentasRapidas: React.FC = () => {
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: '2rem 1rem'
+        padding: '5rem 1rem 2rem 1rem'
       }}>
         {/* Encabezado */}
         <div style={{
@@ -273,7 +273,7 @@ const HistorialVentasRapidas: React.FC = () => {
               e.currentTarget.style.color = '#3b82f6';
             }}
           >
-            ← Volver al Dashboard
+            ← Volver al Panel de Control
           </button>
         </div>
 

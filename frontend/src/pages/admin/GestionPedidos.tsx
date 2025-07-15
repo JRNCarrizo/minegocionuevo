@@ -957,7 +957,7 @@ export default function GestionPedidos() {
           empresaNombre={empresaNombre}
           nombreAdministrador={nombreAdministrador}
         />
-        <div className="contenedor py-8">
+        <div className="contenedor" style={{ paddingTop: '5rem', paddingBottom: '2rem' }}>
           <div className="tarjeta text-center py-12">
             <div className="spinner mx-auto mb-4"></div>
             <p>Cargando pedidos...</p>
@@ -977,7 +977,7 @@ export default function GestionPedidos() {
       />
 
       {/* Contenido principal */}
-      <div className="contenedor py-8">
+      <div className="contenedor" style={{ paddingTop: '5rem', paddingBottom: '2rem' }}>
         <div className="mb-8">
           <h1 className="titulo-2 mb-4" style={{ 
             fontSize: '32px', 

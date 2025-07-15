@@ -991,7 +991,7 @@ export default function NuevoProducto() {
         .contenedor-principal {
           max-width: 800px;
           margin: 0 auto;
-          padding: 2rem 1rem;
+          padding: 4rem 1rem 2rem 1rem;
         }
 
         .contenido-formulario {
@@ -1002,7 +1002,8 @@ export default function NuevoProducto() {
 
         .header-formulario {
           text-align: center;
-          margin-bottom: 2rem;
+          margin-bottom: 3rem;
+          padding-top: 1rem;
         }
 
         .header-info {

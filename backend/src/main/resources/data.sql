@@ -1,12 +1,14 @@
 -- Datos de prueba para el sistema miNegocio
 
--- Insertar empresa de ejemplo
+-- Insertar empresa de ejemplo (solo si no existe)
 INSERT INTO empresas (nombre, subdominio, email, telefono, descripcion, logo_url, color_primario, color_secundario, estado_suscripcion, fecha_fin_prueba, activa, fecha_creacion, fecha_actualizacion)
-VALUES ('Tienda Demo', 'demo', 'admin@demo.com', '+34 123 456 789', 'Tienda de demostración del sistema miNegocio', null, '#3B82F6', '#1F2937', 'PRUEBA', DATEADD('MONTH', 1, CURRENT_TIMESTAMP), true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+SELECT 'Tienda Demo', 'demo', 'admin@demo.com', '+34 123 456 789', 'Tienda de demostración del sistema miNegocio', null, '#3B82F6', '#1F2937', 'PRUEBA', DATEADD('MONTH', 1, CURRENT_TIMESTAMP), true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM empresas WHERE email = 'admin@demo.com');
 
--- Insertar usuario administrador (password: admin123 - BCrypt)
+-- Insertar usuario administrador (password: admin123 - BCrypt) (solo si no existe)
 INSERT INTO usuarios (nombre, apellidos, email, password, telefono, rol, activo, email_verificado, empresa_id, fecha_creacion, fecha_actualizacion)
-VALUES ('Admin', 'Demo', 'admin@demo.com', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', '+34 123 456 789', 'ADMINISTRADOR', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+SELECT 'Admin', 'Demo', 'admin@demo.com', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', '+34 123 456 789', 'ADMINISTRADOR', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'admin@demo.com');
 
 -- Insertar productos (sin imágenes en la tabla principal)
 INSERT INTO productos (nombre, descripcion, precio, stock, stock_minimo, categoria, marca, unidad, activo, destacado, empresa_id, fecha_creacion, fecha_actualizacion)
@@ -91,3 +93,44 @@ INSERT INTO empresas (nombre, subdominio, email, telefono, descripcion, logo_url
 ('Mi Tienda Ejemplo', 'mitienda', 'admin@mitienda.com', '+1234567890', 'Tienda de ejemplo para demostración', 'https://via.placeholder.com/150', '#3B82F6', '#1E40AF', 'USD', 'PRUEBA', '2024-12-31', true, NOW(), NOW()),
 ('Electrónicos Pro', 'electronicospro', 'info@electronicospro.com', '+1987654321', 'Especialistas en electrónica', 'https://via.placeholder.com/150', '#10B981', '#059669', 'USD', 'ACTIVA', '2025-12-31', true, NOW(), NOW()),
 ('Ropa Fashion', 'ropafashion', 'ventas@ropafashion.com', '+1122334455', 'Moda y tendencias', 'https://via.placeholder.com/150', '#F59E0B', '#D97706', 'USD', 'ACTIVA', '2025-12-31', true, NOW(), NOW());
+
+-- Crear tabla historial_inventario si no existe
+CREATE TABLE IF NOT EXISTS historial_inventario (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    
+    -- Relaciones con otras entidades
+    producto_id BIGINT NOT NULL,
+    usuario_id BIGINT NOT NULL,
+    empresa_id BIGINT NOT NULL,
+    
+    -- Información de la operación
+    tipo_operacion VARCHAR(50) NOT NULL, -- 'INCREMENTO', 'DECREMENTO', 'AJUSTE', 'INVENTARIO_FISICO'
+    cantidad INT NOT NULL,
+    stock_anterior INT,
+    stock_nuevo INT,
+    
+    -- Información financiera
+    precio_unitario DECIMAL(10,2),
+    valor_total DECIMAL(10,2),
+    
+    -- Información adicional
+    observacion VARCHAR(500),
+    codigo_barras VARCHAR(50),
+    metodo_entrada VARCHAR(100), -- 'cámara', 'manual', 'usb'
+    
+    -- Timestamps
+    fecha_operacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Índices para mejorar el rendimiento
+    INDEX idx_empresa_id (empresa_id),
+    INDEX idx_producto_id (producto_id),
+    INDEX idx_usuario_id (usuario_id),
+    INDEX idx_fecha_operacion (fecha_operacion),
+    INDEX idx_tipo_operacion (tipo_operacion),
+    INDEX idx_codigo_barras (codigo_barras),
+    
+    -- Claves foráneas
+    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
+);
