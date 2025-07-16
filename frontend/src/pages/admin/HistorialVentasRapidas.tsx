@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ventaRapidaService, type VentaRapida as VentaRapidaType, type EstadisticasVentaRapida } from '../../services/ventaRapidaService';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
+import { useResponsive } from '../../hooks/useResponsive';
 
 type VentaRapida = VentaRapidaType;
 type Estadisticas = EstadisticasVentaRapida;
 
 const HistorialVentasRapidas: React.FC = () => {
-  const navigate = useNavigate();
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
+  const { isMobile } = useResponsive();
   const [ventas, setVentas] = useState<VentaRapida[]>([]);
   const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
   const [loading, setLoading] = useState(true);
@@ -220,61 +220,35 @@ const HistorialVentasRapidas: React.FC = () => {
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: '5rem 1rem 2rem 1rem'
+        paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem',
+        paddingBottom: '2rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem'
       }}>
         {/* Encabezado */}
         <div style={{
           marginBottom: '2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          textAlign: isMobile ? 'center' : 'left'
         }}>
-          <div>
-            <h1 style={{
-              fontSize: '2.5rem',
-              fontWeight: '700',
-              color: '#1e293b',
-              marginBottom: '0.5rem',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>
-              📊 Historial de Caja Rápida
-            </h1>
-            <p style={{
-              fontSize: '1.125rem',
-              color: '#64748b',
-              lineHeight: '1.6'
-            }}>
-              Consulta y analiza todas las ventas realizadas desde la caja rápida
-            </p>
-          </div>
-          
-          <button
-            onClick={() => navigate('/admin/dashboard')}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: 'white',
-              color: '#3b82f6',
-              border: '2px solid #3b82f6',
-              borderRadius: '0.75rem',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#3b82f6';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#3b82f6';
-            }}
-          >
-            ← Volver al Panel de Control
-          </button>
+          <h1 style={{
+            fontSize: isMobile ? '1.75rem' : '2.5rem',
+            fontWeight: '700',
+            color: '#1e293b',
+            marginBottom: '0.5rem',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            📊 Historial de Caja Rápida
+          </h1>
+          <p style={{
+            fontSize: isMobile ? '1rem' : '1.125rem',
+            color: '#64748b',
+            lineHeight: '1.6'
+          }}>
+            Consulta y analiza todas las ventas realizadas desde la caja rápida
+          </p>
         </div>
 
         {error && (
@@ -294,22 +268,39 @@ const HistorialVentasRapidas: React.FC = () => {
         {estadisticas && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1.5rem',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: isMobile ? '1rem' : '1.5rem',
             marginBottom: '2rem'
           }}>
             <div style={{
               background: 'white',
               borderRadius: '1rem',
-              padding: '1.5rem',
+              padding: isMobile ? '1rem' : '1.5rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               border: '1px solid #e2e8f0'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>💰</span>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '0.5rem',
+                flexDirection: isMobile ? 'column' : 'row',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ 
+                  fontSize: isMobile ? '1.5rem' : '2rem', 
+                  marginRight: isMobile ? '0' : '1rem',
+                  marginBottom: isMobile ? '0.5rem' : '0'
+                }}>💰</span>
                 <div>
-                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Total Ventas</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
+                  <div style={{ 
+                    color: '#64748b', 
+                    fontSize: isMobile ? '0.75rem' : '0.875rem' 
+                  }}>Total Ventas</div>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.25rem' : '1.5rem', 
+                    fontWeight: '700', 
+                    color: '#1e293b' 
+                  }}>
                     {formatearMoneda(estadisticas.totalVentas)}
                   </div>
                 </div>
@@ -319,15 +310,32 @@ const HistorialVentasRapidas: React.FC = () => {
             <div style={{
               background: 'white',
               borderRadius: '1rem',
-              padding: '1.5rem',
+              padding: isMobile ? '1rem' : '1.5rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               border: '1px solid #e2e8f0'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>🛒</span>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '0.5rem',
+                flexDirection: isMobile ? 'column' : 'row',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ 
+                  fontSize: isMobile ? '1.5rem' : '2rem', 
+                  marginRight: isMobile ? '0' : '1rem',
+                  marginBottom: isMobile ? '0.5rem' : '0'
+                }}>🛒</span>
                 <div>
-                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Transacciones</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
+                  <div style={{ 
+                    color: '#64748b', 
+                    fontSize: isMobile ? '0.75rem' : '0.875rem' 
+                  }}>Transacciones</div>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.25rem' : '1.5rem', 
+                    fontWeight: '700', 
+                    color: '#1e293b' 
+                  }}>
                     {estadisticas.totalTransacciones}
                   </div>
                 </div>
@@ -337,15 +345,32 @@ const HistorialVentasRapidas: React.FC = () => {
             <div style={{
               background: 'white',
               borderRadius: '1rem',
-              padding: '1.5rem',
+              padding: isMobile ? '1rem' : '1.5rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               border: '1px solid #e2e8f0'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>📦</span>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '0.5rem',
+                flexDirection: isMobile ? 'column' : 'row',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ 
+                  fontSize: isMobile ? '1.5rem' : '2rem', 
+                  marginRight: isMobile ? '0' : '1rem',
+                  marginBottom: isMobile ? '0.5rem' : '0'
+                }}>📦</span>
                 <div>
-                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Productos Vendidos</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
+                  <div style={{ 
+                    color: '#64748b', 
+                    fontSize: isMobile ? '0.75rem' : '0.875rem' 
+                  }}>Productos Vendidos</div>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.25rem' : '1.5rem', 
+                    fontWeight: '700', 
+                    color: '#1e293b' 
+                  }}>
                     {estadisticas.totalProductos}
                   </div>
                 </div>
@@ -355,15 +380,32 @@ const HistorialVentasRapidas: React.FC = () => {
             <div style={{
               background: 'white',
               borderRadius: '1rem',
-              padding: '1.5rem',
+              padding: isMobile ? '1rem' : '1.5rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               border: '1px solid #e2e8f0'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>📊</span>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '0.5rem',
+                flexDirection: isMobile ? 'column' : 'row',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ 
+                  fontSize: isMobile ? '1.5rem' : '2rem', 
+                  marginRight: isMobile ? '0' : '1rem',
+                  marginBottom: isMobile ? '0.5rem' : '0'
+                }}>📊</span>
                 <div>
-                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Cantidad Ventas</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
+                  <div style={{ 
+                    color: '#64748b', 
+                    fontSize: isMobile ? '0.75rem' : '0.875rem' 
+                  }}>Cantidad Ventas</div>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.25rem' : '1.5rem', 
+                    fontWeight: '700', 
+                    color: '#1e293b' 
+                  }}>
                     {estadisticas.cantidadVentas}
                   </div>
                 </div>
@@ -376,13 +418,13 @@ const HistorialVentasRapidas: React.FC = () => {
         <div style={{
           background: 'white',
           borderRadius: '1rem',
-          padding: '1.5rem',
+          padding: isMobile ? '1rem' : '1.5rem',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
           border: '1px solid #e2e8f0',
           marginBottom: '2rem'
         }}>
           <h3 style={{
-            fontSize: '1.25rem',
+            fontSize: isMobile ? '1.125rem' : '1.25rem',
             fontWeight: '600',
             color: '#1e293b',
             marginBottom: '1rem'
@@ -392,8 +434,8 @@ const HistorialVentasRapidas: React.FC = () => {
           
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '1rem',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: isMobile ? '0.75rem' : '1rem',
             alignItems: 'end'
           }}>
             <div>
@@ -473,20 +515,25 @@ const HistorialVentasRapidas: React.FC = () => {
               </select>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ 
+              display: 'flex', 
+              gap: isMobile ? '0.25rem' : '0.5rem',
+              flexDirection: isMobile ? 'column' : 'row'
+            }}>
               <button
                 onClick={aplicarFiltros}
                 disabled={!fechaInicio && !fechaFin && !metodoPago}
                 style={{
-                  padding: '0.75rem 1.5rem',
+                  padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
                   background: !fechaInicio && !fechaFin && !metodoPago ? '#9ca3af' : '#3b82f6',
                   color: 'white',
                   border: 'none',
                   borderRadius: '0.5rem',
-                  fontSize: '1rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
                   fontWeight: '600',
                   cursor: !fechaInicio && !fechaFin && !metodoPago ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  width: isMobile ? '100%' : 'auto'
                 }}
               >
                 Aplicar
@@ -496,15 +543,16 @@ const HistorialVentasRapidas: React.FC = () => {
                 <button
                   onClick={limpiarFiltros}
                   style={{
-                    padding: '0.75rem 1.5rem',
+                    padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
                     background: '#6b7280',
                     color: 'white',
                     border: 'none',
                     borderRadius: '0.5rem',
-                    fontSize: '1rem',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
                     fontWeight: '600',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    width: isMobile ? '100%' : 'auto'
                   }}
                 >
                   Limpiar
@@ -524,7 +572,8 @@ const HistorialVentasRapidas: React.FC = () => {
         }}>
           <div style={{
             display: 'flex',
-            borderBottom: '1px solid #e2e8f0'
+            flexDirection: isMobile ? 'column' : 'row',
+            borderBottom: isMobile ? 'none' : '1px solid #e2e8f0'
           }}>
             {[
               { label: 'Historial Completo', value: 0 },
@@ -537,15 +586,17 @@ const HistorialVentasRapidas: React.FC = () => {
                 onClick={() => setTabValue(tab.value)}
                 style={{
                   flex: 1,
-                  padding: '1rem',
+                  padding: isMobile ? '0.75rem' : '1rem',
                   background: tabValue === tab.value ? '#3b82f6' : 'transparent',
                   color: tabValue === tab.value ? 'white' : '#64748b',
                   border: 'none',
                   cursor: 'pointer',
                   fontWeight: '500',
                   transition: 'all 0.2s ease',
-                  borderTopLeftRadius: tab.value === 0 ? '1rem' : '0',
-                  borderTopRightRadius: tab.value === 3 ? '1rem' : '0'
+                  borderTopLeftRadius: isMobile ? '0' : (tab.value === 0 ? '1rem' : '0'),
+                  borderTopRightRadius: isMobile ? '0' : (tab.value === 3 ? '1rem' : '0'),
+                  borderBottom: isMobile ? '1px solid #e2e8f0' : 'none',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
                 }}
               >
                 {tab.label}

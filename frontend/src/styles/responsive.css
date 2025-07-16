@@ -1,0 +1,539 @@
+/* ===== SISTEMA DE RESPONSIVIDAD ===== */
+
+/* Breakpoints */
+:root {
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 1024px;
+  --breakpoint-lg: 1200px;
+  --breakpoint-xl: 1400px;
+}
+
+/* Utilidades responsivas */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.container-fluid {
+  width: 100%;
+  padding: 0 16px;
+}
+
+/* Grid responsivo */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid-1 { grid-template-columns: repeat(1, 1fr); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-5 { grid-template-columns: repeat(5, 1fr); }
+.grid-6 { grid-template-columns: repeat(6, 1fr); }
+
+/* Flex responsivo */
+.flex {
+  display: flex;
+}
+
+.flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-nowrap { flex-wrap: nowrap; }
+
+/* Espaciado responsivo */
+.p-responsive {
+  padding: 16px;
+}
+
+.p-responsive-sm {
+  padding: 12px;
+}
+
+.p-responsive-lg {
+  padding: 24px;
+}
+
+.m-responsive {
+  margin: 16px;
+}
+
+.m-responsive-sm {
+  margin: 12px;
+}
+
+.m-responsive-lg {
+  margin: 24px;
+}
+
+/* Texto responsivo */
+.text-responsive {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.text-responsive-sm {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.text-responsive-lg {
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+/* Botones responsivos */
+.btn-responsive {
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.btn-responsive-sm {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.btn-responsive-lg {
+  padding: 16px 32px;
+  font-size: 18px;
+}
+
+/* Cards responsivas */
+.card-responsive {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.card-responsive:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Media queries para breakpoints */
+@media (max-width: 480px) {
+  /* Extra Small - Móviles pequeños */
+  .container {
+    padding: 0 12px;
+  }
+  
+  .grid-2, .grid-3, .grid-4, .grid-5, .grid-6 {
+    grid-template-columns: 1fr;
+  }
+  
+  .flex-row {
+    flex-direction: column;
+  }
+  
+  .p-responsive {
+    padding: 12px;
+  }
+  
+  .m-responsive {
+    margin: 12px;
+  }
+  
+  .text-responsive {
+    font-size: 14px;
+  }
+  
+  .btn-responsive {
+    padding: 10px 20px;
+    font-size: 14px;
+    width: 100%;
+  }
+  
+  .card-responsive {
+    border-radius: 8px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  /* Small - Tablets pequeñas */
+  .container {
+    padding: 0 16px;
+  }
+  
+  .grid-3, .grid-4, .grid-5, .grid-6 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .text-responsive {
+    font-size: 15px;
+  }
+  
+  .btn-responsive {
+    padding: 11px 22px;
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Medium - Tablets grandes */
+  .grid-4, .grid-5, .grid-6 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .text-responsive {
+    font-size: 16px;
+  }
+  
+  .btn-responsive {
+    padding: 12px 24px;
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1200px) {
+  /* Large - Desktops pequeños */
+  .grid-5, .grid-6 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1201px) {
+  /* Extra Large - Desktops grandes */
+  .grid-5 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  
+  .grid-6 {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* Utilidades específicas para componentes */
+.navbar-responsive {
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.navbar-responsive .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.navbar-responsive .nav-toggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .navbar-responsive .nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    flex-direction: column;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  .navbar-responsive .nav-links.active {
+    display: flex;
+  }
+  
+  .navbar-responsive .nav-toggle {
+    display: block;
+  }
+}
+
+/* Dashboard responsivo */
+.dashboard-responsive {
+  display: grid;
+  gap: 24px;
+  padding: 24px;
+}
+
+.dashboard-responsive .stats-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.dashboard-responsive .actions-grid {
+  display: grid;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-responsive {
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .dashboard-responsive .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-responsive .actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .dashboard-responsive .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .dashboard-responsive .actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .dashboard-responsive .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .dashboard-responsive .actions-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Formularios responsivos */
+.form-responsive {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.form-responsive .form-group {
+  margin-bottom: 20px;
+}
+
+.form-responsive .form-row {
+  display: grid;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .form-responsive {
+    padding: 16px;
+  }
+  
+  .form-responsive .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 769px) {
+  .form-responsive .form-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Tablas responsivas */
+.table-responsive {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.table-responsive table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+}
+
+.table-responsive th,
+.table-responsive td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+@media (max-width: 768px) {
+  .table-responsive th,
+  .table-responsive td {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+
+/* Modal responsivo */
+.modal-responsive {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-responsive .modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .modal-responsive {
+    padding: 8px;
+  }
+  
+  .modal-responsive .modal-content {
+    max-width: 95vw;
+    max-height: 95vh;
+    border-radius: 8px;
+  }
+}
+
+/* Catálogo responsivo */
+.catalog-responsive {
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+}
+
+.catalog-responsive .filters {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.catalog-responsive .products-grid {
+  display: grid;
+  gap: 20px;
+}
+
+@media (max-width: 480px) {
+  .catalog-responsive {
+    padding: 12px;
+    gap: 16px;
+  }
+  
+  .catalog-responsive .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .catalog-responsive .products-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .catalog-responsive .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .catalog-responsive .products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .catalog-responsive .products-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Utilidades de visibilidad */
+.hidden-xs { display: none; }
+.hidden-sm { display: none; }
+.hidden-md { display: none; }
+.hidden-lg { display: none; }
+.hidden-xl { display: none; }
+
+.visible-xs { display: block; }
+.visible-sm { display: block; }
+.visible-md { display: block; }
+.visible-lg { display: block; }
+.visible-xl { display: block; }
+
+@media (min-width: 481px) {
+  .hidden-xs { display: block; }
+  .visible-xs { display: none; }
+}
+
+@media (min-width: 769px) {
+  .hidden-sm { display: block; }
+  .visible-sm { display: none; }
+}
+
+@media (min-width: 1025px) {
+  .hidden-md { display: block; }
+  .visible-md { display: none; }
+}
+
+@media (min-width: 1201px) {
+  .hidden-lg { display: block; }
+  .visible-lg { display: none; }
+}
+
+@media (min-width: 1401px) {
+  .hidden-xl { display: block; }
+  .visible-xl { display: none; }
+}
+
+/* Animaciones responsivas */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Optimizaciones para touch */
+@media (hover: none) and (pointer: coarse) {
+  .btn-responsive {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .card-responsive {
+    cursor: default;
+  }
+  
+  .card-responsive:hover {
+    transform: none;
+  }
+} 

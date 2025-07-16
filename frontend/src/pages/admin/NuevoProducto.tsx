@@ -6,6 +6,7 @@ import GestorImagenes from '../../components/GestorImagenes';
 import BarcodeScanner from '../../components/BarcodeScanner';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
+import { useResponsive } from '../../hooks/useResponsive';
 import '../../styles/gestor-imagenes.css';
 
 // Componente de campo de formulario optimizado con memo
@@ -46,7 +47,7 @@ const CampoFormulario = memo(({
   mostrarSugerenciasMarca?: boolean;
   marcasFiltradas?: string[];
   seleccionarMarca?: (marca: string) => void;
-  [key: string]: any;
+  [key: string]: unknown;
 }) => (
   <div className="campo-grupo" style={{ position: 'relative' }}>
     <label htmlFor={name} className="campo-label">
@@ -132,12 +133,13 @@ const CampoFormulario = memo(({
 export default function NuevoProducto() {
   const navigate = useNavigate();
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
+  const { isMobile } = useResponsive();
 
   // Función para reproducir el sonido "pi"
   const playBeepSound = () => {
     try {
       // Crear un contexto de audio
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       
       // Crear un oscilador para generar el tono
       const oscillator = audioContext.createOscillator();
@@ -183,78 +185,62 @@ export default function NuevoProducto() {
   });
   const [cargando, setCargando] = useState(false);
   const [categorias, setCategorias] = useState<string[]>([]);
-  const [cargandoCategorias, setCargandoCategorias] = useState(true);
   const [pasoActual, setPasoActual] = useState(1);
   const [errores, setErrores] = useState<{[key: string]: string}>({});
   const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
   const [nuevaCategoria, setNuevaCategoria] = useState('');
   const [marcas, setMarcas] = useState<string[]>([]);
-  const [cargandoMarcas, setCargandoMarcas] = useState(true);
   const [marcasFiltradas, setMarcasFiltradas] = useState<string[]>([]);
   const [mostrarSugerenciasMarca, setMostrarSugerenciasMarca] = useState(false);
   const [sectoresAlmacenamiento, setSectoresAlmacenamiento] = useState<string[]>([]);
-  const [cargandoSectores, setCargandoSectores] = useState(true);
   const [sectoresFiltrados, setSectoresFiltrados] = useState<string[]>([]);
   const [mostrarSugerenciasSector, setMostrarSugerenciasSector] = useState(false);
   const [codigosPersonalizados, setCodigosPersonalizados] = useState<string[]>([]);
-  const [cargandoCodigos, setCargandoCodigos] = useState(true);
   const [codigosFiltrados, setCodigosFiltrados] = useState<string[]>([]);
   const [mostrarSugerenciasCodigo, setMostrarSugerenciasCodigo] = useState(false);
   const [mostrarScanner, setMostrarScanner] = useState(false);
 
   const cargarCategorias = useCallback(async () => {
     try {
-      setCargandoCategorias(true);
       const response = await ApiService.obtenerCategorias(empresaId);
       if (response.data) {
         setCategorias(response.data);
       }
     } catch (error) {
       console.error('Error al cargar categorías:', error);
-    } finally {
-      setCargandoCategorias(false);
     }
   }, [empresaId]);
 
   const cargarMarcas = useCallback(async () => {
     try {
-      setCargandoMarcas(true);
       const response = await ApiService.obtenerMarcas(empresaId);
       if (response.data) {
         setMarcas(response.data);
       }
     } catch (error) {
       console.error('Error al cargar marcas:', error);
-    } finally {
-      setCargandoMarcas(false);
     }
   }, [empresaId]);
 
   const cargarSectoresAlmacenamiento = useCallback(async () => {
     try {
-      setCargandoSectores(true);
       const response = await ApiService.obtenerSectoresAlmacenamiento(empresaId);
       if (response.data) {
         setSectoresAlmacenamiento(response.data);
       }
     } catch (error) {
       console.error('Error al cargar sectores de almacenamiento:', error);
-    } finally {
-      setCargandoSectores(false);
     }
   }, [empresaId]);
 
   const cargarCodigosPersonalizados = useCallback(async () => {
     try {
-      setCargandoCodigos(true);
       const response = await ApiService.obtenerCodigosPersonalizados(empresaId);
       if (response.data) {
         setCodigosPersonalizados(response.data);
       }
     } catch (error) {
       console.error('Error al cargar códigos personalizados:', error);
-    } finally {
-      setCargandoCodigos(false);
     }
   }, [empresaId]);
 
@@ -552,13 +538,25 @@ export default function NuevoProducto() {
         nombreAdministrador={datosUsuario?.nombre}
       />
 
-      <div className="contenedor-principal">
+      <div className="contenedor-principal" style={{ 
+        paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
+        paddingBottom: '2rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem'
+      }}>
         <div className="contenido-formulario">
           {/* Header del formulario */}
           <div className="header-formulario">
-            <div className="header-info">
-              <h1 className="titulo-formulario">
-                <span className="icono-titulo">📦</span>
+            <div className="header-info" style={{ textAlign: 'center' }}>
+              <div style={{ 
+                fontSize: '48px', 
+                marginBottom: '16px',
+                display: 'flex',
+                justifyContent: 'center'
+              }}>
+                📦
+              </div>
+              <h1 className="titulo-formulario" style={{ margin: 0 }}>
                 Crear Nuevo Producto
               </h1>
               <p className="subtitulo-formulario">

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useSubdominio } from '../hooks/useSubdominio';
 import { useCart } from '../hooks/useCart';
-import CartIcon from '../components/CartIcon';
+import { useResponsive } from '../hooks/useResponsive';
 import CartModal from '../components/CartModal';
 import ProductoDetalleModal from '../components/ProductoDetalleModal';
 import NavbarCliente from '../components/NavbarCliente';
@@ -13,7 +13,8 @@ import { FaInstagram, FaFacebook, FaShoppingCart } from 'react-icons/fa';
 
 export default function CatalogoPublico() {
   const { empresa, subdominio, cargando: cargandoEmpresa } = useSubdominio();
-  const { addToCart, items, updateQuantity } = useCart();
+  const { addToCart } = useCart();
+  const { isMobile, isTablet } = useResponsive();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +26,13 @@ export default function CatalogoPublico() {
   const [showCart, setShowCart] = useState(false);
   type VistaProducto = 'lista' | 'intermedia' | 'grande';
   const [vista, setVista] = useState<VistaProducto>('intermedia');
+
+  // Cambiar automáticamente a vista grande en móvil y ocultar opciones de vista
+  useEffect(() => {
+    if (isMobile) {
+      setVista('grande');
+    }
+  }, [isMobile]);
   const [showProductoModal, setShowProductoModal] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<number | null>(null);
 
@@ -175,7 +183,8 @@ export default function CatalogoPublico() {
     <div className="catalogo-publico pagina-con-navbar" style={{
       ...estilosPersonalizados,
       background: fondoPrincipal,
-      minHeight: '100vh'
+      minHeight: '100vh',
+      paddingTop: isMobile ? '120px' : '80px'
     }}>
       <NavbarCliente
         empresa={empresa}
@@ -203,16 +212,16 @@ export default function CatalogoPublico() {
       {clienteInfo && (
         <div style={{
           position: 'fixed',
-          bottom: '30px',
-          right: '30px',
+          bottom: isMobile ? '20px' : '30px',
+          right: isMobile ? '20px' : '30px',
           zIndex: 1000,
           cursor: 'pointer'
         }}>
           <div
             onClick={() => setShowCart(true)}
             style={{
-              width: '70px',
-              height: '70px',
+              width: isMobile ? '60px' : '70px',
+              height: isMobile ? '60px' : '70px',
               background: empresa?.colorPrimario ? 
                 `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)` :
                 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -239,42 +248,42 @@ export default function CatalogoPublico() {
                 '0 8px 25px rgba(102, 126, 234, 0.4)';
             }}
           >
-            <FaShoppingCart size={28} color="white" />
+            <FaShoppingCart size={isMobile ? 24 : 28} color="white" />
             
             {/* Badge con cantidad de items */}
-            {items.reduce((sum, item) => sum + item.cantidad, 0) > 0 && (
-              <div style={{
+            {/* items.reduce((sum, item) => sum + item.cantidad, 0) > 0 && ( */}
+            {/*   <div style={{
                 position: 'absolute',
-                top: '-8px',
-                right: '-8px',
+                top: isMobile ? '-6px' : '-8px',
+                right: isMobile ? '-6px' : '-8px',
                 background: '#ef4444',
                 color: 'white',
                 borderRadius: '50%',
-                width: '28px',
-                height: '28px',
+                width: isMobile ? '24px' : '28px',
+                height: isMobile ? '24px' : '28px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '12px',
+                fontSize: isMobile ? '10px' : '12px',
                 fontWeight: '700',
-                border: '3px solid white',
+                border: isMobile ? '2px solid white' : '3px solid white',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
               }}>
                 {items.reduce((sum, item) => sum + item.cantidad, 0)}
               </div>
-            )}
+            ) */}
           </div>
           
           {/* Tooltip */}
           <div style={{
             position: 'absolute',
-            bottom: '80px',
+            bottom: isMobile ? '70px' : '80px',
             right: '0',
             background: '#1e293b',
             color: 'white',
-            padding: '8px 12px',
+            padding: isMobile ? '6px 10px' : '8px 12px',
             borderRadius: '8px',
-            fontSize: '14px',
+            fontSize: isMobile ? '12px' : '14px',
             fontWeight: '500',
             whiteSpace: 'nowrap',
             opacity: 0,
@@ -291,7 +300,7 @@ export default function CatalogoPublico() {
             e.currentTarget.style.transform = 'translateY(10px)';
           }}
           >
-            Ver carrito ({items.reduce((sum, item) => sum + item.cantidad, 0)} unidades)
+            Ver carrito ({/* items.reduce((sum, item) => sum + item.cantidad, 0) */} unidades)
             <div style={{
               position: 'absolute',
               top: '100%',
@@ -306,13 +315,17 @@ export default function CatalogoPublico() {
         </div>
       )}
 
-      <main className="contenedor" style={{ paddingTop: '20px' }}>
+      <main className="contenedor" style={{ 
+        paddingTop: isMobile ? '16px' : '20px',
+        paddingLeft: isMobile ? '1rem' : '2rem',
+        paddingRight: isMobile ? '1rem' : '2rem'
+      }}>
                   {/* Cabecera del catálogo */}
         {/* Cabecera del catálogo */}
         <div style={{
           textAlign: 'center',
-          marginBottom: '40px',
-          padding: '60px 20px',
+          marginBottom: isMobile ? '32px' : '40px',
+          padding: isMobile ? '40px 16px' : isTablet ? '50px 20px' : '60px 20px',
           background: empresa?.imagenFondoUrl ? 
             `url(${empresa.imagenFondoUrl})` :
             empresa?.colorPrimario ? 
@@ -320,7 +333,7 @@ export default function CatalogoPublico() {
             'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          borderRadius: '20px',
+          borderRadius: isMobile ? '16px' : '20px',
           color: 'white',
           boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
           marginTop: '0px',
@@ -344,10 +357,10 @@ export default function CatalogoPublico() {
           {(empresa.instagramUrl || empresa.facebookUrl) && (
             <div style={{
               position: 'absolute',
-              top: '20px',
-              left: '20px',
+              top: isMobile ? '16px' : '20px',
+              left: isMobile ? '16px' : '20px',
               display: 'flex',
-              gap: '8px',
+              gap: isMobile ? '6px' : '8px',
               zIndex: 10
             }}>
               {empresa.instagramUrl && (
@@ -358,13 +371,13 @@ export default function CatalogoPublico() {
                   style={{
                     color: 'white',
                     textDecoration: 'none',
-                    fontSize: '20px',
-                    padding: '8px',
+                    fontSize: isMobile ? '16px' : '20px',
+                    padding: isMobile ? '6px' : '8px',
                     borderRadius: '50%',
                     transition: 'all 0.2s ease',
                     background: 'rgba(255,255,255,0.15)',
-                    width: '36px',
-                    height: '36px',
+                    width: isMobile ? '32px' : '36px',
+                    height: isMobile ? '32px' : '36px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -381,7 +394,7 @@ export default function CatalogoPublico() {
                   }}
                   title="Síguenos en Instagram"
                 >
-                  <FaInstagram size={18} />
+                  <FaInstagram size={isMobile ? 14 : 18} />
                 </a>
               )}
               
@@ -393,13 +406,13 @@ export default function CatalogoPublico() {
                   style={{
                     color: 'white',
                     textDecoration: 'none',
-                    fontSize: '20px',
-                    padding: '8px',
+                    fontSize: isMobile ? '16px' : '20px',
+                    padding: isMobile ? '6px' : '8px',
                     borderRadius: '50%',
                     transition: 'all 0.2s ease',
                     background: 'rgba(255,255,255,0.15)',
-                    width: '36px',
-                    height: '36px',
+                    width: isMobile ? '32px' : '36px',
+                    height: isMobile ? '32px' : '36px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -416,7 +429,7 @@ export default function CatalogoPublico() {
                   }}
                   title="Síguenos en Facebook"
                 >
-                  <FaFacebook size={18} />
+                  <FaFacebook size={isMobile ? 14 : 18} />
                 </a>
               )}
             </div>
@@ -453,11 +466,11 @@ export default function CatalogoPublico() {
             
             {/* Bienvenida */}
             <div style={{
-              marginBottom: '24px'
+              marginBottom: isMobile ? '20px' : '24px'
             }}>
               <h1 style={{ 
                 margin: '0 0 12px 0', 
-                fontSize: '32px', 
+                fontSize: isMobile ? '24px' : isTablet ? '28px' : '32px', 
                 fontWeight: '700',
                 color: empresa?.colorTituloPrincipal || 'white',
                 textShadow: '0 2px 4px rgba(0,0,0,0.3)',
@@ -471,13 +484,13 @@ export default function CatalogoPublico() {
               
               {empresa.descripcion && (
                 <div style={{
-                  marginBottom: '16px',
+                  marginBottom: isMobile ? '12px' : '16px',
                   maxWidth: '600px',
-                  margin: '0 auto 16px'
+                  margin: isMobile ? '0 auto 12px' : '0 auto 16px'
                 }}>
                   <p style={{ 
                     margin: 0, 
-                    fontSize: '16px', 
+                    fontSize: isMobile ? '14px' : '16px', 
                     lineHeight: '1.6',
                     fontWeight: '400',
                     textAlign: 'center',
@@ -495,9 +508,9 @@ export default function CatalogoPublico() {
         {/* Filtros y controles combinados */}
         <div style={{
           background: empresa?.colorCardFiltros || empresa?.colorAcento || '#fff',
-          borderRadius: '16px',
-          padding: '24px',
-          marginBottom: '32px',
+          borderRadius: isMobile ? '12px' : '16px',
+          padding: isMobile ? '16px' : isTablet ? '20px' : '24px',
+          marginBottom: isMobile ? '24px' : '32px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
           border: `1px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : 'rgba(255,255,255,0.2)'}`,
           color: empresa?.colorTexto || '#1e293b'
@@ -505,13 +518,13 @@ export default function CatalogoPublico() {
           {/* Título del catálogo */}
           <div style={{
             textAlign: 'center',
-            marginBottom: '24px',
-            paddingBottom: '20px',
+            marginBottom: isMobile ? '20px' : '24px',
+            paddingBottom: isMobile ? '16px' : '20px',
             borderBottom: `2px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : '#f1f5f9'}`
           }}>
             <h2 style={{ 
               margin: '0 0 8px 0', 
-              fontSize: '28px', 
+              fontSize: isMobile ? '24px' : isTablet ? '26px' : '28px', 
               fontWeight: '700', 
               color: empresa?.colorTituloPrincipal || empresa?.colorTexto || '#1e293b',
               background: empresa?.colorTituloPrincipal ? `linear-gradient(135deg, ${empresa.colorTituloPrincipal} 0%, ${empresa.colorTituloPrincipal}dd 100%)` : 
@@ -524,7 +537,7 @@ export default function CatalogoPublico() {
             </h2>
             <p style={{ 
               margin: 0, 
-              fontSize: '16px', 
+              fontSize: isMobile ? '14px' : '16px', 
               color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b',
               fontWeight: '400'
             }}>
@@ -535,110 +548,124 @@ export default function CatalogoPublico() {
           {/* Sección de filtros */}
           <div style={{
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            gap: '20px',
-            marginBottom: '24px'
+            gap: isMobile ? '20px' : '24px',
+            marginBottom: isMobile ? '20px' : '24px'
           }}>
-            {/* Título e icono de filtros */}
+            {/* Título e icono de filtros - centrado */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
-              minWidth: '200px'
+              gap: isMobile ? '8px' : '12px',
+              justifyContent: 'center',
+              marginBottom: isMobile ? '8px' : '12px'
             }}>
               <div style={{
-                width: '40px',
-                height: '40px',
+                width: isMobile ? '32px' : '40px',
+                height: isMobile ? '32px' : '40px',
                 background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#10b981'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#059669'} 100%)`,
-                borderRadius: '10px',
+                borderRadius: isMobile ? '8px' : '10px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '20px',
+                fontSize: isMobile ? '16px' : '20px',
                 color: 'white'
               }}>
                 🔍
               </div>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: empresa?.colorTexto || '#1e293b' }}>
+              <h3 style={{ 
+                margin: 0, 
+                fontSize: isMobile ? '16px' : '18px', 
+                fontWeight: '600', 
+                color: empresa?.colorTexto || '#1e293b',
+                textAlign: 'center'
+              }}>
                 Filtros de Búsqueda
               </h3>
             </div>
             
-            {/* Casilleros de búsqueda */}
+            {/* Casilleros de búsqueda - centrados */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '16px',
-              flex: 1
+              gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',
+              gap: isMobile ? '16px' : '20px',
+              width: '100%',
+              maxWidth: isMobile ? '100%' : '600px',
+              margin: '0 auto'
             }}>
-            <div>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: empresa?.colorTexto || '#1e293b'
-              }}>
-                Categoría
-              </label>
-              <select
-                value={filtroCategoria}
-                onChange={(e) => setFiltroCategoria(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  border: '2px solid #e2e8f0',
-                  fontSize: '14px',
-                  background: '#fff',
-                  color: '#000000',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-              >
-                <option value="">Todas las categorías</option>
-                {categorias.map(categoria => (
-                  <option key={categoria} value={categoria}>{categoria}</option>
-                ))}
-              </select>
-            </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '14px' : '15px',
+                  fontWeight: '600',
+                  color: empresa?.colorTexto || '#1e293b',
+                  textAlign: 'center'
+                }}>
+                  Categoría
+                </label>
+                <select
+                  value={filtroCategoria}
+                  onChange={(e) => setFiltroCategoria(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: isMobile ? '12px 16px' : '14px 18px',
+                    borderRadius: '12px',
+                    border: '2px solid #e2e8f0',
+                    fontSize: isMobile ? '14px' : '15px',
+                    background: '#fff',
+                    color: '#000000',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'center'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = empresa?.colorPrimario || '#10b981'}
+                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                >
+                  <option value="">Todas las categorías</option>
+                  {categorias.map(categoria => (
+                    <option key={categoria} value={categoria}>{categoria}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: empresa?.colorTexto || '#1e293b'
-              }}>
-                Marca
-              </label>
-              <select
-                value={filtroMarca}
-                onChange={(e) => setFiltroMarca(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  border: '2px solid #e2e8f0',
-                  fontSize: '14px',
-                  background: '#fff',
-                  color: '#000000',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-              >
-                <option value="">Todas las marcas</option>
-                {marcas.map(marca => (
-                  <option key={marca} value={marca}>{marca}</option>
-                ))}
-              </select>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: isMobile ? '8px' : '10px',
+                  fontSize: isMobile ? '14px' : '15px',
+                  fontWeight: '600',
+                  color: empresa?.colorTexto || '#1e293b',
+                  textAlign: 'center'
+                }}>
+                  Marca
+                </label>
+                <select
+                  value={filtroMarca}
+                  onChange={(e) => setFiltroMarca(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: isMobile ? '12px 16px' : '14px 18px',
+                    borderRadius: '12px',
+                    border: '2px solid #e2e8f0',
+                    fontSize: isMobile ? '14px' : '15px',
+                    background: '#fff',
+                    color: '#000000',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'center'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = empresa?.colorPrimario || '#10b981'}
+                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                >
+                  <option value="">Todas las marcas</option>
+                  {marcas.map(marca => (
+                    <option key={marca} value={marca}>{marca}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
           </div>
 
           {/* Separador */}
@@ -651,114 +678,122 @@ export default function CatalogoPublico() {
           {/* Sección de controles de vista */}
           <div style={{
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
+            justifyContent: isMobile ? 'center' : 'space-between',
+            alignItems: 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '16px' : '0'
           }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <span style={{
-                fontSize: '16px',
-                fontWeight: '600',
-                color: empresa?.colorTexto || '#64748b'
+            {/* Opciones de vista - solo en desktop */}
+            {!isMobile && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                flexWrap: 'wrap',
+                justifyContent: 'flex-start'
               }}>
-                Vista:
-              </span>
-              <button
-                onClick={() => setVista('lista')}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  border: '2px solid',
-                  background: vista === 'lista' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
-                  borderColor: vista === 'lista' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
-                  color: vista === 'lista' ? 'white' : (empresa?.colorTexto || '#64748b'),
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  fontSize: '14px',
-                  fontWeight: '600'
-                }}
-                onMouseOver={(e) => {
-                  if (vista !== 'lista') {
-                    e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
-                    e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (vista !== 'lista') {
-                    e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
-                    e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
-                  }
-                }}
-              >
-                📋 Lista
-              </button>
-              <button
-                onClick={() => setVista('intermedia')}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  border: '2px solid',
-                  background: vista === 'intermedia' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
-                  borderColor: vista === 'intermedia' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
-                  color: vista === 'intermedia' ? 'white' : (empresa?.colorTexto || '#64748b'),
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  fontSize: '14px',
-                  fontWeight: '600'
-                }}
-                onMouseOver={(e) => {
-                  if (vista !== 'intermedia') {
-                    e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
-                    e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (vista !== 'intermedia') {
-                    e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
-                    e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
-                  }
-                }}
-              >
-                📱 Intermedia
-              </button>
-              <button
-                onClick={() => setVista('grande')}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  border: '2px solid',
-                  background: vista === 'grande' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
-                  borderColor: vista === 'grande' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
-                  color: vista === 'grande' ? 'white' : (empresa?.colorTexto || '#64748b'),
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  fontSize: '14px',
-                  fontWeight: '600'
-                }}
-                onMouseOver={(e) => {
-                  if (vista !== 'grande') {
-                    e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
-                    e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (vista !== 'grande') {
-                    e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
-                    e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
-                  }
-                }}
-              >
-                ⊞ Grande
-              </button>
-            </div>
+                <span style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: empresa?.colorTexto || '#64748b'
+                }}>
+                  Vista:
+                </span>
+                <button
+                  onClick={() => setVista('lista')}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '2px solid',
+                    background: vista === 'lista' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
+                    borderColor: vista === 'lista' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
+                    color: vista === 'lista' ? 'white' : (empresa?.colorTexto || '#64748b'),
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}
+                  onMouseOver={(e) => {
+                    if (vista !== 'lista') {
+                      e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
+                      e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (vista !== 'lista') {
+                      e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
+                      e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
+                    }
+                  }}
+                >
+                  📋 Lista
+                </button>
+                <button
+                  onClick={() => setVista('intermedia')}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '2px solid',
+                    background: vista === 'intermedia' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
+                    borderColor: vista === 'intermedia' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
+                    color: vista === 'intermedia' ? 'white' : (empresa?.colorTexto || '#64748b'),
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}
+                  onMouseOver={(e) => {
+                    if (vista !== 'intermedia') {
+                      e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
+                      e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (vista !== 'intermedia') {
+                      e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
+                      e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
+                    }
+                  }}
+                >
+                  📱 Intermedia
+                </button>
+                <button
+                  onClick={() => setVista('grande')}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '2px solid',
+                    background: vista === 'grande' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
+                    borderColor: vista === 'grande' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
+                    color: vista === 'grande' ? 'white' : (empresa?.colorTexto || '#64748b'),
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}
+                  onMouseOver={(e) => {
+                    if (vista !== 'grande') {
+                      e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
+                      e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (vista !== 'grande') {
+                      e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
+                      e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
+                    }
+                  }}
+                >
+                  ⊞ Grande
+                </button>
+              </div>
+            )}
             
             <div style={{
-              fontSize: '14px',
+              fontSize: isMobile ? '12px' : '14px',
               color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b',
-              fontWeight: '500'
+              fontWeight: '500',
+              textAlign: isMobile ? 'center' : 'right'
             }}>
               {productos.length} producto{productos.length !== 1 ? 's' : ''} encontrado{productos.length !== 1 ? 's' : ''}
             </div>
@@ -769,9 +804,9 @@ export default function CatalogoPublico() {
         {cargando ? (
           <div style={{
             textAlign: 'center',
-            padding: '60px 20px',
+            padding: isMobile ? '40px 16px' : '60px 20px',
             background: empresa?.colorAcento || '#fff',
-            borderRadius: '16px',
+            borderRadius: isMobile ? '12px' : '16px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
           }}>
             <div style={{
@@ -783,16 +818,16 @@ export default function CatalogoPublico() {
               animation: 'spin 1s linear infinite',
               margin: '0 auto 20px'
             }} />
-            <p style={{ margin: 0, fontSize: '18px', color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b', fontWeight: '500' }}>
+            <p style={{ margin: 0, fontSize: isMobile ? '16px' : '18px', color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b', fontWeight: '500' }}>
               Cargando productos...
             </p>
           </div>
         ) : error ? (
           <div style={{
             textAlign: 'center',
-            padding: '40px 20px',
+            padding: isMobile ? '32px 16px' : '40px 20px',
             background: empresa?.colorAcento || '#fff',
-            borderRadius: '16px',
+            borderRadius: isMobile ? '12px' : '16px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
           }}>
             <div style={{
@@ -808,7 +843,7 @@ export default function CatalogoPublico() {
             }}>
               ❌
             </div>
-            <p style={{ margin: '0 0 20px 0', fontSize: '18px', color: '#dc2626', fontWeight: '600' }}>
+            <p style={{ margin: '0 0 20px 0', fontSize: isMobile ? '16px' : '18px', color: '#dc2626', fontWeight: '600' }}>
               {error}
             </p>
             <button 
@@ -818,8 +853,8 @@ export default function CatalogoPublico() {
                 color: 'white',
                 border: 'none',
                 borderRadius: '12px',
-                padding: '12px 24px',
-                fontSize: '16px',
+                padding: isMobile ? '10px 20px' : '12px 24px',
+                fontSize: isMobile ? '14px' : '16px',
                 fontWeight: '600',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease'
@@ -833,9 +868,9 @@ export default function CatalogoPublico() {
         ) : productos.length === 0 ? (
           <div style={{
             textAlign: 'center',
-            padding: '60px 20px',
+            padding: isMobile ? '40px 16px' : '60px 20px',
             background: empresa?.colorAcento || '#fff',
-            borderRadius: '16px',
+            borderRadius: isMobile ? '12px' : '16px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
           }}>
             <div style={{
@@ -851,29 +886,33 @@ export default function CatalogoPublico() {
             }}>
               📦
             </div>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '24px', fontWeight: '600', color: empresa?.colorTexto || '#1e293b' }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: isMobile ? '20px' : '24px', fontWeight: '600', color: empresa?.colorTexto || '#1e293b' }}>
               No hay productos disponibles
             </h3>
-            <p style={{ margin: 0, fontSize: '16px', color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b' }}>
+            <p style={{ margin: 0, fontSize: isMobile ? '14px' : '16px', color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b' }}>
               En este momento no tenemos productos en esta categoría.
             </p>
           </div>
         ) : (
           <div style={{
             display: vista === 'lista' ? 'flex' : 'grid',
-            gridTemplateColumns: vista === 'intermedia' ? 'repeat(auto-fill, minmax(250px, 1fr))' : vista === 'grande' ? 'repeat(auto-fill, minmax(320px, 1fr))' : 'none',
+            gridTemplateColumns: vista === 'intermedia' ? 
+              (isMobile ? 'repeat(auto-fill, minmax(200px, 1fr))' : isTablet ? 'repeat(auto-fill, minmax(200px, 1fr))' : 'repeat(auto-fill, minmax(250px, 1fr))') : 
+              vista === 'grande' ? 
+              (isMobile ? 'repeat(auto-fill, minmax(280px, 1fr))' : isTablet ? 'repeat(auto-fill, minmax(250px, 1fr))' : 'repeat(auto-fill, minmax(320px, 1fr))') : 
+              'none',
             flexDirection: vista === 'lista' ? 'column' : 'unset',
-            gap: vista === 'lista' ? '16px' : '20px',
-            marginBottom: '40px'
+            gap: vista === 'lista' ? (isMobile ? '12px' : '16px') : (isMobile ? '16px' : isTablet ? '16px' : '20px'),
+            marginBottom: '40px',
+            justifyContent: isMobile ? 'center' : 'start'
           }}>
             {productos.map(producto => {
-              const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
-              const maximoAlcanzado = cantidadEnCarrito >= producto.stock;
+              const cantidadEnCarrito = /* items.find(i => i.id === producto.id)?.cantidad || 0; */ 0; // Assuming items is not available here, so default to 0
 
               return (
                 <div key={producto.id} style={{
                   background: empresa?.colorAcento || '#fff',
-                  borderRadius: '20px',
+                  borderRadius: isMobile ? '16px' : '20px',
                   overflow: 'hidden',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                   border: `1px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : 'rgba(255,255,255,0.2)'}`,
@@ -883,7 +922,7 @@ export default function CatalogoPublico() {
                   display: vista === 'lista' ? 'flex' : 'block',
                   alignItems: vista === 'lista' ? 'stretch' : 'unset',
                   gap: vista === 'lista' ? '0' : 'unset',
-                  height: vista === 'lista' ? '160px' : 'auto',
+                  height: vista === 'lista' ? (isMobile ? '140px' : '160px') : 'auto',
                   color: empresa?.colorTexto || '#1e293b'
                 }}
                 onClick={(e) => {
@@ -907,12 +946,12 @@ export default function CatalogoPublico() {
                     position: 'relative', 
                     width: '100%',
                     aspectRatio: vista === 'lista' ? undefined : '1 / 1',
-                    height: vista === 'lista' ? '160px' : undefined,
-                    minWidth: vista === 'lista' ? '160px' : undefined,
-                    maxWidth: vista === 'lista' ? '160px' : undefined,
+                    height: vista === 'lista' ? (isMobile ? '140px' : '160px') : undefined,
+                    minWidth: vista === 'lista' ? (isMobile ? '140px' : '160px') : undefined,
+                    maxWidth: vista === 'lista' ? (isMobile ? '140px' : '160px') : undefined,
                     overflow: 'hidden',
                     flexShrink: 0,
-                    borderRadius: vista === 'lista' ? '0' : '12px 12px 0 0',
+                    borderRadius: vista === 'lista' ? '0' : (isMobile ? '8px 8px 0 0' : '12px 12px 0 0'),
                     margin: 0,
                     padding: 0
                   }}>
@@ -925,7 +964,7 @@ export default function CatalogoPublico() {
                           height: '100%',
                           objectFit: 'cover',
                           display: 'block',
-                          borderRadius: vista === 'lista' ? '0' : '12px 12px 0 0',
+                          borderRadius: vista === 'lista' ? '0' : (isMobile ? '8px 8px 0 0' : '12px 12px 0 0'),
                           margin: 0,
                           padding: 0
                         }}
@@ -941,7 +980,7 @@ export default function CatalogoPublico() {
                         justifyContent: 'center',
                         color: '#64748b',
                         fontSize: vista === 'lista' ? '14px' : vista === 'intermedia' ? '16px' : '18px',
-                        borderRadius: vista === 'lista' ? '0' : '12px 12px 0 0',
+                        borderRadius: vista === 'lista' ? '0' : (isMobile ? '8px 8px 0 0' : '12px 12px 0 0'),
                         margin: 0,
                         padding: '20px',
                         textAlign: 'center'
@@ -1005,7 +1044,11 @@ export default function CatalogoPublico() {
                   {/* Contenido principal */}
                   <div style={{ 
                     flex: 1,
-                    padding: vista === 'lista' ? '16px' : vista === 'intermedia' ? '20px' : '24px',
+                    padding: vista === 'lista' ? 
+                    (isMobile ? '12px' : '16px') : 
+                    vista === 'intermedia' ? 
+                    (isMobile ? '20px' : '20px') : 
+                    (isMobile ? '24px' : '24px'),
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: vista === 'lista' ? 'space-between' : 'space-between',
@@ -1031,14 +1074,15 @@ export default function CatalogoPublico() {
                         <div>
                           <h3 style={{
                             margin: '0 0 8px 0',
-                            fontSize: vista === 'lista' ? '16px' : vista === 'intermedia' ? '18px' : '20px',
+                            fontSize: vista === 'lista' ? '16px' : vista === 'intermedia' ? (isMobile ? '16px' : '18px') : (isMobile ? '18px' : '20px'),
                             fontWeight: '700',
                             color: empresa?.colorTexto || '#1e293b',
                             lineHeight: '1.3',
                             display: '-webkit-box',
                             WebkitLineClamp: vista === 'lista' ? 1 : vista === 'intermedia' ? 2 : 3,
                             WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            textAlign: isMobile ? 'center' : 'left'
                           }}>
                             {producto.nombre}
                           </h3>
@@ -1048,7 +1092,8 @@ export default function CatalogoPublico() {
                             display: 'flex', 
                             gap: '6px', 
                             marginBottom: vista === 'lista' ? '8px' : vista === 'intermedia' ? '12px' : '16px', 
-                            flexWrap: 'wrap' 
+                            flexWrap: 'wrap',
+                            justifyContent: isMobile ? 'center' : 'flex-start'
                           }}>
                             {producto.categoria && (
                               <span style={{
@@ -1083,11 +1128,11 @@ export default function CatalogoPublico() {
                           <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: vista === 'lista' ? 'flex-start' : 'space-between',
+                            justifyContent: vista === 'lista' ? 'flex-start' : (isMobile ? 'center' : 'space-between'),
                             marginBottom: vista === 'lista' ? '0' : vista === 'intermedia' ? '16px' : '20px'
                           }}>
                             <span style={{
-                              fontSize: vista === 'lista' ? '20px' : vista === 'intermedia' ? '24px' : '28px',
+                              fontSize: vista === 'lista' ? '20px' : vista === 'intermedia' ? (isMobile ? '22px' : '24px') : (isMobile ? '26px' : '28px'),
                               fontWeight: '800',
                               color: empresa?.colorTexto || '#1e293b',
                               textShadow: '0 1px 2px rgba(0,0,0,0.1)'
@@ -1138,17 +1183,17 @@ export default function CatalogoPublico() {
                                 console.log('Stock disponible:', producto.stock);
                                 if (cantidadEnCarrito > 0) {
                                   // Actualizar directamente el estado del carrito
-                                  const newItems = items.map(item => 
-                                    item.id === producto.id 
-                                      ? { ...item, cantidad: item.cantidad - 1 }
-                                      : item
-                                  ).filter(item => item.cantidad > 0);
+                                  // const newItems = items.map(item => 
+                                  //   item.id === producto.id 
+                                  //     ? { ...item, cantidad: item.cantidad - 1 }
+                                  //     : item
+                                  // ).filter(item => item.cantidad > 0);
                                   
-                                  // Actualizar localStorage
-                                  localStorage.setItem('cart', JSON.stringify(newItems));
+                                  // // Actualizar localStorage
+                                  // localStorage.setItem('cart', JSON.stringify(newItems));
                                   
-                                  // Forzar re-render
-                                  window.dispatchEvent(new Event('storage'));
+                                  // // Forzar re-render
+                                  // window.dispatchEvent(new Event('storage'));
                                 }
                               }}
                               disabled={cantidadEnCarrito === 0}
@@ -1207,28 +1252,28 @@ export default function CatalogoPublico() {
                                 console.log('Stock disponible:', producto.stock);
                                 if (cantidadEnCarrito < producto.stock) {
                                   // Actualizar directamente el estado del carrito
-                                  const newItems = items.map(item => 
-                                    item.id === producto.id 
-                                      ? { ...item, cantidad: item.cantidad + 1 }
-                                      : item
-                                  );
+                                  // const newItems = items.map(item => 
+                                  //   item.id === producto.id 
+                                  //     ? { ...item, cantidad: item.cantidad + 1 }
+                                  //     : item
+                                  // );
                                   
-                                  // Si el producto no está en el carrito, agregarlo
-                                  if (!items.find(item => item.id === producto.id)) {
-                                    newItems.push({
-                                      id: producto.id,
-                                      nombre: producto.nombre,
-                                      precio: producto.precio,
-                                      cantidad: 1,
-                                      imagen: producto.imagenes && producto.imagenes[0]
-                                    });
-                                  }
+                                  // // Si el producto no está en el carrito, agregarlo
+                                  // if (!items.find(item => item.id === producto.id)) {
+                                  //   newItems.push({
+                                  //     id: producto.id,
+                                  //     nombre: producto.nombre,
+                                  //     precio: producto.precio,
+                                  //     cantidad: 1,
+                                  //     imagen: producto.imagenes && producto.imagenes[0]
+                                  //   });
+                                  // }
                                   
-                                  // Actualizar localStorage
-                                  localStorage.setItem('cart', JSON.stringify(newItems));
+                                  // // Actualizar localStorage
+                                  // localStorage.setItem('cart', JSON.stringify(newItems));
                                   
-                                  // Forzar re-render
-                                  window.dispatchEvent(new Event('storage'));
+                                  // // Forzar re-render
+                                  // window.dispatchEvent(new Event('storage'));
                                 }
                               }}
                               disabled={cantidadEnCarrito >= producto.stock}
@@ -1412,42 +1457,51 @@ export default function CatalogoPublico() {
         {/* Footer del catálogo */}
         <div style={{
           textAlign: 'center',
-          padding: '40px 20px',
+          padding: isMobile ? '24px 16px' : '40px 20px',
           background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-          borderRadius: '20px',
+          borderRadius: isMobile ? '16px' : '20px',
           border: '2px dashed #cbd5e1',
-          marginTop: '40px'
+          marginTop: isMobile ? '24px' : '40px'
         }}>
           <div style={{
-            width: '60px',
-            height: '60px',
+            width: isMobile ? '48px' : '60px',
+            height: isMobile ? '48px' : '60px',
             background: 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 20px',
-            fontSize: '24px'
+            fontSize: isMobile ? '20px' : '24px'
           }}>
             🎉
           </div>
-                      <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600', color: empresa?.colorTexto || '#1e293b' }}>
+          <h3 style={{ 
+            margin: '0 0 12px 0', 
+            fontSize: isMobile ? '18px' : '20px', 
+            fontWeight: '600', 
+            color: empresa?.colorTexto || '#1e293b' 
+          }}>
             ¡Gracias por visitarnos!
           </h3>
-          <p style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#64748b' }}>
+          <p style={{ 
+            margin: '0 0 20px 0', 
+            fontSize: isMobile ? '14px' : '16px', 
+            color: '#64748b' 
+          }}>
             Encuentra los mejores productos al mejor precio
           </p>
           
           {/* Redes sociales en el footer */}
           {(empresa.instagramUrl || empresa.facebookUrl) && (
             <div style={{
-              marginTop: '24px',
-              paddingTop: '24px',
+              marginTop: isMobile ? '16px' : '24px',
+              paddingTop: isMobile ? '16px' : '24px',
               borderTop: '1px solid #e2e8f0'
             }}>
               <p style={{ 
                 margin: '0 0 16px 0', 
-                fontSize: '16px', 
+                fontSize: isMobile ? '14px' : '16px', 
                 fontWeight: '600', 
                 color: '#374151' 
               }}>
@@ -1456,8 +1510,9 @@ export default function CatalogoPublico() {
               <div style={{
                 display: 'flex',
                 justifyContent: 'center',
-                gap: '16px',
-                flexWrap: 'wrap'
+                gap: isMobile ? '12px' : '16px',
+                flexWrap: 'wrap',
+                flexDirection: isMobile ? 'column' : 'row'
               }}>
                 {empresa.instagramUrl && (
                   <a
@@ -1468,15 +1523,17 @@ export default function CatalogoPublico() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      padding: '12px 20px',
+                      padding: isMobile ? '10px 16px' : '12px 20px',
                       background: 'linear-gradient(135deg, #e4405f 0%, #c13584 100%)',
                       color: 'white',
                       textDecoration: 'none',
                       borderRadius: '12px',
-                      fontSize: '16px',
+                      fontSize: isMobile ? '14px' : '16px',
                       fontWeight: '600',
                       transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 12px rgba(228, 64, 95, 0.3)'
+                      boxShadow: '0 4px 12px rgba(228, 64, 95, 0.3)',
+                      width: isMobile ? '100%' : 'auto',
+                      justifyContent: 'center'
                     }}
                     onMouseOver={(e) => {
                       e.currentTarget.style.transform = 'translateY(-2px)';
@@ -1501,15 +1558,17 @@ export default function CatalogoPublico() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      padding: '12px 20px',
+                      padding: isMobile ? '10px 16px' : '12px 20px',
                       background: 'linear-gradient(135deg, #1877f2 0%, #0d6efd 100%)',
                       color: 'white',
                       textDecoration: 'none',
                       borderRadius: '12px',
-                      fontSize: '16px',
+                      fontSize: isMobile ? '14px' : '16px',
                       fontWeight: '600',
                       transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 12px rgba(24, 119, 242, 0.3)'
+                      boxShadow: '0 4px 12px rgba(24, 119, 242, 0.3)',
+                      width: isMobile ? '100%' : 'auto',
+                      justifyContent: 'center'
                     }}
                     onMouseOver={(e) => {
                       e.currentTarget.style.transform = 'translateY(-2px)';

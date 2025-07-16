@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import CartIcon from "../components/CartIcon";
-import CartModal from "../components/CartModal";
+import { useResponsive } from '../hooks/useResponsive';
 
 export default function PaginaPrincipal() {
+  const { isMobile } = useResponsive();
   const [estadisticas, setEstadisticas] = useState({
     empresasRegistradas: 1250,
     productosGestionados: 45680,
     pedidosProcesados: 12430
   });
-  const [showCart, setShowCart] = useState(false);
 
   useEffect(() => {
     // Animación de contadores
@@ -114,38 +113,49 @@ export default function PaginaPrincipal() {
         <div style={{
           maxWidth: '1200px',
           margin: '0 auto',
-          padding: '0 1rem'
+          padding: isMobile ? '0 1rem' : '0 1rem'
         }}>
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '1rem 0'
+            display: isMobile ? 'flex' : 'flex',
+            alignItems: isMobile ? 'center' : 'center',
+            justifyContent: isMobile ? 'space-between' : 'space-between',
+            padding: isMobile ? '0.75rem 0' : '1rem 0',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '0.75rem' : '0'
           }}>
             <Link to="/" style={{
-              fontSize: '1.5rem',
+              fontSize: isMobile ? '1.25rem' : '1.5rem',
               fontWeight: '700',
               color: '#1e293b',
               textDecoration: 'none',
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
+              backgroundClip: 'text',
+              textAlign: isMobile ? 'center' : 'left'
             }}>
               MiNegocio
             </Link>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: isMobile ? '0.5rem' : '1rem',
+              justifyContent: isMobile ? 'center' : 'flex-end',
+              width: isMobile ? '100%' : 'auto'
+            }}>
               <Link to="/login" style={{
-                padding: '0.75rem 1.5rem',
+                padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
                 backgroundColor: 'white',
                 color: '#3b82f6',
                 border: '2px solid #3b82f6',
                 borderRadius: '0.5rem',
-                fontSize: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
                 fontWeight: '500',
                 textDecoration: 'none',
                 transition: 'all 0.2s ease',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                minWidth: isMobile ? '100px' : 'auto',
+                textAlign: 'center'
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.backgroundColor = '#3b82f6';
@@ -160,17 +170,19 @@ export default function PaginaPrincipal() {
                 Iniciar Sesión
               </Link>
               <Link to="/registro" style={{
-                padding: '0.75rem 1.5rem',
+                padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '0.5rem',
-                fontSize: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
                 fontWeight: '500',
                 textDecoration: 'none',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                minWidth: isMobile ? '100px' : 'auto',
+                textAlign: 'center'
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
@@ -188,7 +200,7 @@ export default function PaginaPrincipal() {
       </nav>
 
       {/* Contenido principal con padding-top para compensar navbar fijo */}
-      <div style={{ paddingTop: '80px' }}>
+      <div style={{ paddingTop: isMobile ? '120px' : '80px' }}>
         {/* Hero Section */}
         <section style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',

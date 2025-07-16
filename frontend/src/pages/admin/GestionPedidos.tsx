@@ -1,10 +1,24 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
+import { useResponsive } from '../../hooks/useResponsive';
 import type { Pedido } from '../../types';
 import type { DetallePedido } from '../../types';
+
+// Tipo para las estadísticas de pedidos
+interface EstadisticasPedidos {
+  totalPedidos?: number;
+  pedidosPendientes?: number;
+  pedidosConfirmados?: number;
+  pedidosPreparando?: number;
+  pedidosEnviados?: number;
+  pedidosEntregados?: number;
+  pedidosCancelados?: number;
+  totalVentas?: number;
+  promedioTicket?: number;
+  [key: string]: number | undefined; // Para propiedades adicionales
+}
 
 // Componente Modal para detalles del pedido
 function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, open: boolean, onClose: () => void }) {
@@ -35,13 +49,6 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
       CANCELADO: 'Cancelado',
     };
     return textos[estado] || estado;
-  };
-
-  const formatearMoneda = (monto: number) => {
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP'
-    }).format(monto);
   };
 
   const verDetalleProducto = (detalle: DetallePedido) => {
@@ -734,6 +741,7 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
 }
 
 export default function GestionPedidos() {
+  const { isMobile } = useResponsive();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
   const [cargando, setCargando] = useState(true);
@@ -744,10 +752,7 @@ export default function GestionPedidos() {
   const [nombreAdministrador, setNombreAdministrador] = useState<string>('');
   
   // Estados para estadísticas
-  const [estadisticas, setEstadisticas] = useState<any>(null);
-  const [estadisticasDiarias, setEstadisticasDiarias] = useState<any>(null);
-  const [estadisticasMensuales, setEstadisticasMensuales] = useState<any>(null);
-  const [estadisticasAnuales, setEstadisticasAnuales] = useState<any>(null);
+  const [estadisticas, setEstadisticas] = useState<EstadisticasPedidos | null>(null);
   const [cargandoEstadisticas, setCargandoEstadisticas] = useState(false);
 
   useEffect(() => {
@@ -759,7 +764,10 @@ export default function GestionPedidos() {
         setEmpresaId(user.empresaId);
         setEmpresaNombre(user.empresaNombre || '');
         setNombreAdministrador(user.nombre || '');
-      } catch {}
+      } catch (error) {
+        console.log('Error al parsear el usuario:', error);
+        /* ignorado */
+      }
     }
   }, []);
 
@@ -801,56 +809,14 @@ export default function GestionPedidos() {
       
       const response = await api.obtenerEstadisticasPedidos(empresaId);
       console.log('Respuesta de estadísticas:', response);
-      if (response) {
-        setEstadisticas(response);
+      if (response && response.data) {
+        setEstadisticas(response.data as EstadisticasPedidos);
         console.log('Estadísticas cargadas:', response);
       }
     } catch (err) {
       console.error('Error al cargar estadísticas:', err);
     } finally {
       setCargandoEstadisticas(false);
-    }
-  };
-
-  const cargarEstadisticasDiarias = async () => {
-    if (!empresaId) return;
-    
-    const fecha = new Date().toISOString();
-    try {
-      const response = await api.obtenerEstadisticasPedidosDiarias(empresaId, fecha);
-      if (response.data) {
-        setEstadisticasDiarias(response.data);
-      }
-    } catch (err) {
-      console.error('Error al cargar estadísticas diarias:', err);
-    }
-  };
-
-  const cargarEstadisticasMensuales = async () => {
-    if (!empresaId) return;
-    
-    const fecha = new Date();
-    try {
-      const response = await api.obtenerEstadisticasPedidosMensuales(empresaId, fecha.getFullYear(), fecha.getMonth() + 1);
-      if (response.data) {
-        setEstadisticasMensuales(response.data);
-      }
-    } catch (err) {
-      console.error('Error al cargar estadísticas mensuales:', err);
-    }
-  };
-
-  const cargarEstadisticasAnuales = async () => {
-    if (!empresaId) return;
-    
-    const fecha = new Date();
-    try {
-      const response = await api.obtenerEstadisticasPedidosAnuales(empresaId, fecha.getFullYear());
-      if (response.data) {
-        setEstadisticasAnuales(response.data);
-      }
-    } catch (err) {
-      console.error('Error al cargar estadísticas anuales:', err);
     }
   };
 
@@ -938,13 +904,6 @@ export default function GestionPedidos() {
     return textos[estado] || estado;
   };
 
-  const formatearMoneda = (monto: number) => {
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP'
-    }).format(monto);
-  };
-
   const pedidosFiltrados = filtroEstado === 'todos'
     ? pedidos
     : pedidos.filter(pedido => pedido.estado === filtroEstado.toUpperCase());
@@ -957,7 +916,12 @@ export default function GestionPedidos() {
           empresaNombre={empresaNombre}
           nombreAdministrador={nombreAdministrador}
         />
-        <div className="contenedor" style={{ paddingTop: '5rem', paddingBottom: '2rem' }}>
+        <div className="contenedor" style={{ 
+          paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
+          paddingBottom: '2rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem'
+        }}>
           <div className="tarjeta text-center py-12">
             <div className="spinner mx-auto mb-4"></div>
             <p>Cargando pedidos...</p>
@@ -977,10 +941,15 @@ export default function GestionPedidos() {
       />
 
       {/* Contenido principal */}
-      <div className="contenedor" style={{ paddingTop: '5rem', paddingBottom: '2rem' }}>
-        <div className="mb-8">
+      <div className="contenedor" style={{ 
+        paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
+        paddingBottom: '2rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem'
+      }}>
+        <div className="mb-8" style={{ textAlign: isMobile ? 'center' : 'left' }}>
           <h1 className="titulo-2 mb-4" style={{ 
-            fontSize: '32px', 
+            fontSize: isMobile ? '1.75rem' : '32px', 
             fontWeight: '700', 
             color: '#1e293b',
             letterSpacing: '-0.025em',
@@ -989,7 +958,7 @@ export default function GestionPedidos() {
             📋 Gestión de Pedidos
           </h1>
           <p className="texto-gris" style={{ 
-            fontSize: '16px', 
+            fontSize: isMobile ? '1rem' : '16px', 
             color: '#64748b',
             marginBottom: '8px'
           }}>
@@ -1000,7 +969,9 @@ export default function GestionPedidos() {
             width: '60px',
             background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
             borderRadius: '2px',
-            marginTop: '16px'
+            marginTop: '16px',
+            marginLeft: isMobile ? 'auto' : '0',
+            marginRight: isMobile ? 'auto' : '0'
           }}></div>
         </div>
 
@@ -1029,23 +1000,40 @@ export default function GestionPedidos() {
         ) : estadisticas ? (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1.5rem',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: isMobile ? '1rem' : '1.5rem',
             marginBottom: '2rem'
           }}>
             <div style={{
               background: 'white',
               borderRadius: '1rem',
-              padding: '1.5rem',
+              padding: isMobile ? '1rem' : '1.5rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               border: '1px solid #e2e8f0'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>💰</span>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '0.5rem',
+                flexDirection: isMobile ? 'column' : 'row',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ 
+                  fontSize: isMobile ? '1.5rem' : '2rem', 
+                  marginRight: isMobile ? '0' : '1rem',
+                  marginBottom: isMobile ? '0.5rem' : '0'
+                }}>💰</span>
                 <div>
-                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Total Pedidos</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
-                    {formatearMoneda(estadisticas.totalPedidos || 0)}
+                  <div style={{ 
+                    color: '#64748b', 
+                    fontSize: isMobile ? '0.75rem' : '0.875rem' 
+                  }}>Total Pedidos</div>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.25rem' : '1.5rem', 
+                    fontWeight: '700', 
+                    color: '#1e293b' 
+                  }}>
+                    {estadisticas.totalPedidos || 0}
                   </div>
                 </div>
               </div>
@@ -1054,15 +1042,32 @@ export default function GestionPedidos() {
             <div style={{
               background: 'white',
               borderRadius: '1rem',
-              padding: '1.5rem',
+              padding: isMobile ? '1rem' : '1.5rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               border: '1px solid #e2e8f0'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>🛒</span>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '0.5rem',
+                flexDirection: isMobile ? 'column' : 'row',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ 
+                  fontSize: isMobile ? '1.5rem' : '2rem', 
+                  marginRight: isMobile ? '0' : '1rem',
+                  marginBottom: isMobile ? '0.5rem' : '0'
+                }}>🛒</span>
                 <div>
-                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Transacciones</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
+                  <div style={{ 
+                    color: '#64748b', 
+                    fontSize: isMobile ? '0.75rem' : '0.875rem' 
+                  }}>Transacciones</div>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.25rem' : '1.5rem', 
+                    fontWeight: '700', 
+                    color: '#1e293b' 
+                  }}>
                     {estadisticas.totalTransacciones || 0}
                   </div>
                 </div>
@@ -1072,15 +1077,32 @@ export default function GestionPedidos() {
             <div style={{
               background: 'white',
               borderRadius: '1rem',
-              padding: '1.5rem',
+              padding: isMobile ? '1rem' : '1.5rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               border: '1px solid #e2e8f0'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>📦</span>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '0.5rem',
+                flexDirection: isMobile ? 'column' : 'row',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ 
+                  fontSize: isMobile ? '1.5rem' : '2rem', 
+                  marginRight: isMobile ? '0' : '1rem',
+                  marginBottom: isMobile ? '0.5rem' : '0'
+                }}>📦</span>
                 <div>
-                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Productos Vendidos</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
+                  <div style={{ 
+                    color: '#64748b', 
+                    fontSize: isMobile ? '0.75rem' : '0.875rem' 
+                  }}>Productos Vendidos</div>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.25rem' : '1.5rem', 
+                    fontWeight: '700', 
+                    color: '#1e293b' 
+                  }}>
                     {estadisticas.totalProductos || 0}
                   </div>
                 </div>
@@ -1090,15 +1112,32 @@ export default function GestionPedidos() {
             <div style={{
               background: 'white',
               borderRadius: '1rem',
-              padding: '1.5rem',
+              padding: isMobile ? '1rem' : '1.5rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               border: '1px solid #e2e8f0'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>📊</span>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '0.5rem',
+                flexDirection: isMobile ? 'column' : 'row',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ 
+                  fontSize: isMobile ? '1.5rem' : '2rem', 
+                  marginRight: isMobile ? '0' : '1rem',
+                  marginBottom: isMobile ? '0.5rem' : '0'
+                }}>📊</span>
                 <div>
-                  <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Cantidad Pedidos</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>
+                  <div style={{ 
+                    color: '#64748b', 
+                    fontSize: isMobile ? '0.75rem' : '0.875rem' 
+                  }}>Cantidad Pedidos</div>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.25rem' : '1.5rem', 
+                    fontWeight: '700', 
+                    color: '#1e293b' 
+                  }}>
                     {estadisticas.cantidadPedidos || 0}
                   </div>
                 </div>
@@ -1124,18 +1163,20 @@ export default function GestionPedidos() {
           background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
           border: '1px solid #e2e8f0',
           borderRadius: '16px',
-          padding: '24px',
+          padding: isMobile ? '16px' : '24px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
         }}>
           <h3 className="titulo-3 mb-4" style={{
-            fontSize: '20px',
+            fontSize: isMobile ? '18px' : '20px',
             fontWeight: '600',
             color: '#1e293b',
             marginBottom: '16px'
           }}>
             🔍 Filtrar por Estado
           </h3>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap" style={{
+            gap: isMobile ? '0.5rem' : '0.5rem'
+          }}>
             <button
               onClick={() => setFiltroEstado('todos')}
               className={`boton ${filtroEstado === 'todos' ? 'boton-primario' : 'boton-secundario'}`}
@@ -1145,8 +1186,8 @@ export default function GestionPedidos() {
                 border: '2px solid',
                 borderColor: filtroEstado === 'todos' ? '#3b82f6' : '#e2e8f0',
                 borderRadius: '12px',
-                padding: '10px 16px',
-                fontSize: '14px',
+                padding: isMobile ? '8px 12px' : '10px 16px',
+                fontSize: isMobile ? '12px' : '14px',
                 fontWeight: '600',
                 transition: 'all 0.2s ease',
                 boxShadow: filtroEstado === 'todos' ? '0 4px 12px rgba(59,130,246,0.3)' : 'none'
@@ -1165,8 +1206,8 @@ export default function GestionPedidos() {
                   border: '2px solid',
                   borderColor: filtroEstado === estado ? obtenerColorEstado(estado) : '#e2e8f0',
                   borderRadius: '12px',
-                  padding: '10px 16px',
-                  fontSize: '14px',
+                  padding: isMobile ? '8px 12px' : '10px 16px',
+                  fontSize: isMobile ? '12px' : '14px',
                   fontWeight: '600',
                   transition: 'all 0.2s ease',
                   boxShadow: filtroEstado === estado ? `0 4px 12px ${obtenerColorEstado(estado)}40` : 'none'
@@ -1189,17 +1230,19 @@ export default function GestionPedidos() {
           background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
           border: '1px solid #e2e8f0',
           borderRadius: '16px',
-          padding: '24px',
+          padding: isMobile ? '16px' : '24px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
         }}>
           <h3 className="titulo-3 mb-6" style={{
-            fontSize: '22px',
+            fontSize: isMobile ? '18px' : '22px',
             fontWeight: '600',
             color: '#1e293b',
             marginBottom: '24px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            flexDirection: isMobile ? 'column' : 'row',
+            textAlign: isMobile ? 'center' : 'left'
           }}>
             📦 Pedidos {filtroEstado !== 'todos' && `- ${obtenerTextoEstado(filtroEstado as Pedido['estado'])}`}
             <span style={{

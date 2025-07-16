@@ -3,8 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import BarcodeScanner from '../../components/BarcodeScanner';
+import { useResponsive } from '../../hooks/useResponsive';
 import type { Producto } from '../../types';
 import '../../styles/gestion-productos.css';
+
+// Extender la interfaz Window para incluir webkitAudioContext
+declare global {
+  interface Window {
+    webkitAudioContext?: typeof AudioContext;
+  }
+}
 
 interface FiltrosProductos {
   nombre?: string;
@@ -21,13 +29,19 @@ type VistaProducto = 'lista' | 'intermedia' | 'cuadricula';
 
 const GestionProductos: React.FC = () => {
   const navigate = useNavigate();
+  const { isMobile } = useResponsive();
   const [productos, setProductos] = useState<Producto[]>([]);
 
   // Función para reproducir el sonido "pi"
   const playBeepSound = () => {
     try {
-      // Crear un contexto de audio
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // Crear un contexto de audio con soporte para navegadores antiguos
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        console.log('AudioContext no está soportado en este navegador');
+        return;
+      }
+      const audioContext = new AudioContextClass();
       
       // Crear un oscilador para generar el tono
       const oscillator = audioContext.createOscillator();
@@ -53,6 +67,13 @@ const GestionProductos: React.FC = () => {
     }
   };
   const [vista, setVista] = useState<VistaProducto>('lista');
+
+  // Cambiar automáticamente a vista intermedia en móvil si está en lista
+  useEffect(() => {
+    if (isMobile && vista === 'lista') {
+      setVista('intermedia');
+    }
+  }, [isMobile, vista]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [filtros, setFiltros] = useState<FiltrosProductos>({});
@@ -61,7 +82,7 @@ const GestionProductos: React.FC = () => {
   const [marcas, setMarcas] = useState<string[]>([]);
   const [sectoresAlmacenamiento, setSectoresAlmacenamiento] = useState<string[]>([]);
   const [codigosPersonalizados, setCodigosPersonalizados] = useState<string[]>([]);
-  const [codigosBarras, setCodigosBarras] = useState<string[]>([]);
+  // const [codigosBarras, setCodigosBarras] = useState<string[]>([]); // Eliminado - no se usa
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [empresaNombre, setEmpresaNombre] = useState<string>('');
   const [nombreAdministrador, setNombreAdministrador] = useState<string>('');
@@ -198,27 +219,27 @@ const GestionProductos: React.FC = () => {
     }
   }, [empresaId]);
 
-  const cargarCodigosBarras = useCallback(async () => {
-    if (!empresaId) return;
-    
-    try {
-      const response = await ApiService.obtenerCodigosBarras(empresaId);
-      if (response.data) {
-        setCodigosBarras(response.data);
-      }
-    } catch (error) {
-      console.error('Error al cargar códigos de barras:', error);
-    }
-  }, [empresaId]);
+  // const cargarCodigosBarras = useCallback(async () => {
+  //   if (!empresaId) return;
+  //   
+  //   try {
+  //     const response = await ApiService.obtenerCodigosBarras(empresaId);
+  //     if (response.data) {
+  //       setCodigosBarras(response.data);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error al cargar códigos de barras:', error);
+  //   }
+  // }, [empresaId]); // Eliminado - no se usa
 
   useEffect(() => {
     if (empresaId) {
       cargarProductos();
       cargarSectoresAlmacenamiento();
       cargarCodigosPersonalizados();
-      cargarCodigosBarras();
+      // cargarCodigosBarras(); // Eliminado - no se usa
     }
-  }, [empresaId, cargarProductos, cargarSectoresAlmacenamiento, cargarCodigosPersonalizados, cargarCodigosBarras]);
+  }, [empresaId, cargarProductos, cargarSectoresAlmacenamiento, cargarCodigosPersonalizados]);
 
 
 
@@ -419,7 +440,7 @@ const GestionProductos: React.FC = () => {
       console.log('Producto:', producto.nombre);
       
       // Llamar al endpoint de reactivar
-      const response = await ApiService.reactivarProducto(empresaId, producto.id);
+      await ApiService.reactivarProducto(empresaId, producto.id);
       
       // Actualizar la lista local
       setProductos(productos.map(p => 
@@ -618,7 +639,10 @@ const GestionProductos: React.FC = () => {
       />
 
       {/* Contenido principal */}
-      <div className="contenedor py-8">
+      <div className="contenedor" style={{ 
+        paddingTop: isMobile ? '4rem' : '2rem',
+        paddingBottom: '2rem'
+      }}>
         {/* Header con título y descripción */}
         <div style={{
           marginBottom: '3rem',
@@ -941,56 +965,28 @@ const GestionProductos: React.FC = () => {
               
               {/* Barra de búsqueda con escáner y filtro de stock */}
               <div className="mb-4">
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  {/* Campo de búsqueda por nombre */}
-                  <div className="relative" style={{ flex: 1 }}>
-                    <div className="absolute" style={{ top: '50%', left: '16px', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                      <span style={{ color: '#64748b', fontSize: '18px' }}>🔍</span>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Buscar productos por nombre o descripción..."
-                      value={busqueda}
-                      onChange={(e) => setBusqueda(e.target.value)}
-                      className="campo"
-                      style={{ 
-                        paddingLeft: '48px',
-                        fontSize: '16px',
-                        borderRadius: '12px',
-                        border: '2px solid #e2e8f0',
-                        transition: 'all 0.2s ease',
-                        width: '100%'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#3b82f6';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#e2e8f0';
-                        e.target.style.boxShadow = 'none';
-                      }}
-                    />
-                  </div>
-
-                  {/* Campo de código de barras con botón de escanear */}
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: 'fit-content' }}>
-                    <div className="relative" style={{ minWidth: '200px' }}>
-                      <div className="absolute" style={{ top: '50%', left: '12px', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <span style={{ color: '#64748b', fontSize: '16px' }}>📊</span>
+                {isMobile ? (
+                  // Layout móvil: elementos apilados verticalmente
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {/* Campo de búsqueda por nombre */}
+                    <div className="relative">
+                      <div className="absolute" style={{ top: '50%', left: '16px', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                        <span style={{ color: '#64748b', fontSize: '18px' }}>🔍</span>
                       </div>
                       <input
                         type="text"
-                        placeholder="Código de barras..."
-                        value={filtros.codigoBarras || ''}
-                        onChange={(e) => setFiltros(prev => ({ ...prev, codigoBarras: e.target.value || undefined }))}
+                        placeholder="Buscar productos por nombre o descripción..."
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
                         className="campo"
                         style={{ 
-                          paddingLeft: '36px',
-                          fontSize: '14px',
-                          borderRadius: '8px',
+                          paddingLeft: '48px',
+                          fontSize: '16px',
+                          borderRadius: '12px',
                           border: '2px solid #e2e8f0',
                           transition: 'all 0.2s ease',
-                          minWidth: '200px'
+                          width: '100%',
+                          minHeight: '48px'
                         }}
                         onFocus={(e) => {
                           e.target.style.borderColor = '#3b82f6';
@@ -1002,64 +998,212 @@ const GestionProductos: React.FC = () => {
                         }}
                       />
                     </div>
-                    
-                    <button
-                      onClick={abrirScanner}
-                      style={{
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '8px 16px',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        minHeight: '40px'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-1px)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.3)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
-                      title="Escanear código de barras"
-                    >
-                      📷 Escanear
-                    </button>
-                  </div>
 
-                  {/* Checkbox de solo stock bajo */}
-                  <div style={{ minWidth: 'fit-content' }}>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    {/* Campo de código de barras con botón de escanear */}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div className="relative" style={{ flex: 1 }}>
+                        <div className="absolute" style={{ top: '50%', left: '12px', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                          <span style={{ color: '#64748b', fontSize: '16px' }}>📊</span>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Código de barras..."
+                          value={filtros.codigoBarras || ''}
+                          onChange={(e) => setFiltros(prev => ({ ...prev, codigoBarras: e.target.value || undefined }))}
+                          className="campo"
+                          style={{ 
+                            paddingLeft: '36px',
+                            fontSize: '14px',
+                            borderRadius: '8px',
+                            border: '2px solid #e2e8f0',
+                            transition: 'all 0.2s ease',
+                            width: '100%',
+                            minHeight: '44px'
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = '#3b82f6';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = '#e2e8f0';
+                            e.target.style.boxShadow = 'none';
+                          }}
+                        />
+                      </div>
+                      
+                      <button
+                        onClick={abrirScanner}
+                        style={{
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          minHeight: '44px',
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.3)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
+                        title="Escanear código de barras"
+                      >
+                        📷 Escanear
+                      </button>
+                    </div>
+
+                    {/* Checkbox de solo stock bajo */}
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filtros.stockBajo || false}
+                          onChange={(e) => setFiltros({...filtros, stockBajo: e.target.checked || undefined})}
+                          style={{ 
+                            width: '18px',
+                            height: '18px',
+                            accentColor: '#ef4444'
+                          }}
+                        />
+                        <span style={{ fontSize: '14px', color: '#374151', whiteSpace: 'nowrap' }}>
+                          📉 Solo stock bajo
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  // Layout desktop/tablet: elementos en línea
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    {/* Campo de búsqueda por nombre */}
+                    <div className="relative" style={{ flex: 1 }}>
+                      <div className="absolute" style={{ top: '50%', left: '16px', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                        <span style={{ color: '#64748b', fontSize: '18px' }}>🔍</span>
+                      </div>
                       <input
-                        type="checkbox"
-                        checked={filtros.stockBajo || false}
-                        onChange={(e) => setFiltros({...filtros, stockBajo: e.target.checked || undefined})}
+                        type="text"
+                        placeholder="Buscar productos por nombre o descripción..."
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                        className="campo"
                         style={{ 
-                          width: '18px',
-                          height: '18px',
-                          accentColor: '#ef4444'
+                          paddingLeft: '48px',
+                          fontSize: '16px',
+                          borderRadius: '12px',
+                          border: '2px solid #e2e8f0',
+                          transition: 'all 0.2s ease',
+                          width: '100%'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e2e8f0';
+                          e.target.style.boxShadow = 'none';
                         }}
                       />
-                      <span style={{ fontSize: '14px', color: '#374151', whiteSpace: 'nowrap' }}>
-                        📉 Solo stock bajo
-                      </span>
-                    </label>
+                    </div>
+
+                    {/* Campo de código de barras con botón de escanear */}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: 'fit-content' }}>
+                      <div className="relative" style={{ minWidth: '200px' }}>
+                        <div className="absolute" style={{ top: '50%', left: '12px', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                          <span style={{ color: '#64748b', fontSize: '16px' }}>📊</span>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Código de barras..."
+                          value={filtros.codigoBarras || ''}
+                          onChange={(e) => setFiltros(prev => ({ ...prev, codigoBarras: e.target.value || undefined }))}
+                          className="campo"
+                          style={{ 
+                            paddingLeft: '36px',
+                            fontSize: '14px',
+                            borderRadius: '8px',
+                            border: '2px solid #e2e8f0',
+                            transition: 'all 0.2s ease',
+                            minWidth: '200px'
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = '#3b82f6';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = '#e2e8f0';
+                            e.target.style.boxShadow = 'none';
+                          }}
+                        />
+                      </div>
+                      
+                      <button
+                        onClick={abrirScanner}
+                        style={{
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          minHeight: '40px'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.3)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
+                        title="Escanear código de barras"
+                      >
+                        📷 Escanear
+                      </button>
+                    </div>
+
+                    {/* Checkbox de solo stock bajo */}
+                    <div style={{ minWidth: 'fit-content' }}>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filtros.stockBajo || false}
+                          onChange={(e) => setFiltros({...filtros, stockBajo: e.target.checked || undefined})}
+                          style={{ 
+                            width: '18px',
+                            height: '18px',
+                            accentColor: '#ef4444'
+                          }}
+                        />
+                        <span style={{ fontSize: '14px', color: '#374151', whiteSpace: 'nowrap' }}>
+                          📉 Solo stock bajo
+                        </span>
+                      </label>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Filtros */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '16px',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: isMobile ? '12px' : '16px',
                 marginBottom: '16px'
               }}>
                 <select 
@@ -1226,108 +1370,228 @@ const GestionProductos: React.FC = () => {
             </div>
 
             {/* Controles de vista */}
-            <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid #e2e8f0' }}>
-              <div className="flex items-center gap-4" style={{flex: 1}}>
-                <div style={{
-                  background: '#f1f5f9',
-                  color: '#64748b',
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}>
-                  📊 {productosFiltrados.length} de {productos.length} productos
-                </div>
-              </div>
-              
-              {/* Botón Limpiar Filtros centrado */}
-              {(busqueda || Object.keys(filtros).length > 0) && (
-                <div className="flex items-center justify-center" style={{flex: 1}}>
-                  <button 
-                    onClick={limpiarFiltros} 
-                    className="boton boton-secundario"
-                    style={{
-                      background: 'white',
+            <div className="flex items-center justify-between pt-4" style={{ 
+              borderTop: '1px solid #e2e8f0',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: isMobile ? '16px' : '0'
+            }}>
+              {isMobile ? (
+                // Layout móvil: elementos apilados
+                <>
+                  <div className="flex items-center justify-center">
+                    <div style={{
+                      background: '#f1f5f9',
                       color: '#64748b',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '8px',
                       padding: '8px 16px',
+                      borderRadius: '20px',
                       fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = '#3b82f6';
-                      e.currentTarget.style.color = '#3b82f6';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = '#e2e8f0';
-                      e.currentTarget.style.color = '#64748b';
-                    }}
-                  >
-                    🗑️ Limpiar filtros
-                  </button>
-                </div>
+                      fontWeight: '500'
+                    }}>
+                      📊 {productosFiltrados.length} de {productos.length} productos
+                    </div>
+                  </div>
+                  
+                  {/* Botón Limpiar Filtros */}
+                  {(busqueda || Object.keys(filtros).length > 0) && (
+                    <div className="flex items-center justify-center">
+                      <button 
+                        onClick={limpiarFiltros} 
+                        className="boton boton-secundario"
+                        style={{
+                          background: 'white',
+                          color: '#64748b',
+                          border: '2px solid #e2e8f0',
+                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.borderColor = '#3b82f6';
+                          e.currentTarget.style.color = '#3b82f6';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.borderColor = '#e2e8f0';
+                          e.currentTarget.style.color = '#64748b';
+                        }}
+                      >
+                        🗑️ Limpiar filtros
+                      </button>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-2 justify-center">
+                    <span style={{ fontSize: '14px', color: '#64748b', marginRight: '8px' }}>Vista:</span>
+                    {/* Ocultar botón de lista en móvil */}
+                    {!isMobile && (
+                      <button 
+                        className={`boton ${vista === 'lista' ? 'boton-primario' : 'boton-secundario'}`}
+                        onClick={() => setVista('lista')}
+                        title="Vista de lista"
+                        style={{
+                          background: vista === 'lista' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                          color: vista === 'lista' ? 'white' : '#64748b',
+                          border: '2px solid',
+                          borderColor: vista === 'lista' ? '#3b82f6' : '#e2e8f0',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          fontSize: '16px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        ☰
+                      </button>
+                    )}
+                    <button 
+                      className={`boton ${vista === 'intermedia' ? 'boton-primario' : 'boton-secundario'}`}
+                      onClick={() => setVista('intermedia')}
+                      title="Vista intermedia"
+                      style={{
+                        background: vista === 'intermedia' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                        color: vista === 'intermedia' ? 'white' : '#64748b',
+                        border: '2px solid',
+                        borderColor: vista === 'intermedia' ? '#3b82f6' : '#e2e8f0',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      ⊟
+                    </button>
+                    <button 
+                      className={`boton ${vista === 'cuadricula' ? 'boton-primario' : 'boton-secundario'}`}
+                      onClick={() => setVista('cuadricula')}
+                      title="Vista de cuadrícula"
+                      style={{
+                        background: vista === 'cuadricula' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                        color: vista === 'cuadricula' ? 'white' : '#64748b',
+                        border: '2px solid',
+                        borderColor: vista === 'cuadricula' ? '#3b82f6' : '#e2e8f0',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      ⊞
+                    </button>
+                  </div>
+                </>
+              ) : (
+                // Layout desktop/tablet: elementos en línea
+                <>
+                  <div className="flex items-center gap-4" style={{flex: 1}}>
+                    <div style={{
+                      background: '#f1f5f9',
+                      color: '#64748b',
+                      padding: '8px 16px',
+                      borderRadius: '20px',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}>
+                      📊 {productosFiltrados.length} de {productos.length} productos
+                    </div>
+                  </div>
+                  
+                  {/* Botón Limpiar Filtros centrado */}
+                  {(busqueda || Object.keys(filtros).length > 0) && (
+                    <div className="flex items-center justify-center" style={{flex: 1}}>
+                      <button 
+                        onClick={limpiarFiltros} 
+                        className="boton boton-secundario"
+                        style={{
+                          background: 'white',
+                          color: '#64748b',
+                          border: '2px solid #e2e8f0',
+                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.borderColor = '#3b82f6';
+                          e.currentTarget.style.color = '#3b82f6';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.borderColor = '#e2e8f0';
+                          e.currentTarget.style.color = '#64748b';
+                        }}
+                      >
+                        🗑️ Limpiar filtros
+                      </button>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-2" style={{flex: 'none', justifyContent: 'flex-end', minWidth: isMobile ? '200px' : '320px'}}>
+                    <span style={{ fontSize: '14px', color: '#64748b', marginRight: '8px' }}>Vista:</span>
+                    {/* Ocultar botón de lista en móvil */}
+                    {!isMobile && (
+                      <button 
+                        className={`boton ${vista === 'lista' ? 'boton-primario' : 'boton-secundario'}`}
+                        onClick={() => setVista('lista')}
+                        title="Vista de lista"
+                        style={{
+                          background: vista === 'lista' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                          color: vista === 'lista' ? 'white' : '#64748b',
+                          border: '2px solid',
+                          borderColor: vista === 'lista' ? '#3b82f6' : '#e2e8f0',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          fontSize: '16px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        ☰
+                      </button>
+                    )}
+                    <button 
+                      className={`boton ${vista === 'intermedia' ? 'boton-primario' : 'boton-secundario'}`}
+                      onClick={() => setVista('intermedia')}
+                      title="Vista intermedia"
+                      style={{
+                        background: vista === 'intermedia' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                        color: vista === 'intermedia' ? 'white' : '#64748b',
+                        border: '2px solid',
+                        borderColor: vista === 'intermedia' ? '#3b82f6' : '#e2e8f0',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      ⊟
+                    </button>
+                    <button 
+                      className={`boton ${vista === 'cuadricula' ? 'boton-primario' : 'boton-secundario'}`}
+                      onClick={() => setVista('cuadricula')}
+                      title="Vista de cuadrícula"
+                      style={{
+                        background: vista === 'cuadricula' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                        color: vista === 'cuadricula' ? 'white' : '#64748b',
+                        border: '2px solid',
+                        borderColor: vista === 'cuadricula' ? '#3b82f6' : '#e2e8f0',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      ⊞
+                    </button>
+                  </div>
+                </>
               )}
-              
-              <div className="flex items-center gap-2" style={{flex: 'none', justifyContent: 'flex-end', minWidth: '320px'}}>
-                <span style={{ fontSize: '14px', color: '#64748b', marginRight: '8px' }}>Vista:</span>
-                <button 
-                  className={`boton ${vista === 'lista' ? 'boton-primario' : 'boton-secundario'}`}
-                  onClick={() => setVista('lista')}
-                  title="Vista de lista"
-                  style={{
-                    background: vista === 'lista' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
-                    color: vista === 'lista' ? 'white' : '#64748b',
-                    border: '2px solid',
-                    borderColor: vista === 'lista' ? '#3b82f6' : '#e2e8f0',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    fontSize: '16px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  ☰
-                </button>
-                <button 
-                  className={`boton ${vista === 'intermedia' ? 'boton-primario' : 'boton-secundario'}`}
-                  onClick={() => setVista('intermedia')}
-                  title="Vista intermedia"
-                  style={{
-                    background: vista === 'intermedia' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
-                    color: vista === 'intermedia' ? 'white' : '#64748b',
-                    border: '2px solid',
-                    borderColor: vista === 'intermedia' ? '#3b82f6' : '#e2e8f0',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    fontSize: '16px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  ⊟
-                </button>
-                <button 
-                  className={`boton ${vista === 'cuadricula' ? 'boton-primario' : 'boton-secundario'}`}
-                  onClick={() => setVista('cuadricula')}
-                  title="Vista de cuadrícula"
-                  style={{
-                    background: vista === 'cuadricula' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
-                    color: vista === 'cuadricula' ? 'white' : '#64748b',
-                    border: '2px solid',
-                    borderColor: vista === 'cuadricula' ? '#3b82f6' : '#e2e8f0',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    fontSize: '16px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  ⊞
-                </button>
-              </div>
             </div>
           </div>
         )}
@@ -1405,7 +1669,7 @@ const GestionProductos: React.FC = () => {
         {/* Vista de productos */}
         {productosFiltrados.length > 0 && (
           <>
-            {vista === 'lista' ? (
+            {vista === 'lista' && !isMobile ? (
               <div className="tarjeta" style={{
                 background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                 border: '1px solid #e2e8f0',
@@ -1748,6 +2012,58 @@ const GestionProductos: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            ) : isMobile && vista === 'lista' ? (
+              // Mensaje para móvil cuando se intenta acceder a vista de lista
+              <div className="tarjeta text-center py-12" style={{
+                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                border: '1px solid #bae6fd',
+                borderRadius: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.7 }}>📱</div>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
+                  Vista de lista no disponible
+                </h3>
+                <p style={{ margin: '0 0 16px 0', color: '#64748b', fontSize: '16px' }}>
+                  En dispositivos móviles, usa la vista intermedia o cuadrícula para mejor experiencia
+                </p>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                  <button 
+                    onClick={() => setVista('intermedia')} 
+                    className="boton boton-primario"
+                    style={{
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px 20px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    ⊟ Vista Intermedia
+                  </button>
+                  <button 
+                    onClick={() => setVista('cuadricula')} 
+                    className="boton boton-secundario"
+                    style={{
+                      background: 'white',
+                      color: '#3b82f6',
+                      border: '2px solid #3b82f6',
+                      borderRadius: '8px',
+                      padding: '10px 20px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    ⊞ Vista Cuadrícula
+                  </button>
                 </div>
               </div>
             ) : vista === 'intermedia' ? (

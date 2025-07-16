@@ -37,24 +37,39 @@ VALUES
 ('María', 'López Rodríguez', 'maria.lopez@email.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiSfFGhO4tEHy0LYIFGXcP.Wce', '+34 654 321 987', 'Avenida de la Constitución 45', 'Barcelona', '08001', 'España', 'PREMIUM', true, false, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('Carlos', 'González Martín', 'carlos.gonzalez@email.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiSfFGhO4tEHy0LYIFGXcP.Wce', '+34 321 987 654', 'Plaza España 7', 'Valencia', '46001', 'España', 'REGULAR', true, true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
--- Insertar pedidos de ejemplo
+-- Insertar pedidos de ejemplo (solo si no existen)
 INSERT INTO pedidos (numero_pedido, estado, total, subtotal, impuestos, descuento, observaciones, direccion_entrega, cliente_id, empresa_id, fecha_creacion, fecha_actualizacion)
-VALUES 
-('PED-001', 'ENTREGADO', 929.98, 929.98, 0, 0, 'Entrega urgente', 'Calle Mayor 123, Madrid', 1, 1, DATEADD('DAY', -5, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
-('PED-002', 'PREPARANDO', 379.98, 379.98, 0, 0, null, 'Avenida de la Constitución 45, Barcelona', 2, 1, DATEADD('DAY', -2, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
-('PED-003', 'PENDIENTE', 79.99, 79.99, 0, 0, 'Llamar antes de entregar', 'Plaza España 7, Valencia', 3, 1, DATEADD('DAY', -1, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
+SELECT 'PED-001', 'ENTREGADO', 929.98, 929.98, 0, 0, 'Entrega urgente', 'Calle Mayor 123, Madrid', 1, 1, DATEADD('DAY', -5, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM pedidos WHERE numero_pedido = 'PED-001');
 
--- Insertar detalles de pedidos
+INSERT INTO pedidos (numero_pedido, estado, total, subtotal, impuestos, descuento, observaciones, direccion_entrega, cliente_id, empresa_id, fecha_creacion, fecha_actualizacion)
+SELECT 'PED-002', 'PREPARANDO', 379.98, 379.98, 0, 0, null, 'Avenida de la Constitución 45, Barcelona', 2, 1, DATEADD('DAY', -2, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM pedidos WHERE numero_pedido = 'PED-002');
+
+INSERT INTO pedidos (numero_pedido, estado, total, subtotal, impuestos, descuento, observaciones, direccion_entrega, cliente_id, empresa_id, fecha_creacion, fecha_actualizacion)
+SELECT 'PED-003', 'PENDIENTE', 79.99, 79.99, 0, 0, 'Llamar antes de entregar', 'Plaza España 7, Valencia', 3, 1, DATEADD('DAY', -1, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM pedidos WHERE numero_pedido = 'PED-003');
+
+-- Insertar detalles de pedidos (solo si no existen)
 INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, marca_producto, fecha_creacion)
-VALUES 
--- Pedido 1
-(1, 899.99, 899.99, 1, 1, 'Laptop Dell Inspiron 15', 'Laptop para uso profesional', 'Electrónicos', 'Dell', DATEADD('DAY', -5, CURRENT_TIMESTAMP)),
-(1, 29.99, 29.99, 2, 1, 'Mouse Inalámbrico Logitech', 'Mouse inalámbrico ergonómico', 'Electrónicos', 'Logitech', DATEADD('DAY', -5, CURRENT_TIMESTAMP)),
--- Pedido 2  
-(1, 79.99, 79.99, 3, 2, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', 'Corsair', DATEADD('DAY', -2, CURRENT_TIMESTAMP)),
-(1, 299.99, 299.99, 5, 2, 'Silla Ergonómica de Oficina', 'Silla ergonómica con soporte lumbar', 'Mobiliario', 'Herman Miller', DATEADD('DAY', -2, CURRENT_TIMESTAMP)),
--- Pedido 3
-(1, 79.99, 79.99, 3, 3, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', 'Corsair', DATEADD('DAY', -1, CURRENT_TIMESTAMP));
+SELECT 1, 899.99, 899.99, 1, 1, 'Laptop Dell Inspiron 15', 'Laptop para uso profesional', 'Electrónicos', 'Dell', DATEADD('DAY', -5, CURRENT_TIMESTAMP)
+WHERE NOT EXISTS (SELECT 1 FROM detalle_pedidos WHERE pedido_id = 1 AND producto_id = 1);
+
+INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, marca_producto, fecha_creacion)
+SELECT 1, 29.99, 29.99, 2, 1, 'Mouse Inalámbrico Logitech', 'Mouse inalámbrico ergonómico', 'Electrónicos', 'Logitech', DATEADD('DAY', -5, CURRENT_TIMESTAMP)
+WHERE NOT EXISTS (SELECT 1 FROM detalle_pedidos WHERE pedido_id = 1 AND producto_id = 2);
+
+INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, marca_producto, fecha_creacion)
+SELECT 1, 79.99, 79.99, 3, 2, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', 'Corsair', DATEADD('DAY', -2, CURRENT_TIMESTAMP)
+WHERE NOT EXISTS (SELECT 1 FROM detalle_pedidos WHERE pedido_id = 2 AND producto_id = 3);
+
+INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, marca_producto, fecha_creacion)
+SELECT 1, 299.99, 299.99, 5, 2, 'Silla Ergonómica de Oficina', 'Silla ergonómica con soporte lumbar', 'Mobiliario', 'Herman Miller', DATEADD('DAY', -2, CURRENT_TIMESTAMP)
+WHERE NOT EXISTS (SELECT 1 FROM detalle_pedidos WHERE pedido_id = 2 AND producto_id = 5);
+
+INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, marca_producto, fecha_creacion)
+SELECT 1, 79.99, 79.99, 3, 3, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', 'Corsair', DATEADD('DAY', -1, CURRENT_TIMESTAMP)
+WHERE NOT EXISTS (SELECT 1 FROM detalle_pedidos WHERE pedido_id = 3 AND producto_id = 3);
 
 -- Insertar mensajes de ejemplo
 INSERT INTO mensajes (asunto, contenido, tipo, estado, leido, cliente_id, empresa_id, producto_id, fecha_creacion, fecha_actualizacion)

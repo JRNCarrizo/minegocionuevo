@@ -151,28 +151,43 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
 
         {/* Content */}
         <div style={{ padding: '32px', maxHeight: 'calc(85vh - 140px)', overflow: 'auto' }}>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <form onSubmit={handleSubmit} style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '24px',
+            alignItems: 'center',
+            maxWidth: '500px',
+            margin: '0 auto'
+          }}>
             
             {/* Información personal */}
             <div style={{
               background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-              borderRadius: '16px',
-              padding: '24px',
-              border: '2px solid #e2e8f0'
+              borderRadius: '20px',
+              padding: '32px',
+              border: '2px solid #e2e8f0',
+              width: '100%'
             }}>
-              <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+              <h3 style={{ 
+                margin: '0 0 24px 0', 
+                fontSize: '20px', 
+                fontWeight: '700', 
+                color: '#1e293b',
+                textAlign: 'center'
+              }}>
                 👤 Información Personal
               </h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {/* Nombre */}
-                <div>
+                <div style={{ textAlign: 'center' }}>
                   <label style={{
                     display: 'block',
-                    marginBottom: '8px',
-                    fontSize: '14px',
+                    marginBottom: '12px',
+                    fontSize: '15px',
                     fontWeight: '600',
-                    color: '#374151'
+                    color: '#374151',
+                    textAlign: 'center'
                   }}>
                     Nombre completo *
                   </label>
@@ -188,13 +203,14 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                     disabled={loading}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
+                      padding: '16px 20px',
                       border: `2px solid ${errors.nombre ? '#ef4444' : '#d1d5db'}`,
-                      borderRadius: '12px',
+                      borderRadius: '16px',
                       fontSize: '16px',
                       background: 'white',
                       transition: 'all 0.2s ease',
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      textAlign: 'center'
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#8b5cf6';
@@ -208,9 +224,10 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                   />
                   {errors.nombre && (
                     <p style={{
-                      margin: '4px 0 0 0',
+                      margin: '8px 0 0 0',
                       fontSize: '14px',
-                      color: '#ef4444'
+                      color: '#ef4444',
+                      textAlign: 'center'
                     }}>
                       {errors.nombre}
                     </p>
@@ -218,13 +235,14 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                 </div>
 
                 {/* Email */}
-                <div>
+                <div style={{ textAlign: 'center' }}>
                   <label style={{
                     display: 'block',
-                    marginBottom: '8px',
-                    fontSize: '14px',
+                    marginBottom: '12px',
+                    fontSize: '15px',
                     fontWeight: '600',
-                    color: '#374151'
+                    color: '#374151',
+                    textAlign: 'center'
                   }}>
                     Email *
                   </label>
@@ -240,13 +258,14 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                     disabled={loading}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
+                      padding: '16px 20px',
                       border: `2px solid ${errors.email ? '#ef4444' : '#d1d5db'}`,
-                      borderRadius: '12px',
+                      borderRadius: '16px',
                       fontSize: '16px',
                       background: 'white',
                       transition: 'all 0.2s ease',
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      textAlign: 'center'
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#8b5cf6';
@@ -260,9 +279,10 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                   />
                   {errors.email && (
                     <p style={{
-                      margin: '4px 0 0 0',
+                      margin: '8px 0 0 0',
                       fontSize: '14px',
-                      color: '#ef4444'
+                      color: '#ef4444',
+                      textAlign: 'center'
                     }}>
                       {errors.email}
                     </p>
@@ -274,26 +294,39 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
             {/* Dirección de envío */}
             <div style={{
               background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-              borderRadius: '16px',
-              padding: '24px',
-              border: '2px solid #e2e8f0'
+              borderRadius: '20px',
+              padding: '32px',
+              border: '2px solid #e2e8f0',
+              width: '100%'
             }}>
-              <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+              <h3 style={{ 
+                margin: '0 0 24px 0', 
+                fontSize: '20px', 
+                fontWeight: '700', 
+                color: '#1e293b',
+                textAlign: 'center'
+              }}>
                 📍 Dirección de Envío
               </h3>
               
               {/* Opción de acordar con vendedor */}
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ 
+                marginBottom: '24px',
+                display: 'flex',
+                justifyContent: 'center'
+              }}>
                 <label style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
+                  gap: '16px',
                   cursor: 'pointer',
-                  padding: '12px',
-                  borderRadius: '12px',
+                  padding: '20px',
+                  borderRadius: '16px',
                   background: acordarConVendedor ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' : 'white',
                   border: `2px solid ${acordarConVendedor ? '#3b82f6' : '#e2e8f0'}`,
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  maxWidth: '400px',
+                  width: '100%'
                 }}>
                   <input
                     type="checkbox"
@@ -307,23 +340,24 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                     }}
                     disabled={loading}
                     style={{
-                      width: '20px',
-                      height: '20px',
+                      width: '24px',
+                      height: '24px',
                       accentColor: '#3b82f6'
                     }}
                   />
-                  <div>
+                  <div style={{ textAlign: 'center' }}>
                     <div style={{
-                      fontSize: '16px',
-                      fontWeight: '600',
+                      fontSize: '18px',
+                      fontWeight: '700',
                       color: '#1e293b',
-                      marginBottom: '4px'
+                      marginBottom: '8px'
                     }}>
                       🤝 Acordar con el vendedor
                     </div>
                     <div style={{
-                      fontSize: '14px',
-                      color: '#64748b'
+                      fontSize: '15px',
+                      color: '#64748b',
+                      lineHeight: '1.4'
                     }}>
                       Coordinar entrega directamente con el vendedor
                     </div>
@@ -448,57 +482,29 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
             </div>
 
             {/* Botones de acción */}
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={loading}
-                style={{
-                  background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                  border: '2px solid #cbd5e1',
-                  borderRadius: '12px',
-                  padding: '14px 28px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: '#475569',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  flex: 1,
-                  minWidth: '140px',
-                  opacity: loading ? 0.5 : 1
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.borderColor = '#64748b';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.borderColor = '#cbd5e1';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }
-                }}
-              >
-                Cancelar
-              </button>
-              
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              gap: '16px',
+              alignItems: 'center',
+              width: '100%'
+            }}>
               <button
                 type="submit"
                 disabled={loading}
                 style={{
                   background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                   border: 'none',
-                  borderRadius: '12px',
-                  padding: '14px 32px',
-                  fontSize: '16px',
-                  fontWeight: '600',
+                  borderRadius: '16px',
+                  padding: '18px 40px',
+                  fontSize: '18px',
+                  fontWeight: '700',
                   color: 'white',
                   cursor: loading ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
                   boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                  flex: 2,
-                  minWidth: '200px',
+                  width: '100%',
+                  maxWidth: '400px',
                   opacity: loading ? 0.7 : 1
                 }}
                 onMouseOver={(e) => {
@@ -515,7 +521,7 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                 }}
               >
                 {loading ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                     <div style={{
                       width: '16px',
                       height: '16px',
@@ -529,6 +535,42 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                 ) : (
                   acordarConVendedor ? '🤝 Confirmar y Acordar Entrega' : '💳 Confirmar Compra'
                 )}
+              </button>
+              
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                style={{
+                  background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                  border: '2px solid #cbd5e1',
+                  borderRadius: '12px',
+                  padding: '14px 28px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#475569',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  width: '100%',
+                  maxWidth: '300px',
+                  opacity: loading ? 0.5 : 1
+                }}
+                onMouseOver={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.borderColor = '#64748b';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
+                  }
+                }}
+              >
+                Cancelar
               </button>
             </div>
           </form>

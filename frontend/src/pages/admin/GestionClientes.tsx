@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
+import { useResponsive } from '../../hooks/useResponsive';
 import type { Cliente, Pedido } from '../../types';
 
 // Componente Modal para detalles del cliente
@@ -11,6 +12,7 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
   open: boolean, 
   onClose: () => void 
 }) {
+  const { isMobile } = useResponsive();
   console.log('=== DEBUG CLIENTE DETALLE MODAL ===');
   console.log('Open:', open);
   console.log('Cliente:', cliente);
@@ -61,11 +63,11 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
     }}>
       <div className="modal-content" style={{
         background: '#fff',
-        borderRadius: '16px',
+        borderRadius: isMobile ? '12px' : '16px',
         padding: '0',
-        maxWidth: '900px',
-        width: '95vw',
-        maxHeight: '90vh',
+        maxWidth: isMobile ? '95vw' : '900px',
+        width: isMobile ? '95vw' : '95vw',
+        maxHeight: isMobile ? '95vh' : '90vh',
         overflow: 'hidden',
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         border: '1px solid rgba(255,255,255,0.1)'
@@ -74,18 +76,27 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
         <div style={{
           background: 'linear-gradient(135deg, #1e40af 0%, #3730a3 100%)',
           color: 'white',
-          padding: '24px 32px',
-          borderTopLeftRadius: '16px',
-          borderTopRightRadius: '16px',
+          padding: isMobile ? '16px 20px' : '24px 32px',
+          borderTopLeftRadius: isMobile ? '12px' : '16px',
+          borderTopRightRadius: isMobile ? '12px' : '16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
+            <h2 style={{ 
+              margin: 0, 
+              fontSize: isMobile ? '18px' : '24px', 
+              fontWeight: '600',
+              lineHeight: isMobile ? '1.2' : '1.4'
+            }}>
               👤 {cliente.nombre} {cliente.apellidos}
             </h2>
-            <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
+            <p style={{ 
+              margin: '4px 0 0 0', 
+              opacity: 0.9, 
+              fontSize: isMobile ? '12px' : '14px' 
+            }}>
               Detalles completos del cliente
             </p>
           </div>
@@ -113,7 +124,11 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
         </div>
 
         {/* Contenido del modal */}
-        <div style={{ padding: '32px', maxHeight: 'calc(90vh - 120px)', overflow: 'auto' }}>
+        <div style={{ 
+          padding: isMobile ? '16px' : '32px', 
+          maxHeight: isMobile ? 'calc(95vh - 100px)' : 'calc(90vh - 120px)', 
+          overflow: 'auto' 
+        }}>
           {/* Información del cliente */}
           <div style={{
             background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
@@ -125,7 +140,11 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
             <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
               📋 Información Personal
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', 
+              gap: isMobile ? '12px' : '16px' 
+            }}>
               <div>
                 <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Nombre Completo</p>
                 <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
@@ -179,7 +198,11 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
             <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
               💰 Estadísticas de Compras
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(150px, 1fr))', 
+              gap: isMobile ? '12px' : '16px' 
+            }}>
               <div style={{
                 background: '#fff',
                 borderRadius: '12px',
@@ -335,6 +358,8 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
 }
 
 export default function GestionClientes() {
+  const { isMobile, isTablet, isDesktop } = useResponsive();
+  console.log('Responsive debug:', { isMobile, isTablet, isDesktop, windowWidth: window.innerWidth });
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [cargando, setCargando] = useState(true);
@@ -482,7 +507,12 @@ export default function GestionClientes() {
           empresaNombre={empresaNombre}
           nombreAdministrador={nombreAdministrador}
         />
-        <div className="contenedor" style={{ paddingTop: '5rem', paddingBottom: '2rem' }}>
+        <div className="contenedor" style={{ 
+          paddingTop: (isMobile || window.innerWidth < 768) ? '8rem' : '5rem', 
+          paddingBottom: '2rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem'
+        }}>
           <div className="tarjeta text-center py-12">
             <div className="spinner mx-auto mb-4"></div>
             <p>Cargando clientes...</p>
@@ -502,7 +532,12 @@ export default function GestionClientes() {
       />
 
       {/* Contenido principal */}
-      <div className="contenedor" style={{ paddingTop: '5rem', paddingBottom: '2rem' }}>
+      <div className="contenedor" style={{ 
+          paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '11.5rem', // Increased to avoid overlap
+        paddingBottom: '2rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem'
+      }}>
         <div className="mb-8">
           <h1 className="titulo-2 mb-4" style={{ 
             fontSize: '32px', 
@@ -698,162 +733,324 @@ export default function GestionClientes() {
                     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                     border: '2px solid #e2e8f0',
                     borderRadius: '16px',
-                    padding: '24px',
+                    padding: isMobile ? '16px' : '24px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.borderColor = '#3b82f6';
-                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.15)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    if (!isMobile) {
+                      e.currentTarget.style.borderColor = '#3b82f6';
+                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.15)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.borderColor = '#e2e8f0';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-                    e.currentTarget.style.transform = 'translateY(0)';
+                    if (!isMobile) {
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }
                   }}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="titulo-3 mb-1" style={{
-                        fontSize: '20px',
-                        fontWeight: '700',
-                        color: '#1e293b',
-                        marginBottom: '8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
+                  {isMobile ? (
+                    // Layout móvil: elementos apilados verticalmente
+                    <>
+                      {/* Header con nombre y estado */}
+                      <div style={{ marginBottom: '16px' }}>
+                        <h4 className="titulo-3 mb-1" style={{
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#1e293b',
+                          marginBottom: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          flexWrap: 'wrap'
+                        }}>
+                          {cliente.nombre} {cliente.apellidos}
+                          {!cliente.activo && (
+                            <span 
+                              className="ml-2 px-2 py-1 rounded-full texto-pequeno"
+                              style={{
+                                backgroundColor: '#ef444420',
+                                color: '#ef4444',
+                                padding: '4px 8px',
+                                borderRadius: '12px',
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                border: '1px solid #ef444430'
+                              }}
+                            >
+                              ❌ Inactivo
+                            </span>
+                          )}
+                        </h4>
+                        <p className="texto-pequeno texto-gris mb-2" style={{
+                          fontSize: '13px',
+                          color: '#64748b',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px'
+                        }}>
+                          <span>📧 {cliente.email}</span>
+                          {cliente.telefono && (
+                            <span>📞 {cliente.telefono}</span>
+                          )}
+                        </p>
+                        <p className="texto-pequeno texto-gris" style={{
+                          fontSize: '11px',
+                          color: '#64748b'
+                        }}>
+                          📅 Registrado: {new Date(cliente.fechaCreacion).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+
+                      {/* Estadísticas centradas */}
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        gap: '12px', 
+                        marginBottom: '16px',
+                        flexWrap: 'wrap'
                       }}>
-                        {cliente.nombre} {cliente.apellidos}
-                        {!cliente.activo && (
-                          <span 
-                            className="ml-2 px-2 py-1 rounded-full texto-pequeno"
-                            style={{
-                              backgroundColor: '#ef444420',
-                              color: '#ef4444',
-                              padding: '4px 12px',
-                              borderRadius: '12px',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              border: '1px solid #ef444430'
-                            }}
-                          >
-                            ❌ Inactivo
-                          </span>
-                        )}
-                      </h4>
-                      <p className="texto-pequeno texto-gris mb-2" style={{
-                        fontSize: '14px',
-                        color: '#64748b',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                      }}>
-                        📧 {cliente.email}
-                        {cliente.telefono && (
-                          <>
-                            <span style={{ color: '#cbd5e1' }}>•</span>
-                            📞 {cliente.telefono}
-                          </>
-                        )}
-                      </p>
-                      <p className="texto-pequeno texto-gris" style={{
-                        fontSize: '12px',
-                        color: '#64748b'
-                      }}>
-                        📅 Registrado: {new Date(cliente.fechaCreacion).toLocaleDateString('es-ES', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
                         <div style={{
                           background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                           color: 'white',
-                          padding: '8px 16px',
+                          padding: '8px 12px',
                           borderRadius: '12px',
-                          fontSize: '18px',
+                          fontSize: '16px',
                           fontWeight: '700',
-                          boxShadow: '0 2px 8px rgba(5,150,105,0.3)'
+                          boxShadow: '0 2px 8px rgba(5,150,105,0.3)',
+                          textAlign: 'center'
                         }}>
                           ${(cliente.totalCompras || 0).toFixed(2)}
                         </div>
                         <div style={{
                           background: '#f1f5f9',
                           color: '#64748b',
-                          padding: '4px 12px',
+                          padding: '6px 10px',
                           borderRadius: '8px',
-                          fontSize: '14px',
-                          fontWeight: '600'
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          textAlign: 'center'
                         }}>
                           🛒 {cliente.totalPedidos || 0} pedidos
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => verDetallesCliente(cliente)}
-                        className="boton boton-secundario texto-pequeno"
-                        style={{
-                          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '8px 16px',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          boxShadow: '0 2px 8px rgba(59,130,246,0.3)'
-                        }}
-                        disabled={cargandoDetalle}
-                      >
-                        {cargandoDetalle ? '⏳ Cargando...' : '👁️ Ver Detalles'}
-                      </button>
-                      <button className="boton boton-secundario texto-pequeno" style={{
-                        background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '8px 16px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 2px 8px rgba(99,102,241,0.3)'
-                      }}>
-                        📧 Enviar Email
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => alternarEstadoCliente(cliente.id)}
-                      className={`boton texto-pequeno ${cliente.activo ? 'boton-secundario' : 'boton-primario'}`}
-                      style={{
-                        background: cliente.activo 
-                          ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                          : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '8px 16px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        boxShadow: cliente.activo 
-                          ? '0 2px 8px rgba(239,68,68,0.3)'
-                          : '0 2px 8px rgba(16,185,129,0.3)'
-                      }}
-                    >
-                      {cliente.activo ? '❌ Desactivar' : '✅ Activar'}
-                    </button>
-                  </div>
+                      {/* Botones apilados verticalmente */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                          <button 
+                            onClick={() => verDetallesCliente(cliente)}
+                            className="boton boton-secundario texto-pequeno"
+                            style={{
+                              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              padding: '10px 16px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              boxShadow: '0 2px 8px rgba(59,130,246,0.3)',
+                              flex: 1
+                            }}
+                            disabled={cargandoDetalle}
+                          >
+                            {cargandoDetalle ? '⏳ Cargando...' : '👁️ Ver Detalles'}
+                          </button>
+                          <button className="boton boton-secundario texto-pequeno" style={{
+                            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '10px 16px',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
+                            flex: 1
+                          }}>
+                            📧 Enviar Email
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => alternarEstadoCliente(cliente.id)}
+                          className={`boton texto-pequeno ${cliente.activo ? 'boton-secundario' : 'boton-primario'}`}
+                          style={{
+                            background: cliente.activo 
+                              ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                              : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '12px 16px',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: cliente.activo 
+                              ? '0 2px 8px rgba(239,68,68,0.3)'
+                              : '0 2px 8px rgba(16,185,129,0.3)'
+                          }}
+                        >
+                          {cliente.activo ? '❌ Desactivar' : '✅ Activar'}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    // Layout desktop/tablet: elementos en línea
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h4 className="titulo-3 mb-1" style={{
+                            fontSize: '20px',
+                            fontWeight: '700',
+                            color: '#1e293b',
+                            marginBottom: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}>
+                            {cliente.nombre} {cliente.apellidos}
+                            {!cliente.activo && (
+                              <span 
+                                className="ml-2 px-2 py-1 rounded-full texto-pequeno"
+                                style={{
+                                  backgroundColor: '#ef444420',
+                                  color: '#ef4444',
+                                  padding: '4px 12px',
+                                  borderRadius: '12px',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  border: '1px solid #ef444430'
+                                }}
+                              >
+                                ❌ Inactivo
+                              </span>
+                            )}
+                          </h4>
+                          <p className="texto-pequeno texto-gris mb-2" style={{
+                            fontSize: '14px',
+                            color: '#64748b',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}>
+                            📧 {cliente.email}
+                            {cliente.telefono && (
+                              <>
+                                <span style={{ color: '#cbd5e1' }}>•</span>
+                                📞 {cliente.telefono}
+                              </>
+                            )}
+                          </p>
+                          <p className="texto-pequeno texto-gris" style={{
+                            fontSize: '12px',
+                            color: '#64748b'
+                          }}>
+                            📅 Registrado: {new Date(cliente.fechaCreacion).toLocaleDateString('es-ES', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                            <div style={{
+                              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                              color: 'white',
+                              padding: '8px 16px',
+                              borderRadius: '12px',
+                              fontSize: '18px',
+                              fontWeight: '700',
+                              boxShadow: '0 2px 8px rgba(5,150,105,0.3)'
+                            }}>
+                              ${(cliente.totalCompras || 0).toFixed(2)}
+                            </div>
+                            <div style={{
+                              background: '#f1f5f9',
+                              color: '#64748b',
+                              padding: '4px 12px',
+                              borderRadius: '8px',
+                              fontSize: '14px',
+                              fontWeight: '600'
+                            }}>
+                              🛒 {cliente.totalPedidos || 0} pedidos
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => verDetallesCliente(cliente)}
+                            className="boton boton-secundario texto-pequeno"
+                            style={{
+                              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              padding: '8px 16px',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              boxShadow: '0 2px 8px rgba(59,130,246,0.3)'
+                            }}
+                            disabled={cargandoDetalle}
+                          >
+                            {cargandoDetalle ? '⏳ Cargando...' : '👁️ Ver Detalles'}
+                          </button>
+                          <button className="boton boton-secundario texto-pequeno" style={{
+                            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 16px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 2px 8px rgba(99,102,241,0.3)'
+                          }}>
+                            📧 Enviar Email
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => alternarEstadoCliente(cliente.id)}
+                          className={`boton texto-pequeno ${cliente.activo ? 'boton-secundario' : 'boton-primario'}`}
+                          style={{
+                            background: cliente.activo 
+                              ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                              : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 16px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: cliente.activo 
+                              ? '0 2px 8px rgba(239,68,68,0.3)'
+                              : '0 2px 8px rgba(16,185,129,0.3)'
+                          }}
+                        >
+                          {cliente.activo ? '❌ Desactivar' : '✅ Activar'}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>

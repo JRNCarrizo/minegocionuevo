@@ -3,6 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 import type { Producto } from '../../types';
 
+interface UsuarioLocal {
+  empresaId: number;
+  empresaNombre?: string;
+  nombre?: string;
+  email?: string;
+  // ...otros campos si los necesitas
+}
+
 const DetalleProducto: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -11,7 +19,7 @@ const DetalleProducto: React.FC = () => {
   const [error, setError] = useState('');
   const [imagenActual, setImagenActual] = useState(0);
   const [empresaId, setEmpresaId] = useState<number | null>(null);
-  const [usuario, setUsuario] = useState<any>(null);
+  const [usuario, setUsuario] = useState<UsuarioLocal | null>(null);
 
   useEffect(() => {
     // Verificar autenticación y obtener empresaId

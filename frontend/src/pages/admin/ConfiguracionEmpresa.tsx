@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
+import { useResponsive } from '../../hooks/useResponsive';
 import type { Empresa, ApiError } from '../../types';
 
 interface ConfiguracionEmpresa {
@@ -230,6 +231,7 @@ const CheckboxField = ({
 
 export default function ConfiguracionEmpresa() {
   const navigate = useNavigate();
+  const { isMobile } = useResponsive();
   const [configuracion, setConfiguracion] = useState<ConfiguracionEmpresa>({
     nombre: '',
     descripcion: '',
@@ -631,7 +633,12 @@ export default function ConfiguracionEmpresa() {
           empresaNombre={empresaNombre}
           nombreAdministrador={nombreAdministrador}
         />
-        <div className="contenedor py-8">
+        <div className="contenedor" style={{ 
+          paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
+          paddingBottom: '2rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem'
+        }}>
           <div className="tarjeta text-center py-12">
             <div className="spinner mx-auto mb-4"></div>
             <p className="texto-gris">Cargando configuración...</p>
@@ -651,24 +658,55 @@ export default function ConfiguracionEmpresa() {
       />
 
       {/* Contenido principal */}
-      <div className="contenedor py-8">
+      <div className="contenedor" style={{ 
+        paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
+        paddingBottom: '2rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem'
+      }}>
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="titulo-2 mb-2">Configuración de la Empresa</h1>
-          <p className="texto-gris">Personaliza la información y apariencia de tu tienda online.</p>
+        <div className="mb-8" style={{ textAlign: isMobile ? 'center' : 'left' }}>
+          <h1 className="titulo-2 mb-2" style={{ 
+            fontSize: isMobile ? '1.75rem' : '2rem',
+            marginBottom: isMobile ? '0.5rem' : '0.5rem'
+          }}>
+            Configuración de la Empresa
+          </h1>
+          <p className="texto-gris" style={{ 
+            fontSize: isMobile ? '1rem' : '1.125rem'
+          }}>
+            Personaliza la información y apariencia de tu tienda online.
+          </p>
         </div>
 
         <form onSubmit={guardarConfiguracion} className="space-y-8">
           {/* Información Básica */}
           <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ borderBottom: '1px solid var(--color-borde)', backgroundColor: 'var(--color-fondo-hover)' }}>
-              <div className="flex items-centro">
-                <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>🏢</span>
-                <h3 className="titulo-3" style={{ marginBottom: '0' }}>Información Básica</h3>
+            <div className="p-6 border-bottom" style={{ 
+              borderBottom: '1px solid var(--color-borde)', 
+              backgroundColor: 'var(--color-fondo-hover)',
+              padding: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <div className="flex items-centro" style={{ 
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '0.5rem' : '0.75rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🏢</span>
+                <h3 className="titulo-3" style={{ 
+                  marginBottom: '0',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem'
+                }}>
+                  Información Básica
+                </h3>
               </div>
             </div>
-            <div className="p-6 space-y-6">
-              <div className="grid grid-2">
+            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              <div className="grid grid-2" style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                gap: isMobile ? '1rem' : '1.5rem'
+              }}>
                 <InputField
                   icon="🏷️"
                   label="Nombre de la Empresa"
@@ -827,14 +865,31 @@ export default function ConfiguracionEmpresa() {
 
           {/* Información de Contacto */}
           <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ borderBottom: '1px solid var(--color-borde)', backgroundColor: 'var(--color-fondo-hover)' }}>
-              <div className="flex items-centro">
-                <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>📞</span>
-                <h3 className="titulo-3" style={{ marginBottom: '0' }}>Información de Contacto</h3>
+            <div className="p-6 border-bottom" style={{ 
+              borderBottom: '1px solid var(--color-borde)', 
+              backgroundColor: 'var(--color-fondo-hover)',
+              padding: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <div className="flex items-centro" style={{ 
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '0.5rem' : '0.75rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>📞</span>
+                <h3 className="titulo-3" style={{ 
+                  marginBottom: '0',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem'
+                }}>
+                  Información de Contacto
+                </h3>
               </div>
             </div>
-            <div className="p-6 space-y-6">
-              <div className="grid grid-2">
+            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              <div className="grid grid-2" style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                gap: isMobile ? '1rem' : '1.5rem'
+              }}>
                 <InputField
                   icon="📧"
                   label="Email de Contacto"
@@ -896,18 +951,39 @@ export default function ConfiguracionEmpresa() {
 
           {/* Redes Sociales */}
           <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ borderBottom: '1px solid var(--color-borde)', backgroundColor: 'var(--color-fondo-hover)' }}>
-              <div className="flex items-centro">
-                <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>📱</span>
-                <h3 className="titulo-3" style={{ marginBottom: '0' }}>Redes Sociales</h3>
+            <div className="p-6 border-bottom" style={{ 
+              borderBottom: '1px solid var(--color-borde)', 
+              backgroundColor: 'var(--color-fondo-hover)',
+              padding: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <div className="flex items-centro" style={{ 
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '0.5rem' : '0.75rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>📱</span>
+                <h3 className="titulo-3" style={{ 
+                  marginBottom: '0',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem'
+                }}>
+                  Redes Sociales
+                </h3>
               </div>
             </div>
-            <div className="p-6 space-y-6">
-              <p className="texto-gris" style={{ marginBottom: '1rem' }}>
+            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              <p className="texto-gris" style={{ 
+                marginBottom: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
                 Agrega los enlaces a tus redes sociales para que aparezcan en el catálogo público de tu tienda.
               </p>
               
-              <div className="grid grid-2">
+              <div className="grid grid-2" style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                gap: isMobile ? '1rem' : '1.5rem'
+              }}>
                 <InputField
                   icon="📸"
                   label="Instagram"
@@ -934,14 +1010,31 @@ export default function ConfiguracionEmpresa() {
 
           {/* Personalización de Colores */}
           <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ borderBottom: '1px solid var(--color-borde)', backgroundColor: 'var(--color-fondo-hover)' }}>
-              <div className="flex items-centro">
-                <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>🎨</span>
-                <h3 className="titulo-3" style={{ marginBottom: '0' }}>Personalización de Colores</h3>
+            <div className="p-6 border-bottom" style={{ 
+              borderBottom: '1px solid var(--color-borde)', 
+              backgroundColor: 'var(--color-fondo-hover)',
+              padding: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <div className="flex items-centro" style={{ 
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '0.5rem' : '0.75rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🎨</span>
+                <h3 className="titulo-3" style={{ 
+                  marginBottom: '0',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem'
+                }}>
+                  Personalización de Colores
+                </h3>
               </div>
             </div>
-            <div className="p-6">
-              <div className="grid grid-2" style={{ gap: '2rem' }}>
+            <div className="p-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              <div className="grid grid-2" style={{ 
+                gap: isMobile ? '1rem' : '2rem',
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)'
+              }}>
                 {/* Selectores de Color */}
                 <div className="space-y-6">
                   <ColorPicker
@@ -990,15 +1083,22 @@ export default function ConfiguracionEmpresa() {
 
                 {/* Mini Pantalla de Referencia */}
                 <div className="space-y-4">
-                  <h4 className="etiqueta" style={{ marginBottom: '1rem' }}>Vista Previa - Mini Pantalla</h4>
+                  <h4 className="etiqueta" style={{ 
+                    marginBottom: '1rem',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    textAlign: isMobile ? 'center' : 'left'
+                  }}>
+                    Vista Previa - Mini Pantalla
+                  </h4>
                   <div 
                     className="tarjeta"
                     style={{ 
                       backgroundColor: previewTema.fondo,
-                      padding: '1rem',
+                      padding: isMobile ? '0.75rem' : '1rem',
                       borderRadius: '12px',
                       border: '2px solid var(--color-borde)',
-                      maxWidth: '320px',
+                      maxWidth: isMobile ? '100%' : '320px',
+                      margin: isMobile ? '0 auto' : '0',
                       backgroundImage: configuracion.imagenFondo
                         ? `url(${URL.createObjectURL(configuracion.imagenFondo)})`
                         : imagenFondoActual
@@ -1309,14 +1409,31 @@ export default function ConfiguracionEmpresa() {
 
           {/* Configuración del Catálogo */}
           <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ borderBottom: '1px solid var(--color-borde)', backgroundColor: 'var(--color-fondo-hover)' }}>
-              <div className="flex items-centro">
-                <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>🛍️</span>
-                <h3 className="titulo-3" style={{ marginBottom: '0' }}>Configuración del Catálogo</h3>
+            <div className="p-6 border-bottom" style={{ 
+              borderBottom: '1px solid var(--color-borde)', 
+              backgroundColor: 'var(--color-fondo-hover)',
+              padding: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <div className="flex items-centro" style={{ 
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '0.5rem' : '0.75rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🛍️</span>
+                <h3 className="titulo-3" style={{ 
+                  marginBottom: '0',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem'
+                }}>
+                  Configuración del Catálogo
+                </h3>
               </div>
             </div>
-            <div className="p-6 space-y-6">
-              <div className="grid grid-2">
+            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              <div className="grid grid-2" style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                gap: isMobile ? '1rem' : '1.5rem'
+              }}>
                 <InputField
                   icon="💱"
                   label="Moneda"
@@ -1336,8 +1453,18 @@ export default function ConfiguracionEmpresa() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="etiqueta" style={{ marginBottom: '1rem' }}>Opciones de Visualización</h4>
-                <div className="grid grid-2" style={{ gap: '1rem' }}>
+                <h4 className="etiqueta" style={{ 
+                  marginBottom: '1rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
+                  textAlign: isMobile ? 'center' : 'left'
+                }}>
+                  Opciones de Visualización
+                </h4>
+                <div className="grid grid-2" style={{ 
+                  gap: isMobile ? '0.75rem' : '1rem',
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)'
+                }}>
                   <CheckboxField
                     label="Mostrar precios"
                     name="mostrarPrecios"
@@ -1373,13 +1500,26 @@ export default function ConfiguracionEmpresa() {
 
           {/* Configuración de Notificaciones */}
           <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ borderBottom: '1px solid var(--color-borde)', backgroundColor: 'var(--color-fondo-hover)' }}>
-              <div className="flex items-centro">
-                <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>🔔</span>
-                <h3 className="titulo-3" style={{ marginBottom: '0' }}>Notificaciones</h3>
+            <div className="p-6 border-bottom" style={{ 
+              borderBottom: '1px solid var(--color-borde)', 
+              backgroundColor: 'var(--color-fondo-hover)',
+              padding: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <div className="flex items-centro" style={{ 
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '0.5rem' : '0.75rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🔔</span>
+                <h3 className="titulo-3" style={{ 
+                  marginBottom: '0',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem'
+                }}>
+                  Notificaciones
+                </h3>
               </div>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
               <div className="space-y-4">
                 <CheckboxField
                   label="Notificaciones de nuevos pedidos"
@@ -1418,15 +1558,21 @@ export default function ConfiguracionEmpresa() {
           </div>
 
           {/* Botones de Acción */}
-          <div className="flex gap-4" style={{ justifyContent: 'center', paddingTop: '2rem' }}>
+          <div className="flex gap-4" style={{ 
+            justifyContent: 'center', 
+            paddingTop: '2rem',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '0.75rem' : '1rem'
+          }}>
             <button
               type="submit"
               disabled={guardando}
               className="boton boton-primario"
               style={{ 
                 opacity: guardando ? 0.7 : 1,
-                minWidth: '200px',
-                padding: '0.75rem 2rem'
+                minWidth: isMobile ? '100%' : '200px',
+                padding: isMobile ? '0.75rem 1.5rem' : '0.75rem 2rem',
+                fontSize: isMobile ? '0.875rem' : '1rem'
               }}
             >
               {guardando ? (
@@ -1446,8 +1592,9 @@ export default function ConfiguracionEmpresa() {
               onClick={manejarCancelar}
               className="boton boton-secundario"
               style={{ 
-                minWidth: '150px',
-                padding: '0.75rem 2rem'
+                minWidth: isMobile ? '100%' : '150px',
+                padding: isMobile ? '0.75rem 1.5rem' : '0.75rem 2rem',
+                fontSize: isMobile ? '0.875rem' : '1rem'
               }}
             >
               <span className="mr-2">❌</span>

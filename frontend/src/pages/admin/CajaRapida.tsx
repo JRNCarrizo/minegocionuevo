@@ -1,12 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import { ventaRapidaService } from '../../services/ventaRapidaService';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
+import { useResponsive } from '../../hooks/useResponsive';
 import type { Producto } from '../../types';
 import BarcodeScanner from '../../components/BarcodeScanner';
+
+// Extender la interfaz Window para incluir webkitAudioContext
+declare global {
+  interface Window {
+    webkitAudioContext?: typeof AudioContext;
+  }
+}
 
 interface ItemVenta {
   producto: Producto;
@@ -28,11 +35,17 @@ interface VentaRapida {
 }
 
 export default function CajaRapida() {
+  const { isMobile } = useResponsive();
   // Función para reproducir el sonido "pi"
   const playBeepSound = () => {
     try {
-      // Crear un contexto de audio
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // Crear un contexto de audio con soporte para navegadores antiguos
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        console.log('AudioContext no está soportado en este navegador');
+        return;
+      }
+      const audioContext = new AudioContextClass();
       
       // Crear un oscilador para generar el tono
       const oscillator = audioContext.createOscillator();
@@ -84,7 +97,6 @@ export default function CajaRapida() {
     };
   }, []);
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
-  const navigate = useNavigate();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [venta, setVenta] = useState<VentaRapida>({
     items: [],
@@ -93,7 +105,6 @@ export default function CajaRapida() {
     metodoPago: 'EFECTIVO'
   });
   const [cargando, setCargando] = useState(true);
-  const [buscandoProducto, setBuscandoProducto] = useState(false);
   const [mostrarScanner, setMostrarScanner] = useState(false);
   const [filtroProductos, setFiltroProductos] = useState('');
   const [productosFiltrados, setProductosFiltrados] = useState<Producto[]>([]);
@@ -247,7 +258,7 @@ export default function CajaRapida() {
     if (!codigo.trim()) return;
     
     try {
-      setBuscandoProducto(true);
+      // setBuscandoProducto(true); // Eliminado porque no se usa en el JSX
       
       // Buscar directamente en los productos cargados
       const productosEncontrados = productos.filter(producto =>
@@ -303,7 +314,7 @@ export default function CajaRapida() {
       console.error('Error al buscar producto:', error);
       toast.error('Error al buscar producto');
     } finally {
-      setBuscandoProducto(false);
+      // setBuscandoProducto(false); // Eliminado porque no se usa en el JSX
     }
   };
 
@@ -504,15 +515,12 @@ export default function CajaRapida() {
         padding: '4rem 1rem 2rem 1rem'
       }}>
         <div style={{
-          marginBottom: '3rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingTop: '1rem'
+          marginBottom: isMobile ? '2rem' : '3rem',
+          paddingTop: isMobile ? '4rem' : '1rem'
         }}>
           <div>
             <h1 style={{
-              fontSize: '2.5rem',
+              fontSize: isMobile ? '2rem' : '2.5rem',
               fontWeight: '700',
               color: '#1e293b',
               marginBottom: '0.5rem',
@@ -524,78 +532,55 @@ export default function CajaRapida() {
               💰 Caja Rápida
             </h1>
             <p style={{
-              fontSize: '1.125rem',
+              fontSize: isMobile ? '1rem' : '1.125rem',
               color: '#64748b',
               lineHeight: '1.6'
             }}>
               Sistema de punto de venta para ventas cara a cara
             </p>
           </div>
-          
-          <button
-            onClick={() => navigate('/admin/dashboard')}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: 'white',
-              color: '#3b82f6',
-              border: '2px solid #3b82f6',
-              borderRadius: '0.75rem',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#3b82f6';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#3b82f6';
-            }}
-          >
-            ← Volver al Panel de Control
-          </button>
         </div>
 
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: '350px 1fr 350px',
-          gap: '1.5rem',
-          height: 'calc(100vh - 320px)' // Ajustado para más espacio del navbar
+          display: isMobile ? 'flex' : 'grid',
+          flexDirection: isMobile ? 'column' : 'row',
+          gridTemplateColumns: isMobile ? 'none' : '350px 1fr 350px',
+          gap: isMobile ? '1rem' : '1.5rem',
+          height: isMobile ? 'auto' : 'calc(100vh - 320px)' // Ajustado para más espacio del navbar
         }}>
           {/* Panel izquierdo - Controles */}
           <div style={{
             background: 'white',
             borderRadius: '1rem',
-            padding: '1.5rem',
+            padding: isMobile ? '1rem' : '1.5rem',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
             border: '1px solid #e2e8f0',
             display: 'flex',
             flexDirection: 'column',
-            height: 'fit-content',
-            position: 'sticky',
-            top: '1rem'
+            height: isMobile ? 'auto' : 'fit-content',
+            position: isMobile ? 'static' : 'sticky',
+            top: isMobile ? 'auto' : '1rem',
+            order: isMobile ? 1 : 0
           }}>
             {/* Título y búsqueda */}
             <h3 style={{
-              fontSize: '1.5rem',
+              fontSize: isMobile ? '1.25rem' : '1.5rem',
               fontWeight: '700',
               color: '#1e293b',
-              marginBottom: '1.5rem',
+              marginBottom: isMobile ? '1rem' : '1.5rem',
               textAlign: 'center'
             }}>
               🛒 Caja Rápida
             </h3>
             
             {/* Búsqueda de productos */}
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
               <label style={{
                 display: 'block',
                 marginBottom: '0.5rem',
                 fontWeight: '600',
                 color: '#1e293b',
-                fontSize: '1rem'
+                fontSize: isMobile ? '0.875rem' : '1rem'
               }}>
                 🔍 Buscar Producto
               </label>
@@ -614,11 +599,11 @@ export default function CajaRapida() {
                     onKeyDown={manejarTeclas}
                     style={{
                       width: '100%',
-                      height: '48px',
-                      padding: '0.75rem 1rem',
+                      height: isMobile ? '44px' : '48px',
+                      padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem',
                       border: '2px solid #e2e8f0',
                       borderRadius: '0.5rem',
-                      fontSize: '1rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem',
                       outline: 'none',
                       background: 'white'
                     }}
@@ -713,12 +698,12 @@ export default function CajaRapida() {
                 onClick={() => setMostrarScanner(true)}
                 style={{
                   width: '100%',
-                  height: '48px',
+                  height: isMobile ? '44px' : '48px',
                   background: '#3b82f6',
                   color: 'white',
                   border: 'none',
                   borderRadius: '0.5rem',
-                  fontSize: '1rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
                   fontWeight: '600',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
@@ -738,20 +723,20 @@ export default function CajaRapida() {
             <div style={{
               background: '#f8fafc',
               borderRadius: '0.75rem',
-              padding: '1rem',
-              marginBottom: '1.5rem',
+              padding: isMobile ? '0.75rem' : '1rem',
+              marginBottom: isMobile ? '1rem' : '1.5rem',
               border: '1px solid #e2e8f0'
             }}>
               <h4 style={{
-                fontSize: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
                 fontWeight: '600',
                 color: '#1e293b',
-                marginBottom: '0.75rem'
+                marginBottom: isMobile ? '0.5rem' : '0.75rem'
               }}>
                 💡 Consejos Rápidos
               </h4>
               <div style={{
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
                 color: '#64748b',
                 lineHeight: '1.5'
               }}>
@@ -765,24 +750,25 @@ export default function CajaRapida() {
 
           </div>
           
-          {/* Panel derecho - Lista de productos */}
+          {/* Panel central - Lista de productos */}
           <div style={{
             background: 'white',
             borderRadius: '1rem',
-            padding: '1.5rem',
+            padding: isMobile ? '1rem' : '1.5rem',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
             border: '1px solid #e2e8f0',
             display: 'flex',
             flexDirection: 'column',
-            height: '100%'
+            height: isMobile ? 'auto' : '100%',
+            order: isMobile ? 2 : 0
           }}>
 
             {/* Título de la lista */}
             <h3 style={{
-              fontSize: '1.5rem',
+              fontSize: isMobile ? '1.25rem' : '1.5rem',
               fontWeight: '700',
               color: '#1e293b',
-              marginBottom: '1.5rem',
+              marginBottom: isMobile ? '1rem' : '1.5rem',
               textAlign: 'center'
             }}>
               📋 Productos en Venta
@@ -956,21 +942,22 @@ export default function CajaRapida() {
           <div style={{
             background: 'white',
             borderRadius: '1rem',
-            padding: '1.5rem',
+            padding: isMobile ? '1rem' : '1.5rem',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
             border: '1px solid #e2e8f0',
             display: 'flex',
             flexDirection: 'column',
-            height: '100%',
-            position: 'sticky',
-            top: '1rem'
+            height: isMobile ? 'auto' : '100%',
+            position: isMobile ? 'static' : 'sticky',
+            top: isMobile ? 'auto' : '1rem',
+            order: isMobile ? 3 : 0
           }}>
             {/* Título */}
             <h3 style={{
-              fontSize: '1.5rem',
+              fontSize: isMobile ? '1.25rem' : '1.5rem',
               fontWeight: '700',
               color: '#1e293b',
-              marginBottom: '1.5rem',
+              marginBottom: isMobile ? '1rem' : '1.5rem',
               textAlign: 'center'
             }}>
               📊 Detalles de la Cuenta
@@ -1063,15 +1050,15 @@ export default function CajaRapida() {
             <div style={{
               background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
               borderRadius: '0.75rem',
-              padding: '1.5rem',
+              padding: isMobile ? '1rem' : '1.5rem',
               border: '2px solid #bbf7d0',
               marginBottom: '1rem'
             }}>
               <h4 style={{
-                fontSize: '1.125rem',
+                fontSize: isMobile ? '1rem' : '1.125rem',
                 fontWeight: '700',
                 color: '#166534',
-                marginBottom: '1rem',
+                marginBottom: isMobile ? '0.75rem' : '1rem',
                 textAlign: 'center'
               }}>
                 💰 Resumen de Totales
@@ -1130,12 +1117,12 @@ export default function CajaRapida() {
                   onClick={() => setMostrarModalPago(true)}
                   style={{
                     width: '100%',
-                    padding: '1rem',
+                    padding: isMobile ? '0.875rem' : '1rem',
                     background: '#10b981',
                     color: 'white',
                     border: 'none',
                     borderRadius: '0.75rem',
-                    fontSize: '1.125rem',
+                    fontSize: isMobile ? '1rem' : '1.125rem',
                     fontWeight: '700',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
@@ -1154,12 +1141,12 @@ export default function CajaRapida() {
                   onClick={limpiarVenta}
                   style={{
                     width: '100%',
-                    padding: '0.75rem',
+                    padding: isMobile ? '0.625rem' : '0.75rem',
                     background: '#ef4444',
                     color: 'white',
                     border: 'none',
                     borderRadius: '0.75rem',
-                    fontSize: '1rem',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',

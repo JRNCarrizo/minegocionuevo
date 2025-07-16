@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import BarcodeScanner from '../../components/BarcodeScanner';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
+import { useResponsive } from '../../hooks/useResponsive';
 import ApiService from '../../services/api';
 import inventarioService, { type HistorialInventario, type EstadisticasInventario as EstadisticasInventarioAPI } from '../../services/inventarioService';
 import type { Producto } from '../../types';
@@ -43,8 +43,8 @@ interface EstadisticasInventario {
 }
 
 const ControlInventario: React.FC = () => {
-  const navigate = useNavigate();
   const { datosUsuario, cerrarSesion, cargando: cargandoUsuario } = useUsuarioActual();
+  const { isMobile } = useResponsive();
   
   // Estados principales
   const [inventarioActual, setInventarioActual] = useState<Inventario | null>(null);
@@ -56,7 +56,7 @@ const ControlInventario: React.FC = () => {
   const [mostrarScanner, setMostrarScanner] = useState(false);
   const [mostrarScannerUSB, setMostrarScannerUSB] = useState(false);
   const [mostrarResumen, setMostrarResumen] = useState(false);
-  const [mostrarHistorial, setMostrarHistorial] = useState(false);
+
   const [cargando, setCargando] = useState(false);
   const [modoEscaneo, setModoEscaneo] = useState<'INICIAR' | 'ESCANEANDO' | 'FINALIZADO'>('INICIAR');
 
@@ -110,7 +110,7 @@ const ControlInventario: React.FC = () => {
         const inventarios = response.data.content || [];
         
         // Debug: verificar las fechas de cada inventario
-        inventarios.forEach((inventario: any, index: number) => {
+        inventarios.forEach((inventario: { id: number; fecha: string }, index: number) => {
           console.log(`📅 Inventario ${index + 1}:`, {
             id: inventario.id,
             fecha: inventario.fecha,
@@ -455,11 +455,7 @@ const ControlInventario: React.FC = () => {
         if (response.success) {
           console.log('✅ Inventario físico guardado en API:', response.data);
           
-          // Actualizar inventario con datos del backend
-          const inventarioConId = {
-            ...inventarioCompletado,
-            id: response.data.id || inventarioCompletado.id
-          };
+
           
           toast.success('Inventario guardado exitosamente en el servidor');
         } else {
@@ -607,15 +603,7 @@ const ControlInventario: React.FC = () => {
     setMostrarDetalleInventario(true);
   };
 
-  const generarReportePDF = (inventario: Inventario) => {
-    // TODO: Implementar generación de PDF
-    toast.success('Función de descarga de PDF en desarrollo');
-  };
 
-  const imprimirReporte = (inventario: Inventario) => {
-    // TODO: Implementar impresión
-    toast.success('Función de impresión en desarrollo');
-  };
 
   const verDetalleOperacion = (operacion: HistorialInventario) => {
     setOperacionSeleccionada(operacion);
@@ -627,8 +615,10 @@ const ControlInventario: React.FC = () => {
     return (
       <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
         <div className="contenedor" style={{ 
-          paddingTop: '5rem', 
+          paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
           paddingBottom: '2rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -663,11 +653,16 @@ const ControlInventario: React.FC = () => {
       />
 
       {/* Contenido principal */}
-      <div className="contenedor" style={{ paddingTop: '5rem', paddingBottom: '2rem' }}>
+      <div className="contenedor" style={{ 
+        paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
+        paddingBottom: '2rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem'
+      }}>
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8" style={{ textAlign: isMobile ? 'center' : 'left' }}>
           <h1 className="titulo-2 mb-4" style={{ 
-            fontSize: '32px', 
+            fontSize: isMobile ? '1.75rem' : '32px', 
             fontWeight: '700', 
             color: '#1e293b',
             letterSpacing: '-0.025em',
@@ -676,7 +671,7 @@ const ControlInventario: React.FC = () => {
             🔍 Control de Inventario
           </h1>
           <p className="texto-gris" style={{ 
-            fontSize: '16px', 
+            fontSize: isMobile ? '1rem' : '16px', 
             color: '#64748b',
             marginBottom: '8px'
           }}>
@@ -687,7 +682,9 @@ const ControlInventario: React.FC = () => {
             width: '60px',
             background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
             borderRadius: '2px',
-            marginTop: '16px'
+            marginTop: '16px',
+            marginLeft: isMobile ? 'auto' : '0',
+            marginRight: isMobile ? 'auto' : '0'
           }}></div>
         </div>
 
@@ -697,13 +694,13 @@ const ControlInventario: React.FC = () => {
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
             borderRadius: '16px',
-            padding: '24px',
+            padding: isMobile ? '16px' : '24px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
           }}>
             <div className="text-center">
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔍</div>
+              <div style={{ fontSize: isMobile ? '3rem' : '4rem', marginBottom: '1rem' }}>🔍</div>
               <h3 className="titulo-3 mb-4" style={{
-                fontSize: '24px',
+                fontSize: isMobile ? '20px' : '24px',
                 fontWeight: '600',
                 color: '#1e293b',
                 marginBottom: '16px'
@@ -711,7 +708,7 @@ const ControlInventario: React.FC = () => {
                 Iniciar Control de Inventario
               </h3>
               <p className="texto-gris mb-6" style={{ 
-                fontSize: '16px', 
+                fontSize: isMobile ? '14px' : '16px', 
                 color: '#64748b',
                 marginBottom: '24px',
                 maxWidth: '600px',
@@ -721,7 +718,11 @@ const ControlInventario: React.FC = () => {
                 y comparar con el stock registrado en el sistema.
               </p>
               
-              <div className="flex gap-4 justify-center" style={{ gap: '1rem', justifyContent: 'center' }}>
+              <div className="flex gap-4 justify-center" style={{ 
+                gap: isMobile ? '0.5rem' : '1rem', 
+                justifyContent: 'center',
+                flexDirection: isMobile ? 'column' : 'row'
+              }}>
                 <button
                   onClick={() => {
                     setMostrarScanner(true);
@@ -732,13 +733,14 @@ const ControlInventario: React.FC = () => {
                     background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
                     color: 'white',
                     border: 'none',
-                    padding: '12px 24px',
+                    padding: isMobile ? '10px 20px' : '12px 24px',
                     borderRadius: '12px',
-                    fontSize: '16px',
+                    fontSize: isMobile ? '14px' : '16px',
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)'
+                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)',
+                    width: isMobile ? '100%' : 'auto'
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
@@ -762,12 +764,13 @@ const ControlInventario: React.FC = () => {
                     background: 'white',
                     color: '#dc2626',
                     border: '2px solid #dc2626',
-                    padding: '12px 24px',
+                    padding: isMobile ? '10px 20px' : '12px 24px',
                     borderRadius: '12px',
-                    fontSize: '16px',
+                    fontSize: isMobile ? '14px' : '16px',
                     fontWeight: '600',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    width: isMobile ? '100%' : 'auto'
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.background = '#dc2626';
@@ -793,14 +796,14 @@ const ControlInventario: React.FC = () => {
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
             borderRadius: '16px',
-            padding: '24px',
+            padding: isMobile ? '16px' : '24px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
           }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
               {/* Título principal */}
               <div style={{ textAlign: 'center' }}>
                 <h3 className="titulo-3" style={{
-                  fontSize: '24px',
+                  fontSize: isMobile ? '20px' : '24px',
                   fontWeight: '700',
                   color: '#1e293b',
                   marginBottom: '8px'
@@ -819,38 +822,56 @@ const ControlInventario: React.FC = () => {
               {/* Información y controles */}
               <div style={{
                 display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
                 justifyContent: 'space-between',
-                alignItems: 'center',
+                alignItems: isMobile ? 'stretch' : 'center',
                 background: 'white',
-                padding: '16px 20px',
+                padding: isMobile ? '12px 16px' : '16px 20px',
                 borderRadius: '12px',
                 border: '1px solid #e2e8f0',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                gap: isMobile ? '12px' : '0'
               }}>
                 {/* Contador de productos */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px',
+                  justifyContent: isMobile ? 'center' : 'flex-start'
+                }}>
                   <div style={{
                     background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                     color: 'white',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    fontSize: '14px',
+                    fontSize: isMobile ? '12px' : '14px',
                     fontWeight: '600'
                   }}>
                     📦 {productosEscaneados.size}
                   </div>
                   <div>
-                    <div style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                    <div style={{ 
+                      fontSize: isMobile ? '14px' : '16px', 
+                      fontWeight: '600', 
+                      color: '#1e293b' 
+                    }}>
                       Productos Escaneados
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    <div style={{ 
+                      fontSize: isMobile ? '10px' : '12px', 
+                      color: '#64748b' 
+                    }}>
                       Continúa escaneando códigos de barras
                     </div>
                   </div>
                 </div>
                 
                 {/* Botones de acción */}
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  gap: isMobile ? '8px' : '12px',
+                  flexDirection: isMobile ? 'column' : 'row'
+                }}>
                   {/* Botón de cancelar */}
                   <button
                     onClick={resetearInventario}
@@ -859,12 +880,13 @@ const ControlInventario: React.FC = () => {
                       background: 'white',
                       color: '#dc2626',
                       border: '2px solid #dc2626',
-                      padding: '12px 20px',
+                      padding: isMobile ? '10px 16px' : '12px 20px',
                       borderRadius: '10px',
-                      fontSize: '14px',
+                      fontSize: isMobile ? '12px' : '14px',
                       fontWeight: '600',
                       cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s ease',
+                      width: isMobile ? '100%' : 'auto'
                     }}
                     onMouseOver={(e) => {
                       e.currentTarget.style.background = '#dc2626';
@@ -888,13 +910,14 @@ const ControlInventario: React.FC = () => {
                       background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                       color: 'white',
                       border: 'none',
-                      padding: '12px 24px',
+                      padding: isMobile ? '10px 20px' : '12px 24px',
                       borderRadius: '10px',
-                      fontSize: '16px',
+                      fontSize: isMobile ? '14px' : '16px',
                       fontWeight: '600',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                      width: isMobile ? '100%' : 'auto'
                     }}
                     onMouseOver={(e) => {
                       e.currentTarget.style.transform = 'translateY(-2px)';
@@ -955,11 +978,11 @@ const ControlInventario: React.FC = () => {
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
             borderRadius: '16px',
-            padding: '24px',
+            padding: isMobile ? '16px' : '24px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
           }}>
             <h3 className="titulo-3 mb-4" style={{
-              fontSize: '24px',
+              fontSize: isMobile ? '20px' : '24px',
               fontWeight: '600',
               color: '#1e293b',
               marginBottom: '16px'
@@ -970,64 +993,64 @@ const ControlInventario: React.FC = () => {
             {/* Estadísticas principales */}
             <div className="grid grid-4 mb-6" style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '16px',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: isMobile ? '12px' : '16px',
               marginBottom: '24px'
             }}>
               <div style={{
                 background: 'white',
                 borderRadius: '12px',
-                padding: '16px',
+                padding: isMobile ? '12px' : '16px',
                 border: '1px solid #e2e8f0',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📦</div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#3b82f6' }}>
+                <div style={{ fontSize: isMobile ? '20px' : '24px', marginBottom: '8px' }}>📦</div>
+                <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#3b82f6' }}>
                   {estadisticas.totalProductos}
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>Total Productos</div>
+                <div style={{ fontSize: isMobile ? '10px' : '12px', color: '#64748b' }}>Total Productos</div>
               </div>
               
               <div style={{
                 background: 'white',
                 borderRadius: '12px',
-                padding: '16px',
+                padding: isMobile ? '12px' : '16px',
                 border: '1px solid #e2e8f0',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>⚠️</div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#f59e0b' }}>
+                <div style={{ fontSize: isMobile ? '20px' : '24px', marginBottom: '8px' }}>⚠️</div>
+                <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#f59e0b' }}>
                   {estadisticas.productosConDiferencias}
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>Con Diferencias</div>
+                <div style={{ fontSize: isMobile ? '10px' : '12px', color: '#64748b' }}>Con Diferencias</div>
               </div>
               
               <div style={{
                 background: 'white',
                 borderRadius: '12px',
-                padding: '16px',
+                padding: isMobile ? '12px' : '16px',
                 border: '1px solid #e2e8f0',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>💰</div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#dc2626' }}>
+                <div style={{ fontSize: isMobile ? '20px' : '24px', marginBottom: '8px' }}>💰</div>
+                <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#dc2626' }}>
                   {formatearMoneda(estadisticas.valorTotalDiferencias)}
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>Valor Diferencias</div>
+                <div style={{ fontSize: isMobile ? '10px' : '12px', color: '#64748b' }}>Valor Diferencias</div>
               </div>
               
               <div style={{
                 background: 'white',
                 borderRadius: '12px',
-                padding: '16px',
+                padding: isMobile ? '12px' : '16px',
                 border: '1px solid #e2e8f0',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#10b981' }}>
+                <div style={{ fontSize: isMobile ? '20px' : '24px', marginBottom: '8px' }}>📈</div>
+                <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#10b981' }}>
                   {estadisticas.porcentajePrecision.toFixed(1)}%
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>Precisión</div>
+                <div style={{ fontSize: isMobile ? '10px' : '12px', color: '#64748b' }}>Precisión</div>
               </div>
             </div>
 
@@ -1035,7 +1058,7 @@ const ControlInventario: React.FC = () => {
             {(estadisticas.productosPerdidos.length > 0 || estadisticas.productosSobrantes.length > 0) && (
               <div className="mb-6">
                 <h4 className="titulo-4 mb-3" style={{
-                  fontSize: '18px',
+                  fontSize: isMobile ? '16px' : '18px',
                   fontWeight: '600',
                   color: '#1e293b',
                   marginBottom: '12px'
@@ -1045,8 +1068,8 @@ const ControlInventario: React.FC = () => {
                 
                 <div className="grid grid-2" style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                  gap: '16px'
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
+                  gap: isMobile ? '12px' : '16px'
                 }}>
                   {/* Productos perdidos */}
                   {estadisticas.productosPerdidos.length > 0 && (
@@ -1118,7 +1141,11 @@ const ControlInventario: React.FC = () => {
             )}
 
             {/* Botones de acción */}
-            <div className="flex gap-4 justify-center" style={{ gap: '1rem', justifyContent: 'center' }}>
+            <div className="flex gap-4 justify-center" style={{ 
+              gap: isMobile ? '0.5rem' : '1rem', 
+              justifyContent: 'center',
+              flexDirection: isMobile ? 'column' : 'row'
+            }}>
               <button
                 onClick={guardarInventario}
                 disabled={cargando}
@@ -1127,13 +1154,14 @@ const ControlInventario: React.FC = () => {
                   background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                   color: 'white',
                   border: 'none',
-                  padding: '12px 24px',
+                  padding: isMobile ? '10px 20px' : '12px 24px',
                   borderRadius: '12px',
-                  fontSize: '16px',
+                  fontSize: isMobile ? '14px' : '16px',
                   fontWeight: '600',
                   cursor: cargando ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
-                  opacity: cargando ? 0.7 : 1
+                  opacity: cargando ? 0.7 : 1,
+                  width: isMobile ? '100%' : 'auto'
                 }}
               >
                 {cargando ? '💾 Guardando...' : '💾 Guardar Inventario'}
@@ -1152,12 +1180,13 @@ const ControlInventario: React.FC = () => {
                   background: 'white',
                   color: '#6b7280',
                   border: '2px solid #6b7280',
-                  padding: '12px 24px',
+                  padding: isMobile ? '10px 20px' : '12px 24px',
                   borderRadius: '12px',
-                  fontSize: '16px',
+                  fontSize: isMobile ? '14px' : '16px',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  width: isMobile ? '100%' : 'auto'
                 }}
               >
                 🔄 Nuevo Inventario
@@ -1171,12 +1200,12 @@ const ControlInventario: React.FC = () => {
           background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
           border: '1px solid #e2e8f0',
           borderRadius: '16px',
-          padding: '24px',
+          padding: isMobile ? '16px' : '24px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
         }}>
-          <div className="flex items-center justify-center mb-4" style={{ flexDirection: 'column', gap: '16px' }}>
+          <div className="flex items-center justify-center mb-4" style={{ flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
             <h3 className="titulo-3" style={{
-              fontSize: '20px',
+              fontSize: isMobile ? '18px' : '20px',
               fontWeight: '600',
               color: '#1e293b',
               marginBottom: '0',
@@ -1287,12 +1316,12 @@ const ControlInventario: React.FC = () => {
           background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
           border: '1px solid #e2e8f0',
           borderRadius: '16px',
-          padding: '24px',
+          padding: isMobile ? '16px' : '24px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
         }}>
-          <div className="flex items-center justify-center mb-4" style={{ flexDirection: 'column', gap: '16px' }}>
+          <div className="flex items-center justify-center mb-4" style={{ flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
             <h3 className="titulo-3" style={{
-              fontSize: '20px',
+              fontSize: isMobile ? '18px' : '20px',
               fontWeight: '600',
               color: '#1e293b',
               marginBottom: '0',
@@ -1330,8 +1359,8 @@ const ControlInventario: React.FC = () => {
           {estadisticasOperaciones && (
             <div className="grid grid-4 mb-4" style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '1rem',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: isMobile ? '0.75rem' : '1rem',
               marginBottom: '1rem'
             }}>
               <div style={{
@@ -1849,44 +1878,6 @@ const ControlInventario: React.FC = () => {
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => generarReportePDF(inventarioDetalle)}
-                  style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                  title="Descargar PDF"
-                >
-                  📄 PDF
-                </button>
-                <button
-                  onClick={() => imprimirReporte(inventarioDetalle)}
-                  style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                  title="Imprimir"
-                >
-                  🖨️ Imprimir
-                </button>
                 <button 
                   onClick={() => setMostrarDetalleInventario(false)}
                   style={{

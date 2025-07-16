@@ -191,32 +191,56 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
               <div style={{
                 textAlign: 'center',
                 padding: '60px 20px',
-                color: '#64748b'
+                color: '#64748b',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '300px'
               }}>
                 <div style={{
-                  width: '80px',
-                  height: '80px',
+                  width: '100px',
+                  height: '100px',
                   background: 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 20px',
-                  fontSize: '32px'
+                  margin: '0 auto 24px',
+                  fontSize: '40px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.1)'
                 }}>
                   🛒
                 </div>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
+                <h3 style={{ 
+                  margin: '0 0 16px 0', 
+                  fontSize: '24px', 
+                  fontWeight: '700', 
+                  color: '#1e293b',
+                  textAlign: 'center'
+                }}>
                   Tu carrito está vacío
                 </h3>
-                <p style={{ margin: 0, fontSize: '16px' }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: '18px',
+                  textAlign: 'center',
+                  maxWidth: '300px',
+                  lineHeight: '1.5'
+                }}>
                   Agrega algunos productos para comenzar a comprar
                 </p>
               </div>
           ) : (
             <>
                 {/* Productos */}
-                <div style={{ marginBottom: '32px' }}>
+                <div style={{ 
+                  marginBottom: '32px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '16px'
+                }}>
                   {items.map((item, index) => (
                     <div 
                       key={item.id}
@@ -439,20 +463,89 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
                 {/* Resumen y acciones */}
                 <div style={{
                   background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  border: '2px solid #e2e8f0'
+                  borderRadius: '20px',
+                  padding: '32px',
+                  border: '2px solid #e2e8f0',
+                  width: '100%',
+                  maxWidth: '600px',
+                  margin: '0 auto'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
-                      Total del Pedido
+                  {/* Título centrado */}
+                  <div style={{ 
+                    textAlign: 'center', 
+                    marginBottom: '24px',
+                    paddingBottom: '20px',
+                    borderBottom: '2px solid #e2e8f0'
+                  }}>
+                    <h3 style={{ 
+                      margin: '0 0 8px 0', 
+                      fontSize: '24px', 
+                      fontWeight: '700', 
+                      color: '#1e293b',
+                      textAlign: 'center'
+                    }}>
+                      💰 Resumen del Pedido
                     </h3>
-                    <p style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: '#059669' }}>
+                    <p style={{ 
+                      margin: 0, 
+                      fontSize: '32px', 
+                      fontWeight: '800', 
+                      color: '#059669',
+                      textAlign: 'center'
+                    }}>
                       ${total.toFixed(2)}
                     </p>
                   </div>
                   
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {/* Botones centrados */}
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    gap: '16px',
+                    alignItems: 'center'
+                  }}>
+                    <button
+                      onClick={() => setShowConfirm(true)}
+                      disabled={loading}
+                      style={{
+                        background: empresa?.colorPrimario ? 
+                          `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorPrimario}dd 100%)` :
+                          'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        border: 'none',
+                        borderRadius: '16px',
+                        padding: '16px 40px',
+                        fontSize: '18px',
+                        fontWeight: '700',
+                        color: 'white',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: empresa?.colorPrimario ? 
+                          `0 4px 12px ${empresa.colorPrimario}40` :
+                          '0 4px 12px rgba(16,185,129,0.3)',
+                        width: '100%',
+                        maxWidth: '400px',
+                        opacity: loading ? 0.7 : 1
+                      }}
+                      onMouseOver={(e) => {
+                        if (!loading) {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = empresa?.colorPrimario ? 
+                            `0 6px 16px ${empresa.colorPrimario}60` :
+                            '0 6px 16px rgba(16,185,129,0.4)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (!loading) {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = empresa?.colorPrimario ? 
+                            `0 4px 12px ${empresa.colorPrimario}40` :
+                            '0 4px 12px rgba(16,185,129,0.3)';
+                        }
+                      }}
+                    >
+                      {loading ? '⏳ Procesando...' : '💳 Finalizar Compra'}
+                    </button>
+                    
                     <button
                       onClick={clearCart}
                       style={{
@@ -465,66 +558,35 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
                         color: '#475569',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
-                        flex: 1,
-                        minWidth: '140px'
+                        width: '100%',
+                        maxWidth: '300px'
                       }}
                       onMouseOver={(e) => {
                         e.currentTarget.style.borderColor = '#64748b';
                         e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)';
                       }}
                       onMouseOut={(e) => {
                         e.currentTarget.style.borderColor = '#cbd5e1';
                         e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
                       }}
                     >
                       🗑️ Vaciar Carrito
                     </button>
-                    
-                    <button
-                      onClick={() => setShowConfirm(true)}
-                      disabled={loading}
-                      style={{
-                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                        border: 'none',
-                        borderRadius: '12px',
-                        padding: '12px 32px',
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        color: 'white',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                        flex: 2,
-                        minWidth: '200px',
-                        opacity: loading ? 0.7 : 1
-                      }}
-                      onMouseOver={(e) => {
-                        if (!loading) {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(16,185,129,0.4)';
-                        }
-                      }}
-                      onMouseOut={(e) => {
-                        if (!loading) {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)';
-                        }
-                      }}
-                    >
-                      {loading ? '⏳ Procesando...' : '💳 Finalizar Compra'}
-              </button>
                   </div>
                   
                   {compraRealizada && (
                     <div style={{
                       background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
                       border: '2px solid #10b981',
-                      borderRadius: '12px',
-                      padding: '16px',
-                      marginTop: '16px',
+                      borderRadius: '16px',
+                      padding: '20px',
+                      marginTop: '20px',
                       textAlign: 'center',
                       color: '#065f46',
-                      fontWeight: '600'
+                      fontWeight: '600',
+                      fontSize: '16px'
                     }}>
                       ✅ ¡Compra realizada con éxito!
                     </div>

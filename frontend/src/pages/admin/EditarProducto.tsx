@@ -438,70 +438,86 @@ const EditarProducto: React.FC = () => {
                   }}>
                     Marca
                   </label>
-                  <input
-                    type="text"
-                    id="marca"
-                    value={formulario.marca}
-                    onChange={(e) => manejarCambioMarca(e.target.value)}
-                    style={{
+                  {cargandoMarcas ? (
+                    <div style={{
                       width: '100%',
                       padding: '12px 16px',
                       border: '2px solid #e2e8f0',
                       borderRadius: '8px',
                       fontSize: '16px',
-                      transition: 'all 0.2s ease'
-                    }}
-                    placeholder="Ej: Nike, Apple, Samsung..."
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e2e8f0';
-                      e.target.style.boxShadow = 'none';
-                      setTimeout(() => {
-                        setMostrarSugerenciasMarca(false);
-                      }, 100);
-                    }}
-                  />
-                  {mostrarSugerenciasMarca && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      right: 0,
-                      background: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      maxHeight: '150px',
-                      overflowY: 'auto',
-                      zIndex: 1000,
-                      marginTop: '2px'
+                      color: '#64748b',
+                      background: '#f8fafc'
                     }}>
-                      {marcasFiltradas.map(marca => (
-                        <div
-                          key={marca}
-                          style={{
-                            padding: '8px 12px',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            color: '#374151',
-                            borderBottom: '1px solid #f3f4f6',
-                            transition: 'background-color 0.2s ease'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#f8fafc';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                          onClick={() => seleccionarMarca(marca)}
-                        >
-                          {marca}
-                        </div>
-                      ))}
+                      Cargando marcas...
                     </div>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        id="marca"
+                        value={formulario.marca}
+                        onChange={(e) => manejarCambioMarca(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e2e8f0',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="Ej: Nike, Apple, Samsung..."
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e2e8f0';
+                          e.target.style.boxShadow = 'none';
+                          setTimeout(() => {
+                            setMostrarSugerenciasMarca(false);
+                          }, 100);
+                        }}
+                      />
+                      {mostrarSugerenciasMarca && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          background: 'white',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          maxHeight: '150px',
+                          overflowY: 'auto',
+                          zIndex: 1000,
+                          marginTop: '2px'
+                        }}>
+                          {marcasFiltradas.map(marca => (
+                            <div
+                              key={marca}
+                              style={{
+                                padding: '8px 12px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                color: '#374151',
+                                borderBottom: '1px solid #f3f4f6',
+                                transition: 'background-color 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#f8fafc';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
+                              onClick={() => seleccionarMarca(marca)}
+                            >
+                              {marca}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 

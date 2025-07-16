@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useSubdominio } from '../hooks/useSubdominio';
-import { useCart } from '../hooks/useCart';
-import CartIcon from '../components/CartIcon';
+import { useResponsive } from '../hooks/useResponsive';
 import CartModal from '../components/CartModal';
 import NavbarCliente from '../components/NavbarCliente';
 import api from '../services/api';
@@ -778,7 +777,7 @@ function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Ped
 
 export default function AreaPersonalCliente() {
   const { empresa, cargando: cargandoEmpresa, subdominio } = useSubdominio();
-  const { addToCart } = useCart();
+  const { isMobile } = useResponsive();
   const [cliente, setCliente] = useState<ClienteInfo | null>(null);
   const [cargando, setCargando] = useState(true);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -983,7 +982,9 @@ export default function AreaPersonalCliente() {
       />
       <CartModal open={showCart} onClose={() => setShowCart(false)} />
 
-      <main className="contenedor">
+      <main className="contenedor" style={{
+        paddingTop: isMobile ? '10.5rem' : '2rem'
+      }}>
         {/* Cabecera mejorada */}
         <div style={{
           textAlign: 'center',
@@ -1052,7 +1053,14 @@ export default function AreaPersonalCliente() {
                 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
             }} />
             
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+            {/* Título e icono de información personal - centrado */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              marginBottom: '32px',
+              gap: '12px'
+            }}>
               <div style={{
                 width: '50px',
                 height: '50px',
@@ -1063,117 +1071,195 @@ export default function AreaPersonalCliente() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginRight: '16px',
                 fontSize: '24px',
                 color: 'white'
               }}>
                 👤
               </div>
-              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: empresa?.colorTexto || '#1e293b' }}>
+              <h2 style={{ 
+                margin: 0, 
+                fontSize: '24px', 
+                fontWeight: '700', 
+                color: empresa?.colorTexto || '#1e293b',
+                textAlign: 'center'
+              }}>
                 Información Personal
               </h2>
-                  </div>
+            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '32px', alignItems: 'start' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Contenido centrado */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              gap: '32px'
+            }}>
+              {/* Campos de información - centrados */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '20px',
+                width: '100%',
+                maxWidth: '800px',
+                margin: '0 auto'
+              }}>
                 <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                  gap: '20px'
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                  padding: '24px',
+                  borderRadius: '16px',
+                  border: '1px solid #e2e8f0',
+                  textAlign: 'center'
                 }}>
-                  <div style={{
-                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                    padding: '20px',
-                    borderRadius: '12px',
-                    border: '1px solid #e2e8f0'
+                  <p style={{ 
+                    margin: '0 0 12px 0', 
+                    fontSize: '13px', 
+                    color: '#64748b', 
+                    fontWeight: '600', 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
-                    <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>
-                      Nombre Completo
-                    </p>
-                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
-                      {cliente?.nombre} {cliente?.apellidos}
-                    </p>
-                  </div>
-
-                  <div style={{
-                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                    padding: '20px',
-                    borderRadius: '12px',
-                    border: '1px solid #e2e8f0'
+                    Nombre Completo
+                  </p>
+                  <p style={{ 
+                    margin: 0, 
+                    fontSize: '18px', 
+                    fontWeight: '600', 
+                    color: '#1e293b'
                   }}>
-                    <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>
-                      Email
-                    </p>
-                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
-                      {cliente?.email}
-                    </p>
-                  </div>
-
-                  {cliente?.telefono && (
-                    <div style={{
-                      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                      padding: '20px',
-                      borderRadius: '12px',
-                      border: '1px solid #e2e8f0'
-                    }}>
-                      <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>
-                        Teléfono
-                      </p>
-                      <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
-                        {cliente.telefono}
-                      </p>
-                    </div>
-                  )}
+                    {cliente?.nombre} {cliente?.apellidos}
+                  </p>
                 </div>
+
+                <div style={{
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                  padding: '24px',
+                  borderRadius: '16px',
+                  border: '1px solid #e2e8f0',
+                  textAlign: 'center'
+                }}>
+                  <p style={{ 
+                    margin: '0 0 12px 0', 
+                    fontSize: '13px', 
+                    color: '#64748b', 
+                    fontWeight: '600', 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Email
+                  </p>
+                  <p style={{ 
+                    margin: 0, 
+                    fontSize: '18px', 
+                    fontWeight: '600', 
+                    color: '#1e293b'
+                  }}>
+                    {cliente?.email}
+                  </p>
+                </div>
+
+                {cliente?.telefono && (
+                  <div style={{
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                    padding: '24px',
+                    borderRadius: '16px',
+                    border: '1px solid #e2e8f0',
+                    textAlign: 'center'
+                  }}>
+                    <p style={{ 
+                      margin: '0 0 12px 0', 
+                      fontSize: '13px', 
+                      color: '#64748b', 
+                      fontWeight: '600', 
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      Teléfono
+                    </p>
+                    <p style={{ 
+                      margin: 0, 
+                      fontSize: '18px', 
+                      fontWeight: '600', 
+                      color: '#1e293b'
+                    }}>
+                      {cliente.telefono}
+                    </p>
+                  </div>
+                )}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Botones centrados */}
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '16px',
+                alignItems: 'center',
+                width: '100%',
+                maxWidth: '400px'
+              }}>
                 <button style={{
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  background: empresa?.colorPrimario ? 
+                    `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorPrimario}dd 100%)` :
+                    'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 24px',
-                  fontSize: '14px',
+                  borderRadius: '16px',
+                  padding: '16px 32px',
+                  fontSize: '16px',
                   fontWeight: '600',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 12px rgba(59,130,246,0.3)'
+                  boxShadow: empresa?.colorPrimario ? 
+                    `0 4px 12px ${empresa.colorPrimario}40` :
+                    '0 4px 12px rgba(59,130,246,0.3)',
+                  width: '100%'
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(59,130,246,0.4)';
+                  e.currentTarget.style.boxShadow = empresa?.colorPrimario ? 
+                    `0 6px 16px ${empresa.colorPrimario}60` :
+                    '0 6px 16px rgba(59,130,246,0.4)';
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.3)';
+                  e.currentTarget.style.boxShadow = empresa?.colorPrimario ? 
+                    `0 4px 12px ${empresa.colorPrimario}40` :
+                    '0 4px 12px rgba(59,130,246,0.3)';
                 }}>
                   ✏️ Editar Perfil
-                  </button>
+                </button>
                 <button style={{
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  background: empresa?.colorAcento ? 
+                    `linear-gradient(135deg, ${empresa.colorAcento} 0%, ${empresa.colorAcento}dd 100%)` :
+                    'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 24px',
-                  fontSize: '14px',
+                  borderRadius: '16px',
+                  padding: '16px 32px',
+                  fontSize: '16px',
                   fontWeight: '600',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 12px rgba(245,158,11,0.3)'
+                  boxShadow: empresa?.colorAcento ? 
+                    `0 4px 12px ${empresa.colorAcento}40` :
+                    '0 4px 12px rgba(245,158,11,0.3)',
+                  width: '100%'
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(245,158,11,0.4)';
+                  e.currentTarget.style.boxShadow = empresa?.colorAcento ? 
+                    `0 6px 16px ${empresa.colorAcento}60` :
+                    '0 6px 16px rgba(245,158,11,0.4)';
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(245,158,11,0.3)';
+                  e.currentTarget.style.boxShadow = empresa?.colorAcento ? 
+                    `0 4px 12px ${empresa.colorAcento}40` :
+                    '0 4px 12px rgba(245,158,11,0.3)';
                 }}>
                   🔒 Cambiar Contraseña
-                  </button>
-                </div>
+                </button>
               </div>
+            </div>
             </div>
 
           {/* Sistema de Pestañas */}

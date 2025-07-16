@@ -4,10 +4,12 @@ import toast from 'react-hot-toast';
 import ApiService from '../services/api';
 import NavbarAdmin from '../components/NavbarAdmin';
 import { useUsuarioActual } from '../hooks/useUsuarioActual';
+import { useResponsive } from '../hooks/useResponsive';
 import type { Notificacion } from '../types';
 
 export default function DashboardAdministrador() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
+  const { isMobile, isTablet} = useResponsive();
   const [estadisticas, setEstadisticas] = useState({
     productos: 0,
     clientes: 0,
@@ -340,7 +342,8 @@ export default function DashboardAdministrador() {
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: '2rem 1rem'
+        padding: isMobile ? '1rem 0.5rem' : isTablet ? '1.5rem 1rem' : '2rem 1rem',
+        paddingTop: isMobile ? '120px' : '80px'
       }}>
         {/* Encabezado */}
         <div style={{
@@ -348,21 +351,23 @@ export default function DashboardAdministrador() {
           animation: 'slideInUp 0.6s ease-out'
         }}>
           <h1 style={{
-            fontSize: '2.5rem',
+            fontSize: isMobile ? '2rem' : isTablet ? '2.25rem' : '2.5rem',
             fontWeight: '700',
             color: '#1e293b',
             marginBottom: '0.5rem',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
+            backgroundClip: 'text',
+            textAlign: isMobile ? 'center' : 'left'
           }}>
             Panel de Administración
           </h1>
           <p style={{
-            fontSize: '1.125rem',
+            fontSize: isMobile ? '1rem' : '1.125rem',
             color: '#64748b',
-            lineHeight: '1.6'
+            lineHeight: '1.6',
+            textAlign: isMobile ? 'center' : 'left'
           }}>
             Bienvenido{datosUsuario?.nombre ? ` ${datosUsuario.nombre}` : ''}. 
             Aquí tienes un resumen de {datosUsuario?.empresaNombre || 'tu negocio'}.
@@ -377,21 +382,24 @@ export default function DashboardAdministrador() {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '1rem',
-            flexWrap: 'wrap'
+            gap: isMobile ? '0.5rem' : '1rem',
+            flexWrap: 'wrap',
+            flexDirection: isMobile ? 'column' : 'row'
           }}>
             <Link 
               to="/admin/productos" 
               style={{
-                padding: '0.875rem 1.5rem',
+                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.5rem',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: 'white',
                 textDecoration: 'none',
                 borderRadius: '0.75rem',
-                fontSize: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
                 fontWeight: '600',
                 transition: 'all 0.2s ease',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                width: isMobile ? '100%' : 'auto',
+                textAlign: isMobile ? 'center' : 'left'
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
@@ -407,15 +415,17 @@ export default function DashboardAdministrador() {
             <Link 
               to="/admin/pedidos" 
               style={{
-                padding: '0.875rem 1.5rem',
+                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.5rem',
                 background: 'white',
                 color: '#3b82f6',
                 textDecoration: 'none',
                 borderRadius: '0.75rem',
-                fontSize: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
                 fontWeight: '600',
                 border: '2px solid #3b82f6',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                width: isMobile ? '100%' : 'auto',
+                textAlign: isMobile ? 'center' : 'left'
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.background = '#3b82f6';
@@ -433,15 +443,17 @@ export default function DashboardAdministrador() {
             <Link 
               to="/admin/clientes" 
               style={{
-                padding: '0.875rem 1.5rem',
+                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.5rem',
                 background: 'white',
                 color: '#3b82f6',
                 textDecoration: 'none',
                 borderRadius: '0.75rem',
-                fontSize: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
                 fontWeight: '600',
                 border: '2px solid #3b82f6',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                width: isMobile ? '100%' : 'auto',
+                textAlign: isMobile ? 'center' : 'left'
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.background = '#3b82f6';
@@ -459,15 +471,17 @@ export default function DashboardAdministrador() {
             <Link 
               to="/admin/configuracion" 
               style={{
-                padding: '0.875rem 1.5rem',
+                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.5rem',
                 background: 'white',
                 color: '#3b82f6',
                 textDecoration: 'none',
                 borderRadius: '0.75rem',
-                fontSize: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
                 fontWeight: '600',
                 border: '2px solid #3b82f6',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                width: isMobile ? '100%' : 'auto',
+                textAlign: isMobile ? 'center' : 'left'
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.background = '#3b82f6';
@@ -485,15 +499,17 @@ export default function DashboardAdministrador() {
             <Link 
               to="/admin/caja-rapida" 
               style={{
-                padding: '0.875rem 1.5rem',
+                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.5rem',
                 background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                 color: 'white',
                 textDecoration: 'none',
                 borderRadius: '0.75rem',
-                fontSize: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
                 fontWeight: '600',
                 transition: 'all 0.2s ease',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                width: isMobile ? '100%' : 'auto',
+                textAlign: isMobile ? 'center' : 'left'
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
@@ -512,21 +528,21 @@ export default function DashboardAdministrador() {
         {/* Estadísticas */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1.5rem',
-          marginBottom: '3rem'
+          gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: isMobile ? '1rem' : '1.5rem',
+          marginBottom: isMobile ? '2rem' : '3rem'
         }}>
           {tarjetasEstadisticas.map((tarjeta, index) => (
             <div 
               key={index} 
               style={{
                 background: 'white',
-                borderRadius: '1rem',
-                padding: '2rem',
+                borderRadius: isMobile ? '0.75rem' : '1rem',
+                padding: isMobile ? '1.5rem' : '2rem',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                 border: '1px solid #e2e8f0',
                 animation: `slideInUp 0.6s ease-out ${index * 0.1}s both`,
-                gridColumn: tarjeta.titulo === 'Ventas' ? 'span 2' : 'span 1'
+                gridColumn: isMobile ? 'span 1' : (tarjeta.titulo === 'Ventas' ? 'span 2' : 'span 1')
               }}
             >
               {tarjeta.titulo === 'Ventas' ? (
@@ -648,8 +664,8 @@ export default function DashboardAdministrador() {
           </h2>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '1.5rem'
+            gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: isMobile ? '1rem' : '1.5rem'
           }}>
             {accionesRapidas.map((accion, index) => (
               <Link 
@@ -657,8 +673,8 @@ export default function DashboardAdministrador() {
                 to={accion.enlace}
                 style={{
                   background: 'white',
-                  borderRadius: '1rem',
-                  padding: '2rem',
+                  borderRadius: isMobile ? '0.75rem' : '1rem',
+                  padding: isMobile ? '1.5rem' : '2rem',
                   textDecoration: 'none',
                   color: 'inherit',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
@@ -741,20 +757,30 @@ export default function DashboardAdministrador() {
         }}>
           <div style={{
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '1.5rem'
+            justifyContent: isMobile ? 'center' : 'space-between',
+            alignItems: isMobile ? 'center' : 'center',
+            marginBottom: '1.5rem',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '1rem' : '0'
           }}>
             <h2 style={{
-              fontSize: '1.875rem',
+              fontSize: isMobile ? '1.5rem' : '1.875rem',
               fontWeight: '600',
               color: '#1e293b',
-              margin: 0
+              margin: 0,
+              textAlign: isMobile ? 'center' : 'left'
             }}>
               Actividad Reciente
             </h2>
             {notificaciones.length > 0 && (
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <div style={{ 
+                display: 'flex', 
+                gap: isMobile ? '0.5rem' : '0.5rem', 
+                alignItems: 'center',
+                flexWrap: isMobile ? 'wrap' : 'nowrap',
+                justifyContent: isMobile ? 'center' : 'flex-end',
+                width: isMobile ? '100%' : 'auto'
+              }}>
                 {modoSeleccion ? (
                   <>
                     <button
@@ -764,12 +790,14 @@ export default function DashboardAdministrador() {
                         background: notificacionesSeleccionadas.length > 0 ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : '#9ca3af',
                         color: 'white',
                         border: 'none',
-                        padding: '0.5rem 1rem',
+                        padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem',
                         borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
+                        fontSize: isMobile ? '0.75rem' : '0.875rem',
                         fontWeight: '500',
                         cursor: notificacionesSeleccionadas.length > 0 ? 'pointer' : 'not-allowed',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        minWidth: isMobile ? '80px' : 'auto',
+                        textAlign: 'center'
                       }}
                       onMouseOver={(e) => {
                         if (notificacionesSeleccionadas.length > 0) {
@@ -793,12 +821,14 @@ export default function DashboardAdministrador() {
                         background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
                         color: 'white',
                         border: 'none',
-                        padding: '0.5rem 1rem',
+                        padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem',
                         borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
+                        fontSize: isMobile ? '0.75rem' : '0.875rem',
                         fontWeight: '500',
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        minWidth: isMobile ? '80px' : 'auto',
+                        textAlign: 'center'
                       }}
                       onMouseOver={(e) => {
                         e.currentTarget.style.transform = 'translateY(-1px)';
@@ -820,12 +850,14 @@ export default function DashboardAdministrador() {
                         background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                         color: 'white',
                         border: 'none',
-                        padding: '0.5rem 1rem',
+                        padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem',
                         borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
+                        fontSize: isMobile ? '0.75rem' : '0.875rem',
                         fontWeight: '500',
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        minWidth: isMobile ? '80px' : 'auto',
+                        textAlign: 'center'
                       }}
                       onMouseOver={(e) => {
                         e.currentTarget.style.transform = 'translateY(-1px)';
@@ -844,12 +876,14 @@ export default function DashboardAdministrador() {
                         background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                         color: 'white',
                         border: 'none',
-                        padding: '0.5rem 1rem',
+                        padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem',
                         borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
+                        fontSize: isMobile ? '0.75rem' : '0.875rem',
                         fontWeight: '500',
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        minWidth: isMobile ? '80px' : 'auto',
+                        textAlign: 'center'
                       }}
                       onMouseOver={(e) => {
                         e.currentTarget.style.transform = 'translateY(-1px)';
@@ -878,12 +912,14 @@ export default function DashboardAdministrador() {
                         background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                         color: 'white',
                         border: 'none',
-                        padding: '0.5rem 1rem',
+                        padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem',
                         borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
+                        fontSize: isMobile ? '0.75rem' : '0.875rem',
                         fontWeight: '500',
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        minWidth: isMobile ? '80px' : 'auto',
+                        textAlign: 'center'
                       }}
                       onMouseOver={(e) => {
                         e.currentTarget.style.transform = 'translateY(-1px)';
