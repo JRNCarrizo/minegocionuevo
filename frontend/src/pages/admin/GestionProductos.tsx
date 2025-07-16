@@ -17,11 +17,41 @@ interface FiltrosProductos {
   stockBajo?: boolean;
 }
 
-type VistaProducto = 'lista' | 'cuadricula';
+type VistaProducto = 'lista' | 'intermedia' | 'cuadricula';
 
 const GestionProductos: React.FC = () => {
   const navigate = useNavigate();
   const [productos, setProductos] = useState<Producto[]>([]);
+
+  // Función para reproducir el sonido "pi"
+  const playBeepSound = () => {
+    try {
+      // Crear un contexto de audio
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Crear un oscilador para generar el tono
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      // Configurar el tono (frecuencia de 800Hz para un "pi" agudo)
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      // Configurar el volumen y la duración
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      // Conectar los nodos
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Reproducir el sonido
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+      console.log('No se pudo reproducir el sonido:', error);
+    }
+  };
   const [vista, setVista] = useState<VistaProducto>('lista');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
@@ -49,6 +79,7 @@ const GestionProductos: React.FC = () => {
   const [productosAgregados, setProductosAgregados] = useState<Array<{producto: Producto, cantidad: number}>>([]);
   const [mostrarResumen, setMostrarResumen] = useState(false);
   const [guardandoStock, setGuardandoStock] = useState(false);
+  const [modoTerminar, setModoTerminar] = useState(false);
   
   // Estados para paginación (TODO: implementar cuando sea necesario)
   // const [paginaActual, setPaginaActual] = useState(0);
@@ -423,6 +454,8 @@ const GestionProductos: React.FC = () => {
   // Funciones para el escáner de códigos de barras
   const manejarEscaneoBarras = (codigoBarras: string) => {
     console.log("✅ Código escaneado en gestión de productos:", codigoBarras);
+    // Reproducir sonido "pi"
+    playBeepSound();
     // Solo buscar productos activos cuando se escanea un código de barras
     setFiltros(prev => ({ ...prev, codigoBarras, activo: true }));
     setMostrarScanner(false);
@@ -451,6 +484,9 @@ const GestionProductos: React.FC = () => {
 
   const manejarEscaneoStock = async (codigoBarras: string) => {
     console.log("📦 Código escaneado para agregar stock:", codigoBarras);
+    
+    // Reproducir sonido "pi"
+    playBeepSound();
     
     // Buscar el producto por código de barras
     const producto = productos.find(p => p.codigoBarras === codigoBarras);
@@ -535,12 +571,14 @@ const GestionProductos: React.FC = () => {
   };
 
   const terminarIngresoStock = () => {
+    setModoTerminar(true);
     setMostrarResumen(true);
     setMostrarScannerStock(false);
   };
 
   const cerrarResumenStock = () => {
     setMostrarResumen(false);
+    setModoTerminar(false);
     setProductosAgregados([]);
     setProductoEscaneado(null);
     setCantidadStock(1);
@@ -548,6 +586,7 @@ const GestionProductos: React.FC = () => {
 
   const continuarEscaneando = () => {
     setMostrarResumen(false);
+    setModoTerminar(false);
     setMostrarScannerStock(true);
   };
 
@@ -747,7 +786,7 @@ const GestionProductos: React.FC = () => {
                     color: '#1e293b',
                     marginBottom: '0.25rem'
                   }}>
-                    Escáner Cámara
+                    Escanér Cámara
                   </h3>
                   <p style={{
                     fontSize: '0.875rem',
@@ -828,7 +867,7 @@ const GestionProductos: React.FC = () => {
                     margin: 0,
                     lineHeight: '1.5'
                   }}>
-                    Usa un escáner físico USB para añadir stock
+                    Usa un escáner físico USB para añadir stock 
                   </p>
                 </div>
               </div>
@@ -1232,7 +1271,7 @@ const GestionProductos: React.FC = () => {
                 </div>
               )}
               
-              <div className="flex items-center gap-2" style={{flex: 'none', justifyContent: 'flex-end', minWidth: '260px'}}>
+              <div className="flex items-center gap-2" style={{flex: 'none', justifyContent: 'flex-end', minWidth: '320px'}}>
                 <span style={{ fontSize: '14px', color: '#64748b', marginRight: '8px' }}>Vista:</span>
                 <button 
                   className={`boton ${vista === 'lista' ? 'boton-primario' : 'boton-secundario'}`}
@@ -1251,6 +1290,24 @@ const GestionProductos: React.FC = () => {
                   }}
                 >
                   ☰
+                </button>
+                <button 
+                  className={`boton ${vista === 'intermedia' ? 'boton-primario' : 'boton-secundario'}`}
+                  onClick={() => setVista('intermedia')}
+                  title="Vista intermedia"
+                  style={{
+                    background: vista === 'intermedia' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                    color: vista === 'intermedia' ? 'white' : '#64748b',
+                    border: '2px solid',
+                    borderColor: vista === 'intermedia' ? '#3b82f6' : '#e2e8f0',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  ⊟
                 </button>
                 <button 
                   className={`boton ${vista === 'cuadricula' ? 'boton-primario' : 'boton-secundario'}`}
@@ -1686,6 +1743,340 @@ const GestionProductos: React.FC = () => {
                             }}
                           >
                             {producto.activo ? '🗑️ Eliminar' : '✅ Reactivar'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : vista === 'intermedia' ? (
+              <div className="vista-intermedia">
+                <div className="grilla-productos" style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                  gap: '16px'
+                }}>
+                  {productosFiltrados.map(producto => (
+                    <div key={producto.id} className="tarjeta-producto" style={{
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '16px',
+                      padding: '0',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.borderColor = '#3b82f6';
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(59,130,246,0.15)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                    }}
+                    >
+                      {/* Badges de estado */}
+                      <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                        {producto.destacado && (
+                          <span style={{
+                            background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                            color: 'white',
+                            padding: '3px 6px',
+                            borderRadius: '8px',
+                            fontSize: '9px',
+                            fontWeight: '600'
+                          }}>
+                            ⭐
+                          </span>
+                        )}
+                        <span style={{
+                          background: producto.activo ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                          color: 'white',
+                          padding: '3px 6px',
+                          borderRadius: '8px',
+                          fontSize: '9px',
+                          fontWeight: '600'
+                        }}>
+                          {producto.activo ? '✅' : '❌'}
+                        </span>
+                      </div>
+
+                      {/* Imagen del producto */}
+                      <div className="imagen-container" style={{ 
+                        width: '100%',
+                        position: 'relative',
+                        paddingBottom: '90%',
+                        overflow: 'hidden',
+                        borderRadius: '12px 12px 0 0'
+                      }}>
+                        {producto.imagenes?.[0] ? (
+                          <img 
+                            src={producto.imagenes[0]} 
+                            alt={producto.nombre}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              borderRadius: '12px 12px 0 0',
+                              border: 'none',
+                              boxShadow: 'none'
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#64748b',
+                            fontSize: '16px',
+                            borderRadius: '12px 12px 0 0',
+                            flexDirection: 'column',
+                            gap: '4px'
+                          }}>
+                            <span style={{ fontSize: '2rem' }}>📷</span>
+                            <span style={{ fontSize: '0.875rem' }}>Sin imagen disponible</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Información del producto */}
+                      <div className="info-tarjeta" style={{ padding: '16px' }}>
+                        <h3 style={{
+                          margin: '0 0 8px 0',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          color: '#1e293b',
+                          lineHeight: '1.3'
+                        }}
+                        onClick={() => irADetalle(producto)}
+                        >
+                          {producto.nombre}
+                        </h3>
+                        
+                        <p style={{
+                          margin: '0 0 12px 0',
+                          fontSize: '13px',
+                          color: '#64748b',
+                          lineHeight: '1.4',
+                          fontWeight: '500'
+                        }}>
+                          {producto.marca || 'Sin marca'}
+                        </p>
+
+                        {/* Precio y stock */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <div>
+                            <div style={{
+                              fontSize: '18px',
+                              fontWeight: '700',
+                              color: '#059669'
+                            }}>
+                              ${producto.precio.toFixed(2)}
+                            </div>
+                            <div style={{
+                              fontSize: '11px',
+                              color: '#64748b'
+                            }}>
+                              {producto.unidad}
+                            </div>
+                          </div>
+                          
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: producto.stock <= producto.stockMinimo ? '#ef4444' : '#059669'
+                            }}>
+                              Stock: {producto.stock}
+                            </div>
+                            {producto.stock <= producto.stockMinimo && (
+                              <div style={{
+                                fontSize: '9px',
+                                color: '#ef4444',
+                                fontWeight: '500'
+                              }}>
+                                ⚠️ Bajo
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Información secundaria */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <span style={{
+                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                            color: '#374151',
+                            padding: '4px 8px',
+                            borderRadius: '8px',
+                            fontSize: '11px',
+                            fontWeight: '500',
+                            border: '1px solid #e2e8f0'
+                          }}>
+                            📂 {producto.categoria}
+                          </span>
+                          
+                          <div className="control-stock-mini" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                cambiarStock(producto, -1);
+                              }}
+                              style={{
+                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                width: '20px',
+                                height: '20px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              -
+                            </button>
+                            
+                            <span style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: producto.stock <= producto.stockMinimo ? '#ef4444' : '#059669',
+                              minWidth: '25px',
+                              textAlign: 'center'
+                            }}>
+                              {producto.stock}
+                            </span>
+                            
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                cambiarStock(producto, 1);
+                              }}
+                              style={{
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                width: '20px',
+                                height: '20px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Botones de acción */}
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              irADetalle(producto);
+                            }}
+                            style={{
+                              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '6px 10px',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              flex: 1
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(59,130,246,0.3)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            👁️ Ver
+                          </button>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              irAEditar(producto);
+                            }}
+                            style={{
+                              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '6px 10px',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              flex: 1
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(245,158,11,0.3)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            ✏️ Editar
+                          </button>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (producto.activo) {
+                                eliminarProducto(producto);
+                              } else {
+                                reactivarProducto(producto);
+                              }
+                            }}
+                            style={{
+                              background: producto.activo 
+                                ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '6px 10px',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              flex: 1
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = producto.activo 
+                                ? '0 2px 8px rgba(239,68,68,0.3)'
+                                : '0 2px 8px rgba(16,185,129,0.3)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            {producto.activo ? '🗑️' : '✅'}
                           </button>
                         </div>
                       </div>
@@ -2874,30 +3265,35 @@ const GestionProductos: React.FC = () => {
             display: 'flex',
             flexDirection: 'column'
           }}>
-            {/* Header */}
+            {/* Header compacto */}
             <div style={{
               background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
               color: 'white',
-              padding: '24px',
-              textAlign: 'center'
+              padding: '16px 24px',
+              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
             }}>
-              <div style={{ fontSize: '48px', marginBottom: '12px' }}>📦</div>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700' }}>
-                Producto Agregado
-              </h2>
-              <p style={{ margin: 0, fontSize: '16px', opacity: 0.9 }}>
-                Ajusta la cantidad si es necesario
-              </p>
+              <div style={{ fontSize: '24px' }}>📦</div>
+              <div>
+                <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700' }}>
+                  Producto Agregado
+                </h2>
+                <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>
+                  Ajusta la cantidad si es necesario
+                </p>
+              </div>
             </div>
 
                         {/* Contenido */}
-            <div style={{ padding: '24px', flex: 1, overflow: 'auto' }}>
+            <div style={{ padding: '20px', flex: 1, overflow: 'auto' }}>
               {/* Información del producto con cantidad integrada */}
               <div style={{
                 background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
                 borderRadius: '12px',
-                padding: '20px',
-                marginBottom: '24px',
+                padding: '16px',
+                marginBottom: '20px',
                 border: '2px solid #e2e8f0'
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
@@ -2998,26 +3394,26 @@ const GestionProductos: React.FC = () => {
 
               {/* Productos ya agregados en esta sesión */}
               {productosAgregados.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
                     📋 Productos agregados en esta sesión:
                   </h4>
-                  <div style={{ maxHeight: '150px', overflow: 'auto' }}>
+                  <div style={{ maxHeight: '100px', overflow: 'auto' }}>
                     {productosAgregados.map((item, index) => (
                       <div key={index} style={{
                         background: '#f8fafc',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        marginBottom: '8px',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        marginBottom: '6px',
                         border: '1px solid #e2e8f0',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center'
                       }}>
-                        <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '500', color: '#374151' }}>
                           {item.producto.nombre}
                         </span>
-                        <span style={{ fontSize: '14px', fontWeight: '600', color: '#059669' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#059669' }}>
                           +{item.cantidad}
                         </span>
                       </div>
@@ -3288,7 +3684,7 @@ const GestionProductos: React.FC = () => {
                 Cerrar
               </button>
 
-              {productosAgregados.length > 0 && (
+              {productosAgregados.length > 0 && !modoTerminar && (
                 <button
                   onClick={continuarEscaneando}
                   style={{

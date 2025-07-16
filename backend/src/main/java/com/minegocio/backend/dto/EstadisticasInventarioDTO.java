@@ -18,14 +18,19 @@ public class EstadisticasInventarioDTO {
 
     public EstadisticasInventarioDTO(Object[] estadisticas) {
         if (estadisticas != null && estadisticas.length >= 8) {
-            this.totalOperaciones = estadisticas[0] != null ? ((Number) estadisticas[0]).longValue() : 0L;
-            this.totalIncrementos = estadisticas[1] != null ? ((Number) estadisticas[1]).longValue() : 0L;
-            this.totalDecrementos = estadisticas[2] != null ? ((Number) estadisticas[2]).longValue() : 0L;
-            this.totalAjustes = estadisticas[3] != null ? ((Number) estadisticas[3]).longValue() : 0L;
-            this.valorTotalIncrementos = estadisticas[4] != null ? new BigDecimal(estadisticas[4].toString()) : BigDecimal.ZERO;
-            this.valorTotalDecrementos = estadisticas[5] != null ? new BigDecimal(estadisticas[5].toString()) : BigDecimal.ZERO;
-            this.valorTotalAjustes = estadisticas[6] != null ? new BigDecimal(estadisticas[6].toString()) : BigDecimal.ZERO;
-            this.valorTotalMovimientos = estadisticas[7] != null ? new BigDecimal(estadisticas[7].toString()) : BigDecimal.ZERO;
+            try {
+                this.totalOperaciones = estadisticas[0] != null ? ((Number) estadisticas[0]).longValue() : 0L;
+                this.totalIncrementos = estadisticas[1] != null ? ((Number) estadisticas[1]).longValue() : 0L;
+                this.totalDecrementos = estadisticas[2] != null ? ((Number) estadisticas[2]).longValue() : 0L;
+                this.totalAjustes = estadisticas[3] != null ? ((Number) estadisticas[3]).longValue() : 0L;
+                this.valorTotalIncrementos = estadisticas[4] != null ? new BigDecimal(estadisticas[4].toString()) : BigDecimal.ZERO;
+                this.valorTotalDecrementos = estadisticas[5] != null ? new BigDecimal(estadisticas[5].toString()) : BigDecimal.ZERO;
+                this.valorTotalAjustes = estadisticas[6] != null ? new BigDecimal(estadisticas[6].toString()) : BigDecimal.ZERO;
+                this.valorTotalMovimientos = estadisticas[7] != null ? new BigDecimal(estadisticas[7].toString()) : BigDecimal.ZERO;
+            } catch (Exception e) {
+                System.err.println("Error al mapear estadísticas: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
     }
 

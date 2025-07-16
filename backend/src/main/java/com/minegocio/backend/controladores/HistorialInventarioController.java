@@ -268,10 +268,26 @@ public class HistorialInventarioController {
             
             if (estadisticas != null) {
                 debugInfo.put("estadisticasRaw", Arrays.asList(estadisticas));
-                debugInfo.put("totalOperaciones", estadisticas[0]);
-                debugInfo.put("totalIncrementos", estadisticas[1]);
-                debugInfo.put("totalDecrementos", estadisticas[2]);
-                debugInfo.put("totalAjustes", estadisticas[3]);
+                debugInfo.put("longitudArray", estadisticas.length);
+                
+                // Acceder a los elementos de forma segura
+                if (estadisticas.length > 0) {
+                    debugInfo.put("totalOperaciones", estadisticas[0]);
+                }
+                if (estadisticas.length > 1) {
+                    debugInfo.put("totalIncrementos", estadisticas[1]);
+                }
+                if (estadisticas.length > 2) {
+                    debugInfo.put("totalDecrementos", estadisticas[2]);
+                }
+                if (estadisticas.length > 3) {
+                    debugInfo.put("totalAjustes", estadisticas[3]);
+                }
+                
+                // Mostrar todos los elementos del array
+                for (int i = 0; i < estadisticas.length; i++) {
+                    debugInfo.put("elemento_" + i, estadisticas[i]);
+                }
             } else {
                 debugInfo.put("estadisticasRaw", null);
             }
@@ -293,8 +309,7 @@ public class HistorialInventarioController {
             
             debugInfo.put("registrosEjemplo", registrosEjemplo);
             
-            System.out.println("Debug info: " + debugInfo);
-            System.out.println("=== FIN DEBUG ENDPOINT ===");
+
             
             return ResponseEntity.ok(debugInfo);
         } catch (Exception e) {
@@ -398,7 +413,7 @@ public class HistorialInventarioController {
                     operacionesCreadas.add(response.getData());
                     System.out.println("✅ Operación creada: " + operacion.getTipoOperacion() + " - " + operacion.getCantidad() + " unidades");
                 } else {
-                    System.out.println("❌ Error al crear operación: " + response.getMessage());
+                    System.out.println("❌ Error al crear operación: " + response.getMensaje());
                 }
             }
             
@@ -461,6 +476,74 @@ public class HistorialInventarioController {
             "mensaje", "Backend funcionando correctamente",
             "timestamp", java.time.LocalDateTime.now().toString()
         ));
+    }
+    
+    /**
+     * Endpoint para probar la consulta SQL de estadísticas directamente
+     */
+    @GetMapping("/test-sql-estadisticas")
+    public ResponseEntity<?> testSqlEstadisticas() {
+        try {
+            Long empresaId = obtenerEmpresaIdDelUsuarioAutenticado();
+            System.out.println("=== TEST SQL ESTADÍSTICAS ===");
+            System.out.println("Empresa ID: " + empresaId);
+            
+            // Obtener todos los registros
+            List<HistorialInventario> todos = historialInventarioRepository.findAll();
+            System.out.println("Total registros: " + todos.size());
+            
+            // Filtrar por empresa
+            List<HistorialInventario> deEstaEmpresa = todos.stream()
+                .filter(h -> h.getEmpresa() != null && h.getEmpresa().getId().equals(empresaId))
+                .collect(java.util.stream.Collectors.toList());
+            System.out.println("Registros de empresa " + empresaId + ": " + deEstaEmpresa.size());
+            
+            // Contar por tipo de operación manualmente
+            long totalIncrementos = deEstaEmpresa.stream()
+                .filter(h -> "INCREMENTO".equals(h.getTipoOperacion().name()))
+                .count();
+            long totalDecrementos = deEstaEmpresa.stream()
+                .filter(h -> "DECREMENTO".equals(h.getTipoOperacion().name()))
+                .count();
+            long totalAjustes = deEstaEmpresa.stream()
+                .filter(h -> "AJUSTE".equals(h.getTipoOperacion().name()))
+                .count();
+            
+            System.out.println("Conteo manual:");
+            System.out.println("  Total: " + deEstaEmpresa.size());
+            System.out.println("  Incrementos: " + totalIncrementos);
+            System.out.println("  Decrementos: " + totalDecrementos);
+            System.out.println("  Ajustes: " + totalAjustes);
+            
+            // Ejecutar la consulta SQL
+            Object[] estadisticas = historialInventarioRepository.getEstadisticasByEmpresaId(empresaId);
+            System.out.println("Resultado SQL:");
+            if (estadisticas != null) {
+                for (int i = 0; i < estadisticas.length; i++) {
+                    System.out.println("  [" + i + "]: " + estadisticas[i]);
+                }
+            }
+            
+            System.out.println("=== FIN TEST SQL ESTADÍSTICAS ===");
+            
+            return ResponseEntity.ok(Map.of(
+                "empresaId", empresaId,
+                "totalRegistros", todos.size(),
+                "registrosEmpresa", deEstaEmpresa.size(),
+                "conteoManual", Map.of(
+                    "total", deEstaEmpresa.size(),
+                    "incrementos", totalIncrementos,
+                    "decrementos", totalDecrementos,
+                    "ajustes", totalAjustes
+                ),
+                "resultadoSQL", estadisticas != null ? Arrays.asList(estadisticas) : null
+            ));
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
     
     private Long obtenerUsuarioIdDelUsuarioAutenticado() {

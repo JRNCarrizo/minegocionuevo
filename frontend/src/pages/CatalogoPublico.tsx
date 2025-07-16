@@ -23,7 +23,8 @@ export default function CatalogoPublico() {
   const [marcas, setMarcas] = useState<string[]>([]);
   const [clienteInfo, setClienteInfo] = useState<{ nombre: string; email: string } | null>(null);
   const [showCart, setShowCart] = useState(false);
-  const [vistaCuadricula, setVistaCuadricula] = useState(true);
+  type VistaProducto = 'lista' | 'intermedia' | 'grande';
+  const [vista, setVista] = useState<VistaProducto>('intermedia');
   const [showProductoModal, setShowProductoModal] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<number | null>(null);
 
@@ -666,62 +667,91 @@ export default function CatalogoPublico() {
                 Vista:
               </span>
               <button
-                onClick={() => setVistaCuadricula(true)}
+                onClick={() => setVista('lista')}
                 style={{
                   padding: '8px 12px',
                   borderRadius: '8px',
                   border: '2px solid',
-                  background: vistaCuadricula ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
-                  borderColor: vistaCuadricula ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
-                  color: vistaCuadricula ? 'white' : (empresa?.colorTexto || '#64748b'),
+                  background: vista === 'lista' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
+                  borderColor: vista === 'lista' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
+                  color: vista === 'lista' ? 'white' : (empresa?.colorTexto || '#64748b'),
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   fontSize: '14px',
                   fontWeight: '600'
                 }}
                 onMouseOver={(e) => {
-                  if (!vistaCuadricula) {
+                  if (vista !== 'lista') {
                     e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
                     e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
                   }
                 }}
                 onMouseOut={(e) => {
-                  if (!vistaCuadricula) {
-                    e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
-                    e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
-                  }
-                }}
-              >
-                📱 Cuadrícula
-              </button>
-              <button
-                onClick={() => setVistaCuadricula(false)}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  border: '2px solid',
-                  background: !vistaCuadricula ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
-                  borderColor: !vistaCuadricula ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
-                  color: !vistaCuadricula ? 'white' : (empresa?.colorTexto || '#64748b'),
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  fontSize: '14px',
-              fontWeight: '600'
-                }}
-                onMouseOver={(e) => {
-                  if (vistaCuadricula) {
-                    e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
-                    e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (vistaCuadricula) {
+                  if (vista !== 'lista') {
                     e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
                     e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
                   }
                 }}
               >
                 📋 Lista
+              </button>
+              <button
+                onClick={() => setVista('intermedia')}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '2px solid',
+                  background: vista === 'intermedia' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
+                  borderColor: vista === 'intermedia' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
+                  color: vista === 'intermedia' ? 'white' : (empresa?.colorTexto || '#64748b'),
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}
+                onMouseOver={(e) => {
+                  if (vista !== 'intermedia') {
+                    e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
+                    e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (vista !== 'intermedia') {
+                    e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
+                    e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
+                  }
+                }}
+              >
+                📱 Intermedia
+              </button>
+              <button
+                onClick={() => setVista('grande')}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '2px solid',
+                  background: vista === 'grande' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
+                  borderColor: vista === 'grande' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
+                  color: vista === 'grande' ? 'white' : (empresa?.colorTexto || '#64748b'),
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}
+                onMouseOver={(e) => {
+                  if (vista !== 'grande') {
+                    e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
+                    e.currentTarget.style.color = empresa?.colorPrimario || '#667eea';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (vista !== 'grande') {
+                    e.currentTarget.style.borderColor = empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0';
+                    e.currentTarget.style.color = empresa?.colorTexto || '#64748b';
+                  }
+                }}
+              >
+                ⊞ Grande
               </button>
             </div>
             
@@ -830,10 +860,10 @@ export default function CatalogoPublico() {
           </div>
         ) : (
           <div style={{
-            display: vistaCuadricula ? 'grid' : 'flex',
-            gridTemplateColumns: vistaCuadricula ? 'repeat(auto-fill, minmax(250px, 1fr))' : 'none',
-            flexDirection: vistaCuadricula ? 'unset' : 'column',
-            gap: vistaCuadricula ? '20px' : '16px',
+            display: vista === 'lista' ? 'flex' : 'grid',
+            gridTemplateColumns: vista === 'intermedia' ? 'repeat(auto-fill, minmax(250px, 1fr))' : vista === 'grande' ? 'repeat(auto-fill, minmax(320px, 1fr))' : 'none',
+            flexDirection: vista === 'lista' ? 'column' : 'unset',
+            gap: vista === 'lista' ? '16px' : '20px',
             marginBottom: '40px'
           }}>
             {productos.map(producto => {
@@ -850,10 +880,10 @@ export default function CatalogoPublico() {
                   transition: 'all 0.3s ease',
                   cursor: 'pointer',
                   position: 'relative',
-                  display: vistaCuadricula ? 'block' : 'flex',
-                  alignItems: vistaCuadricula ? 'unset' : 'stretch',
-                  gap: vistaCuadricula ? 'unset' : '0',
-                  height: vistaCuadricula ? 'auto' : '160px',
+                  display: vista === 'lista' ? 'flex' : 'block',
+                  alignItems: vista === 'lista' ? 'stretch' : 'unset',
+                  gap: vista === 'lista' ? '0' : 'unset',
+                  height: vista === 'lista' ? '160px' : 'auto',
                   color: empresa?.colorTexto || '#1e293b'
                 }}
                 onClick={(e) => {
@@ -864,7 +894,7 @@ export default function CatalogoPublico() {
                   }
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.transform = vistaCuadricula ? 'translateY(-8px)' : 'translateX(4px)';
+                  e.currentTarget.style.transform = vista === 'lista' ? 'translateX(4px)' : 'translateY(-8px)';
                   e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.15)';
                 }}
                 onMouseOut={(e) => {
@@ -876,13 +906,13 @@ export default function CatalogoPublico() {
                   <div style={{ 
                     position: 'relative', 
                     width: '100%',
-                    aspectRatio: vistaCuadricula ? '1 / 1' : undefined,
-                    height: vistaCuadricula ? undefined : '160px',
-                    minWidth: vistaCuadricula ? undefined : '160px',
-                    maxWidth: vistaCuadricula ? undefined : '160px',
+                    aspectRatio: vista === 'lista' ? undefined : '1 / 1',
+                    height: vista === 'lista' ? '160px' : undefined,
+                    minWidth: vista === 'lista' ? '160px' : undefined,
+                    maxWidth: vista === 'lista' ? '160px' : undefined,
                     overflow: 'hidden',
                     flexShrink: 0,
-                    borderRadius: vistaCuadricula ? '12px 12px 0 0' : '0',
+                    borderRadius: vista === 'lista' ? '0' : '12px 12px 0 0',
                     margin: 0,
                     padding: 0
                   }}>
@@ -895,7 +925,7 @@ export default function CatalogoPublico() {
                           height: '100%',
                           objectFit: 'cover',
                           display: 'block',
-                          borderRadius: vistaCuadricula ? '12px 12px 0 0' : '0',
+                          borderRadius: vista === 'lista' ? '0' : '12px 12px 0 0',
                           margin: 0,
                           padding: 0
                         }}
@@ -910,21 +940,21 @@ export default function CatalogoPublico() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#64748b',
-                        fontSize: vistaCuadricula ? '16px' : '14px',
-                        borderRadius: vistaCuadricula ? '12px 12px 0 0' : '0',
+                        fontSize: vista === 'lista' ? '14px' : vista === 'intermedia' ? '16px' : '18px',
+                        borderRadius: vista === 'lista' ? '0' : '12px 12px 0 0',
                         margin: 0,
                         padding: '20px',
                         textAlign: 'center'
                       }}>
                         <div style={{
-                          fontSize: vistaCuadricula ? '48px' : '36px',
+                          fontSize: vista === 'lista' ? '36px' : vista === 'intermedia' ? '48px' : '56px',
                           marginBottom: '8px',
                           opacity: 0.7
                         }}>
                           📸
                         </div>
                         <div style={{
-                          fontSize: vistaCuadricula ? '12px' : '10px',
+                          fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '12px' : '14px',
                           fontWeight: '500',
                           opacity: 0.8
                         }}>
@@ -943,7 +973,7 @@ export default function CatalogoPublico() {
                         color: 'white',
                         padding: '4px 8px',
                         borderRadius: '12px',
-                        fontSize: vistaCuadricula ? '12px' : '10px',
+                        fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '12px' : '14px',
                         fontWeight: '600',
                         boxShadow: '0 2px 8px rgba(245,158,11,0.3)'
                       }}>
@@ -963,7 +993,7 @@ export default function CatalogoPublico() {
                         color: 'white',
                         padding: '4px 8px',
                         borderRadius: '12px',
-                        fontSize: vistaCuadricula ? '12px' : '10px',
+                        fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '12px' : '14px',
                         fontWeight: '600',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
                       }}>
@@ -975,38 +1005,38 @@ export default function CatalogoPublico() {
                   {/* Contenido principal */}
                   <div style={{ 
                     flex: 1,
-                    padding: vistaCuadricula ? '20px' : '16px',
+                    padding: vista === 'lista' ? '16px' : vista === 'intermedia' ? '20px' : '24px',
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: vistaCuadricula ? 'space-between' : 'space-between',
-                    height: vistaCuadricula ? 'auto' : '160px'
+                    justifyContent: vista === 'lista' ? 'space-between' : 'space-between',
+                    height: vista === 'lista' ? '160px' : 'auto'
                   }}>
                     {/* Layout horizontal para vista de lista */}
                     <div style={{
                       display: 'flex',
-                      flexDirection: vistaCuadricula ? 'column' : 'row',
-                      justifyContent: vistaCuadricula ? 'space-between' : 'space-between',
-                      alignItems: vistaCuadricula ? 'stretch' : 'center',
-                      height: vistaCuadricula ? 'auto' : '100%',
-                      gap: vistaCuadricula ? '0' : '16px'
+                      flexDirection: vista === 'lista' ? 'row' : 'column',
+                      justifyContent: vista === 'lista' ? 'space-between' : 'space-between',
+                      alignItems: vista === 'lista' ? 'center' : 'stretch',
+                      height: vista === 'lista' ? '100%' : 'auto',
+                      gap: vista === 'lista' ? '16px' : '0'
                     }}>
                       {/* Información del producto */}
                       <div style={{
-                        flex: vistaCuadricula ? 'none' : '1',
+                        flex: vista === 'lista' ? '1' : 'none',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between',
-                        height: vistaCuadricula ? 'auto' : '100%'
+                        height: vista === 'lista' ? '100%' : 'auto'
                       }}>
                         <div>
                           <h3 style={{
                             margin: '0 0 8px 0',
-                            fontSize: vistaCuadricula ? '18px' : '16px',
+                            fontSize: vista === 'lista' ? '16px' : vista === 'intermedia' ? '18px' : '20px',
                             fontWeight: '700',
                             color: empresa?.colorTexto || '#1e293b',
                             lineHeight: '1.3',
                             display: '-webkit-box',
-                            WebkitLineClamp: vistaCuadricula ? 2 : 1,
+                            WebkitLineClamp: vista === 'lista' ? 1 : vista === 'intermedia' ? 2 : 3,
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden'
                           }}>
@@ -1017,7 +1047,7 @@ export default function CatalogoPublico() {
                           <div style={{ 
                             display: 'flex', 
                             gap: '6px', 
-                            marginBottom: vistaCuadricula ? '12px' : '8px', 
+                            marginBottom: vista === 'lista' ? '8px' : vista === 'intermedia' ? '12px' : '16px', 
                             flexWrap: 'wrap' 
                           }}>
                             {producto.categoria && (
@@ -1026,7 +1056,7 @@ export default function CatalogoPublico() {
                                 color: '#1e40af',
                                 padding: '3px 8px',
                                 borderRadius: '8px',
-                                fontSize: vistaCuadricula ? '12px' : '10px',
+                                fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '12px' : '14px',
                                 fontWeight: '600',
                                 border: '1px solid #93c5fd'
                               }}>
@@ -1040,7 +1070,7 @@ export default function CatalogoPublico() {
                                 color: '#92400e',
                                 padding: '3px 8px',
                                 borderRadius: '8px',
-                                fontSize: vistaCuadricula ? '12px' : '10px',
+                                fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '12px' : '14px',
                                 fontWeight: '600',
                                 border: '1px solid #fbbf24'
                               }}>
@@ -1053,11 +1083,11 @@ export default function CatalogoPublico() {
                           <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: vistaCuadricula ? 'space-between' : 'flex-start',
-                            marginBottom: vistaCuadricula ? '16px' : '0'
+                            justifyContent: vista === 'lista' ? 'flex-start' : 'space-between',
+                            marginBottom: vista === 'lista' ? '0' : vista === 'intermedia' ? '16px' : '20px'
                           }}>
                             <span style={{
-                              fontSize: vistaCuadricula ? '24px' : '20px',
+                              fontSize: vista === 'lista' ? '20px' : vista === 'intermedia' ? '24px' : '28px',
                               fontWeight: '800',
                               color: empresa?.colorTexto || '#1e293b',
                               textShadow: '0 1px 2px rgba(0,0,0,0.1)'
@@ -1073,12 +1103,12 @@ export default function CatalogoPublico() {
                         // Mostrar controles de carrito solo si hay cliente logueado
                         <div style={{
                           display: 'flex',
-                          flexDirection: vistaCuadricula ? 'column' : 'column',
-                          gap: vistaCuadricula ? '12px' : '8px',
-                          alignItems: vistaCuadricula ? 'stretch' : 'center',
-                          justifyContent: vistaCuadricula ? 'stretch' : 'center',
-                          minWidth: vistaCuadricula ? undefined : '200px',
-                          maxWidth: vistaCuadricula ? undefined : '220px'
+                          flexDirection: vista === 'lista' ? 'column' : 'column',
+                          gap: vista === 'lista' ? '8px' : vista === 'intermedia' ? '12px' : '16px',
+                          alignItems: vista === 'lista' ? 'center' : 'stretch',
+                          justifyContent: vista === 'lista' ? 'center' : 'stretch',
+                          minWidth: vista === 'lista' ? '200px' : undefined,
+                          maxWidth: vista === 'lista' ? '220px' : undefined
                         }}>
                           {/* Controles de cantidad */}
                           <div style={{
@@ -1088,7 +1118,7 @@ export default function CatalogoPublico() {
                             borderRadius: '10px',
                             padding: '8px 12px',
                             border: '1px solid #e2e8f0',
-                            width: vistaCuadricula ? '100%' : '100%',
+                            width: vista === 'lista' ? '100%' : '100%',
                             gap: '8px'
                           }}>
                             <span style={{
@@ -1105,6 +1135,7 @@ export default function CatalogoPublico() {
                                 console.log('Botón menos clickeado');
                                 console.log('Producto ID:', producto.id);
                                 console.log('Cantidad actual:', cantidadEnCarrito);
+                                console.log('Stock disponible:', producto.stock);
                                 if (cantidadEnCarrito > 0) {
                                   // Actualizar directamente el estado del carrito
                                   const newItems = items.map(item => 

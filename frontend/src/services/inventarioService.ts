@@ -43,6 +43,41 @@ export interface EstadisticasInventario {
   valorTotalMovimientos: number;
 }
 
+// Nuevas interfaces para inventarios físicos
+export interface DetalleInventarioFisico {
+  id?: number;
+  productoId: number;
+  codigoProducto: string;
+  nombreProducto: string;
+  stockReal: number;
+  stockEscaneado: number;
+  diferencia: number;
+  precioUnitario: number;
+  categoria: string;
+  marca: string;
+}
+
+export interface InventarioFisico {
+  id?: number;
+  empresaId?: number;
+  usuarioId?: number;
+  usuarioNombre?: string;
+  fechaInventario?: string;
+  totalProductos: number;
+  productosConDiferencias: number;
+  valorTotalDiferencias: number;
+  porcentajePrecision: number;
+  estado: 'EN_PROGRESO' | 'COMPLETADO';
+  detalles: DetalleInventarioFisico[];
+}
+
+export interface EstadisticasInventarioFisico {
+  totalInventarios: number;
+  valorTotalDiferencias: number;
+  promedioPrecision: number;
+  ultimosInventarios: InventarioFisico[];
+}
+
 class InventarioService {
   /**
    * Registrar una operación de inventario
@@ -163,6 +198,83 @@ class InventarioService {
       return response;
     } catch (error) {
       console.error('Error al buscar por código de barras:', error);
+      throw error;
+    }
+  }
+
+  // ===== NUEVAS FUNCIONES PARA INVENTARIOS FÍSICOS =====
+
+  /**
+   * Obtener historial de inventarios físicos
+   */
+  async obtenerHistorialInventariosFisicos(pagina: number = 0, tamano: number = 20) {
+    try {
+      console.log('📋 Obteniendo historial de inventarios físicos - página:', pagina, 'tamaño:', tamano);
+      const response = await ApiService.obtenerHistorialInventariosFisicos(pagina, tamano);
+      console.log('✅ Historial de inventarios físicos obtenido:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Error al obtener historial de inventarios físicos:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener inventario físico por ID
+   */
+  async obtenerInventarioFisicoPorId(inventarioId: number) {
+    try {
+      console.log('📋 Obteniendo inventario físico por ID:', inventarioId);
+      const response = await ApiService.obtenerInventarioFisicoPorId(inventarioId);
+      console.log('✅ Inventario físico obtenido:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Error al obtener inventario físico:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Guardar inventario físico
+   */
+  async guardarInventarioFisico(inventario: InventarioFisico) {
+    try {
+      console.log('💾 Guardando inventario físico:', inventario);
+      const response = await ApiService.guardarInventarioFisico(inventario);
+      console.log('✅ Inventario físico guardado:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Error al guardar inventario físico:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Eliminar inventario físico
+   */
+  async eliminarInventarioFisico(inventarioId: number) {
+    try {
+      console.log('🗑️ Eliminando inventario físico:', inventarioId);
+      const response = await ApiService.eliminarInventarioFisico(inventarioId);
+      console.log('✅ Inventario físico eliminado:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Error al eliminar inventario físico:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener estadísticas de inventarios físicos
+   */
+  async obtenerEstadisticasInventariosFisicos() {
+    try {
+      console.log('📊 Obteniendo estadísticas de inventarios físicos...');
+      const response = await ApiService.obtenerEstadisticasInventariosFisicos();
+      console.log('✅ Estadísticas de inventarios físicos obtenidas:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Error al obtener estadísticas de inventarios físicos:', error);
       throw error;
     }
   }

@@ -787,6 +787,53 @@ class ApiService {
     const response = await this.api.post('/admin/inventario/test-registro');
     return response.data;
   }
+
+  async testSqlEstadisticas() {
+    const response = await this.api.get('/admin/inventario/test-sql-estadisticas');
+    return response.data;
+  }
+
+  // ===== NUEVAS FUNCIONES PARA INVENTARIOS FÍSICOS =====
+
+  /**
+   * Obtener historial de inventarios físicos
+   */
+  async obtenerHistorialInventariosFisicos(pagina: number = 0, tamano: number = 20) {
+    const response = await this.api.get(`/admin/inventario-fisico/historial?pagina=${pagina}&tamano=${tamano}`);
+    return response.data;
+  }
+
+  /**
+   * Obtener inventario físico por ID
+   */
+  async obtenerInventarioFisicoPorId(inventarioId: number) {
+    const response = await this.api.get(`/admin/inventario-fisico/${inventarioId}`);
+    return response.data;
+  }
+
+  /**
+   * Guardar inventario físico
+   */
+  async guardarInventarioFisico(inventario: any) {
+    const response = await this.api.post('/admin/inventario-fisico/guardar', inventario);
+    return response.data;
+  }
+
+  /**
+   * Eliminar inventario físico
+   */
+  async eliminarInventarioFisico(inventarioId: number) {
+    const response = await this.api.delete(`/admin/inventario-fisico/${inventarioId}`);
+    return response.data;
+  }
+
+  /**
+   * Obtener estadísticas de inventarios físicos
+   */
+  async obtenerEstadisticasInventariosFisicos() {
+    const response = await this.api.get('/admin/inventario-fisico/estadisticas');
+    return response.data;
+  }
 }
 
 export default new ApiService();

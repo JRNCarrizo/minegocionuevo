@@ -217,32 +217,14 @@ public class HistorialInventarioService {
      */
     public ApiResponse<EstadisticasInventarioDTO> obtenerEstadisticas(Long empresaId) {
         try {
-            System.out.println("=== DEBUG ESTADÍSTICAS ===");
-            System.out.println("Consultando estadísticas para empresa: " + empresaId);
-            
             Object[] estadisticas = historialInventarioRepository.getEstadisticasByEmpresaId(empresaId);
             
-            System.out.println("Resultado de la consulta SQL:");
-            if (estadisticas != null) {
-                for (int i = 0; i < estadisticas.length; i++) {
-                    System.out.println("  [" + i + "]: " + estadisticas[i] + " (tipo: " + (estadisticas[i] != null ? estadisticas[i].getClass().getSimpleName() : "null") + ")");
-                }
-            } else {
-                System.out.println("  Resultado es null");
+            // Si el resultado es un array que contiene otro array, extraer el array interno
+            if (estadisticas != null && estadisticas.length == 1 && estadisticas[0] instanceof Object[]) {
+                estadisticas = (Object[]) estadisticas[0];
             }
             
             EstadisticasInventarioDTO estadisticasDTO = new EstadisticasInventarioDTO(estadisticas);
-            
-            System.out.println("DTO creado:");
-            System.out.println("  totalOperaciones: " + estadisticasDTO.getTotalOperaciones());
-            System.out.println("  totalIncrementos: " + estadisticasDTO.getTotalIncrementos());
-            System.out.println("  totalDecrementos: " + estadisticasDTO.getTotalDecrementos());
-            System.out.println("  totalAjustes: " + estadisticasDTO.getTotalAjustes());
-            System.out.println("  valorTotalIncrementos: " + estadisticasDTO.getValorTotalIncrementos());
-            System.out.println("  valorTotalDecrementos: " + estadisticasDTO.getValorTotalDecrementos());
-            System.out.println("  valorTotalAjustes: " + estadisticasDTO.getValorTotalAjustes());
-            System.out.println("  valorTotalMovimientos: " + estadisticasDTO.getValorTotalMovimientos());
-            System.out.println("=== FIN DEBUG ESTADÍSTICAS ===");
             
             return new ApiResponse<>(true, "Estadísticas obtenidas exitosamente", estadisticasDTO);
         } catch (Exception e) {

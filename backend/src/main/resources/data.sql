@@ -121,16 +121,16 @@ CREATE TABLE IF NOT EXISTS historial_inventario (
     -- Timestamps
     fecha_operacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    -- Índices para mejorar el rendimiento
-    INDEX idx_empresa_id (empresa_id),
-    INDEX idx_producto_id (producto_id),
-    INDEX idx_usuario_id (usuario_id),
-    INDEX idx_fecha_operacion (fecha_operacion),
-    INDEX idx_tipo_operacion (tipo_operacion),
-    INDEX idx_codigo_barras (codigo_barras),
-    
     -- Claves foráneas
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
     FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
 );
+
+-- Crear índices para mejorar el rendimiento
+CREATE INDEX IF NOT EXISTS idx_historial_empresa_id ON historial_inventario (empresa_id);
+CREATE INDEX IF NOT EXISTS idx_historial_producto_id ON historial_inventario (producto_id);
+CREATE INDEX IF NOT EXISTS idx_historial_usuario_id ON historial_inventario (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_historial_fecha_operacion ON historial_inventario (fecha_operacion);
+CREATE INDEX IF NOT EXISTS idx_historial_tipo_operacion ON historial_inventario (tipo_operacion);
+CREATE INDEX IF NOT EXISTS idx_historial_codigo_barras ON historial_inventario (codigo_barras);

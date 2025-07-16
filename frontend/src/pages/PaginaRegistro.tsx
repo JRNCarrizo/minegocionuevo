@@ -92,6 +92,16 @@ export default function PaginaRegistro() {
     setTimeout(() => verificarSubdominio(valor), 500);
   };
 
+  const limpiarCampoEmail = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Limpiar el campo cuando se hace foco en él
+    if (e.target.value && e.target.value.includes('@')) {
+      // Si ya tiene un email válido, no hacer nada
+      return;
+    }
+    // Si no tiene un email válido, limpiar el campo
+    e.target.value = '';
+  };
+
   const enviarFormulario = async (datos: RegistroEmpresaDTO) => {
     if (subdominioVerificado === false) {
       toast.error('El subdominio no está disponible');
@@ -151,11 +161,20 @@ export default function PaginaRegistro() {
   return (
     <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: '#f8fafc' }}>
       {/* Navegación */}
-      <nav className="navbar">
+      <nav className="navbar" style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        backgroundColor: 'white',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        borderBottom: '1px solid var(--color-borde)'
+      }}>
         <div className="contenedor">
           <div className="navbar-contenido">
             <Link to="/" className="logo">
-              miNegocio
+              MiNegocio
             </Link>
             <Link to="/login" className="boton boton-secundario">
               ¿Ya tienes cuenta?
@@ -165,12 +184,12 @@ export default function PaginaRegistro() {
       </nav>
 
       {/* Contenido principal */}
-      <div className="contenedor py-8">
+      <div className="contenedor" style={{ paddingTop: '5rem', paddingBottom: '2rem' }}>
         <div className="contenedor-medio">
           <div className="texto-centro mb-8">
-            <h1 className="titulo-2 mb-4">Crea tu tienda online</h1>
+            <h1 className="titulo-2 mb-4">Crea tu Cuenta</h1>
             <p className="texto-grande texto-gris">
-              Empieza gratis y haz crecer tu negocio con todas las herramientas que necesitas
+              Empieza gratis y hace crecer tu negocio con todas las herramientas que necesitas
             </p>
           </div>
 
@@ -253,10 +272,17 @@ export default function PaginaRegistro() {
                     Email de la Empresa *
                   </label>
                   <input
-                    type="email"
+                    type="text"
                     id="emailEmpresa"
                     className={`campo ${errors.emailEmpresa ? 'campo-error' : ''}`}
                     placeholder="contacto@minegocio.com"
+                    autoComplete="new-password"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
+                    onFocus={limpiarCampoEmail}
                     {...register('emailEmpresa')}
                   />
                   {errors.emailEmpresa && (
@@ -282,7 +308,7 @@ export default function PaginaRegistro() {
 
                 <div className="grupo-campo">
                   <label htmlFor="descripcionEmpresa" className="etiqueta">
-                    Descripción de la Empresa
+                    Descripción o eslogan de la Empresa
                   </label>
                   <textarea
                     id="descripcionEmpresa"
@@ -342,10 +368,17 @@ export default function PaginaRegistro() {
                     Email del Administrador *
                   </label>
                   <input
-                    type="email"
+                    type="text"
                     id="emailAdministrador"
                     className={`campo ${errors.emailAdministrador ? 'campo-error' : ''}`}
                     placeholder="admin@minegocio.com"
+                    autoComplete="new-password"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
+                    onFocus={limpiarCampoEmail}
                     {...register('emailAdministrador')}
                   />
                   {errors.emailAdministrador && (

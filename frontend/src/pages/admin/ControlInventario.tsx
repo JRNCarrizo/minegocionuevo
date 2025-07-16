@@ -10,25 +10,25 @@ import type { Producto } from '../../types';
 
 interface ProductoInventario {
   id: number;
-  codigo: string;
-  nombre: string;
+  codigoProducto: string;
+  nombreProducto: string;
   stockReal: number;
   stockEscaneado: number;
   diferencia: number;
-  precio: number;
+  precioUnitario: number;
   categoria: string;
   marca: string;
 }
 
 interface Inventario {
   id: number;
-  fecha: string;
+  fechaInventario: string;
   totalProductos: number;
   productosConDiferencias: number;
   valorTotalDiferencias: number;
   porcentajePrecision: number;
-  estado: 'EN_PROGRESO' | 'COMPLETADO';
-  productos: ProductoInventario[];
+  estado: string;
+  detalles: ProductoInventario[];
 }
 
 interface EstadisticasInventario {
@@ -44,7 +44,7 @@ interface EstadisticasInventario {
 
 const ControlInventario: React.FC = () => {
   const navigate = useNavigate();
-  const { datosUsuario, cerrarSesion } = useUsuarioActual();
+  const { datosUsuario, cerrarSesion, cargando: cargandoUsuario } = useUsuarioActual();
   
   // Estados principales
   const [inventarioActual, setInventarioActual] = useState<Inventario | null>(null);
@@ -78,26 +78,84 @@ const ControlInventario: React.FC = () => {
   const [paginaHistorial, setPaginaHistorial] = useState(0);
   const [totalPaginasHistorial, setTotalPaginasHistorial] = useState(0);
   
+  // Estados para el historial de inventarios físicos
+  const [mostrarHistorialInventarios, setMostrarHistorialInventarios] = useState(false);
+  
   // Estados para el modal de detalles de operación
   const [operacionSeleccionada, setOperacionSeleccionada] = useState<HistorialInventario | null>(null);
   const [mostrarDetalleOperacion, setMostrarDetalleOperacion] = useState(false);
 
   useEffect(() => {
-    cargarHistorialInventarios();
-    cargarEstadisticasOperaciones();
-  }, []);
+    if (datosUsuario?.empresaId) {
+      cargarHistorialInventarios();
+      cargarEstadisticasOperaciones();
+    }
+  }, [datosUsuario?.empresaId]);
 
   const cargarHistorialInventarios = async () => {
+    if (!datosUsuario?.empresaId) {
+      console.log('❌ No hay empresaId disponible para cargar historial');
+      return;
+    }
+
+    console.log('🔍 Datos del usuario:', datosUsuario);
+    console.log('🔍 EmpresaId:', datosUsuario.empresaId);
+
     try {
-      // TODO: Implementar API para cargar historial de inventarios
-      // const response = await ApiService.obtenerHistorialInventarios(datosUsuario!.empresaId);
-      // setHistorialInventarios(response.data || []);
+      console.log('📋 Cargando historial de inventarios físicos...');
+      const response = await inventarioService.obtenerHistorialInventariosFisicos(0, 50);
+      
+      if (response.success && response.data) {
+        console.log('✅ Historial de inventarios físicos cargado:', response.data);
+        const inventarios = response.data.content || [];
+        
+        // Debug: verificar las fechas de cada inventario
+        inventarios.forEach((inventario: any, index: number) => {
+          console.log(`📅 Inventario ${index + 1}:`, {
+            id: inventario.id,
+            fecha: inventario.fecha,
+            fechaTipo: typeof inventario.fecha,
+            fechaValida: inventario.fecha ? !isNaN(new Date(inventario.fecha).getTime()) : false
+          });
+        });
+        
+        setHistorialInventarios(inventarios);
+      } else {
+        console.error('❌ Error en respuesta de historial:', response);
+        // Fallback a localStorage si la API no está disponible
+        const historialGuardado = localStorage.getItem(`historialInventarios_${datosUsuario.empresaId}`);
+        console.log('🔍 Buscando en localStorage con key:', `historialInventarios_${datosUsuario.empresaId}`);
+        console.log('🔍 Contenido de localStorage:', historialGuardado);
+        if (historialGuardado) {
+          const historial = JSON.parse(historialGuardado);
+          console.log('✅ Historial cargado desde localStorage:', historial);
+          setHistorialInventarios(historial);
+        } else {
+          console.log('❌ No se encontró historial en localStorage');
+        }
+      }
     } catch (error) {
-      console.error('Error al cargar historial de inventarios:', error);
+      console.error('❌ Error al cargar historial de inventarios físicos:', error);
+      // Fallback a localStorage si hay error
+      const historialGuardado = localStorage.getItem(`historialInventarios_${datosUsuario.empresaId}`);
+      console.log('🔍 Fallback: Buscando en localStorage con key:', `historialInventarios_${datosUsuario.empresaId}`);
+      console.log('🔍 Fallback: Contenido de localStorage:', historialGuardado);
+      if (historialGuardado) {
+        const historial = JSON.parse(historialGuardado);
+        console.log('✅ Historial cargado desde localStorage (fallback):', historial);
+        setHistorialInventarios(historial);
+      } else {
+        console.log('❌ No se encontró historial en localStorage (fallback)');
+      }
     }
   };
 
   const cargarEstadisticasOperaciones = async () => {
+    if (!datosUsuario?.empresaId) {
+      console.log('❌ No hay empresaId disponible para cargar estadísticas');
+      return;
+    }
+
     try {
       console.log('📊 Cargando estadísticas de operaciones...');
       const response = await inventarioService.obtenerEstadisticas();
@@ -134,19 +192,37 @@ const ControlInventario: React.FC = () => {
   const iniciarInventario = () => {
     const nuevoInventario: Inventario = {
       id: Date.now(), // Temporal, debería venir del backend
-      fecha: new Date().toISOString(),
+      fechaInventario: new Date().toISOString(),
       totalProductos: 0,
       productosConDiferencias: 0,
       valorTotalDiferencias: 0,
       porcentajePrecision: 0,
       estado: 'EN_PROGRESO',
-      productos: []
+      detalles: []
     };
     
     setInventarioActual(nuevoInventario);
     setProductosEscaneados(new Map());
     setModoEscaneo('ESCANEANDO');
     setMostrarScanner(true);
+  };
+
+  const iniciarInventarioUSB = () => {
+    const nuevoInventario: Inventario = {
+      id: Date.now(), // Temporal, debería venir del backend
+      fechaInventario: new Date().toISOString(),
+      totalProductos: 0,
+      productosConDiferencias: 0,
+      valorTotalDiferencias: 0,
+      porcentajePrecision: 0,
+      estado: 'EN_PROGRESO',
+      detalles: []
+    };
+    
+    setInventarioActual(nuevoInventario);
+    setProductosEscaneados(new Map());
+    setModoEscaneo('ESCANEANDO');
+    // NO activar la cámara para escáner USB
   };
 
   const manejarCodigoEscaneado = async (codigo: string) => {
@@ -177,12 +253,12 @@ const ControlInventario: React.FC = () => {
       // Crear objeto de producto para inventario
       const productoInventario: ProductoInventario = {
         id: producto.id,
-        codigo: producto.codigoBarras || producto.codigoPersonalizado || codigo,
-        nombre: producto.nombre,
+        codigoProducto: producto.codigoBarras || producto.codigoPersonalizado || codigo,
+        nombreProducto: producto.nombre,
         stockReal: producto.stock,
         stockEscaneado: 1, // Por defecto 1, se puede editar
         diferencia: 0,
-        precio: producto.precio,
+        precioUnitario: producto.precio,
         categoria: producto.categoria || 'Sin categoría',
         marca: producto.marca || 'Sin marca'
       };
@@ -227,20 +303,83 @@ const ControlInventario: React.FC = () => {
 
     // Actualizar el mapa de productos escaneados
     const nuevosProductosEscaneados = new Map(productosEscaneados);
-    nuevosProductosEscaneados.set(productoSeleccionado.codigo, productoActualizado);
+    nuevosProductosEscaneados.set(productoSeleccionado.codigoProducto, productoActualizado);
     setProductosEscaneados(nuevosProductosEscaneados);
 
-    // Cerrar modal y continuar escaneando
+    // Cerrar modal y salir del escáner correspondiente
     setMostrarModalProducto(false);
     setProductoSeleccionado(null);
-    setMostrarScanner(true);
     
-    toast.success(`Producto ${productoSeleccionado.nombre} registrado con cantidad: ${cantidadEscaneada}`);
+    // Si el escáner USB está abierto, cerrarlo también
+    if (mostrarScannerUSB) {
+      setMostrarScannerUSB(false);
+    } else {
+      setMostrarScanner(false);
+    }
+    
+    toast.success(`Producto ${productoSeleccionado.nombreProducto} registrado con cantidad: ${cantidadEscaneada}`);
+  };
+
+  const seguirEscaneando = () => {
+    if (!productoSeleccionado) return;
+
+    const productoActualizado: ProductoInventario = {
+      ...productoSeleccionado,
+      stockEscaneado: cantidadEscaneada,
+      diferencia: cantidadEscaneada - productoSeleccionado.stockReal
+    };
+
+    // Actualizar el mapa de productos escaneados
+    const nuevosProductosEscaneados = new Map(productosEscaneados);
+    nuevosProductosEscaneados.set(productoSeleccionado.codigoProducto, productoActualizado);
+    setProductosEscaneados(nuevosProductosEscaneados);
+
+    // Cerrar modal y volver al escáner correspondiente
+    setMostrarModalProducto(false);
+    setProductoSeleccionado(null);
+    
+    // Si el escáner USB está abierto, volver al modal USB
+    if (mostrarScannerUSB) {
+      setMostrarScannerUSB(true); // Mantener abierto el modal USB
+    } else {
+      setMostrarScanner(true); // Volver a la cámara
+    }
+    
+    toast.success(`Producto ${productoSeleccionado.nombreProducto} registrado con cantidad: ${cantidadEscaneada}`);
+  };
+
+  const cancelarCantidad = () => {
+    // No guardar nada, solo cerrar modal y salir del escáner correspondiente
+    setMostrarModalProducto(false);
+    setProductoSeleccionado(null);
+    
+    // Si el escáner USB está abierto, cerrarlo también
+    if (mostrarScannerUSB) {
+      setMostrarScannerUSB(false);
+    } else {
+      setMostrarScanner(false);
+    }
+    
+    toast.error('Operación cancelada');
+  };
+
+  const resetearInventario = () => {
+    // Resetear completamente el estado del inventario
+    setInventarioActual(null);
+    setProductosEscaneados(new Map());
+    setEstadisticas(null);
+    setModoEscaneo('INICIAR');
+    setMostrarScanner(false);
+    setMostrarScannerUSB(false);
+    setMostrarResumen(false);
+    setProductoSeleccionado(null);
+    setCantidadEscaneada(1);
+    setMostrarModalProducto(false);
   };
 
   const finalizarInventario = () => {
     if (productosEscaneados.size === 0) {
-      toast.error('No se han escaneado productos para finalizar el inventario');
+      toast.error('No se han escaneado productos para finalizar el inventario. Escanea al menos un producto o cancela el inventario.');
       return;
     }
 
@@ -249,7 +388,7 @@ const ControlInventario: React.FC = () => {
     const totalProductos = productos.length;
     const productosConDiferencias = productos.filter(p => p.diferencia !== 0).length;
     const valorTotalDiferencias = productos.reduce((total, p) => {
-      const valorDiferencia = Math.abs(p.diferencia) * p.precio;
+      const valorDiferencia = p.diferencia * p.precioUnitario;
       return total + valorDiferencia;
     }, 0);
     const porcentajePrecision = ((totalProductos - productosConDiferencias) / totalProductos) * 100;
@@ -284,15 +423,56 @@ const ControlInventario: React.FC = () => {
         productosConDiferencias: estadisticas.productosConDiferencias,
         valorTotalDiferencias: estadisticas.valorTotalDiferencias,
         porcentajePrecision: estadisticas.porcentajePrecision,
-        productos: Array.from(productosEscaneados.values())
+        detalles: Array.from(productosEscaneados.values())
       };
 
-      // TODO: Implementar API para guardar inventario
-      // await ApiService.guardarInventario(datosUsuario!.empresaId, inventarioCompletado);
+      // Crear objeto para la API de inventario físico
+      const inventarioParaAPI = {
+        totalProductos: estadisticas.totalProductos,
+        productosConDiferencias: estadisticas.productosConDiferencias,
+        valorTotalDiferencias: estadisticas.valorTotalDiferencias,
+        porcentajePrecision: estadisticas.porcentajePrecision,
+        estado: 'COMPLETADO' as const,
+        detalles: Array.from(productosEscaneados.values()).map(p => ({
+          productoId: p.id,
+          codigoProducto: p.codigoProducto,
+          nombreProducto: p.nombreProducto,
+          stockReal: p.stockReal,
+          stockEscaneado: p.stockEscaneado,
+          diferencia: p.diferencia,
+          precioUnitario: p.precioUnitario,
+          categoria: p.categoria,
+          marca: p.marca
+        }))
+      };
+
+      console.log('💾 Guardando inventario físico en API:', inventarioParaAPI);
+      
+      // Intentar guardar en la API
+      try {
+        const response = await inventarioService.guardarInventarioFisico(inventarioParaAPI);
+        
+        if (response.success) {
+          console.log('✅ Inventario físico guardado en API:', response.data);
+          
+          // Actualizar inventario con datos del backend
+          const inventarioConId = {
+            ...inventarioCompletado,
+            id: response.data.id || inventarioCompletado.id
+          };
+          
+          toast.success('Inventario guardado exitosamente en el servidor');
+        } else {
+          throw new Error(response.message || 'Error al guardar en API');
+        }
+      } catch (apiError) {
+        console.error('❌ Error al guardar en API, guardando en localStorage:', apiError);
+        toast.success('Inventario guardado localmente (servidor no disponible)');
+      }
       
       // Registrar operaciones de inventario para cada producto con diferencias
       console.log('📊 Registrando operaciones de inventario...');
-      for (const producto of inventarioCompletado.productos) {
+      for (const producto of inventarioCompletado.detalles) {
         if (producto.diferencia !== 0) {
           const tipoOperacion = producto.diferencia > 0 ? 'INCREMENTO' : 'DECREMENTO';
           const cantidad = Math.abs(producto.diferencia);
@@ -304,24 +484,30 @@ const ControlInventario: React.FC = () => {
             cantidad,
             producto.stockReal,
             stockNuevo,
-            producto.codigo,
+            producto.codigoProducto,
             `Ajuste por inventario físico. Stock real: ${producto.stockEscaneado}, Stock sistema: ${producto.stockReal}`
           );
           
           // Actualizar el stock del producto en el sistema
           try {
             await ApiService.actualizarStock(datosUsuario!.empresaId, producto.id, stockNuevo);
-            console.log(`✅ Stock actualizado para producto ${producto.nombre}: ${producto.stockReal} → ${stockNuevo}`);
+            console.log(`✅ Stock actualizado para producto ${producto.nombreProducto}: ${producto.stockReal} → ${stockNuevo}`);
           } catch (error) {
-            console.error(`❌ Error al actualizar stock del producto ${producto.nombre}:`, error);
+            console.error(`❌ Error al actualizar stock del producto ${producto.nombreProducto}:`, error);
           }
         }
       }
       
-      toast.success('Inventario guardado exitosamente');
-      
       // Actualizar historial
-      setHistorialInventarios(prev => [inventarioCompletado, ...prev]);
+      setHistorialInventarios(prev => {
+        const nuevoHistorial = [inventarioCompletado, ...prev];
+        // Guardar en localStorage como backup
+        if (datosUsuario?.empresaId) {
+          localStorage.setItem(`historialInventarios_${datosUsuario.empresaId}`, JSON.stringify(nuevoHistorial));
+          console.log('💾 Historial guardado en localStorage:', nuevoHistorial);
+        }
+        return nuevoHistorial;
+      });
       
       // Resetear estados
       setInventarioActual(null);
@@ -388,13 +574,32 @@ const ControlInventario: React.FC = () => {
   };
 
   const formatearFecha = (fecha: string) => {
-    return new Date(fecha).toLocaleString('es-CL', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    try {
+      // Si la fecha es null, undefined o vacía, mostrar mensaje
+      if (!fecha) {
+        return 'Fecha no disponible';
+      }
+      
+      // Intentar parsear la fecha
+      const fechaObj = new Date(fecha);
+      
+      // Verificar si la fecha es válida
+      if (isNaN(fechaObj.getTime())) {
+        console.warn('Fecha inválida recibida:', fecha);
+        return 'Fecha inválida';
+      }
+      
+      return fechaObj.toLocaleString('es-CL', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Error al formatear fecha:', error, 'Fecha recibida:', fecha);
+      return 'Error en fecha';
+    }
   };
 
   const verDetalleInventario = (inventario: Inventario) => {
@@ -416,6 +621,37 @@ const ControlInventario: React.FC = () => {
     setOperacionSeleccionada(operacion);
     setMostrarDetalleOperacion(true);
   };
+
+  // Mostrar estado de carga mientras se cargan los datos del usuario
+  if (cargandoUsuario) {
+    return (
+      <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
+        <div className="contenedor" style={{ 
+          paddingTop: '5rem', 
+          paddingBottom: '2rem',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '60vh'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="spinner" style={{
+              width: '48px',
+              height: '48px',
+              border: '4px solid #e2e8f0',
+              borderTop: '4px solid #3b82f6',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 16px'
+            }}></div>
+            <p style={{ color: '#64748b', fontSize: '16px' }}>
+              Cargando datos del usuario...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
@@ -519,7 +755,7 @@ const ControlInventario: React.FC = () => {
                 <button
                   onClick={() => {
                     setMostrarScannerUSB(true);
-                    iniciarInventario();
+                    iniciarInventarioUSB();
                   }}
                   className="boton boton-secundario"
                   style={{
@@ -560,36 +796,118 @@ const ControlInventario: React.FC = () => {
             padding: '24px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
           }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="titulo-3" style={{
-                fontSize: '20px',
-                fontWeight: '600',
-                color: '#1e293b',
-                marginBottom: '0'
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Título principal */}
+              <div style={{ textAlign: 'center' }}>
+                <h3 className="titulo-3" style={{
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  color: '#1e293b',
+                  marginBottom: '8px'
+                }}>
+                  🔍 Escaneando Productos
+                </h3>
+                <div style={{
+                  height: '3px',
+                  width: '80px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  borderRadius: '2px',
+                  margin: '0 auto'
+                }}></div>
+              </div>
+              
+              {/* Información y controles */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'white',
+                padding: '16px 20px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
               }}>
-                🔍 Escaneando Productos
-              </h3>
-              <div className="flex gap-2">
-                <span className="texto-pequeno texto-gris">
-                  Productos escaneados: {productosEscaneados.size}
-                </span>
-                <button
-                  onClick={finalizarInventario}
-                  className="boton boton-primario"
-                  style={{
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                {/* Contador de productos */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                     color: 'white',
-                    border: 'none',
-                    padding: '8px 16px',
+                    padding: '8px 12px',
                     borderRadius: '8px',
                     fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  ✅ Finalizar
-                </button>
+                    fontWeight: '600'
+                  }}>
+                    📦 {productosEscaneados.size}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                      Productos Escaneados
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                      Continúa escaneando códigos de barras
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Botones de acción */}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  {/* Botón de cancelar */}
+                  <button
+                    onClick={resetearInventario}
+                    className="boton boton-secundario"
+                    style={{
+                      background: 'white',
+                      color: '#dc2626',
+                      border: '2px solid #dc2626',
+                      padding: '12px 20px',
+                      borderRadius: '10px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = '#dc2626';
+                      e.currentTarget.style.color = 'white';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'white';
+                      e.currentTarget.style.color = '#dc2626';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    ❌ Cancelar
+                  </button>
+                  
+                  {/* Botón de finalizar */}
+                  <button
+                    onClick={finalizarInventario}
+                    className="boton boton-primario"
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '12px 24px',
+                      borderRadius: '10px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.4)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                    }}
+                  >
+                    ✅ Finalizar Inventario
+                  </button>
+                </div>
               </div>
             </div>
             
@@ -598,7 +916,7 @@ const ControlInventario: React.FC = () => {
               <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 <div className="grid grid-1 gap-2" style={{ gap: '8px' }}>
                   {Array.from(productosEscaneados.values()).map((producto) => (
-                    <div key={producto.codigo} style={{
+                    <div key={producto.codigoProducto} style={{
                       background: 'white',
                       padding: '12px',
                       borderRadius: '8px',
@@ -609,10 +927,10 @@ const ControlInventario: React.FC = () => {
                     }}>
                       <div>
                         <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                          {producto.nombre}
+                          {producto.nombreProducto}
                         </div>
                         <div style={{ fontSize: '12px', color: '#64748b' }}>
-                          Código: {producto.codigo}
+                          Código: {producto.codigoProducto}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -743,7 +1061,7 @@ const ControlInventario: React.FC = () => {
                       </h5>
                       <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
                         {estadisticas.productosPerdidos.map((producto) => (
-                          <div key={producto.codigo} style={{
+                          <div key={producto.codigoProducto} style={{
                             background: 'white',
                             padding: '8px',
                             borderRadius: '6px',
@@ -751,11 +1069,11 @@ const ControlInventario: React.FC = () => {
                             border: '1px solid #fecaca'
                           }}>
                             <div style={{ fontWeight: '600', fontSize: '14px' }}>
-                              {producto.nombre}
+                              {producto.nombreProducto}
                             </div>
                             <div style={{ fontSize: '12px', color: '#64748b' }}>
                               Faltan: {Math.abs(producto.diferencia)} unidades | 
-                              Valor: {formatearMoneda(Math.abs(producto.diferencia) * producto.precio)}
+                              Valor: {formatearMoneda(Math.abs(producto.diferencia) * producto.precioUnitario)}
                             </div>
                           </div>
                         ))}
@@ -776,7 +1094,7 @@ const ControlInventario: React.FC = () => {
                       </h5>
                       <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
                         {estadisticas.productosSobrantes.map((producto) => (
-                          <div key={producto.codigo} style={{
+                          <div key={producto.codigoProducto} style={{
                             background: 'white',
                             padding: '8px',
                             borderRadius: '6px',
@@ -784,11 +1102,11 @@ const ControlInventario: React.FC = () => {
                             border: '1px solid #bbf7d0'
                           }}>
                             <div style={{ fontWeight: '600', fontSize: '14px' }}>
-                              {producto.nombre}
+                              {producto.nombreProducto}
                             </div>
                             <div style={{ fontSize: '12px', color: '#64748b' }}>
                               Sobran: {producto.diferencia} unidades | 
-                              Valor: {formatearMoneda(producto.diferencia * producto.precio)}
+                              Valor: {formatearMoneda(producto.diferencia * producto.precioUnitario)}
                             </div>
                           </div>
                         ))}
@@ -848,82 +1166,7 @@ const ControlInventario: React.FC = () => {
           </div>
         )}
 
-        {/* Historial de inventarios */}
-        {historialInventarios.length > 0 && (
-          <div className="tarjeta" style={{
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-            border: '1px solid #e2e8f0',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-          }}>
-            <h3 className="titulo-3 mb-4" style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              color: '#1e293b',
-              marginBottom: '16px'
-            }}>
-              📋 Historial de Inventarios
-            </h3>
-            
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                          {historialInventarios.map((inventario) => (
-              <div key={inventario.id} style={{
-                background: 'white',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                marginBottom: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                e.currentTarget.style.borderColor = '#3b82f6';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-                e.currentTarget.style.borderColor = '#e2e8f0';
-              }}
-              onClick={() => verDetalleInventario(inventario)}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                      Inventario del {formatearFecha(inventario.fecha)}
-                    </div>
-                    <div style={{ fontSize: '14px', color: '#64748b' }}>
-                      {inventario.totalProductos} productos | 
-                      {inventario.productosConDiferencias} con diferencias | 
-                      Precisión: {inventario.porcentajePrecision.toFixed(1)}%
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: '600', color: '#dc2626' }}>
-                      {formatearMoneda(inventario.valorTotalDiferencias)}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      Valor diferencias
-                    </div>
-                  </div>
-                </div>
-                <div style={{ 
-                  marginTop: '8px', 
-                  fontSize: '12px', 
-                  color: '#3b82f6',
-                  fontWeight: '500'
-                }}>
-                  👆 Haz clic para ver detalles
-                </div>
-              </div>
-            ))}
-            </div>
-          </div>
-        )}
-
-        {/* Historial de Operaciones de Inventario */}
+        {/* Historial de inventarios físicos */}
         <div className="tarjeta mb-6" style={{
           background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
           border: '1px solid #e2e8f0',
@@ -931,18 +1174,19 @@ const ControlInventario: React.FC = () => {
           padding: '24px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
         }}>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-center mb-4" style={{ flexDirection: 'column', gap: '16px' }}>
             <h3 className="titulo-3" style={{
               fontSize: '20px',
               fontWeight: '600',
               color: '#1e293b',
-              marginBottom: '0'
+              marginBottom: '0',
+              textAlign: 'center'
             }}>
-              📊 Historial de Operaciones
+              📋 Historial de Inventarios Físicos
             </h3>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
               <button
-                onClick={cargarEstadisticasOperaciones}
+                onClick={() => setMostrarHistorialInventarios(!mostrarHistorialInventarios)}
                 className="boton boton-secundario"
                 style={{
                   background: 'white',
@@ -956,8 +1200,107 @@ const ControlInventario: React.FC = () => {
                   transition: 'all 0.2s ease'
                 }}
               >
-                🔄 Recargar
+                {mostrarHistorialInventarios ? '👁️ Ocultar' : '👁️ Ver Historial'}
               </button>
+            </div>
+          </div>
+
+          {/* Lista de inventarios */}
+          {mostrarHistorialInventarios && (
+            <div>
+              {historialInventarios.length > 0 ? (
+                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                  {historialInventarios.map((inventario) => (
+                    <div key={inventario.id} style={{
+                      background: 'white',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      marginBottom: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                      e.currentTarget.style.borderColor = '#10b981';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                    }}
+                    onClick={() => verDetalleInventario(inventario)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div style={{ fontWeight: '600', color: '#1e293b' }}>
+                            Inventario del {formatearFecha(inventario.fechaInventario)}
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#64748b' }}>
+                            {inventario.totalProductos} productos | 
+                            {inventario.productosConDiferencias} con diferencias | 
+                            Precisión: {inventario.porcentajePrecision.toFixed(1)}%
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontWeight: '600', color: inventario.valorTotalDiferencias < 0 ? '#dc2626' : inventario.valorTotalDiferencias > 0 ? '#059669' : '#64748b' }}>
+                            {formatearMoneda(inventario.valorTotalDiferencias)}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>
+                            Valor diferencias
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ 
+                        marginTop: '8px', 
+                        fontSize: '12px', 
+                        color: '#10b981',
+                        fontWeight: '500'
+                      }}>
+                        👆 Haz clic para ver detalles
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: '#64748b'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
+                    No hay inventarios físicos
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '14px' }}>
+                    Realiza tu primer inventario físico para ver el historial aquí.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Historial de Operaciones de Inventario */}
+        <div className="tarjeta mb-6" style={{
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          border: '1px solid #e2e8f0',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+          <div className="flex items-center justify-center mb-4" style={{ flexDirection: 'column', gap: '16px' }}>
+            <h3 className="titulo-3" style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              color: '#1e293b',
+              marginBottom: '0',
+              textAlign: 'center'
+            }}>
+              📊 Historial de Operaciones
+            </h3>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
               <button
                 onClick={() => {
                   setMostrarHistorialOperaciones(!mostrarHistorialOperaciones);
@@ -979,107 +1322,6 @@ const ControlInventario: React.FC = () => {
                 }}
               >
                 {mostrarHistorialOperaciones ? '👁️ Ocultar' : '👁️ Ver Historial'}
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    console.log('🧪 Creando operación de prueba...');
-                    await registrarOperacionInventario(
-                      1, // ID de producto de prueba
-                      'INCREMENTO',
-                      5,
-                      10,
-                      15,
-                      'TEST123',
-                      'Operación de prueba para verificar el sistema'
-                    );
-                    toast.success('Operación de prueba creada exitosamente');
-                    // Recargar estadísticas y historial
-                    setTimeout(() => {
-                      cargarEstadisticasOperaciones();
-                      if (mostrarHistorialOperaciones) {
-                        cargarHistorialOperaciones();
-                      }
-                    }, 1000);
-                  } catch (error) {
-                    console.error('Error al crear operación de prueba:', error);
-                    toast.error('Error al crear operación de prueba');
-                  }
-                }}
-                className="boton boton-secundario"
-                style={{
-                  background: 'white',
-                  color: '#f59e0b',
-                  border: '2px solid #f59e0b',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                🧪 Crear Prueba
-              </button>
-              
-              <button
-                onClick={async () => {
-                  try {
-                    const debugInfo = await ApiService.debugInventario();
-                    console.log('🔍 Debug info:', debugInfo);
-                    toast.success('Debug info obtenida. Revisa la consola.');
-                  } catch (error) {
-                    console.error('Error al obtener debug info:', error);
-                    toast.error('Error al obtener debug info');
-                  }
-                }}
-                className="boton boton-secundario"
-                style={{
-                  background: 'white',
-                  color: '#3b82f6',
-                  border: '2px solid #3b82f6',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                🔍 Debug
-              </button>
-              
-              <button
-                onClick={async () => {
-                  try {
-                    const resultado = await ApiService.crearOperacionesPrueba();
-                    console.log('✅ Operaciones de prueba creadas:', resultado);
-                    toast.success('Operaciones de prueba creadas');
-                    setTimeout(() => {
-                      cargarEstadisticasOperaciones();
-                      if (mostrarHistorialOperaciones) {
-                        cargarHistorialOperaciones();
-                      }
-                    }, 1000);
-                  } catch (error) {
-                    console.error('Error al crear operaciones de prueba:', error);
-                    toast.error('Error al crear operaciones de prueba');
-                  }
-                }}
-                className="boton boton-secundario"
-                style={{
-                  background: 'white',
-                  color: '#10b981',
-                  border: '2px solid #10b981',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                🚀 Crear Múltiples Pruebas
               </button>
             </div>
           </div>
@@ -1283,7 +1525,13 @@ const ControlInventario: React.FC = () => {
       <BarcodeScanner
         isOpen={mostrarScanner}
         onScan={manejarCodigoEscaneado}
-        onClose={() => setMostrarScanner(false)}
+        onClose={() => {
+          setMostrarScanner(false);
+          // Si no hay productos escaneados, resetear el inventario
+          if (productosEscaneados.size === 0) {
+            resetearInventario();
+          }
+        }}
       />
 
       {/* Modal de Scanner USB */}
@@ -1316,7 +1564,13 @@ const ControlInventario: React.FC = () => {
                 ⌨️ Escáner USB
               </h3>
               <button
-                onClick={() => setMostrarScannerUSB(false)}
+                onClick={() => {
+                  setMostrarScannerUSB(false);
+                  // Si no hay productos escaneados, resetear el inventario
+                  if (productosEscaneados.size === 0) {
+                    resetearInventario();
+                  }
+                }}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -1359,7 +1613,13 @@ const ControlInventario: React.FC = () => {
             
             <div className="text-center mt-4">
               <button
-                onClick={() => setMostrarScannerUSB(false)}
+                onClick={() => {
+                  setMostrarScannerUSB(false);
+                  // Si no hay productos escaneados, resetear el inventario
+                  if (productosEscaneados.size === 0) {
+                    resetearInventario();
+                  }
+                }}
                 className="boton boton-secundario"
                 style={{
                   background: '#6b7280',
@@ -1406,7 +1666,7 @@ const ControlInventario: React.FC = () => {
           }}>
             <div className="flex items-center justify-between mb-4">
               <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1e293b', margin: 0 }}>
-                📦 {productoSeleccionado.nombre}
+                📦 {productoSeleccionado.nombreProducto}
               </h3>
               <button
                 onClick={() => setMostrarModalProducto(false)}
@@ -1429,9 +1689,25 @@ const ControlInventario: React.FC = () => {
                 </label>
                 <input
                   type="number"
-                  value={cantidadEscaneada}
-                  onChange={(e) => setCantidadEscaneada(parseInt(e.target.value) || 0)}
+                  value={cantidadEscaneada === 0 ? '' : cantidadEscaneada}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setCantidadEscaneada(0);
+                    } else {
+                      const numValue = parseInt(value);
+                      if (!isNaN(numValue) && numValue >= 0) {
+                        setCantidadEscaneada(numValue);
+                      }
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      setCantidadEscaneada(1); // Valor por defecto si se deja vacío
+                    }
+                  }}
                   min="0"
+                  placeholder="Ingresa la cantidad"
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -1447,49 +1723,81 @@ const ControlInventario: React.FC = () => {
                   Stock Real: {productoSeleccionado.stockReal}
                 </div>
                 <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '4px' }}>
-                  Código: {productoSeleccionado.codigo}
+                  Código: {productoSeleccionado.codigoProducto}
                 </div>
                 <div style={{ fontSize: '14px', color: '#64748b' }}>
-                  Precio: {formatearMoneda(productoSeleccionado.precio)}
+                  Precio: {formatearMoneda(productoSeleccionado.precioUnitario)}
                 </div>
               </div>
             </div>
             
-            <div className="flex gap-3" style={{ gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Botones superiores */}
+              <div className="flex gap-3" style={{ gap: '12px' }}>
+                <button
+                  onClick={confirmarCantidad}
+                  className="boton boton-primario"
+                  style={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    flex: 1
+                  }}
+                >
+                  ✅ Confirmar
+                </button>
+                
+                <button
+                  onClick={cancelarCantidad}
+                  className="boton boton-secundario"
+                  style={{
+                    background: 'white',
+                    color: '#dc2626',
+                    border: '2px solid #dc2626',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    flex: 1
+                  }}
+                >
+                  ❌ Cancelar
+                </button>
+              </div>
+              
+              {/* Botón central llamativo */}
               <button
-                onClick={confirmarCantidad}
+                onClick={seguirEscaneando}
                 className="boton boton-primario"
                 style={{
                   background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                   color: 'white',
                   border: 'none',
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: '600',
+                  padding: '16px 32px',
+                  borderRadius: '12px',
+                  fontSize: '18px',
+                  fontWeight: '700',
                   cursor: 'pointer',
-                  flex: 1
+                  width: '100%',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
                 }}
               >
-                ✅ Confirmar y Continuar
-              </button>
-              
-              <button
-                onClick={() => setMostrarModalProducto(false)}
-                className="boton boton-secundario"
-                style={{
-                  background: 'white',
-                  color: '#6b7280',
-                  border: '2px solid #6b7280',
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  flex: 1
-                }}
-              >
-                ❌ Cancelar
+                🔄 Seguir Escaneando
               </button>
             </div>
           </div>
@@ -1537,7 +1845,7 @@ const ControlInventario: React.FC = () => {
                   📊 Detalle del Inventario
                 </h2>
                 <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
-                  {formatearFecha(inventarioDetalle.fecha)}
+                  {formatearFecha(inventarioDetalle.fechaInventario)}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -1645,7 +1953,7 @@ const ControlInventario: React.FC = () => {
               </div>
 
               {/* Productos con diferencias */}
-              {inventarioDetalle.productos.length > 0 && (
+              {Array.isArray(inventarioDetalle.detalles) && inventarioDetalle.detalles.length > 0 && (
                 <div style={{
                   background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
                   borderRadius: '12px',
@@ -1672,7 +1980,7 @@ const ControlInventario: React.FC = () => {
                         cursor: 'pointer'
                       }}
                     >
-                      Todos ({inventarioDetalle.productos.length})
+                      Todos ({Array.isArray(inventarioDetalle.detalles) ? inventarioDetalle.detalles.length : 0})
                     </button>
                     <button
                       onClick={() => setFiltroDetalle('faltantes')}
@@ -1687,7 +1995,7 @@ const ControlInventario: React.FC = () => {
                         cursor: 'pointer'
                       }}
                     >
-                      Faltantes ({inventarioDetalle.productos.filter(p => p.diferencia < 0).length})
+                      Faltantes ({Array.isArray(inventarioDetalle.detalles) ? inventarioDetalle.detalles.filter(p => p.diferencia < 0).length : 0})
                     </button>
                     <button
                       onClick={() => setFiltroDetalle('sobrantes')}
@@ -1702,7 +2010,7 @@ const ControlInventario: React.FC = () => {
                         cursor: 'pointer'
                       }}
                     >
-                      Sobrantes ({inventarioDetalle.productos.filter(p => p.diferencia > 0).length})
+                      Sobrantes ({Array.isArray(inventarioDetalle.detalles) ? inventarioDetalle.detalles.filter(p => p.diferencia > 0).length : 0})
                     </button>
                   </div>
 
@@ -1731,57 +2039,57 @@ const ControlInventario: React.FC = () => {
                           </th>
                         </tr>
                       </thead>
-                                             <tbody>
-                         {inventarioDetalle.productos
-                           .filter(producto => {
-                             if (filtroDetalle === 'todos') return true;
-                             if (filtroDetalle === 'faltantes') return producto.diferencia < 0;
-                             if (filtroDetalle === 'sobrantes') return producto.diferencia > 0;
-                             return true;
-                           })
-                           .map((producto, index) => (
-                          <tr key={index} style={{ 
-                            borderBottom: '1px solid #f1f5f9',
-                            background: index % 2 === 0 ? 'white' : '#f8fafc'
-                          }}>
-                            <td style={{ padding: '12px', fontSize: '14px', color: '#1e293b' }}>
-                              <div>
-                                <div style={{ fontWeight: '600' }}>{producto.nombre}</div>
-                                <div style={{ fontSize: '12px', color: '#64748b' }}>
-                                  {producto.categoria} • {producto.marca}
+                      <tbody>
+                        {Array.isArray(inventarioDetalle.detalles) && inventarioDetalle.detalles
+                          .filter(producto => {
+                            if (filtroDetalle === 'todos') return true;
+                            if (filtroDetalle === 'faltantes') return producto.diferencia < 0;
+                            if (filtroDetalle === 'sobrantes') return producto.diferencia > 0;
+                            return true;
+                          })
+                          .map((producto, index) => (
+                            <tr key={index} style={{ 
+                              borderBottom: '1px solid #f1f5f9',
+                              background: index % 2 === 0 ? 'white' : '#f8fafc'
+                            }}>
+                              <td style={{ padding: '12px', fontSize: '14px', color: '#1e293b' }}>
+                                <div>
+                                  <div style={{ fontWeight: '600' }}>{producto.nombreProducto}</div>
+                                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                                    {producto.categoria} • {producto.marca}
+                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                            <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px', color: '#64748b' }}>
-                              {producto.codigo}
-                            </td>
-                            <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px', color: '#1e293b', fontWeight: '600' }}>
-                              {producto.stockReal}
-                            </td>
-                            <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px', color: '#1e293b', fontWeight: '600' }}>
-                              {producto.stockEscaneado}
-                            </td>
-                            <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px', fontWeight: '600' }}>
-                              <span style={{ 
-                                color: producto.diferencia < 0 ? '#dc2626' : producto.diferencia > 0 ? '#059669' : '#64748b',
-                                background: producto.diferencia !== 0 ? 
-                                  (producto.diferencia < 0 ? '#fef2f2' : '#f0fdf4') : '#f8fafc',
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                fontSize: '12px'
-                              }}>
-                                {producto.diferencia > 0 ? '+' : ''}{producto.diferencia}
-                              </span>
-                            </td>
-                            <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px', fontWeight: '600' }}>
-                              <span style={{ 
-                                color: producto.diferencia !== 0 ? '#dc2626' : '#64748b'
-                              }}>
-                                {formatearMoneda(Math.abs(producto.diferencia) * producto.precio)}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px', color: '#64748b' }}>
+                                {producto.codigoProducto}
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px', color: '#1e293b', fontWeight: '600' }}>
+                                {producto.stockReal}
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px', color: '#1e293b', fontWeight: '600' }}>
+                                {producto.stockEscaneado}
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px', fontWeight: '600' }}>
+                                <span style={{ 
+                                  color: producto.diferencia < 0 ? '#dc2626' : producto.diferencia > 0 ? '#059669' : '#64748b',
+                                  background: producto.diferencia !== 0 ? 
+                                    (producto.diferencia < 0 ? '#fef2f2' : '#f0fdf4') : '#f8fafc',
+                                  padding: '4px 8px',
+                                  borderRadius: '4px',
+                                  fontSize: '12px'
+                                }}>
+                                  {producto.diferencia > 0 ? '+' : ''}{producto.diferencia}
+                                </span>
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px', fontWeight: '600' }}>
+                                <span style={{ 
+                                  color: producto.diferencia < 0 ? '#dc2626' : producto.diferencia > 0 ? '#059669' : '#64748b'
+                                }}>
+                                  {formatearMoneda(Math.abs(producto.diferencia) * producto.precioUnitario)}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>
@@ -1975,7 +2283,7 @@ const ControlInventario: React.FC = () => {
                     <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
                       Stock Anterior
                     </p>
-                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#dc2626' }}>
+                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
                       {operacionSeleccionada.stockAnterior}
                     </p>
                   </div>
@@ -1983,7 +2291,7 @@ const ControlInventario: React.FC = () => {
                     <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
                       Stock Nuevo
                     </p>
-                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#059669' }}>
+                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
                       {operacionSeleccionada.stockNuevo}
                     </p>
                   </div>
