@@ -503,6 +503,10 @@ const GestionProductos: React.FC = () => {
     setMostrarResumen(false);
   };
 
+  const irAHistorialCarga = () => {
+    navigate('/admin/historial-carga-productos');
+  };
+
   const manejarEscaneoStock = async (codigoBarras: string) => {
     console.log("📦 Código escaneado para agregar stock:", codigoBarras);
     
@@ -903,6 +907,79 @@ const GestionProductos: React.FC = () => {
                 fontWeight: '600'
               }}>
                 Conectar escáner →
+              </div>
+            </div>
+
+            {/* Tarjeta Historial de Carga */}
+            <div 
+              onClick={irAHistorialCarga}
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                animation: 'slideInUp 0.6s ease-out 0.6s both'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = '#f59e0b';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.25rem',
+                  marginRight: '0.75rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}>
+                  📊
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Historial de Carga
+                  </h3>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Revisa el historial de todas las operaciones de carga de productos
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: '#f59e0b',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                Ver historial →
               </div>
             </div>
           </div>

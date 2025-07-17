@@ -8,6 +8,7 @@ import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import '../../styles/gestor-imagenes.css';
+import Barcode from 'react-barcode';
 
 // Componente de campo de formulario optimizado con memo
 const CampoFormulario = memo(({ 
@@ -347,6 +348,32 @@ export default function NuevoProducto() {
     setMostrarScanner(true);
   }, []);
 
+  const generarCodigoBarras = useCallback(async () => {
+    try {
+      if (!empresaId) {
+        toast.error('Error: No se encontró la empresa asociada');
+        return;
+      }
+      const response = await ApiService.generarCodigoBarras(empresaId);
+      if (
+        response &&
+        typeof response === 'object' &&
+        'data' in response &&
+        response.data &&
+        typeof response.data === 'object' &&
+        'codigoBarras' in response.data &&
+        typeof (response.data as { codigoBarras?: string }).codigoBarras === 'string' &&
+        (response.data as { codigoBarras?: string }).codigoBarras
+      ) {
+        setFormulario(prev => ({ ...prev, codigoBarras: (response.data as { codigoBarras: string }).codigoBarras }));
+        toast.success('Código de barras generado exitosamente');
+      }
+    } catch (error) {
+      console.error('Error al generar código de barras:', error);
+      toast.error('Error al generar código de barras');
+    }
+  }, [empresaId]);
+
   useEffect(() => {
     cargarCategorias();
     cargarMarcas();
@@ -528,6 +555,45 @@ export default function NuevoProducto() {
     }
   };
 
+  const descargarCodigoBarras = (elementId: string) => {
+    const svg = document.getElementById(elementId)?.querySelector('svg');
+    if (!svg) return;
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const img = new window.Image();
+    img.onload = function () {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        const png = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = png;
+        a.download = 'codigo_barras.png';
+        a.click();
+      }
+    };
+    img.src = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgString)));
+  };
+
+  const imprimirCodigoBarras = (elementId: string) => {
+    const svg = document.getElementById(elementId)?.querySelector('svg');
+    if (!svg) return;
+    const w = window.open('', 'Imprimir código de barras');
+    if (w) {
+      w.document.write('<html><head><title>Imprimir código de barras</title></head><body>');
+      w.document.write(svg.outerHTML);
+      w.document.write('</body></html>');
+      w.document.close();
+      w.focus();
+      setTimeout(() => {
+        w.print();
+        w.close();
+      }, 500);
+    }
+  };
 
 
   return (
@@ -657,49 +723,142 @@ export default function NuevoProducto() {
                         )}
                       </div>
 
-                      <div className="campo-grupo" style={{ position: 'relative' }}>
-                        <label htmlFor="codigoBarras" className="campo-label">
-                          Código de Barras <span className="campo-opcional">(Opcional)</span>
+                      <div style={{ marginBottom: '1.5rem' }}>
+                        <label htmlFor="codigoBarras" style={{
+                          display: 'block',
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          color: '#374151',
+                          marginBottom: '8px'
+                        }}>
+                          Código de Barras
                         </label>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: isMobile ? 'column' : 'row',
+                          gap: '8px',
+                          alignItems: isMobile ? 'stretch' : 'center',
+                          width: '100%'
+                        }}>
                           <input
                             type="text"
                             id="codigoBarras"
-                            name="codigoBarras"
                             value={formulario.codigoBarras}
-                            onChange={(e) => setFormulario(prev => ({ ...prev, codigoBarras: e.target.value }))}
-                            className="campo-input"
-                            placeholder="Ej: 1234567890123"
-                            style={{ flex: 1 }}
-                          />
-                          <button
-                            type="button"
-                            onClick={abrirScanner}
+                            onChange={manejarCambio}
                             style={{
-                              background: '#3b82f6',
-                              color: 'white',
-                              border: 'none',
+                              flex: 1,
+                              minWidth: 0,
+                              padding: '12px 16px',
+                              border: '2px solid #e2e8f0',
                               borderRadius: '8px',
-                              padding: '8px 12px',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              fontWeight: '500',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
+                              fontSize: '16px',
+                              transition: 'all 0.2s ease',
+                              minHeight: '44px',
+                              maxWidth: '100%'
                             }}
-                            title="Escanear código de barras"
-                          >
-                            📷
-                          </button>
+                            placeholder="Ej: 1234567890123"
+                            onFocus={(e) => {
+                              e.target.style.borderColor = '#3b82f6';
+                              e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                            }}
+                            onBlur={(e) => {
+                              e.target.style.borderColor = '#e2e8f0';
+                              e.target.style.boxShadow = 'none';
+                            }}
+                          />
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: isMobile ? 'row' : 'row',
+                            gap: '8px',
+                            marginTop: isMobile ? '8px' : 0
+                          }}>
+                            <button
+                              type="button"
+                              onClick={abrirScanner}
+                              style={{
+                                background: '#3b82f6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '10px',
+                                cursor: 'pointer',
+                                fontSize: '18px',
+                                fontWeight: 500,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minWidth: '44px',
+                                minHeight: '44px',
+                                transition: 'all 0.2s ease'
+                              }}
+                              title="Escanear código de barras"
+                            >
+                              📷
+                            </button>
+                            <button
+                              type="button"
+                              onClick={generarCodigoBarras}
+                              style={{
+                                background: '#10b981',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '10px',
+                                cursor: 'pointer',
+                                fontSize: '18px',
+                                fontWeight: 500,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minWidth: '44px',
+                                minHeight: '44px',
+                                transition: 'all 0.2s ease'
+                              }}
+                              title="Generar código de barras automáticamente"
+                            >
+                              🔄
+                            </button>
+                          </div>
                         </div>
-                        <div style={{
-                          fontSize: '12px',
-                          color: '#64748b',
-                          marginTop: '4px'
-                        }}>
-                          Escanea con la cámara o ingresa manualmente
-                        </div>
+                        {formulario.codigoBarras && (
+                          <div style={{
+                            marginTop: '16px',
+                            textAlign: 'center',
+                            width: '100%',
+                            maxWidth: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            padding: isMobile ? '0 10px' : '0'
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'center',
+                              width: '100%',
+                              maxWidth: isMobile ? 280 : 350,
+                              margin: '0 auto'
+                            }}>
+                              <Barcode
+                                value={formulario.codigoBarras}
+                                width={isMobile ? 1 : 2}
+                                height={isMobile ? 50 : 80}
+                                displayValue
+                                id="barcode-preview-nuevo"
+                              />
+                            </div>
+                            <div style={{
+                              marginTop: '10px',
+                              display: 'flex',
+                              gap: '8px',
+                              justifyContent: 'center',
+                              flexWrap: 'wrap',
+                              width: '100%'
+                            }}>
+                              <button type="button" onClick={() => descargarCodigoBarras('barcode-preview-nuevo')} style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease' }}>💾 Descargar</button>
+                              <button type="button" onClick={() => imprimirCodigoBarras('barcode-preview-nuevo')} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease' }}>🖨️ Imprimir</button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 

@@ -73,6 +73,7 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/admin/**").hasRole("ADMINISTRADOR")
                     .requestMatchers("/api/empresas/**").hasRole("ADMINISTRADOR")
                     .requestMatchers("/api/notificaciones/**").hasRole("ADMINISTRADOR")
+                    .requestMatchers("/api/historial-carga-productos/**").hasRole("ADMINISTRADOR")
                     .anyRequest().authenticated();
             });
 

@@ -24,9 +24,8 @@ public class HistorialInventario {
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 
-    @NotNull(message = "El usuario es obligatorio")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false)
+    @JoinColumn(name = "usuario_id", nullable = true)
     private Usuario usuario;
 
     @NotNull(message = "La empresa es obligatoria")

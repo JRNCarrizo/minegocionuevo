@@ -39,6 +39,12 @@ export default function NavbarAdminPages({
       description: 'Gestionar clientes'
     },
     {
+      path: '/admin/historial-carga-productos',
+      label: 'Historial Carga',
+      icon: '📋',
+      description: 'Historial de carga de productos'
+    },
+    {
       path: '/admin/configuracion',
       label: 'Configuración',
       icon: '⚙️',

@@ -10,32 +10,68 @@ INSERT INTO usuarios (nombre, apellidos, email, password, telefono, rol, activo,
 SELECT 'Admin', 'Demo', 'admin@demo.com', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', '+34 123 456 789', 'ADMINISTRADOR', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'admin@demo.com');
 
--- Insertar productos (sin imágenes en la tabla principal)
+-- Insertar productos (sin imágenes en la tabla principal) (solo si no existen)
 INSERT INTO productos (nombre, descripcion, precio, stock, stock_minimo, categoria, marca, unidad, activo, destacado, empresa_id, fecha_creacion, fecha_actualizacion)
-VALUES 
-('Laptop Dell Inspiron 15', 'Laptop para uso profesional con procesador Intel i5, 8GB RAM y 256GB SSD', 899.99, 15, 5, 'Electrónicos', 'Dell', 'unidad', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Mouse Inalámbrico Logitech', 'Mouse inalámbrico ergonómico con conexión USB', 29.99, 50, 10, 'Electrónicos', 'Logitech', 'unidad', true, false, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB personalizable', 79.99, 25, 5, 'Electrónicos', 'Corsair', 'unidad', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Monitor 24" Full HD', 'Monitor LED de 24 pulgadas con resolución Full HD 1920x1080', 199.99, 12, 3, 'Electrónicos', 'Samsung', 'unidad', true, false, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Silla Ergonómica de Oficina', 'Silla ergonómica con soporte lumbar y reposabrazos ajustables', 299.99, 8, 2, 'Mobiliario', 'Herman Miller', 'unidad', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+SELECT 'Laptop Dell Inspiron 15', 'Laptop para uso profesional con procesador Intel i5, 8GB RAM y 256GB SSD', 899.99, 15, 5, 'Electrónicos', 'Dell', 'unidad', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Laptop Dell Inspiron 15' AND empresa_id = 1);
 
--- Insertar imágenes de productos en tabla separada
+INSERT INTO productos (nombre, descripcion, precio, stock, stock_minimo, categoria, marca, unidad, activo, destacado, empresa_id, fecha_creacion, fecha_actualizacion)
+SELECT 'Mouse Inalámbrico Logitech', 'Mouse inalámbrico ergonómico con conexión USB', 29.99, 50, 10, 'Electrónicos', 'Logitech', 'unidad', true, false, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Mouse Inalámbrico Logitech' AND empresa_id = 1);
+
+INSERT INTO productos (nombre, descripcion, precio, stock, stock_minimo, categoria, marca, unidad, activo, destacado, empresa_id, fecha_creacion, fecha_actualizacion)
+SELECT 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB personalizable', 79.99, 25, 5, 'Electrónicos', 'Corsair', 'unidad', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Teclado Mecánico RGB' AND empresa_id = 1);
+
+INSERT INTO productos (nombre, descripcion, precio, stock, stock_minimo, categoria, marca, unidad, activo, destacado, empresa_id, fecha_creacion, fecha_actualizacion)
+SELECT 'Monitor 24" Full HD', 'Monitor LED de 24 pulgadas con resolución Full HD 1920x1080', 199.99, 12, 3, 'Electrónicos', 'Samsung', 'unidad', true, false, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Monitor 24" Full HD' AND empresa_id = 1);
+
+INSERT INTO productos (nombre, descripcion, precio, stock, stock_minimo, categoria, marca, unidad, activo, destacado, empresa_id, fecha_creacion, fecha_actualizacion)
+SELECT 'Silla Ergonómica de Oficina', 'Silla ergonómica con soporte lumbar y reposabrazos ajustables', 299.99, 8, 2, 'Mobiliario', 'Herman Miller', 'unidad', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Silla Ergonómica de Oficina' AND empresa_id = 1);
+
+-- Insertar imágenes de productos en tabla separada (solo si no existen)
 INSERT INTO producto_imagenes (producto_id, url_imagen)
-VALUES 
-(1, '/uploads/laptop-dell.jpg'),
-(1, '/uploads/laptop-dell-2.jpg'),
-(2, '/uploads/mouse-logitech.jpg'),
-(3, '/uploads/teclado-rgb.jpg'),
-(3, '/uploads/teclado-rgb-2.jpg'),
-(4, '/uploads/monitor-samsung.jpg'),
-(5, '/uploads/silla-ergonomica.jpg');
+SELECT 1, '/uploads/laptop-dell.jpg'
+WHERE NOT EXISTS (SELECT 1 FROM producto_imagenes WHERE producto_id = 1 AND url_imagen = '/uploads/laptop-dell.jpg');
 
--- Insertar clientes de ejemplo (password: cliente123 - BCrypt)
+INSERT INTO producto_imagenes (producto_id, url_imagen)
+SELECT 1, '/uploads/laptop-dell-2.jpg'
+WHERE NOT EXISTS (SELECT 1 FROM producto_imagenes WHERE producto_id = 1 AND url_imagen = '/uploads/laptop-dell-2.jpg');
+
+INSERT INTO producto_imagenes (producto_id, url_imagen)
+SELECT 2, '/uploads/mouse-logitech.jpg'
+WHERE NOT EXISTS (SELECT 1 FROM producto_imagenes WHERE producto_id = 2 AND url_imagen = '/uploads/mouse-logitech.jpg');
+
+INSERT INTO producto_imagenes (producto_id, url_imagen)
+SELECT 3, '/uploads/teclado-rgb.jpg'
+WHERE NOT EXISTS (SELECT 1 FROM producto_imagenes WHERE producto_id = 3 AND url_imagen = '/uploads/teclado-rgb.jpg');
+
+INSERT INTO producto_imagenes (producto_id, url_imagen)
+SELECT 3, '/uploads/teclado-rgb-2.jpg'
+WHERE NOT EXISTS (SELECT 1 FROM producto_imagenes WHERE producto_id = 3 AND url_imagen = '/uploads/teclado-rgb-2.jpg');
+
+INSERT INTO producto_imagenes (producto_id, url_imagen)
+SELECT 4, '/uploads/monitor-samsung.jpg'
+WHERE NOT EXISTS (SELECT 1 FROM producto_imagenes WHERE producto_id = 4 AND url_imagen = '/uploads/monitor-samsung.jpg');
+
+INSERT INTO producto_imagenes (producto_id, url_imagen)
+SELECT 5, '/uploads/silla-ergonomica.jpg'
+WHERE NOT EXISTS (SELECT 1 FROM producto_imagenes WHERE producto_id = 5 AND url_imagen = '/uploads/silla-ergonomica.jpg');
+
+-- Insertar clientes de ejemplo (password: cliente123 - BCrypt) (solo si no existen)
 INSERT INTO clientes (nombre, apellidos, email, password, telefono, direccion, ciudad, codigo_postal, pais, tipo, activo, acepta_marketing, email_verificado, empresa_id, fecha_creacion, fecha_actualizacion)
-VALUES 
-('Juan', 'Pérez García', 'juan.perez@email.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiSfFGhO4tEHy0LYIFGXcP.Wce', '+34 987 654 321', 'Calle Mayor 123', 'Madrid', '28001', 'España', 'REGULAR', true, true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('María', 'López Rodríguez', 'maria.lopez@email.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiSfFGhO4tEHy0LYIFGXcP.Wce', '+34 654 321 987', 'Avenida de la Constitución 45', 'Barcelona', '08001', 'España', 'PREMIUM', true, false, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Carlos', 'González Martín', 'carlos.gonzalez@email.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiSfFGhO4tEHy0LYIFGXcP.Wce', '+34 321 987 654', 'Plaza España 7', 'Valencia', '46001', 'España', 'REGULAR', true, true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+SELECT 'Juan', 'Pérez García', 'juan.perez@email.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiSfFGhO4tEHy0LYIFGXcP.Wce', '+34 987 654 321', 'Calle Mayor 123', 'Madrid', '28001', 'España', 'REGULAR', true, true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM clientes WHERE email = 'juan.perez@email.com' AND empresa_id = 1);
+
+INSERT INTO clientes (nombre, apellidos, email, password, telefono, direccion, ciudad, codigo_postal, pais, tipo, activo, acepta_marketing, email_verificado, empresa_id, fecha_creacion, fecha_actualizacion)
+SELECT 'María', 'López Rodríguez', 'maria.lopez@email.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiSfFGhO4tEHy0LYIFGXcP.Wce', '+34 654 321 987', 'Avenida de la Constitución 45', 'Barcelona', '08001', 'España', 'PREMIUM', true, false, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM clientes WHERE email = 'maria.lopez@email.com' AND empresa_id = 1);
+
+INSERT INTO clientes (nombre, apellidos, email, password, telefono, direccion, ciudad, codigo_postal, pais, tipo, activo, acepta_marketing, email_verificado, empresa_id, fecha_creacion, fecha_actualizacion)
+SELECT 'Carlos', 'González Martín', 'carlos.gonzalez@email.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiSfFGhO4tEHy0LYIFGXcP.Wce', '+34 321 987 654', 'Plaza España 7', 'Valencia', '46001', 'España', 'REGULAR', true, true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM clientes WHERE email = 'carlos.gonzalez@email.com' AND empresa_id = 1);
 
 -- Insertar pedidos de ejemplo (solo si no existen)
 INSERT INTO pedidos (numero_pedido, estado, total, subtotal, impuestos, descuento, observaciones, direccion_entrega, cliente_id, empresa_id, fecha_creacion, fecha_actualizacion)
@@ -71,12 +107,18 @@ INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_i
 SELECT 1, 79.99, 79.99, 3, 3, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', 'Corsair', DATEADD('DAY', -1, CURRENT_TIMESTAMP)
 WHERE NOT EXISTS (SELECT 1 FROM detalle_pedidos WHERE pedido_id = 3 AND producto_id = 3);
 
--- Insertar mensajes de ejemplo
+-- Insertar mensajes de ejemplo (solo si no existen)
 INSERT INTO mensajes (asunto, contenido, tipo, estado, leido, cliente_id, empresa_id, producto_id, fecha_creacion, fecha_actualizacion)
-VALUES 
-('Consulta sobre Laptop Dell', '¿La laptop incluye Office? ¿Cuál es la garantía?', 'CONSULTA', 'PENDIENTE', false, 1, 1, 1, DATEADD('HOUR', -2, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
-('Problema con el pedido', 'Mi pedido está marcado como preparando pero han pasado 3 días', 'RECLAMO', 'PENDIENTE', false, 2, 1, null, DATEADD('HOUR', -1, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
-('Sugerencia de producto', 'Estaría bien que añadieran tablets a su catálogo', 'SUGERENCIA', 'PENDIENTE', false, 3, 1, null, DATEADD('MINUTE', -30, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
+SELECT 'Consulta sobre Laptop Dell', '¿La laptop incluye Office? ¿Cuál es la garantía?', 'CONSULTA', 'PENDIENTE', false, 1, 1, 1, DATEADD('HOUR', -2, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM mensajes WHERE asunto = 'Consulta sobre Laptop Dell' AND cliente_id = 1);
+
+INSERT INTO mensajes (asunto, contenido, tipo, estado, leido, cliente_id, empresa_id, producto_id, fecha_creacion, fecha_actualizacion)
+SELECT 'Problema con el pedido', 'Mi pedido está marcado como preparando pero han pasado 3 días', 'RECLAMO', 'PENDIENTE', false, 2, 1, null, DATEADD('HOUR', -1, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM mensajes WHERE asunto = 'Problema con el pedido' AND cliente_id = 2);
+
+INSERT INTO mensajes (asunto, contenido, tipo, estado, leido, cliente_id, empresa_id, producto_id, fecha_creacion, fecha_actualizacion)
+SELECT 'Sugerencia de producto', 'Estaría bien que añadieran tablets a su catálogo', 'SUGERENCIA', 'PENDIENTE', false, 3, 1, null, DATEADD('MINUTE', -30, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM mensajes WHERE asunto = 'Sugerencia de producto' AND cliente_id = 3);
 
 -- Agregar columna marca_producto a la tabla detalle_pedidos si no existe
 ALTER TABLE detalle_pedidos ADD COLUMN IF NOT EXISTS marca_producto VARCHAR(100);
@@ -103,11 +145,18 @@ ALTER TABLE productos ADD COLUMN IF NOT EXISTS codigo_barras VARCHAR(50);
 -- Comentario sobre la nueva columna
 COMMENT ON COLUMN productos.codigo_barras IS 'Código de barras del producto (EAN-13, UPC, etc.)';
 
--- Datos de ejemplo para empresas
-INSERT INTO empresas (nombre, subdominio, email, telefono, descripcion, logo_url, color_primario, color_secundario, moneda, estado_suscripcion, fecha_fin_prueba, activa, fecha_creacion, fecha_actualizacion) VALUES
-('Mi Tienda Ejemplo', 'mitienda', 'admin@mitienda.com', '+1234567890', 'Tienda de ejemplo para demostración', 'https://via.placeholder.com/150', '#3B82F6', '#1E40AF', 'USD', 'PRUEBA', '2024-12-31', true, NOW(), NOW()),
-('Electrónicos Pro', 'electronicospro', 'info@electronicospro.com', '+1987654321', 'Especialistas en electrónica', 'https://via.placeholder.com/150', '#10B981', '#059669', 'USD', 'ACTIVA', '2025-12-31', true, NOW(), NOW()),
-('Ropa Fashion', 'ropafashion', 'ventas@ropafashion.com', '+1122334455', 'Moda y tendencias', 'https://via.placeholder.com/150', '#F59E0B', '#D97706', 'USD', 'ACTIVA', '2025-12-31', true, NOW(), NOW());
+-- Datos de ejemplo para empresas (solo si no existen)
+INSERT INTO empresas (nombre, subdominio, email, telefono, descripcion, logo_url, color_primario, color_secundario, moneda, estado_suscripcion, fecha_fin_prueba, activa, fecha_creacion, fecha_actualizacion)
+SELECT 'Mi Tienda Ejemplo', 'mitienda', 'admin@mitienda.com', '+1234567890', 'Tienda de ejemplo para demostración', 'https://via.placeholder.com/150', '#3B82F6', '#1E40AF', 'USD', 'PRUEBA', '2024-12-31', true, NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM empresas WHERE email = 'admin@mitienda.com');
+
+INSERT INTO empresas (nombre, subdominio, email, telefono, descripcion, logo_url, color_primario, color_secundario, moneda, estado_suscripcion, fecha_fin_prueba, activa, fecha_creacion, fecha_actualizacion)
+SELECT 'Electrónicos Pro', 'electronicospro', 'info@electronicospro.com', '+1987654321', 'Especialistas en electrónica', 'https://via.placeholder.com/150', '#10B981', '#059669', 'USD', 'ACTIVA', '2025-12-31', true, NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM empresas WHERE email = 'info@electronicospro.com');
+
+INSERT INTO empresas (nombre, subdominio, email, telefono, descripcion, logo_url, color_primario, color_secundario, moneda, estado_suscripcion, fecha_fin_prueba, activa, fecha_creacion, fecha_actualizacion)
+SELECT 'Ropa Fashion', 'ropafashion', 'ventas@ropafashion.com', '+1122334455', 'Moda y tendencias', 'https://via.placeholder.com/150', '#F59E0B', '#D97706', 'USD', 'ACTIVA', '2025-12-31', true, NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM empresas WHERE email = 'ventas@ropafashion.com');
 
 -- Crear tabla historial_inventario si no existe
 CREATE TABLE IF NOT EXISTS historial_inventario (

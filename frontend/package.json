@@ -15,6 +15,7 @@
     "axios": "^1.10.0",
     "html5-qrcode": "^2.3.8",
     "react": "^19.1.0",
+    "react-barcode": "^1.6.1",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.60.0",
     "react-hot-toast": "^2.5.2",

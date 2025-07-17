@@ -36,8 +36,13 @@ public class HistorialInventarioDTO {
         this.productoId = historial.getProducto().getId();
         this.productoNombre = historial.getProducto().getNombre();
         this.productoCodigoBarras = historial.getProducto().getCodigoBarras();
-        this.usuarioId = historial.getUsuario().getId();
-        this.usuarioNombre = historial.getUsuario().getNombreCompleto();
+        if (historial.getUsuario() != null) {
+            this.usuarioId = historial.getUsuario().getId();
+            this.usuarioNombre = historial.getUsuario().getNombreCompleto();
+        } else {
+            this.usuarioId = null;
+            this.usuarioNombre = null;
+        }
         this.tipoOperacion = historial.getTipoOperacion().name();
         this.descripcionOperacion = historial.getDescripcionOperacion();
         this.cantidad = historial.getCantidad();

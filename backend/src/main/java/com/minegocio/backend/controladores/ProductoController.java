@@ -588,6 +588,64 @@ public class ProductoController {
     }
 
     /**
+     * Genera un código de barras único para la empresa
+     */
+    @PostMapping("/generar-codigo-barras")
+    public ResponseEntity<?> generarCodigoBarras(@PathVariable Long empresaId) {
+        try {
+            String codigoBarras = productoService.generarCodigoBarras(empresaId);
+            
+            var respuesta = java.util.Map.of(
+               "data", java.util.Map.of(
+                 "codigoBarras", codigoBarras
+                ),
+                "mensaje", "Código de barras generado exitosamente"
+            );
+            
+            return ResponseEntity.ok(respuesta);
+        } catch (Exception e) {
+            System.err.println("Error al generar código de barras: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error al generar código de barras: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Verifica si un código de barras ya existe en la empresa
+     */
+    @GetMapping("/verificar-codigo-barras")
+    public ResponseEntity<?> verificarCodigoBarras(
+            @PathVariable Long empresaId,
+            @RequestParam String codigoBarras) {
+        try {
+            boolean existe = productoService.codigoBarrasExiste(empresaId, codigoBarras);
+            
+            var respuesta = java.util.Map.of(
+               "data", java.util.Map.of(
+                    "existe", existe
+                ),
+               "mensaje", existe ? "El código de barras ya existe" : "El código de barras está disponible"
+            );
+            
+            return ResponseEntity.ok(respuesta);
+        } catch (Exception e) {
+            System.err.println("Error al verificar código de barras: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error al verificar código de barras: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
      * Obtiene productos por código de barras
      */
     @GetMapping("/por-codigo-barras")

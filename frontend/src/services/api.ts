@@ -52,7 +52,8 @@ class ApiService {
           config.url &&
           (/\/admin\//.test(config.url) ||
            /\/empresas\/\d+\//.test(config.url) ||
-           /\/notificaciones\//.test(config.url))
+           /\/notificaciones\//.test(config.url) ||
+           /\/historial-carga-productos\//.test(config.url))
         ) {
           const tokenAdmin = localStorage.getItem('token');
           if (tokenAdmin) {
@@ -832,6 +833,97 @@ class ApiService {
    */
   async obtenerEstadisticasInventariosFisicos() {
     const response = await this.api.get('/admin/inventario-fisico/estadisticas');
+    return response.data;
+  }
+
+  // Métodos para Historial de Carga de Productos
+  async obtenerHistorialCargaProductos(
+    empresaId: number,
+    pagina: number = 0,
+    tamano: number = 20,
+    filtros?: {
+      fechaInicio?: string;
+      fechaFin?: string;
+      tipoOperacion?: string;
+      productoId?: number;
+      usuarioId?: number;
+      codigoBarras?: string;
+    }
+  ): Promise<ApiResponse<{
+    contenido: any[];
+    totalElementos: number;
+    totalPaginas: number;
+    paginaActual: number;
+    tamano: number;
+  }>> {
+    const params = new URLSearchParams({
+      empresaId: empresaId.toString(),
+      pagina: pagina.toString(),
+      tamanio: tamano.toString(),
+      ...(filtros?.fechaInicio && { fechaInicio: filtros.fechaInicio }),
+      ...(filtros?.fechaFin && { fechaFin: filtros.fechaFin }),
+      ...(filtros?.tipoOperacion && { tipoOperacion: filtros.tipoOperacion }),
+      ...(filtros?.productoId && { productoId: filtros.productoId.toString() }),
+      ...(filtros?.usuarioId && { usuarioId: filtros.usuarioId.toString() }),
+      ...(filtros?.codigoBarras && { codigoBarras: filtros.codigoBarras })
+    });
+
+    const response = await this.api.get(`/historial-carga-productos/buscar?${params}`);
+    return response.data;
+  }
+
+  async obtenerEstadisticasHistorialCarga(empresaId: number): Promise<ApiResponse<{
+    totalOperaciones: number;
+    operacionesHoy: number;
+    operacionesEstaSemana: number;
+    operacionesEsteMes: number;
+    valorTotalOperaciones: number;
+    productosMasCargados: Array<{ productoId: number; nombre: string; cantidad: number }>;
+    usuariosMasActivos: Array<{ usuarioId: number; nombre: string; operaciones: number }>;
+    operacionesPorTipo: Array<{ tipo: string; cantidad: number }>;
+  }>> {
+    const response = await this.api.get(`/historial-carga-productos/estadisticas/${empresaId}`);
+    return response.data;
+  }
+
+  async obtenerHistorialCargaPorProducto(empresaId: number, productoId: number): Promise<ApiResponse<any[]>> {
+    const response = await this.api.get(`/historial-carga-productos/producto/${productoId}/empresa/${empresaId}`);
+    return response.data;
+  }
+
+  async obtenerHistorialCargaPorFechas(
+    empresaId: number,
+    fechaInicio: string,
+    fechaFin: string
+  ): Promise<ApiResponse<any[]>> {
+    const params = new URLSearchParams({
+      fechaInicio,
+      fechaFin
+    });
+    const response = await this.api.get(`/historial-carga-productos/fechas/empresa/${empresaId}?${params}`);
+    return response.data;
+  }
+
+  async obtenerHistorialCargaPorCodigoBarras(empresaId: number, codigoBarras: string): Promise<ApiResponse<any[]>> {
+    const response = await this.api.get(`/historial-carga-productos/codigo-barras/${codigoBarras}/empresa/${empresaId}`);
+    return response.data;
+  }
+
+  async obtenerHistorialCargaPorUsuario(empresaId: number, usuarioId: number): Promise<ApiResponse<any[]>> {
+    const response = await this.api.get(`/historial-carga-productos/usuario/${usuarioId}/empresa/${empresaId}`);
+    return response.data;
+  }
+
+  // Métodos para códigos de barras
+  async generarCodigoBarras(empresaId: number): Promise<ApiResponse<{ codigoBarras: string }>> {
+    const response = await this.api.post(`/empresas/${empresaId}/productos/generar-codigo-barras`);
+    return response.data;
+  }
+
+  async verificarCodigoBarras(empresaId: number, codigoBarras: string): Promise<ApiResponse<{ existe: boolean; codigoBarras: string }>> {
+    const response = await this.api.get(`/empresas/${empresaId}/productos/verificar-codigo-barras`, {
+      params: { codigoBarras }
+    });
     return response.data;
   }
 }

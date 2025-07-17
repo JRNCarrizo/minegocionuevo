@@ -5,18 +5,25 @@ import com.minegocio.backend.dto.InventarioRequestDTO;
 import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Producto;
 import com.minegocio.backend.entidades.HistorialInventario;
+import com.minegocio.backend.entidades.HistorialCargaProductos;
+import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
+import com.minegocio.backend.repositorios.UsuarioRepository;
+import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.UUID;
+import java.util.Random;
 
 @Service
 @Transactional
@@ -33,6 +40,12 @@ public class ProductoService {
     
     @Autowired
     private HistorialInventarioService historialInventarioService;
+    
+    @Autowired
+    private HistorialCargaProductosService historialCargaProductosService;
+    
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     public List<ProductoDTO> obtenerTodosLosProductos(Long empresaId) {
         List<Producto> productos = productoRepository.findByEmpresaIdAndActivoTrue(empresaId);
@@ -102,6 +115,33 @@ public class ProductoService {
         producto.setEmpresa(empresa);
 
         Producto productoGuardado = productoRepository.save(producto);
+        
+        // Registrar la creación en el historial de inventario
+        try {
+            InventarioRequestDTO request = new InventarioRequestDTO();
+            request.setProductoId(productoGuardado.getId());
+            request.setTipoOperacion("CARGA_INICIAL");
+            request.setCantidad(productoDTO.getStock() != null ? productoDTO.getStock() : 0);
+            request.setStockAnterior(0);
+            request.setStockNuevo(productoDTO.getStock() != null ? productoDTO.getStock() : 0);
+            request.setPrecioUnitario(productoDTO.getPrecio() != null ? productoDTO.getPrecio() : BigDecimal.ZERO);
+            request.setObservacion("Creación de producto nuevo");
+            request.setCodigoBarras(productoDTO.getCodigoBarras());
+            request.setMetodoEntrada("MANUAL");
+            
+            historialInventarioService.registrarOperacionInventario(request, null, empresaId);
+        } catch (Exception e) {
+            // Log del error pero no fallar la operación principal
+            System.err.println("Error al registrar historial de inventario en creación de producto: " + e.getMessage());
+        }
+        
+        // Registrar la carga inicial en el historial de carga de productos
+        try {
+            historialCargaProductosService.registrarCargaInicial(productoGuardado, empresa, null);
+        } catch (Exception e) {
+            // Log del error pero no fallar la operación principal
+            System.err.println("Error al registrar historial de carga de productos en creación de producto: " + e.getMessage());
+        }
         
         // Crear notificación de producto creado
         notificacionService.crearNotificacionProductoActualizado(empresaId, productoDTO.getNombre(), "Producto creado");
@@ -203,6 +243,55 @@ public class ProductoService {
             } catch (Exception e) {
                 // Log del error pero no fallar la operación principal
                 System.err.println("Error al registrar historial de inventario: " + e.getMessage());
+            }
+            
+            // Registrar el cambio de stock en el historial de carga de productos
+            try {
+                // Determinar el tipo de operación basado en si aumentó o disminuyó el stock
+                HistorialCargaProductos.TipoOperacion tipoOperacion = productoDTO.getStock() > stockAnterior ? 
+                    HistorialCargaProductos.TipoOperacion.REPOSICION : 
+                    HistorialCargaProductos.TipoOperacion.AJUSTE_NEGATIVO;
+                
+                // Obtener el usuario si está disponible
+                Usuario usuario = null;
+                if (usuarioId != null) {
+                    usuario = usuarioRepository.findById(usuarioId).orElse(null);
+                }
+                
+                // Crear el registro de historial para el cambio de stock
+                HistorialCargaProductos historial = new HistorialCargaProductos();
+                historial.setProducto(productoActualizado);
+                historial.setUsuario(usuario);
+                historial.setEmpresa(productoActualizado.getEmpresa());
+                historial.setTipoOperacion(tipoOperacion);
+                historial.setCantidad(Math.abs(productoDTO.getStock() - stockAnterior));
+                historial.setStockAnterior(stockAnterior);
+                historial.setStockNuevo(productoDTO.getStock());
+                historial.setPrecioUnitario(producto.getPrecio() != null ? producto.getPrecio() : BigDecimal.ZERO);
+                historial.setValorTotal(
+                    (producto.getPrecio() != null ? producto.getPrecio() : BigDecimal.ZERO)
+                    .multiply(BigDecimal.valueOf(Math.abs(productoDTO.getStock() - stockAnterior)))
+                );
+                historial.setObservacion("Actualización de stock de producto");
+                historial.setMetodoEntrada("MANUAL");
+                historial.setCodigoBarras(producto.getCodigoBarras());
+                historial.setFechaOperacion(LocalDateTime.now());
+                
+                // Usar el método del servicio en lugar de acceder directamente al repositorio
+                historialCargaProductosService.registrarOperacion(
+                    empresaId,
+                    productoActualizado.getId(),
+                    usuarioId,
+                    tipoOperacion,
+                    Math.abs(productoDTO.getStock() - stockAnterior),
+                    producto.getPrecio() != null ? producto.getPrecio() : BigDecimal.ZERO,
+                    "Actualización de stock de producto",
+                    "MANUAL",
+                    producto.getCodigoBarras()
+                );
+            } catch (Exception e) {
+                // Log del error pero no fallar la operación principal
+                System.err.println("Error al registrar historial de carga de productos en actualización: " + e.getMessage());
             }
         }
         
@@ -448,6 +537,47 @@ public class ProductoService {
     public Optional<ProductoDTO> buscarProductoPorCodigoBarras(Long empresaId, String codigoBarras) {
         Optional<Producto> producto = productoRepository.findByEmpresaIdAndCodigoBarras(empresaId, codigoBarras).stream().findFirst();
         return producto.map(this::convertirADTO);
+    }
+
+    /**
+     * Genera un código de barras único para la empresa
+     */
+    public String generarCodigoBarras(Long empresaId) {
+        String codigo;
+        boolean esUnico = false;
+        int intentos = 0;
+        final int MAX_INTENTOS = 10;
+        
+        do {
+            // Generar código con formato: EMP-{empresaId}-{timestamp}-{random}
+            long timestamp = System.currentTimeMillis();
+            int random = new Random().nextInt(1000);
+            codigo = String.format("EMP-%d-%d-%03d", empresaId, timestamp, random);
+            
+            // Verificar que sea único en la empresa
+            List<Producto> productosConMismoCodigo = productoRepository.findByEmpresaIdAndCodigoBarras(empresaId, codigo);
+            esUnico = productosConMismoCodigo.isEmpty();
+            
+            intentos++;
+        } while (!esUnico && intentos < MAX_INTENTOS);
+        
+        if (!esUnico) {
+            // Si no se pudo generar uno único, usar UUID
+            codigo = "EMP-" + empresaId + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+        
+        return codigo;
+    }
+
+    /**
+     * Verifica si un código de barras ya existe en la empresa
+     */
+    public boolean codigoBarrasExiste(Long empresaId, String codigoBarras) {
+        if (codigoBarras == null || codigoBarras.trim().isEmpty()) {
+            return false;
+        }
+        List<Producto> productos = productoRepository.findByEmpresaIdAndCodigoBarras(empresaId, codigoBarras.trim());
+        return !productos.isEmpty();
     }
 
     private ProductoDTO convertirADTO(Producto producto) {

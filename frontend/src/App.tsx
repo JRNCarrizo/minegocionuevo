@@ -16,6 +16,7 @@ import ConfiguracionEmpresa from './pages/admin/ConfiguracionEmpresa.tsx';
 import CajaRapida from './pages/admin/CajaRapida.tsx';
 import HistorialVentasRapidas from './pages/admin/HistorialVentasRapidas.tsx';
 import ControlInventario from './pages/admin/ControlInventario.tsx';
+import HistorialCargaProductos from './pages/admin/HistorialCargaProductos.tsx';
 import CatalogoPublico from './pages/CatalogoPublico.tsx';
 import ProductoPublico from './pages/ProductoPublico.tsx';
 import LoginCliente from './pages/LoginCliente.tsx';
@@ -55,6 +56,7 @@ function AppContent() {
           <Route path="/admin/caja-rapida" element={<CajaRapida />} />
           <Route path="/admin/historial-ventas" element={<HistorialVentasRapidas />} />
           <Route path="/admin/control-inventario" element={<ControlInventario />} />
+          <Route path="/admin/historial-carga-productos" element={<HistorialCargaProductos />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
       ) : (
