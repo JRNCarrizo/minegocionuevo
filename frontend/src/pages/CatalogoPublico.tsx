@@ -13,7 +13,7 @@ import { FaInstagram, FaFacebook, FaShoppingCart } from 'react-icons/fa';
 
 export default function CatalogoPublico() {
   const { empresa, subdominio, cargando: cargandoEmpresa } = useSubdominio();
-  const { addToCart } = useCart();
+  const { addToCart, updateQuantity, items } = useCart();
   const { isMobile, isTablet } = useResponsive();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -251,8 +251,8 @@ export default function CatalogoPublico() {
             <FaShoppingCart size={isMobile ? 24 : 28} color="white" />
             
             {/* Badge con cantidad de items */}
-            {/* items.reduce((sum, item) => sum + item.cantidad, 0) > 0 && ( */}
-            {/*   <div style={{
+            {items && items.reduce((sum, item) => sum + item.cantidad, 0) > 0 && (
+              <div style={{
                 position: 'absolute',
                 top: isMobile ? '-6px' : '-8px',
                 right: isMobile ? '-6px' : '-8px',
@@ -271,7 +271,7 @@ export default function CatalogoPublico() {
               }}>
                 {items.reduce((sum, item) => sum + item.cantidad, 0)}
               </div>
-            ) */}
+            )}
           </div>
           
           {/* Tooltip */}
@@ -300,7 +300,7 @@ export default function CatalogoPublico() {
             e.currentTarget.style.transform = 'translateY(10px)';
           }}
           >
-            Ver carrito ({/* items.reduce((sum, item) => sum + item.cantidad, 0) */} unidades)
+            Ver carrito ({items.reduce((sum, item) => sum + item.cantidad, 0)} unidades)
             <div style={{
               position: 'absolute',
               top: '100%',
@@ -895,19 +895,21 @@ export default function CatalogoPublico() {
           </div>
         ) : (
           <div style={{
-            display: vista === 'lista' ? 'flex' : 'grid',
-            gridTemplateColumns: vista === 'intermedia' ? 
-              (isMobile ? 'repeat(auto-fill, minmax(200px, 1fr))' : isTablet ? 'repeat(auto-fill, minmax(200px, 1fr))' : 'repeat(auto-fill, minmax(250px, 1fr))') : 
-              vista === 'grande' ? 
-              (isMobile ? 'repeat(auto-fill, minmax(280px, 1fr))' : isTablet ? 'repeat(auto-fill, minmax(250px, 1fr))' : 'repeat(auto-fill, minmax(320px, 1fr))') : 
-              'none',
-            flexDirection: vista === 'lista' ? 'column' : 'unset',
+            display: (vista === 'lista' && !isMobile) ? 'grid' : (vista === 'lista' ? 'flex' : 'grid'),
+            gridTemplateColumns: (vista === 'lista' && !isMobile)
+              ? 'repeat(2, 1fr)'
+              : vista === 'intermedia'
+                ? (isMobile ? 'repeat(auto-fill, minmax(200px, 1fr))' : isTablet ? 'repeat(auto-fill, minmax(200px, 1fr))' : 'repeat(auto-fill, minmax(250px, 1fr))')
+                : vista === 'grande'
+                  ? (isMobile ? 'repeat(auto-fill, minmax(280px, 1fr))' : isTablet ? 'repeat(auto-fill, minmax(250px, 1fr))' : 'repeat(auto-fill, minmax(320px, 1fr))')
+                  : 'none',
+            flexDirection: (vista === 'lista' && isMobile) ? 'column' : 'unset',
             gap: vista === 'lista' ? (isMobile ? '12px' : '16px') : (isMobile ? '16px' : isTablet ? '16px' : '20px'),
             marginBottom: '40px',
             justifyContent: isMobile ? 'center' : 'start'
           }}>
             {productos.map(producto => {
-              const cantidadEnCarrito = /* items.find(i => i.id === producto.id)?.cantidad || 0; */ 0; // Assuming items is not available here, so default to 0
+              const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
 
               return (
                 <div key={producto.id} style={{
@@ -1175,25 +1177,10 @@ export default function CatalogoPublico() {
                               Cantidad:
                             </span>
                             <button
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.stopPropagation();
-                                console.log('Botón menos clickeado');
-                                console.log('Producto ID:', producto.id);
-                                console.log('Cantidad actual:', cantidadEnCarrito);
-                                console.log('Stock disponible:', producto.stock);
                                 if (cantidadEnCarrito > 0) {
-                                  // Actualizar directamente el estado del carrito
-                                  // const newItems = items.map(item => 
-                                  //   item.id === producto.id 
-                                  //     ? { ...item, cantidad: item.cantidad - 1 }
-                                  //     : item
-                                  // ).filter(item => item.cantidad > 0);
-                                  
-                                  // // Actualizar localStorage
-                                  // localStorage.setItem('cart', JSON.stringify(newItems));
-                                  
-                                  // // Forzar re-render
-                                  // window.dispatchEvent(new Event('storage'));
+                                  await updateQuantity(producto.id, cantidadEnCarrito - 1);
                                 }
                               }}
                               disabled={cantidadEnCarrito === 0}
@@ -1246,34 +1233,14 @@ export default function CatalogoPublico() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                console.log('Botón más clickeado');
-                                console.log('Producto ID:', producto.id);
-                                console.log('Cantidad actual:', cantidadEnCarrito);
-                                console.log('Stock disponible:', producto.stock);
                                 if (cantidadEnCarrito < producto.stock) {
-                                  // Actualizar directamente el estado del carrito
-                                  // const newItems = items.map(item => 
-                                  //   item.id === producto.id 
-                                  //     ? { ...item, cantidad: item.cantidad + 1 }
-                                  //     : item
-                                  // );
-                                  
-                                  // // Si el producto no está en el carrito, agregarlo
-                                  // if (!items.find(item => item.id === producto.id)) {
-                                  //   newItems.push({
-                                  //     id: producto.id,
-                                  //     nombre: producto.nombre,
-                                  //     precio: producto.precio,
-                                  //     cantidad: 1,
-                                  //     imagen: producto.imagenes && producto.imagenes[0]
-                                  //   });
-                                  // }
-                                  
-                                  // // Actualizar localStorage
-                                  // localStorage.setItem('cart', JSON.stringify(newItems));
-                                  
-                                  // // Forzar re-render
-                                  // window.dispatchEvent(new Event('storage'));
+                                  addToCart({
+                                    id: producto.id,
+                                    nombre: producto.nombre,
+                                    precio: producto.precio,
+                                    cantidad: 1,
+                                    imagen: producto.imagenes && producto.imagenes[0]
+                                  });
                                 }
                               }}
                               disabled={cantidadEnCarrito >= producto.stock}
