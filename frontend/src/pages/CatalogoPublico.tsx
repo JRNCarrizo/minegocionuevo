@@ -13,7 +13,7 @@ import { FaInstagram, FaFacebook, FaShoppingCart } from 'react-icons/fa';
 
 export default function CatalogoPublico() {
   const { empresa, subdominio, cargando: cargandoEmpresa } = useSubdominio();
-  const { addToCart, updateQuantity, items } = useCart();
+  const { addToCart, items, updateQuantity } = useCart();
   const { isMobile, isTablet } = useResponsive();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -27,12 +27,12 @@ export default function CatalogoPublico() {
   type VistaProducto = 'lista' | 'intermedia' | 'grande';
   const [vista, setVista] = useState<VistaProducto>('intermedia');
 
-  // Cambiar automáticamente a vista grande en móvil y ocultar opciones de vista
-  useEffect(() => {
-    if (isMobile) {
-      setVista('grande');
-    }
-  }, [isMobile]);
+  // Permitir todas las vistas en móvil
+  // useEffect(() => {
+  //   if (isMobile) {
+  //     setVista('lista');
+  //   }
+  // }, [isMobile]);
   const [showProductoModal, setShowProductoModal] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<number | null>(null);
 
@@ -251,7 +251,7 @@ export default function CatalogoPublico() {
             <FaShoppingCart size={isMobile ? 24 : 28} color="white" />
             
             {/* Badge con cantidad de items */}
-            {items && items.reduce((sum, item) => sum + item.cantidad, 0) > 0 && (
+                        {items.reduce((sum, item) => sum + item.cantidad, 0) > 0 && (
               <div style={{
                 position: 'absolute',
                 top: isMobile ? '-6px' : '-8px',
@@ -683,36 +683,37 @@ export default function CatalogoPublico() {
             flexDirection: isMobile ? 'column' : 'row',
             gap: isMobile ? '16px' : '0'
           }}>
-            {/* Opciones de vista - solo en desktop */}
-            {!isMobile && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                flexWrap: 'wrap',
-                justifyContent: 'flex-start'
-              }}>
-                <span style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: empresa?.colorTexto || '#64748b'
-                }}>
-                  Vista:
-                </span>
-                <button
-                  onClick={() => setVista('lista')}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '2px solid',
-                    background: vista === 'lista' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
-                    borderColor: vista === 'lista' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
-                    color: vista === 'lista' ? 'white' : (empresa?.colorTexto || '#64748b'),
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    fontSize: '14px',
-                    fontWeight: '600'
-                  }}
+            {/* Opciones de vista - ahora también en móvil */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: isMobile ? '8px' : '8px',
+              flexWrap: 'wrap',
+              justifyContent: isMobile ? 'center' : 'flex-start',
+              width: '100%'
+            }}>
+                                  <span style={{
+                    fontSize: isMobile ? '14px' : '16px',
+                    fontWeight: '600',
+                    color: empresa?.colorTexto || '#64748b'
+                  }}>
+                    Vista:
+                  </span>
+                  <button
+                    onClick={() => setVista('lista')}
+                    style={{
+                      padding: isMobile ? '8px 12px' : '8px 12px',
+                      borderRadius: '8px',
+                      border: '2px solid',
+                      background: vista === 'lista' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : (isMobile ? '#f8fafc' : 'transparent'),
+                      borderColor: vista === 'lista' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
+                      color: vista === 'lista' ? 'white' : (empresa?.colorTexto || '#64748b'),
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      fontSize: isMobile ? '14px' : '14px',
+                      fontWeight: '600',
+                      boxShadow: isMobile ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                    }}
                   onMouseOver={(e) => {
                     if (vista !== 'lista') {
                       e.currentTarget.style.borderColor = empresa?.colorPrimario || '#667eea';
@@ -726,20 +727,20 @@ export default function CatalogoPublico() {
                     }
                   }}
                 >
-                  📋 Lista
+                  {isMobile ? '📋' : '📋 Lista'}
                 </button>
                 <button
                   onClick={() => setVista('intermedia')}
                   style={{
-                    padding: '8px 12px',
+                    padding: isMobile ? '8px 12px' : '8px 12px',
                     borderRadius: '8px',
                     border: '2px solid',
-                    background: vista === 'intermedia' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
+                    background: vista === 'intermedia' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : (isMobile ? '#f8fafc' : 'transparent'),
                     borderColor: vista === 'intermedia' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
                     color: vista === 'intermedia' ? 'white' : (empresa?.colorTexto || '#64748b'),
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    fontSize: '14px',
+                    fontSize: isMobile ? '14px' : '14px',
                     fontWeight: '600'
                   }}
                   onMouseOver={(e) => {
@@ -755,20 +756,20 @@ export default function CatalogoPublico() {
                     }
                   }}
                 >
-                  📱 Intermedia
+                  {isMobile ? '📱' : '📱 Intermedia'}
                 </button>
                 <button
                   onClick={() => setVista('grande')}
                   style={{
-                    padding: '8px 12px',
+                    padding: isMobile ? '8px 12px' : '8px 12px',
                     borderRadius: '8px',
                     border: '2px solid',
-                    background: vista === 'grande' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : 'transparent',
+                    background: vista === 'grande' ? `linear-gradient(135deg, ${empresa?.colorPrimario || '#667eea'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#764ba2'} 100%)` : (isMobile ? '#f8fafc' : 'transparent'),
                     borderColor: vista === 'grande' ? (empresa?.colorPrimario || '#667eea') : (empresa?.colorSecundario ? `${empresa.colorSecundario}40` : '#e2e8f0'),
                     color: vista === 'grande' ? 'white' : (empresa?.colorTexto || '#64748b'),
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    fontSize: '14px',
+                    fontSize: isMobile ? '14px' : '14px',
                     fontWeight: '600'
                   }}
                   onMouseOver={(e) => {
@@ -784,10 +785,9 @@ export default function CatalogoPublico() {
                     }
                   }}
                 >
-                  ⊞ Grande
+                  {isMobile ? '⊞' : '⊞ Grande'}
                 </button>
               </div>
-            )}
             
             <div style={{
               fontSize: isMobile ? '12px' : '14px',
@@ -895,18 +895,19 @@ export default function CatalogoPublico() {
           </div>
         ) : (
           <div style={{
-            display: (vista === 'lista' && !isMobile) ? 'grid' : (vista === 'lista' ? 'flex' : 'grid'),
-            gridTemplateColumns: (vista === 'lista' && !isMobile)
-              ? 'repeat(2, 1fr)'
-              : vista === 'intermedia'
-                ? (isMobile ? 'repeat(auto-fill, minmax(200px, 1fr))' : isTablet ? 'repeat(auto-fill, minmax(200px, 1fr))' : 'repeat(auto-fill, minmax(250px, 1fr))')
-                : vista === 'grande'
-                  ? (isMobile ? 'repeat(auto-fill, minmax(280px, 1fr))' : isTablet ? 'repeat(auto-fill, minmax(250px, 1fr))' : 'repeat(auto-fill, minmax(320px, 1fr))')
-                  : 'none',
-            flexDirection: (vista === 'lista' && isMobile) ? 'column' : 'unset',
-            gap: vista === 'lista' ? (isMobile ? '12px' : '16px') : (isMobile ? '16px' : isTablet ? '16px' : '20px'),
+            display: vista === 'lista' ? 'flex' : 'grid',
+            gridTemplateColumns: vista === 'lista' ? 
+              'none' :
+              vista === 'intermedia' ? 
+              (isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(auto-fill, minmax(200px, 1fr))' : 'repeat(auto-fill, minmax(250px, 1fr))') : 
+              vista === 'grande' ? 
+              (isMobile ? 'repeat(1, 1fr)' : isTablet ? 'repeat(auto-fill, minmax(250px, 1fr))' : 'repeat(auto-fill, minmax(320px, 1fr))') : 
+              'none',
+            flexDirection: vista === 'lista' ? 'row' : 'unset',
+            gap: vista === 'lista' ? '12px' : (isMobile ? (vista === 'grande' ? '16px' : '12px') : isTablet ? '16px' : '20px'),
             marginBottom: '40px',
-            justifyContent: isMobile ? 'center' : 'start'
+            justifyContent: isMobile ? 'center' : 'start',
+            flexWrap: vista === 'lista' ? 'wrap' : 'unset'
           }}>
             {productos.map(producto => {
               const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
@@ -924,8 +925,10 @@ export default function CatalogoPublico() {
                   display: vista === 'lista' ? 'flex' : 'block',
                   alignItems: vista === 'lista' ? 'stretch' : 'unset',
                   gap: vista === 'lista' ? '0' : 'unset',
-                  height: vista === 'lista' ? (isMobile ? '140px' : '160px') : 'auto',
-                  color: empresa?.colorTexto || '#1e293b'
+                  height: vista === 'lista' ? '120px' : 'auto',
+                  color: empresa?.colorTexto || '#1e293b',
+                  width: vista === 'lista' ? (isMobile ? '100%' : 'calc(50% - 6px)') : '100%',
+                  minWidth: vista === 'lista' ? (isMobile ? 0 : '300px') : 0
                 }}
                 onClick={(e) => {
                   // Solo abrir modal si no se hizo clic en el botón de agregar al carrito
@@ -946,11 +949,11 @@ export default function CatalogoPublico() {
                   {/* Imagen del producto */}
                   <div style={{ 
                     position: 'relative', 
-                    width: '100%',
-                    aspectRatio: vista === 'lista' ? undefined : '1 / 1',
-                    height: vista === 'lista' ? (isMobile ? '140px' : '160px') : undefined,
-                    minWidth: vista === 'lista' ? (isMobile ? '140px' : '160px') : undefined,
-                    maxWidth: vista === 'lista' ? (isMobile ? '140px' : '160px') : undefined,
+                    width: vista === 'lista' ? '120px' : '100%',
+                    aspectRatio: vista === 'lista' ? '1 / 1' : '1 / 1',
+                    height: vista === 'lista' ? '120px' : undefined,
+                    minWidth: vista === 'lista' ? '120px' : undefined,
+                    maxWidth: vista === 'lista' ? '120px' : undefined,
                     overflow: 'hidden',
                     flexShrink: 0,
                     borderRadius: vista === 'lista' ? '0' : (isMobile ? '8px 8px 0 0' : '12px 12px 0 0'),
@@ -1046,45 +1049,45 @@ export default function CatalogoPublico() {
                   {/* Contenido principal */}
                   <div style={{ 
                     flex: 1,
-                    padding: vista === 'lista' ? 
-                    (isMobile ? '12px' : '16px') : 
+                    padding: vista === 'lista' ? '12px' : 
                     vista === 'intermedia' ? 
-                    (isMobile ? '20px' : '20px') : 
-                    (isMobile ? '24px' : '24px'),
+                    (isMobile ? '12px' : '20px') : 
+                    (isMobile ? '20px' : '24px'),
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: vista === 'lista' ? 'space-between' : 'space-between',
-                    height: vista === 'lista' ? '160px' : 'auto'
+                    height: vista === 'lista' ? '100%' : 'auto'
                   }}>
                     {/* Layout horizontal para vista de lista */}
                     <div style={{
                       display: 'flex',
                       flexDirection: vista === 'lista' ? 'row' : 'column',
                       justifyContent: vista === 'lista' ? 'space-between' : 'space-between',
-                      alignItems: vista === 'lista' ? 'center' : 'stretch',
+                      alignItems: vista === 'lista' ? 'stretch' : 'stretch',
                       height: vista === 'lista' ? '100%' : 'auto',
-                      gap: vista === 'lista' ? '16px' : '0'
+                      gap: vista === 'lista' ? '12px' : '0'
                     }}>
                       {/* Información del producto */}
-                      <div style={{
-                        flex: vista === 'lista' ? '1' : 'none',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        height: vista === 'lista' ? '100%' : 'auto'
-                      }}>
+                                              <div style={{
+                          flex: vista === 'lista' ? '1' : 'none',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          height: vista === 'lista' ? '100%' : 'auto',
+                          minWidth: 0
+                        }}>
                         <div>
                           <h3 style={{
-                            margin: '0 0 8px 0',
-                            fontSize: vista === 'lista' ? '16px' : vista === 'intermedia' ? (isMobile ? '16px' : '18px') : (isMobile ? '18px' : '20px'),
+                            margin: '0 0 4px 0',
+                            fontSize: vista === 'lista' ? '14px' : vista === 'intermedia' ? (isMobile ? '15px' : '18px') : (isMobile ? '16px' : '20px'),
                             fontWeight: '700',
                             color: empresa?.colorTexto || '#1e293b',
-                            lineHeight: '1.3',
+                            lineHeight: '1.2',
                             display: '-webkit-box',
-                            WebkitLineClamp: vista === 'lista' ? 1 : vista === 'intermedia' ? 2 : 3,
+                            WebkitLineClamp: vista === 'lista' ? 2 : vista === 'intermedia' ? 2 : 3,
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
-                            textAlign: isMobile ? 'center' : 'left'
+                            textAlign: 'left'
                           }}>
                             {producto.nombre}
                           </h3>
@@ -1093,7 +1096,7 @@ export default function CatalogoPublico() {
                           <div style={{ 
                             display: 'flex', 
                             gap: '6px', 
-                            marginBottom: vista === 'lista' ? '8px' : vista === 'intermedia' ? '12px' : '16px', 
+                            marginBottom: vista === 'lista' ? '8px' : vista === 'intermedia' ? (isMobile ? '8px' : '12px') : '16px', 
                             flexWrap: 'wrap',
                             justifyContent: isMobile ? 'center' : 'flex-start'
                           }}>
@@ -1103,7 +1106,7 @@ export default function CatalogoPublico() {
                                 color: '#1e40af',
                                 padding: '3px 8px',
                                 borderRadius: '8px',
-                                fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '12px' : '14px',
+                                fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? (isMobile ? '10px' : '12px') : (isMobile ? '12px' : '14px'),
                                 fontWeight: '600',
                                 border: '1px solid #93c5fd'
                               }}>
@@ -1117,7 +1120,7 @@ export default function CatalogoPublico() {
                                 color: '#92400e',
                                 padding: '3px 8px',
                                 borderRadius: '8px',
-                                fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '12px' : '14px',
+                                fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? (isMobile ? '10px' : '12px') : (isMobile ? '12px' : '14px'),
                                 fontWeight: '600',
                                 border: '1px solid #fbbf24'
                               }}>
@@ -1131,10 +1134,10 @@ export default function CatalogoPublico() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: vista === 'lista' ? 'flex-start' : (isMobile ? 'center' : 'space-between'),
-                            marginBottom: vista === 'lista' ? '0' : vista === 'intermedia' ? '16px' : '20px'
+                            marginBottom: vista === 'lista' ? '8px' : vista === 'intermedia' ? (isMobile ? '12px' : '16px') : (isMobile ? '16px' : '20px')
                           }}>
                             <span style={{
-                              fontSize: vista === 'lista' ? '20px' : vista === 'intermedia' ? (isMobile ? '22px' : '24px') : (isMobile ? '26px' : '28px'),
+                              fontSize: vista === 'lista' ? '16px' : vista === 'intermedia' ? (isMobile ? '18px' : '24px') : (isMobile ? '20px' : '28px'),
                               fontWeight: '800',
                               color: empresa?.colorTexto || '#1e293b',
                               textShadow: '0 1px 2px rgba(0,0,0,0.1)'
@@ -1151,56 +1154,58 @@ export default function CatalogoPublico() {
                         <div style={{
                           display: 'flex',
                           flexDirection: vista === 'lista' ? 'column' : 'column',
-                          gap: vista === 'lista' ? '8px' : vista === 'intermedia' ? '12px' : '16px',
-                          alignItems: vista === 'lista' ? 'center' : 'stretch',
-                          justifyContent: vista === 'lista' ? 'center' : 'stretch',
-                          minWidth: vista === 'lista' ? '200px' : undefined,
-                          maxWidth: vista === 'lista' ? '220px' : undefined
+                          gap: vista === 'lista' ? '12px' : vista === 'intermedia' ? (isMobile ? '8px' : '12px') : (isMobile ? '12px' : '16px'),
+                          alignItems: vista === 'lista' ? 'stretch' : 'stretch',
+                          justifyContent: vista === 'lista' ? 'flex-start' : 'stretch',
+                          minWidth: vista === 'lista' ? '120px' : undefined,
+                          maxWidth: vista === 'lista' ? '120px' : undefined,
+                          marginTop: vista === 'lista' ? '0' : '0',
+                          marginBottom: vista === 'lista' ? '0' : '0',
+                          alignSelf: vista === 'lista' ? 'flex-end' : 'stretch',
+                          paddingTop: vista === 'lista' ? '8px' : '0',
+                          paddingBottom: vista === 'lista' ? '8px' : '0'
                         }}>
-                          {/* Controles de cantidad */}
+                          {/* Controles modernos de cantidad */}
                           <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            background: '#f8fafc',
-                            borderRadius: '10px',
-                            padding: '8px 12px',
-                            border: '1px solid #e2e8f0',
-                            width: vista === 'lista' ? '100%' : '100%',
-                            gap: '8px'
+                            background: vista === 'lista' ? 'rgba(255,255,255,0.9)' : '#f8fafc',
+                            borderRadius: '12px',
+                            padding: vista === 'lista' ? '8px 16px' : '8px 12px',
+                            border: vista === 'lista' ? '1px solid rgba(0,0,0,0.1)' : '1px solid #e2e8f0',
+                            gap: '8px',
+                            justifyContent: 'center',
+                            minWidth: vista === 'lista' ? '120px' : 'auto',
+                            height: vista === 'lista' ? '40px' : 'auto',
+                            boxShadow: vista === 'lista' ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
+                            backdropFilter: vista === 'lista' ? 'blur(10px)' : 'none'
                           }}>
-                            <span style={{
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              color: '#374151',
-                              minWidth: '60px'
-                            }}>
-                              Cantidad:
-                            </span>
                             <button
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 if (cantidadEnCarrito > 0) {
-                                  await updateQuantity(producto.id, cantidadEnCarrito - 1);
+                                  await updateQuantity(producto.id, cantidadEnCarrito - 1, undefined, subdominio || undefined);
                                 }
                               }}
                               disabled={cantidadEnCarrito === 0}
                               style={{
-                                width: '32px',
-                                height: '32px',
+                                width: '28px',
+                                height: '28px',
                                 background: cantidadEnCarrito === 0
-                                  ? '#e5e7eb'
+                                  ? 'rgba(0,0,0,0.1)'
                                   : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                color: 'white',
+                                color: cantidadEnCarrito === 0 ? '#6b7280' : 'white',
                                 border: 'none',
                                 borderRadius: '8px',
-                                fontSize: '16px',
+                                fontSize: '14px',
                                 fontWeight: '700',
                                 cursor: cantidadEnCarrito === 0 ? 'not-allowed' : 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                transition: 'all 0.2s ease',
-                                opacity: cantidadEnCarrito === 0 ? 0.5 : 1
+                                transition: 'all 0.3s ease',
+                                opacity: cantidadEnCarrito === 0 ? 0.6 : 1,
+                                boxShadow: cantidadEnCarrito === 0 ? 'none' : '0 2px 8px rgba(239, 68, 68, 0.3)'
                               }}
                               onMouseOver={(e) => {
                                 if (cantidadEnCarrito > 0) {
@@ -1219,48 +1224,56 @@ export default function CatalogoPublico() {
                             <span style={{
                               minWidth: '32px',
                               textAlign: 'center',
-                              fontSize: '16px',
+                              fontSize: '14px',
                               fontWeight: '700',
                               color: '#1e293b',
                               background: 'white',
                               padding: '6px 8px',
                               borderRadius: '6px',
-                              border: '1px solid #d1d5db'
+                              border: '1px solid #e5e7eb',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                             }}>
                               {cantidadEnCarrito}
                             </span>
                             
                             <button
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.stopPropagation();
                                 if (cantidadEnCarrito < producto.stock) {
-                                  addToCart({
-                                    id: producto.id,
-                                    nombre: producto.nombre,
-                                    precio: producto.precio,
-                                    cantidad: 1,
-                                    imagen: producto.imagenes && producto.imagenes[0]
-                                  });
+                                  if (cantidadEnCarrito === 0) {
+                                    // Si no está en el carrito, agregarlo
+                                    await addToCart({
+                                      id: producto.id,
+                                      nombre: producto.nombre,
+                                      precio: producto.precio,
+                                      cantidad: 1,
+                                      imagen: producto.imagenes && producto.imagenes[0]
+                                    }, undefined, subdominio || undefined);
+                                  } else {
+                                    // Si ya está en el carrito, aumentar cantidad
+                                    await updateQuantity(producto.id, cantidadEnCarrito + 1, undefined, subdominio || undefined);
+                                  }
                                 }
                               }}
                               disabled={cantidadEnCarrito >= producto.stock}
                               style={{
-                                width: '32px',
-                                height: '32px',
+                                width: '28px',
+                                height: '28px',
                                 background: cantidadEnCarrito >= producto.stock
-                                  ? '#e5e7eb'
+                                  ? 'rgba(0,0,0,0.1)'
                                   : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                color: 'white',
+                                color: cantidadEnCarrito >= producto.stock ? '#6b7280' : 'white',
                                 border: 'none',
                                 borderRadius: '8px',
-                                fontSize: '16px',
+                                fontSize: '14px',
                                 fontWeight: '700',
                                 cursor: cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                transition: 'all 0.2s ease',
-                                opacity: cantidadEnCarrito >= producto.stock ? 0.5 : 1
+                                transition: 'all 0.3s ease',
+                                opacity: cantidadEnCarrito >= producto.stock ? 0.6 : 1,
+                                boxShadow: cantidadEnCarrito >= producto.stock ? 'none' : '0 2px 8px rgba(16, 185, 129, 0.3)'
                               }}
                               onMouseOver={(e) => {
                                 if (cantidadEnCarrito < producto.stock) {
@@ -1277,31 +1290,35 @@ export default function CatalogoPublico() {
                             </button>
                           </div>
 
-                          {/* Botón agregar al carrito mejorado */}
+                          {/* Botón moderno agregar al carrito */}
                           <button
                             disabled={producto.stock === 0}
-                                                          style={{
-                                width: '100%',
-                                padding: '12px 16px',
-                                background: producto.stock === 0 
-                                  ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-                                  : cantidadEnCarrito > 0
-                                    ? `linear-gradient(135deg, ${empresa?.colorAcento || '#f59e0b'} 0%, ${empresa?.colorAcento ? `${empresa.colorAcento}dd` : '#d97706'} 100%)`
-                                    : `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`,
+                            style={{
+                              padding: vista === 'lista' ? '8px 16px' : '12px 16px',
+                              height: vista === 'lista' ? '40px' : 'auto',
+                              background: producto.stock === 0 
+                                ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+                                : cantidadEnCarrito > 0
+                                  ? `linear-gradient(135deg, ${empresa?.colorAcento || '#f59e0b'} 0%, ${empresa?.colorAcento ? `${empresa.colorAcento}dd` : '#d97706'} 100%)`
+                                  : `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`,
                               color: 'white',
                               border: 'none',
                               borderRadius: '12px',
-                              fontSize: '15px',
-                              fontWeight: '700',
+                              fontSize: vista === 'lista' ? '11px' : '14px',
+                              fontWeight: '600',
                               cursor: producto.stock === 0 ? 'not-allowed' : 'pointer',
                               transition: 'all 0.3s ease',
                               opacity: producto.stock === 0 ? 0.6 : 1,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              gap: '8px',
+                              gap: vista === 'lista' ? '4px' : '8px',
                               position: 'relative',
-                              overflow: 'hidden'
+                              overflow: 'hidden',
+                              minWidth: vista === 'lista' ? '120px' : 'auto',
+                              whiteSpace: 'nowrap',
+                              boxShadow: producto.stock === 0 ? 'none' : '0 4px 12px rgba(0,0,0,0.15)',
+                              backdropFilter: vista === 'lista' ? 'blur(10px)' : 'none'
                             }}
                             onClick={async (e) => {
                               e.stopPropagation();
