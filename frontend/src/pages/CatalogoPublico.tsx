@@ -1092,28 +1092,15 @@ export default function CatalogoPublico() {
                             {producto.nombre}
                           </h3>
                           
-                          {/* Categoría y marca */}
+                          {/* Marca - siempre presente para mantener posición */}
                           <div style={{ 
                             display: 'flex', 
                             gap: '6px', 
                             marginBottom: vista === 'lista' ? '8px' : vista === 'intermedia' ? (isMobile ? '8px' : '12px') : '16px', 
                             flexWrap: 'wrap',
-                            justifyContent: isMobile ? 'center' : 'flex-start'
+                            justifyContent: isMobile ? 'center' : 'flex-start',
+                            minHeight: vista === 'lista' ? '20px' : vista === 'intermedia' ? (isMobile ? '20px' : '24px') : (isMobile ? '24px' : '28px')
                           }}>
-                            {producto.categoria && (
-                              <span style={{
-                                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                                color: '#1e40af',
-                                padding: '3px 8px',
-                                borderRadius: '8px',
-                                fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? (isMobile ? '10px' : '12px') : (isMobile ? '12px' : '14px'),
-                                fontWeight: '600',
-                                border: '1px solid #93c5fd'
-                              }}>
-                                📂 {producto.categoria}
-                              </span>
-                            )}
-                            
                             {producto.marca && (
                               <span style={{
                                 background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
