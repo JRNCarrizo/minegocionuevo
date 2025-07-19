@@ -60,18 +60,28 @@ public class SuperAdminController {
             
             Map<String, Object> dashboard = new HashMap<>();
             dashboard.put("totalEmpresas", todasLasEmpresas.size());
+            dashboard.put("totalUsuarios", 0); // TODO: Implementar conteo de usuarios
+            dashboard.put("totalClientes", 0); // TODO: Implementar conteo de clientes
+            dashboard.put("totalProductos", 0); // TODO: Implementar conteo de productos
+            dashboard.put("totalPedidos", 0); // TODO: Implementar conteo de pedidos
+            dashboard.put("totalVentasRapidas", 0); // TODO: Implementar conteo de ventas rápidas
             dashboard.put("empresasActivas", empresasActivas);
-            dashboard.put("empresasInactivas", empresasInactivas);
-            dashboard.put("empresas", todasLasEmpresas.stream().map(empresa -> {
-                Map<String, Object> empresaMap = new HashMap<>();
-                empresaMap.put("id", empresa.getId());
-                empresaMap.put("nombre", empresa.getNombre());
-                empresaMap.put("subdominio", empresa.getSubdominio());
-                empresaMap.put("email", empresa.getEmail());
-                empresaMap.put("activa", empresa.getActiva());
-                empresaMap.put("fechaCreacion", empresa.getFechaCreacion());
-                return empresaMap;
-            }).toList());
+            dashboard.put("empresasEnPrueba", 0); // TODO: Implementar conteo de empresas en prueba
+            dashboard.put("empresasSuspendidas", 0); // TODO: Implementar conteo de empresas suspendidas
+            dashboard.put("empresasCanceladas", 0); // TODO: Implementar conteo de empresas canceladas
+            dashboard.put("empresasPorExpirar", 0); // TODO: Implementar conteo de empresas por expirar
+            dashboard.put("ingresosMensuales", 0.0); // TODO: Implementar cálculo de ingresos
+            dashboard.put("ingresosAnuales", 0.0); // TODO: Implementar cálculo de ingresos
+            dashboard.put("ingresosTotales", 0.0); // TODO: Implementar cálculo de ingresos
+            dashboard.put("promedioIngresosPorEmpresa", 0.0); // TODO: Implementar cálculo
+            dashboard.put("tasaConversionPrueba", 0.0); // TODO: Implementar cálculo
+            dashboard.put("nuevasEmpresasEsteMes", 0); // TODO: Implementar conteo
+            dashboard.put("nuevasEmpresasEsteAno", 0); // TODO: Implementar conteo
+            dashboard.put("empresasCanceladasEsteMes", 0); // TODO: Implementar conteo
+            dashboard.put("tasaRetencion", 0.0); // TODO: Implementar cálculo
+            dashboard.put("empresasActivasHoy", empresasActivas); // Usar el conteo actual
+            dashboard.put("empresasInactivasMasDe30Dias", empresasInactivas); // Usar el conteo actual
+            dashboard.put("empresasNuevasEstaSemana", 0); // TODO: Implementar conteo
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Dashboard del Super Admin",
