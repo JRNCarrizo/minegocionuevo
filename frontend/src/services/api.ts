@@ -929,7 +929,7 @@ class ApiService {
 
   // Métodos para Super Admin
   async getSuperAdminDashboard() {
-    const response = await this.api.get('/api/super-admin/dashboard');
+    const response = await this.api.get('/super-admin/dashboard');
     return response.data;
   }
 
