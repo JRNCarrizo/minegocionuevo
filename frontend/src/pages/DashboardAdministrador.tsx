@@ -58,8 +58,14 @@ export default function DashboardAdministrador() {
         const cantidadPedidos = responsePedidos.totalElements || 0;
         
         // Cargar ventas reales
-        const responseVentas = await ApiService.obtenerEstadisticasVentas();
-        const totalVentas = responseVentas.data?.totalVentas || 0;
+        let totalVentas = 0;
+        try {
+          const responseVentas = await ApiService.obtenerEstadisticasVentas();
+          totalVentas = responseVentas.data?.totalVentas || 0;
+        } catch (error) {
+          console.error('Error al cargar estadísticas de ventas:', error);
+          totalVentas = 0;
+        }
         
         setEstadisticas({
           productos: cantidadProductos,
@@ -137,7 +143,7 @@ export default function DashboardAdministrador() {
     },
     {
       titulo: 'Ventas',
-      valor: mostrarVentas ? `$${estadisticas.ventas.toLocaleString()}` : '****',
+      valor: mostrarVentas ? `$${(estadisticas.ventas || 0).toLocaleString()}` : '****',
       icono: '💰',
       color: '#8b5cf6',
       gradiente: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',

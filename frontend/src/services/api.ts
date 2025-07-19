@@ -22,7 +22,7 @@ class ApiService {
   constructor() {
     this.api = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 10000,
+      timeout: 30000, // Aumentado a 30 segundos
       headers: {
         'Content-Type': 'application/json',
       },
@@ -117,6 +117,22 @@ class ApiService {
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
+        console.error('❌ Error en API:', {
+          url: error.config?.url,
+          method: error.config?.method,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          message: error.message,
+          code: error.code
+        });
+
+        // Manejar timeout específicamente
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          console.error('⏰ Timeout en petición:', error.config?.url);
+          // No redirigir en caso de timeout, solo mostrar error
+          return Promise.reject(new Error('La petición tardó demasiado. Intenta de nuevo.'));
+        }
+
         if (error.response?.status === 401) {
           // Token expirado o inválido
           localStorage.removeItem('token');
