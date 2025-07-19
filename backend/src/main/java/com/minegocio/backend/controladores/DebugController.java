@@ -23,8 +23,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import com.minegocio.backend.entidades.HistorialCargaProductos;
 import com.minegocio.backend.repositorios.HistorialCargaProductosRepository;
+import com.minegocio.backend.repositorios.EmpresaRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.minegocio.backend.entidades.Empresa;
 
 @RestController
 @RequestMapping("/api/debug")
@@ -42,6 +46,9 @@ public class DebugController {
     
     @Autowired
     private HistorialCargaProductosRepository historialCargaProductosRepository;
+    
+    @Autowired
+    private EmpresaRepository empresaRepository;
 
     /**
      * Lista todos los usuarios en la base de datos
@@ -888,6 +895,425 @@ public class DebugController {
             System.err.println("=== ERROR GENERAL EN MIGRACIÓN ===");
             System.err.println("Error: " + e.getMessage());
             e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint temporal para actualizar la contraseña del super admin
+     */
+    @PostMapping("/actualizar-super-admin")
+    public ResponseEntity<?> actualizarSuperAdmin() {
+        try {
+            // Buscar el usuario super admin
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail("jrncarrizo@gmail.com");
+            
+            if (usuarioOpt.isPresent()) {
+                Usuario usuario = usuarioOpt.get();
+                
+                // Actualizar la contraseña (hash para: 32691240Jor)
+                String nuevaPassword = "$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG";
+                usuario.setPassword(nuevaPassword);
+                
+                usuarioRepository.save(usuario);
+                
+                return ResponseEntity.ok(Map.of(
+                    "mensaje", "Contraseña del super admin actualizada correctamente",
+                    "email", usuario.getEmail(),
+                    "rol", usuario.getRol()
+                ));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al actualizar: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint para generar hash y actualizar la contraseña del super admin
+     */
+    @PostMapping("/fix-super-admin-password")
+    public ResponseEntity<?> fixSuperAdminPassword(@RequestParam(defaultValue = "32691240Jor") String password) {
+        try {
+            // Buscar el usuario super admin
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail("jrncarrizo@gmail.com");
+            
+            if (usuarioOpt.isPresent()) {
+                Usuario usuario = usuarioOpt.get();
+                
+                // Generar el hash correcto para la contraseña
+                BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+                String hashedPassword = encoder.encode(password);
+                
+                // Actualizar la contraseña
+                usuario.setPassword(hashedPassword);
+                usuarioRepository.save(usuario);
+                
+                // Verificar que funciona
+                boolean matches = encoder.matches(password, hashedPassword);
+                
+                return ResponseEntity.ok(Map.of(
+                    "mensaje", "Contraseña del super admin actualizada correctamente",
+                    "email", usuario.getEmail(),
+                    "rol", usuario.getRol(),
+                    "password_usada", password,
+                    "hash_generado", hashedPassword,
+                    "verificacion", matches
+                ));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al actualizar: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint GET simple para arreglar la contraseña del super admin
+     */
+    @GetMapping("/fix-password")
+    public ResponseEntity<?> fixPassword() {
+        try {
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail("jrncarrizo@gmail.com");
+            
+            if (usuarioOpt.isPresent()) {
+                Usuario usuario = usuarioOpt.get();
+                
+                // Hash correcto para: 32691240Jor (generado en tiempo real)
+                String newPassword = "$2a$10$Pu4TqrmVkrsfwD1WBRq0Ruin3w96eJSPuLDScl0igGiSH/8os9jwi";
+                usuario.setPassword(newPassword);
+                usuarioRepository.save(usuario);
+                
+                return ResponseEntity.ok("✅ Contraseña actualizada. Usa: jrncarrizo@gmail.com / 32691240Jor");
+            } else {
+                return ResponseEntity.ok("❌ Usuario no encontrado");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.ok("❌ Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Endpoint para generar el hash correcto para 32691240Jor
+     */
+    @GetMapping("/generate-hash")
+    public ResponseEntity<?> generateHash() {
+        try {
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            String password = "32691240Jor";
+            String hash = encoder.encode(password);
+            
+            // Verificar que funciona
+            boolean matches = encoder.matches(password, hash);
+            
+            return ResponseEntity.ok(Map.of(
+                "password", password,
+                "hash", hash,
+                "verificacion", matches,
+                "mensaje", "Hash generado correctamente"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.ok("❌ Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Endpoint para verificar el token JWT y roles del usuario
+     */
+    @GetMapping("/verificar-token")
+    public ResponseEntity<?> verificarToken() {
+        try {
+            // Obtener el contexto de seguridad actual
+            var authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication != null && authentication.isAuthenticated() && 
+                !"anonymousUser".equals(authentication.getName())) {
+                
+                return ResponseEntity.ok(Map.of(
+                    "usuario", authentication.getName(),
+                    "roles", authentication.getAuthorities().stream()
+                        .map(Object::toString)
+                        .collect(java.util.stream.Collectors.toList()),
+                    "autenticado", true,
+                    "tipo", authentication.getClass().getSimpleName()
+                ));
+            } else {
+                return ResponseEntity.ok(Map.of(
+                    "autenticado", false,
+                    "usuario", authentication != null ? authentication.getName() : "null",
+                    "mensaje", "Usuario no autenticado o anónimo"
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of(
+                "error", e.getMessage(),
+                "autenticado", false
+            ));
+        }
+    }
+
+    /**
+     * Crea o actualiza un usuario SUPER_ADMIN
+     */
+    @PostMapping("/crear-super-admin")
+    public ResponseEntity<?> crearSuperAdmin() {
+        try {
+            // Buscar si ya existe el usuario
+            Optional<Usuario> usuarioExistente = usuarioRepository.findByEmail("jrncarrizo@gmail.com");
+            
+            if (usuarioExistente.isPresent()) {
+                // Actualizar usuario existente
+                Usuario usuario = usuarioExistente.get();
+                usuario.setRol(Usuario.RolUsuario.SUPER_ADMIN);
+                usuario.setActivo(true);
+                usuario.setEmailVerificado(true);
+                
+                // Generar hash para la contraseña: 32691240Jor
+                String nuevaPassword = "32691240Jor";
+                String nuevoHash = passwordEncoder.encode(nuevaPassword);
+                usuario.setPassword(nuevoHash);
+                
+                usuarioRepository.save(usuario);
+                
+                return ResponseEntity.ok(Map.of(
+                    "mensaje", "Usuario SUPER_ADMIN actualizado correctamente",
+                    "email", usuario.getEmail(),
+                    "rol", usuario.getRol().name(),
+                    "password", nuevaPassword,
+                    "accion", "actualizado"
+                ));
+            } else {
+                // Crear nuevo usuario SUPER_ADMIN
+                // Primero necesitamos una empresa (crear una empresa del sistema)
+                Empresa empresaSistema = new Empresa();
+                empresaSistema.setNombre("Sistema MiNegocio");
+                empresaSistema.setSubdominio("sistema");
+                empresaSistema.setEmail("sistema@minegocio.com");
+                empresaSistema.setTelefono("+34 000 000 000");
+                empresaSistema.setDescripcion("Empresa del sistema para super administradores");
+                empresaSistema.setColorPrimario("#1f2937");
+                empresaSistema.setColorSecundario("#374151");
+                empresaSistema.setEstadoSuscripcion(Empresa.EstadoSuscripcion.ACTIVA);
+                empresaSistema.setActiva(true);
+                
+                // Guardar la empresa del sistema
+                empresaRepository.save(empresaSistema);
+                
+                // Crear el usuario SUPER_ADMIN
+                Usuario superAdmin = new Usuario();
+                superAdmin.setNombre("Super");
+                superAdmin.setApellidos("Administrador");
+                superAdmin.setEmail("jrncarrizo@gmail.com");
+                superAdmin.setTelefono("+34 000 000 000");
+                superAdmin.setRol(Usuario.RolUsuario.SUPER_ADMIN);
+                superAdmin.setActivo(true);
+                superAdmin.setEmailVerificado(true);
+                
+                // Generar hash para la contraseña
+                String password = "32691240Jor";
+                String hash = passwordEncoder.encode(password);
+                superAdmin.setPassword(hash);
+                
+                // Asignar empresa del sistema
+                superAdmin.setEmpresa(empresaSistema);
+                
+                usuarioRepository.save(superAdmin);
+                
+                return ResponseEntity.ok(Map.of(
+                    "mensaje", "Usuario SUPER_ADMIN creado correctamente",
+                    "email", superAdmin.getEmail(),
+                    "rol", superAdmin.getRol().name(),
+                    "password", password,
+                    "accion", "creado"
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al crear/actualizar SUPER_ADMIN: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Verifica el estado del usuario SUPER_ADMIN
+     */
+    @GetMapping("/verificar-super-admin")
+    public ResponseEntity<?> verificarSuperAdmin() {
+        try {
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail("jrncarrizo@gmail.com");
+            
+            if (usuarioOpt.isPresent()) {
+                Usuario usuario = usuarioOpt.get();
+                
+                Map<String, Object> resultado = new HashMap<>();
+                resultado.put("existe", true);
+                resultado.put("email", usuario.getEmail());
+                resultado.put("nombre", usuario.getNombre());
+                resultado.put("apellidos", usuario.getApellidos());
+                resultado.put("rol", usuario.getRol().name());
+                resultado.put("activo", usuario.getActivo());
+                resultado.put("emailVerificado", usuario.getEmailVerificado());
+                resultado.put("empresaId", usuario.getEmpresa() != null ? usuario.getEmpresa().getId() : null);
+                resultado.put("empresaNombre", usuario.getEmpresa() != null ? usuario.getEmpresa().getNombre() : null);
+                resultado.put("esSuperAdmin", usuario.esSuperAdmin());
+                resultado.put("hashPassword", usuario.getPassword().substring(0, 20) + "...");
+                
+                // Verificar si la contraseña funciona
+                boolean passwordCorrecta = passwordEncoder.matches("32691240Jor", usuario.getPassword());
+                resultado.put("passwordCorrecta", passwordCorrecta);
+                
+                return ResponseEntity.ok(resultado);
+            } else {
+                return ResponseEntity.ok(Map.of(
+                    "existe", false,
+                    "mensaje", "Usuario jrncarrizo@gmail.com no encontrado"
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint GET simple para crear/verificar el SUPER_ADMIN
+     */
+    @GetMapping("/setup-super-admin")
+    public ResponseEntity<?> setupSuperAdmin() {
+        try {
+            // Verificar si ya existe
+            Optional<Usuario> usuarioExistente = usuarioRepository.findByEmail("jrncarrizo@gmail.com");
+            
+            if (usuarioExistente.isPresent()) {
+                Usuario usuario = usuarioExistente.get();
+                
+                // Verificar si ya es SUPER_ADMIN
+                if (usuario.getRol() == Usuario.RolUsuario.SUPER_ADMIN) {
+                    return ResponseEntity.ok(Map.of(
+                        "mensaje", "✅ Usuario SUPER_ADMIN ya existe y está configurado correctamente",
+                        "email", usuario.getEmail(),
+                        "rol", usuario.getRol().name(),
+                        "password", "32691240Jor",
+                        "estado", "listo"
+                    ));
+                } else {
+                    // Actualizar rol a SUPER_ADMIN
+                    usuario.setRol(Usuario.RolUsuario.SUPER_ADMIN);
+                    usuarioRepository.save(usuario);
+                    
+                    return ResponseEntity.ok(Map.of(
+                        "mensaje", "✅ Usuario actualizado a SUPER_ADMIN correctamente",
+                        "email", usuario.getEmail(),
+                        "rol", usuario.getRol().name(),
+                        "password", "32691240Jor",
+                        "estado", "actualizado"
+                    ));
+                }
+            } else {
+                // Crear empresa del sistema si no existe
+                Optional<Empresa> empresaSistemaOpt = empresaRepository.findByEmail("sistema@minegocio.com");
+                Empresa empresaSistema;
+                
+                if (empresaSistemaOpt.isEmpty()) {
+                    empresaSistema = new Empresa();
+                    empresaSistema.setNombre("Sistema MiNegocio");
+                    empresaSistema.setSubdominio("sistema");
+                    empresaSistema.setEmail("sistema@minegocio.com");
+                    empresaSistema.setTelefono("+34 000 000 000");
+                    empresaSistema.setDescripcion("Empresa del sistema para super administradores");
+                    empresaSistema.setColorPrimario("#1f2937");
+                    empresaSistema.setColorSecundario("#374151");
+                    empresaSistema.setEstadoSuscripcion(Empresa.EstadoSuscripcion.ACTIVA);
+                    empresaSistema.setActiva(true);
+                    empresaRepository.save(empresaSistema);
+                } else {
+                    empresaSistema = empresaSistemaOpt.get();
+                }
+                
+                // Crear usuario SUPER_ADMIN
+                Usuario superAdmin = new Usuario();
+                superAdmin.setNombre("Super");
+                superAdmin.setApellidos("Administrador");
+                superAdmin.setEmail("jrncarrizo@gmail.com");
+                superAdmin.setTelefono("+34 000 000 000");
+                superAdmin.setRol(Usuario.RolUsuario.SUPER_ADMIN);
+                superAdmin.setActivo(true);
+                superAdmin.setEmailVerificado(true);
+                
+                // Generar hash para la contraseña
+                String password = "32691240Jor";
+                String hash = passwordEncoder.encode(password);
+                superAdmin.setPassword(hash);
+                
+                // Asignar empresa del sistema
+                superAdmin.setEmpresa(empresaSistema);
+                
+                usuarioRepository.save(superAdmin);
+                
+                return ResponseEntity.ok(Map.of(
+                    "mensaje", "✅ Usuario SUPER_ADMIN creado correctamente",
+                    "email", superAdmin.getEmail(),
+                    "rol", superAdmin.getRol().name(),
+                    "password", password,
+                    "estado", "creado"
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "❌ Error al configurar SUPER_ADMIN: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint para diagnosticar problemas de autenticación
+     */
+    @GetMapping("/diagnostico-auth")
+    public ResponseEntity<?> diagnosticoAuth() {
+        try {
+            Map<String, Object> resultado = new HashMap<>();
+            
+            // 1. Verificar usuario en base de datos
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail("jrncarrizo@gmail.com");
+            if (usuarioOpt.isPresent()) {
+                Usuario usuario = usuarioOpt.get();
+                resultado.put("usuarioExiste", true);
+                resultado.put("usuarioRol", usuario.getRol().name());
+                resultado.put("usuarioActivo", usuario.getActivo());
+                resultado.put("usuarioEmailVerificado", usuario.getEmailVerificado());
+                resultado.put("esSuperAdmin", usuario.esSuperAdmin());
+            } else {
+                resultado.put("usuarioExiste", false);
+            }
+            
+            // 2. Verificar autenticación actual
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                resultado.put("autenticado", true);
+                resultado.put("usuarioAutenticado", auth.getName());
+                resultado.put("autoridades", auth.getAuthorities().stream()
+                    .map(Object::toString)
+                    .collect(Collectors.toList()));
+                
+                if (auth.getPrincipal() instanceof UsuarioPrincipal) {
+                    UsuarioPrincipal principal = (UsuarioPrincipal) auth.getPrincipal();
+                    resultado.put("userId", principal.getId());
+                    resultado.put("empresaId", principal.getEmpresaId());
+                    resultado.put("nombreCompleto", principal.getNombreCompleto());
+                    resultado.put("rolUsuario", principal.getUsuario().getRol().name());
+                }
+            } else {
+                resultado.put("autenticado", false);
+                resultado.put("usuarioAutenticado", auth != null ? auth.getName() : "null");
+            }
+            
+            // 3. Verificar configuración de seguridad
+            resultado.put("endpointSuperAdmin", "/api/super-admin/**");
+            resultado.put("rolesRequeridos", List.of("SUPER_ADMIN", "ADMINISTRADOR"));
+            
+            return ResponseEntity.ok(resultado);
+            
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }

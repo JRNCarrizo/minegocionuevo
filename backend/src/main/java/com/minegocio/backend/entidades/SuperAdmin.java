@@ -3,51 +3,45 @@ package com.minegocio.backend.entidades;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
- * Entidad que representa los usuarios administradores de las empresas
+ * Entidad que representa los super administradores del sistema
  */
 @Entity
-@Table(name = "usuarios")
-public class Usuario {
+@Table(name = "super_admins")
+public class SuperAdmin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank(message = "El nombre es obligatorio")
-    @Size(max = 100, message = "El nombre no puede exceder 100 caracteres")
     @Column(nullable = false, length = 100)
     private String nombre;
 
     @NotBlank(message = "Los apellidos son obligatorios")
-    @Size(max = 100, message = "Los apellidos no pueden exceder 100 caracteres")
     @Column(nullable = false, length = 100)
     private String apellidos;
 
-    @Email(message = "Debe proporcionar un email válido")
     @NotBlank(message = "El email es obligatorio")
-    @Column(unique = true, nullable = false)
+    @Email(message = "El formato del email no es válido")
+    @Column(nullable = false, unique = true, length = 255)
     private String email;
 
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String password;
 
-    @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
+    @Column(length = 20)
     private String telefono;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private RolUsuario rol = RolUsuario.ADMINISTRADOR;
+    @Column(nullable = false, length = 20)
+    private RolSuperAdmin rol = RolSuperAdmin.ADMIN;
 
     @Column(name = "activo")
     private Boolean activo = true;
@@ -55,13 +49,29 @@ public class Usuario {
     @Column(name = "email_verificado")
     private Boolean emailVerificado = false;
 
-    @Column(name = "token_verificacion")
+    @Column(name = "token_verificacion", length = 255)
     private String tokenVerificacion;
 
-    // Relación con empresa
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "empresa_id", nullable = false)
-    private Empresa empresa;
+    @Column(name = "ultimo_acceso")
+    private LocalDateTime ultimoAcceso;
+
+    @Column(name = "fecha_ultimo_cambio_password")
+    private LocalDateTime fechaUltimoCambioPassword;
+
+    @Column(name = "requiere_cambio_password")
+    private Boolean requiereCambioPassword = false;
+
+    @Column(name = "intentos_fallidos_login")
+    private Integer intentosFallidosLogin = 0;
+
+    @Column(name = "cuenta_bloqueada")
+    private Boolean cuentaBloqueada = false;
+
+    @Column(name = "fecha_desbloqueo")
+    private LocalDateTime fechaDesbloqueo;
+
+    @Column(length = 500)
+    private String observaciones;
 
     // Timestamps
     @CreationTimestamp
@@ -72,23 +82,19 @@ public class Usuario {
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 
-    @Column(name = "ultimo_acceso")
-    private LocalDateTime ultimoAcceso;
-
     // Constructores
-    public Usuario() {}
+    public SuperAdmin() {}
 
-    public Usuario(String nombre, String apellidos, String email, String password, Empresa empresa) {
+    public SuperAdmin(String nombre, String apellidos, String email, String password) {
         this.nombre = nombre;
         this.apellidos = apellidos;
         this.email = email;
         this.password = password;
-        this.empresa = empresa;
     }
 
-    // Enum para roles
-    public enum RolUsuario {
-        ADMINISTRADOR, EMPLEADO, SUPER_ADMIN
+    // Enum para roles de super administrador
+    public enum RolSuperAdmin {
+        SUPER_ADMIN, ADMIN, SUPPORT, READ_ONLY
     }
 
     // Métodos de utilidad
@@ -96,12 +102,17 @@ public class Usuario {
         return nombre + " " + apellidos;
     }
 
-    public boolean esAdministrador() {
-        return RolUsuario.ADMINISTRADOR.equals(this.rol);
+    public boolean puedeAcceder() {
+        return activo && !cuentaBloqueada;
     }
 
     public boolean esSuperAdmin() {
-        return RolUsuario.SUPER_ADMIN.equals(this.rol);
+        return RolSuperAdmin.SUPER_ADMIN.equals(this.rol);
+    }
+
+    public boolean puedeEditar() {
+        return RolSuperAdmin.SUPER_ADMIN.equals(this.rol) || 
+               RolSuperAdmin.ADMIN.equals(this.rol);
     }
 
     // Getters y Setters
@@ -123,8 +134,8 @@ public class Usuario {
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
 
-    public RolUsuario getRol() { return rol; }
-    public void setRol(RolUsuario rol) { this.rol = rol; }
+    public RolSuperAdmin getRol() { return rol; }
+    public void setRol(RolSuperAdmin rol) { this.rol = rol; }
 
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }
@@ -135,15 +146,30 @@ public class Usuario {
     public String getTokenVerificacion() { return tokenVerificacion; }
     public void setTokenVerificacion(String tokenVerificacion) { this.tokenVerificacion = tokenVerificacion; }
 
-    public Empresa getEmpresa() { return empresa; }
-    public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
+    public LocalDateTime getUltimoAcceso() { return ultimoAcceso; }
+    public void setUltimoAcceso(LocalDateTime ultimoAcceso) { this.ultimoAcceso = ultimoAcceso; }
+
+    public LocalDateTime getFechaUltimoCambioPassword() { return fechaUltimoCambioPassword; }
+    public void setFechaUltimoCambioPassword(LocalDateTime fechaUltimoCambioPassword) { this.fechaUltimoCambioPassword = fechaUltimoCambioPassword; }
+
+    public Boolean getRequiereCambioPassword() { return requiereCambioPassword; }
+    public void setRequiereCambioPassword(Boolean requiereCambioPassword) { this.requiereCambioPassword = requiereCambioPassword; }
+
+    public Integer getIntentosFallidosLogin() { return intentosFallidosLogin; }
+    public void setIntentosFallidosLogin(Integer intentosFallidosLogin) { this.intentosFallidosLogin = intentosFallidosLogin; }
+
+    public Boolean getCuentaBloqueada() { return cuentaBloqueada; }
+    public void setCuentaBloqueada(Boolean cuentaBloqueada) { this.cuentaBloqueada = cuentaBloqueada; }
+
+    public LocalDateTime getFechaDesbloqueo() { return fechaDesbloqueo; }
+    public void setFechaDesbloqueo(LocalDateTime fechaDesbloqueo) { this.fechaDesbloqueo = fechaDesbloqueo; }
+
+    public String getObservaciones() { return observaciones; }
+    public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
 
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
     public void setFechaActualizacion(LocalDateTime fechaActualizacion) { this.fechaActualizacion = fechaActualizacion; }
-
-    public LocalDateTime getUltimoAcceso() { return ultimoAcceso; }
-    public void setUltimoAcceso(LocalDateTime ultimoAcceso) { this.ultimoAcceso = ultimoAcceso; }
-}
+} 

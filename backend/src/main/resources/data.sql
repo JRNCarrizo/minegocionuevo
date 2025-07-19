@@ -10,26 +10,28 @@ INSERT INTO usuarios (nombre, apellidos, email, password, telefono, rol, activo,
 SELECT 'Admin', 'Demo', 'admin@demo.com', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', '+34 123 456 789', 'ADMINISTRADOR', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'admin@demo.com');
 
+
+
 -- Insertar productos (sin imágenes en la tabla principal) (solo si no existen)
 INSERT INTO productos (nombre, descripcion, precio, stock, stock_minimo, categoria, marca, unidad, activo, destacado, empresa_id, fecha_creacion, fecha_actualizacion)
 SELECT 'Laptop Dell Inspiron 15', 'Laptop para uso profesional con procesador Intel i5, 8GB RAM y 256GB SSD', 899.99, 15, 5, 'Electrónicos', 'Dell', 'unidad', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Laptop Dell Inspiron 15' AND empresa_id = 1);
 
 INSERT INTO productos (nombre, descripcion, precio, stock, stock_minimo, categoria, marca, unidad, activo, destacado, empresa_id, fecha_creacion, fecha_actualizacion)
-SELECT 'Mouse Inalámbrico Logitech', 'Mouse inalámbrico ergonómico con conexión USB', 29.99, 50, 10, 'Electrónicos', 'Logitech', 'unidad', true, false, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT 'Mouse Inalámbrico Logitech', 'Mouse inalámbrico con sensor óptico de alta precisión', 29.99, 50, 10, 'Periféricos', 'Logitech', 'unidad', true, false, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Mouse Inalámbrico Logitech' AND empresa_id = 1);
 
 INSERT INTO productos (nombre, descripcion, precio, stock, stock_minimo, categoria, marca, unidad, activo, destacado, empresa_id, fecha_creacion, fecha_actualizacion)
-SELECT 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB personalizable', 79.99, 25, 5, 'Electrónicos', 'Corsair', 'unidad', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT 'Teclado Mecánico RGB', 'Teclado mecánico con switches Cherry MX y retroiluminación RGB', 89.99, 25, 5, 'Periféricos', 'Corsair', 'unidad', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Teclado Mecánico RGB' AND empresa_id = 1);
 
 INSERT INTO productos (nombre, descripcion, precio, stock, stock_minimo, categoria, marca, unidad, activo, destacado, empresa_id, fecha_creacion, fecha_actualizacion)
-SELECT 'Monitor 24" Full HD', 'Monitor LED de 24 pulgadas con resolución Full HD 1920x1080', 199.99, 12, 3, 'Electrónicos', 'Samsung', 'unidad', true, false, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT 'Monitor 24" Full HD', 'Monitor LED de 24 pulgadas con resolución Full HD 1920x1080', 199.99, 30, 8, 'Monitores', 'Samsung', 'unidad', true, false, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Monitor 24" Full HD' AND empresa_id = 1);
 
 INSERT INTO productos (nombre, descripcion, precio, stock, stock_minimo, categoria, marca, unidad, activo, destacado, empresa_id, fecha_creacion, fecha_actualizacion)
-SELECT 'Silla Ergonómica de Oficina', 'Silla ergonómica con soporte lumbar y reposabrazos ajustables', 299.99, 8, 2, 'Mobiliario', 'Herman Miller', 'unidad', true, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Silla Ergonómica de Oficina' AND empresa_id = 1);
+SELECT 'Disco Duro Externo 1TB', 'Disco duro externo portátil de 1TB con conexión USB 3.0', 59.99, 40, 12, 'Almacenamiento', 'Seagate', 'unidad', true, false, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Disco Duro Externo 1TB' AND empresa_id = 1);
 
 -- Insertar imágenes de productos en tabla separada (solo si no existen)
 INSERT INTO producto_imagenes (producto_id, url_imagen)
@@ -198,3 +200,17 @@ CREATE INDEX IF NOT EXISTS idx_historial_usuario_id ON historial_inventario (usu
 CREATE INDEX IF NOT EXISTS idx_historial_fecha_operacion ON historial_inventario (fecha_operacion);
 CREATE INDEX IF NOT EXISTS idx_historial_tipo_operacion ON historial_inventario (tipo_operacion);
 CREATE INDEX IF NOT EXISTS idx_historial_codigo_barras ON historial_inventario (codigo_barras);
+
+-- Insertar empresa del sistema para SUPER_ADMIN (solo si no existe)
+INSERT INTO empresas (nombre, subdominio, email, telefono, descripcion, logo_url, color_primario, color_secundario, estado_suscripcion, fecha_fin_prueba, activa, fecha_creacion, fecha_actualizacion)
+SELECT 'Sistema MiNegocio', 'sistema', 'sistema@minegocio.com', '+34 000 000 000', 'Empresa del sistema para super administradores', null, '#1f2937', '#374151', 'ACTIVA', DATEADD('MONTH', 12, CURRENT_TIMESTAMP), true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM empresas WHERE email = 'sistema@minegocio.com');
+
+-- Insertar usuario SUPER_ADMIN (solo si no existe)
+-- Insertar usuario SUPER_ADMIN (solo si no existe)
+-- Password: 32691240Jor (hash generado con BCrypt)
+INSERT INTO usuarios (nombre, apellidos, email, password, telefono, rol, activo, email_verificado, empresa_id, fecha_creacion, fecha_actualizacion)
+SELECT 'Super', 'Administrador', 'jrncarrizo@gmail.com', '$2a$10$Pu4TqrmVkrsfwD1WBRq0Ruin3w96eJSPuLDScl0igGiSH/8os9jwi', '+34 000 000 000', 'SUPER_ADMIN', true, true, 
+       (SELECT id FROM empresas WHERE email = 'sistema@minegocio.com' LIMIT 1), 
+       CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'jrncarrizo@gmail.com');

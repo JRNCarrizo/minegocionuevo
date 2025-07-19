@@ -108,4 +108,9 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
            "OR LOWER(c.apellidos) LIKE LOWER(CONCAT('%', :termino, '%')) " +
            "OR LOWER(c.email) LIKE LOWER(CONCAT('%', :termino, '%')))")
     List<Cliente> buscarClientesPorTermino(@Param("empresa") Empresa empresa, @Param("termino") String termino);
+
+    /**
+     * Cuenta clientes por empresa ID
+     */
+    long countByEmpresaId(Long empresaId);
 }

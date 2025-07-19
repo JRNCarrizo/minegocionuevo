@@ -71,4 +71,20 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
     @Query("SELECT e FROM Empresa e WHERE e.fechaCreacion BETWEEN :fechaInicio AND :fechaFin")
     List<Empresa> findEmpresasCreadasEntre(@Param("fechaInicio") LocalDateTime fechaInicio, 
                                           @Param("fechaFin") LocalDateTime fechaFin);
+
+    /**
+     * Cuenta empresas por estado de suscripción
+     */
+    long countByEstadoSuscripcion(Empresa.EstadoSuscripcion estado);
+
+    /**
+     * Cuenta empresas creadas entre dos fechas
+     */
+    long countByFechaCreacionBetween(LocalDateTime fechaInicio, LocalDateTime fechaFin);
+
+    /**
+     * Cuenta empresas con último acceso antes de una fecha
+     * Nota: Este método no está implementado porque Empresa no tiene campo ultimoAcceso
+     */
+    // long countByUltimoAccesoBefore(LocalDateTime fecha);
 }

@@ -3,26 +3,33 @@ package com.minegocio.backend.util;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /**
- * Utilidad para generar hashes de contraseña BCrypt
+ * Utilidad para generar hashes de contraseñas
+ * Solo usar para desarrollo/testing
  */
 public class GenerarHashPassword {
+    
     public static void main(String[] args) {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         
-        String password = "admin123";
-        String hash = encoder.encode(password);
+        // Contraseña del super admin: 32691240Jor (sin punto al final)
+        String password = "32691240Jor";
+        String hashedPassword = encoder.encode(password);
         
-        System.out.println("==== GENERADOR DE HASH BCRYPT ====");
-        System.out.println("Contraseña: " + password);
-        System.out.println("Hash BCrypt: " + hash);
-        System.out.println();
+        System.out.println("=== HASH DE CONTRASEÑA SUPER ADMIN ===");
+        System.out.println("Contraseña original: " + password);
+        System.out.println("Hash generado: " + hashedPassword);
+        System.out.println("======================================");
         
-        // Verificar que el hash funciona
-        boolean matches = encoder.matches(password, hash);
-        System.out.println("Verificación: " + (matches ? "✅ CORRECTO" : "❌ ERROR"));
-        System.out.println();
+        // Verificar que funciona
+        boolean matches = encoder.matches(password, hashedPassword);
+        System.out.println("Verificación: " + matches);
         
-        System.out.println("SQL para actualizar:");
-        System.out.println("UPDATE usuarios SET password = '" + hash + "' WHERE email = 'admin@demo.com';");
+        // También probar con punto al final
+        String passwordWithDot = "32691240Jor.";
+        String hashedPasswordWithDot = encoder.encode(passwordWithDot);
+        System.out.println("\n=== CON PUNTO AL FINAL ===");
+        System.out.println("Contraseña con punto: " + passwordWithDot);
+        System.out.println("Hash generado: " + hashedPasswordWithDot);
+        System.out.println("Verificación: " + encoder.matches(passwordWithDot, hashedPasswordWithDot));
     }
 }

@@ -70,10 +70,11 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/archivos/**").permitAll()
                     .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                    .requestMatchers("/api/admin/**").hasRole("ADMINISTRADOR")
-                    .requestMatchers("/api/empresas/**").hasRole("ADMINISTRADOR")
-                    .requestMatchers("/api/notificaciones/**").hasRole("ADMINISTRADOR")
-                    .requestMatchers("/api/historial-carga-productos/**").hasRole("ADMINISTRADOR")
+                    .requestMatchers("/api/super-admin/**").hasAnyRole("SUPER_ADMIN", "ADMINISTRADOR") // Permitir acceso al super admin
+                    .requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
+                    .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
+                    .requestMatchers("/api/notificaciones/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
+                    .requestMatchers("/api/historial-carga-productos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .anyRequest().authenticated();
             });
 

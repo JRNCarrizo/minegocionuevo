@@ -49,9 +49,19 @@ export default function LoginAdministrador() {
       localStorage.setItem('user', JSON.stringify(user));
       
       console.log('Usuario guardado en localStorage:', user);
+      console.log('Token guardado en localStorage:', response.token);
+      console.log('Token verificado:', localStorage.getItem('token'));
       
-      toast.success('¡Bienvenido de vuelta!');
-      navigate('/admin/dashboard');
+      // Verificar si es super admin y redirigir al panel correspondiente
+      if (user.rol === 'SUPER_ADMIN') {
+        console.log('🔵 Redirigiendo a Super Admin Dashboard');
+        toast.success('¡Bienvenido Super Administrador!');
+        navigate('/dashboard-super-admin');
+      } else {
+        console.log('🔵 Redirigiendo a Admin Dashboard');
+        toast.success('¡Bienvenido de vuelta!');
+        navigate('/admin/dashboard');
+      }
     } catch (error: unknown) {
       console.error('Error en login:', error);
       

@@ -153,4 +153,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
                                                                                   @Param("fechaInicio") LocalDateTime fechaInicio, 
                                                                                   @Param("fechaFin") LocalDateTime fechaFin, 
                                                                                   @Param("observacion") String observacion);
+
+    /**
+     * Cuenta pedidos por empresa ID
+     */
+    long countByEmpresaId(Long empresaId);
 }

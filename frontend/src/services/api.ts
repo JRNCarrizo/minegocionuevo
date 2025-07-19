@@ -926,6 +926,99 @@ class ApiService {
     });
     return response.data;
   }
+
+  // Métodos para Super Admin
+  async getSuperAdminDashboard() {
+    const response = await this.api.get('/api/super-admin/dashboard');
+    return response.data;
+  }
+
+  async getSuperAdminEmpresas(params: any = {}) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, value.toString());
+      }
+    });
+    const response = await this.api.get(`/api/super-admin/empresas?${queryParams}`);
+    return response.data;
+  }
+
+  async getSuperAdminEmpresa(id: number) {
+    const response = await this.api.get(`/api/super-admin/empresas/${id}`);
+    return response.data;
+  }
+
+  async updateSuperAdminEmpresaEstado(id: number, estado: string) {
+    const response = await this.api.put(`/api/super-admin/empresas/${id}/estado?estado=${estado}`);
+    return response.data;
+  }
+
+  async getSuperAdminEstadisticasSuscripciones() {
+    const response = await this.api.get('/api/super-admin/suscripciones/estadisticas');
+    return response.data;
+  }
+
+  async getSuperAdminEmpresasPorExpirar() {
+    const response = await this.api.get('/api/super-admin/empresas/por-expirar');
+    return response.data;
+  }
+
+  async getSuperAdminTopEmpresasPorIngresos(limite: number = 10) {
+    const response = await this.api.get(`/api/super-admin/empresas/top-ingresos?limite=${limite}`);
+    return response.data;
+  }
+
+  async getSuperAdminEmpresasEnRiesgo() {
+    const response = await this.api.get('/api/super-admin/empresas/en-riesgo');
+    return response.data;
+  }
+
+  async getSuperAdminAlertas(soloNoLeidas: boolean = false) {
+    const response = await this.api.get(`/api/super-admin/alertas?soloNoLeidas=${soloNoLeidas}`);
+    return response.data;
+  }
+
+  async marcarSuperAdminAlertaComoLeida(id: number) {
+    const response = await this.api.put(`/api/super-admin/alertas/${id}/leer`);
+    return response.data;
+  }
+
+  async getSuperAdminNotificaciones(soloNoLeidas: boolean = false) {
+    const response = await this.api.get(`/api/super-admin/notificaciones?soloNoLeidas=${soloNoLeidas}`);
+    return response.data;
+  }
+
+  async marcarSuperAdminNotificacionComoLeida(id: number) {
+    const response = await this.api.put(`/api/super-admin/notificaciones/${id}/leer`);
+    return response.data;
+  }
+
+  async getSuperAdminReporteIngresos(fechaDesde: string, fechaHasta: string) {
+    const response = await this.api.get(`/api/super-admin/reportes/ingresos?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`);
+    return response.data;
+  }
+
+  async getSuperAdminReporteCrecimiento(meses: number = 12) {
+    const response = await this.api.get(`/api/super-admin/reportes/crecimiento?meses=${meses}`);
+    return response.data;
+  }
+
+  async enviarSuperAdminNotificacionEmpresa(id: number, notificacion: any) {
+    const response = await this.api.post(`/api/super-admin/empresas/${id}/notificar`, notificacion);
+    return response.data;
+  }
+
+  async getSuperAdminLogs(params: any = {}) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, value.toString());
+      }
+    });
+    const response = await this.api.get(`/api/super-admin/logs?${queryParams}`);
+    return response.data;
+  }
 }
 
 export default new ApiService();

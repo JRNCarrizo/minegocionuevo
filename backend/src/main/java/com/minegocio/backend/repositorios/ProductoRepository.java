@@ -210,4 +210,14 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      * Busca producto por ID y empresa ID (sin filtro de activo)
      */
     Optional<Producto> findByIdAndEmpresaId(Long id, Long empresaId);
+
+    /**
+     * Cuenta productos por empresa ID
+     */
+    long countByEmpresaId(Long empresaId);
+
+    /**
+     * Cuenta productos creados entre dos fechas
+     */
+    long countByFechaCreacionBetween(java.time.LocalDateTime fechaInicio, java.time.LocalDateTime fechaFin);
 }
