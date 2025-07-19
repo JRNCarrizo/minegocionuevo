@@ -65,6 +65,21 @@ class ApiService {
           return config;
         }
         
+        // Endpoints de super admin (requieren token de admin)
+        if (
+          config.url &&
+          (/\/super-admin\//.test(config.url))
+        ) {
+          const tokenAdmin = localStorage.getItem('token');
+          if (tokenAdmin) {
+            console.log('🔵 Token super admin agregado');
+            config.headers.Authorization = `Bearer ${tokenAdmin}`;
+          } else {
+            console.log('❌ Token super admin requerido pero no encontrado');
+          }
+          return config;
+        }
+        
         // Endpoints de cliente (requieren token de cliente)
         if (
           config.url &&
