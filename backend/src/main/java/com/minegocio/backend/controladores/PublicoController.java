@@ -23,7 +23,7 @@ import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/publico")
-@CrossOrigin(origins = {"http://localhost:5173", "http://*.localhost:5173", "https://*.localhost:5173"}, allowedHeaders = "*")
+@CrossOrigin(origins = {"http://localhost:5173", "http://*.localhost:5173", "https://*.localhost:5173", "https://*.onrender.com", "https://*.netlify.app", "https://*.vercel.app", "https://negocio360.org", "https://*.negocio360.org"}, allowedHeaders = "*")
 public class PublicoController {
 
     @Autowired

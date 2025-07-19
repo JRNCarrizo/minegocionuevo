@@ -1,0 +1,45 @@
+services:
+  # Base de datos PostgreSQL
+  - type: pserv
+    name: minegocio-db
+    env: postgresql
+    plan: free
+
+  # Backend Spring Boot
+  - type: web
+    name: minegocio-backend
+    env: java
+    buildCommand: cd backend && ./mvnw clean package -DskipTests
+    startCommand: cd backend && java -jar target/miNegocio-Backend-0.0.1-SNAPSHOT.jar
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: render
+      - key: SPRING_DATASOURCE_URL
+        fromService:
+          type: pserv
+          name: minegocio-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromService:
+          type: pserv
+          name: minegocio-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromService:
+          type: pserv
+          name: minegocio-db
+          property: password
+      - key: MINE_NEGOCIO_APP_JWT_SECRET
+        generateValue: true
+      - key: MINE_NEGOCIO_APP_FRONTEND_URL
+        value: https://negocio360.org
+
+  # Frontend React
+  - type: web
+    name: minegocio-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://negocio360.org/api 

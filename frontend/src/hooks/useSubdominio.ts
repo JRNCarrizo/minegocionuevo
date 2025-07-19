@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import type { Empresa } from '../types';
 import apiService from '../services/api';
+import type { Empresa } from '../types';
 
 interface UseSubdominioReturn {
   subdominio: string | null;
@@ -33,7 +33,14 @@ export const useSubdominio = (): UseSubdominioReturn => {
         'localhost',
         '127.0.0.1',
         'minegocio.com', // dominio de producción
-        'app.minegocio.com' // app principal
+        'app.minegocio.com', // app principal
+        'minegocio-frontend.onrender.com', // Render frontend
+        'minegocio-backend.onrender.com', // Render backend
+        'tu-app.onrender.com', // Dominio genérico de Render
+        'tu-frontend.netlify.app', // Netlify frontend
+        'tu-app.vercel.app', // Vercel frontend
+        'negocio360.org', // Tu dominio personalizado
+        'app.negocio360.org' // App principal
       ];
 
       console.log('Hostname detectado:', hostname);
