@@ -239,3 +239,68 @@ curl https://minegocio-backend.onrender.com/api/debug/auth-status
 Tu aplicación MiNegocio estará completamente desplegada y funcional en Render sin necesidad de dominio personalizado. El sistema multi-tenant funcionará perfectamente para pruebas y uso personal.
 
 **¿Necesitas ayuda con algún paso específico?** 
+
+¡Perfecto!  **¡El backend está funcionando correctamente!**
+
+## ✅ **Estado actual:**
+
+- ✅ **Backend desplegado:** `https://negocio360-backend.onrender.com`
+- ✅ **Base de datos PostgreSQL conectada**
+- ✅ **Tablas creadas correctamente**
+- ✅ **Spring Security configurado**
+- ✅ **Aplicación respondiendo a peticiones**
+
+## 🚀 **Paso 61: Probar el backend**
+
+### **Prueba estos endpoints públicos:**
+
+1. **Endpoint de salud:**
+   ```
+   https://negocio360-backend.onrender.com/api/debug/ping
+   ```
+
+2. **Información del sistema:**
+   ```
+   https://negocio360-backend.onrender.com/api/debug/info
+   ```
+
+3. **Crear super admin:**
+   ```
+   https://negocio360-backend.onrender.com/api/debug/setup-super-admin
+   ```
+
+## 🎯 **Paso 62: Crear el frontend**
+
+Ahora vamos a crear el servicio del frontend en Render.
+
+### **En Render:**
+1. **Click "New" → "Web Service"**
+2. **Conecta tu repositorio** `minegocionuevo`
+3. **Configuración:**
+   - **Nombre:** `negocio360-frontend`
+   - **Environment:** `Node`
+   - **Build Command:** `cd frontend && npm install && npm run build`
+   - **Start Command:** `cd frontend && npm run preview`
+   - **Directorio raíz:** `frontend`
+
+## ❓ **¿Pudiste probar el endpoint de salud del backend?**
+
+**Prueba:** `https://negocio360-backend.onrender.com/api/debug/ping`
+
+**¿Ya empezaste a crear el servicio del frontend?** 
+
+## 🚀 **Paso 67: Actualizar variable de entorno en Render**
+
+### **En Render, ve a tu servicio y actualiza la variable DATABASE_URL:**
+
+**Cambia de:**
+```
+postgresql://negocio360_user:icbnCz99fE3rs62HyQOnFG4hBPJDp4Hd@dpg-d1tsnmbuibrs73fsbelg-a/negocio360
+```
+
+**A:**
+```
+jdbc:postgresql://dpg-d1tsnmbuibrs73fsbelg-a/negocio360?user=negocio360_user&password=icbnCz99fE3rs62HyQOnFG4hBPJDp4Hd
+```
+
+## 🚀 **Paso 68: Subir el cambio** 
