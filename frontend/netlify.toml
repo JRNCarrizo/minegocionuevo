@@ -12,7 +12,16 @@
   status = 200
 
 [context.production.environment]
-  VITE_API_URL = "https://tu-backend.onrender.com/api"
+  VITE_API_URL = "https://minegocio-backend.onrender.com/api"
 
 [context.deploy-preview.environment]
-  VITE_API_URL = "https://tu-backend.onrender.com/api" 
+  VITE_API_URL = "https://minegocio-backend.onrender.com/api"
+
+# Configuración para dominio personalizado
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin" 

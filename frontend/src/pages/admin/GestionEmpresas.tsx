@@ -43,7 +43,8 @@ const GestionEmpresas: React.FC = () => {
       setLoading(true);
       setError(null);
       const response = await superAdminService.obtenerEmpresas(0, 100);
-      setEmpresas(response.content || []);
+      console.log('🔍 Respuesta del backend:', response);
+      setEmpresas(response.data || []);
     } catch (err) {
       console.error('Error al cargar empresas:', err);
       setError('Error al cargar las empresas');

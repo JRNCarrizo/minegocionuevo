@@ -40,7 +40,8 @@ export const useSubdominio = (): UseSubdominioReturn => {
         'tu-frontend.netlify.app', // Netlify frontend
         'tu-app.vercel.app', // Vercel frontend
         'negocio360.org', // Tu dominio personalizado
-        'app.negocio360.org' // App principal
+        'app.negocio360.org', // App principal
+        'www.negocio360.org' // Con www
       ];
 
       console.log('Hostname detectado:', hostname);

@@ -1,18 +1,27 @@
 import axios from 'axios';
 
-// Determinar la URL base según el entorno
+// Determinar la URL base según el entorno (misma lógica que api.ts)
 const getBaseUrl = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl) {
-    // Si estamos en producción, usar la URL de producción
-    return envUrl.replace('/api', '/api/super-admin');
-  } else {
-    // Si estamos en desarrollo local
+  // Si estamos en desarrollo local (localhost:5173), usar localhost:8080
+  if (window.location.hostname === 'localhost' && window.location.port === '5173') {
     return 'http://localhost:8080/api/super-admin';
   }
+  
+  // Si hay una variable de entorno configurada, usarla
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace('/api', '/api/super-admin');
+  }
+  
+  // Por defecto, usar producción
+  return 'https://minegocio-backend.onrender.com/api/super-admin';
 };
 
 const API_BASE_URL = getBaseUrl();
+
+// Log para debug
+console.log('🌐 SuperAdmin API Base URL configurada:', API_BASE_URL);
+console.log('🌐 Hostname actual:', window.location.hostname);
+console.log('🌐 Puerto actual:', window.location.port);
 
 // Configurar axios para incluir el token JWT
 const axiosInstance = axios.create({
@@ -104,11 +113,8 @@ export interface Empresa {
 }
 
 export interface EmpresasResponse {
-  content: Empresa[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
+  data: Empresa[];
+  mensaje: string;
 }
 
 class SuperAdminService {
@@ -127,7 +133,7 @@ class SuperAdminService {
   async obtenerEmpresas(page = 0, size = 10): Promise<EmpresasResponse> {
     try {
       const response = await axiosInstance.get(`/empresas?page=${page}&size=${size}`);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       console.error('Error al obtener empresas:', error);
       throw error;

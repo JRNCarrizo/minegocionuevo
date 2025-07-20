@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite",
     "dev:mobile": "vite --host 0.0.0.0 --port 5173",
-    "build": "tsc -b tsconfig.prod.json && vite build",
-    "lint": "eslint .",
+    "build": "tsc && vite build",
+    "build:prod": "tsc && vite build --mode production",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {

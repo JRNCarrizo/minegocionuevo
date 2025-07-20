@@ -42,4 +42,4 @@ services:
     staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_URL
-        value: https://negocio360.org/api 
+        value: https://minegocio-backend.onrender.com/api 
