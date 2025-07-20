@@ -19,16 +19,6 @@ services:
           type: pserv
           name: minegocio-db
           property: connectionString
-      - key: SPRING_DATASOURCE_USERNAME
-        fromService:
-          type: pserv
-          name: minegocio-db
-          property: user
-      - key: SPRING_DATASOURCE_PASSWORD
-        fromService:
-          type: pserv
-          name: minegocio-db
-          property: password
       - key: MINE_NEGOCIO_APP_JWT_SECRET
         generateValue: true
       - key: MINE_NEGOCIO_APP_FRONTEND_URL

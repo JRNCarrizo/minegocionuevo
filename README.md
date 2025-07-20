@@ -251,3 +251,49 @@ Para soporte técnico o preguntas sobre el proyecto:
 ---
 
 **miNegocio** - Digitalizando negocios, un subdominio a la vez 🚀
+
+¡No te preocupes! Sí puedes recuperarlo fácilmente. El backend está definido en tu `render.yaml`, así que Render puede recrearlo automáticamente.
+
+## **Pasos para recuperar el backend:**
+
+### 1. **Verificar que el render.yaml esté correcto**
+Tu archivo `render.yaml` ya tiene la configuración del backend:
+
+```yaml
+# Backend Spring Boot
+- type: web
+  name: minegocio-backend
+  env: java
+  buildCommand: cd backend && ./mvnw clean package -DskipTests
+  startCommand: cd backend && java -jar target/miNegocio-Backend-0.0.1-SNAPSHOT.jar
+```
+
+### 2. **Crear el backend desde render.yaml**
+- Ve a tu dashboard de Render
+- Haz clic en **"New"** → **"Blueprint"**
+- Selecciona tu repositorio: `JRNCarrizo/minegocionuevo`
+- Render detectará automáticamente el `render.yaml`
+- Haz clic en **"Apply"**
+
+### 3. **O crear el backend manualmente**
+Si prefieres crearlo manualmente:
+
+- **New** → **Web Service**
+- **Repository:** `JRNCarrizo/minegocionuevo`
+- **Branch:** `master`
+- **Root Directory:** `backend`
+- **Runtime:** `Java`
+- **Build Command:** `./mvnw clean package -DskipTests`
+- **Start Command:** `java -jar target/miNegocio-Backend-0.0.1-SNAPSHOT.jar`
+
+### 4. **Variables de entorno necesarias:**
+```
+SPRING_PROFILES_ACTIVE=render
+SPRING_DATASOURCE_URL=(se conectará automáticamente a la base de datos)
+MINE_NEGOCIO_APP_JWT_SECRET=(se generará automáticamente)
+MINE_NEGOCIO_APP_FRONTEND_URL=https://negocio360.org
+```
+
+## **¿Quieres que te ayude a recrearlo usando el Blueprint (opción más fácil)?**
+
+El Blueprint recreará automáticamente tanto el backend como la base de datos con la configuración correcta.
