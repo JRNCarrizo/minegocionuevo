@@ -41,7 +41,8 @@ export const useSubdominio = (): UseSubdominioReturn => {
         'tu-app.vercel.app', // Vercel frontend
         'negocio360.org', // Tu dominio personalizado
         'app.negocio360.org', // App principal
-        'www.negocio360.org' // Con www
+        'www.negocio360.org', // Con www
+        'negocio360-frontend.onrender.com' // Tu frontend en Render
       ];
 
       console.log('Hostname detectado:', hostname);

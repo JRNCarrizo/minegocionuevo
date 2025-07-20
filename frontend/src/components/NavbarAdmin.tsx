@@ -62,16 +62,21 @@ export default function NavbarAdmin({
               onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
               onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
               >
-                <span style={{
-                  fontSize: '1.5rem',
-                  color: '#3b82f6'
-                }}>🏢</span>
+                <img 
+                  src="/images/logo.png" 
+                  alt="Negocio360 Logo" 
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    objectFit: 'contain'
+                  }}
+                />
                 <span style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text'
-                }}>MiNegocio</span>
+                }}>Negocio360</span>
               </Link>
               <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
                 {nombreAdministrador && (
@@ -172,16 +177,21 @@ export default function NavbarAdmin({
               onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
               onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
               >
-                <span style={{
-                  fontSize: '1.75rem',
-                  color: '#3b82f6'
-                }}>🏢</span>
+                <img 
+                  src="/images/logo.png" 
+                  alt="Negocio360 Logo" 
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    objectFit: 'contain'
+                  }}
+                />
                 <span style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text'
-                }}>MiNegocio</span>
+                }}>Negocio360</span>
                 {empresaNombre && (
                   <span style={{
                     color: '#3b82f6',

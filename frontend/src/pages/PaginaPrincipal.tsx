@@ -132,9 +132,21 @@ export default function PaginaPrincipal() {
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              textAlign: isMobile ? 'center' : 'left'
+              textAlign: isMobile ? 'center' : 'left',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}>
-              MiNegocio
+              <img 
+                src="/images/logo.png" 
+                alt="Negocio360 Logo" 
+                style={{
+                  width: isMobile ? '45px' : '55px',
+                  height: isMobile ? '45px' : '55px',
+                  objectFit: 'contain'
+                }}
+              />
+              Negocio360
             </Link>
             <div style={{ 
               display: 'flex', 

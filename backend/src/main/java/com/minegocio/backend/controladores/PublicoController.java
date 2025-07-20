@@ -156,6 +156,65 @@ public class PublicoController {
     }
 
     /**
+     * Endpoint para crear empresa de prueba específica
+     */
+    @PostMapping("/debug/crear-empresa/{subdominio}")
+    public ResponseEntity<?> crearEmpresaPrueba(@PathVariable String subdominio) {
+        try {
+            // Verificar si ya existe
+            Optional<Empresa> existente = empresaService.obtenerPorSubdominio(subdominio);
+            if (existente.isPresent()) {
+                Map<String, Object> empresaMap = new java.util.HashMap<>();
+                empresaMap.put("id", existente.get().getId());
+                empresaMap.put("nombre", existente.get().getNombre());
+                empresaMap.put("subdominio", existente.get().getSubdominio());
+                
+                Map<String, Object> response = new java.util.HashMap<>();
+                response.put("mensaje", "La empresa '" + subdominio + "' ya existe");
+                response.put("empresa", empresaMap);
+                return ResponseEntity.ok(response);
+            }
+            
+            // Crear nueva empresa
+            Empresa empresa = new Empresa();
+            empresa.setNombre("Empresa " + subdominio);
+            empresa.setSubdominio(subdominio);
+            empresa.setEmail("info@" + subdominio + ".negocio360.org");
+            empresa.setTelefono("+54 11 1234-5678");
+            empresa.setDescripcion("Tienda de prueba para el subdominio " + subdominio);
+            empresa.setColorPrimario("#3B82F6");
+            empresa.setColorSecundario("#1F2937");
+            empresa.setColorAcento("#F59E0B");
+            empresa.setColorFondo("#FFFFFF");
+            empresa.setColorTexto("#1F2937");
+            empresa.setColorTituloPrincipal("#1F2937");
+            empresa.setColorCardFiltros("#FFFFFF");
+            empresa.setMoneda("USD");
+            empresa.setActiva(true);
+            
+            Empresa empresaGuardada = empresaService.guardar(empresa);
+            
+            Map<String, Object> empresaMap = new java.util.HashMap<>();
+            empresaMap.put("id", empresaGuardada.getId());
+            empresaMap.put("nombre", empresaGuardada.getNombre());
+            empresaMap.put("subdominio", empresaGuardada.getSubdominio());
+            empresaMap.put("email", empresaGuardada.getEmail());
+            
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("mensaje", "Empresa '" + subdominio + "' creada exitosamente");
+            response.put("empresa", empresaMap);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("Error al crear empresa '" + subdominio + "': " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Error al crear empresa '" + subdominio + "'",
+                "detalle", e.getMessage()
+            ));
+        }
+    }
+
+    /**
      * Endpoint temporal para debug - listar todas las empresas
      */
     @GetMapping("/debug/empresas")

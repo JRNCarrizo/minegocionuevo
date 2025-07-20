@@ -745,7 +745,7 @@ export default function ConfiguracionEmpresa() {
                       display: 'flex',
                       alignItems: 'center'
                     }}>
-                      .minegocio.com
+                      .negocio360.org
                     </span>
                   </div>
                   {verificandoSubdominio && (

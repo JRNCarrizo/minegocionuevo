@@ -143,20 +143,36 @@ export default function LoginAdministrador() {
           animation: 'slideInUp 0.8s ease-out'
         }}>
           <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-            <Link to="/" style={{
-              fontSize: '2rem',
-              fontWeight: '700',
-              color: '#1e293b',
-              textDecoration: 'none',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              display: 'block',
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
               marginBottom: '1.5rem'
             }}>
-              MiNegocio
-            </Link>
+              <img 
+                src="/images/logo.png" 
+                alt="Negocio360 Logo" 
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  objectFit: 'contain',
+                  marginBottom: '1rem'
+                }}
+              />
+              <Link to="/" style={{
+                fontSize: '1.75rem',
+                fontWeight: '700',
+                color: '#1e293b',
+                textDecoration: 'none',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                display: 'block'
+              }}>
+                Negocio360
+              </Link>
+            </div>
             <h1 style={{
               fontSize: '2rem',
               fontWeight: '700',
