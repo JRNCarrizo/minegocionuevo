@@ -26,7 +26,7 @@ const getApiBaseUrl = () => {
   }
   
   // Por defecto, usar producción
-  return 'https://minegocio-backend.onrender.com/api';
+  return 'https://api.negocio360.org/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();
