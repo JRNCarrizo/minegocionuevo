@@ -5,12 +5,11 @@ services:
     env: postgresql
     plan: free
 
-  # Backend Spring Boot
+  # Backend Spring Boot con Docker
   - type: web
     name: minegocio-backend
-    env: java
-    buildCommand: cd backend && ./mvnw clean package -DskipTests
-    startCommand: cd backend && java -jar target/miNegocio-Backend-0.0.1-SNAPSHOT.jar
+    env: docker
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: render
@@ -24,7 +23,7 @@ services:
       - key: MINE_NEGOCIO_APP_FRONTEND_URL
         value: https://negocio360.org
 
-  # Frontend React
+  # Frontend React (Static Site)
   - type: web
     name: minegocio-frontend
     env: static
