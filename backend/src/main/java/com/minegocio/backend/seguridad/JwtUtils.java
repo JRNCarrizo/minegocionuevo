@@ -27,6 +27,9 @@ public class JwtUtils {
     private int jwtExpirationMs;
 
     private SecretKey getSigningKey() {
+        System.out.println("🔑 JWT Secret actual: " + jwtSecret);
+        System.out.println("🔑 JWT Secret longitud: " + jwtSecret.length());
+        System.out.println("🔑 JWT Secret bytes: " + jwtSecret.getBytes().length);
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
@@ -43,7 +46,7 @@ public class JwtUtils {
                 .claim("nombreCompleto", userPrincipal.getNombreCompleto())
                 .issuedAt(Date.from(Instant.now()))
                 .expiration(Date.from(Instant.now().plusMillis(jwtExpirationMs)))
-                .signWith(getSigningKey())
+                .signWith(getSigningKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
@@ -58,7 +61,7 @@ public class JwtUtils {
                 .claim("nombreCompleto", nombreCompleto)
                 .issuedAt(Date.from(Instant.now()))
                 .expiration(Date.from(Instant.now().plusMillis(jwtExpirationMs)))
-                .signWith(getSigningKey())
+                .signWith(getSigningKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
@@ -112,6 +115,7 @@ public class JwtUtils {
      */
     public boolean validateJwtToken(String authToken) {
         try {
+            // Usar el método correcto para la versión actual de JJWT
             Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()

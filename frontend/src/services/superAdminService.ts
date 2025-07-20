@@ -1,6 +1,18 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://negocio360-backend.onrender.com/api';
+// Determinar la URL base según el entorno
+const getBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) {
+    // Si estamos en producción, usar la URL de producción
+    return envUrl.replace('/api', '/api/super-admin');
+  } else {
+    // Si estamos en desarrollo local
+    return 'http://localhost:8080/api/super-admin';
+  }
+};
+
+const API_BASE_URL = getBaseUrl();
 
 // Configurar axios para incluir el token JWT
 const axiosInstance = axios.create({
@@ -104,7 +116,7 @@ class SuperAdminService {
 
   async obtenerDashboard(): Promise<DashboardStats> {
     try {
-      const response = await axiosInstance.get('/super-admin/dashboard');
+      const response = await axiosInstance.get('/dashboard');
       return response.data.data;
     } catch (error) {
       console.error('Error al obtener dashboard:', error);
@@ -114,7 +126,7 @@ class SuperAdminService {
 
   async obtenerEmpresas(page = 0, size = 10): Promise<EmpresasResponse> {
     try {
-      const response = await axiosInstance.get(`/super-admin/empresas?page=${page}&size=${size}`);
+      const response = await axiosInstance.get(`/empresas?page=${page}&size=${size}`);
       return response.data.data;
     } catch (error) {
       console.error('Error al obtener empresas:', error);
@@ -124,7 +136,7 @@ class SuperAdminService {
 
   async obtenerEstadisticasSuscripciones() {
     try {
-      const response = await axiosInstance.get('/super-admin/suscripciones/estadisticas');
+      const response = await axiosInstance.get('/suscripciones/estadisticas');
       return response.data;
     } catch (error) {
       console.error('Error al obtener estadísticas de suscripciones:', error);
@@ -134,7 +146,7 @@ class SuperAdminService {
 
   async obtenerEmpresasPorExpirar() {
     try {
-      const response = await axiosInstance.get('/super-admin/empresas/por-expirar');
+      const response = await axiosInstance.get('/empresas/por-expirar');
       return response.data;
     } catch (error) {
       console.error('Error al obtener empresas por expirar:', error);
@@ -144,7 +156,7 @@ class SuperAdminService {
 
   async obtenerTopEmpresas(limite = 5) {
     try {
-      const response = await axiosInstance.get(`/super-admin/empresas/top?limite=${limite}`);
+      const response = await axiosInstance.get(`/empresas/top?limite=${limite}`);
       return response.data;
     } catch (error) {
       console.error('Error al obtener top empresas:', error);
@@ -154,7 +166,7 @@ class SuperAdminService {
 
   async testPing() {
     try {
-      const response = await axiosInstance.get('/super-admin/ping');
+      const response = await axiosInstance.get('/ping');
       return response.data;
     } catch (error) {
       console.error('Error al hacer ping:', error);

@@ -45,10 +45,29 @@ const DashboardSuperAdmin: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const dashboardData = await superAdminService.obtenerDashboard();
-        setStats(dashboardData);
-      } catch (err) {
-        console.error('Error al cargar dashboard:', err);
+        console.log('🔍 Verificando token antes de cargar dashboard...');
+        const token = localStorage.getItem('token');
+        console.log('🔍 Token en localStorage:', token);
+        console.log('🔍 Longitud del token:', token?.length);
+        console.log('🔍 Token completo:', token);
+        
+        if (token) {
+          // Verificar si el token es válido (decodificar)
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            console.log('🔍 Token payload:', payload);
+            console.log('🔍 Token expira:', new Date(payload.exp * 1000));
+            console.log('🔍 Token ahora:', new Date());
+            console.log('🔍 ¿Token expirado?', new Date() > new Date(payload.exp * 1000));
+          } catch (e) {
+            console.log('🔍 Error decodificando token:', e);
+          }
+        }
+        
+        const stats = await superAdminService.obtenerDashboard();
+        setStats(stats);
+      } catch (error) {
+        console.error('Error al cargar dashboard:', error);
         setError('Error al cargar los datos del dashboard');
       } finally {
         setLoading(false);
@@ -412,7 +431,7 @@ const DashboardSuperAdmin: React.FC = () => {
           <div style={{ marginBottom: '15px' }}>
             <FaStore color="#4CAF50" size={48} />
           </div>
-          <div style={statNumberStyle}>{stats.totalEmpresas.toLocaleString()}</div>
+          <div style={statNumberStyle}>{(stats.totalEmpresas || 0).toLocaleString()}</div>
           <div style={statLabelStyle}>Empresas Registradas</div>
         </div>
         
@@ -420,7 +439,7 @@ const DashboardSuperAdmin: React.FC = () => {
           <div style={{ marginBottom: '15px' }}>
             <FaUsers color="#2196F3" size={48} />
           </div>
-          <div style={statNumberStyle}>{stats.totalUsuarios.toLocaleString()}</div>
+          <div style={statNumberStyle}>{(stats.totalUsuarios || 0).toLocaleString()}</div>
           <div style={statLabelStyle}>Usuarios Activos</div>
         </div>
         
@@ -428,7 +447,7 @@ const DashboardSuperAdmin: React.FC = () => {
           <div style={{ marginBottom: '15px' }}>
             <FaBox color="#FF9800" size={48} />
           </div>
-          <div style={statNumberStyle}>{stats.totalProductos.toLocaleString()}</div>
+          <div style={statNumberStyle}>{(stats.totalProductos || 0).toLocaleString()}</div>
           <div style={statLabelStyle}>Productos Totales</div>
         </div>
         
@@ -436,7 +455,7 @@ const DashboardSuperAdmin: React.FC = () => {
           <div style={{ marginBottom: '15px' }}>
             <FaMoneyBillWave color="#9C27B0" size={48} />
           </div>
-          <div style={statNumberStyle}>${stats.totalVentasRapidas.toLocaleString()}</div>
+          <div style={statNumberStyle}>${(stats.totalVentasRapidas || 0).toLocaleString()}</div>
           <div style={statLabelStyle}>Ventas Rápidas</div>
         </div>
       </div>

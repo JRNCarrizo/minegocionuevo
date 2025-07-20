@@ -13,8 +13,28 @@ import type {
   PaginatedResponse
 } from '../types';
 
-// Configuración base de Axios
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://negocio360-backend.onrender.com/api';
+// Configuración inteligente de Axios para desarrollo y producción
+const getApiBaseUrl = () => {
+  // Si estamos en desarrollo local (localhost:5173), usar localhost:8080
+  if (window.location.hostname === 'localhost' && window.location.port === '5173') {
+    return 'http://localhost:8080/api';
+  }
+  
+  // Si hay una variable de entorno configurada, usarla
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Por defecto, usar producción
+  return 'https://minegocio-backend.onrender.com/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Log para debug
+console.log('🌐 API Base URL configurada:', API_BASE_URL);
+console.log('🌐 Hostname actual:', window.location.hostname);
+console.log('🌐 Puerto actual:', window.location.port);
 
 class ApiService {
   private api: AxiosInstance;
@@ -22,7 +42,7 @@ class ApiService {
   constructor() {
     this.api = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 30000, // Aumentado a 30 segundos
+      timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -65,20 +85,7 @@ class ApiService {
           return config;
         }
         
-        // Endpoints de super admin (requieren token de admin)
-        if (
-          config.url &&
-          (/\/super-admin\//.test(config.url))
-        ) {
-          const tokenAdmin = localStorage.getItem('token');
-          if (tokenAdmin) {
-            console.log('🔵 Token super admin agregado');
-            config.headers.Authorization = `Bearer ${tokenAdmin}`;
-          } else {
-            console.log('❌ Token super admin requerido pero no encontrado');
-          }
-          return config;
-        }
+
         
         // Endpoints de cliente (requieren token de cliente)
         if (
@@ -117,21 +124,7 @@ class ApiService {
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
-        console.error('❌ Error en API:', {
-          url: error.config?.url,
-          method: error.config?.method,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          message: error.message,
-          code: error.code
-        });
 
-        // Manejar timeout específicamente
-        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-          console.error('⏰ Timeout en petición:', error.config?.url);
-          // No redirigir en caso de timeout, solo mostrar error
-          return Promise.reject(new Error('La petición tardó demasiado. Intenta de nuevo.'));
-        }
 
         if (error.response?.status === 401) {
           // Token expirado o inválido
@@ -960,7 +953,7 @@ class ApiService {
 
   // Métodos para Super Admin
   async getSuperAdminDashboard() {
-    const response = await this.api.get('/super-admin/dashboard');
+    const response = await this.api.get('/api/super-admin/dashboard');
     return response.data;
   }
 
