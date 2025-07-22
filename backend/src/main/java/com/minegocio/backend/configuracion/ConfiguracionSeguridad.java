@@ -90,11 +90,12 @@ public class ConfiguracionSeguridad {
 
         return http.build();
     }
-
+// nuevo
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList(
+            "https://negocio360.org",
     "https://*.negocio360.org",
     "http://localhost:5173"
 ));
