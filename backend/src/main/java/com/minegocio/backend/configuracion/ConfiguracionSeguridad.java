@@ -95,10 +95,9 @@ public class ConfiguracionSeguridad {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList(
-            "https://negocio360.org",
-            "https://www.negocio360.org",
-            "http://localhost:5173"
-        ));
+    "https://*.negocio360.org",
+    "http://localhost:5173"
+));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
