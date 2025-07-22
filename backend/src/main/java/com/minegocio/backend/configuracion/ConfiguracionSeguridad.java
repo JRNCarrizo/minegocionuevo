@@ -97,6 +97,7 @@ public class ConfiguracionSeguridad {
         configuration.setAllowedOriginPatterns(Arrays.asList(
         "https://negocio360.org",
              "https://*.negocio360.org",
+              "http://*.localhost:5173",
              "http://localhost:5173"
 ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
