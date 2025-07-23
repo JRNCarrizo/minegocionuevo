@@ -166,13 +166,7 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
               <div>
                 <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Fecha de Registro</p>
                 <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
-                  {new Date(cliente.fechaCreacion).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {(() => { const fecha = cliente.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
                 </p>
               </div>
             </div>
@@ -306,13 +300,7 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
                           fontSize: '14px', 
                           color: '#64748b'
                         }}>
-                          {new Date(pedido.fechaCreacion).toLocaleDateString('es-ES', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {(() => { const fecha = pedido.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
                         </p>
                         <span
                           style={{
@@ -801,11 +789,7 @@ export default function GestionClientes() {
                           fontSize: '11px',
                           color: '#64748b'
                         }}>
-                          📅 Registrado: {new Date(cliente.fechaCreacion).toLocaleDateString('es-ES', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
+                          📅 Registrado: {(() => { const fecha = cliente.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
                         </p>
                       </div>
 
@@ -956,11 +940,7 @@ export default function GestionClientes() {
                             fontSize: '12px',
                             color: '#64748b'
                           }}>
-                            📅 Registrado: {new Date(cliente.fechaCreacion).toLocaleDateString('es-ES', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
+                            📅 Registrado: {(() => { const fecha = cliente.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
                           </p>
                         </div>
                         <div className="text-right">

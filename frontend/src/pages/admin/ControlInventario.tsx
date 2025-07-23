@@ -580,26 +580,24 @@ const ControlInventario: React.FC = () => {
 
   const formatearFecha = (fecha: string) => {
     try {
-      // Si la fecha es null, undefined o vacía, mostrar mensaje
       if (!fecha) {
         return 'Fecha no disponible';
       }
-      
-      // Intentar parsear la fecha
-      const fechaObj = new Date(fecha);
-      
-      // Verificar si la fecha es válida
+      // Si la fecha viene sin zona, la tratamos como UTC
+      const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z';
+      const fechaObj = new Date(fechaUTC);
       if (isNaN(fechaObj.getTime())) {
         console.warn('Fecha inválida recibida:', fecha);
         return 'Fecha inválida';
       }
-      
-      return fechaObj.toLocaleString('es-CL', {
+      return fechaObj.toLocaleString('es-AR', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'America/Argentina/Buenos_Aires',
       });
     } catch (error) {
       console.error('Error al formatear fecha:', error, 'Fecha recibida:', fecha);

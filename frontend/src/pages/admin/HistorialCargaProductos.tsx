@@ -222,12 +222,16 @@ export default function HistorialCargaProductos() {
   };
 
   const formatearFecha = (fecha: string) => {
-    return new Date(fecha).toLocaleString('es-ES', {
+    // Si la fecha viene sin zona, la tratamos como UTC
+    const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z';
+    return new Date(fechaUTC).toLocaleString('es-AR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
+      timeZone: 'America/Argentina/Buenos_Aires',
     });
   };
 

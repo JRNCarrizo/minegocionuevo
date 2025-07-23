@@ -98,14 +98,7 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
                 Pedido #{pedido.numeroPedido || pedido.id}
               </h2>
               <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
-                {new Date(pedido.fechaCreacion).toLocaleDateString('es-ES', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
+                {(() => { const fecha = pedido.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
               </p>
             </div>
             <button 
@@ -1314,13 +1307,7 @@ export default function GestionPedidos() {
                       }}>
                         👤 {pedido.cliente?.nombre} {pedido.cliente?.apellidos}
                         <span style={{ color: '#cbd5e1' }}>•</span>
-                        📅 {new Date(pedido.fechaCreacion).toLocaleDateString('es-ES', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        📅 {(() => { const fecha = pedido.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
                       </p>
                     </div>
                     <div className="text-right">
