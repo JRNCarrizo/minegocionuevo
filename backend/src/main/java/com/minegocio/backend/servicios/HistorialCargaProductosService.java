@@ -148,9 +148,20 @@ public class HistorialCargaProductosService {
             Pageable pageable = PageRequest.of(pagina, tamanio, 
                     Sort.by(Sort.Direction.DESC, "fechaOperacion"));
             
-            Page<HistorialCargaProductos> historialPage = historialRepository.buscarConFiltros(
-                    empresaId, productoId, tipoOperacion, usuarioId, 
-                    fechaInicio, fechaFin, codigoBarras, pageable);
+            Page<HistorialCargaProductos> historialPage;
+            
+            // Si no hay filtros aplicados, usar el método simple que funciona
+            if (productoId == null && tipoOperacion == null && usuarioId == null && 
+                fechaInicio == null && fechaFin == null && 
+                (codigoBarras == null || codigoBarras.trim().isEmpty())) {
+                
+                historialPage = historialRepository.findByEmpresaIdOrderByFechaOperacionDescPaged(empresaId, pageable);
+            } else {
+                // Si hay filtros, usar el método complejo
+                historialPage = historialRepository.buscarConFiltros(
+                        empresaId, productoId, tipoOperacion, usuarioId, 
+                        fechaInicio, fechaFin, codigoBarras, pageable);
+            }
             
             Page<HistorialCargaProductosDTO> dtoPage = historialPage
                     .map(HistorialCargaProductosDTO::new);

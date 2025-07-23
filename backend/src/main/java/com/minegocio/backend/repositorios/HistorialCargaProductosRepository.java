@@ -85,4 +85,10 @@ public interface HistorialCargaProductosRepository extends JpaRepository<Histori
     @Query("SELECT h FROM HistorialCargaProductos h WHERE h.empresa.id = :empresaId " +
            "ORDER BY h.fechaOperacion DESC")
     List<HistorialCargaProductos> findTop10ByEmpresaIdOrderByFechaOperacionDesc(@Param("empresaId") Long empresaId);
+    
+    // Método temporal para obtener historial paginado (mismo query que funciona en estadísticas)
+    @Query("SELECT h FROM HistorialCargaProductos h WHERE h.empresa.id = :empresaId " +
+           "ORDER BY h.fechaOperacion DESC")
+    Page<HistorialCargaProductos> findByEmpresaIdOrderByFechaOperacionDescPaged(
+        @Param("empresaId") Long empresaId, Pageable pageable);
 } 
