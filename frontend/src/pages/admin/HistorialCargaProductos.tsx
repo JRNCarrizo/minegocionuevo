@@ -101,7 +101,9 @@ export default function HistorialCargaProductos() {
 
   const cargarHistorial = async (paginaActual: number = 0) => {
     try {
-      console.log('🔍 Cargando historial, página:', paginaActual);
+      console.log('🔍 [DEBUG] EmpresaId:', datosUsuario?.empresaId);
+      console.log('🔍 [DEBUG] Filtros enviados:', filtros);
+      console.log('🔍 [DEBUG] Página actual:', paginaActual);
       const response = await ApiService.obtenerHistorialCargaProductos(
         datosUsuario?.empresaId || 0,
         paginaActual,
@@ -114,6 +116,7 @@ export default function HistorialCargaProductos() {
           codigoBarras: filtros.codigoBarras || undefined,
         }
       );
+      console.log('🔍 [DEBUG] Respuesta de historial:', response);
       console.log('📦 Respuesta completa:', response);
       console.log('📦 Response.data:', response.data);
       console.log('📦 Response.data.contenido:', response.data?.contenido);
