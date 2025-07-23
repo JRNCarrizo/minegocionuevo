@@ -25,10 +25,14 @@ services:
 
   # Frontend React (Static Site)
   - type: web
-    name: minegocio-frontend
+    name: negocio360-frontend
     env: static
     buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: frontend/dist
+    staticPublishPath: ./frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
         value: https://minegocio-backend.onrender.com/api 
