@@ -689,6 +689,15 @@ class ApiService {
     return response.data;
   }
 
+  async obtenerHistorialVentaRapida(fechaInicio?: string, fechaFin?: string) {
+    const params = new URLSearchParams();
+    if (fechaInicio) params.append('fechaInicio', fechaInicio);
+    if (fechaFin) params.append('fechaFin', fechaFin);
+    
+    const response = await this.api.get(`/admin/venta-rapida/historial?${params}`);
+    return response.data;
+  }
+
   // Métodos de notificaciones
   async obtenerNotificaciones(empresaId: number, pagina = 0, tamano = 10) {
     const response = await this.api.get(`/notificaciones/empresa/${empresaId}?pagina=${pagina}&tamano=${tamano}`);

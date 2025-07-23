@@ -40,13 +40,22 @@ const HistorialVentasRapidas: React.FC = () => {
       setLoading(true);
       const response = await ventaRapidaService.obtenerHistorial();
       
-      if (response.data) {
+      console.log('Respuesta del historial:', response);
+      
+      if (response.data && Array.isArray(response.data)) {
         setVentas(response.data);
+      } else if (response.data && typeof response.data === 'object' && 'contenido' in response.data && Array.isArray((response.data as any).contenido)) {
+        // Si la respuesta tiene un formato paginado
+        setVentas((response.data as any).contenido);
       } else {
-        setError(response.mensaje || 'Error al cargar el historial');
+        console.error('Respuesta inesperada:', response);
+        setVentas([]);
+        setError('Formato de respuesta inesperado');
       }
     } catch (err) {
+      console.error('Error al cargar historial:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
+      setVentas([]);
     } finally {
       setLoading(false);
     }
@@ -102,10 +111,12 @@ const HistorialVentasRapidas: React.FC = () => {
     if (!fechaInicio) return;
     
     try {
-      const response = await ventaRapidaService.obtenerEstadisticasDiarias(fechaInicio);
-      if (response.data) {
-        setEstadisticasDiarias(response.data);
-      }
+      // TODO: Implementar cuando esté disponible en el backend
+      console.log('Estadísticas diarias no implementadas aún');
+      // const response = await ventaRapidaService.obtenerEstadisticasDiarias(fechaInicio);
+      // if (response.data) {
+      //   setEstadisticasDiarias(response.data);
+      // }
     } catch (err) {
       console.error('Error al cargar estadísticas diarias:', err);
     }
@@ -114,10 +125,12 @@ const HistorialVentasRapidas: React.FC = () => {
   const cargarEstadisticasMensuales = async () => {
     const fecha = new Date();
     try {
-      const response = await ventaRapidaService.obtenerEstadisticasMensuales(fecha.getFullYear(), fecha.getMonth() + 1);
-      if (response.data) {
-        setEstadisticasMensuales(response.data);
-      }
+      // TODO: Implementar cuando esté disponible en el backend
+      console.log('Estadísticas mensuales no implementadas aún');
+      // const response = await ventaRapidaService.obtenerEstadisticasMensuales(fecha.getFullYear(), fecha.getMonth() + 1);
+      // if (response.data) {
+      //   setEstadisticasMensuales(response.data);
+      // }
     } catch (err) {
       console.error('Error al cargar estadísticas mensuales:', err);
     }
@@ -126,10 +139,12 @@ const HistorialVentasRapidas: React.FC = () => {
   const cargarEstadisticasAnuales = async () => {
     const fecha = new Date();
     try {
-      const response = await ventaRapidaService.obtenerEstadisticasAnuales(fecha.getFullYear());
-      if (response.data) {
-        setEstadisticasAnuales(response.data);
-      }
+      // TODO: Implementar cuando esté disponible en el backend
+      console.log('Estadísticas anuales no implementadas aún');
+      // const response = await ventaRapidaService.obtenerEstadisticasAnuales(fecha.getFullYear());
+      // if (response.data) {
+      //   setEstadisticasAnuales(response.data);
+      // }
     } catch (err) {
       console.error('Error al cargar estadísticas anuales:', err);
     }

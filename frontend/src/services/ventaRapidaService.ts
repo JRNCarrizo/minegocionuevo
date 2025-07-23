@@ -81,7 +81,7 @@ class VentaRapidaService {
   // Obtener historial completo de ventas rápidas
   async obtenerHistorial(): Promise<ApiResponse<VentaRapida[]>> {
     try {
-      const response = await ApiService.obtenerEstadisticasVentaRapida();
+      const response = await ApiService.obtenerHistorialVentaRapida();
       return {
         mensaje: 'Historial obtenido correctamente',
         data: response
@@ -94,7 +94,7 @@ class VentaRapidaService {
   // Obtener ventas por rango de fechas
   async obtenerVentasPorFecha(fechaInicio: string, fechaFin: string): Promise<ApiResponse<VentaRapida[]>> {
     try {
-      const response = await ApiService.obtenerEstadisticasVentaRapida(fechaInicio, fechaFin);
+      const response = await ApiService.obtenerHistorialVentaRapida(fechaInicio, fechaFin);
       return {
         mensaje: 'Ventas por fecha obtenidas correctamente',
         data: response
