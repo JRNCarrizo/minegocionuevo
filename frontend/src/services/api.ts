@@ -15,8 +15,8 @@ import type {
 
 // Configuración inteligente de Axios para desarrollo y producción
 const getApiBaseUrl = () => {
-  // Si estamos en desarrollo local (localhost:5173), usar localhost:8080
-  if (window.location.hostname === 'localhost' && window.location.port === '5173') {
+  // Si estamos en desarrollo local (localhost o subdominios de localhost), usar localhost:8080
+  if (window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost')) {
     return 'http://localhost:8080/api';
   }
   
