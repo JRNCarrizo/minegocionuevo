@@ -12,29 +12,9 @@ import type {
   ApiResponse,
   PaginatedResponse
 } from '../types';
+import { API_CONFIG } from '../config/api';
 
-// Configuración inteligente de Axios para desarrollo y producción
-const getApiBaseUrl = () => {
-  // Si estamos en desarrollo local (localhost o subdominios de localhost), usar localhost:8080
-  if (window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost')) {
-    return 'http://localhost:8080/api';
-  }
-  
-  // Si hay una variable de entorno configurada, usarla
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  
-  // Por defecto, usar producción
-  return 'https://api.negocio360.org/api';
-};
-
-const API_BASE_URL = getApiBaseUrl();
-
-// Log para debug
-console.log('🌐 API Base URL configurada:', API_BASE_URL);
-console.log('🌐 Hostname actual:', window.location.hostname);
-console.log('🌐 Puerto actual:', window.location.port);
+const API_BASE_URL = API_CONFIG.getBaseUrl();
 
 class ApiService {
   private api: AxiosInstance;
