@@ -530,12 +530,21 @@ const ControlInventario: React.FC = () => {
     observacion?: string
   ) => {
     try {
+      // Obtener el producto para obtener su precio unitario
+      const productoResponse = await ApiService.obtenerProducto(datosUsuario!.empresaId, productoId, true);
+      const precioUnitario = productoResponse.data?.precio || 0;
+      
+      console.log('🔍 DEBUG - Producto obtenido:', productoResponse.data);
+      console.log('🔍 DEBUG - Precio unitario:', precioUnitario);
+      console.log('🔍 DEBUG - Producto ID:', productoId);
+
       const request = {
         productoId,
         tipoOperacion,
         cantidad,
         stockAnterior,
         stockNuevo,
+        precioUnitario,
         codigoBarras,
         observacion,
         metodoEntrada: 'inventario_fisico'

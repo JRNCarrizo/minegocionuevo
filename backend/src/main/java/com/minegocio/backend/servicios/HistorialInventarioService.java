@@ -118,11 +118,24 @@ public class HistorialInventarioService {
             historial.setCantidad(request.getCantidad());
             historial.setStockAnterior(stockAnterior);
             historial.setStockNuevo(stockNuevo);
-            historial.setPrecioUnitario(request.getPrecioUnitario());
+            // Usar el precio del request o el precio del producto como fallback
+            BigDecimal precioUnitario = request.getPrecioUnitario();
+            if (precioUnitario == null || precioUnitario.compareTo(BigDecimal.ZERO) == 0) {
+                precioUnitario = producto.getPrecio();
+            }
+            historial.setPrecioUnitario(precioUnitario);
             historial.setValorTotal(historial.calcularValorTotal());
             historial.setObservacion(request.getObservacion());
             historial.setCodigoBarras(request.getCodigoBarras());
             historial.setMetodoEntrada(request.getMetodoEntrada());
+
+            // Debug logs
+            System.out.println("=== DEBUG VALOR TOTAL ===");
+            System.out.println("Precio unitario recibido: " + request.getPrecioUnitario());
+            System.out.println("Cantidad: " + request.getCantidad());
+            System.out.println("Valor total calculado: " + historial.getValorTotal());
+            System.out.println("Producto precio: " + producto.getPrecio());
+            System.out.println("=========================");
 
             // Guardar el historial
             System.out.println("=== DEBUG HISTORIAL INVENTARIO ===");
