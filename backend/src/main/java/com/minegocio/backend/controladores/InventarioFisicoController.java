@@ -1,7 +1,9 @@
 package com.minegocio.backend.controladores;
 
 import com.minegocio.backend.dto.InventarioFisicoDTO;
+import com.minegocio.backend.dto.HistorialInventarioDTO;
 import com.minegocio.backend.servicios.InventarioFisicoService;
+import com.minegocio.backend.servicios.HistorialInventarioService;
 import com.minegocio.backend.seguridad.UsuarioPrincipal;
 import com.minegocio.backend.utils.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,18 +22,21 @@ public class InventarioFisicoController {
 
     @Autowired
     private InventarioFisicoService inventarioFisicoService;
+    
+    @Autowired
+    private HistorialInventarioService historialInventarioService;
 
     /**
      * Obtener historial de inventarios físicos
      */
     @GetMapping("/historial")
-    public ResponseEntity<ApiResponse<Page<InventarioFisicoDTO>>> obtenerHistorial(
+    public ResponseEntity<ApiResponse<Page<HistorialInventarioDTO>>> obtenerHistorial(
             @RequestParam(defaultValue = "0") int pagina,
             @RequestParam(defaultValue = "20") int tamano) {
         
         try {
             Long empresaId = obtenerEmpresaIdDelUsuarioAutenticado();
-            ApiResponse<Page<InventarioFisicoDTO>> response = inventarioFisicoService
+            ApiResponse<Page<HistorialInventarioDTO>> response = historialInventarioService
                     .obtenerHistorialPorEmpresa(empresaId, pagina, tamano);
 
             return ResponseEntity.ok(response);
