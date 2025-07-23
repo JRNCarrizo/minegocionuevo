@@ -43,7 +43,7 @@ public interface HistorialCargaProductosRepository extends JpaRepository<Histori
     @Query("SELECT h FROM HistorialCargaProductos h WHERE h.empresa.id = :empresaId " +
            "AND (:productoId IS NULL OR h.producto.id = :productoId) " +
            "AND (:tipoOperacion IS NULL OR h.tipoOperacion = :tipoOperacion) " +
-           "AND (:usuarioId IS NULL OR h.usuario.id = :usuarioId) " +
+           "AND (:usuarioId IS NULL OR h.usuario.id = :usuarioId OR h.usuario.id IS NULL) " +
            "AND (:fechaInicio IS NULL OR h.fechaOperacion >= :fechaInicio) " +
            "AND (:fechaFin IS NULL OR h.fechaOperacion <= :fechaFin) " +
            "AND (:codigoBarras IS NULL OR h.codigoBarras LIKE %:codigoBarras%) " +

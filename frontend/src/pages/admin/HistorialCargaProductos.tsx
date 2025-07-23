@@ -117,6 +117,8 @@ export default function HistorialCargaProductos() {
         }
       );
       console.log('🔍 [DEBUG] Respuesta de historial:', response);
+      console.log('🔍 [DEBUG] response.data:', response.data);
+      console.log('🔍 [DEBUG] response.data.contenido:', response.data?.contenido);
       console.log('📦 Respuesta completa:', response);
       console.log('📦 Response.data:', response.data);
       console.log('📦 Response.data.contenido:', response.data?.contenido);
