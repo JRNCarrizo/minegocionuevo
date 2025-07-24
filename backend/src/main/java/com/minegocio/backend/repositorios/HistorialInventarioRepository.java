@@ -73,12 +73,12 @@ public interface HistorialInventarioRepository extends JpaRepository<HistorialIn
      */
     @Query("SELECT " +
            "COUNT(h) as totalOperaciones, " +
-           "COUNT(CASE WHEN h.tipoOperacion = 'INCREMENTO' THEN 1 END) as totalIncrementos, " +
-           "COUNT(CASE WHEN h.tipoOperacion = 'DECREMENTO' THEN 1 END) as totalDecrementos, " +
-           "COUNT(CASE WHEN h.tipoOperacion = 'AJUSTE' THEN 1 END) as totalAjustes, " +
-           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'INCREMENTO' THEN h.valorTotal ELSE 0 END), 0) as valorTotalIncrementos, " +
-           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'DECREMENTO' THEN h.valorTotal ELSE 0 END), 0) as valorTotalDecrementos, " +
-           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'AJUSTE' THEN h.valorTotal ELSE 0 END), 0) as valorTotalAjustes, " +
+           "COUNT(CASE WHEN h.tipoOperacion = 'INCREMENTO' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo > h.stockAnterior) THEN 1 END) as totalIncrementos, " +
+           "COUNT(CASE WHEN h.tipoOperacion = 'DECREMENTO' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo < h.stockAnterior) THEN 1 END) as totalDecrementos, " +
+           "COUNT(CASE WHEN h.tipoOperacion = 'AJUSTE' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo = h.stockAnterior) THEN 1 END) as totalAjustes, " +
+           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'INCREMENTO' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo > h.stockAnterior) THEN h.valorTotal ELSE 0 END), 0) as valorTotalIncrementos, " +
+           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'DECREMENTO' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo < h.stockAnterior) THEN h.valorTotal ELSE 0 END), 0) as valorTotalDecrementos, " +
+           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'AJUSTE' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo = h.stockAnterior) THEN h.valorTotal ELSE 0 END), 0) as valorTotalAjustes, " +
            "COALESCE(SUM(h.valorTotal), 0) as valorTotalMovimientos " +
            "FROM HistorialInventario h WHERE h.empresa.id = :empresaId")
     Object[] getEstadisticasByEmpresaId(@Param("empresaId") Long empresaId);
@@ -88,12 +88,12 @@ public interface HistorialInventarioRepository extends JpaRepository<HistorialIn
      */
     @Query("SELECT " +
            "COUNT(h) as totalOperaciones, " +
-           "COUNT(CASE WHEN h.tipoOperacion = 'INCREMENTO' THEN 1 END) as totalIncrementos, " +
-           "COUNT(CASE WHEN h.tipoOperacion = 'DECREMENTO' THEN 1 END) as totalDecrementos, " +
-           "COUNT(CASE WHEN h.tipoOperacion = 'AJUSTE' THEN 1 END) as totalAjustes, " +
-           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'INCREMENTO' THEN h.valorTotal ELSE 0 END), 0) as valorTotalIncrementos, " +
-           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'DECREMENTO' THEN h.valorTotal ELSE 0 END), 0) as valorTotalDecrementos, " +
-           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'AJUSTE' THEN h.valorTotal ELSE 0 END), 0) as valorTotalAjustes, " +
+           "COUNT(CASE WHEN h.tipoOperacion = 'INCREMENTO' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo > h.stockAnterior) THEN 1 END) as totalIncrementos, " +
+           "COUNT(CASE WHEN h.tipoOperacion = 'DECREMENTO' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo < h.stockAnterior) THEN 1 END) as totalDecrementos, " +
+           "COUNT(CASE WHEN h.tipoOperacion = 'AJUSTE' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo = h.stockAnterior) THEN 1 END) as totalAjustes, " +
+           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'INCREMENTO' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo > h.stockAnterior) THEN h.valorTotal ELSE 0 END), 0) as valorTotalIncrementos, " +
+           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'DECREMENTO' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo < h.stockAnterior) THEN h.valorTotal ELSE 0 END), 0) as valorTotalDecrementos, " +
+           "COALESCE(SUM(CASE WHEN h.tipoOperacion = 'AJUSTE' OR (h.tipoOperacion = 'INVENTARIO_FISICO' AND h.stockNuevo = h.stockAnterior) THEN h.valorTotal ELSE 0 END), 0) as valorTotalAjustes, " +
            "COALESCE(SUM(h.valorTotal), 0) as valorTotalMovimientos " +
            "FROM HistorialInventario h WHERE h.empresa.id = :empresaId AND h.fechaOperacion BETWEEN :fechaInicio AND :fechaFin")
     Object[] getEstadisticasByEmpresaIdAndFechaOperacionBetween(

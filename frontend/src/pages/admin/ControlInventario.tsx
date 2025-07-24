@@ -1287,6 +1287,7 @@ const ControlInventario: React.FC = () => {
                             Valor diferencias
                           </div>
                         </div>
+
                       </div>
                       <div style={{ 
                         marginTop: '8px', 
@@ -2387,4 +2388,4 @@ const ControlInventario: React.FC = () => {
   );
 };
 
-export default ControlInventario; 
+export default ControlInventario;

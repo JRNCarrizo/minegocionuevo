@@ -4,7 +4,7 @@ import { Html5QrcodeScanner, Html5QrcodeScanType, Html5QrcodeSupportedFormats } 
 interface BarcodeScannerProps {
   onScan: (result: string) => void;
   onClose: () => void;
-  isOpen: boolean;
+  isOpen?: boolean;
 }
 
 const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose, isOpen }) => {
