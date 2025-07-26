@@ -1055,86 +1055,7 @@ public class DebugController {
         }
     }
 
-    /**
-     * Crea o actualiza un usuario SUPER_ADMIN
-     */
-    @PostMapping("/crear-super-admin")
-    public ResponseEntity<?> crearSuperAdmin() {
-        try {
-            // Buscar si ya existe el usuario
-            Optional<Usuario> usuarioExistente = usuarioRepository.findByEmail("jrncarrizo@gmail.com");
-            
-            if (usuarioExistente.isPresent()) {
-                // Actualizar usuario existente
-                Usuario usuario = usuarioExistente.get();
-                usuario.setRol(Usuario.RolUsuario.SUPER_ADMIN);
-                usuario.setActivo(true);
-                usuario.setEmailVerificado(true);
-                
-                // Generar hash para la contraseña: 32691240Jor
-                String nuevaPassword = "32691240Jor";
-                String nuevoHash = passwordEncoder.encode(nuevaPassword);
-                usuario.setPassword(nuevoHash);
-                
-                usuarioRepository.save(usuario);
-                
-                return ResponseEntity.ok(Map.of(
-                    "mensaje", "Usuario SUPER_ADMIN actualizado correctamente",
-                    "email", usuario.getEmail(),
-                    "rol", usuario.getRol().name(),
-                    "password", nuevaPassword,
-                    "accion", "actualizado"
-                ));
-            } else {
-                // Crear nuevo usuario SUPER_ADMIN
-                // Primero necesitamos una empresa (crear una empresa del sistema)
-                Empresa empresaSistema = new Empresa();
-                empresaSistema.setNombre("Sistema MiNegocio");
-                empresaSistema.setSubdominio("sistema");
-                empresaSistema.setEmail("sistema@minegocio.com");
-                empresaSistema.setTelefono("+34 000 000 000");
-                empresaSistema.setDescripcion("Empresa del sistema para super administradores");
-                empresaSistema.setColorPrimario("#1f2937");
-                empresaSistema.setColorSecundario("#374151");
-                empresaSistema.setEstadoSuscripcion(Empresa.EstadoSuscripcion.ACTIVA);
-                empresaSistema.setActiva(true);
-                
-                // Guardar la empresa del sistema
-                empresaRepository.save(empresaSistema);
-                
-                // Crear el usuario SUPER_ADMIN
-                Usuario superAdmin = new Usuario();
-                superAdmin.setNombre("Super");
-                superAdmin.setApellidos("Administrador");
-                superAdmin.setEmail("jrncarrizo@gmail.com");
-                superAdmin.setTelefono("+34 000 000 000");
-                superAdmin.setRol(Usuario.RolUsuario.SUPER_ADMIN);
-                superAdmin.setActivo(true);
-                superAdmin.setEmailVerificado(true);
-                
-                // Generar hash para la contraseña
-                String password = "32691240Jor";
-                String hash = passwordEncoder.encode(password);
-                superAdmin.setPassword(hash);
-                
-                // Asignar empresa del sistema
-                superAdmin.setEmpresa(empresaSistema);
-                
-                usuarioRepository.save(superAdmin);
-                
-                return ResponseEntity.ok(Map.of(
-                    "mensaje", "Usuario SUPER_ADMIN creado correctamente",
-                    "email", superAdmin.getEmail(),
-                    "rol", superAdmin.getRol().name(),
-                    "password", password,
-                    "accion", "creado"
-                ));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Error al crear/actualizar SUPER_ADMIN: " + e.getMessage()));
-        }
-    }
+
 
     /**
      * Verifica el estado del usuario SUPER_ADMIN
@@ -1315,6 +1236,66 @@ public class DebugController {
             
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint simple para crear el superadmin desde el navegador
+     */
+    @GetMapping("/crear-superadmin")
+    public String crearSuperAdmin() {
+        try {
+            System.out.println("🔧 Iniciando creación de superadmin...");
+            
+            String email = "jrncarrizo@gmail.com";
+            String password = "32691240Jor";
+            
+            // Verificar si ya existe el superadmin
+            System.out.println("🔍 Verificando si existe el superadmin...");
+            if (usuarioRepository.findByEmail(email).isPresent()) {
+                System.out.println("✅ Superadmin ya existe");
+                return "✅ El superadmin ya existe. Usa: " + email + " / " + password;
+            }
+            
+            // Crear la empresa del sistema si no existe
+            System.out.println("🏢 Verificando empresa del sistema...");
+            Empresa empresa = empresaRepository.findByEmail("sistema@minegocio.com")
+                .orElseGet(() -> {
+                    System.out.println("🏢 Creando empresa del sistema...");
+                    Empresa e = new Empresa();
+                    e.setNombre("Sistema MiNegocio");
+                    e.setSubdominio("sistema");
+                    e.setEmail("sistema@minegocio.com");
+                    e.setTelefono("+34 000 000 000");
+                    e.setDescripcion("Empresa del sistema para super administradores");
+                    e.setActiva(true);
+                    Empresa empresaGuardada = empresaRepository.save(e);
+                    System.out.println("✅ Empresa del sistema creada con ID: " + empresaGuardada.getId());
+                    return empresaGuardada;
+                });
+            
+            System.out.println("👤 Creando superadmin...");
+            // Crear el superadmin
+            Usuario superadmin = new Usuario();
+            superadmin.setNombre("Super");
+            superadmin.setApellidos("Administrador");
+            superadmin.setEmail(email);
+            superadmin.setPassword(passwordEncoder.encode(password));
+            superadmin.setTelefono("+34 000 000 000");
+            superadmin.setRol(Usuario.RolUsuario.SUPER_ADMIN);
+            superadmin.setActivo(true);
+            superadmin.setEmailVerificado(true);
+            superadmin.setEmpresa(empresa);
+            
+            Usuario superadminGuardado = usuarioRepository.save(superadmin);
+            System.out.println("✅ Superadmin creado con ID: " + superadminGuardado.getId());
+            
+            return "✅ Superadmin creado correctamente. Usa: " + email + " / " + password;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error al crear superadmin: " + e.getMessage());
+            e.printStackTrace();
+            return "❌ Error al crear superadmin: " + e.getMessage() + "\nStack trace: " + e.getStackTrace()[0];
         }
     }
 }
