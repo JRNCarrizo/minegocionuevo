@@ -8,8 +8,8 @@ export const API_CONFIG = {
   
   // URLs de producción
   PRODUCTION: {
-    BASE_URL: 'https://negocio360-backend.onrender.com/api',
-    SUPER_ADMIN_URL: 'https://negocio360-backend.onrender.com/api/super-admin',
+    BASE_URL: 'https://minegocio-backend-production.up.railway.app/api',
+    SUPER_ADMIN_URL: 'https://minegocio-backend-production.up.railway.app/api/super-admin',
   },
   
   // Función para obtener la URL base según el entorno
