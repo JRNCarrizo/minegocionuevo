@@ -85,6 +85,14 @@ const ControlInventario: React.FC = () => {
   const [operacionSeleccionada, setOperacionSeleccionada] = useState<HistorialInventario | null>(null);
   const [mostrarDetalleOperacion, setMostrarDetalleOperacion] = useState(false);
 
+  // Estados para productos no escaneados
+  const [productosNoEscaneados, setProductosNoEscaneados] = useState<Producto[]>([]);
+  const [mostrarModalProductosNoEscaneados, setMostrarModalProductosNoEscaneados] = useState(false);
+  const [productosSeleccionadosComoFaltantes, setProductosSeleccionadosComoFaltantes] = useState<Set<number>>(new Set());
+
+  // Estados para secciones expandibles
+  const [seccionExpandida, setSeccionExpandida] = useState<string | null>(null);
+
   useEffect(() => {
     if (datosUsuario?.empresaId) {
       cargarHistorialInventarios();
@@ -282,7 +290,8 @@ const ControlInventario: React.FC = () => {
       setProductoSeleccionado(productoInventario);
       setCantidadEscaneada(productoInventario.stockEscaneado);
       setMostrarModalProducto(true);
-      setMostrarScanner(false);
+      // NO cerrar el escáner aquí, solo ocultarlo temporalmente
+      // setMostrarScanner(false);
 
     } catch (error) {
       console.error('Error al procesar código escaneado:', error);
@@ -295,10 +304,19 @@ const ControlInventario: React.FC = () => {
   const confirmarCantidad = () => {
     if (!productoSeleccionado) return;
 
+    const diferencia = cantidadEscaneada - productoSeleccionado.stockReal;
+    
+    console.log('🔍 DEBUG - confirmarCantidad:');
+    console.log('🔍 Producto:', productoSeleccionado.nombreProducto);
+    console.log('🔍 Stock Real (sistema):', productoSeleccionado.stockReal);
+    console.log('🔍 Cantidad Escaneada:', cantidadEscaneada);
+    console.log('🔍 Diferencia calculada:', diferencia);
+    console.log('🔍 Tipo de diferencia:', diferencia > 0 ? 'SOBRANTE' : diferencia < 0 ? 'FALTANTE' : 'CORRECTO');
+
     const productoActualizado: ProductoInventario = {
       ...productoSeleccionado,
       stockEscaneado: cantidadEscaneada,
-      diferencia: cantidadEscaneada - productoSeleccionado.stockReal
+      diferencia: diferencia
     };
 
     // Actualizar el mapa de productos escaneados
@@ -306,23 +324,69 @@ const ControlInventario: React.FC = () => {
     nuevosProductosEscaneados.set(productoSeleccionado.codigoProducto, productoActualizado);
     setProductosEscaneados(nuevosProductosEscaneados);
 
-    // Cerrar modal y salir del escáner correspondiente
+    // Cerrar solo el modal de producto, el escáner ya está abierto
     setMostrarModalProducto(false);
     setProductoSeleccionado(null);
-    // Cerrar el escáner, pero NO cambiar el modoEscaneo ni mostrar resumen
-    setMostrarScanner(false);
-    setMostrarScannerUSB(false);
+    setCantidadEscaneada(1);
 
-    toast.success(`Producto ${productoSeleccionado.nombreProducto} registrado con cantidad: ${cantidadEscaneada}`);
+    // Calcular estadísticas del inventario actual
+    const productos = Array.from(nuevosProductosEscaneados.values());
+    const totalProductos = productos.length;
+    const productosConDiferencias = productos.filter(p => p.diferencia !== 0).length;
+    const valorTotalDiferencias = productos.reduce((total, p) => {
+      const valorDiferencia = p.diferencia * p.precioUnitario;
+      return total + valorDiferencia;
+    }, 0);
+    const porcentajePrecision = ((totalProductos - productosConDiferencias) / totalProductos) * 100;
+
+    const estadisticasCalculadas: EstadisticasInventario = {
+      totalProductos,
+      productosConDiferencias,
+      productosFaltantes: productos.filter(p => p.diferencia < 0).length,
+      cantidadProductosSobrantes: productos.filter(p => p.diferencia > 0).length,
+      valorTotalDiferencias,
+      porcentajePrecision,
+      productosPerdidos: productos.filter(p => p.diferencia < 0),
+      productosSobrantes: productos.filter(p => p.diferencia > 0)
+    };
+
+    // Crear el inventario actual si no existe
+    const inventarioActualizado: Inventario = {
+      id: inventarioActual ? inventarioActual.id : Date.now(),
+      fechaInventario: inventarioActual ? inventarioActual.fechaInventario : new Date().toISOString(),
+      totalProductos,
+      productosConDiferencias,
+      valorTotalDiferencias,
+      porcentajePrecision,
+      estado: 'EN_PROGRESO',
+      detalles: Array.from(nuevosProductosEscaneados.values())
+    };
+
+    setInventarioActual(inventarioActualizado);
+    setEstadisticas(estadisticasCalculadas);
+    
+    // Establecer el modo ESCANEANDO para mostrar la sección de progreso
+    setModoEscaneo('ESCANEANDO');
+
+    toast.success(`Producto ${productoSeleccionado.nombreProducto} registrado. Puedes seguir escaneando o finalizar el inventario.`);
   };
 
   const seguirEscaneando = () => {
     if (!productoSeleccionado) return;
 
+    const diferencia = cantidadEscaneada - productoSeleccionado.stockReal;
+    
+    console.log('🔍 DEBUG - seguirEscaneando:');
+    console.log('🔍 Producto:', productoSeleccionado.nombreProducto);
+    console.log('🔍 Stock Real (sistema):', productoSeleccionado.stockReal);
+    console.log('🔍 Cantidad Escaneada:', cantidadEscaneada);
+    console.log('🔍 Diferencia calculada:', diferencia);
+    console.log('🔍 Tipo de diferencia:', diferencia > 0 ? 'SOBRANTE' : diferencia < 0 ? 'FALTANTE' : 'CORRECTO');
+
     const productoActualizado: ProductoInventario = {
       ...productoSeleccionado,
       stockEscaneado: cantidadEscaneada,
-      diferencia: cantidadEscaneada - productoSeleccionado.stockReal
+      diferencia: diferencia
     };
 
     // Actualizar el mapa de productos escaneados
@@ -333,6 +397,9 @@ const ControlInventario: React.FC = () => {
     // Cerrar modal y volver al escáner correspondiente
     setMostrarModalProducto(false);
     setProductoSeleccionado(null);
+    
+    // Establecer el modo ESCANEANDO para mostrar la sección de progreso
+    setModoEscaneo('ESCANEANDO');
     
     // Si el escáner USB está abierto, volver al modal USB
     if (mostrarScannerUSB) {
@@ -406,30 +473,253 @@ const ControlInventario: React.FC = () => {
     setMostrarResumen(true);
   };
 
+  const obtenerProductosNoEscaneados = async () => {
+    try {
+      console.log('🔍 Obteniendo todos los productos activos...');
+      console.log('🔍 empresaId:', datosUsuario!.empresaId);
+      console.log('🔍 productosEscaneados actuales:', productosEscaneados.size);
+      
+      const response = await ApiService.obtenerTodosLosProductos(datosUsuario!.empresaId);
+      console.log('🔍 Response de API:', response);
+      
+      // Verificar si response es un array directo o tiene la propiedad data
+      const todosLosProductos = Array.isArray(response) ? response : (response.data || []);
+      console.log('🔍 Total de productos en la empresa:', todosLosProductos.length);
+      console.log('🔍 Todos los productos:', todosLosProductos.map(p => ({ id: p.id, nombre: p.nombre, activo: p.activo })));
+      
+      // Filtrar solo productos activos
+      const productosActivos = todosLosProductos.filter(p => p.activo !== false);
+      console.log('🔍 Productos activos:', productosActivos.length);
+      console.log('🔍 Productos activos:', productosActivos.map(p => ({ id: p.id, nombre: p.nombre })));
+      
+      const productosEscaneadosIds = new Set(Array.from(productosEscaneados.values()).map(p => p.id));
+      console.log('🔍 IDs de productos escaneados:', Array.from(productosEscaneadosIds));
+      console.log('🔍 Productos escaneados detallados:', Array.from(productosEscaneados.values()).map(p => ({ id: p.id, nombre: p.nombreProducto })));
+      
+      const productosNoEscaneados = productosActivos.filter(producto => !productosEscaneadosIds.has(producto.id));
+      console.log('🔍 Productos no escaneados encontrados:', productosNoEscaneados.length);
+      console.log('🔍 Productos no escaneados:', productosNoEscaneados.map(p => ({ id: p.id, nombre: p.nombre })));
+      
+      setProductosNoEscaneados(productosNoEscaneados);
+      setProductosSeleccionadosComoFaltantes(new Set());
+      
+      if (productosNoEscaneados.length > 0) {
+        console.log('✅ Mostrando modal de productos no escaneados');
+        setMostrarModalProductosNoEscaneados(true);
+        return true; // Hay productos no escaneados
+      } else {
+        console.log('✅ No hay productos no escaneados');
+      }
+      
+      return false; // No hay productos no escaneados
+    } catch (error) {
+      console.error('Error al obtener productos no escaneados:', error);
+      toast.error('Error al verificar productos no escaneados');
+      return false;
+    }
+  };
+
   const guardarInventario = async () => {
-    if (!inventarioActual || !estadisticas) return;
+    console.log('🔍 DEBUG - Función guardarInventario llamada');
+    console.log('🔍 DEBUG - inventarioActual:', inventarioActual);
+    console.log('🔍 DEBUG - estadisticas:', estadisticas);
+    console.log('🔍 DEBUG - productosEscaneados:', productosEscaneados);
+    
+    if (!estadisticas) {
+      console.log('❌ DEBUG - Validación fallida: estadisticas es null');
+      toast.error('No hay datos de inventario para guardar');
+      return;
+    }
+
+    // Verificar productos no escaneados antes de guardar
+    const hayProductosNoEscaneados = await obtenerProductosNoEscaneados();
+    if (hayProductosNoEscaneados) {
+      console.log('⚠️ Hay productos no escaneados, mostrando modal de confirmación');
+      return; // No continuar con el guardado hasta que se confirme
+    }
+
+    // Si no hay productos no escaneados, continuar con el guardado normal
+    await guardarInventarioReal();
+  };
+
+  const continuarGuardadoConProductosFaltantes = async () => {
+    console.log('✅ Continuando guardado con productos marcados como faltantes');
+    
+    // Agregar productos seleccionados como faltantes al inventario
+    const productosFaltantes = productosNoEscaneados.filter(producto => 
+      productosSeleccionadosComoFaltantes.has(producto.id)
+    );
+    
+    console.log('🔍 Productos seleccionados como faltantes:', productosFaltantes.length);
+    console.log('🔍 Productos faltantes:', productosFaltantes.map(p => ({ id: p.id, nombre: p.nombre, stock: p.stock })));
+    
+    // Convertir productos faltantes a formato ProductoInventario
+    const productosFaltantesInventario = productosFaltantes.map(producto => ({
+      id: producto.id,
+      codigoProducto: producto.codigoBarras || producto.codigoPersonalizado || '',
+      nombreProducto: producto.nombre,
+      stockReal: producto.stock,
+      stockEscaneado: 0, // No fueron escaneados
+      diferencia: -producto.stock, // Faltan todos los que había en stock
+      precioUnitario: producto.precio,
+      categoria: producto.categoria || 'Sin categoría',
+      marca: producto.marca || 'Sin marca'
+    }));
+    
+    console.log('🔍 Productos faltantes convertidos:', productosFaltantesInventario.map(p => ({ 
+      id: p.id, 
+      nombre: p.nombreProducto, 
+      stockReal: p.stockReal, 
+      stockEscaneado: p.stockEscaneado, 
+      diferencia: p.diferencia 
+    })));
+    
+    // Agregar productos faltantes a productosEscaneados
+    const nuevosProductosEscaneados = new Map(productosEscaneados);
+    productosFaltantesInventario.forEach(producto => {
+      nuevosProductosEscaneados.set(producto.codigoProducto, producto);
+    });
+    
+    console.log('🔍 Total productos escaneados después de agregar faltantes:', nuevosProductosEscaneados.size);
+    console.log('🔍 DEBUG - Contenido de nuevosProductosEscaneados:');
+    Array.from(nuevosProductosEscaneados.entries()).forEach(([codigo, producto]) => {
+      console.log(`  - ${codigo}: ${producto.nombreProducto} (ID: ${producto.id}, Stock: ${producto.stockReal} → ${producto.stockEscaneado}, Diferencia: ${producto.diferencia})`);
+    });
+    
+    // Recalcular estadísticas con los productos faltantes incluidos
+    const todosLosProductos = Array.from(nuevosProductosEscaneados.values());
+    const totalProductos = todosLosProductos.length;
+    const productosConDiferencias = todosLosProductos.filter(p => p.diferencia !== 0).length;
+    const valorTotalDiferencias = todosLosProductos.reduce((total, p) => {
+      const valorDiferencia = p.diferencia * p.precioUnitario;
+      return total + valorDiferencia;
+    }, 0);
+    const porcentajePrecision = ((totalProductos - productosConDiferencias) / totalProductos) * 100;
+
+    const estadisticasActualizadas: EstadisticasInventario = {
+      totalProductos,
+      productosConDiferencias,
+      productosFaltantes: todosLosProductos.filter(p => p.diferencia < 0).length,
+      cantidadProductosSobrantes: todosLosProductos.filter(p => p.diferencia > 0).length,
+      valorTotalDiferencias,
+      porcentajePrecision,
+      productosPerdidos: todosLosProductos.filter(p => p.diferencia < 0),
+      productosSobrantes: todosLosProductos.filter(p => p.diferencia > 0)
+    };
+    
+    console.log('🔍 Estadísticas actualizadas:', estadisticasActualizadas);
+    
+    // Actualizar estados
+    setProductosEscaneados(nuevosProductosEscaneados);
+    setEstadisticas(estadisticasActualizadas);
+    
+    // Actualizar inventarioActual con los productos faltantes incluidos
+    const inventarioActualizado: Inventario = {
+      id: inventarioActual ? inventarioActual.id : Date.now(),
+      fechaInventario: inventarioActual ? inventarioActual.fechaInventario : new Date().toISOString(),
+      totalProductos,
+      productosConDiferencias,
+      valorTotalDiferencias,
+      porcentajePrecision,
+      estado: 'EN_PROGRESO',
+      detalles: Array.from(nuevosProductosEscaneados.values())
+    };
+    setInventarioActual(inventarioActualizado);
+    
+    console.log('🔍 Inventario actualizado con productos faltantes:', inventarioActualizado);
+    console.log('🔍 DEBUG - Detalles del inventario actualizado:', inventarioActualizado.detalles.map(p => ({
+      id: p.id,
+      nombre: p.nombreProducto,
+      stockReal: p.stockReal,
+      stockEscaneado: p.stockEscaneado,
+      diferencia: p.diferencia
+    })));
+    
+    // Cerrar modal
+    setMostrarModalProductosNoEscaneados(false);
+    setProductosNoEscaneados([]);
+    setProductosSeleccionadosComoFaltantes(new Set());
+    
+    // Continuar con el guardado normal pasando los productos actualizados
+    await guardarInventarioReal(nuevosProductosEscaneados);
+  };
+
+  const omitirProductosNoEscaneados = async () => {
+    console.log('⏭️ Omitiendo productos no escaneados');
+    
+    // Cerrar modal
+    setMostrarModalProductosNoEscaneados(false);
+    setProductosNoEscaneados([]);
+    setProductosSeleccionadosComoFaltantes(new Set());
+    
+    // Continuar con el guardado normal
+    await guardarInventarioReal();
+  };
+
+  const guardarInventarioReal = async (productosActualizados?: Map<string, ProductoInventario>) => {
+    // Si no hay inventarioActual, crear uno básico
+    if (!inventarioActual) {
+      console.log('⚠️ DEBUG - inventarioActual es null, creando uno básico');
+      const inventarioBasico: Inventario = {
+        id: Date.now(),
+        fechaInventario: new Date().toISOString(),
+        totalProductos: estadisticas!.totalProductos,
+        productosConDiferencias: estadisticas!.productosConDiferencias,
+        valorTotalDiferencias: estadisticas!.valorTotalDiferencias,
+        porcentajePrecision: estadisticas!.porcentajePrecision,
+        estado: 'EN_PROGRESO',
+        detalles: Array.from(productosEscaneados.values())
+      };
+      setInventarioActual(inventarioBasico);
+    }
 
     try {
       setCargando(true);
+      console.log('✅ DEBUG - Iniciando proceso de guardado...');
+      console.log('🔍 DEBUG - Estado actual al inicio de guardarInventarioReal:');
+      console.log('  - productosEscaneados.size:', productosEscaneados.size);
+      console.log('  - estadisticas:', estadisticas);
+      console.log('  - inventarioActual:', inventarioActual);
+      
+      // Usar productos actualizados si se proporcionan, sino usar productosEscaneados
+      const productosParaProcesar = productosActualizados || productosEscaneados;
+      const productosEscaneadosArray = Array.from(productosParaProcesar.values());
+      
+      console.log('🔍 DEBUG - Productos para procesar:');
+      console.log('  - productosActualizados proporcionados:', !!productosActualizados);
+      console.log('  - productosParaProcesar.size:', productosParaProcesar.size);
+      console.log('  - productosEscaneados.size:', productosEscaneados.size);
       
       const inventarioCompletado: Inventario = {
-        ...inventarioActual,
+        id: inventarioActual ? inventarioActual.id : Date.now(),
+        fechaInventario: inventarioActual ? inventarioActual.fechaInventario : new Date().toISOString(),
         estado: 'COMPLETADO',
-        totalProductos: estadisticas.totalProductos,
-        productosConDiferencias: estadisticas.productosConDiferencias,
-        valorTotalDiferencias: estadisticas.valorTotalDiferencias,
-        porcentajePrecision: estadisticas.porcentajePrecision,
-        detalles: Array.from(productosEscaneados.values())
+        totalProductos: estadisticas!.totalProductos,
+        productosConDiferencias: estadisticas!.productosConDiferencias,
+        valorTotalDiferencias: estadisticas!.valorTotalDiferencias,
+        porcentajePrecision: estadisticas!.porcentajePrecision,
+        detalles: productosEscaneadosArray
       };
+      
+      console.log('🔍 DEBUG - inventarioCompletado creado con productosEscaneados actualizado:');
+      console.log('🔍 Total productos en productosEscaneados:', productosEscaneadosArray.length);
+      console.log('🔍 Productos en productosEscaneados:', productosEscaneadosArray.map(p => ({
+        id: p.id,
+        nombre: p.nombreProducto,
+        stockReal: p.stockReal,
+        stockEscaneado: p.stockEscaneado,
+        diferencia: p.diferencia,
+        tipo: p.diferencia > 0 ? 'SOBRANTE' : p.diferencia < 0 ? 'FALTANTE' : 'CORRECTO'
+      })));
 
       // Crear objeto para la API de inventario físico
       const inventarioParaAPI = {
-        totalProductos: estadisticas.totalProductos,
-        productosConDiferencias: estadisticas.productosConDiferencias,
-        valorTotalDiferencias: estadisticas.valorTotalDiferencias,
-        porcentajePrecision: estadisticas.porcentajePrecision,
+        totalProductos: estadisticas!.totalProductos,
+        productosConDiferencias: estadisticas!.productosConDiferencias,
+        valorTotalDiferencias: estadisticas!.valorTotalDiferencias,
+        porcentajePrecision: estadisticas!.porcentajePrecision,
         estado: 'COMPLETADO' as const,
-        detalles: Array.from(productosEscaneados.values()).map(p => ({
+        detalles: productosEscaneadosArray.map(p => ({
           productoId: p.id,
           codigoProducto: p.codigoProducto,
           nombreProducto: p.nombreProducto,
@@ -450,9 +740,6 @@ const ControlInventario: React.FC = () => {
         
         if (response.success) {
           console.log('✅ Inventario físico guardado en API:', response.data);
-          
-
-          
           toast.success('Inventario guardado exitosamente en el servidor');
         } else {
           throw new Error(response.message || 'Error al guardar en API');
@@ -462,31 +749,98 @@ const ControlInventario: React.FC = () => {
         toast.success('Inventario guardado localmente (servidor no disponible)');
       }
       
-      // Registrar operaciones de inventario para cada producto con diferencias
-      console.log('📊 Registrando operaciones de inventario...');
-      for (const producto of inventarioCompletado.detalles) {
-        if (producto.diferencia !== 0) {
+      // Procesar productos con diferencias de forma más eficiente
+      const productosConDiferencias = inventarioCompletado.detalles.filter(p => p.diferencia !== 0);
+      
+      console.log('🔍 DEBUG - guardarInventarioReal:');
+      console.log('🔍 Total productos en inventario:', inventarioCompletado.detalles.length);
+      console.log('🔍 Productos con diferencias:', productosConDiferencias.length);
+      console.log('🔍 Productos con diferencias:', productosConDiferencias.map(p => ({
+        id: p.id,
+        nombre: p.nombreProducto,
+        stockReal: p.stockReal,
+        stockEscaneado: p.stockEscaneado,
+        diferencia: p.diferencia,
+        tipo: p.diferencia > 0 ? 'SOBRANTE' : p.diferencia < 0 ? 'FALTANTE' : 'CORRECTO'
+      })));
+      
+      // Verificar productos faltantes específicamente
+      const productosFaltantes = productosConDiferencias.filter(p => p.diferencia < 0);
+      console.log('🔍 Productos faltantes a procesar:', productosFaltantes.length);
+      console.log('🔍 Productos faltantes:', productosFaltantes.map(p => ({
+        id: p.id,
+        nombre: p.nombreProducto,
+        stockReal: p.stockReal,
+        stockEscaneado: p.stockEscaneado,
+        diferencia: p.diferencia
+      })));
+      
+      if (productosConDiferencias.length > 0) {
+        console.log('📊 Procesando productos con diferencias...');
+        
+        // Procesar en lotes para evitar sobrecarga
+        const lotes = [];
+        for (let i = 0; i < productosConDiferencias.length; i += 3) {
+          lotes.push(productosConDiferencias.slice(i, i + 3));
+        }
+        
+        for (const lote of lotes) {
+          await Promise.all(lote.map(async (producto) => {
+            try {
+              // Obtener el stock actual del producto antes de actualizarlo
+              console.log(`🔍 Obteniendo stock actual para ${producto.nombreProducto}...`);
+              const productoActualResponse = await ApiService.obtenerProducto(datosUsuario!.empresaId, producto.id);
+              const stockActual = productoActualResponse.data?.stock || producto.stockReal;
+              
+              // Verificar si es un producto faltante
+              const esProductoFaltante = producto.diferencia < 0;
+              console.log(`🔍 Producto ${producto.nombreProducto} - Es faltante: ${esProductoFaltante}`);
+              if (esProductoFaltante) {
+                console.log(`🔍 Producto faltante - Stock actual: ${stockActual}, Stock escaneado: ${producto.stockEscaneado}, Diferencia: ${producto.diferencia}`);
+              }
+              
           const tipoOperacion = producto.diferencia > 0 ? 'INCREMENTO' : 'DECREMENTO';
           const cantidad = Math.abs(producto.diferencia);
-          const stockNuevo = producto.stockReal + producto.diferencia;
-          
+              // CORRECCIÓN: El stock nuevo debe ser el stock escaneado, no el stock real + diferencia
+              const stockNuevo = producto.stockEscaneado;
+              
+              console.log(`🔍 DEBUG - Producto: ${producto.nombreProducto}`);
+              console.log(`🔍 DEBUG - Stock Actual (sistema): ${stockActual}`);
+              console.log(`🔍 DEBUG - Stock Real (cuando se escaneó): ${producto.stockReal}`);
+              console.log(`🔍 DEBUG - Stock Escaneado: ${producto.stockEscaneado}`);
+              console.log(`🔍 DEBUG - Diferencia: ${producto.diferencia}`);
+              console.log(`🔍 DEBUG - Stock Nuevo: ${stockNuevo}`);
+              console.log(`🔍 DEBUG - Tipo Operación: ${tipoOperacion}`);
+              console.log(`🔍 DEBUG - Cantidad: ${cantidad}`);
+              
+              // Registrar operación con el tipo correcto y luego actualizar stock
+              console.log(`📝 Registrando operación de ${tipoOperacion}...`);
           await registrarOperacionInventario(
             producto.id,
-            tipoOperacion,
+                tipoOperacion, // Usar INCREMENTO o DECREMENTO según corresponda
             cantidad,
-            producto.stockReal,
+                stockActual, // Usar el stock actual, no el stock cuando se escaneó
             stockNuevo,
             producto.codigoProducto,
-            `Ajuste por inventario físico. Stock real: ${producto.stockEscaneado}, Stock sistema: ${producto.stockReal}`
+                `Inventario físico: Stock escaneado ${producto.stockEscaneado}, Stock sistema ${stockActual}`
           );
           
-          // Actualizar el stock del producto en el sistema
-          try {
-            await ApiService.actualizarStock(datosUsuario!.empresaId, producto.id, stockNuevo);
-            console.log(`✅ Stock actualizado para producto ${producto.nombreProducto}: ${producto.stockReal} → ${stockNuevo}`);
+              // Actualizar stock usando actualizarProducto para evitar registro automático de operación
+              console.log(`🔄 Actualizando stock para ${producto.nombreProducto}...`);
+              const response = await ApiService.actualizarProducto(datosUsuario!.empresaId, producto.id, { stock: stockNuevo });
+              console.log(`✅ Respuesta de actualización de stock:`, response);
+              
+              console.log(`✅ Stock actualizado para ${producto.nombreProducto}: ${stockActual} → ${stockNuevo}`);
+              if (esProductoFaltante) {
+                console.log(`✅ Producto faltante procesado: ${producto.nombreProducto} - Stock actualizado a 0`);
+              }
           } catch (error) {
-            console.error(`❌ Error al actualizar stock del producto ${producto.nombreProducto}:`, error);
+              console.error(`❌ Error al procesar producto ${producto.nombreProducto}:`, error);
           }
+          }));
+          
+          // Pequeña pausa entre lotes para evitar sobrecarga
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
       
@@ -507,6 +861,8 @@ const ControlInventario: React.FC = () => {
       setEstadisticas(null);
       setModoEscaneo('INICIAR');
       setMostrarResumen(false);
+      
+      toast.success('Inventario guardado y procesado exitosamente');
       
     } catch (error) {
       console.error('Error al guardar inventario:', error);
@@ -529,10 +885,6 @@ const ControlInventario: React.FC = () => {
       // Obtener el producto para obtener su precio unitario
       const productoResponse = await ApiService.obtenerProducto(datosUsuario!.empresaId, productoId, true);
       const precioUnitario = productoResponse.data?.precio || 0;
-      
-      console.log('🔍 DEBUG - Producto obtenido:', productoResponse.data);
-      console.log('🔍 DEBUG - Precio unitario:', precioUnitario);
-      console.log('🔍 DEBUG - Producto ID:', productoId);
 
       const request = {
         productoId,
@@ -548,12 +900,7 @@ const ControlInventario: React.FC = () => {
 
       const response = await inventarioService.registrarOperacion(request);
       if (response.success) {
-        console.log('✅ Operación registrada en historial:', response.data);
-        // Recargar estadísticas después de un breve delay
-        setTimeout(async () => {
-          console.log('🔄 Recargando estadísticas después de registrar operación...');
-          await cargarEstadisticasOperaciones();
-        }, 1000);
+        console.log('✅ Operación registrada en historial para producto ID:', productoId);
       } else {
         console.error('❌ Error al registrar operación:', response.message);
       }
@@ -586,14 +933,15 @@ const ControlInventario: React.FC = () => {
         console.warn('Fecha inválida recibida:', fecha);
         return 'Fecha inválida';
       }
-      return fechaObj.toLocaleString('es-AR', {
+      // Usar la zona horaria local del usuario en lugar de una zona específica
+      return fechaObj.toLocaleString('es-CL', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
-        timeZone: 'America/Argentina/Buenos_Aires',
+        // No especificar timeZone para usar la zona horaria local del navegador
       });
     } catch (error) {
       console.error('Error al formatear fecha:', error, 'Fecha recibida:', fecha);
@@ -611,6 +959,10 @@ const ControlInventario: React.FC = () => {
   const verDetalleOperacion = (operacion: HistorialInventario) => {
     setOperacionSeleccionada(operacion);
     setMostrarDetalleOperacion(true);
+  };
+
+  const toggleSeccion = (seccion: string) => {
+    setSeccionExpandida(seccionExpandida === seccion ? null : seccion);
   };
 
   // Mostrar estado de carga mientras se cargan los datos del usuario
@@ -648,6 +1000,20 @@ const ControlInventario: React.FC = () => {
 
   return (
     <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
+      <style>
+        {`
+          @keyframes slideDown {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}
+      </style>
       {/* Navegación */}
       <NavbarAdmin 
         onCerrarSesion={cerrarSesionConToast}
@@ -788,6 +1154,83 @@ const ControlInventario: React.FC = () => {
                 >
                   ⌨️ Escáner USB
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Estadísticas de Operaciones */}
+        {estadisticasOperaciones && (
+          <div className="tarjeta mb-6" style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: isMobile ? '16px' : '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <h3 className="titulo-3 mb-4" style={{
+              fontSize: isMobile ? '18px' : '20px',
+              fontWeight: '600',
+              color: '#1e293b',
+              marginBottom: '16px',
+              textAlign: 'center'
+            }}>
+              📊 Estadísticas de Operaciones
+            </h3>
+            
+            <div className="grid grid-4 mb-4" style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+              gap: isMobile ? '0.75rem' : '1rem',
+              marginBottom: '1rem'
+            }}>
+              <div style={{
+                background: 'white',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#3b82f6' }}>
+                  {estadisticasOperaciones.totalOperaciones || 0}
+                </div>
+                <div style={{ fontSize: '14px', color: '#64748b' }}>Total Operaciones</div>
+              </div>
+              <div style={{
+                background: 'white',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#10b981' }}>
+                  {estadisticasOperaciones.totalIncrementos || 0}
+                </div>
+                <div style={{ fontSize: '14px', color: '#64748b' }}>Incrementos</div>
+              </div>
+              <div style={{
+                background: 'white',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#ef4444' }}>
+                  {estadisticasOperaciones.totalDecrementos || 0}
+                </div>
+                <div style={{ fontSize: '14px', color: '#64748b' }}>Decrementos</div>
+              </div>
+              <div style={{
+                background: 'white',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#f59e0b' }}>
+                  {estadisticasOperaciones.totalAjustes || 0}
+                </div>
+                <div style={{ fontSize: '14px', color: '#64748b' }}>Ajustes</div>
               </div>
             </div>
           </div>
@@ -1143,6 +1586,22 @@ const ControlInventario: React.FC = () => {
               </div>
             )}
 
+            {/* Información del proceso */}
+            {cargando && (
+              <div style={{
+                background: '#f0f9ff',
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid #bae6fd',
+                marginBottom: '16px',
+                textAlign: 'center',
+                fontSize: '14px',
+                color: '#0369a1'
+              }}>
+                ⏳ <strong>Procesando inventario...</strong> Esto puede tomar unos segundos dependiendo de la cantidad de productos.
+              </div>
+            )}
+
             {/* Botones de acción */}
             <div className="flex gap-4 justify-center" style={{ 
               gap: isMobile ? '0.5rem' : '1rem', 
@@ -1164,10 +1623,173 @@ const ControlInventario: React.FC = () => {
                   cursor: cargando ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
                   opacity: cargando ? 0.7 : 1,
+                  width: isMobile ? '100%' : 'auto',
+                  position: 'relative'
+                }}
+              >
+                {cargando ? (
+                  <>
+                    <span style={{ marginRight: '8px' }}>💾</span>
+                    Guardando...
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '0',
+                      left: '0',
+                      height: '3px',
+                      background: 'rgba(255,255,255,0.3)',
+                      borderRadius: '0 0 12px 12px',
+                      animation: 'pulse 1.5s ease-in-out infinite'
+                    }}></div>
+                  </>
+                ) : (
+                  '💾 Guardar Inventario'
+                )}
+              </button>
+              
+              {/* Botón de prueba temporal */}
+              <button
+                onClick={() => {
+                  console.log('🔍 DEBUG - Botón de prueba clickeado');
+                  console.log('🔍 DEBUG - inventarioActual:', inventarioActual);
+                  console.log('🔍 DEBUG - estadisticas:', estadisticas);
+                  console.log('🔍 DEBUG - productosEscaneados:', productosEscaneados);
+                  toast.success('Revisa la consola para ver los datos de debug');
+                }}
+                className="boton boton-secundario"
+                style={{
+                  background: 'white',
+                  color: '#3b82f6',
+                  border: '2px solid #3b82f6',
+                  padding: isMobile ? '8px 16px' : '10px 20px',
+                  borderRadius: '8px',
+                  fontSize: isMobile ? '12px' : '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
                   width: isMobile ? '100%' : 'auto'
                 }}
               >
-                {cargando ? '💾 Guardando...' : '💾 Guardar Inventario'}
+                🔍 Debug
+              </button>
+              
+              {/* Botón para probar productos no escaneados */}
+              <button
+                onClick={async () => {
+                  console.log('🧪 Probando funcionalidad de productos no escaneados...');
+                  const hayProductos = await obtenerProductosNoEscaneados();
+                  console.log('🧪 Resultado:', hayProductos);
+                  if (hayProductos) {
+                    toast.success('Se encontraron productos no escaneados. Revisa el modal.');
+                  } else {
+                    toast.success('No se encontraron productos no escaneados.');
+                  }
+                }}
+                className="boton boton-secundario"
+                style={{
+                  background: 'white',
+                  color: '#f59e0b',
+                  border: '2px solid #f59e0b',
+                  padding: isMobile ? '8px 16px' : '10px 20px',
+                  borderRadius: '8px',
+                  fontSize: isMobile ? '12px' : '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  width: isMobile ? '100%' : 'auto'
+                }}
+              >
+                🧪 Probar No Escaneados
+              </button>
+              
+              {/* Botón para probar con productos inactivos */}
+              <button
+                onClick={async () => {
+                  console.log('🧪 Probando con productos incluyendo inactivos...');
+                  try {
+                    const response = await ApiService.obtenerTodosLosProductosIncluirInactivos(datosUsuario!.empresaId);
+                    console.log('🧪 Response con inactivos:', response);
+                    
+                    if (response.data) {
+                      const todosLosProductos = response.data;
+                      const productosEscaneadosIds = new Set(Array.from(productosEscaneados.values()).map(p => p.id));
+                      const productosNoEscaneados = todosLosProductos.filter(producto => !productosEscaneadosIds.has(producto.id));
+                      
+                      console.log('🧪 Productos no escaneados (incluyendo inactivos):', productosNoEscaneados.length);
+                      console.log('🧪 Productos no escaneados:', productosNoEscaneados.map(p => ({ id: p.id, nombre: p.nombre, activo: p.activo })));
+                      
+                      if (productosNoEscaneados.length > 0) {
+                        setProductosNoEscaneados(productosNoEscaneados);
+                        setProductosSeleccionadosComoFaltantes(new Set());
+                        setMostrarModalProductosNoEscaneados(true);
+                        toast.success('Se encontraron productos no escaneados (incluyendo inactivos).');
+                      } else {
+                        toast.success('No se encontraron productos no escaneados (incluyendo inactivos).');
+                      }
+                    }
+                  } catch (error) {
+                    console.error('🧪 Error:', error);
+                    toast.error('Error al probar con productos inactivos');
+                  }
+                }}
+                className="boton boton-secundario"
+                style={{
+                  background: 'white',
+                  color: '#8b5cf6',
+                  border: '2px solid #8b5cf6',
+                  padding: isMobile ? '8px 16px' : '10px 20px',
+                  borderRadius: '8px',
+                  fontSize: isMobile ? '12px' : '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  width: isMobile ? '100%' : 'auto'
+                }}
+              >
+                🧪 Probar Con Inactivos
+              </button>
+              
+              {/* Botón para debug detallado */}
+              <button
+                onClick={async () => {
+                  console.log('🔬 DEBUG DETALLADO - Estado actual:');
+                  console.log('🔬 productosEscaneados:', productosEscaneados);
+                  console.log('🔬 productosEscaneados.size:', productosEscaneados.size);
+                  console.log('🔬 productosEscaneados.values():', Array.from(productosEscaneados.values()));
+                  
+                  try {
+                    const response = await ApiService.obtenerTodosLosProductos(datosUsuario!.empresaId);
+                    console.log('🔬 API Response (activos):', response);
+                    const productosActivos = Array.isArray(response) ? response : (response.data || []);
+                    console.log('🔬 Total productos activos en API:', productosActivos.length);
+                    console.log('🔬 Productos activos:', productosActivos);
+                    
+                    // También probar con productos incluyendo inactivos
+                    const responseInactivos = await ApiService.obtenerTodosLosProductosIncluirInactivos(datosUsuario!.empresaId);
+                    console.log('🔬 API Response (incluyendo inactivos):', responseInactivos);
+                    const productosTodos = Array.isArray(responseInactivos) ? responseInactivos : (responseInactivos.data || []);
+                    console.log('🔬 Total productos (incluyendo inactivos):', productosTodos.length);
+                    console.log('🔬 Productos inactivos:', productosTodos.filter(p => p.activo === false));
+                  } catch (error) {
+                    console.error('🔬 Error al obtener productos:', error);
+                  }
+                  
+                  toast.success('Revisa la consola para debug detallado');
+                }}
+                className="boton boton-secundario"
+                style={{
+                  background: 'white',
+                  color: '#dc2626',
+                  border: '2px solid #dc2626',
+                  padding: isMobile ? '8px 16px' : '10px 20px',
+                  borderRadius: '8px',
+                  fontSize: isMobile ? '12px' : '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  width: isMobile ? '100%' : 'auto'
+                }}
+              >
+                🔬 Debug Detallado
               </button>
               
               <button
@@ -1198,7 +1820,7 @@ const ControlInventario: React.FC = () => {
           </div>
         )}
 
-        {/* Historial de inventarios físicos */}
+        {/* Sección de Historiales */}
         <div className="tarjeta mb-6" style={{
           background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
           border: '1px solid #e2e8f0',
@@ -1206,40 +1828,101 @@ const ControlInventario: React.FC = () => {
           padding: isMobile ? '16px' : '24px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
         }}>
-          <div className="flex items-center justify-center mb-4" style={{ flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
-            <h3 className="titulo-3" style={{
+          <h3 className="titulo-3 mb-4" style={{
               fontSize: isMobile ? '18px' : '20px',
               fontWeight: '600',
               color: '#1e293b',
-              marginBottom: '0',
+            marginBottom: '16px',
               textAlign: 'center'
             }}>
-              📋 Historial de Inventarios Físicos
+            📚 Historiales
             </h3>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+
+          {/* Botones de historiales en línea */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '12px', 
+            justifyContent: 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+            marginBottom: '20px'
+          }}>
               <button
-                onClick={() => setMostrarHistorialInventarios(!mostrarHistorialInventarios)}
+              onClick={() => toggleSeccion('inventarios')}
                 className="boton boton-secundario"
                 style={{
-                  background: 'white',
-                  color: '#10b981',
+                background: seccionExpandida === 'inventarios' ? '#10b981' : 'white',
+                color: seccionExpandida === 'inventarios' ? 'white' : '#10b981',
                   border: '2px solid #10b981',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
+                padding: '12px 20px',
+                borderRadius: '12px',
                   fontSize: '14px',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {mostrarHistorialInventarios ? '👁️ Ocultar' : '👁️ Ver Historial'}
+                transition: 'all 0.2s ease',
+                flex: isMobile ? '1' : 'auto',
+                minWidth: isMobile ? 'auto' : '180px'
+              }}
+              onMouseOver={(e) => {
+                if (seccionExpandida !== 'inventarios') {
+                  e.currentTarget.style.background = '#10b981';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (seccionExpandida !== 'inventarios') {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#10b981';
+                }
+              }}
+            >
+              📋 Inventarios Físicos
+            </button>
+            
+            <button
+              onClick={() => {
+                toggleSeccion('operaciones');
+                if (seccionExpandida !== 'operaciones') {
+                  cargarHistorialOperaciones();
+                }
+              }}
+              className="boton boton-secundario"
+              style={{
+                background: seccionExpandida === 'operaciones' ? '#3b82f6' : 'white',
+                color: seccionExpandida === 'operaciones' ? 'white' : '#3b82f6',
+                border: '2px solid #3b82f6',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: isMobile ? '1' : 'auto',
+                minWidth: isMobile ? 'auto' : '180px'
+              }}
+              onMouseOver={(e) => {
+                if (seccionExpandida !== 'operaciones') {
+                  e.currentTarget.style.background = '#3b82f6';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (seccionExpandida !== 'operaciones') {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#3b82f6';
+                }
+              }}
+            >
+              📊 Operaciones
               </button>
-            </div>
           </div>
 
-          {/* Lista de inventarios */}
-          {mostrarHistorialInventarios && (
-            <div>
+          {/* Contenido expandible - Inventarios Físicos */}
+          {seccionExpandida === 'inventarios' && (
+            <div style={{ 
+              borderTop: '1px solid #e2e8f0', 
+              paddingTop: '20px',
+              animation: 'slideDown 0.3s ease-out'
+            }}>
               {historialInventarios.length > 0 ? (
                 <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                   {historialInventarios.map((inventario) => (
@@ -1267,7 +1950,7 @@ const ControlInventario: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                            Inventario del {formatearFecha(inventario.fechaInventario)}
+                            Inventario del {inventarioService.formatearFechaDesdeAPI(inventario.fechaInventario)}
                           </div>
                           <div style={{ fontSize: '14px', color: '#64748b' }}>
                             {inventario.totalProductos} productos | 
@@ -1283,7 +1966,6 @@ const ControlInventario: React.FC = () => {
                             Valor diferencias
                           </div>
                         </div>
-
                       </div>
                       <div style={{ 
                         marginTop: '8px', 
@@ -1313,114 +1995,14 @@ const ControlInventario: React.FC = () => {
               )}
             </div>
           )}
-        </div>
 
-        {/* Historial de Operaciones de Inventario */}
-        <div className="tarjeta mb-6" style={{
-          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-          border: '1px solid #e2e8f0',
-          borderRadius: '16px',
-          padding: isMobile ? '16px' : '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-        }}>
-          <div className="flex items-center justify-center mb-4" style={{ flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
-            <h3 className="titulo-3" style={{
-              fontSize: isMobile ? '18px' : '20px',
-              fontWeight: '600',
-              color: '#1e293b',
-              marginBottom: '0',
-              textAlign: 'center'
+          {/* Contenido expandible - Operaciones */}
+          {seccionExpandida === 'operaciones' && (
+              <div style={{
+              borderTop: '1px solid #e2e8f0', 
+              paddingTop: '20px',
+              animation: 'slideDown 0.3s ease-out'
             }}>
-              📊 Historial de Operaciones
-            </h3>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-              <button
-                onClick={() => {
-                  setMostrarHistorialOperaciones(!mostrarHistorialOperaciones);
-                  if (!mostrarHistorialOperaciones) {
-                    cargarHistorialOperaciones();
-                  }
-                }}
-                className="boton boton-secundario"
-                style={{
-                  background: 'white',
-                  color: '#3b82f6',
-                  border: '2px solid #3b82f6',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {mostrarHistorialOperaciones ? '👁️ Ocultar' : '👁️ Ver Historial'}
-              </button>
-            </div>
-          </div>
-
-          {/* Estadísticas rápidas */}
-          {estadisticasOperaciones && (
-            <div className="grid grid-4 mb-4" style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: isMobile ? '0.75rem' : '1rem',
-              marginBottom: '1rem'
-            }}>
-              <div style={{
-                background: 'white',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#3b82f6' }}>
-                  {estadisticasOperaciones.totalOperaciones || 0}
-                </div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>Total Operaciones</div>
-              </div>
-              <div style={{
-                background: 'white',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#10b981' }}>
-                  {estadisticasOperaciones.totalIncrementos || 0}
-                </div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>Incrementos</div>
-              </div>
-              <div style={{
-                background: 'white',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#ef4444' }}>
-                  {estadisticasOperaciones.totalDecrementos || 0}
-                </div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>Decrementos</div>
-              </div>
-              <div style={{
-                background: 'white',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#f59e0b' }}>
-                  {estadisticasOperaciones.totalAjustes || 0}
-                </div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>Ajustes</div>
-              </div>
-            </div>
-          )}
-
-          {/* Lista de operaciones */}
-          {mostrarHistorialOperaciones && (
-            <div>
               {cargandoHistorial ? (
                 <div className="text-center py-8">
                   <div className="spinner mx-auto mb-4"></div>
@@ -1480,73 +2062,40 @@ const ControlInventario: React.FC = () => {
                           <div style={{ fontSize: '12px', color: '#64748b' }}>
                             {operacion.usuarioNombre} • {inventarioService.formatearFechaDesdeAPI(operacion.fechaOperacion)}
                           </div>
-                          {operacion.observacion && (
-                            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                              📝 {operacion.observacion}
-                            </div>
-                          )}
-                          <div style={{ fontSize: '11px', color: '#3b82f6', marginTop: '8px', fontWeight: '500' }}>
-                            👆 Haz clic para ver detalles completos
-                          </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '14px', color: '#64748b' }}>
-                            Stock: {operacion.stockAnterior} → {operacion.stockNuevo}
-                          </div>
-                          {operacion.valorTotal > 0 && (
                             <div style={{ fontWeight: '600', color: '#1e293b' }}>
                               {formatearMoneda(operacion.valorTotal)}
                             </div>
-                          )}
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>
+                            Valor total
                         </div>
+                        </div>
+                      </div>
+                      <div style={{ 
+                        marginTop: '8px', 
+                        fontSize: '12px', 
+                        color: '#3b82f6',
+                        fontWeight: '500'
+                      }}>
+                        👆 Haz clic para ver detalles
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
-                  <p className="texto-gris">No hay operaciones registradas aún.</p>
-                  <p className="texto-pequeno texto-gris">Las operaciones de inventario aparecerán aquí automáticamente.</p>
-                </div>
-              )}
-
-              {/* Paginación */}
-              {totalPaginasHistorial > 1 && (
-                <div className="flex justify-center gap-2 mt-4">
-                  <button
-                    onClick={() => cargarHistorialOperaciones(paginaHistorial - 1)}
-                    disabled={paginaHistorial === 0}
-                    className="boton boton-secundario"
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '14px',
-                      opacity: paginaHistorial === 0 ? 0.5 : 1
-                    }}
-                  >
-                    ← Anterior
-                  </button>
-                  <span style={{ 
-                    padding: '8px 12px', 
-                    fontSize: '14px', 
-                    color: '#64748b',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    Página {paginaHistorial + 1} de {totalPaginasHistorial}
-                  </span>
-                  <button
-                    onClick={() => cargarHistorialOperaciones(paginaHistorial + 1)}
-                    disabled={paginaHistorial >= totalPaginasHistorial - 1}
-                    className="boton boton-secundario"
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '14px',
-                      opacity: paginaHistorial >= totalPaginasHistorial - 1 ? 0.5 : 1
-                    }}
-                  >
-                    Siguiente →
-                  </button>
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: '#64748b'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
+                    No hay operaciones de inventario
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '14px' }}>
+                    Realiza operaciones de inventario para ver el historial aquí.
+                  </p>
                 </div>
               )}
             </div>
@@ -1758,8 +2307,11 @@ const ControlInventario: React.FC = () => {
                 <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '4px' }}>
                   Código: {productoSeleccionado.codigoProducto}
                 </div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>
+                <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>
                   Precio: {formatearMoneda(productoSeleccionado.precioUnitario)}
+                </div>
+                <div style={{ fontSize: '12px', color: '#dc2626', fontWeight: '500' }}>
+                  💡 <strong>Confirmar y Finalizar:</strong> Guarda el producto y muestra el resumen del inventario
                 </div>
               </div>
             </div>
@@ -1782,7 +2334,7 @@ const ControlInventario: React.FC = () => {
                     flex: 1
                   }}
                 >
-                  ✅ Confirmar
+                  ✅ Confirmar y Finalizar
                 </button>
                 
                 <button
@@ -1832,6 +2384,19 @@ const ControlInventario: React.FC = () => {
               >
                 🔄 Seguir Escaneando
               </button>
+              
+              {/* Información adicional */}
+              <div style={{ 
+                background: '#f0f9ff', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                border: '1px solid #bae6fd',
+                fontSize: '12px',
+                color: '#0369a1',
+                textAlign: 'center'
+              }}>
+                💡 <strong>Opciones:</strong> Puedes finalizar el inventario ahora o continuar escaneando más productos
+              </div>
             </div>
           </div>
         </div>
@@ -1878,7 +2443,7 @@ const ControlInventario: React.FC = () => {
                   📊 Detalle del Inventario
                 </h2>
                 <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
-                  {formatearFecha(inventarioDetalle.fechaInventario)}
+                  {inventarioService.formatearFechaDesdeAPI(inventarioDetalle.fechaInventario)}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -1944,8 +2509,281 @@ const ControlInventario: React.FC = () => {
                       {formatearMoneda(inventarioDetalle.valorTotalDiferencias)}
                     </p>
                   </div>
+                  <div>
+                    <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Total Perdido</p>
+                    <p style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#dc2626' }}>
+                      {formatearMoneda(
+                        Array.isArray(inventarioDetalle.detalles) 
+                          ? inventarioDetalle.detalles
+                              .filter(p => p.diferencia < 0)
+                              .reduce((total, p) => total + (Math.abs(p.diferencia) * p.precioUnitario), 0)
+                          : 0
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Total Sobrante</p>
+                    <p style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#059669' }}>
+                      {formatearMoneda(
+                        Array.isArray(inventarioDetalle.detalles) 
+                          ? inventarioDetalle.detalles
+                              .filter(p => p.diferencia > 0)
+                              .reduce((total, p) => total + (p.diferencia * p.precioUnitario), 0)
+                          : 0
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Resultado Neto</p>
+                    <p style={{ 
+                      margin: 0, 
+                      fontSize: '20px', 
+                      fontWeight: '700', 
+                      color: (() => {
+                        const totalPerdido = Array.isArray(inventarioDetalle.detalles) 
+                          ? inventarioDetalle.detalles
+                              .filter(p => p.diferencia < 0)
+                              .reduce((total, p) => total + (Math.abs(p.diferencia) * p.precioUnitario), 0)
+                          : 0;
+                        const totalSobrante = Array.isArray(inventarioDetalle.detalles) 
+                          ? inventarioDetalle.detalles
+                              .filter(p => p.diferencia > 0)
+                              .reduce((total, p) => total + (p.diferencia * p.precioUnitario), 0)
+                          : 0;
+                        const resultadoNeto = totalPerdido - totalSobrante;
+                        return resultadoNeto > 0 ? '#dc2626' : resultadoNeto < 0 ? '#059669' : '#64748b';
+                      })()
+                    }}>
+                      {(() => {
+                        const totalPerdido = Array.isArray(inventarioDetalle.detalles) 
+                          ? inventarioDetalle.detalles
+                              .filter(p => p.diferencia < 0)
+                              .reduce((total, p) => total + (Math.abs(p.diferencia) * p.precioUnitario), 0)
+                          : 0;
+                        const totalSobrante = Array.isArray(inventarioDetalle.detalles) 
+                          ? inventarioDetalle.detalles
+                              .filter(p => p.diferencia > 0)
+                              .reduce((total, p) => total + (p.diferencia * p.precioUnitario), 0)
+                          : 0;
+                        const resultadoNeto = totalPerdido - totalSobrante;
+                        const signo = resultadoNeto > 0 ? '+' : '';
+                        return `${signo}${formatearMoneda(resultadoNeto)}`;
+                      })()}
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {/* Resumen detallado de pérdidas y sobrantes */}
+              {Array.isArray(inventarioDetalle.detalles) && inventarioDetalle.detalles.length > 0 && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  marginBottom: '24px',
+                  border: '1px solid #fecaca'
+                }}>
+                  <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+                    ⚠️ Resumen de Pérdidas y Sobrantes
+                  </h3>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                    {/* Productos Faltantes */}
+                    <div style={{
+                      background: 'white',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      border: '1px solid #fecaca'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '20px', marginRight: '8px' }}>❌</span>
+                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#dc2626' }}>
+                          Productos Faltantes
+                        </h4>
+                      </div>
+                      <div style={{ fontSize: '24px', fontWeight: '700', color: '#dc2626', marginBottom: '4px' }}>
+                        {Array.isArray(inventarioDetalle.detalles) ? inventarioDetalle.detalles.filter(p => p.diferencia < 0).length : 0}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                        Valor: {formatearMoneda(
+                          Array.isArray(inventarioDetalle.detalles) 
+                            ? inventarioDetalle.detalles
+                                .filter(p => p.diferencia < 0)
+                                .reduce((total, p) => total + (Math.abs(p.diferencia) * p.precioUnitario), 0)
+                            : 0
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Productos Sobrantes */}
+                    <div style={{
+                      background: 'white',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      border: '1px solid #bbf7d0'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '20px', marginRight: '8px' }}>✅</span>
+                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#059669' }}>
+                          Productos Sobrantes
+                        </h4>
+                      </div>
+                      <div style={{ fontSize: '24px', fontWeight: '700', color: '#059669', marginBottom: '4px' }}>
+                        {Array.isArray(inventarioDetalle.detalles) ? inventarioDetalle.detalles.filter(p => p.diferencia > 0).length : 0}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                        Valor: {formatearMoneda(
+                          Array.isArray(inventarioDetalle.detalles) 
+                            ? inventarioDetalle.detalles
+                                .filter(p => p.diferencia > 0)
+                                .reduce((total, p) => total + (p.diferencia * p.precioUnitario), 0)
+                            : 0
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Productos Correctos */}
+                    <div style={{
+                      background: 'white',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      border: '1px solid #dbeafe'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '20px', marginRight: '8px' }}>✅</span>
+                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#3b82f6' }}>
+                          Productos Correctos
+                        </h4>
+                      </div>
+                      <div style={{ fontSize: '24px', fontWeight: '700', color: '#3b82f6', marginBottom: '4px' }}>
+                        {Array.isArray(inventarioDetalle.detalles) ? inventarioDetalle.detalles.filter(p => p.diferencia === 0).length : 0}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                        Sin diferencias
+                      </div>
+                    </div>
+
+                    {/* Resultado Neto */}
+                    <div style={{
+                      background: 'white',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      border: (() => {
+                        const totalPerdido = Array.isArray(inventarioDetalle.detalles) 
+                          ? inventarioDetalle.detalles
+                              .filter(p => p.diferencia < 0)
+                              .reduce((total, p) => total + (Math.abs(p.diferencia) * p.precioUnitario), 0)
+                          : 0;
+                        const totalSobrante = Array.isArray(inventarioDetalle.detalles) 
+                          ? inventarioDetalle.detalles
+                              .filter(p => p.diferencia > 0)
+                              .reduce((total, p) => total + (p.diferencia * p.precioUnitario), 0)
+                          : 0;
+                        const resultadoNeto = totalPerdido - totalSobrante;
+                        return resultadoNeto > 0 ? '2px solid #dc2626' : resultadoNeto < 0 ? '2px solid #059669' : '1px solid #d1d5db';
+                      })(),
+                      gridColumn: '1 / -1'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '20px', marginRight: '8px' }}>
+                          {(() => {
+                            const totalPerdido = Array.isArray(inventarioDetalle.detalles) 
+                              ? inventarioDetalle.detalles
+                                  .filter(p => p.diferencia < 0)
+                                  .reduce((total, p) => total + (Math.abs(p.diferencia) * p.precioUnitario), 0)
+                              : 0;
+                            const totalSobrante = Array.isArray(inventarioDetalle.detalles) 
+                              ? inventarioDetalle.detalles
+                                  .filter(p => p.diferencia > 0)
+                                  .reduce((total, p) => total + (p.diferencia * p.precioUnitario), 0)
+                              : 0;
+                            const resultadoNeto = totalPerdido - totalSobrante;
+                            return resultadoNeto > 0 ? '📉' : resultadoNeto < 0 ? '📈' : '➖';
+                          })()}
+                        </span>
+                        <h4 style={{ 
+                          margin: 0, 
+                          fontSize: '16px', 
+                          fontWeight: '600', 
+                          color: (() => {
+                            const totalPerdido = Array.isArray(inventarioDetalle.detalles) 
+                              ? inventarioDetalle.detalles
+                                  .filter(p => p.diferencia < 0)
+                                  .reduce((total, p) => total + (Math.abs(p.diferencia) * p.precioUnitario), 0)
+                              : 0;
+                            const totalSobrante = Array.isArray(inventarioDetalle.detalles) 
+                              ? inventarioDetalle.detalles
+                                  .filter(p => p.diferencia > 0)
+                                  .reduce((total, p) => total + (p.diferencia * p.precioUnitario), 0)
+                              : 0;
+                            const resultadoNeto = totalPerdido - totalSobrante;
+                            return resultadoNeto > 0 ? '#dc2626' : resultadoNeto < 0 ? '#059669' : '#64748b';
+                          })()
+                        }}>
+                          Resultado Neto del Inventario
+                        </h4>
+                      </div>
+                      <div style={{ 
+                        fontSize: '28px', 
+                        fontWeight: '700', 
+                        marginBottom: '4px',
+                        color: (() => {
+                          const totalPerdido = Array.isArray(inventarioDetalle.detalles) 
+                            ? inventarioDetalle.detalles
+                                .filter(p => p.diferencia < 0)
+                                .reduce((total, p) => total + (Math.abs(p.diferencia) * p.precioUnitario), 0)
+                            : 0;
+                          const totalSobrante = Array.isArray(inventarioDetalle.detalles) 
+                            ? inventarioDetalle.detalles
+                                .filter(p => p.diferencia > 0)
+                                .reduce((total, p) => total + (p.diferencia * p.precioUnitario), 0)
+                            : 0;
+                          const resultadoNeto = totalPerdido - totalSobrante;
+                          return resultadoNeto > 0 ? '#dc2626' : resultadoNeto < 0 ? '#059669' : '#64748b';
+                        })()
+                      }}>
+                        {(() => {
+                          const totalPerdido = Array.isArray(inventarioDetalle.detalles) 
+                            ? inventarioDetalle.detalles
+                                .filter(p => p.diferencia < 0)
+                                .reduce((total, p) => total + (Math.abs(p.diferencia) * p.precioUnitario), 0)
+                            : 0;
+                          const totalSobrante = Array.isArray(inventarioDetalle.detalles) 
+                            ? inventarioDetalle.detalles
+                                .filter(p => p.diferencia > 0)
+                                .reduce((total, p) => total + (p.diferencia * p.precioUnitario), 0)
+                            : 0;
+                          const resultadoNeto = totalPerdido - totalSobrante;
+                          const signo = resultadoNeto > 0 ? '+' : '';
+                          return `${signo}${formatearMoneda(resultadoNeto)}`;
+                        })()}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                        {(() => {
+                          const totalPerdido = Array.isArray(inventarioDetalle.detalles) 
+                            ? inventarioDetalle.detalles
+                                .filter(p => p.diferencia < 0)
+                                .reduce((total, p) => total + (Math.abs(p.diferencia) * p.precioUnitario), 0)
+                            : 0;
+                          const totalSobrante = Array.isArray(inventarioDetalle.detalles) 
+                            ? inventarioDetalle.detalles
+                                .filter(p => p.diferencia > 0)
+                                .reduce((total, p) => total + (p.diferencia * p.precioUnitario), 0)
+                            : 0;
+                          const resultadoNeto = totalPerdido - totalSobrante;
+                          if (resultadoNeto > 0) {
+                            return `Pérdida neta: ${formatearMoneda(totalPerdido)} - ${formatearMoneda(totalSobrante)} = ${formatearMoneda(resultadoNeto)}`;
+                          } else if (resultadoNeto < 0) {
+                            return `Ganancia neta: ${formatearMoneda(totalSobrante)} - ${formatearMoneda(totalPerdido)} = ${formatearMoneda(Math.abs(resultadoNeto))}`;
+                          } else {
+                            return 'Sin pérdidas ni ganancias netas';
+                          }
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Productos con diferencias */}
               {Array.isArray(inventarioDetalle.detalles) && inventarioDetalle.detalles.length > 0 && (
@@ -2375,6 +3213,143 @@ const ControlInventario: React.FC = () => {
                 }}
               >
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Productos No Escaneados */}
+      {mostrarModalProductosNoEscaneados && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.8)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div className="modal-content" style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '800px',
+            width: '95vw',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1e293b', margin: 0 }}>
+                ⚠️ Productos No Escaneados
+              </h3>
+              <button
+                onClick={() => setMostrarModalProductosNoEscaneados(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#64748b'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>
+                Se encontraron <strong>{productosNoEscaneados.length}</strong> productos que no fueron escaneados durante el inventario.
+              </p>
+              <p style={{ fontSize: '14px', color: '#dc2626', fontWeight: '500' }}>
+                💡 Selecciona los productos que quieres marcar como faltantes, o omite todos para continuar sin cambios.
+              </p>
+            </div>
+            
+            {/* Lista de productos no escaneados */}
+            <div style={{ 
+              maxHeight: '400px', 
+              overflowY: 'auto', 
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              marginBottom: '16px'
+            }}>
+              {productosNoEscaneados.map((producto) => (
+                <div key={producto.id} style={{
+                  padding: '12px',
+                  borderBottom: '1px solid #f1f5f9',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  background: productosSeleccionadosComoFaltantes.has(producto.id) ? '#fef2f2' : 'white'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={productosSeleccionadosComoFaltantes.has(producto.id)}
+                    onChange={(e) => {
+                      const nuevosSeleccionados = new Set(productosSeleccionadosComoFaltantes);
+                      if (e.target.checked) {
+                        nuevosSeleccionados.add(producto.id);
+                      } else {
+                        nuevosSeleccionados.delete(producto.id);
+                      }
+                      setProductosSeleccionadosComoFaltantes(nuevosSeleccionados);
+                    }}
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '600', fontSize: '14px', color: '#1e293b' }}>
+                      {producto.nombre}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                      Código: {producto.codigoBarras || producto.codigoPersonalizado || 'N/A'} | 
+                      Stock: {producto.stock} | 
+                      Precio: {formatearMoneda(producto.precio)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Botones de acción */}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={omitirProductosNoEscaneados}
+                className="boton boton-secundario"
+                style={{
+                  background: 'white',
+                  color: '#6b7280',
+                  border: '2px solid #6b7280',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                ⏭️ Omitir Todos
+              </button>
+              
+              <button
+                onClick={continuarGuardadoConProductosFaltantes}
+                className="boton boton-primario"
+                style={{
+                  background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                ✅ Continuar ({productosSeleccionadosComoFaltantes.size} seleccionados)
               </button>
             </div>
           </div>
