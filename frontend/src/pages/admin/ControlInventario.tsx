@@ -90,6 +90,9 @@ const ControlInventario: React.FC = () => {
   const [mostrarModalProductosNoEscaneados, setMostrarModalProductosNoEscaneados] = useState(false);
   const [productosSeleccionadosComoFaltantes, setProductosSeleccionadosComoFaltantes] = useState<Set<number>>(new Set());
 
+  // Estados para secciones expandibles
+  const [seccionExpandida, setSeccionExpandida] = useState<string | null>(null);
+
   useEffect(() => {
     if (datosUsuario?.empresaId) {
       cargarHistorialInventarios();
@@ -954,6 +957,10 @@ const ControlInventario: React.FC = () => {
     setMostrarDetalleOperacion(true);
   };
 
+  const toggleSeccion = (seccion: string) => {
+    setSeccionExpandida(seccionExpandida === seccion ? null : seccion);
+  };
+
   // Mostrar estado de carga mientras se cargan los datos del usuario
   if (cargandoUsuario) {
     return (
@@ -989,6 +996,20 @@ const ControlInventario: React.FC = () => {
 
   return (
     <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
+      <style>
+        {`
+          @keyframes slideDown {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}
+      </style>
       {/* Navegación */}
       <NavbarAdmin 
         onCerrarSesion={cerrarSesionConToast}
@@ -1129,6 +1150,83 @@ const ControlInventario: React.FC = () => {
                 >
                   ⌨️ Escáner USB
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Estadísticas de Operaciones */}
+        {estadisticasOperaciones && (
+          <div className="tarjeta mb-6" style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: isMobile ? '16px' : '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <h3 className="titulo-3 mb-4" style={{
+              fontSize: isMobile ? '18px' : '20px',
+              fontWeight: '600',
+              color: '#1e293b',
+              marginBottom: '16px',
+              textAlign: 'center'
+            }}>
+              📊 Estadísticas de Operaciones
+            </h3>
+            
+            <div className="grid grid-4 mb-4" style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+              gap: isMobile ? '0.75rem' : '1rem',
+              marginBottom: '1rem'
+            }}>
+              <div style={{
+                background: 'white',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#3b82f6' }}>
+                  {estadisticasOperaciones.totalOperaciones || 0}
+                </div>
+                <div style={{ fontSize: '14px', color: '#64748b' }}>Total Operaciones</div>
+              </div>
+              <div style={{
+                background: 'white',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#10b981' }}>
+                  {estadisticasOperaciones.totalIncrementos || 0}
+                </div>
+                <div style={{ fontSize: '14px', color: '#64748b' }}>Incrementos</div>
+              </div>
+              <div style={{
+                background: 'white',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#ef4444' }}>
+                  {estadisticasOperaciones.totalDecrementos || 0}
+                </div>
+                <div style={{ fontSize: '14px', color: '#64748b' }}>Decrementos</div>
+              </div>
+              <div style={{
+                background: 'white',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#f59e0b' }}>
+                  {estadisticasOperaciones.totalAjustes || 0}
+                </div>
+                <div style={{ fontSize: '14px', color: '#64748b' }}>Ajustes</div>
               </div>
             </div>
           </div>
@@ -1718,7 +1816,7 @@ const ControlInventario: React.FC = () => {
           </div>
         )}
 
-        {/* Historial de inventarios físicos */}
+        {/* Sección de Historiales */}
         <div className="tarjeta mb-6" style={{
           background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
           border: '1px solid #e2e8f0',
@@ -1726,40 +1824,101 @@ const ControlInventario: React.FC = () => {
           padding: isMobile ? '16px' : '24px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
         }}>
-          <div className="flex items-center justify-center mb-4" style={{ flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
-            <h3 className="titulo-3" style={{
-              fontSize: isMobile ? '18px' : '20px',
-              fontWeight: '600',
-              color: '#1e293b',
-              marginBottom: '0',
-              textAlign: 'center'
-            }}>
-              📋 Historial de Inventarios Físicos
-            </h3>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-              <button
-                onClick={() => setMostrarHistorialInventarios(!mostrarHistorialInventarios)}
-                className="boton boton-secundario"
-                style={{
-                  background: 'white',
-                  color: '#10b981',
-                  border: '2px solid #10b981',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {mostrarHistorialInventarios ? '👁️ Ocultar' : '👁️ Ver Historial'}
-              </button>
-            </div>
+          <h3 className="titulo-3 mb-4" style={{
+            fontSize: isMobile ? '18px' : '20px',
+            fontWeight: '600',
+            color: '#1e293b',
+            marginBottom: '16px',
+            textAlign: 'center'
+          }}>
+            📚 Historiales
+          </h3>
+
+          {/* Botones de historiales en línea */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '12px', 
+            justifyContent: 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+            marginBottom: '20px'
+          }}>
+            <button
+              onClick={() => toggleSeccion('inventarios')}
+              className="boton boton-secundario"
+              style={{
+                background: seccionExpandida === 'inventarios' ? '#10b981' : 'white',
+                color: seccionExpandida === 'inventarios' ? 'white' : '#10b981',
+                border: '2px solid #10b981',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: isMobile ? '1' : 'auto',
+                minWidth: isMobile ? 'auto' : '180px'
+              }}
+              onMouseOver={(e) => {
+                if (seccionExpandida !== 'inventarios') {
+                  e.currentTarget.style.background = '#10b981';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (seccionExpandida !== 'inventarios') {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#10b981';
+                }
+              }}
+            >
+              📋 Inventarios Físicos
+            </button>
+            
+            <button
+              onClick={() => {
+                toggleSeccion('operaciones');
+                if (seccionExpandida !== 'operaciones') {
+                  cargarHistorialOperaciones();
+                }
+              }}
+              className="boton boton-secundario"
+              style={{
+                background: seccionExpandida === 'operaciones' ? '#3b82f6' : 'white',
+                color: seccionExpandida === 'operaciones' ? 'white' : '#3b82f6',
+                border: '2px solid #3b82f6',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: isMobile ? '1' : 'auto',
+                minWidth: isMobile ? 'auto' : '180px'
+              }}
+              onMouseOver={(e) => {
+                if (seccionExpandida !== 'operaciones') {
+                  e.currentTarget.style.background = '#3b82f6';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (seccionExpandida !== 'operaciones') {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#3b82f6';
+                }
+              }}
+            >
+              📊 Operaciones
+            </button>
           </div>
 
-          {/* Lista de inventarios */}
-          {mostrarHistorialInventarios && (
-            <div>
+          {/* Contenido expandible - Inventarios Físicos */}
+          {seccionExpandida === 'inventarios' && (
+            <div style={{ 
+              borderTop: '1px solid #e2e8f0', 
+              paddingTop: '20px',
+              animation: 'slideDown 0.3s ease-out'
+            }}>
               {historialInventarios.length > 0 ? (
                 <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                   {historialInventarios.map((inventario) => (
@@ -1803,7 +1962,6 @@ const ControlInventario: React.FC = () => {
                             Valor diferencias
                           </div>
                         </div>
-
                       </div>
                       <div style={{ 
                         marginTop: '8px', 
@@ -1833,114 +1991,14 @@ const ControlInventario: React.FC = () => {
               )}
             </div>
           )}
-        </div>
 
-        {/* Historial de Operaciones de Inventario */}
-        <div className="tarjeta mb-6" style={{
-          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-          border: '1px solid #e2e8f0',
-          borderRadius: '16px',
-          padding: isMobile ? '16px' : '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-        }}>
-          <div className="flex items-center justify-center mb-4" style={{ flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
-            <h3 className="titulo-3" style={{
-              fontSize: isMobile ? '18px' : '20px',
-              fontWeight: '600',
-              color: '#1e293b',
-              marginBottom: '0',
-              textAlign: 'center'
+          {/* Contenido expandible - Operaciones */}
+          {seccionExpandida === 'operaciones' && (
+            <div style={{ 
+              borderTop: '1px solid #e2e8f0', 
+              paddingTop: '20px',
+              animation: 'slideDown 0.3s ease-out'
             }}>
-              📊 Historial de Operaciones
-            </h3>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-              <button
-                onClick={() => {
-                  setMostrarHistorialOperaciones(!mostrarHistorialOperaciones);
-                  if (!mostrarHistorialOperaciones) {
-                    cargarHistorialOperaciones();
-                  }
-                }}
-                className="boton boton-secundario"
-                style={{
-                  background: 'white',
-                  color: '#3b82f6',
-                  border: '2px solid #3b82f6',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {mostrarHistorialOperaciones ? '👁️ Ocultar' : '👁️ Ver Historial'}
-              </button>
-            </div>
-          </div>
-
-          {/* Estadísticas rápidas */}
-          {estadisticasOperaciones && (
-            <div className="grid grid-4 mb-4" style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: isMobile ? '0.75rem' : '1rem',
-              marginBottom: '1rem'
-            }}>
-              <div style={{
-                background: 'white',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#3b82f6' }}>
-                  {estadisticasOperaciones.totalOperaciones || 0}
-                </div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>Total Operaciones</div>
-              </div>
-              <div style={{
-                background: 'white',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#10b981' }}>
-                  {estadisticasOperaciones.totalIncrementos || 0}
-                </div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>Incrementos</div>
-              </div>
-              <div style={{
-                background: 'white',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#ef4444' }}>
-                  {estadisticasOperaciones.totalDecrementos || 0}
-                </div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>Decrementos</div>
-              </div>
-              <div style={{
-                background: 'white',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#f59e0b' }}>
-                  {estadisticasOperaciones.totalAjustes || 0}
-                </div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>Ajustes</div>
-              </div>
-            </div>
-          )}
-
-          {/* Lista de operaciones */}
-          {mostrarHistorialOperaciones && (
-            <div>
               {cargandoHistorial ? (
                 <div className="text-center py-8">
                   <div className="spinner mx-auto mb-4"></div>
@@ -2000,73 +2058,40 @@ const ControlInventario: React.FC = () => {
                           <div style={{ fontSize: '12px', color: '#64748b' }}>
                             {operacion.usuarioNombre} • {inventarioService.formatearFechaDesdeAPI(operacion.fechaOperacion)}
                           </div>
-                          {operacion.observacion && (
-                            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                              📝 {operacion.observacion}
-                            </div>
-                          )}
-                          <div style={{ fontSize: '11px', color: '#3b82f6', marginTop: '8px', fontWeight: '500' }}>
-                            👆 Haz clic para ver detalles completos
-                          </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '14px', color: '#64748b' }}>
-                            Stock: {operacion.stockAnterior} → {operacion.stockNuevo}
+                          <div style={{ fontWeight: '600', color: '#1e293b' }}>
+                            {formatearMoneda(operacion.valorTotal)}
                           </div>
-                          {operacion.valorTotal > 0 && (
-                            <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                              {formatearMoneda(operacion.valorTotal)}
-                            </div>
-                          )}
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>
+                            Valor total
+                          </div>
                         </div>
+                      </div>
+                      <div style={{ 
+                        marginTop: '8px', 
+                        fontSize: '12px', 
+                        color: '#3b82f6',
+                        fontWeight: '500'
+                      }}>
+                        👆 Haz clic para ver detalles
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
-                  <p className="texto-gris">No hay operaciones registradas aún.</p>
-                  <p className="texto-pequeno texto-gris">Las operaciones de inventario aparecerán aquí automáticamente.</p>
-                </div>
-              )}
-
-              {/* Paginación */}
-              {totalPaginasHistorial > 1 && (
-                <div className="flex justify-center gap-2 mt-4">
-                  <button
-                    onClick={() => cargarHistorialOperaciones(paginaHistorial - 1)}
-                    disabled={paginaHistorial === 0}
-                    className="boton boton-secundario"
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '14px',
-                      opacity: paginaHistorial === 0 ? 0.5 : 1
-                    }}
-                  >
-                    ← Anterior
-                  </button>
-                  <span style={{ 
-                    padding: '8px 12px', 
-                    fontSize: '14px', 
-                    color: '#64748b',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    Página {paginaHistorial + 1} de {totalPaginasHistorial}
-                  </span>
-                  <button
-                    onClick={() => cargarHistorialOperaciones(paginaHistorial + 1)}
-                    disabled={paginaHistorial >= totalPaginasHistorial - 1}
-                    className="boton boton-secundario"
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '14px',
-                      opacity: paginaHistorial >= totalPaginasHistorial - 1 ? 0.5 : 1
-                    }}
-                  >
-                    Siguiente →
-                  </button>
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: '#64748b'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
+                    No hay operaciones de inventario
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '14px' }}>
+                    Realiza operaciones de inventario para ver el historial aquí.
+                  </p>
                 </div>
               )}
             </div>
