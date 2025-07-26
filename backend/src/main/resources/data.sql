@@ -2,7 +2,7 @@
 
 -- Insertar empresa de ejemplo (solo si no existe)
 INSERT INTO empresas (nombre, subdominio, email, telefono, descripcion, logo_url, color_primario, color_secundario, estado_suscripcion, fecha_fin_prueba, activa, fecha_creacion, fecha_actualizacion)
-SELECT 'Tienda Demo', 'demo', 'admin@demo.com', '+34 123 456 789', 'Tienda de demostración del sistema miNegocio', null, '#3B82F6', '#1F2937', 'PRUEBA', DATEADD('MONTH', 1, CURRENT_TIMESTAMP), true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT 'Tienda Demo', 'demo', 'admin@demo.com', '+34 123 456 789', 'Tienda de demostración del sistema miNegocio', null, '#3B82F6', '#1F2937', 'PRUEBA', CURRENT_TIMESTAMP + interval '1 month', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM empresas WHERE email = 'admin@demo.com');
 
 -- Insertar usuario administrador (password: admin123 - BCrypt) (solo si no existe)
@@ -77,49 +77,49 @@ WHERE NOT EXISTS (SELECT 1 FROM clientes WHERE email = 'carlos.gonzalez@email.co
 
 -- Insertar pedidos de ejemplo (solo si no existen)
 INSERT INTO pedidos (numero_pedido, estado, total, subtotal, impuestos, descuento, observaciones, direccion_entrega, cliente_id, empresa_id, fecha_creacion, fecha_actualizacion)
-SELECT 'PED-001', 'ENTREGADO', 929.98, 929.98, 0, 0, 'Entrega urgente', 'Calle Mayor 123, Madrid', 1, 1, DATEADD('DAY', -5, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+SELECT 'PED-001', 'ENTREGADO', 929.98, 929.98, 0, 0, 'Entrega urgente', 'Calle Mayor 123, Madrid', 1, 1, CURRENT_TIMESTAMP + interval '-5 day', CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM pedidos WHERE numero_pedido = 'PED-001');
 
 INSERT INTO pedidos (numero_pedido, estado, total, subtotal, impuestos, descuento, observaciones, direccion_entrega, cliente_id, empresa_id, fecha_creacion, fecha_actualizacion)
-SELECT 'PED-002', 'PREPARANDO', 379.98, 379.98, 0, 0, null, 'Avenida de la Constitución 45, Barcelona', 2, 1, DATEADD('DAY', -2, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+SELECT 'PED-002', 'PREPARANDO', 379.98, 379.98, 0, 0, null, 'Avenida de la Constitución 45, Barcelona', 2, 1, CURRENT_TIMESTAMP + interval '-2 day', CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM pedidos WHERE numero_pedido = 'PED-002');
 
 INSERT INTO pedidos (numero_pedido, estado, total, subtotal, impuestos, descuento, observaciones, direccion_entrega, cliente_id, empresa_id, fecha_creacion, fecha_actualizacion)
-SELECT 'PED-003', 'PENDIENTE', 79.99, 79.99, 0, 0, 'Llamar antes de entregar', 'Plaza España 7, Valencia', 3, 1, DATEADD('DAY', -1, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+SELECT 'PED-003', 'PENDIENTE', 79.99, 79.99, 0, 0, 'Llamar antes de entregar', 'Plaza España 7, Valencia', 3, 1, CURRENT_TIMESTAMP + interval '-1 day', CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM pedidos WHERE numero_pedido = 'PED-003');
 
 -- Insertar detalles de pedidos (solo si no existen)
 INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, marca_producto, fecha_creacion)
-SELECT 1, 899.99, 899.99, 1, 1, 'Laptop Dell Inspiron 15', 'Laptop para uso profesional', 'Electrónicos', 'Dell', DATEADD('DAY', -5, CURRENT_TIMESTAMP)
+SELECT 1, 899.99, 899.99, 1, 1, 'Laptop Dell Inspiron 15', 'Laptop para uso profesional', 'Electrónicos', 'Dell', CURRENT_TIMESTAMP + interval '-5 day'
 WHERE NOT EXISTS (SELECT 1 FROM detalle_pedidos WHERE pedido_id = 1 AND producto_id = 1);
 
 INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, marca_producto, fecha_creacion)
-SELECT 1, 29.99, 29.99, 2, 1, 'Mouse Inalámbrico Logitech', 'Mouse inalámbrico ergonómico', 'Electrónicos', 'Logitech', DATEADD('DAY', -5, CURRENT_TIMESTAMP)
+SELECT 1, 29.99, 29.99, 2, 1, 'Mouse Inalámbrico Logitech', 'Mouse inalámbrico ergonómico', 'Electrónicos', 'Logitech', CURRENT_TIMESTAMP + interval '-5 day'
 WHERE NOT EXISTS (SELECT 1 FROM detalle_pedidos WHERE pedido_id = 1 AND producto_id = 2);
 
 INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, marca_producto, fecha_creacion)
-SELECT 1, 79.99, 79.99, 3, 2, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', 'Corsair', DATEADD('DAY', -2, CURRENT_TIMESTAMP)
+SELECT 1, 79.99, 79.99, 3, 2, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', 'Corsair', CURRENT_TIMESTAMP + interval '-2 day'
 WHERE NOT EXISTS (SELECT 1 FROM detalle_pedidos WHERE pedido_id = 2 AND producto_id = 3);
 
 INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, marca_producto, fecha_creacion)
-SELECT 1, 299.99, 299.99, 5, 2, 'Silla Ergonómica de Oficina', 'Silla ergonómica con soporte lumbar', 'Mobiliario', 'Herman Miller', DATEADD('DAY', -2, CURRENT_TIMESTAMP)
+SELECT 1, 299.99, 299.99, 5, 2, 'Silla Ergonómica de Oficina', 'Silla ergonómica con soporte lumbar', 'Mobiliario', 'Herman Miller', CURRENT_TIMESTAMP + interval '-2 day'
 WHERE NOT EXISTS (SELECT 1 FROM detalle_pedidos WHERE pedido_id = 2 AND producto_id = 5);
 
 INSERT INTO detalle_pedidos (cantidad, precio_unitario, precio_total, producto_id, pedido_id, nombre_producto, descripcion_producto, categoria_producto, marca_producto, fecha_creacion)
-SELECT 1, 79.99, 79.99, 3, 3, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', 'Corsair', DATEADD('DAY', -1, CURRENT_TIMESTAMP)
+SELECT 1, 79.99, 79.99, 3, 3, 'Teclado Mecánico RGB', 'Teclado mecánico con retroiluminación RGB', 'Electrónicos', 'Corsair', CURRENT_TIMESTAMP + interval '-1 day'
 WHERE NOT EXISTS (SELECT 1 FROM detalle_pedidos WHERE pedido_id = 3 AND producto_id = 3);
 
 -- Insertar mensajes de ejemplo (solo si no existen)
 INSERT INTO mensajes (asunto, contenido, tipo, estado, leido, cliente_id, empresa_id, producto_id, fecha_creacion, fecha_actualizacion)
-SELECT 'Consulta sobre Laptop Dell', '¿La laptop incluye Office? ¿Cuál es la garantía?', 'CONSULTA', 'PENDIENTE', false, 1, 1, 1, DATEADD('HOUR', -2, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+SELECT 'Consulta sobre Laptop Dell', '¿La laptop incluye Office? ¿Cuál es la garantía?', 'CONSULTA', 'PENDIENTE', false, 1, 1, 1, CURRENT_TIMESTAMP + interval '-2 hour', CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM mensajes WHERE asunto = 'Consulta sobre Laptop Dell' AND cliente_id = 1);
 
 INSERT INTO mensajes (asunto, contenido, tipo, estado, leido, cliente_id, empresa_id, producto_id, fecha_creacion, fecha_actualizacion)
-SELECT 'Problema con el pedido', 'Mi pedido está marcado como preparando pero han pasado 3 días', 'RECLAMO', 'PENDIENTE', false, 2, 1, null, DATEADD('HOUR', -1, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+SELECT 'Problema con el pedido', 'Mi pedido está marcado como preparando pero han pasado 3 días', 'RECLAMO', 'PENDIENTE', false, 2, 1, null, CURRENT_TIMESTAMP + interval '-1 hour', CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM mensajes WHERE asunto = 'Problema con el pedido' AND cliente_id = 2);
 
 INSERT INTO mensajes (asunto, contenido, tipo, estado, leido, cliente_id, empresa_id, producto_id, fecha_creacion, fecha_actualizacion)
-SELECT 'Sugerencia de producto', 'Estaría bien que añadieran tablets a su catálogo', 'SUGERENCIA', 'PENDIENTE', false, 3, 1, null, DATEADD('MINUTE', -30, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP
+SELECT 'Sugerencia de producto', 'Estaría bien que añadieran tablets a su catálogo', 'SUGERENCIA', 'PENDIENTE', false, 3, 1, null, CURRENT_TIMESTAMP + interval '-30 minute', CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM mensajes WHERE asunto = 'Sugerencia de producto' AND cliente_id = 3);
 
 -- Agregar columna marca_producto a la tabla detalle_pedidos si no existe
@@ -203,7 +203,7 @@ CREATE INDEX IF NOT EXISTS idx_historial_codigo_barras ON historial_inventario (
 
 -- Insertar empresa del sistema para SUPER_ADMIN (solo si no existe)
 INSERT INTO empresas (nombre, subdominio, email, telefono, descripcion, logo_url, color_primario, color_secundario, estado_suscripcion, fecha_fin_prueba, activa, fecha_creacion, fecha_actualizacion)
-SELECT 'Sistema MiNegocio', 'sistema', 'sistema@minegocio.com', '+34 000 000 000', 'Empresa del sistema para super administradores', null, '#1f2937', '#374151', 'ACTIVA', DATEADD('MONTH', 12, CURRENT_TIMESTAMP), true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT 'Sistema MiNegocio', 'sistema', 'sistema@minegocio.com', '+34 000 000 000', 'Empresa del sistema para super administradores', null, '#1f2937', '#374151', 'ACTIVA', CURRENT_TIMESTAMP + interval '12 month', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM empresas WHERE email = 'sistema@minegocio.com');
 
 -- Insertar usuario SUPER_ADMIN (solo si no existe)
