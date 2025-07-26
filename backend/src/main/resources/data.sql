@@ -162,7 +162,7 @@ WHERE NOT EXISTS (SELECT 1 FROM empresas WHERE email = 'ventas@ropafashion.com')
 
 -- Crear tabla historial_inventario si no existe
 CREATE TABLE IF NOT EXISTS historial_inventario (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     
     -- Relaciones con otras entidades
     producto_id BIGINT NOT NULL,
