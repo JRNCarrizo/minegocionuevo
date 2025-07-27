@@ -25,6 +25,15 @@ export default function ProductoDetalleModal({
   const [imagenActual, setImagenActual] = useState(0);
   const [cantidad, setCantidad] = useState(1);
   const { addToCart, items } = useCart();
+  
+  // Verificar si hay un cliente logueado
+  const [clienteLogueado, setClienteLogueado] = useState(false);
+  
+  useEffect(() => {
+    const token = localStorage.getItem('clienteToken');
+    const cliente = localStorage.getItem('clienteInfo');
+    setClienteLogueado(!!(token && cliente));
+  }, []);
 
   // Función para navegar entre imágenes
   const navegarImagen = (direccion: 'anterior' | 'siguiente') => {
@@ -109,6 +118,11 @@ export default function ProductoDetalleModal({
 
   const agregarAlCarrito = async () => {
     if (!producto) return;
+    
+    if (!clienteLogueado) {
+      toast.error('Debes iniciar sesión para agregar productos al carrito');
+      return;
+    }
     
     if (producto.stock === 0) {
       toast.error('Este producto está agotado');
@@ -617,26 +631,26 @@ export default function ProductoDetalleModal({
                     border: '2px solid #e2e8f0',
                     overflow: 'hidden'
                   }}>
-                    <button
-                      onClick={() => setCantidad(Math.max(1, cantidad - 1))}
-                      disabled={cantidad <= 1}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        background: cantidad <= 1 ? '#e5e7eb' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                        color: 'white',
-                        border: 'none',
-                        fontSize: '18px',
-                        fontWeight: '700',
-                        cursor: cantidad <= 1 ? 'not-allowed' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: cantidad <= 1 ? 0.5 : 1
-                      }}
-                    >
-                      -
-                    </button>
+                                      <button
+                    onClick={() => setCantidad(Math.max(1, cantidad - 1))}
+                    disabled={cantidad <= 1 || !clienteLogueado}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      background: cantidad <= 1 || !clienteLogueado ? '#e5e7eb' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                      color: 'white',
+                      border: 'none',
+                      fontSize: '18px',
+                      fontWeight: '700',
+                      cursor: cantidad <= 1 || !clienteLogueado ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: cantidad <= 1 || !clienteLogueado ? 0.5 : 1
+                    }}
+                  >
+                    -
+                  </button>
                     
                     <span style={{
                       minWidth: '60px',
@@ -651,20 +665,20 @@ export default function ProductoDetalleModal({
                     
                     <button
                       onClick={() => setCantidad(Math.min(producto.stock || 999, cantidad + 1))}
-                      disabled={cantidad >= (producto.stock || 999)}
+                      disabled={cantidad >= (producto.stock || 999) || !clienteLogueado}
                       style={{
                         width: '40px',
                         height: '40px',
-                        background: cantidad >= (producto.stock || 999) ? '#e5e7eb' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        background: cantidad >= (producto.stock || 999) || !clienteLogueado ? '#e5e7eb' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                         color: 'white',
                         border: 'none',
                         fontSize: '18px',
                         fontWeight: '700',
-                        cursor: cantidad >= (producto.stock || 999) ? 'not-allowed' : 'pointer',
+                        cursor: cantidad >= (producto.stock || 999) || !clienteLogueado ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        opacity: cantidad >= (producto.stock || 999) ? 0.5 : 1
+                        opacity: cantidad >= (producto.stock || 999) || !clienteLogueado ? 0.5 : 1
                       }}
                     >
                       +
@@ -680,11 +694,11 @@ export default function ProductoDetalleModal({
                 }}>
                   <button
                     onClick={agregarAlCarrito}
-                    disabled={producto.stock === 0}
+                    disabled={producto.stock === 0 || !clienteLogueado}
                     style={{
                       flex: 1,
                       padding: '16px 24px',
-                      background: producto.stock === 0 
+                      background: producto.stock === 0 || !clienteLogueado
                         ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
                         : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                       color: 'white',
@@ -692,16 +706,16 @@ export default function ProductoDetalleModal({
                       borderRadius: '12px',
                       fontSize: '16px',
                       fontWeight: '700',
-                      cursor: producto.stock === 0 ? 'not-allowed' : 'pointer',
+                      cursor: producto.stock === 0 || !clienteLogueado ? 'not-allowed' : 'pointer',
                       transition: 'all 0.2s ease',
-                      opacity: producto.stock === 0 ? 0.6 : 1,
+                      opacity: producto.stock === 0 || !clienteLogueado ? 0.6 : 1,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px'
                     }}
                     onMouseOver={(e) => {
-                      if (producto.stock !== 0) {
+                      if (producto.stock !== 0 && clienteLogueado) {
                         e.currentTarget.style.transform = 'translateY(-2px)';
                         e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.3)';
                       }
@@ -712,7 +726,7 @@ export default function ProductoDetalleModal({
                     }}
                   >
                     <span>🛒</span>
-                    <span>Agregar al carrito</span>
+                    <span>{!clienteLogueado ? 'Inicia sesión para comprar' : 'Agregar al carrito'}</span>
                   </button>
                   
                   <button
