@@ -517,7 +517,7 @@ export default function CatalogoPublico() {
                     lineHeight: '1.6',
                     fontWeight: '400',
                     textAlign: 'center',
-                    color: empresa?.colorTexto || 'white',
+                    color: empresa?.colorTituloPrincipal || 'white',
                     textShadow: '0 2px 4px rgba(0,0,0,0.4)'
                   }}>
                     {empresa.descripcion}
