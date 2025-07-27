@@ -903,11 +903,11 @@ export default function CatalogoPublico() {
               vista === 'grande' ? 
               (isMobile ? 'repeat(1, 1fr)' : isTablet ? 'repeat(auto-fill, minmax(250px, 1fr))' : 'repeat(auto-fill, minmax(320px, 1fr))') : 
               'none',
-            flexDirection: vista === 'lista' ? 'row' : 'unset',
+            flexDirection: vista === 'lista' ? 'column' : 'unset',
             gap: vista === 'lista' ? '12px' : (isMobile ? (vista === 'grande' ? '16px' : '12px') : isTablet ? '16px' : '20px'),
             marginBottom: '40px',
             justifyContent: isMobile ? 'center' : 'start',
-            flexWrap: vista === 'lista' ? 'wrap' : 'unset'
+            flexWrap: vista === 'lista' ? 'nowrap' : 'unset'
           }}>
             {productos.map(producto => {
               const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
@@ -925,10 +925,11 @@ export default function CatalogoPublico() {
                   display: vista === 'lista' ? 'flex' : 'block',
                   alignItems: vista === 'lista' ? 'stretch' : 'unset',
                   gap: vista === 'lista' ? '0' : 'unset',
-                  height: vista === 'lista' ? '120px' : 'auto',
+                  height: vista === 'lista' ? 'auto' : 'auto',
                   color: empresa?.colorTexto || '#1e293b',
-                  width: vista === 'lista' ? (isMobile ? '100%' : 'calc(50% - 6px)') : '100%',
-                  minWidth: vista === 'lista' ? (isMobile ? 0 : '300px') : 0
+                  width: '100%',
+                  minHeight: vista === 'lista' ? '140px' : 'auto',
+                  padding: vista === 'lista' ? '0' : '0'
                 }}
                 onClick={(e) => {
                   // Solo abrir modal si no se hizo clic en el botón de agregar al carrito
@@ -949,11 +950,11 @@ export default function CatalogoPublico() {
                   {/* Imagen del producto */}
                   <div style={{ 
                     position: 'relative', 
-                    width: vista === 'lista' ? '120px' : '100%',
+                    width: vista === 'lista' ? '140px' : '100%',
                     aspectRatio: vista === 'lista' ? '1 / 1' : '1 / 1',
-                    height: vista === 'lista' ? '120px' : undefined,
-                    minWidth: vista === 'lista' ? '120px' : undefined,
-                    maxWidth: vista === 'lista' ? '120px' : undefined,
+                    height: vista === 'lista' ? '140px' : undefined,
+                    minWidth: vista === 'lista' ? '140px' : undefined,
+                    maxWidth: vista === 'lista' ? '140px' : undefined,
                     overflow: 'hidden',
                     flexShrink: 0,
                     borderRadius: vista === 'lista' ? '0' : (isMobile ? '8px 8px 0 0' : '12px 12px 0 0'),
@@ -1049,375 +1050,311 @@ export default function CatalogoPublico() {
                   {/* Contenido principal */}
                   <div style={{ 
                     flex: 1,
-                    padding: vista === 'lista' ? '12px' : 
+                    padding: vista === 'lista' ? '16px' : 
                     vista === 'intermedia' ? 
                     (isMobile ? '12px' : '20px') : 
                     (isMobile ? '20px' : '24px'),
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: vista === 'lista' ? 'space-between' : 'space-between',
-                    height: vista === 'lista' ? '100%' : 'auto'
+                    justifyContent: 'space-between',
+                    height: vista === 'lista' ? '100%' : 'auto',
+                    minWidth: 0,
+                    overflow: 'hidden'
                   }}>
-                    {/* Layout horizontal para vista de lista */}
+                    {/* Información del producto */}
                     <div style={{
+                      flex: 1,
                       display: 'flex',
-                      flexDirection: vista === 'lista' ? 'row' : 'column',
-                      justifyContent: vista === 'lista' ? 'space-between' : 'space-between',
-                      alignItems: vista === 'lista' ? 'stretch' : 'stretch',
-                      height: vista === 'lista' ? '100%' : 'auto',
-                      gap: vista === 'lista' ? '12px' : '0'
+                      flexDirection: 'column',
+                      justifyContent: 'flex-start',
+                      gap: '8px',
+                      minWidth: 0,
+                      overflow: 'hidden'
                     }}>
-                      {/* Información del producto */}
-                                              <div style={{
-                          flex: vista === 'lista' ? '1' : 'none',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          height: vista === 'lista' ? '100%' : 'auto',
-                          minWidth: 0
+                      <h3 style={{
+                        margin: '0 0 4px 0',
+                        fontSize: vista === 'lista' ? '16px' : vista === 'intermedia' ? (isMobile ? '15px' : '18px') : (isMobile ? '16px' : '20px'),
+                        fontWeight: '700',
+                        color: empresa?.colorTexto || '#1e293b',
+                        lineHeight: '1.2',
+                        display: '-webkit-box',
+                        WebkitLineClamp: vista === 'lista' ? 2 : vista === 'intermedia' ? 2 : 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textAlign: 'left'
+                      }}>
+                        {producto.nombre}
+                      </h3>
+                      
+                      {/* Marca */}
+                      {producto.marca && (
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: '6px', 
+                          marginBottom: '8px', 
+                          flexWrap: 'wrap',
+                          justifyContent: 'flex-start'
                         }}>
-                        <div>
-                          <h3 style={{
-                            margin: '0 0 4px 0',
-                            fontSize: vista === 'lista' ? '14px' : vista === 'intermedia' ? (isMobile ? '15px' : '18px') : (isMobile ? '16px' : '20px'),
-                            fontWeight: '700',
-                            color: empresa?.colorTexto || '#1e293b',
-                            lineHeight: '1.2',
-                            display: '-webkit-box',
-                            WebkitLineClamp: vista === 'lista' ? 2 : vista === 'intermedia' ? 2 : 3,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            textAlign: 'left'
+                          <span style={{
+                            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                            color: '#92400e',
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? (isMobile ? '10px' : '12px') : (isMobile ? '12px' : '14px'),
+                            fontWeight: '600',
+                            border: '1px solid #fbbf24'
                           }}>
-                            {producto.nombre}
-                          </h3>
-                          
-                          {/* Marca - siempre presente para mantener posición */}
-                          <div style={{ 
-                            display: 'flex', 
-                            gap: '6px', 
-                            marginBottom: vista === 'lista' ? '8px' : vista === 'intermedia' ? (isMobile ? '8px' : '12px') : '16px', 
-                            flexWrap: 'wrap',
-                            justifyContent: isMobile ? 'center' : 'flex-start',
-                            minHeight: vista === 'lista' ? '20px' : vista === 'intermedia' ? (isMobile ? '20px' : '24px') : (isMobile ? '24px' : '28px')
-                          }}>
-                            {producto.marca && (
-                              <span style={{
-                                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                                color: '#92400e',
-                                padding: '3px 8px',
-                                borderRadius: '8px',
-                                fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? (isMobile ? '10px' : '12px') : (isMobile ? '12px' : '14px'),
-                                fontWeight: '600',
-                                border: '1px solid #fbbf24'
-                              }}>
-                                🏷️ {producto.marca}
-                              </span>
-                            )}
-                          </div>
-                          
-                          {/* Precio */}
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: vista === 'lista' ? 'flex-start' : (isMobile ? 'center' : 'space-between'),
-                            marginBottom: vista === 'lista' ? '8px' : vista === 'intermedia' ? (isMobile ? '12px' : '16px') : (isMobile ? '16px' : '20px')
-                          }}>
-                            <span style={{
-                              fontSize: vista === 'lista' ? '16px' : vista === 'intermedia' ? (isMobile ? '18px' : '24px') : (isMobile ? '20px' : '28px'),
-                              fontWeight: '800',
-                              color: empresa?.colorTexto || '#1e293b',
-                              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                            }}>
-                              {formatearPrecio(producto.precio, empresa.moneda)}
-                            </span>
-                          </div>
+                            🏷️ {producto.marca}
+                          </span>
                         </div>
+                      )}
+                      
+                      {/* Precio */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                        marginBottom: '12px'
+                      }}>
+                        <span style={{
+                          fontSize: vista === 'lista' ? '18px' : vista === 'intermedia' ? (isMobile ? '18px' : '24px') : (isMobile ? '20px' : '28px'),
+                          fontWeight: '800',
+                          color: empresa?.colorTexto || '#1e293b',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                        }}>
+                          {formatearPrecio(producto.precio, empresa.moneda)}
+                        </span>
                       </div>
+                    </div>
 
-                      {/* Controles a la derecha */}
-                      {clienteInfo ? (
-                        // Mostrar controles de carrito solo si hay cliente logueado
+                    {/* Controles */}
+                    {clienteInfo ? (
+                      // Mostrar controles de carrito solo si hay cliente logueado
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        alignItems: 'stretch',
+                        justifyContent: 'flex-end',
+                        marginTop: 'auto'
+                      }}>
+                        {/* Controles de cantidad */}
                         <div style={{
                           display: 'flex',
-                          flexDirection: vista === 'lista' ? 'column' : 'column',
-                          gap: vista === 'lista' ? '12px' : vista === 'intermedia' ? (isMobile ? '8px' : '12px') : (isMobile ? '12px' : '16px'),
-                          alignItems: vista === 'lista' ? 'stretch' : 'stretch',
-                          justifyContent: vista === 'lista' ? 'flex-start' : 'stretch',
-                          minWidth: vista === 'lista' ? '120px' : undefined,
-                          maxWidth: vista === 'lista' ? '120px' : undefined,
-                          marginTop: vista === 'lista' ? '0' : '0',
-                          marginBottom: vista === 'lista' ? '0' : '0',
-                          alignSelf: vista === 'lista' ? 'flex-end' : 'stretch',
-                          paddingTop: vista === 'lista' ? '8px' : '0',
-                          paddingBottom: vista === 'lista' ? '8px' : '0'
+                          alignItems: 'center',
+                          background: '#f8fafc',
+                          borderRadius: '8px',
+                          padding: '6px 8px',
+                          border: '1px solid #e2e8f0',
+                          gap: '6px',
+                          justifyContent: 'center',
+                          height: '36px'
                         }}>
-                          {/* Controles modernos de cantidad */}
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            background: vista === 'lista' ? 'rgba(255,255,255,0.9)' : '#f8fafc',
-                            borderRadius: '12px',
-                            padding: vista === 'lista' ? '8px 16px' : '8px 12px',
-                            border: vista === 'lista' ? '1px solid rgba(0,0,0,0.1)' : '1px solid #e2e8f0',
-                            gap: '8px',
-                            justifyContent: 'center',
-                            minWidth: vista === 'lista' ? '120px' : 'auto',
-                            height: vista === 'lista' ? '40px' : 'auto',
-                            boxShadow: vista === 'lista' ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
-                            backdropFilter: vista === 'lista' ? 'blur(10px)' : 'none'
-                          }}>
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (cantidadEnCarrito > 0) {
-                                  await updateQuantity(producto.id, cantidadEnCarrito - 1, undefined, subdominio || undefined);
-                                }
-                              }}
-                              disabled={cantidadEnCarrito === 0}
-                              style={{
-                                width: '28px',
-                                height: '28px',
-                                background: cantidadEnCarrito === 0
-                                  ? 'rgba(0,0,0,0.1)'
-                                  : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                color: cantidadEnCarrito === 0 ? '#6b7280' : 'white',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontSize: '14px',
-                                fontWeight: '700',
-                                cursor: cantidadEnCarrito === 0 ? 'not-allowed' : 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.3s ease',
-                                opacity: cantidadEnCarrito === 0 ? 0.6 : 1,
-                                boxShadow: cantidadEnCarrito === 0 ? 'none' : '0 2px 8px rgba(239, 68, 68, 0.3)'
-                              }}
-                              onMouseOver={(e) => {
-                                if (cantidadEnCarrito > 0) {
-                                  e.currentTarget.style.transform = 'scale(1.05)';
-                                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
-                                }
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.transform = 'scale(1)';
-                                e.currentTarget.style.boxShadow = 'none';
-                              }}
-                            >
-                              -
-                            </button>
-                            
-                            <span style={{
-                              minWidth: '32px',
-                              textAlign: 'center',
-                              fontSize: '14px',
-                              fontWeight: '700',
-                              color: '#1e293b',
-                              background: 'white',
-                              padding: '6px 8px',
-                              borderRadius: '6px',
-                              border: '1px solid #e5e7eb',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                            }}>
-                              {cantidadEnCarrito}
-                            </span>
-                            
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (cantidadEnCarrito < producto.stock) {
-                                  if (cantidadEnCarrito === 0) {
-                                    // Si no está en el carrito, agregarlo
-                                    await addToCart({
-                                      id: producto.id,
-                                      nombre: producto.nombre,
-                                      precio: producto.precio,
-                                      cantidad: 1,
-                                      imagen: producto.imagenes && producto.imagenes[0]
-                                    }, undefined, subdominio || undefined);
-                                  } else {
-                                    // Si ya está en el carrito, aumentar cantidad
-                                    await updateQuantity(producto.id, cantidadEnCarrito + 1, undefined, subdominio || undefined);
-                                  }
-                                }
-                              }}
-                              disabled={cantidadEnCarrito >= producto.stock}
-                              style={{
-                                width: '28px',
-                                height: '28px',
-                                background: cantidadEnCarrito >= producto.stock
-                                  ? 'rgba(0,0,0,0.1)'
-                                  : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                color: cantidadEnCarrito >= producto.stock ? '#6b7280' : 'white',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontSize: '14px',
-                                fontWeight: '700',
-                                cursor: cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.3s ease',
-                                opacity: cantidadEnCarrito >= producto.stock ? 0.6 : 1,
-                                boxShadow: cantidadEnCarrito >= producto.stock ? 'none' : '0 2px 8px rgba(16, 185, 129, 0.3)'
-                              }}
-                              onMouseOver={(e) => {
-                                if (cantidadEnCarrito < producto.stock) {
-                                  e.currentTarget.style.transform = 'scale(1.05)';
-                                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
-                                }
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.transform = 'scale(1)';
-                                e.currentTarget.style.boxShadow = 'none';
-                              }}
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          {/* Botón moderno agregar al carrito */}
                           <button
-                            disabled={producto.stock === 0}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (cantidadEnCarrito > 0) {
+                                await updateQuantity(producto.id, cantidadEnCarrito - 1, undefined, subdominio || undefined);
+                              }
+                            }}
+                            disabled={cantidadEnCarrito === 0}
                             style={{
-                              padding: vista === 'lista' ? '8px 16px' : '12px 16px',
-                              height: vista === 'lista' ? '40px' : 'auto',
-                              background: producto.stock === 0 
-                                ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-                                : cantidadEnCarrito > 0
-                                  ? `linear-gradient(135deg, ${empresa?.colorAcento || '#f59e0b'} 0%, ${empresa?.colorAcento ? `${empresa.colorAcento}dd` : '#d97706'} 100%)`
-                                  : `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`,
-                              color: 'white',
+                              width: '24px',
+                              height: '24px',
+                              background: cantidadEnCarrito === 0
+                                ? 'rgba(0,0,0,0.1)'
+                                : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                              color: cantidadEnCarrito === 0 ? '#6b7280' : 'white',
                               border: 'none',
-                              borderRadius: '12px',
-                              fontSize: vista === 'lista' ? '11px' : '14px',
-                              fontWeight: '600',
-                              cursor: producto.stock === 0 ? 'not-allowed' : 'pointer',
-                              transition: 'all 0.3s ease',
-                              opacity: producto.stock === 0 ? 0.6 : 1,
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: '700',
+                              cursor: cantidadEnCarrito === 0 ? 'not-allowed' : 'pointer',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              gap: vista === 'lista' ? '4px' : '8px',
-                              position: 'relative',
-                              overflow: 'hidden',
-                              minWidth: vista === 'lista' ? '120px' : 'auto',
-                              whiteSpace: 'nowrap',
-                              boxShadow: producto.stock === 0 ? 'none' : '0 4px 12px rgba(0,0,0,0.15)',
-                              backdropFilter: vista === 'lista' ? 'blur(10px)' : 'none'
-                            }}
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              
-                              if (producto.stock === 0) {
-                                toast.error('Este producto está agotado');
-                                return;
-                              }
-                              
-                              if (typeof producto.precio !== 'number' || isNaN(producto.precio)) {
-                                alert('Este producto no tiene un precio válido y no puede ser agregado al carrito.');
-                                return;
-                              }
-                              
-                              // Si no hay cantidad en carrito, agregar 1
-                              if (cantidadEnCarrito === 0) {
-                                const agregado = await addToCart({
-                                  id: producto.id,
-                                  nombre: producto.nombre,
-                                  precio: producto.precio,
-                                  cantidad: 1,
-                                  imagen: producto.imagenes && producto.imagenes[0]
-                                }, undefined, subdominio || undefined);
-                                
-                                if (agregado) {
-                                  toast.success('Producto agregado al carrito');
-                                }
-                              } else {
-                                // Si ya hay cantidad, mostrar mensaje
-                                toast.success(`Tienes ${cantidadEnCarrito} unidades en el carrito`);
-                              }
-                            }}
-                            onMouseOver={(e) => {
-                              if (producto.stock !== 0) {
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.3)';
-                              }
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = 'none';
+                              transition: 'all 0.3s ease',
+                              opacity: cantidadEnCarrito === 0 ? 0.6 : 1
                             }}
                           >
-                            {producto.stock === 0 ? (
-                              <>
-                                <span>❌</span>
-                                <span>Agotado</span>
-                              </>
-                            ) : cantidadEnCarrito > 0 ? (
-                              <>
-                                <span>🛒</span>
-                                <span>{cantidadEnCarrito} en carrito</span>
-                              </>
-                            ) : (
-                              <>
-                                <span>🛒</span>
-                                <span>Agregar al carrito</span>
-                              </>
-                            )}
+                            -
+                          </button>
+                          
+                          <span style={{
+                            minWidth: '28px',
+                            textAlign: 'center',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            color: '#1e293b',
+                            background: 'white',
+                            padding: '4px 6px',
+                            borderRadius: '4px',
+                            border: '1px solid #e5e7eb'
+                          }}>
+                            {cantidadEnCarrito}
+                          </span>
+                          
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (cantidadEnCarrito < producto.stock) {
+                                if (cantidadEnCarrito === 0) {
+                                  // Si no está en el carrito, agregarlo
+                                  await addToCart({
+                                    id: producto.id,
+                                    nombre: producto.nombre,
+                                    precio: producto.precio,
+                                    cantidad: 1,
+                                    imagen: producto.imagenes && producto.imagenes[0]
+                                  }, undefined, subdominio || undefined);
+                                } else {
+                                  // Si ya está en el carrito, aumentar cantidad
+                                  await updateQuantity(producto.id, cantidadEnCarrito + 1, undefined, subdominio || undefined);
+                                }
+                              }
+                            }}
+                            disabled={cantidadEnCarrito >= producto.stock}
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              background: cantidadEnCarrito >= producto.stock
+                                ? 'rgba(0,0,0,0.1)'
+                                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                              color: cantidadEnCarrito >= producto.stock ? '#6b7280' : 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: '700',
+                              cursor: cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.3s ease',
+                              opacity: cantidadEnCarrito >= producto.stock ? 0.6 : 1
+                            }}
+                          >
+                            +
                           </button>
                         </div>
-                      ) : (
-                        // Mostrar botón de iniciar sesión si no hay cliente logueado
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '12px',
-                          alignItems: 'stretch'
-                        }}>
-                          <div style={{
-                            padding: '12px 16px',
-                            background: '#f0f9ff',
-                            border: '1px solid #bae6fd',
-                            borderRadius: '10px',
-                            textAlign: 'center',
-                            fontSize: '14px',
-                            color: '#0369a1'
-                          }}>
-                            🔑 Inicia sesión para comprar
-                          </div>
-                          <Link to="/login" style={{
-                            width: '100%',
-                            padding: '12px 16px',
-                            background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`,
+
+                        {/* Botón agregar al carrito */}
+                        <button
+                          disabled={producto.stock === 0}
+                          style={{
+                            padding: '8px 12px',
+                            height: '36px',
+                            background: producto.stock === 0 
+                              ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+                              : cantidadEnCarrito > 0
+                                ? `linear-gradient(135deg, ${empresa?.colorAcento || '#f59e0b'} 0%, ${empresa?.colorAcento ? `${empresa.colorAcento}dd` : '#d97706'} 100%)`
+                                : `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`,
                             color: 'white',
                             border: 'none',
-                            borderRadius: '10px',
-                            fontSize: '14px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
                             fontWeight: '600',
-                            cursor: 'pointer',
+                            cursor: producto.stock === 0 ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.3s ease',
+                            opacity: producto.stock === 0 ? 0.6 : 1,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '8px',
-                            transition: 'all 0.2s ease',
-                            textDecoration: 'none'
+                            gap: '4px',
+                            whiteSpace: 'nowrap'
                           }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.3)';
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            
+                            if (producto.stock === 0) {
+                              toast.error('Este producto está agotado');
+                              return;
+                            }
+                            
+                            if (typeof producto.precio !== 'number' || isNaN(producto.precio)) {
+                              alert('Este producto no tiene un precio válido y no puede ser agregado al carrito.');
+                              return;
+                            }
+                            
+                            // Si no hay cantidad en carrito, agregar 1
+                            if (cantidadEnCarrito === 0) {
+                              const agregado = await addToCart({
+                                id: producto.id,
+                                nombre: producto.nombre,
+                                precio: producto.precio,
+                                cantidad: 1,
+                                imagen: producto.imagenes && producto.imagenes[0]
+                              }, undefined, subdominio || undefined);
+                              
+                              if (agregado) {
+                                toast.success('Producto agregado al carrito');
+                              }
+                            } else {
+                              // Si ya hay cantidad, mostrar mensaje
+                              toast.success(`Tienes ${cantidadEnCarrito} unidades en el carrito`);
+                            }
                           }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
-                          >
-                            <span>🔑</span>
-                            <span>Iniciar Sesión</span>
-                          </Link>
+                        >
+                          {producto.stock === 0 ? (
+                            <>
+                              <span>❌</span>
+                              <span>Agotado</span>
+                            </>
+                          ) : cantidadEnCarrito > 0 ? (
+                            <>
+                              <span>🛒</span>
+                              <span>{cantidadEnCarrito} en carrito</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🛒</span>
+                              <span>Agregar</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      // Mostrar botón de iniciar sesión si no hay cliente logueado
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        alignItems: 'stretch',
+                        marginTop: 'auto'
+                      }}>
+                        <div style={{
+                          padding: '8px 12px',
+                          background: '#f0f9ff',
+                          border: '1px solid #bae6fd',
+                          borderRadius: '8px',
+                          textAlign: 'center',
+                          fontSize: '11px',
+                          color: '#0369a1'
+                        }}>
+                          🔑 Inicia sesión para comprar
                         </div>
-                      )}
-                    </div>
+                        <Link to="/login" style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`,
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s ease',
+                          textDecoration: 'none'
+                        }}
+                        >
+                          <span>🔑</span>
+                          <span>Iniciar Sesión</span>
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
