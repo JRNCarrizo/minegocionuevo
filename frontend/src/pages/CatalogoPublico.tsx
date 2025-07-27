@@ -99,6 +99,28 @@ export default function CatalogoPublico() {
     }
   }, [empresa, subdominio, cargarProductos]);
 
+  // Debug: Log de la empresa cuando se carga
+  useEffect(() => {
+    if (empresa) {
+      console.log('🏢 Empresa cargada:', {
+        nombre: empresa.nombre,
+        descripcion: empresa.descripcion,
+        subdominio: empresa.subdominio,
+        logoUrl: empresa.logoUrl,
+        colorPrimario: empresa.colorPrimario,
+        colorSecundario: empresa.colorSecundario,
+        colorAcento: empresa.colorAcento,
+        colorFondo: empresa.colorFondo,
+        colorTexto: empresa.colorTexto,
+        colorTituloPrincipal: empresa.colorTituloPrincipal,
+        colorCardFiltros: empresa.colorCardFiltros,
+        imagenFondoUrl: empresa.imagenFondoUrl,
+        instagramUrl: empresa.instagramUrl,
+        facebookUrl: empresa.facebookUrl
+      });
+    }
+  }, [empresa]);
+
   const formatearPrecio = (precio: number, moneda: string = 'USD') => {
     const simbolos: { [key: string]: string } = {
       'USD': '$',
@@ -479,7 +501,8 @@ export default function CatalogoPublico() {
                 WebkitTextFillColor: empresa?.colorTituloPrincipal ? 'transparent' : 'white',
                 backgroundClip: empresa?.colorTituloPrincipal ? 'text' : 'unset'
               }}>
-                Bienvenido a {empresa.nombre}
+                {empresa.textoBienvenida || `Bienvenido a ${empresa.nombre}`}
+                {/* Debug: {empresa.textoBienvenida ? `✅ Texto personalizado: "${empresa.textoBienvenida}"` : `❌ Sin texto personalizado`} */}
               </h1>
               
               {empresa.descripcion && (

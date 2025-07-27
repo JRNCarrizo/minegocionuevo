@@ -190,12 +190,18 @@ class ApiService {
     empresaId: number, 
     data: { 
       logoUrl?: string; 
+      descripcion?: string;
+      textoBienvenida?: string;
       colorPrimario?: string; 
       colorSecundario?: string;
       colorAcento?: string;
       colorFondo?: string;
       colorTexto?: string;
+      colorTituloPrincipal?: string;
+      colorCardFiltros?: string;
       imagenFondoUrl?: string;
+      instagramUrl?: string;
+      facebookUrl?: string;
     }
   ): Promise<ApiResponse<{ mensaje: string; empresa: Empresa }>> {
     const response = await this.api.put(`/empresas/${empresaId}/personalizacion`, data);

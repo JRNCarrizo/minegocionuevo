@@ -297,3 +297,32 @@ MINE_NEGOCIO_APP_FRONTEND_URL=https://negocio360.org
 ## **¿Quieres que te ayude a recrearlo usando el Blueprint (opción más fácil)?**
 
 El Blueprint recreará automáticamente tanto el backend como la base de datos con la configuración correcta.
+
+# Opción 1: Con Maven (si funciona)
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+
+# Opción 2: Con Java directamente (más confiable)
+mvn clean package -DskipTests
+java -jar target/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
+
+# 1. Asegúrate que en pom.xml esté así:
+# H2 - DESCOMENTADO
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <scope>runtime</scope>
+</dependency>
+
+# PostgreSQL - COMENTADO
+<!--
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <scope>runtime</scope>
+</dependency>
+-->
+
+# 2. Ejecuta con:
+java -jar target/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev-h2
+
+java -jar target/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=railway

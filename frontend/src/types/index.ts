@@ -7,6 +7,7 @@ export interface Empresa {
   email: string;
   telefono?: string;
   descripcion?: string;
+  textoBienvenida?: string;
   logoUrl?: string;
   colorPrimario: string;
   colorSecundario: string;

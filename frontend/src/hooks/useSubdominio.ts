@@ -95,6 +95,12 @@ export const useSubdominio = (): UseSubdominioReturn => {
       setError(null);
       
       const response = await apiService.obtenerEmpresaPorSubdominio(subdominioParam);
+      console.log('=== DEBUG: Datos de empresa recibidos ===');
+      console.log('Empresa completa:', response.data);
+      console.log('Texto de bienvenida:', response.data?.textoBienvenida);
+      console.log('Descripción:', response.data?.descripcion);
+      console.log('Nombre:', response.data?.nombre);
+      console.log('=== FIN DEBUG ===');
       setEmpresa(response.data || null);
     } catch (err) {
       console.error('Error al obtener empresa por subdominio:', err);

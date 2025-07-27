@@ -80,6 +80,7 @@ public class AdminController {
             System.out.println("  - Título Principal: " + empresa.getColorTituloPrincipal());
             System.out.println("  - Card Filtros: " + empresa.getColorCardFiltros());
             System.out.println("  - Imagen Fondo: " + empresa.getImagenFondoUrl());
+            System.out.println("  - Texto de Bienvenida: " + empresa.getTextoBienvenida());
             System.out.println("=== FIN DEBUG ===");
             
             // Devolver información completa de la empresa para administradores
@@ -87,6 +88,7 @@ public class AdminController {
             empresaDTO.setId(empresa.getId());
             empresaDTO.setNombre(empresa.getNombre());
             empresaDTO.setDescripcion(empresa.getDescripcion());
+            empresaDTO.setTextoBienvenida(empresa.getTextoBienvenida());
             empresaDTO.setSubdominio(empresa.getSubdominio());
             empresaDTO.setEmail(empresa.getEmail());
             empresaDTO.setTelefono(empresa.getTelefono());
@@ -120,6 +122,12 @@ public class AdminController {
     @PutMapping("/empresa")
     public ResponseEntity<?> actualizarEmpresaAdmin(@RequestBody EmpresaDTO empresaDTO, HttpServletRequest request) {
         try {
+            System.out.println("=== DEBUG ADMIN CONTROLLER ===");
+            System.out.println("EmpresaDTO recibido: " + empresaDTO);
+            System.out.println("Texto de bienvenida recibido: " + empresaDTO.getTextoBienvenida());
+            System.out.println("Descripción recibida: " + empresaDTO.getDescripcion());
+            System.out.println("Nombre recibido: " + empresaDTO.getNombre());
+            
             String token = request.getHeader("Authorization");
             if (token == null || !token.startsWith("Bearer ")) {
                 return ResponseEntity.status(401).body(Map.of("error", "Token no válido"));
@@ -138,8 +146,13 @@ public class AdminController {
                 return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
             }
             
+            System.out.println("Empresa ID: " + empresa.getId());
+            System.out.println("=== FIN DEBUG ADMIN CONTROLLER ===");
+            
+            System.out.println("🔍 Llamando a actualizarConfiguracionEmpresa...");
             // Usar el nuevo método con validaciones
             EmpresaDTO empresaActualizadaDTO = empresaService.actualizarConfiguracionEmpresa(empresa.getId(), empresaDTO);
+            System.out.println("✅ actualizarConfiguracionEmpresa completado");
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Empresa actualizada correctamente",
@@ -315,7 +328,22 @@ public class AdminController {
             String urlImagen = cloudinaryService.subirImagen(archivo, empresa.getId(), "fondo");
             
             // Guardar la URL en la empresa
-            EmpresaDTO empresaDTO = empresaService.actualizarPersonalizacion(empresa.getId(), null, null, null, null, null, null,null,null, urlImagen, null, null);
+            EmpresaDTO empresaDTO = empresaService.actualizarPersonalizacion(
+                empresa.getId(), 
+                empresa.getLogoUrl(), // logoUrl
+                empresa.getDescripcion(), // descripcion
+                empresa.getTextoBienvenida(), // textoBienvenida
+                empresa.getColorPrimario(), // colorPrimario
+                empresa.getColorSecundario(), // colorSecundario
+                empresa.getColorAcento(), // colorAcento
+                empresa.getColorFondo(), // colorFondo
+                empresa.getColorTexto(), // colorTexto
+                empresa.getColorTituloPrincipal(), // colorTituloPrincipal
+                empresa.getColorCardFiltros(), // colorCardFiltros
+                urlImagen, // imagenFondoUrl
+                empresa.getInstagramUrl(), // instagramUrl
+                empresa.getFacebookUrl() // facebookUrl
+            );
             
             System.out.println("=== DEBUG SUBIDA FONDO ===");
             System.out.println("Empresa ID: " + empresa.getId());
@@ -370,8 +398,19 @@ public class AdminController {
             // Actualizar solo la imagen de fondo
             EmpresaDTO empresaDTO = empresaService.actualizarPersonalizacion(
                 empresa.getId(), 
-                null, null, null, null, null, null,null,null,
-                urlImagenPrueba, null, null
+                empresa.getLogoUrl(), // logoUrl
+                empresa.getDescripcion(), // descripcion
+                empresa.getTextoBienvenida(), // textoBienvenida
+                empresa.getColorPrimario(), // colorPrimario
+                empresa.getColorSecundario(), // colorSecundario
+                empresa.getColorAcento(), // colorAcento
+                empresa.getColorFondo(), // colorFondo
+                empresa.getColorTexto(), // colorTexto
+                empresa.getColorTituloPrincipal(), // colorTituloPrincipal
+                empresa.getColorCardFiltros(), // colorCardFiltros
+                urlImagenPrueba, // imagenFondoUrl
+                empresa.getInstagramUrl(), // instagramUrl
+                empresa.getFacebookUrl() // facebookUrl
             );
             
             System.out.println("Empresa actualizada: " + empresaDTO.getImagenFondoUrl());

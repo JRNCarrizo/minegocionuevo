@@ -15,6 +15,7 @@ public class EmpresaDTO {
     private String email;
     private String telefono;
     private String descripcion;
+    private String textoBienvenida;
     private String logoUrl;
     private String colorPrimario;
     private String colorSecundario;
@@ -52,6 +53,7 @@ public class EmpresaDTO {
         this.email = empresa.getEmail();
         this.telefono = empresa.getTelefono();
         this.descripcion = empresa.getDescripcion();
+        this.textoBienvenida = empresa.getTextoBienvenida();
         this.logoUrl = empresa.getLogoUrl();
         this.colorPrimario = empresa.getColorPrimario();
         this.colorSecundario = empresa.getColorSecundario();
@@ -89,6 +91,9 @@ public class EmpresaDTO {
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+
+    public String getTextoBienvenida() { return textoBienvenida; }
+    public void setTextoBienvenida(String textoBienvenida) { this.textoBienvenida = textoBienvenida; }
 
     public String getLogoUrl() { return logoUrl; }
     public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; }

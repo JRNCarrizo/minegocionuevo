@@ -96,12 +96,13 @@ public class EmpresaService {
     /**
      * Actualiza la personalización de una empresa
      */
-    public EmpresaDTO actualizarPersonalizacion(Long empresaId, String logoUrl, String colorPrimario, String colorSecundario, 
+    public EmpresaDTO actualizarPersonalizacion(Long empresaId, String logoUrl, String descripcion, String textoBienvenida, String colorPrimario, String colorSecundario, 
                                                String colorAcento, String colorFondo, String colorTexto, String colorTituloPrincipal, 
                                                String colorCardFiltros, String imagenFondoUrl, String instagramUrl, String facebookUrl) {
         System.out.println("=== DEBUG SERVICIO PERSONALIZACIÓN ===");
         System.out.println("Empresa ID: " + empresaId);
         System.out.println("Logo URL: " + logoUrl);
+        System.out.println("Descripción: " + descripcion);
         System.out.println("Color Primario: " + colorPrimario);
         System.out.println("Color Secundario: " + colorSecundario);
         System.out.println("Color Acento: " + colorAcento);
@@ -117,11 +118,24 @@ public class EmpresaService {
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
         // Debug: Verificar si los campos se están guardando
         System.out.println("=== DEBUG GUARDADO ===");
+        System.out.println("Antes de guardar - Descripción: " + empresa.getDescripcion());
         System.out.println("Antes de guardar - Color Título Principal: " + empresa.getColorTituloPrincipal());
         System.out.println("Antes de guardar - Color Card Filtros: " + empresa.getColorCardFiltros());
 
         if (logoUrl != null) {
             empresa.setLogoUrl(logoUrl);
+        }
+        if (descripcion != null) {
+            empresa.setDescripcion(descripcion);
+            System.out.println("✅ Descripción guardada: " + descripcion);
+        } else {
+            System.out.println("❌ Descripción es null, no se guarda");
+        }
+        if (textoBienvenida != null) {
+            empresa.setTextoBienvenida(textoBienvenida);
+            System.out.println("✅ Texto de bienvenida guardado: " + textoBienvenida);
+        } else {
+            System.out.println("❌ Texto de bienvenida es null, no se guarda");
         }
         if (colorPrimario != null) {
             empresa.setColorPrimario(colorPrimario);
@@ -158,6 +172,7 @@ public class EmpresaService {
         }
 
         empresa = empresaRepository.save(empresa);
+        System.out.println("Empresa guardada. Descripción final: " + empresa.getDescripcion());
         System.out.println("Empresa guardada. Imagen de fondo final: " + empresa.getImagenFondoUrl());
         System.out.println("Después de guardar - Color Título Principal: " + empresa.getColorTituloPrincipal());
         System.out.println("Después de guardar - Color Card Filtros: " + empresa.getColorCardFiltros());
@@ -198,8 +213,10 @@ public class EmpresaService {
      * Actualiza la configuración de una empresa con validaciones
      */
     public EmpresaDTO actualizarConfiguracionEmpresa(Long empresaId, EmpresaDTO empresaDTO) {
-        System.out.println("=== DEBUG ACTUALIZAR CONFIGURACIÓN EMPRESA ===");
+        System.out.println("=== DEBUG ACTUALIZAR CONFIGURACIÓN ===");
         System.out.println("Empresa ID: " + empresaId);
+        System.out.println("Texto de bienvenida recibido: " + empresaDTO.getTextoBienvenida());
+        System.out.println("Descripción recibida: " + empresaDTO.getDescripcion());
         System.out.println("Color Título Principal recibido: " + empresaDTO.getColorTituloPrincipal());
         System.out.println("Color Card Filtros recibido: " + empresaDTO.getColorCardFiltros());
         
@@ -248,6 +265,17 @@ public class EmpresaService {
         if (empresaDTO.getDescripcion() != null) {
             empresa.setDescripcion(empresaDTO.getDescripcion());
         }
+        System.out.println("🔍 Verificando texto de bienvenida...");
+        System.out.println("  - Valor en DTO: " + empresaDTO.getTextoBienvenida());
+        System.out.println("  - Es null?: " + (empresaDTO.getTextoBienvenida() == null));
+        System.out.println("  - Está vacío?: " + ("".equals(empresaDTO.getTextoBienvenida())));
+        
+        if (empresaDTO.getTextoBienvenida() != null) {
+            empresa.setTextoBienvenida(empresaDTO.getTextoBienvenida());
+            System.out.println("✅ Texto de bienvenida actualizado: " + empresaDTO.getTextoBienvenida());
+        } else {
+            System.out.println("❌ Texto de bienvenida es null en el DTO");
+        }
         if (empresaDTO.getTelefono() != null) {
             empresa.setTelefono(empresaDTO.getTelefono());
         }
@@ -286,8 +314,11 @@ public class EmpresaService {
         
 
         empresa = empresaRepository.save(empresa);
-        System.out.println("Configuración guardada - Color Título Principal: " + empresa.getColorTituloPrincipal());
-        System.out.println("Configuración guardada - Color Card Filtros: " + empresa.getColorCardFiltros());
+        System.out.println("💾 Después de guardar en BD:");
+        System.out.println("  - Texto de Bienvenida: " + empresa.getTextoBienvenida());
+        System.out.println("  - Descripción: " + empresa.getDescripcion());
+        System.out.println("  - Color Título Principal: " + empresa.getColorTituloPrincipal());
+        System.out.println("  - Color Card Filtros: " + empresa.getColorCardFiltros());
         System.out.println("=== FIN DEBUG ACTUALIZAR CONFIGURACIÓN ===");
         return new EmpresaDTO(empresa);
     }

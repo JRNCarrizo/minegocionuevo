@@ -72,7 +72,7 @@ public class PublicoController {
             empresaData.put("id", empresa.getId() != null ? empresa.getId() : 0L);
             empresaData.put("nombre", empresa.getNombre() != null ? empresa.getNombre() : "");
             empresaData.put("descripcion", empresa.getDescripcion() != null ? empresa.getDescripcion() : "");
-            empresaData.put("subdominio", empresa.getSubdominio() != null ? empresa.getSubdominio() : "");
+            empresaData.put("textoBienvenida", empresa.getTextoBienvenida() != null ? empresa.getTextoBienvenida() : "");
             empresaData.put("logoUrl", empresa.getLogoUrl() != null ? empresa.getLogoUrl() : "");
             empresaData.put("colorPrimario", empresa.getColorPrimario() != null ? empresa.getColorPrimario() : "#3B82F6");
             empresaData.put("colorSecundario", empresa.getColorSecundario() != null ? empresa.getColorSecundario() : "#1F2937");

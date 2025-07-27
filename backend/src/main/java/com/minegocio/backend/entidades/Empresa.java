@@ -44,6 +44,10 @@ public class Empresa {
     @Column(length = 500)
     private String descripcion;
 
+    @Size(max = 200, message = "El texto de bienvenida no puede exceder 200 caracteres")
+    @Column(name = "texto_bienvenida", length = 200, nullable = true, columnDefinition = "VARCHAR(200)")
+    private String textoBienvenida;
+
     // Personalización visual
     @Column(name = "logo_url")
     private String logoUrl;
@@ -147,6 +151,9 @@ public class Empresa {
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+
+    public String getTextoBienvenida() { return textoBienvenida; }
+    public void setTextoBienvenida(String textoBienvenida) { this.textoBienvenida = textoBienvenida; }
 
     public String getLogoUrl() { return logoUrl; }
     public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; }

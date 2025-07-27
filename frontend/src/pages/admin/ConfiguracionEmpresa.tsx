@@ -9,6 +9,7 @@ import type { Empresa, ApiError } from '../../types';
 interface ConfiguracionEmpresa {
   nombre: string;
   descripcion: string;
+  textoBienvenida: string;
   subdominio: string;
   email: string;
   telefono: string;
@@ -235,6 +236,7 @@ export default function ConfiguracionEmpresa() {
   const [configuracion, setConfiguracion] = useState<ConfiguracionEmpresa>({
     nombre: '',
     descripcion: '',
+    textoBienvenida: '',
     subdominio: '',
     email: '',
     telefono: '',
@@ -298,6 +300,8 @@ export default function ConfiguracionEmpresa() {
       
       console.log('=== DEBUG CONFIGURACIÓN EMPRESA ===');
       console.log('Datos de la empresa obtenidos:', empresa);
+      console.log('Texto de bienvenida recibido:', empresa.textoBienvenida);
+      console.log('Descripción recibida:', empresa.descripcion);
       console.log('Colores recibidos:');
       console.log('  - Primario:', empresa.colorPrimario);
       console.log('  - Secundario:', empresa.colorSecundario);
@@ -311,6 +315,7 @@ export default function ConfiguracionEmpresa() {
         ...configuracion,
         nombre: empresa.nombre || '',
         descripcion: empresa.descripcion || '',
+        textoBienvenida: empresa.textoBienvenida || '',
         subdominio: empresa.subdominio || '',
         email: empresa.email || '',
         telefono: empresa.telefono || '',
@@ -386,6 +391,8 @@ export default function ConfiguracionEmpresa() {
   const manejarCambio = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
+    console.log('🔄 Campo cambiado:', name, 'Valor:', value);
+    
     if (type === 'checkbox') {
       const checkbox = e.target as HTMLInputElement;
       setConfiguracion(prev => ({
@@ -451,27 +458,36 @@ export default function ConfiguracionEmpresa() {
     
     // Comparar campos principales
     const camposPrincipales = [
-      'nombre', 'descripcion', 'subdominio', 'email', 'telefono',
+      'nombre', 'descripcion', 'textoBienvenida', 'subdominio', 'email', 'telefono',
       'colorPrimario', 'colorSecundario', 'colorAcento', 'colorFondo', 'colorTexto',
-      'moneda', 'instagramUrl', 'facebookUrl'
+      'colorTituloPrincipal', 'colorCardFiltros', 'moneda', 'instagramUrl', 'facebookUrl'
     ];
     
     for (const campo of camposPrincipales) {
-      if (configuracion[campo as keyof ConfiguracionEmpresa] !== configuracionOriginal[campo as keyof ConfiguracionEmpresa]) {
+      const valorActual = configuracion[campo as keyof ConfiguracionEmpresa];
+      const valorOriginal = configuracionOriginal[campo as keyof ConfiguracionEmpresa];
+      
+      if (valorActual !== valorOriginal) {
+        console.log('🔍 Cambio detectado en:', campo);
+        console.log('  - Actual:', valorActual);
+        console.log('  - Original:', valorOriginal);
         return true;
       }
     }
     
     // Verificar si hay un nuevo logo seleccionado
     if (configuracion.logo) {
+      console.log('🔍 Cambio detectado: nuevo logo seleccionado');
       return true;
     }
     
     // Verificar si hay una nueva imagen de fondo seleccionada
     if (configuracion.imagenFondo) {
+      console.log('🔍 Cambio detectado: nueva imagen de fondo seleccionada');
       return true;
     }
     
+    console.log('🔍 No se detectaron cambios');
     return false;
   }, [configuracion, configuracionOriginal]);
 
@@ -579,6 +595,7 @@ export default function ConfiguracionEmpresa() {
       // PASO 3: Preparar datos de personalización
       const datosPersonalizacion = {
         logoUrl,
+        descripcion: configuracion.descripcion,
         colorPrimario: configuracion.colorPrimario,
         colorSecundario: configuracion.colorSecundario,
         colorAcento: configuracion.colorAcento,
@@ -591,6 +608,7 @@ export default function ConfiguracionEmpresa() {
         facebookUrl: configuracion.facebookUrl
       };
       console.log('📋 Datos de personalización a enviar:', datosPersonalizacion);
+      console.log('📝 Descripción a enviar:', configuracion.descripcion);
 
       if (!empresaId) {
         toast.error('Error: No se pudo identificar la empresa');
@@ -598,8 +616,39 @@ export default function ConfiguracionEmpresa() {
         return;
       }
 
-      // PASO 4: Guardar personalización
-      const response = await ApiService.actualizarPersonalizacion(empresaId, datosPersonalizacion);
+      // PASO 4: Guardar configuración completa de la empresa
+      console.log('📋 Enviando configuración completa de la empresa...');
+      console.log('📝 Descripción a enviar:', configuracion.descripcion);
+      
+      const datosEmpresa = {
+        nombre: configuracion.nombre,
+        descripcion: configuracion.descripcion,
+        textoBienvenida: configuracion.textoBienvenida,
+        subdominio: configuracion.subdominio,
+        email: configuracion.email,
+        telefono: configuracion.telefono,
+        logoUrl,
+        colorPrimario: configuracion.colorPrimario,
+        colorSecundario: configuracion.colorSecundario,
+        colorAcento: configuracion.colorAcento,
+        colorFondo: configuracion.colorFondo,
+        colorTexto: configuracion.colorTexto,
+        colorTituloPrincipal: configuracion.colorTituloPrincipal,
+        colorCardFiltros: configuracion.colorCardFiltros,
+        imagenFondoUrl,
+        moneda: configuracion.moneda,
+        instagramUrl: configuracion.instagramUrl,
+        facebookUrl: configuracion.facebookUrl
+      };
+      
+      console.log('📋 Datos completos de la empresa a enviar:', datosEmpresa);
+      console.log('👋 Texto de bienvenida a enviar:', configuracion.textoBienvenida);
+      console.log('👋 Texto de bienvenida es null?:', configuracion.textoBienvenida === null);
+      console.log('👋 Texto de bienvenida es undefined?:', configuracion.textoBienvenida === undefined);
+      console.log('👋 Texto de bienvenida está vacío?:', configuracion.textoBienvenida === '');
+      console.log('👋 Longitud del texto de bienvenida:', configuracion.textoBienvenida?.length);
+      
+      const response = await ApiService.actualizarEmpresaAdmin(datosEmpresa);
       console.log('✅ Respuesta del servidor:', response);
       toast.success('Configuración guardada correctamente');
       cargarConfiguracion(false);
@@ -760,14 +809,31 @@ export default function ConfiguracionEmpresa() {
               </div>
 
               <InputField
+                icon="👋"
+                label="Texto de Bienvenida"
+                name="textoBienvenida"
+                value={configuracion.textoBienvenida}
+                onChange={manejarCambio}
+                placeholder="¡Bienvenidos a [nombre de la empresa]!"
+              />
+              <p className="texto-pequeno texto-gris" style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
+                💡 <strong>Guía:</strong> Este texto aparecerá como título principal en la card de presentación del catálogo público. 
+                Si lo dejas vacío, se mostrará "Bienvenido a [nombre de la empresa]" por defecto.
+              </p>
+
+              <InputField
                 icon="📝"
-                label="Descripción"
+                label="Texto de Presentación"
                 type="textarea"
                 name="descripcion"
                 value={configuracion.descripcion}
                 onChange={manejarCambio}
                 placeholder="Describe tu negocio, productos y servicios..."
               />
+              <p className="texto-pequeno texto-gris" style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
+                💡 <strong>Guía:</strong> Este texto aparecerá debajo del título de bienvenida en la card de presentación. 
+                Es ideal para describir brevemente tu negocio, productos o servicios.
+              </p>
 
               <div className="grupo-campo">
                 <label className="etiqueta">Logo de la Empresa</label>
