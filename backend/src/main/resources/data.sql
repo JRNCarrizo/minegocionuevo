@@ -5,4 +5,4 @@
 -- Como Hibernate no está reconociendo la columna, la agregamos manualmente
 
 -- Agregar columna texto_bienvenida si no existe
-ALTER TABLE empresas ADD COLUMN texto_bienvenida VARCHAR(200);
+-- ALTER TABLE empresas ADD COLUMN texto_bienvenida VARCHAR(200);
