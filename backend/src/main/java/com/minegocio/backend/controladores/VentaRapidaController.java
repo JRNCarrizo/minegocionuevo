@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Controlador para manejar las ventas rápidas desde la caja
@@ -154,6 +155,7 @@ public class VentaRapidaController {
      * Obtiene el historial completo de ventas rápidas
      */
     @GetMapping("/historial")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> obtenerHistorialVentasRapidas() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -243,6 +245,7 @@ public class VentaRapidaController {
      * Obtiene estadísticas de ventas rápidas
      */
     @GetMapping("/estadisticas")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> obtenerEstadisticasVentasRapidas(
             @RequestParam(required = false) String fechaInicio,
             @RequestParam(required = false) String fechaFin) {
