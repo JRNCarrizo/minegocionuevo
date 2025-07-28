@@ -10,8 +10,8 @@
 	</parent>
 	<groupId>com.minegocio</groupId>
 	<artifactId>backend</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
-	<name>miNegocio-Backend-Production</name>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>miNegocio-Backend</name>
 	<description>Sistema de gestión de negocios multi-tenant</description>
 	<url/>
 	<licenses>
