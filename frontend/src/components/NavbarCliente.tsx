@@ -123,7 +123,9 @@ export default function NavbarCliente({
                 <span style={{
                   fontSize: '18px',
                   fontWeight: '700',
-                  color: 'white'
+                  color: 'white',
+                  fontFamily: "'Playfair Display', serif",
+                  letterSpacing: '0.5px'
                 }}>
                   {empresa.nombre}
                 </span>

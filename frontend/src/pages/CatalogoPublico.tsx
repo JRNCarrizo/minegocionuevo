@@ -570,7 +570,9 @@ export default function CatalogoPublico() {
                 background: empresa?.colorTituloPrincipal ? `linear-gradient(135deg, ${empresa.colorTituloPrincipal} 0%, ${empresa.colorTituloPrincipal}dd 100%)` : 'none',
                 WebkitBackgroundClip: empresa?.colorTituloPrincipal ? 'text' : 'unset',
                 WebkitTextFillColor: empresa?.colorTituloPrincipal ? 'transparent' : 'white',
-                backgroundClip: empresa?.colorTituloPrincipal ? 'text' : 'unset'
+                backgroundClip: empresa?.colorTituloPrincipal ? 'text' : 'unset',
+                fontFamily: "'Libre Baskerville', serif",
+                letterSpacing: '0.8px'
               }}>
                 {empresa.textoBienvenida || `Bienvenido a ${empresa.nombre}`}
                 {/* Debug: {empresa.textoBienvenida ? `✅ Texto personalizado: "${empresa.textoBienvenida}"` : `❌ Sin texto personalizado`} */}
@@ -589,7 +591,10 @@ export default function CatalogoPublico() {
                     fontWeight: '400',
                     textAlign: 'center',
                     color: empresa?.colorTituloPrincipal || 'white',
-                    textShadow: '0 2px 4px rgba(0,0,0,0.4)'
+                    textShadow: '0 2px 4px rgba(0,0,0,0.4)',
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontStyle: 'italic',
+                    letterSpacing: '0.3px'
                   }}>
                     {empresa.descripcion}
                   </p>
