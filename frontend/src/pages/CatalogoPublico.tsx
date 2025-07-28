@@ -620,7 +620,7 @@ export default function CatalogoPublico() {
               margin: '0 0 8px 0', 
               fontSize: isMobile ? '24px' : isTablet ? '26px' : '28px', 
               fontWeight: '700', 
-              color: empresa?.colorTituloPrincipal || '#1f2937'
+              color: empresa?.colorTexto || '#1e293b'
             }}>
               Catálogo de Productos
             </h2>
