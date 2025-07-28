@@ -12,11 +12,15 @@ COPY pom.xml .
 # Dar permisos de ejecución a mvnw
 RUN chmod +x mvnw
 
+# Limpiar cache de Maven y forzar descarga de dependencias
+RUN ./mvnw dependency:purge-local-repository
+RUN ./mvnw clean
+
 # Copiar código fuente
 COPY src src
 
-# Construir la aplicación
-RUN ./mvnw clean package -DskipTests
+# Construir la aplicación con dependencias explícitas
+RUN ./mvnw clean package -DskipTests -U
 
 # Exponer puerto
 EXPOSE 8080
