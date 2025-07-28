@@ -54,18 +54,18 @@
 		<!-- Base de datos - DESCOMENTAR LA QUE QUIERAS USAR -->
 		
 		<!-- H2 - Para desarrollo local (más rápido) -->
-		<dependency>
+		<!-- <dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-		</dependency>
+		</dependency> -->
 		
 		<!-- PostgreSQL - Para producción (Railway) -->
-		<!--
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
 		</dependency>
-		-->
+		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
