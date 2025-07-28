@@ -12,6 +12,11 @@ Estás experimentando errores 500 en producción cuando:
 Driver org.h2.Driver claims to not accept jdbcUrl, jdbc:postgresql://maglev.proxy.rlwy.net:47286/railway
 ```
 
+**Error adicional:**
+```
+DdlTransactionIsolatorNonJtaImpl.getIsolatedConnection
+```
+
 ## 🛠️ **Cambios Realizados**
 
 ### 1. **Resuelto Conflicto de Drivers de Base de Datos**
@@ -20,17 +25,23 @@ Driver org.h2.Driver claims to not accept jdbcUrl, jdbc:postgresql://maglev.prox
 - ✅ PostgreSQL solo disponible en perfil `prod`
 - ✅ Eliminado conflicto entre drivers
 
-### 2. **Mejorado el Manejo de Errores**
+### 2. **Configuración para Datos Existentes**
+- ✅ **`ddl-auto=none`**: NO modifica el esquema de la base de datos
+- ✅ **`sql.init.mode=never`**: NO ejecuta scripts de inicialización
+- ✅ **`defer-datasource-initialization=false`**: NO inicializa datos
+- ✅ **`hbm2ddl.auto=none`**: NO genera DDL automáticamente
+
+### 3. **Mejorado el Manejo de Errores**
 - ✅ Agregado logging detallado en endpoints críticos
 - ✅ Mejorado el manejo de excepciones en `AdminController`
 - ✅ Agregado endpoint `/health` para diagnóstico
 
-### 3. **Configuración de Logs Mejorada**
-- ✅ Activado logging DEBUG en producción para Railway
-- ✅ Agregado logging de SQL y Hibernate
-- ✅ Configurado logging a archivo `/tmp/minegocio.log`
+### 4. **Configuración de Logs Optimizada**
+- ✅ Logs solo para errores importantes (WARN)
+- ✅ Eliminado logging excesivo que puede causar problemas
+- ✅ Configuración estable para producción
 
-### 4. **Scripts de Build**
+### 5. **Scripts de Build**
 - ✅ Creado `railway-build.sh` para build de producción
 - ✅ Creado `verificar-produccion.sh` para diagnosticar problemas
 - ✅ Endpoint `/api/admin/health` para verificar conectividad
@@ -41,7 +52,7 @@ Driver org.h2.Driver claims to not accept jdbcUrl, jdbc:postgresql://maglev.prox
 ```bash
 # Hacer commit y push de los cambios
 git add .
-git commit -m "Fix: Resuelto conflicto de drivers H2/PostgreSQL con perfiles Maven"
+git commit -m "Fix: Configurado para usar datos existentes sin modificar esquema"
 git push origin main
 ```
 
@@ -91,19 +102,25 @@ curl https://minegocio-backend-production.up.railway.app/api/admin/health
 ```
 **Solución:** ✅ Implementado perfiles Maven para separar drivers
 
-### **Error 2: Problemas de Base de Datos**
+### **Error 2: Problemas de Migración de Esquema (RESUELTO)**
+```
+❌ Error: DdlTransactionIsolatorNonJtaImpl.getIsolatedConnection
+```
+**Solución:** ✅ Deshabilitado completamente la modificación de esquema
+
+### **Error 3: Problemas de Base de Datos**
 ```
 ❌ Error: Cannot load driver class: org.postgresql.Driver
 ```
 **Solución:** Verificar que se use el perfil `prod` en Railway
 
-### **Error 3: Problemas de Autenticación**
+### **Error 4: Problemas de Autenticación**
 ```
 ❌ Error: Token no válido
 ```
 **Solución:** Verificar que el JWT secret esté configurado correctamente.
 
-### **Error 4: Problemas de Conexión**
+### **Error 5: Problemas de Conexión**
 ```
 ❌ Error: Connection refused
 ```
@@ -171,12 +188,12 @@ Authorization: Bearer TU_TOKEN_JWT
 jar -tf target/backend-0.0.1-SNAPSHOT.jar | grep -E "(h2|postgresql)"
 ```
 
-### **Verificar Logs Detallados**
-Los logs ahora incluyen información detallada:
-- ✅ Tokens JWT
-- ✅ IDs de usuario y empresa
-- ✅ Consultas SQL
-- ✅ Errores específicos
+### **Verificar Configuración de Base de Datos**
+La aplicación ahora está configurada para:
+- ✅ **NO modificar** el esquema de la base de datos
+- ✅ **NO ejecutar** scripts de inicialización
+- ✅ **NO generar** DDL automáticamente
+- ✅ **Solo usar** los datos existentes
 
 ### **Usar el Endpoint de Health**
 El endpoint `/health` te dará información sobre:
@@ -189,7 +206,7 @@ El endpoint `/health` te dará información sobre:
 
 1. **Hacer deploy** de los cambios
 2. **Verificar** que Railway use el perfil `prod`
-3. **Revisar logs** en Railway para confirmar que no hay errores de driver
+3. **Revisar logs** en Railway para confirmar que no hay errores de driver o esquema
 4. **Probar** los endpoints con el script de verificación
 5. **Reportar** cualquier error específico que encuentres
 
@@ -216,9 +233,11 @@ curl https://minegocio-backend-production.up.railway.app/api/admin/health
 
 - **Perfiles Maven** resuelven el conflicto de drivers
 - **H2 solo en desarrollo**, PostgreSQL solo en producción
-- **Logs detallados** están activados temporalmente para debugging
+- **NO se modifica** el esquema de la base de datos existente
+- **Solo se usan** los datos que ya tienes en producción
+- **Logs optimizados** para producción (solo errores importantes)
 - **El endpoint `/health`** no requiere autenticación
 - **Los errores 500** ahora incluyen más información de debugging
-- **La aplicación** debería ser más robusta después de estos cambios
+- **La aplicación** debería ser más estable después de estos cambios
 
-¡Con estos cambios el conflicto de drivers debería estar resuelto y la aplicación debería funcionar correctamente en producción! 
+¡Con estos cambios la aplicación debería funcionar correctamente con tus datos existentes en producción! 

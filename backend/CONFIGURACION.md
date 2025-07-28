@@ -14,6 +14,7 @@
 - `application-dev-*.properties`
 - `application-render-*.properties`
 - `application-fly-*.properties`
+- **Todos los archivos de migración SQL** (ya tienes datos en producción)
 
 ## 🚀 Cómo Usar
 
@@ -54,13 +55,14 @@ MINE_NEGOCIO_APP_FRONTEND_URL=https://tu-frontend-en-render.com
 | Característica | H2 (Desarrollo) | Railway (Producción) |
 |----------------|------------------|---------------------|
 | Base de datos | H2 en memoria | PostgreSQL |
-| DDL | create-drop | update |
-| Logs SQL | DEBUG | DEBUG |
+| DDL | create-drop | none (no modifica esquema) |
+| Logs SQL | DEBUG | WARN |
 | Consola H2 | Habilitada | Deshabilitada |
 | Puerto | 8080 | ${PORT} |
 | Archivos | ./uploads/ | /tmp/uploads/ |
 | Frontend URL | localhost:5173 | Variable de entorno |
 | Driver | H2 | PostgreSQL |
+| Datos iniciales | No (esquema vacío) | Usa datos existentes |
 
 ## 🛠️ Comandos Útiles
 
@@ -103,8 +105,9 @@ Si ves el error "Driver org.h2.Driver claims to not accept jdbcUrl, jdbc:postgre
 
 ## 📝 Notas
 
-- **Desarrollo**: Usa H2 en memoria, se reinicia cada vez
-- **Producción**: Usa PostgreSQL persistente en Railway
+- **Desarrollo**: Usa H2 en memoria, se reinicia cada vez (sin datos iniciales)
+- **Producción**: Usa PostgreSQL persistente en Railway con datos existentes
 - **Frontend**: Se despliega en Render, se conecta al backend en Railway
-- **Base de datos**: Se crea automáticamente en Railway
-- **Perfiles Maven**: Evitan conflictos entre drivers de base de datos 
+- **Base de datos**: Se usa la existente en Railway (no se modifica esquema)
+- **Perfiles Maven**: Evitan conflictos entre drivers de base de datos
+- **Sin migraciones**: No se ejecutan scripts SQL automáticamente 
