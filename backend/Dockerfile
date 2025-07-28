@@ -4,11 +4,22 @@ FROM openjdk:17-jdk-slim
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Copiar el archivo JAR del proyecto
-COPY target/*.jar app.jar
+# Copiar archivos de Maven
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+
+# Dar permisos de ejecución a mvnw
+RUN chmod +x mvnw
+
+# Copiar código fuente
+COPY src src
+
+# Construir con perfil de producción (solo PostgreSQL, sin H2)
+RUN ./mvnw clean package -Pprod -DskipTests
 
 # Exponer puerto
 EXPOSE 8080
 
 # Comando para ejecutar la aplicación con perfil railway
-ENTRYPOINT ["java", "-Dspring.profiles.active=railway", "-jar", "app.jar"] 
+ENTRYPOINT ["java", "-Dspring.profiles.active=railway", "-jar", "target/backend-0.0.1-SNAPSHOT.jar"] 
