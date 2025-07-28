@@ -578,6 +578,60 @@ class ApiService {
     return response.data;
   }
 
+  async actualizarPerfilCliente(subdominio: string, clienteId: number, data: {
+    nombre: string;
+    apellidos: string;
+    email: string;
+    telefono: string;
+  }, token: string) {
+    const response = await this.api.put(`/publico/${subdominio}/auth/perfil/${clienteId}`, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  async cambiarPasswordCliente(subdominio: string, clienteId: number, data: {
+    passwordActual: string;
+    passwordNueva: string;
+  }, token: string) {
+    const response = await this.api.put(`/publico/${subdominio}/auth/password/${clienteId}`, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  // ============================================
+  // MÉTODOS PARA PRODUCTOS FAVORITOS
+  // ============================================
+
+  async obtenerFavoritos(subdominio: string, token: string) {
+    const response = await this.api.get(`/publico/${subdominio}/auth/favoritos`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  async agregarFavorito(subdominio: string, productoId: number, token: string) {
+    const response = await this.api.post(`/publico/${subdominio}/auth/favoritos/${productoId}`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  async removerFavorito(subdominio: string, productoId: number, token: string) {
+    const response = await this.api.delete(`/publico/${subdominio}/auth/favoritos/${productoId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  async verificarFavorito(subdominio: string, productoId: number, token: string) {
+    const response = await this.api.get(`/publico/${subdominio}/auth/favoritos/${productoId}/verificar`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
   // Obtener pedidos de un cliente (requiere empresaId y clienteId)
   async obtenerPedidosCliente(empresaId: number, clienteId: number): Promise<ApiResponse<Pedido[]>> {
     const response = await this.api.get(`/empresas/${empresaId}/pedidos/cliente/${clienteId}`);

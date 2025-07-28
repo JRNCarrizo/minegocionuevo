@@ -54,12 +54,21 @@ public class EmpresaService {
             throw new RuntimeException("El email del administrador ya está registrado");
         }
 
+        // Validar que las contraseñas coincidan
+        if (!registroDTO.getPasswordAdministrador().equals(registroDTO.getConfirmarPasswordAdministrador())) {
+            throw new RuntimeException("Las contraseñas no coinciden");
+        }
+
         // Crear la empresa
         Empresa empresa = new Empresa();
         empresa.setNombre(registroDTO.getNombreEmpresa());
         empresa.setSubdominio(registroDTO.getSubdominio().toLowerCase());
         empresa.setEmail(registroDTO.getEmailEmpresa());
         empresa.setTelefono(registroDTO.getTelefonoEmpresa());
+        empresa.setDireccion(registroDTO.getDireccionEmpresa());
+        empresa.setCiudad(registroDTO.getCiudadEmpresa());
+        empresa.setCodigoPostal(registroDTO.getCodigoPostalEmpresa());
+        empresa.setPais(registroDTO.getPaisEmpresa());
         empresa.setDescripcion(registroDTO.getDescripcionEmpresa());
         empresa.setFechaFinPrueba(LocalDateTime.now().plusMonths(1)); // 1 mes de prueba
 

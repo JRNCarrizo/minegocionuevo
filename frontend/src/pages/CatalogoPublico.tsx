@@ -36,6 +36,10 @@ export default function CatalogoPublico() {
   const [showProductoModal, setShowProductoModal] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<number | null>(null);
 
+  // Estados para favoritos
+  const [favoritos, setFavoritos] = useState<Set<number>>(new Set());
+  const [cargandoFavoritos, setCargandoFavoritos] = useState(false);
+
   // Verificar si hay un cliente logueado
   useEffect(() => {
     const token = localStorage.getItem('clienteToken');
@@ -122,15 +126,82 @@ export default function CatalogoPublico() {
   }, [empresa]);
 
   const formatearPrecio = (precio: number, moneda: string = 'USD') => {
-    const simbolos: { [key: string]: string } = {
-      'USD': '$',
-      'EUR': '€',
-      'ARS': '$',
-      'Peso Argentino ($)': '$'
-    };
-    
-    return `${simbolos[moneda] || '$'}${precio.toLocaleString()}`;
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: moneda,
+      minimumFractionDigits: 2
+    }).format(precio);
   };
+
+  // ============================================
+  // FUNCIONES PARA FAVORITOS
+  // ============================================
+
+  const cargarFavoritos = async () => {
+    if (!clienteInfo) return;
+    
+    const subdominioDesarrollo = localStorage.getItem('subdominio-desarrollo');
+    const subdominioFinal = subdominio || subdominioDesarrollo;
+    const token = localStorage.getItem('clienteToken');
+    
+    if (!subdominioFinal || !token) return;
+
+    setCargandoFavoritos(true);
+    try {
+      const response = await apiService.obtenerFavoritos(subdominioFinal, token);
+      const favoritosIds = new Set<number>((response.favoritos || []).map((f: any) => f.producto.id));
+      setFavoritos(favoritosIds);
+    } catch (error) {
+      console.error('Error al cargar favoritos:', error);
+    } finally {
+      setCargandoFavoritos(false);
+    }
+  };
+
+  const toggleFavorito = async (productoId: number) => {
+    if (!clienteInfo) {
+      toast.error('Debes iniciar sesión para guardar favoritos');
+      return;
+    }
+
+    const subdominioDesarrollo = localStorage.getItem('subdominio-desarrollo');
+    const subdominioFinal = subdominio || subdominioDesarrollo;
+    const token = localStorage.getItem('clienteToken');
+    
+    if (!subdominioFinal || !token) {
+      toast.error('Error de autenticación');
+      return;
+    }
+
+    try {
+      if (favoritos.has(productoId)) {
+        // Remover de favoritos
+        await apiService.removerFavorito(subdominioFinal, productoId, token);
+        setFavoritos(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(productoId);
+          return newSet;
+        });
+        toast.success('Producto removido de favoritos');
+      } else {
+        // Agregar a favoritos
+        await apiService.agregarFavorito(subdominioFinal, productoId, token);
+        setFavoritos(prev => new Set([...prev, productoId]));
+        toast.success('Producto agregado a favoritos');
+      }
+    } catch (error) {
+      console.error('Error al gestionar favorito:', error);
+      const mensaje = (error as { response?: { data?: { error?: string } } }).response?.data?.error || 'Error al gestionar favorito';
+      toast.error(mensaje);
+    }
+  };
+
+  // Cargar favoritos cuando el cliente esté logueado
+  useEffect(() => {
+    if (clienteInfo) {
+      cargarFavoritos();
+    }
+  }, [clienteInfo, subdominio]);
 
   if (cargandoEmpresa) {
     return (
@@ -532,7 +603,7 @@ export default function CatalogoPublico() {
         <div style={{
           background: empresa?.colorCardFiltros || empresa?.colorAcento || '#fff',
           borderRadius: isMobile ? '12px' : '16px',
-          padding: isMobile ? '16px' : isTablet ? '20px' : '24px',
+          padding: isMobile ? '12px' : isTablet ? '16px' : '20px',
           marginBottom: isMobile ? '24px' : '32px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
           border: `1px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : 'rgba(255,255,255,0.2)'}`,
@@ -541,8 +612,8 @@ export default function CatalogoPublico() {
           {/* Título del catálogo */}
           <div style={{
             textAlign: 'center',
-            marginBottom: isMobile ? '20px' : '24px',
-            paddingBottom: isMobile ? '16px' : '20px',
+            marginBottom: isMobile ? '16px' : '20px',
+            paddingBottom: isMobile ? '12px' : '16px',
             borderBottom: `2px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : '#f1f5f9'}`
           }}>
             <h2 style={{ 
@@ -573,120 +644,112 @@ export default function CatalogoPublico() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: isMobile ? '20px' : '24px',
-            marginBottom: isMobile ? '20px' : '24px'
+            gap: isMobile ? '16px' : '20px',
+            marginBottom: isMobile ? '16px' : '20px'
           }}>
-            {/* Título e icono de filtros - centrado */}
+            {/* Casilleros de búsqueda con lupa a la izquierda */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: isMobile ? '8px' : '12px',
-              justifyContent: 'center',
-              marginBottom: isMobile ? '8px' : '12px'
-            }}>
-              <div style={{
-                width: isMobile ? '32px' : '40px',
-                height: isMobile ? '32px' : '40px',
-                background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#10b981'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#059669'} 100%)`,
-                borderRadius: isMobile ? '8px' : '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: isMobile ? '16px' : '20px',
-                color: 'white'
-              }}>
-                🔍
-              </div>
-              <h3 style={{ 
-                margin: 0, 
-                fontSize: isMobile ? '16px' : '18px', 
-                fontWeight: '600', 
-                color: empresa?.colorTexto || '#1e293b',
-                textAlign: 'center'
-              }}>
-                Filtros de Búsqueda
-              </h3>
-            </div>
-            
-            {/* Casilleros de búsqueda - centrados */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',
-              gap: isMobile ? '16px' : '20px',
+              gap: isMobile ? '12px' : '16px',
               width: '100%',
               maxWidth: isMobile ? '100%' : '600px',
               margin: '0 auto'
             }}>
-              <div>
-                <label style={{
-                  display: 'block',
-                  marginBottom: isMobile ? '8px' : '10px',
-                  fontSize: isMobile ? '14px' : '15px',
-                  fontWeight: '600',
-                  color: empresa?.colorTexto || '#1e293b',
-                  textAlign: 'center'
-                }}>
-                  Categoría
-                </label>
-                <select
-                  value={filtroCategoria}
-                  onChange={(e) => setFiltroCategoria(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: isMobile ? '12px 16px' : '14px 18px',
-                    borderRadius: '12px',
-                    border: '2px solid #e2e8f0',
-                    fontSize: isMobile ? '14px' : '15px',
-                    background: '#fff',
-                    color: '#000000',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    textAlign: 'center'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = empresa?.colorPrimario || '#10b981'}
-                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                >
-                  <option value="">Todas las categorías</option>
-                  {categorias.map(categoria => (
-                    <option key={categoria} value={categoria}>{categoria}</option>
-                  ))}
-                </select>
+              {/* Icono de lupa */}
+              <div style={{
+                width: isMobile ? '40px' : '48px',
+                height: isMobile ? '40px' : '48px',
+                background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#10b981'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#059669'} 100%)`,
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: isMobile ? '18px' : '20px',
+                color: 'white',
+                flexShrink: 0
+              }}>
+                🔍
               </div>
+              
+              {/* Filtros */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',
+                gap: isMobile ? '12px' : '16px',
+                flex: 1
+              }}>
+                <div>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: isMobile ? '6px' : '8px',
+                    fontSize: isMobile ? '13px' : '14px',
+                    fontWeight: '600',
+                    color: empresa?.colorTexto || '#1e293b',
+                    textAlign: 'left'
+                  }}>
+                    Categoría
+                  </label>
+                  <select
+                    value={filtroCategoria}
+                    onChange={(e) => setFiltroCategoria(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: isMobile ? '10px 14px' : '12px 16px',
+                      borderRadius: '10px',
+                      border: '2px solid #e2e8f0',
+                      fontSize: isMobile ? '13px' : '14px',
+                      background: '#fff',
+                      color: '#000000',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      textAlign: 'left'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = empresa?.colorPrimario || '#10b981'}
+                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                  >
+                    <option value="">Todas las categorías</option>
+                    {categorias.map(categoria => (
+                      <option key={categoria} value={categoria}>{categoria}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label style={{
-                  display: 'block',
-                  marginBottom: isMobile ? '8px' : '10px',
-                  fontSize: isMobile ? '14px' : '15px',
-                  fontWeight: '600',
-                  color: empresa?.colorTexto || '#1e293b',
-                  textAlign: 'center'
-                }}>
-                  Marca
-                </label>
-                <select
-                  value={filtroMarca}
-                  onChange={(e) => setFiltroMarca(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: isMobile ? '12px 16px' : '14px 18px',
-                    borderRadius: '12px',
-                    border: '2px solid #e2e8f0',
-                    fontSize: isMobile ? '14px' : '15px',
-                    background: '#fff',
-                    color: '#000000',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    textAlign: 'center'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = empresa?.colorPrimario || '#10b981'}
-                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                >
-                  <option value="">Todas las marcas</option>
-                  {marcas.map(marca => (
-                    <option key={marca} value={marca}>{marca}</option>
-                  ))}
-                </select>
+                <div>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: isMobile ? '6px' : '8px',
+                    fontSize: isMobile ? '13px' : '14px',
+                    fontWeight: '600',
+                    color: empresa?.colorTexto || '#1e293b',
+                    textAlign: 'left'
+                  }}>
+                    Marca
+                  </label>
+                  <select
+                    value={filtroMarca}
+                    onChange={(e) => setFiltroMarca(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: isMobile ? '10px 14px' : '12px 16px',
+                      borderRadius: '10px',
+                      border: '2px solid #e2e8f0',
+                      fontSize: isMobile ? '13px' : '14px',
+                      background: '#fff',
+                      color: '#000000',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      textAlign: 'left'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = empresa?.colorPrimario || '#10b981'}
+                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                  >
+                    <option value="">Todas las marcas</option>
+                    {marcas.map(marca => (
+                      <option key={marca} value={marca}>{marca}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -816,7 +879,16 @@ export default function CatalogoPublico() {
               fontSize: isMobile ? '12px' : '14px',
               color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b',
               fontWeight: '500',
-              textAlign: isMobile ? 'center' : 'right'
+              textAlign: isMobile ? 'center' : 'right',
+              position: isMobile ? 'static' : 'absolute',
+              top: isMobile ? 'auto' : '16px',
+              right: isMobile ? 'auto' : '16px',
+              background: isMobile ? 'transparent' : 'rgba(255,255,255,0.9)',
+              padding: isMobile ? '0' : '8px 12px',
+              borderRadius: isMobile ? '0' : '8px',
+              backdropFilter: isMobile ? 'none' : 'blur(4px)',
+              border: isMobile ? 'none' : `1px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : 'rgba(0,0,0,0.1)'}`,
+              zIndex: isMobile ? 'auto' : '10'
             }}>
               {productos.length} producto{productos.length !== 1 ? 's' : ''} encontrado{productos.length !== 1 ? 's' : ''}
             </div>
@@ -918,19 +990,17 @@ export default function CatalogoPublico() {
           </div>
         ) : (
           <div style={{
-            display: vista === 'lista' ? 'flex' : 'grid',
+            display: vista === 'lista' ? 'grid' : 'grid',
             gridTemplateColumns: vista === 'lista' ? 
-              'none' :
+              (isMobile ? '1fr' : 'repeat(2, 1fr)') :
               vista === 'intermedia' ? 
               (isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(auto-fill, minmax(200px, 1fr))' : 'repeat(auto-fill, minmax(250px, 1fr))') : 
               vista === 'grande' ? 
               (isMobile ? 'repeat(1, 1fr)' : isTablet ? 'repeat(auto-fill, minmax(250px, 1fr))' : 'repeat(auto-fill, minmax(320px, 1fr))') : 
               'none',
-            flexDirection: vista === 'lista' ? 'column' : 'unset',
-            gap: vista === 'lista' ? '12px' : (isMobile ? (vista === 'grande' ? '16px' : '12px') : isTablet ? '16px' : '20px'),
+            gap: vista === 'lista' ? (isMobile ? '12px' : '16px') : (isMobile ? (vista === 'grande' ? '16px' : '12px') : isTablet ? '16px' : '20px'),
             marginBottom: '40px',
-            justifyContent: isMobile ? 'center' : 'start',
-            flexWrap: vista === 'lista' ? 'nowrap' : 'unset'
+            justifyContent: isMobile ? 'center' : 'start'
           }}>
             {productos.map(producto => {
               const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
@@ -951,7 +1021,7 @@ export default function CatalogoPublico() {
                   height: vista === 'lista' ? 'auto' : 'auto',
                   color: empresa?.colorTexto || '#1e293b',
                   width: '100%',
-                  minHeight: vista === 'lista' ? '140px' : 'auto',
+                  minHeight: vista === 'lista' ? (isMobile ? '140px' : '160px') : 'auto',
                   padding: vista === 'lista' ? '0' : '0'
                 }}
                 onClick={(e) => {
@@ -973,11 +1043,11 @@ export default function CatalogoPublico() {
                   {/* Imagen del producto */}
                   <div style={{ 
                     position: 'relative', 
-                    width: vista === 'lista' ? '140px' : '100%',
-                    aspectRatio: vista === 'lista' ? '1 / 1' : '1 / 1',
-                    height: vista === 'lista' ? '140px' : undefined,
-                    minWidth: vista === 'lista' ? '140px' : undefined,
-                    maxWidth: vista === 'lista' ? '140px' : undefined,
+                    width: vista === 'lista' ? (isMobile ? '140px' : '180px') : '100%',
+                    aspectRatio: vista === 'lista' ? (isMobile ? '1 / 1' : '3 / 4') : '1 / 1',
+                    height: vista === 'lista' ? (isMobile ? '140px' : '100%') : undefined,
+                    minWidth: vista === 'lista' ? (isMobile ? '140px' : '180px') : undefined,
+                    maxWidth: vista === 'lista' ? (isMobile ? '140px' : '180px') : undefined,
                     overflow: 'hidden',
                     flexShrink: 0,
                     borderRadius: vista === 'lista' ? '0' : (isMobile ? '8px 8px 0 0' : '12px 12px 0 0'),
@@ -1036,7 +1106,7 @@ export default function CatalogoPublico() {
                       <div style={{
                         position: 'absolute',
                         top: '8px',
-                        left: '8px',
+                        left: '48px',
                         background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                         color: 'white',
                         padding: '4px 8px',
@@ -1068,6 +1138,45 @@ export default function CatalogoPublico() {
                         {producto.stock > 0 ? `📦 ${producto.stock}` : '❌ Agotado'}
                       </div>
                     )}
+
+                    {/* Botón de favoritos */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorito(producto.id);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: '8px',
+                        left: '8px',
+                        background: favoritos.has(producto.id)
+                          ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                          : 'rgba(255,255,255,0.9)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        color: favoritos.has(producto.id) ? 'white' : '#ef4444',
+                        fontSize: '16px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                        zIndex: 10
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+                      }}
+                    >
+                      {favoritos.has(producto.id) ? '❤️' : '🤍'}
+                    </button>
                   </div>
                   
                   {/* Contenido principal */}
@@ -1167,11 +1276,11 @@ export default function CatalogoPublico() {
                           alignItems: 'center',
                           background: '#f8fafc',
                           borderRadius: '8px',
-                          padding: '6px 8px',
+                          padding: vista === 'lista' && !isMobile ? '4px 6px' : '6px 8px',
                           border: '1px solid #e2e8f0',
-                          gap: '6px',
+                          gap: vista === 'lista' && !isMobile ? '4px' : '6px',
                           justifyContent: 'center',
-                          height: '36px'
+                          height: vista === 'lista' && !isMobile ? '28px' : '36px'
                         }}>
                           <button
                             onClick={async (e) => {
@@ -1182,54 +1291,51 @@ export default function CatalogoPublico() {
                             }}
                             disabled={cantidadEnCarrito === 0}
                             style={{
-                              width: '24px',
-                              height: '24px',
+                              width: vista === 'lista' && !isMobile ? '20px' : '24px',
+                              height: vista === 'lista' && !isMobile ? '20px' : '24px',
                               background: cantidadEnCarrito === 0
                                 ? 'rgba(0,0,0,0.1)'
                                 : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                               color: cantidadEnCarrito === 0 ? '#6b7280' : 'white',
                               border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '12px',
+                              borderRadius: vista === 'lista' && !isMobile ? '4px' : '6px',
+                              fontSize: vista === 'lista' && !isMobile ? '10px' : '12px',
                               fontWeight: '700',
                               cursor: cantidadEnCarrito === 0 ? 'not-allowed' : 'pointer',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              transition: 'all 0.3s ease',
-                              opacity: cantidadEnCarrito === 0 ? 0.6 : 1
+                              transition: 'all 0.2s ease'
                             }}
                           >
                             -
                           </button>
-                          
                           <span style={{
-                            minWidth: '28px',
-                            textAlign: 'center',
-                            fontSize: '12px',
-                            fontWeight: '700',
+                            fontSize: vista === 'lista' && !isMobile ? '11px' : '12px',
+                            fontWeight: '600',
                             color: '#1e293b',
-                            background: 'white',
-                            padding: '4px 6px',
-                            borderRadius: '4px',
-                            border: '1px solid #e5e7eb'
+                            minWidth: vista === 'lista' && !isMobile ? '16px' : '20px',
+                            textAlign: 'center'
                           }}>
                             {cantidadEnCarrito}
                           </span>
-                          
                           <button
                             onClick={async (e) => {
                               e.stopPropagation();
                               if (cantidadEnCarrito < producto.stock) {
                                 if (cantidadEnCarrito === 0) {
                                   // Si no está en el carrito, agregarlo
-                                  await addToCart({
+                                  const agregado = await addToCart({
                                     id: producto.id,
                                     nombre: producto.nombre,
                                     precio: producto.precio,
                                     cantidad: 1,
                                     imagen: producto.imagenes && producto.imagenes[0]
                                   }, undefined, subdominio || undefined);
+                                  
+                                  if (agregado) {
+                                    toast.success('Producto agregado al carrito');
+                                  }
                                 } else {
                                   // Si ya está en el carrito, aumentar cantidad
                                   await updateQuantity(producto.id, cantidadEnCarrito + 1, undefined, subdominio || undefined);
@@ -1238,15 +1344,15 @@ export default function CatalogoPublico() {
                             }}
                             disabled={cantidadEnCarrito >= producto.stock}
                             style={{
-                              width: '24px',
-                              height: '24px',
+                              width: vista === 'lista' && !isMobile ? '20px' : '24px',
+                              height: vista === 'lista' && !isMobile ? '20px' : '24px',
                               background: cantidadEnCarrito >= producto.stock
                                 ? 'rgba(0,0,0,0.1)'
                                 : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                               color: cantidadEnCarrito >= producto.stock ? '#6b7280' : 'white',
                               border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '12px',
+                              borderRadius: vista === 'lista' && !isMobile ? '4px' : '6px',
+                              fontSize: vista === 'lista' && !isMobile ? '10px' : '12px',
                               fontWeight: '700',
                               cursor: cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer',
                               display: 'flex',
@@ -1264,8 +1370,8 @@ export default function CatalogoPublico() {
                         <button
                           disabled={producto.stock === 0}
                           style={{
-                            padding: '8px 12px',
-                            height: '36px',
+                            padding: vista === 'lista' && !isMobile ? '6px 8px' : '8px 12px',
+                            height: vista === 'lista' && !isMobile ? '32px' : '36px',
                             background: producto.stock === 0 
                               ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
                               : cantidadEnCarrito > 0
@@ -1274,7 +1380,7 @@ export default function CatalogoPublico() {
                             color: 'white',
                             border: 'none',
                             borderRadius: '8px',
-                            fontSize: '12px',
+                            fontSize: vista === 'lista' && !isMobile ? '11px' : '12px',
                             fontWeight: '600',
                             cursor: producto.stock === 0 ? 'not-allowed' : 'pointer',
                             transition: 'all 0.3s ease',
@@ -1282,8 +1388,9 @@ export default function CatalogoPublico() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '4px',
-                            whiteSpace: 'nowrap'
+                            gap: vista === 'lista' && !isMobile ? '2px' : '4px',
+                            whiteSpace: 'nowrap',
+                            minWidth: vista === 'lista' && !isMobile ? '80px' : 'auto'
                           }}
                           onClick={async (e) => {
                             e.stopPropagation();
@@ -1320,17 +1427,17 @@ export default function CatalogoPublico() {
                           {producto.stock === 0 ? (
                             <>
                               <span>❌</span>
-                              <span>Agotado</span>
+                              <span>{vista === 'lista' && !isMobile ? 'Sin stock' : 'Agotado'}</span>
                             </>
                           ) : cantidadEnCarrito > 0 ? (
                             <>
                               <span>🛒</span>
-                              <span>{cantidadEnCarrito} en carrito</span>
+                              <span>{vista === 'lista' && !isMobile ? `${cantidadEnCarrito}` : `${cantidadEnCarrito} en carrito`}</span>
                             </>
                           ) : (
                             <>
                               <span>🛒</span>
-                              <span>Agregar</span>
+                              <span>{vista === 'lista' && !isMobile ? 'Agregar' : 'Agregar'}</span>
                             </>
                           )}
                         </button>
@@ -1521,6 +1628,114 @@ export default function CatalogoPublico() {
           )}
         </div>
       </main>
+
+      {/* Footer con referencia a Negocio360.org */}
+      <footer style={{
+        background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+        color: 'white',
+        padding: isMobile ? '24px 16px' : '32px 24px',
+        marginTop: isMobile ? '32px' : '48px',
+        textAlign: 'center',
+        borderTop: `3px solid ${empresa?.colorPrimario || '#10b981'}`
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: isMobile ? '16px' : '24px',
+          position: 'relative'
+        }}>
+          {/* Separador decorativo */}
+          <div style={{
+            width: '60px',
+            height: '3px',
+            background: empresa?.colorPrimario || '#10b981',
+            borderRadius: '2px',
+            margin: '0 auto 8px auto'
+          }} />
+          
+          {/* Texto principal */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <p style={{
+              margin: 0,
+              fontSize: isMobile ? '14px' : '16px',
+              color: '#cbd5e1',
+              fontWeight: '400'
+            }}>
+              Esta tienda online fue creada con
+            </p>
+            
+            {/* Logo y enlace a Negocio360.org */}
+            <a
+              href="https://negocio360.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: isMobile ? '8px 16px' : '12px 20px',
+                background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#10b981'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#059669'} 100%)`,
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '12px',
+                fontSize: isMobile ? '16px' : '18px',
+                fontWeight: '700',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                border: '2px solid transparent'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.3)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                e.currentTarget.style.borderColor = 'transparent';
+              }}
+            >
+              <span style={{ fontSize: isMobile ? '20px' : '24px' }}>🚀</span>
+              <span>Negocio360.org</span>
+              <span style={{ fontSize: isMobile ? '14px' : '16px' }}>→</span>
+            </a>
+            
+            <p style={{
+              margin: 0,
+              fontSize: isMobile ? '12px' : '14px',
+              color: '#94a3b8',
+              fontWeight: '400',
+              marginTop: '8px'
+            }}>
+              La plataforma líder para gestionar tu negocio en minutos
+            </p>
+          </div>
+          
+          {/* Información adicional */}
+          <div style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: isMobile ? '8px' : '16px',
+            marginTop: '8px'
+          }}>
+            <span style={{
+              fontSize: isMobile ? '11px' : '12px',
+              color: '#64748b',
+              fontWeight: '400',
+              textAlign: 'center'
+            }}>
+              ✨ Sin costos ocultos • 🚀 Configuración rápida • 📱 Responsive
+            </span>
+          </div>
+        </div>
+      </footer>
 
       <style>{`
         @keyframes spin {

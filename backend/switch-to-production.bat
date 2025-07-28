@@ -1,33 +1,31 @@
 @echo off
-echo ============================================
-echo    miNegocio - Cambiar a Producción
-echo ============================================
-echo.
-echo Este script cambia las dependencias para producción:
-echo - Comenta H2 (desarrollo)
-echo - Descomenta PostgreSQL (producción)
-echo.
-echo ============================================
+echo ========================================
+echo   CAMBIANDO A MODO PRODUCCIÓN
+echo ========================================
 
 echo.
-echo Cambiando dependencias para producción...
-
-REM Comentar H2
-powershell -Command "(Get-Content 'pom.xml') -replace '<dependency>', '<!-- <dependency>' | Set-Content 'pom.xml'"
-powershell -Command "(Get-Content 'pom.xml') -replace '</dependency>', '</dependency> -->' | Set-Content 'pom.xml'"
-
-REM Descomentar PostgreSQL
-powershell -Command "(Get-Content 'pom.xml') -replace '<!-- <dependency>', '<dependency>' | Set-Content 'pom.xml'"
-powershell -Command "(Get-Content 'pom.xml') -replace '</dependency> -->', '</dependency>' | Set-Content 'pom.xml'"
+echo 1. Deteniendo aplicación si está corriendo...
+taskkill /f /im java.exe 2>nul
 
 echo.
-echo ✅ Configuración cambiada a producción
+echo 2. Limpiando archivos temporales...
+if exist target rmdir /s /q target
+
 echo.
-echo Ahora puedes hacer:
-echo 1. git add .
-echo 2. git commit -m "Switch to production"
-echo 3. git push origin main
+echo 3. Configurando para producción...
+set SPRING_PROFILES_ACTIVE=railway
+
 echo.
-echo Railway detectará los cambios y redeployará automáticamente.
+echo 4. Iniciando aplicación en modo producción...
 echo.
+echo ========================================
+echo   APLICACIÓN INICIADA EN MODO RAILWAY
+echo   URL: http://localhost:8080
+echo   Perfil: railway
+echo   Base de datos: PostgreSQL (Railway)
+echo ========================================
+echo.
+
+mvnw spring-boot:run -Dspring.profiles.active=railway
+
 pause 

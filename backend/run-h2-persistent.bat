@@ -1,19 +1,34 @@
 @echo off
-echo ============================================
-echo    miNegocio - H2 Persistente
-echo ============================================
-echo.
-echo Iniciando backend con H2 persistente...
-echo Los datos se guardaran en: ./data/minegocio_db.mv.db
-echo.
-echo Para acceder a la consola H2: http://localhost:8080/h2-console
-echo JDBC URL: jdbc:h2:file:./data/minegocio_db
-echo Usuario: sa
-echo Password: password
-echo.
-echo ============================================
+echo ========================================
+echo   DESARROLLO CON H2 PERSISTENTE
+echo ========================================
 
-cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=dev-h2-persistent
+echo.
+echo 1. Deteniendo aplicación si está corriendo...
+taskkill /f /im java.exe 2>nul
+
+echo.
+echo 2. Limpiando archivos temporales...
+if exist target rmdir /s /q target
+
+echo.
+echo 3. Configurando H2 persistente...
+set SPRING_PROFILES_ACTIVE=h2-persistent
+
+echo.
+echo 4. Iniciando aplicación con H2 persistente...
+echo.
+echo ========================================
+echo   APLICACIÓN INICIADA CON H2 PERSISTENTE
+echo   URL: http://localhost:8080
+echo   H2 Console: http://localhost:8080/h2-console
+echo   JDBC URL: jdbc:h2:file:./data/h2-db
+echo   Usuario: sa
+echo   Contraseña: password
+echo   Archivo DB: ./data/h2-db.mv.db
+echo ========================================
+echo.
+
+mvnw spring-boot:run -Dspring.profiles.active=h2-persistent
 
 pause 

@@ -27,6 +27,18 @@ public class RegistroEmpresaDTO {
     @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
     private String telefonoEmpresa;
 
+    @Size(max = 200, message = "La dirección no puede exceder 200 caracteres")
+    private String direccionEmpresa;
+
+    @Size(max = 100, message = "La ciudad no puede exceder 100 caracteres")
+    private String ciudadEmpresa;
+
+    @Size(max = 20, message = "El código postal no puede exceder 20 caracteres")
+    private String codigoPostalEmpresa;
+
+    @Size(max = 100, message = "El país no puede exceder 100 caracteres")
+    private String paisEmpresa;
+
     @Size(max = 500, message = "La descripción no puede exceder 500 caracteres")
     private String descripcionEmpresa;
 
@@ -46,6 +58,9 @@ public class RegistroEmpresaDTO {
     @NotBlank(message = "La contraseña es obligatoria")
     @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
     private String passwordAdministrador;
+
+    @NotBlank(message = "Debe confirmar la contraseña")
+    private String confirmarPasswordAdministrador;
 
     @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
     private String telefonoAdministrador;
@@ -71,6 +86,18 @@ public class RegistroEmpresaDTO {
     public String getTelefonoEmpresa() { return telefonoEmpresa; }
     public void setTelefonoEmpresa(String telefonoEmpresa) { this.telefonoEmpresa = telefonoEmpresa; }
 
+    public String getDireccionEmpresa() { return direccionEmpresa; }
+    public void setDireccionEmpresa(String direccionEmpresa) { this.direccionEmpresa = direccionEmpresa; }
+
+    public String getCiudadEmpresa() { return ciudadEmpresa; }
+    public void setCiudadEmpresa(String ciudadEmpresa) { this.ciudadEmpresa = ciudadEmpresa; }
+
+    public String getCodigoPostalEmpresa() { return codigoPostalEmpresa; }
+    public void setCodigoPostalEmpresa(String codigoPostalEmpresa) { this.codigoPostalEmpresa = codigoPostalEmpresa; }
+
+    public String getPaisEmpresa() { return paisEmpresa; }
+    public void setPaisEmpresa(String paisEmpresa) { this.paisEmpresa = paisEmpresa; }
+
     public String getDescripcionEmpresa() { return descripcionEmpresa; }
     public void setDescripcionEmpresa(String descripcionEmpresa) { this.descripcionEmpresa = descripcionEmpresa; }
 
@@ -85,6 +112,9 @@ public class RegistroEmpresaDTO {
 
     public String getPasswordAdministrador() { return passwordAdministrador; }
     public void setPasswordAdministrador(String passwordAdministrador) { this.passwordAdministrador = passwordAdministrador; }
+
+    public String getConfirmarPasswordAdministrador() { return confirmarPasswordAdministrador; }
+    public void setConfirmarPasswordAdministrador(String confirmarPasswordAdministrador) { this.confirmarPasswordAdministrador = confirmarPasswordAdministrador; }
 
     public String getTelefonoAdministrador() { return telefonoAdministrador; }
     public void setTelefonoAdministrador(String telefonoAdministrador) { this.telefonoAdministrador = telefonoAdministrador; }

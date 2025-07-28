@@ -1,0 +1,4 @@
+# Ignorar todo excepto la carpeta backend
+*
+!backend/
+!backend/** 

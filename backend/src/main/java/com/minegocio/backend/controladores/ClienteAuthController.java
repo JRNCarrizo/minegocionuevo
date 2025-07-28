@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import com.minegocio.backend.dto.ProductoFavoritoDTO;
+import com.minegocio.backend.servicios.ProductoFavoritoService;
 
 /**
  * Controlador para autenticación de clientes en el portal público
@@ -523,28 +525,474 @@ public class ClienteAuthController {
             Empresa empresa = empresaOpt.get();
             List<ClienteDTO> clientes = clienteService.obtenerTodosLosClientes(empresa.getId());
             
-            int clientesActualizados = 0;
-            String passwordPorDefecto = "123456"; // Contraseña por defecto
-            
+            int actualizados = 0;
             for (ClienteDTO cliente : clientes) {
-                if (cliente.getPassword() == null || cliente.getPassword().trim().isEmpty()) {
-                    cliente.setPassword(passwordEncoder.encode(passwordPorDefecto));
-                    clienteService.actualizarCliente(empresa.getId(), cliente.getId(), cliente);
-                    clientesActualizados++;
+                if (cliente.getPassword() == null || cliente.getPassword().isEmpty()) {
+                    // Generar password temporal
+                    String passwordTemporal = "cliente" + cliente.getId();
+                    String passwordEncriptado = passwordEncoder.encode(passwordTemporal);
+                    
+                    ClienteDTO clienteActualizado = new ClienteDTO();
+                    clienteActualizado.setId(cliente.getId());
+                    clienteActualizado.setPassword(passwordEncriptado);
+                    
+                    clienteService.actualizarCliente(empresa.getId(), cliente.getId(), clienteActualizado);
+                    actualizados++;
                 }
             }
             
             return ResponseEntity.ok(Map.of(
-                "mensaje", "Contraseñas actualizadas",
-                "clientesActualizados", clientesActualizados,
-                "passwordPorDefecto", passwordPorDefecto
+                "mensaje", "Passwords arreglados",
+                "clientesActualizados", actualizados,
+                "totalClientes", clientes.size()
             ));
             
         } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ============================================
+    // ENDPOINTS PARA PRODUCTOS FAVORITOS
+    // ============================================
+
+    @Autowired
+    private ProductoFavoritoService productoFavoritoService;
+
+    /**
+     * Obtener productos favoritos del cliente
+     */
+    @GetMapping("/favoritos")
+    public ResponseEntity<?> obtenerFavoritos(
+            @PathVariable String subdominio,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            System.out.println("=== DEBUG OBTENER FAVORITOS ===");
+            System.out.println("Subdominio: " + subdominio);
+            
+            // Validar token
+            if (!authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+            }
+            
+            String token = authHeader.substring(7);
+            if (!jwtUtils.validateJwtToken(token)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido o expirado"));
+            }
+            
+            // Extraer información del token
+            Long clienteId = jwtUtils.getUserIdFromJwtToken(token);
+            Long empresaId = jwtUtils.getEmpresaIdFromJwtToken(token);
+            
+            // Verificar que la empresa existe y coincide
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty() || !empresaOpt.get().getId().equals(empresaId)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido para esta empresa"));
+            }
+            
+            // Obtener favoritos
+            List<ProductoFavoritoDTO> favoritos = productoFavoritoService.obtenerFavoritos(clienteId, empresaId);
+            
+            System.out.println("Favoritos encontrados: " + favoritos.size());
+            System.out.println("=== FIN DEBUG OBTENER FAVORITOS ===");
+            
+            return ResponseEntity.ok(Map.of(
+                "favoritos", favoritos,
+                "total", favoritos.size()
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("ERROR en obtenerFavoritos: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                 "error", "Error interno del servidor",
                 "detalle", e.getMessage()
             ));
         }
+    }
+
+    /**
+     * Agregar producto a favoritos
+     */
+    @PostMapping("/favoritos/{productoId}")
+    public ResponseEntity<?> agregarFavorito(
+            @PathVariable String subdominio,
+            @PathVariable Long productoId,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            System.out.println("=== DEBUG AGREGAR FAVORITO ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("ProductoId: " + productoId);
+            
+            // Validar token
+            if (!authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+            }
+            
+            String token = authHeader.substring(7);
+            if (!jwtUtils.validateJwtToken(token)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido o expirado"));
+            }
+            
+            // Extraer información del token
+            Long clienteId = jwtUtils.getUserIdFromJwtToken(token);
+            Long empresaId = jwtUtils.getEmpresaIdFromJwtToken(token);
+            
+            // Verificar que la empresa existe y coincide
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty() || !empresaOpt.get().getId().equals(empresaId)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido para esta empresa"));
+            }
+            
+            // Agregar favorito
+            ProductoFavoritoDTO favorito = productoFavoritoService.agregarFavorito(clienteId, productoId, empresaId);
+            
+            System.out.println("Favorito agregado exitosamente");
+            System.out.println("=== FIN DEBUG AGREGAR FAVORITO ===");
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Producto agregado a favoritos",
+                "favorito", favorito
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("ERROR en agregarFavorito: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error interno del servidor",
+                "detalle", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Remover producto de favoritos
+     */
+    @DeleteMapping("/favoritos/{productoId}")
+    public ResponseEntity<?> removerFavorito(
+            @PathVariable String subdominio,
+            @PathVariable Long productoId,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            System.out.println("=== DEBUG REMOVER FAVORITO ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("ProductoId: " + productoId);
+            
+            // Validar token
+            if (!authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+            }
+            
+            String token = authHeader.substring(7);
+            if (!jwtUtils.validateJwtToken(token)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido o expirado"));
+            }
+            
+            // Extraer información del token
+            Long clienteId = jwtUtils.getUserIdFromJwtToken(token);
+            Long empresaId = jwtUtils.getEmpresaIdFromJwtToken(token);
+            
+            // Verificar que la empresa existe y coincide
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty() || !empresaOpt.get().getId().equals(empresaId)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido para esta empresa"));
+            }
+            
+            // Remover favorito
+            productoFavoritoService.removerFavorito(clienteId, productoId, empresaId);
+            
+            System.out.println("Favorito removido exitosamente");
+            System.out.println("=== FIN DEBUG REMOVER FAVORITO ===");
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Producto removido de favoritos"
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("ERROR en removerFavorito: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error interno del servidor",
+                "detalle", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Verificar si un producto es favorito
+     */
+    @GetMapping("/favoritos/{productoId}/verificar")
+    public ResponseEntity<?> verificarFavorito(
+            @PathVariable String subdominio,
+            @PathVariable Long productoId,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            // Validar token
+            if (!authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+            }
+            
+            String token = authHeader.substring(7);
+            if (!jwtUtils.validateJwtToken(token)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido o expirado"));
+            }
+            
+            // Extraer información del token
+            Long clienteId = jwtUtils.getUserIdFromJwtToken(token);
+            Long empresaId = jwtUtils.getEmpresaIdFromJwtToken(token);
+            
+            // Verificar que la empresa existe y coincide
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty() || !empresaOpt.get().getId().equals(empresaId)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido para esta empresa"));
+            }
+            
+            // Verificar si es favorito
+            boolean esFavorito = productoFavoritoService.esFavorito(clienteId, productoId, empresaId);
+            
+            return ResponseEntity.ok(Map.of(
+                "esFavorito", esFavorito
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("ERROR en verificarFavorito: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error interno del servidor",
+                "detalle", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Actualizar perfil del cliente
+     */
+    @PutMapping("/perfil/{clienteId}")
+    public ResponseEntity<?> actualizarPerfil(
+            @PathVariable String subdominio,
+            @PathVariable Long clienteId,
+            @Valid @RequestBody ActualizarPerfilDTO actualizarDTO,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            System.out.println("=== DEBUG ACTUALIZAR PERFIL CLIENTE ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("ClienteId: " + clienteId);
+            System.out.println("Datos recibidos: " + actualizarDTO);
+            
+            // Validar token
+            if (!authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+            }
+            
+            String token = authHeader.substring(7);
+            if (!jwtUtils.validateJwtToken(token)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido o expirado"));
+            }
+            
+            // Verificar que el cliente del token coincide con el clienteId de la URL
+            Long clienteIdToken = jwtUtils.getUserIdFromJwtToken(token);
+            Long empresaId = jwtUtils.getEmpresaIdFromJwtToken(token);
+            
+            if (!clienteId.equals(clienteIdToken)) {
+                return ResponseEntity.status(403).body(Map.of("error", "No tienes permisos para actualizar este perfil"));
+            }
+            
+            // Verificar que la empresa existe y coincide
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty() || !empresaOpt.get().getId().equals(empresaId)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido para esta empresa"));
+            }
+            
+            // Verificar que el cliente existe
+            Optional<ClienteDTO> clienteOpt = clienteService.obtenerClientePorId(empresaId, clienteId);
+            if (clienteOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Cliente no encontrado"));
+            }
+            
+            ClienteDTO clienteExistente = clienteOpt.get();
+            
+            // Verificar que el email no esté en uso por otro cliente
+            if (!actualizarDTO.getEmail().equals(clienteExistente.getEmail())) {
+                Optional<ClienteDTO> clienteConEmail = clienteService.obtenerClientePorEmail(empresaId, actualizarDTO.getEmail());
+                if (clienteConEmail.isPresent() && !clienteConEmail.get().getId().equals(clienteId)) {
+                    return ResponseEntity.status(409).body(Map.of("error", "El email ya está en uso por otro cliente"));
+                }
+            }
+            
+            // Actualizar cliente preservando datos existentes
+            ClienteDTO clienteActualizado = new ClienteDTO();
+            clienteActualizado.setId(clienteId);
+            clienteActualizado.setNombre(actualizarDTO.getNombre());
+            clienteActualizado.setApellidos(actualizarDTO.getApellidos());
+            clienteActualizado.setEmail(actualizarDTO.getEmail());
+            clienteActualizado.setTelefono(actualizarDTO.getTelefono());
+            
+            // Preservar otros campos existentes
+            clienteActualizado.setDireccion(clienteExistente.getDireccion());
+            clienteActualizado.setCiudad(clienteExistente.getCiudad());
+            clienteActualizado.setCodigoPostal(clienteExistente.getCodigoPostal());
+            clienteActualizado.setPais(clienteExistente.getPais());
+            clienteActualizado.setPassword(clienteExistente.getPassword()); // Preservar contraseña actual
+            
+            ClienteDTO resultado = clienteService.actualizarCliente(empresaId, clienteId, clienteActualizado);
+            
+            System.out.println("Perfil actualizado exitosamente");
+            System.out.println("=== FIN DEBUG ACTUALIZAR PERFIL CLIENTE ===");
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Perfil actualizado correctamente",
+                "cliente", Map.of(
+                    "id", resultado.getId(),
+                    "nombre", resultado.getNombre(),
+                    "apellidos", resultado.getApellidos(),
+                    "email", resultado.getEmail(),
+                    "telefono", resultado.getTelefono()
+                )
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("ERROR en actualizarPerfil: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error interno del servidor",
+                "detalle", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Cambiar contraseña del cliente
+     */
+    @PutMapping("/password/{clienteId}")
+    public ResponseEntity<?> cambiarPassword(
+            @PathVariable String subdominio,
+            @PathVariable Long clienteId,
+            @Valid @RequestBody CambiarPasswordDTO passwordDTO,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            System.out.println("=== DEBUG CAMBIAR PASSWORD CLIENTE ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("ClienteId: " + clienteId);
+            
+            // Validar token
+            if (!authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+            }
+            
+            String token = authHeader.substring(7);
+            if (!jwtUtils.validateJwtToken(token)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido o expirado"));
+            }
+            
+            // Verificar que el cliente del token coincide con el clienteId de la URL
+            Long clienteIdToken = jwtUtils.getUserIdFromJwtToken(token);
+            Long empresaId = jwtUtils.getEmpresaIdFromJwtToken(token);
+            
+            if (!clienteId.equals(clienteIdToken)) {
+                return ResponseEntity.status(403).body(Map.of("error", "No tienes permisos para cambiar la contraseña de este cliente"));
+            }
+            
+            // Verificar que la empresa existe y coincide
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty() || !empresaOpt.get().getId().equals(empresaId)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido para esta empresa"));
+            }
+            
+            // Verificar que el cliente existe
+            Optional<ClienteDTO> clienteOpt = clienteService.obtenerClientePorId(empresaId, clienteId);
+            if (clienteOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Cliente no encontrado"));
+            }
+            
+            ClienteDTO clienteExistente = clienteOpt.get();
+            
+            // Verificar contraseña actual
+            if (!passwordEncoder.matches(passwordDTO.getPasswordActual(), clienteExistente.getPassword())) {
+                return ResponseEntity.status(400).body(Map.of("error", "La contraseña actual es incorrecta"));
+            }
+            
+            // Actualizar solo la contraseña preservando todos los demás datos
+            String nuevaPasswordEncriptada = passwordEncoder.encode(passwordDTO.getPasswordNueva());
+            
+            ClienteDTO clienteActualizado = new ClienteDTO();
+            clienteActualizado.setId(clienteId);
+            clienteActualizado.setNombre(clienteExistente.getNombre());
+            clienteActualizado.setApellidos(clienteExistente.getApellidos());
+            clienteActualizado.setEmail(clienteExistente.getEmail());
+            clienteActualizado.setTelefono(clienteExistente.getTelefono());
+            clienteActualizado.setDireccion(clienteExistente.getDireccion());
+            clienteActualizado.setCiudad(clienteExistente.getCiudad());
+            clienteActualizado.setCodigoPostal(clienteExistente.getCodigoPostal());
+            clienteActualizado.setPais(clienteExistente.getPais());
+            clienteActualizado.setPassword(nuevaPasswordEncriptada);
+            
+            clienteService.actualizarCliente(empresaId, clienteId, clienteActualizado);
+            
+            System.out.println("Contraseña cambiada exitosamente");
+            System.out.println("=== FIN DEBUG CAMBIAR PASSWORD CLIENTE ===");
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Contraseña cambiada correctamente"
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("ERROR en cambiarPassword: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error interno del servidor",
+                "detalle", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * DTO para actualizar perfil
+     */
+    public static class ActualizarPerfilDTO {
+        @NotBlank(message = "El nombre es obligatorio")
+        @Size(min = 2, max = 100, message = "El nombre debe tener entre 2 y 100 caracteres")
+        private String nombre;
+        
+        @Size(max = 100, message = "Los apellidos no pueden tener más de 100 caracteres")
+        private String apellidos;
+        
+        @NotBlank(message = "El email es obligatorio")
+        @Email(message = "El email debe tener un formato válido")
+        private String email;
+        
+        @Size(max = 20, message = "El teléfono no puede tener más de 20 caracteres")
+        private String telefono;
+        
+        // Getters y setters
+        public String getNombre() { return nombre; }
+        public void setNombre(String nombre) { this.nombre = nombre; }
+        
+        public String getApellidos() { return apellidos; }
+        public void setApellidos(String apellidos) { this.apellidos = apellidos; }
+        
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        
+        public String getTelefono() { return telefono; }
+        public void setTelefono(String telefono) { this.telefono = telefono; }
+    }
+
+    /**
+     * DTO para cambiar contraseña
+     */
+    public static class CambiarPasswordDTO {
+        @NotBlank(message = "La contraseña actual es obligatoria")
+        private String passwordActual;
+        
+        @NotBlank(message = "La nueva contraseña es obligatoria")
+        @Size(min = 6, message = "La nueva contraseña debe tener al menos 6 caracteres")
+        private String passwordNueva;
+        
+        // Getters y setters
+        public String getPasswordActual() { return passwordActual; }
+        public void setPasswordActual(String passwordActual) { this.passwordActual = passwordActual; }
+        
+        public String getPasswordNueva() { return passwordNueva; }
+        public void setPasswordNueva(String passwordNueva) { this.passwordNueva = passwordNueva; }
     }
 }

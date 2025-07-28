@@ -14,6 +14,10 @@ public class EmpresaDTO {
     private String subdominio;
     private String email;
     private String telefono;
+    private String direccion;
+    private String ciudad;
+    private String codigoPostal;
+    private String pais;
     private String descripcion;
     private String textoBienvenida;
     private String logoUrl;
@@ -52,6 +56,10 @@ public class EmpresaDTO {
         this.subdominio = empresa.getSubdominio();
         this.email = empresa.getEmail();
         this.telefono = empresa.getTelefono();
+        this.direccion = empresa.getDireccion();
+        this.ciudad = empresa.getCiudad();
+        this.codigoPostal = empresa.getCodigoPostal();
+        this.pais = empresa.getPais();
         this.descripcion = empresa.getDescripcion();
         this.textoBienvenida = empresa.getTextoBienvenida();
         this.logoUrl = empresa.getLogoUrl();
@@ -88,6 +96,18 @@ public class EmpresaDTO {
 
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
+
+    public String getDireccion() { return direccion; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
+
+    public String getCiudad() { return ciudad; }
+    public void setCiudad(String ciudad) { this.ciudad = ciudad; }
+
+    public String getCodigoPostal() { return codigoPostal; }
+    public void setCodigoPostal(String codigoPostal) { this.codigoPostal = codigoPostal; }
+
+    public String getPais() { return pais; }
+    public void setPais(String pais) { this.pais = pais; }
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }

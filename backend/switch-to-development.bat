@@ -1,30 +1,33 @@
 @echo off
-echo ============================================
-echo    miNegocio - Cambiar a Desarrollo
-echo ============================================
-echo.
-echo Este script cambia las dependencias para desarrollo:
-echo - Descomenta H2 (desarrollo)
-echo - Comenta PostgreSQL (producción)
-echo.
-echo ============================================
+echo ========================================
+echo   CAMBIANDO A MODO DESARROLLO (H2)
+echo ========================================
 
 echo.
-echo Cambiando dependencias para desarrollo...
-
-REM Descomentar H2
-powershell -Command "(Get-Content 'pom.xml') -replace '<!-- <dependency>', '<dependency>' | Set-Content 'pom.xml'"
-powershell -Command "(Get-Content 'pom.xml') -replace '</dependency> -->', '</dependency>' | Set-Content 'pom.xml'"
-
-REM Comentar PostgreSQL
-powershell -Command "(Get-Content 'pom.xml') -replace '<dependency>', '<!-- <dependency>' | Set-Content 'pom.xml'"
-powershell -Command "(Get-Content 'pom.xml') -replace '</dependency>', '</dependency> -->' | Set-Content 'pom.xml'"
+echo 1. Deteniendo aplicación si está corriendo...
+taskkill /f /im java.exe 2>nul
 
 echo.
-echo ✅ Configuración cambiada a desarrollo
+echo 2. Limpiando archivos temporales...
+if exist target rmdir /s /q target
+
 echo.
-echo Ahora puedes ejecutar:
-echo - run-h2-persistent.bat (para H2 persistente)
-echo - O: mvn spring-boot:run -Dspring-boot.run.profiles=dev-h2-persistent
+echo 3. Configurando para desarrollo...
+set SPRING_PROFILES_ACTIVE=h2
+
 echo.
+echo 4. Iniciando aplicación en modo desarrollo...
+echo.
+echo ========================================
+echo   APLICACIÓN INICIADA EN MODO H2
+echo   URL: http://localhost:8080
+echo   H2 Console: http://localhost:8080/h2-console
+echo   JDBC URL: jdbc:h2:mem:testdb
+echo   Usuario: sa
+echo   Contraseña: password
+echo ========================================
+echo.
+
+mvnw spring-boot:run -Dspring.profiles.active=h2
+
 pause 

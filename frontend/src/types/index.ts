@@ -6,6 +6,10 @@ export interface Empresa {
   subdominio: string;
   email: string;
   telefono?: string;
+  direccion?: string;
+  ciudad?: string;
+  codigoPostal?: string;
+  pais?: string;
   descripcion?: string;
   textoBienvenida?: string;
   logoUrl?: string;
@@ -52,7 +56,9 @@ export interface Producto {
   descripcion?: string;
   precio: number;
   stock: number;
-  stockMinimo: number;
+  stockMinimo?: number;
+  imagenUrl?: string;
+  imagenes?: string[];
   categoria?: string;
   marca?: string;
   unidad?: string;
@@ -60,10 +66,21 @@ export interface Producto {
   codigoPersonalizado?: string;
   codigoBarras?: string;
   activo: boolean;
-  destacado: boolean;
-  imagenes: string[];
-  fechaCreacion: string;
-  fechaActualizacion: string;
+  destacado?: boolean;
+  empresaId: number;
+  empresaNombre?: string;
+  fechaCreacion?: string;
+  fechaActualizacion?: string;
+}
+
+export interface ProductoFavorito {
+  id: number;
+  clienteId: number;
+  clienteNombre: string;
+  producto: Producto;
+  empresaId: number;
+  empresaNombre: string;
+  fechaAgregado: string;
 }
 
 export interface Cliente {
@@ -148,11 +165,15 @@ export interface RegistroEmpresaDTO {
   subdominio: string;
   emailEmpresa: string;
   telefonoEmpresa?: string;
-  descripcionEmpresa?: string;
+  direccionEmpresa?: string;
+  ciudadEmpresa?: string;
+  codigoPostalEmpresa?: string;
+  paisEmpresa?: string;
   nombreAdministrador: string;
   apellidosAdministrador: string;
   emailAdministrador: string;
   passwordAdministrador: string;
+  confirmarPasswordAdministrador: string;
   telefonoAdministrador?: string;
   aceptaTerminos: boolean;
   aceptaMarketing: boolean;

@@ -40,6 +40,22 @@ public class Empresa {
     @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
     private String telefono;
 
+    @Size(max = 200, message = "La dirección no puede exceder 200 caracteres")
+    @Column(length = 200)
+    private String direccion;
+
+    @Size(max = 100, message = "La ciudad no puede exceder 100 caracteres")
+    @Column(length = 100)
+    private String ciudad;
+
+    @Size(max = 20, message = "El código postal no puede exceder 20 caracteres")
+    @Column(length = 20)
+    private String codigoPostal;
+
+    @Size(max = 100, message = "El país no puede exceder 100 caracteres")
+    @Column(length = 100)
+    private String pais;
+
     @Size(max = 500, message = "La descripción no puede exceder 500 caracteres")
     @Column(length = 500)
     private String descripcion;
@@ -148,6 +164,18 @@ public class Empresa {
 
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
+
+    public String getDireccion() { return direccion; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
+
+    public String getCiudad() { return ciudad; }
+    public void setCiudad(String ciudad) { this.ciudad = ciudad; }
+
+    public String getCodigoPostal() { return codigoPostal; }
+    public void setCodigoPostal(String codigoPostal) { this.codigoPostal = codigoPostal; }
+
+    public String getPais() { return pais; }
+    public void setPais(String pais) { this.pais = pais; }
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }

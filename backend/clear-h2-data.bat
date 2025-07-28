@@ -1,23 +1,28 @@
 @echo off
-echo ============================================
-echo    miNegocio - Limpiar Datos H2
-echo ============================================
+echo ========================================
+echo   LIMPIANDO DATOS DE H2
+echo ========================================
+
 echo.
-echo ADVERTENCIA: Esto eliminara todos los datos guardados
+echo 1. Deteniendo aplicación si está corriendo...
+taskkill /f /im java.exe 2>nul
+
 echo.
-set /p confirm="¿Estas seguro? (s/N): "
-if /i "%confirm%"=="s" (
-    echo.
-    echo Eliminando archivos de base de datos...
-    if exist "data\minegocio_db.mv.db" del "data\minegocio_db.mv.db"
-    if exist "data\minegocio_db.trace.db" del "data\minegocio_db.trace.db"
-    if exist "data\minegocio_db.lock.db" del "data\minegocio_db.lock.db"
-    echo.
-    echo Datos eliminados correctamente.
-    echo La proxima vez que inicies el backend, se crearan nuevas tablas.
-) else (
-    echo.
-    echo Operacion cancelada.
-)
+echo 2. Eliminando archivos de base de datos H2...
+if exist data\*.mv.db del /q data\*.mv.db
+if exist data\*.trace.db del /q data\*.trace.db
+if exist data\*.lock.db del /q data\*.lock.db
+
 echo.
+echo 3. Eliminando archivos temporales...
+if exist target rmdir /s /q target
+
+echo.
+echo ✅ Datos de H2 eliminados correctamente
+echo.
+echo Ahora puedes ejecutar:
+echo - switch-to-development.bat (para H2 en memoria)
+echo - run-h2-persistent.bat (para H2 persistente)
+echo.
+
 pause 

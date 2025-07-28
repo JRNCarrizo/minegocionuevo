@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -18,11 +18,17 @@ const esquemaValidacion: yup.ObjectSchema<RegistroEmpresaDTO> = yup.object({
     .matches(/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$/, 'El subdominio solo puede contener letras, números y guiones'),
   emailEmpresa: yup.string().email('Email inválido').required('El email de la empresa es obligatorio'),
   telefonoEmpresa: yup.string().max(20).optional(),
-  descripcionEmpresa: yup.string().max(500).optional(),
+  direccionEmpresa: yup.string().max(200).optional(),
+  ciudadEmpresa: yup.string().max(100).optional(),
+  codigoPostalEmpresa: yup.string().max(20).optional(),
+  paisEmpresa: yup.string().max(100).optional(),
   nombreAdministrador: yup.string().required('El nombre del administrador es obligatorio').max(100),
   apellidosAdministrador: yup.string().required('Los apellidos del administrador son obligatorios').max(100),
   emailAdministrador: yup.string().email('Email inválido').required('El email del administrador es obligatorio'),
   passwordAdministrador: yup.string().required('La contraseña es obligatoria').min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  confirmarPasswordAdministrador: yup.string()
+    .required('Debe confirmar la contraseña')
+    .oneOf([yup.ref('passwordAdministrador')], 'Las contraseñas deben coincidir'),
   telefonoAdministrador: yup.string().max(20).optional(),
   aceptaTerminos: yup.boolean().required().oneOf([true], 'Debe aceptar los términos y condiciones'),
   aceptaMarketing: yup.boolean().required()
@@ -39,7 +45,9 @@ export default function PaginaRegistro() {
     handleSubmit,
     formState: { errors },
     setError,
-    clearErrors
+    clearErrors,
+    watch,
+    setValue
   } = useForm<RegistroEmpresaDTO>({
     resolver: yupResolver(esquemaValidacion),
     mode: 'onChange',
@@ -48,16 +56,22 @@ export default function PaginaRegistro() {
       subdominio: '',
       emailEmpresa: '',
       telefonoEmpresa: '',
-      descripcionEmpresa: '',
+      direccionEmpresa: '',
+      ciudadEmpresa: '',
+      codigoPostalEmpresa: '',
+      paisEmpresa: '',
       nombreAdministrador: '',
       apellidosAdministrador: '',
       emailAdministrador: '',
       passwordAdministrador: '',
+      confirmarPasswordAdministrador: '',
       telefonoAdministrador: '',
       aceptaTerminos: false,
       aceptaMarketing: false
     }
   });
+
+  const subdominioActual = watch('subdominio');
 
   // Verificar disponibilidad del subdominio
   const verificarSubdominio = async (valor: string) => {
@@ -84,13 +98,24 @@ export default function PaginaRegistro() {
     }
   };
 
+  // Manejar cambios en el subdominio
   const manejarCambioSubdominio = (e: React.ChangeEvent<HTMLInputElement>) => {
     const valor = e.target.value.toLowerCase().replace(/[^a-zA-Z0-9-]/g, '');
-    e.target.value = valor;
-    
-    // Verificar después de un pequeño retraso
-    setTimeout(() => verificarSubdominio(valor), 500);
+    setValue('subdominio', valor);
   };
+    
+  useEffect(() => {
+    if (subdominioActual) {
+      // Verificar después de un pequeño retraso para evitar muchas llamadas
+      const timeoutId = setTimeout(() => {
+        verificarSubdominio(subdominioActual);
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSubdominioVerificado(null);
+    }
+  }, [subdominioActual]);
 
   const limpiarCampoEmail = (e: React.FocusEvent<HTMLInputElement>) => {
     // Limpiar el campo cuando se hace foco en él
@@ -221,14 +246,16 @@ export default function PaginaRegistro() {
                   <label htmlFor="subdominio" className="etiqueta">
                     Subdominio *
                   </label>
+                  <p className="texto-pequeno texto-gris mb-2">
+                    Será la URL de tu tienda online
+                  </p>
                   <div className="flex items-centro">
                     <input
                       type="text"
                       id="subdominio"
                       className={`campo ${errors.subdominio ? 'campo-error' : ''}`}
                       placeholder="mi-negocio"
-                      {...register('subdominio')}
-                      onChange={manejarCambioSubdominio}
+                      {...register('subdominio', { onChange: manejarCambioSubdominio })}
                       style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
                     />
                     <div style={{
@@ -240,7 +267,7 @@ export default function PaginaRegistro() {
                       borderBottomRightRadius: 'var(--radio-borde)',
                       color: 'var(--color-texto-secundario)'
                     }}>
-                      .minegocio.com
+                      .negocio360.org
                     </div>
                   </div>
                   
@@ -306,20 +333,76 @@ export default function PaginaRegistro() {
                   )}
                 </div>
 
+                <div className="mb-4">
+                  <p className="texto-pequeno texto-gris">
+                    📍 <strong>Información de ubicación (opcional):</strong> Si tienes una tienda física, completa estos datos. Si solo tienes tienda online, puedes dejarlos vacíos.
+                  </p>
+                </div>
+
                 <div className="grupo-campo">
-                  <label htmlFor="descripcionEmpresa" className="etiqueta">
-                    Descripción o eslogan de la Empresa
+                  <label htmlFor="direccionEmpresa" className="etiqueta">
+                    Dirección de la Empresa
                   </label>
-                  <textarea
-                    id="descripcionEmpresa"
-                    className={`campo ${errors.descripcionEmpresa ? 'campo-error' : ''}`}
-                    placeholder="Descripción breve de tu empresa y sus productos/servicios"
-                    rows={3}
-                    {...register('descripcionEmpresa')}
+                  <input
+                    type="text"
+                    id="direccionEmpresa"
+                    className={`campo ${errors.direccionEmpresa ? 'campo-error' : ''}`}
+                    placeholder="Calle Principal, 123"
+                    {...register('direccionEmpresa')}
                   />
-                  {errors.descripcionEmpresa && (
-                    <p className="mensaje-error">{errors.descripcionEmpresa.message}</p>
+                  {errors.direccionEmpresa && (
+                    <p className="mensaje-error">{errors.direccionEmpresa.message}</p>
                   )}
+                </div>
+
+                <div className="grid grid-3">
+                  <div className="grupo-campo">
+                    <label htmlFor="ciudadEmpresa" className="etiqueta">
+                      Ciudad
+                    </label>
+                    <input
+                      type="text"
+                      id="ciudadEmpresa"
+                      className={`campo ${errors.ciudadEmpresa ? 'campo-error' : ''}`}
+                      placeholder="Madrid"
+                      {...register('ciudadEmpresa')}
+                    />
+                    {errors.ciudadEmpresa && (
+                      <p className="mensaje-error">{errors.ciudadEmpresa.message}</p>
+                    )}
+                  </div>
+
+                  <div className="grupo-campo">
+                    <label htmlFor="codigoPostalEmpresa" className="etiqueta">
+                      Código Postal
+                    </label>
+                    <input
+                      type="text"
+                      id="codigoPostalEmpresa"
+                      className={`campo ${errors.codigoPostalEmpresa ? 'campo-error' : ''}`}
+                      placeholder="28001"
+                      {...register('codigoPostalEmpresa')}
+                    />
+                    {errors.codigoPostalEmpresa && (
+                      <p className="mensaje-error">{errors.codigoPostalEmpresa.message}</p>
+                    )}
+                  </div>
+
+                  <div className="grupo-campo">
+                    <label htmlFor="paisEmpresa" className="etiqueta">
+                      País
+                    </label>
+                    <input
+                      type="text"
+                      id="paisEmpresa"
+                      className={`campo ${errors.paisEmpresa ? 'campo-error' : ''}`}
+                      placeholder="España"
+                      {...register('paisEmpresa')}
+                    />
+                    {errors.paisEmpresa && (
+                      <p className="mensaje-error">{errors.paisEmpresa.message}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -332,7 +415,7 @@ export default function PaginaRegistro() {
                 <div className="grid grid-2">
                   <div className="grupo-campo">
                     <label htmlFor="nombreAdministrador" className="etiqueta">
-                      Nombre *
+                      Nombre/s *
                     </label>
                     <input
                       type="text"
@@ -348,7 +431,7 @@ export default function PaginaRegistro() {
 
                   <div className="grupo-campo">
                     <label htmlFor="apellidosAdministrador" className="etiqueta">
-                      Apellidos *
+                      Apellido/s *
                     </label>
                     <input
                       type="text"
@@ -387,6 +470,22 @@ export default function PaginaRegistro() {
                 </div>
 
                 <div className="grupo-campo">
+                  <label htmlFor="telefonoAdministrador" className="etiqueta">
+                    Teléfono del Administrador
+                  </label>
+                  <input
+                    type="tel"
+                    id="telefonoAdministrador"
+                    className={`campo ${errors.telefonoAdministrador ? 'campo-error' : ''}`}
+                    placeholder="+34 123 456 789"
+                    {...register('telefonoAdministrador')}
+                  />
+                  {errors.telefonoAdministrador && (
+                    <p className="mensaje-error">{errors.telefonoAdministrador.message}</p>
+                  )}
+                </div>
+
+                <div className="grupo-campo">
                   <label htmlFor="passwordAdministrador" className="etiqueta">
                     Contraseña *
                   </label>
@@ -403,18 +502,18 @@ export default function PaginaRegistro() {
                 </div>
 
                 <div className="grupo-campo">
-                  <label htmlFor="telefonoAdministrador" className="etiqueta">
-                    Teléfono del Administrador
+                  <label htmlFor="confirmarPasswordAdministrador" className="etiqueta">
+                    Confirmar Contraseña *
                   </label>
                   <input
-                    type="tel"
-                    id="telefonoAdministrador"
-                    className={`campo ${errors.telefonoAdministrador ? 'campo-error' : ''}`}
-                    placeholder="+34 123 456 789"
-                    {...register('telefonoAdministrador')}
+                    type="password"
+                    id="confirmarPasswordAdministrador"
+                    className={`campo ${errors.confirmarPasswordAdministrador ? 'campo-error' : ''}`}
+                    placeholder="Repite la contraseña"
+                    {...register('confirmarPasswordAdministrador')}
                   />
-                  {errors.telefonoAdministrador && (
-                    <p className="mensaje-error">{errors.telefonoAdministrador.message}</p>
+                  {errors.confirmarPasswordAdministrador && (
+                    <p className="mensaje-error">{errors.confirmarPasswordAdministrador.message}</p>
                   )}
                 </div>
               </div>
