@@ -111,6 +111,7 @@ public class AdminController {
      * Obtener información completa de la empresa del usuario autenticado
      */
     @GetMapping("/empresa")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> obtenerEmpresaAdmin(HttpServletRequest request) {
         try {
             System.out.println("=== DEBUG OBTENER EMPRESA ADMIN ===");
@@ -176,6 +177,7 @@ public class AdminController {
      * Actualizar información de la empresa del usuario autenticado
      */
     @PutMapping("/empresa")
+    @Transactional
     public ResponseEntity<?> actualizarEmpresaAdmin(@RequestBody EmpresaDTO empresaDTO, HttpServletRequest request) {
         try {
             System.out.println("=== DEBUG ADMIN CONTROLLER ===");
