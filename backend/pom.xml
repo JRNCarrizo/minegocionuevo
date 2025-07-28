@@ -51,13 +51,14 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
-		<!-- Base de datos - DESCOMENTAR LA QUE QUIERAS USAR -->
+		<!-- Base de datos -->
 		
-		<!-- H2 - Para desarrollo local (más rápido) -->
-		<!-- <dependency>
+		<!-- H2 - Para desarrollo local -->
+		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-		</dependency> -->
+			<scope>runtime</scope>
+		</dependency>
 		
 		<!-- PostgreSQL - Para producción (Railway) -->
 		<dependency>
