@@ -26,4 +26,4 @@ RUN ./mvnw clean package -DskipTests -U
 EXPOSE 8080
 
 # Comando para ejecutar la aplicación
-ENTRYPOINT ["java", "-Dspring.profiles.active=railway", "-jar", "target/backend-0.0.1-SNAPSHOT.jar"] 
+ENTRYPOINT ["java", "-Dspring.profiles.active=railway", "-jar", "target/backend-0.0.2-SNAPSHOT.jar"] 
