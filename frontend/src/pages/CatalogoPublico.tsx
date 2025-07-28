@@ -645,8 +645,7 @@ export default function CatalogoPublico() {
             flexDirection: 'column',
             alignItems: 'center',
             gap: isMobile ? '16px' : '20px',
-            marginBottom: isMobile ? '16px' : '20px',
-            position: 'relative'
+            marginBottom: isMobile ? '16px' : '20px'
           }}>
             {/* Casilleros de búsqueda con lupa a la izquierda */}
             <div style={{
@@ -882,16 +881,14 @@ export default function CatalogoPublico() {
               color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b',
               fontWeight: '500',
               textAlign: 'left',
-              position: 'absolute',
-              bottom: isMobile ? '-40px' : '-50px',
-              left: '0',
               padding: isMobile ? '8px 12px' : '10px 16px',
               background: 'rgba(255,255,255,0.9)',
               borderRadius: '8px',
               backdropFilter: 'blur(4px)',
               border: `1px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : 'rgba(0,0,0,0.1)'}`,
               width: 'fit-content',
-              zIndex: 10
+              alignSelf: 'flex-start',
+              marginTop: isMobile ? '12px' : '16px'
             }}>
               {productos.length} producto{productos.length !== 1 ? 's' : ''} encontrado{productos.length !== 1 ? 's' : ''}
             </div>
