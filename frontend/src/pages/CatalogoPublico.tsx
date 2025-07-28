@@ -875,20 +875,20 @@ export default function CatalogoPublico() {
                 </button>
               </div>
             
+            {/* Contador de productos */}
             <div style={{
               fontSize: isMobile ? '12px' : '14px',
               color: empresa?.colorTexto ? `${empresa.colorTexto}80` : '#64748b',
               fontWeight: '500',
-              textAlign: isMobile ? 'center' : 'right',
-              position: isMobile ? 'static' : 'absolute',
-              top: isMobile ? 'auto' : '8px',
-              right: isMobile ? 'auto' : '8px',
-              background: isMobile ? 'transparent' : 'rgba(255,255,255,0.9)',
-              padding: isMobile ? '0' : '6px 10px',
-              borderRadius: isMobile ? '0' : '6px',
-              backdropFilter: isMobile ? 'none' : 'blur(4px)',
-              border: isMobile ? 'none' : `1px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : 'rgba(0,0,0,0.1)'}`,
-              zIndex: isMobile ? 'auto' : '10'
+              textAlign: 'left',
+              marginTop: isMobile ? '8px' : '12px',
+              padding: isMobile ? '8px 12px' : '10px 16px',
+              background: 'rgba(255,255,255,0.9)',
+              borderRadius: '8px',
+              backdropFilter: 'blur(4px)',
+              border: `1px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : 'rgba(0,0,0,0.1)'}`,
+              alignSelf: 'flex-start',
+              width: 'fit-content'
             }}>
               {productos.length} producto{productos.length !== 1 ? 's' : ''} encontrado{productos.length !== 1 ? 's' : ''}
             </div>
