@@ -119,7 +119,7 @@ public class SuperAdminController {
                 return ResponseEntity.status(403).body(Map.of("error", "Acceso denegado. Se requiere rol SUPER_ADMIN"));
             }
             
-            List<Empresa> empresas = empresaService.obtenerTodasLasEmpresas();
+            List<Map<String, Object>> empresas = empresaService.obtenerTodasLasEmpresasConEstadisticas();
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Empresas obtenidas correctamente",

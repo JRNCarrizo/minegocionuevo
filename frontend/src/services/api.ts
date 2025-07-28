@@ -47,6 +47,21 @@ class ApiService {
           return config;
         }
         
+        // Endpoints de super admin (requieren token de admin)
+        if (
+          config.url &&
+          /\/super-admin\//.test(config.url)
+        ) {
+          const tokenAdmin = localStorage.getItem('token');
+          if (tokenAdmin) {
+            console.log('👑 Token super admin agregado');
+            config.headers.Authorization = `Bearer ${tokenAdmin}`;
+          } else {
+            console.log('❌ Token super admin requerido pero no encontrado');
+          }
+          return config;
+        }
+        
         // Endpoints de administrador (requieren token de admin)
         if (
           config.url &&
@@ -948,7 +963,7 @@ class ApiService {
 
   // Métodos para Super Admin
   async getSuperAdminDashboard() {
-    const response = await this.api.get('/api/super-admin/dashboard');
+    const response = await this.api.get('/super-admin/dashboard');
     return response.data;
   }
 
@@ -959,72 +974,72 @@ class ApiService {
         queryParams.append(key, value.toString());
       }
     });
-    const response = await this.api.get(`/api/super-admin/empresas?${queryParams}`);
+    const response = await this.api.get(`/super-admin/empresas?${queryParams}`);
     return response.data;
   }
 
   async getSuperAdminEmpresa(id: number) {
-    const response = await this.api.get(`/api/super-admin/empresas/${id}`);
+    const response = await this.api.get(`/super-admin/empresas/${id}`);
     return response.data;
   }
 
   async updateSuperAdminEmpresaEstado(id: number, estado: string) {
-    const response = await this.api.put(`/api/super-admin/empresas/${id}/estado?estado=${estado}`);
+    const response = await this.api.put(`/super-admin/empresas/${id}/estado?estado=${estado}`);
     return response.data;
   }
 
   async getSuperAdminEstadisticasSuscripciones() {
-    const response = await this.api.get('/api/super-admin/suscripciones/estadisticas');
+    const response = await this.api.get('/super-admin/suscripciones/estadisticas');
     return response.data;
   }
 
   async getSuperAdminEmpresasPorExpirar() {
-    const response = await this.api.get('/api/super-admin/empresas/por-expirar');
+    const response = await this.api.get('/super-admin/empresas/por-expirar');
     return response.data;
   }
 
   async getSuperAdminTopEmpresasPorIngresos(limite: number = 10) {
-    const response = await this.api.get(`/api/super-admin/empresas/top-ingresos?limite=${limite}`);
+    const response = await this.api.get(`/super-admin/empresas/top-ingresos?limite=${limite}`);
     return response.data;
   }
 
   async getSuperAdminEmpresasEnRiesgo() {
-    const response = await this.api.get('/api/super-admin/empresas/en-riesgo');
+    const response = await this.api.get('/super-admin/empresas/en-riesgo');
     return response.data;
   }
 
   async getSuperAdminAlertas(soloNoLeidas: boolean = false) {
-    const response = await this.api.get(`/api/super-admin/alertas?soloNoLeidas=${soloNoLeidas}`);
+    const response = await this.api.get(`/super-admin/alertas?soloNoLeidas=${soloNoLeidas}`);
     return response.data;
   }
 
   async marcarSuperAdminAlertaComoLeida(id: number) {
-    const response = await this.api.put(`/api/super-admin/alertas/${id}/leer`);
+    const response = await this.api.put(`/super-admin/alertas/${id}/leer`);
     return response.data;
   }
 
   async getSuperAdminNotificaciones(soloNoLeidas: boolean = false) {
-    const response = await this.api.get(`/api/super-admin/notificaciones?soloNoLeidas=${soloNoLeidas}`);
+    const response = await this.api.get(`/super-admin/notificaciones?soloNoLeidas=${soloNoLeidas}`);
     return response.data;
   }
 
   async marcarSuperAdminNotificacionComoLeida(id: number) {
-    const response = await this.api.put(`/api/super-admin/notificaciones/${id}/leer`);
+    const response = await this.api.put(`/super-admin/notificaciones/${id}/leer`);
     return response.data;
   }
 
   async getSuperAdminReporteIngresos(fechaDesde: string, fechaHasta: string) {
-    const response = await this.api.get(`/api/super-admin/reportes/ingresos?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`);
+    const response = await this.api.get(`/super-admin/reportes/ingresos?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`);
     return response.data;
   }
 
   async getSuperAdminReporteCrecimiento(meses: number = 12) {
-    const response = await this.api.get(`/api/super-admin/reportes/crecimiento?meses=${meses}`);
+    const response = await this.api.get(`/super-admin/reportes/crecimiento?meses=${meses}`);
     return response.data;
   }
 
   async enviarSuperAdminNotificacionEmpresa(id: number, notificacion: any) {
-    const response = await this.api.post(`/api/super-admin/empresas/${id}/notificar`, notificacion);
+    const response = await this.api.post(`/super-admin/empresas/${id}/notificar`, notificacion);
     return response.data;
   }
 
@@ -1035,7 +1050,7 @@ class ApiService {
         queryParams.append(key, value.toString());
       }
     });
-    const response = await this.api.get(`/api/super-admin/logs?${queryParams}`);
+    const response = await this.api.get(`/super-admin/logs?${queryParams}`);
     return response.data;
   }
 }

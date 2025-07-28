@@ -12,9 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Servicio para la gestión de empresas
@@ -200,6 +203,37 @@ public class EmpresaService {
      */
     public List<Empresa> obtenerTodasLasEmpresas() {
         return empresaRepository.findAll();
+    }
+
+    /**
+     * Obtiene todas las empresas con estadísticas calculadas
+     */
+    public List<Map<String, Object>> obtenerTodasLasEmpresasConEstadisticas() {
+        List<Empresa> empresas = empresaRepository.findAll();
+        return empresas.stream().map(empresa -> {
+            Map<String, Object> empresaConStats = new HashMap<>();
+            
+            // Datos básicos de la empresa
+            empresaConStats.put("id", empresa.getId());
+            empresaConStats.put("nombre", empresa.getNombre());
+            empresaConStats.put("subdominio", empresa.getSubdominio());
+            empresaConStats.put("email", empresa.getEmail());
+            empresaConStats.put("telefono", empresa.getTelefono());
+            empresaConStats.put("logoUrl", empresa.getLogoUrl());
+            empresaConStats.put("estadoSuscripcion", empresa.getEstadoSuscripcion().name());
+            empresaConStats.put("fechaCreacion", empresa.getFechaCreacion());
+            empresaConStats.put("descripcion", empresa.getDescripcion());
+            empresaConStats.put("colorPrimario", empresa.getColorPrimario());
+            empresaConStats.put("moneda", empresa.getMoneda());
+            empresaConStats.put("activa", empresa.getActiva());
+            
+            // Estadísticas (por ahora en 0, se pueden calcular después)
+            empresaConStats.put("totalClientes", 0);
+            empresaConStats.put("totalProductos", 0);
+            empresaConStats.put("totalPedidos", 0);
+            
+            return empresaConStats;
+        }).collect(Collectors.toList());
     }
 
     /**

@@ -306,7 +306,7 @@ const GestionEmpresas: React.FC = () => {
             <FaUsers color="#3B82F6" size={32} />
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-texto)' }}>
-            {empresas.reduce((total, e) => total + e.totalClientes, 0).toLocaleString()}
+            {empresas.reduce((total, e) => total + (e.totalClientes || 0), 0).toLocaleString()}
           </div>
           <div style={{ color: 'var(--color-texto-secundario)' }}>Total Clientes</div>
         </div>
@@ -316,7 +316,7 @@ const GestionEmpresas: React.FC = () => {
             <FaBox color="#8B5CF6" size={32} />
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-texto)' }}>
-            {empresas.reduce((total, e) => total + e.totalProductos, 0).toLocaleString()}
+            {empresas.reduce((total, e) => total + (e.totalProductos || 0), 0).toLocaleString()}
           </div>
           <div style={{ color: 'var(--color-texto-secundario)' }}>Total Productos</div>
         </div>
@@ -471,19 +471,19 @@ const GestionEmpresas: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '15px' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-primario)' }}>
-                  {empresa.totalClientes.toLocaleString()}
+                  {(empresa.totalClientes || 0).toLocaleString()}
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--color-texto-secundario)' }}>Clientes</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-primario)' }}>
-                  {empresa.totalProductos.toLocaleString()}
+                  {(empresa.totalProductos || 0).toLocaleString()}
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--color-texto-secundario)' }}>Productos</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-primario)' }}>
-                  {empresa.totalPedidos.toLocaleString()}
+                  {(empresa.totalPedidos || 0).toLocaleString()}
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--color-texto-secundario)' }}>Pedidos</div>
               </div>
@@ -558,9 +558,9 @@ const GestionEmpresas: React.FC = () => {
               
               <div>
                 <h4 style={{ marginBottom: '10px' }}>Estadísticas</h4>
-                <p><strong>Clientes:</strong> {selectedEmpresa.totalClientes.toLocaleString()}</p>
-                <p><strong>Productos:</strong> {selectedEmpresa.totalProductos.toLocaleString()}</p>
-                <p><strong>Pedidos:</strong> {selectedEmpresa.totalPedidos.toLocaleString()}</p>
+                <p><strong>Clientes:</strong> {(selectedEmpresa.totalClientes || 0).toLocaleString()}</p>
+                <p><strong>Productos:</strong> {(selectedEmpresa.totalProductos || 0).toLocaleString()}</p>
+                <p><strong>Pedidos:</strong> {(selectedEmpresa.totalPedidos || 0).toLocaleString()}</p>
                 <p><strong>Estado:</strong> {selectedEmpresa.estadoSuscripcion}</p>
               </div>
             </div>
