@@ -34,9 +34,6 @@
 		<!-- Perfil de desarrollo -->
 		<profile>
 			<id>dev</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
 			<dependencies>
 				<dependency>
 					<groupId>com.h2database</groupId>
