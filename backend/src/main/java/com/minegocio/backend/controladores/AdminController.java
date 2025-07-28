@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -228,6 +229,7 @@ public class AdminController {
      * Obtener estadísticas de ventas de la empresa
      */
     @GetMapping("/estadisticas-ventas")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> obtenerEstadisticasVentas(HttpServletRequest request) {
         try {
             System.out.println("=== DEBUG ESTADISTICAS VENTAS ===");
