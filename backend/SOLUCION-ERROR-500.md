@@ -31,7 +31,7 @@ SchemaManagementToolCoordinator.process
 - ✅ **`sql.init.mode=never`**: NO ejecuta scripts de inicialización
 - ✅ **`defer-datasource-initialization=false`**: NO inicializa datos
 - ✅ **`hbm2ddl.auto=none`**: NO genera DDL automáticamente
-- ✅ **Configuración mínima**: Eliminadas configuraciones complejas que causan problemas
+- ✅ **Configuración mínima**: Solo configuración esencial para evitar problemas
 
 ### 3. **Eliminados Archivos de Migración**
 - ✅ Eliminados todos los archivos SQL de migración
