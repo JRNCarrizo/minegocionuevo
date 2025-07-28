@@ -15,7 +15,7 @@ RUN chmod +x mvnw
 # Copiar código fuente
 COPY src src
 
-# Construir con perfil de producción (solo PostgreSQL, sin H2)
+# Construir con perfil de producción (solo PostgreSQL, sin H2) - FORZAR DEPLOY
 RUN ./mvnw clean package -Pprod -DskipTests
 
 # Exponer puerto
