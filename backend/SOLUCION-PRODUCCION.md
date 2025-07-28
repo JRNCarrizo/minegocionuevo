@@ -10,33 +10,32 @@ Caused by: org.springframework.beans.factory.BeanCreationException: Error creati
 Caused by: java.lang.IllegalStateException: Cannot load driver class: org.postgresql.Driver
 ```
 
-## Solución Implementada
+## Problema Adicional - HikariConnectionProvider
+```
+Caused by: java.lang.ClassNotFoundException: org.hibernate.hikaricp.internal.HikariConnectionProvider
+```
 
-### 1. Configuración de JPA Mejorada
-Se ha creado una configuración específica de JPA en `JpaConfig.java` que:
-- Define explícitamente el `entityManagerFactory`
-- Configura correctamente el `transactionManager`
-- Establece las propiedades necesarias para PostgreSQL
+## Solución Implementada (Simplificada)
 
-### 2. Configuración de DataSource
-Se ha creado `DataSourceConfig.java` que:
-- Asegura que el driver de PostgreSQL se cargue correctamente
-- Configura el DataSource con HikariCP
-- Maneja la carga explícita del driver
+### 1. Eliminación de Configuraciones Personalizadas
+Se han eliminado las configuraciones personalizadas que causaban conflictos:
+- Eliminado `JpaConfig.java` (configuración personalizada de JPA)
+- Eliminado `DataSourceConfig.java` (configuración personalizada de DataSource)
+- Se confía en la auto-configuración de Spring Boot
 
-### 3. Dependencia PostgreSQL Corregida
+### 2. Dependencia PostgreSQL Corregida
 En `pom.xml`:
 - Se agregó `<scope>runtime</scope>` a la dependencia de PostgreSQL
 - Se asegura que el driver esté disponible en tiempo de ejecución
 
-### 4. Configuración de Producción
+### 3. Configuración de Producción Simplificada
 Se ha creado `application-prod.properties` con:
 - Configuración específica para PostgreSQL
-- Configuración de HikariCP para conexiones
+- Configuración básica de HikariCP
 - Deshabilitación de características problemáticas
 - Uso de `spring.datasource.driver-class-name` en lugar de `driverClassName`
 
-### 5. Variables de Entorno Requeridas
+### 4. Variables de Entorno Requeridas
 
 Asegúrate de tener configuradas estas variables de entorno:
 
@@ -55,7 +54,7 @@ MINE_NEGOCIO_APP_FRONTEND_URL=https://tu-dominio.com
 MAIL_FROM=noreply@tu-dominio.com
 ```
 
-### 6. Perfil de Spring Boot
+### 5. Perfil de Spring Boot
 El perfil por defecto está configurado como `prod`. Si necesitas usar un perfil específico, configura:
 
 ```bash
@@ -111,7 +110,7 @@ docker run -p 8080:8080 --env-file .env minegocio-backend
 
 ## Troubleshooting
 
-### Si el error del driver persiste:
+### Si el error persiste:
 
 1. **Verifica que PostgreSQL esté en el classpath**:
    ```bash
@@ -137,6 +136,12 @@ docker run -p 8080:8080 --env-file .env minegocio-backend
    psql $SPRING_DATASOURCE_URL
    ```
 
+5. **Verifica que no haya configuraciones personalizadas**:
+   ```bash
+   # Asegúrate de que no existan archivos de configuración personalizada
+   find src/main/java -name "*Config.java" -type f
+   ```
+
 ### Logs Útiles para Debugging
 
 Agrega estas configuraciones temporalmente para debugging:
@@ -147,6 +152,7 @@ logging.level.org.springframework.orm.jpa=DEBUG
 logging.level.org.hibernate.SQL=DEBUG
 logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
 logging.level.com.zaxxer.hikari=DEBUG
+logging.level.org.springframework.boot.autoconfigure=DEBUG
 ```
 
 ## Cambios Específicos Realizados
@@ -158,14 +164,23 @@ logging.level.com.zaxxer.hikari=DEBUG
 ### application-prod.properties
 - Cambiado `driverClassName` por `driver-class-name`
 - Configuración explícita del driver de PostgreSQL
+- Configuración básica de HikariCP sin personalizaciones complejas
 
-### DataSourceConfig.java
-- Carga explícita del driver de PostgreSQL
-- Configuración del DataSource con HikariCP
+### Eliminados
+- `JpaConfig.java` - Configuración personalizada de JPA
+- `DataSourceConfig.java` - Configuración personalizada de DataSource
 
-### JpaConfig.java
-- Configuración explícita del EntityManagerFactory
-- Configuración del TransactionManager
+### Enfoque Simplificado
+- Se confía en la auto-configuración de Spring Boot
+- Se evitan configuraciones personalizadas que pueden causar conflictos
+- Se mantiene solo la configuración esencial en los archivos properties
+
+## Ventajas de la Solución Simplificada
+
+1. **Menos código personalizado** = Menos puntos de falla
+2. **Auto-configuración de Spring Boot** = Configuración probada y estable
+3. **Mantenimiento más fácil** = Menos archivos de configuración
+4. **Compatibilidad garantizada** = Spring Boot maneja las versiones automáticamente
 
 ## Contacto
 
@@ -174,4 +189,5 @@ Si el problema persiste después de seguir estos pasos, verifica:
 2. Que la base de datos PostgreSQL esté accesible
 3. Que las credenciales de la base de datos sean correctas
 4. Que el puerto 8080 esté disponible
-5. Que el driver de PostgreSQL esté incluido en el JAR final 
+5. Que el driver de PostgreSQL esté incluido en el JAR final
+6. Que no haya configuraciones personalizadas que interfieran 
