@@ -48,7 +48,7 @@ const ColorPicker = ({
   value, 
   onChange, 
   name,
-  preview = true 
+  preview = false 
 }: {
   label: string;
   value: string;
@@ -729,7 +729,9 @@ export default function ConfiguracionEmpresa() {
         </div>
 
         <form onSubmit={guardarConfiguracion} className="space-y-8">
-          {/* Información Básica */}
+          {/* ============================================
+              1. INFORMACIÓN BÁSICA Y CONTACTO
+          ============================================ */}
           <div className="tarjeta">
             <div className="p-6 border-bottom" style={{ 
               borderBottom: '1px solid var(--color-borde)', 
@@ -742,12 +744,17 @@ export default function ConfiguracionEmpresa() {
                 textAlign: isMobile ? 'center' : 'left'
               }}>
                 <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🏢</span>
-                <h3 className="titulo-3" style={{ 
-                  marginBottom: '0',
-                  fontSize: isMobile ? '1.25rem' : '1.5rem'
-                }}>
-                  Información Básica
-                </h3>
+                <div>
+                  <h3 className="titulo-3" style={{ 
+                    marginBottom: '0.25rem',
+                    fontSize: isMobile ? '1.25rem' : '1.5rem'
+                  }}>
+                    Información Básica y Contacto
+                  </h3>
+                  <p className="texto-gris" style={{ fontSize: '0.875rem', margin: 0 }}>
+                    Configura los datos principales de tu empresa e información de contacto
+                  </p>
+                </div>
               </div>
             </div>
             <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
@@ -808,149 +815,6 @@ export default function ConfiguracionEmpresa() {
                 </div>
               </div>
 
-              <InputField
-                icon="👋"
-                label="Texto de Bienvenida"
-                name="textoBienvenida"
-                value={configuracion.textoBienvenida}
-                onChange={manejarCambio}
-                placeholder="¡Bienvenidos a [nombre de la empresa]!"
-              />
-              <p className="texto-pequeno texto-gris" style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
-                💡 <strong>Guía:</strong> Este texto aparecerá como título principal en la card de presentación del catálogo público. 
-                Si lo dejas vacío, se mostrará "Bienvenido a [nombre de la empresa]" por defecto.
-              </p>
-
-              <InputField
-                icon="📝"
-                label="Texto de Presentación"
-                type="textarea"
-                name="descripcion"
-                value={configuracion.descripcion}
-                onChange={manejarCambio}
-                placeholder="Describe tu negocio, productos y servicios..."
-              />
-              <p className="texto-pequeno texto-gris" style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
-                💡 <strong>Guía:</strong> Este texto aparecerá debajo del título de bienvenida en la card de presentación. 
-                Es ideal para describir brevemente tu negocio, productos o servicios.
-              </p>
-
-              <div className="grupo-campo">
-                <label className="etiqueta">Logo de la Empresa</label>
-                <div className="flex items-centro" style={{ gap: '1rem', flexWrap: 'wrap' }}>
-                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        name="logo"
-                        onChange={manejarLogo}
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        id="logo-input"
-                      />
-                      <label
-                        htmlFor="logo-input"
-                        className="boton boton-secundario"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        📁 Seleccionar Logo
-                      </label>
-                    </div>
-                    {configuracion.logo && (
-                      <button
-                        type="button"
-                        onClick={() => setConfiguracion(prev => ({ ...prev, logo: null }))}
-                        className="boton boton-outline"
-                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
-                      >
-                        ❌ Limpiar
-                      </button>
-                    )}
-                  </div>
-                  
-                  {/* Vista previa del logo */}
-                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
-                    <div style={{
-                      width: '60px',
-                      height: '60px',
-                      border: '2px dashed var(--color-borde)',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: 'var(--color-fondo-hover)',
-                      overflow: 'hidden'
-                    }}>
-                      {configuracion.logo ? (
-                        <img
-                          src={URL.createObjectURL(configuracion.logo)}
-                          alt="Vista previa del nuevo logo"
-                          style={{
-                            maxWidth: '100%',
-                            maxHeight: '100%',
-                            objectFit: 'contain'
-                          }}
-                        />
-                      ) : logoActual ? (
-                        <img
-                          src={logoActual}
-                          alt="Logo actual de la empresa"
-                          style={{
-                            maxWidth: '100%',
-                            maxHeight: '100%',
-                            objectFit: 'contain'
-                          }}
-                        />
-                      ) : (
-                        <span style={{ fontSize: '1.5rem', color: 'var(--color-texto-secundario)' }}>
-                          🏢
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col" style={{ gap: '0.25rem' }}>
-                      {configuracion.logo && (
-                        <span className="texto-pequeno texto-verde">
-                          ✅ Nuevo: {configuracion.logo.name}
-                        </span>
-                      )}
-                      {logoActual && !configuracion.logo && (
-                        <span className="texto-pequeno texto-gris">
-                          📋 Logo actual cargado
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <p className="texto-pequeno texto-gris" style={{ marginTop: '0.5rem' }}>
-                  El logo aparecerá en el navbar, la tarjeta de presentación y el login de clientes. 
-                  Formatos recomendados: PNG, JPG. Tamaño máximo: 2MB.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Información de Contacto */}
-          <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ 
-              borderBottom: '1px solid var(--color-borde)', 
-              backgroundColor: 'var(--color-fondo-hover)',
-              padding: isMobile ? '1rem' : '1.5rem'
-            }}>
-              <div className="flex items-centro" style={{ 
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: isMobile ? '0.5rem' : '0.75rem',
-                textAlign: isMobile ? 'center' : 'left'
-              }}>
-                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>📞</span>
-                <h3 className="titulo-3" style={{ 
-                  marginBottom: '0',
-                  fontSize: isMobile ? '1.25rem' : '1.5rem'
-                }}>
-                  Información de Contacto
-                </h3>
-              </div>
-            </div>
-            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
               <div className="grid grid-2" style={{
                 display: 'grid',
                 gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
@@ -1015,7 +879,9 @@ export default function ConfiguracionEmpresa() {
             </div>
           </div>
 
-          {/* Redes Sociales */}
+          {/* ============================================
+              2. REDES SOCIALES
+          ============================================ */}
           <div className="tarjeta">
             <div className="p-6 border-bottom" style={{ 
               borderBottom: '1px solid var(--color-borde)', 
@@ -1028,12 +894,17 @@ export default function ConfiguracionEmpresa() {
                 textAlign: isMobile ? 'center' : 'left'
               }}>
                 <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>📱</span>
-                <h3 className="titulo-3" style={{ 
-                  marginBottom: '0',
-                  fontSize: isMobile ? '1.25rem' : '1.5rem'
-                }}>
-                  Redes Sociales
-                </h3>
+                <div>
+                  <h3 className="titulo-3" style={{ 
+                    marginBottom: '0.25rem',
+                    fontSize: isMobile ? '1.25rem' : '1.5rem'
+                  }}>
+                    Redes Sociales
+                  </h3>
+                  <p className="texto-gris" style={{ fontSize: '0.875rem', margin: 0 }}>
+                    Conecta con tus clientes a través de tus redes sociales
+                  </p>
+                </div>
               </div>
             </div>
             <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
@@ -1069,12 +940,226 @@ export default function ConfiguracionEmpresa() {
                   placeholder="https://facebook.com/tuempresa"
                 />
               </div>
-
-
             </div>
           </div>
 
-          {/* Personalización de Colores */}
+          {/* ============================================
+              3. CARD DE PRESENTACIÓN
+          ============================================ */}
+          <div className="tarjeta">
+            <div className="p-6 border-bottom" style={{ 
+              borderBottom: '1px solid var(--color-borde)', 
+              backgroundColor: 'var(--color-fondo-hover)',
+              padding: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <div className="flex items-centro" style={{ 
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '0.5rem' : '0.75rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🎨</span>
+                <div>
+                  <h3 className="titulo-3" style={{ 
+                    marginBottom: '0.25rem',
+                    fontSize: isMobile ? '1.25rem' : '1.5rem'
+                  }}>
+                    Card de Presentación
+                  </h3>
+                  <p className="texto-gris" style={{ fontSize: '0.875rem', margin: 0 }}>
+                    Personaliza el logo, título de bienvenida y descripción que aparecerán en el catálogo público
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              {/* Logo de la empresa */}
+              <div className="grupo-campo">
+                <label className="etiqueta">Logo de la Empresa</label>
+                <div className="flex items-centro" style={{ gap: '1rem', flexWrap: 'wrap' }}>
+                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        name="logo"
+                        onChange={manejarLogo}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id="logo-input"
+                      />
+                      <label
+                        htmlFor="logo-input"
+                        className="boton boton-secundario"
+                        style={{ cursor: 'pointer' }}
+                      >
+                        🖼️ Seleccionar Logo
+                      </label>
+                    </div>
+                    {configuracion.logo && (
+                      <button
+                        type="button"
+                        onClick={() => setConfiguracion(prev => ({ ...prev, logo: null }))}
+                        className="boton boton-outline"
+                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                      >
+                        ❌ Limpiar
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Vista previa del logo */}
+                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      border: '2px dashed var(--color-borde)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'var(--color-fondo-hover)',
+                      overflow: 'hidden',
+                      backgroundSize: 'contain',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundImage: configuracion.logo ? 
+                        `url(${URL.createObjectURL(configuracion.logo)})` : 
+                        logoActual ? `url(${logoActual})` : 'none'
+                    }}>
+                      {!configuracion.logo && !logoActual && (
+                        <span style={{ fontSize: '1.5rem', color: 'var(--color-texto-secundario)' }}>
+                          🏢
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col" style={{ gap: '0.25rem' }}>
+                      {configuracion.logo && (
+                        <span className="texto-pequeno texto-verde">
+                          ✅ Nueva: {configuracion.logo.name}
+                        </span>
+                      )}
+                      {logoActual && !configuracion.logo && (
+                        <span className="texto-pequeno texto-gris">
+                          📋 Logo guardado
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <p className="texto-pequeno texto-gris" style={{ marginTop: '0.5rem' }}>
+                  El logo aparecerá en la tarjeta de presentación de la empresa en el catálogo público. 
+                  Formatos recomendados: PNG, JPG. Tamaño máximo: 2MB.
+                </p>
+              </div>
+
+              {/* Título de bienvenida */}
+              <InputField
+                icon="👋"
+                label="Título de Bienvenida"
+                name="textoBienvenida"
+                value={configuracion.textoBienvenida}
+                onChange={manejarCambio}
+                placeholder="¡Bienvenidos a [nombre de la empresa]!"
+              />
+              <p className="texto-pequeno texto-gris" style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
+                💡 <strong>Guía:</strong> Este será el título principal que aparecerá en la tarjeta de presentación de tu tienda.
+              </p>
+
+              {/* Texto secundario */}
+              <InputField
+                icon="📝"
+                label="Descripción de la Empresa"
+                type="textarea"
+                name="descripcion"
+                value={configuracion.descripcion}
+                onChange={manejarCambio}
+                placeholder="Describe tu negocio, productos y servicios..."
+              />
+              <p className="texto-pequeno texto-gris" style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
+                💡 <strong>Guía:</strong> Este texto aparecerá debajo del título en la tarjeta de presentación.
+              </p>
+
+              {/* Imagen de fondo para la card de presentación */}
+              <div className="grupo-campo">
+                <label className="etiqueta">Imagen de Fondo de la Card</label>
+                <div className="flex items-centro" style={{ gap: '1rem', flexWrap: 'wrap' }}>
+                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        name="imagenFondo"
+                        onChange={manejarImagenFondo}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id="imagen-fondo-input"
+                      />
+                      <label
+                        htmlFor="imagen-fondo-input"
+                        className="boton boton-secundario"
+                        style={{ cursor: 'pointer' }}
+                      >
+                        🖼️ Seleccionar Imagen de Fondo
+                      </label>
+                    </div>
+                    {configuracion.imagenFondo && (
+                      <button
+                        type="button"
+                        onClick={() => setConfiguracion(prev => ({ ...prev, imagenFondo: null }))}
+                        className="boton boton-outline"
+                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                      >
+                        ❌ Limpiar
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Vista previa de la imagen de fondo */}
+                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                    <div style={{
+                      width: '120px',
+                      height: '80px',
+                      border: '2px dashed var(--color-borde)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'var(--color-fondo-hover)',
+                      overflow: 'hidden',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundImage: configuracion.imagenFondoUrl ? 
+                        `url(${configuracion.imagenFondoUrl})` : 'none'
+                    }}>
+                      {!configuracion.imagenFondoUrl && (
+                        <span style={{ fontSize: '1.5rem', color: 'var(--color-texto-secundario)' }}>
+                          🖼️
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col" style={{ gap: '0.25rem' }}>
+                      {configuracion.imagenFondo && (
+                        <span className="texto-pequeno texto-verde">
+                          ✅ Nueva: {configuracion.imagenFondo.name}
+                        </span>
+                      )}
+                      {configuracion.imagenFondoUrl && !configuracion.imagenFondo && (
+                        <span className="texto-pequeno texto-gris">
+                          📋 Imagen guardada
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <p className="texto-pequeno texto-gris" style={{ marginTop: '0.5rem' }}>
+                  La imagen aparecerá como fondo en la tarjeta de presentación de la empresa (logo, título y descripción) del catálogo público. 
+                  Formatos recomendados: JPG, PNG. Tamaño máximo: 2MB.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ============================================
+              4. PERSONALIZACIÓN DE COLORES
+          ============================================ */}
           <div className="tarjeta">
             <div className="p-6 border-bottom" style={{ 
               borderBottom: '1px solid var(--color-borde)', 
@@ -1096,27 +1181,27 @@ export default function ConfiguracionEmpresa() {
               </div>
             </div>
             <div className="p-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-              <div className="grid grid-2" style={{ 
+              <div className="grid grid-3" style={{ 
                 gap: isMobile ? '1rem' : '2rem',
                 display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)'
+                gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr'
               }}>
-                {/* Selectores de Color */}
+                {/* Selectores de Color - Lado Izquierdo */}
                 <div className="space-y-6">
                   <ColorPicker
-                    label="Color Primario"
+                    label="Color Primario (Navbar mezclado)"
                     name="colorPrimario"
                     value={configuracion.colorPrimario}
                     onChange={manejarCambio}
                   />
                   <ColorPicker
-                    label="Color Secundario"
+                    label="Color Secundario (Navbar mezclado)"
                     name="colorSecundario"
                     value={configuracion.colorSecundario}
                     onChange={manejarCambio}
                   />
                   <ColorPicker
-                    label="Color de Card Producto"
+                    label="Color de Card Productos"
                     name="colorAcento"
                     value={configuracion.colorAcento}
                     onChange={manejarCambio}
@@ -1127,32 +1212,14 @@ export default function ConfiguracionEmpresa() {
                     value={configuracion.colorFondo}
                     onChange={manejarCambio}
                   />
-                  <ColorPicker
-                    label="Color de Textos Principales"
-                    name="colorTexto"
-                    value={configuracion.colorTexto}
-                    onChange={manejarCambio}
-                  />
-                  <ColorPicker
-                    label="Color de Título Principal"
-                    name="colorTituloPrincipal"
-                    value={configuracion.colorTituloPrincipal}
-                    onChange={manejarCambio}
-                  />
-                  <ColorPicker
-                    label="Color de Card de Filtros"
-                    name="colorCardFiltros"
-                    value={configuracion.colorCardFiltros}
-                    onChange={manejarCambio}
-                  />
                 </div>
 
-                {/* Mini Pantalla de Referencia */}
+                {/* Mini Pantalla de Referencia - Centro */}
                 <div className="space-y-4">
                   <h4 className="etiqueta" style={{ 
                     marginBottom: '1rem',
                     fontSize: isMobile ? '0.875rem' : '1rem',
-                    textAlign: isMobile ? 'center' : 'left'
+                    textAlign: 'center'
                   }}>
                     Vista Previa - Mini Pantalla
                   </h4>
@@ -1164,20 +1231,13 @@ export default function ConfiguracionEmpresa() {
                       borderRadius: '12px',
                       border: '2px solid var(--color-borde)',
                       maxWidth: isMobile ? '100%' : '320px',
-                      margin: isMobile ? '0 auto' : '0',
-                      backgroundImage: configuracion.imagenFondo
-                        ? `url(${URL.createObjectURL(configuracion.imagenFondo)})`
-                        : imagenFondoActual
-                          ? `url(${imagenFondoActual})`
-                          : 'none',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center'
+                      margin: '0 auto'
                     }}
                   >
-                    {/* Mini Navbar */}
+                    {/* Mini Navbar con colores mezclados */}
                     <div 
                       style={{ 
-                        backgroundColor: previewTema.primario,
+                        background: `linear-gradient(135deg, ${previewTema.primario} 0%, ${previewTema.secundario} 100%)`,
                         color: getContrastColor(previewTema.primario),
                         padding: '0.5rem 1rem',
                         borderRadius: '8px 8px 0 0',
@@ -1193,21 +1253,89 @@ export default function ConfiguracionEmpresa() {
                       <span>👤 Admin</span>
                     </div>
 
-                    {/* Mini Título Principal */}
+                    {/* Card de Presentación con imagen de fondo */}
                     <div 
                       style={{ 
-                        color: previewTema.tituloPrincipal,
-                        fontSize: '0.8rem',
-                        fontWeight: '700',
-                        marginBottom: '0.75rem',
-                        textAlign: 'center',
-                        background: `linear-gradient(135deg, ${previewTema.tituloPrincipal} 0%, ${previewTema.tituloPrincipal}dd 100%)`,
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text'
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        marginBottom: '1rem',
+                        border: `1px solid ${previewTema.secundario}20`,
+                        position: 'relative',
+                        overflow: 'hidden',
+                        backgroundImage: configuracion.imagenFondo
+                          ? `url(${URL.createObjectURL(configuracion.imagenFondo)})`
+                          : imagenFondoActual
+                            ? `url(${imagenFondoActual})`
+                            : 'none',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        minHeight: '80px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
                       }}
                     >
-                      🛍️ Catálogo de Productos
+                      {/* Overlay para mejorar legibilidad */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.3)',
+                        zIndex: 1
+                      }}></div>
+                      
+                      {/* Contenido de la card de presentación */}
+                      <div style={{ 
+                        position: 'relative', 
+                        zIndex: 2,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textAlign: 'center'
+                      }}>
+                        {/* Logo */}
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          backgroundColor: 'rgba(255,255,255,0.9)',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: '0.5rem',
+                          fontSize: '1.2rem'
+                        }}>
+                          🏢
+                        </div>
+                        
+                        {/* Título de bienvenida */}
+                        <div 
+                          style={{ 
+                            color: previewTema.tituloPrincipal,
+                            fontSize: '0.8rem',
+                            fontWeight: '700',
+                            marginBottom: '0.25rem',
+                            textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
+                          }}
+                        >
+                          {configuracion.textoBienvenida || '¡Bienvenidos!'}
+                        </div>
+                        
+                        {/* Descripción */}
+                        <div 
+                          style={{ 
+                            color: previewTema.tituloPrincipal,
+                            fontSize: '0.6rem',
+                            textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+                            lineHeight: '1.2'
+                          }}
+                        >
+                          {configuracion.descripcion || 'Descripción de la empresa'}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Mini Card de Filtros */}
@@ -1284,8 +1412,20 @@ export default function ConfiguracionEmpresa() {
                         }}>
                           📱
                         </div>
-                        <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Producto 1</div>
-                        <div style={{ fontSize: '0.6rem', opacity: '0.8' }}>$99.99</div>
+                        <div style={{ 
+                          fontWeight: '600', 
+                          marginBottom: '0.25rem',
+                          color: previewTema.texto
+                        }}>
+                          Producto 1
+                        </div>
+                        <div style={{ 
+                          fontSize: '0.6rem', 
+                          opacity: '0.8',
+                          color: previewTema.texto
+                        }}>
+                          $99.99
+                        </div>
                       </div>
 
                       {/* Card Producto 2 */}
@@ -1313,8 +1453,20 @@ export default function ConfiguracionEmpresa() {
                         }}>
                           💻
                         </div>
-                        <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Producto 2</div>
-                        <div style={{ fontSize: '0.6rem', opacity: '0.8' }}>$149.99</div>
+                        <div style={{ 
+                          fontWeight: '600', 
+                          marginBottom: '0.25rem',
+                          color: previewTema.texto
+                        }}>
+                          Producto 2
+                        </div>
+                        <div style={{ 
+                          fontSize: '0.6rem', 
+                          opacity: '0.8',
+                          color: previewTema.texto
+                        }}>
+                          $149.99
+                        </div>
                       </div>
                     </div>
 
@@ -1322,7 +1474,7 @@ export default function ConfiguracionEmpresa() {
                     <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
                       <button 
                         style={{ 
-                          backgroundColor: previewTema.primario,
+                          background: `linear-gradient(135deg, ${previewTema.primario} 0%, ${previewTema.secundario} 100%)`,
                           color: getContrastColor(previewTema.primario),
                           border: 'none',
                           padding: '0.5rem 0.75rem',
@@ -1365,110 +1517,100 @@ export default function ConfiguracionEmpresa() {
                   </div>
 
                   {/* Leyenda de Colores */}
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-texto-secundario)' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-texto-secundario)', textAlign: 'center' }}>
                     <div style={{ marginBottom: '0.5rem', fontWeight: '600' }}>Referencia de Colores:</div>
                     <div style={{ display: 'grid', gap: '0.25rem', gridTemplateColumns: '1fr 1fr' }}>
-                      <div>🔵 <strong>Primario:</strong> Navbar, botones principales</div>
-                      <div>🟢 <strong>Secundario:</strong> Bordes, botones secundarios</div>
-                      <div>🟡 <strong>Acento:</strong> Cards de productos</div>
+                      <div>🔵 <strong>Primario:</strong> Navbar (mezclado)</div>
+                      <div>🟢 <strong>Secundario:</strong> Navbar (mezclado)</div>
+                      <div>🟡 <strong>Card Productos:</strong> Fondo de productos</div>
                       <div>⚪ <strong>Fondo:</strong> Fondo general de la página</div>
-                      <div>⚫ <strong>Texto:</strong> Textos principales</div>
+                      <div>⚫ <strong>Textos:</strong> Nombres y precios de productos</div>
                       <div>🟣 <strong>Título Principal:</strong> Títulos del catálogo</div>
                       <div>🟠 <strong>Card Filtros:</strong> Fondo de filtros de búsqueda</div>
                     </div>
                   </div>
                 </div>
+
+                {/* Selectores de Color - Lado Derecho */}
+                <div className="space-y-6">
+                  <ColorPicker
+                    label="Color de Textos Principales (Nombres y precios)"
+                    name="colorTexto"
+                    value={configuracion.colorTexto}
+                    onChange={manejarCambio}
+                  />
+                  <ColorPicker
+                    label="Color de Título Principal"
+                    name="colorTituloPrincipal"
+                    value={configuracion.colorTituloPrincipal}
+                    onChange={manejarCambio}
+                  />
+                  <ColorPicker
+                    label="Color de Card de Filtros"
+                    name="colorCardFiltros"
+                    value={configuracion.colorCardFiltros}
+                    onChange={manejarCambio}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Imagen de Fondo */}
+          {/* Configuración de Notificaciones */}
           <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ borderBottom: '1px solid var(--color-borde)', backgroundColor: 'var(--color-fondo-hover)' }}>
-              <div className="flex items-centro">
-                <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>🖼️</span>
-                <h3 className="titulo-3" style={{ marginBottom: '0' }}>Imagen de Fondo</h3>
+            <div className="p-6 border-bottom" style={{ 
+              borderBottom: '1px solid var(--color-borde)', 
+              backgroundColor: 'var(--color-fondo-hover)',
+              padding: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <div className="flex items-centro" style={{ 
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '0.5rem' : '0.75rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🔔</span>
+                <h3 className="titulo-3" style={{ 
+                  marginBottom: '0',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem'
+                }}>
+                  Notificaciones
+                </h3>
               </div>
             </div>
-            <div className="p-6 space-y-6">
-              <p className="texto-gris" style={{ marginBottom: '1rem' }}>
-                Agrega una imagen de fondo para la tarjeta de presentación de la empresa (logo y descripción) en el catálogo público.
-              </p>
-              
+            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              <div className="space-y-4">
+                <CheckboxField
+                  label="Notificaciones de nuevos pedidos"
+                  name="notificacionesPedidos"
+                  checked={configuracion.notificacionesPedidos}
+                  onChange={manejarCambio}
+                  description="Recibir alertas cuando se realicen nuevos pedidos"
+                />
+                <CheckboxField
+                  label="Alertas de stock bajo"
+                  name="notificacionesStock"
+                  checked={configuracion.notificacionesStock}
+                  onChange={manejarCambio}
+                  description="Recibir notificaciones cuando el stock esté bajo"
+                />
+              </div>
+
               <div className="grupo-campo">
-                <label className="etiqueta">Imagen de Fondo</label>
-                <div className="flex items-centro" style={{ gap: '1rem', flexWrap: 'wrap' }}>
-                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        name="imagenFondo"
-                        onChange={manejarImagenFondo}
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        id="imagen-fondo-input"
-                      />
-                      <label
-                        htmlFor="imagen-fondo-input"
-                        className="boton boton-secundario"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        🖼️ Seleccionar Imagen
-                      </label>
-                    </div>
-                    {configuracion.imagenFondo && (
-                      <button
-                        type="button"
-                        onClick={() => setConfiguracion(prev => ({ ...prev, imagenFondo: null }))}
-                        className="boton boton-outline"
-                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
-                      >
-                        ❌ Limpiar
-                      </button>
-                    )}
+                <label className="etiqueta">Stock mínimo para alertas</label>
+                <div className="relative" style={{ maxWidth: '200px' }}>
+                  <div className="absolute" style={{ top: '50%', left: '0.75rem', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                    <span style={{ color: 'var(--color-texto-secundario)', fontSize: '1.125rem' }}>📦</span>
                   </div>
-                  
-                  {/* Vista previa de la imagen de fondo */}
-                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
-                    <div style={{
-                      width: '120px',
-                      height: '80px',
-                      border: '2px dashed var(--color-borde)',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: 'var(--color-fondo-hover)',
-                      overflow: 'hidden',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      backgroundImage: configuracion.imagenFondoUrl ? 
-                        `url(${configuracion.imagenFondoUrl})` : 'none'
-                    }}>
-                      {!configuracion.imagenFondoUrl && (
-                        <span style={{ fontSize: '1.5rem', color: 'var(--color-texto-secundario)' }}>
-                          🖼️
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col" style={{ gap: '0.25rem' }}>
-                      {configuracion.imagenFondo && (
-                        <span className="texto-pequeno texto-verde">
-                          ✅ Nueva: {configuracion.imagenFondo.name}
-                        </span>
-                      )}
-                      {configuracion.imagenFondoUrl && !configuracion.imagenFondo && (
-                        <span className="texto-pequeno texto-gris">
-                          📋 Imagen guardada
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  <input
+                    type="number"
+                    name="stockMinimo"
+                    value={configuracion.stockMinimo}
+                    onChange={manejarCambio}
+                    min="0"
+                    className="campo"
+                    style={{ paddingLeft: '2.5rem' }}
+                  />
                 </div>
-                <p className="texto-pequeno texto-gris" style={{ marginTop: '0.5rem' }}>
-                  La imagen aparecerá como fondo en la tarjeta de presentación de la empresa (logo y descripción) del catálogo público. 
-                  Formatos recomendados: JPG, PNG. Tamaño máximo: 2MB.
-                </p>
               </div>
             </div>
           </div>
@@ -1558,65 +1700,6 @@ export default function ConfiguracionEmpresa() {
                     checked={configuracion.mostrarCategorias}
                     onChange={manejarCambio}
                     description="Organizar productos por categorías"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Configuración de Notificaciones */}
-          <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ 
-              borderBottom: '1px solid var(--color-borde)', 
-              backgroundColor: 'var(--color-fondo-hover)',
-              padding: isMobile ? '1rem' : '1.5rem'
-            }}>
-              <div className="flex items-centro" style={{ 
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: isMobile ? '0.5rem' : '0.75rem',
-                textAlign: isMobile ? 'center' : 'left'
-              }}>
-                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🔔</span>
-                <h3 className="titulo-3" style={{ 
-                  marginBottom: '0',
-                  fontSize: isMobile ? '1.25rem' : '1.5rem'
-                }}>
-                  Notificaciones
-                </h3>
-              </div>
-            </div>
-            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-              <div className="space-y-4">
-                <CheckboxField
-                  label="Notificaciones de nuevos pedidos"
-                  name="notificacionesPedidos"
-                  checked={configuracion.notificacionesPedidos}
-                  onChange={manejarCambio}
-                  description="Recibir alertas cuando se realicen nuevos pedidos"
-                />
-                <CheckboxField
-                  label="Alertas de stock bajo"
-                  name="notificacionesStock"
-                  checked={configuracion.notificacionesStock}
-                  onChange={manejarCambio}
-                  description="Recibir notificaciones cuando el stock esté bajo"
-                />
-              </div>
-
-              <div className="grupo-campo">
-                <label className="etiqueta">Stock mínimo para alertas</label>
-                <div className="relative" style={{ maxWidth: '200px' }}>
-                  <div className="absolute" style={{ top: '50%', left: '0.75rem', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                    <span style={{ color: 'var(--color-texto-secundario)', fontSize: '1.125rem' }}>📦</span>
-                  </div>
-                  <input
-                    type="number"
-                    name="stockMinimo"
-                    value={configuracion.stockMinimo}
-                    onChange={manejarCambio}
-                    min="0"
-                    className="campo"
-                    style={{ paddingLeft: '2.5rem' }}
                   />
                 </div>
               </div>
