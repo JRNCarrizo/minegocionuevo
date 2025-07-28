@@ -1,0 +1,4 @@
+# Este archivo fuerza a Railway a hacer un rebuild completo
+# Fecha: 2025-07-28
+# Versión: 0.0.2-SNAPSHOT
+# PostgreSQL incluido 
