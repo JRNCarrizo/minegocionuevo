@@ -1271,8 +1271,8 @@ export default function AreaPersonalCliente() {
                   ✏️ Editar Perfil
                 </button>
                 <button style={{
-                  background: empresa?.colorAcento ? 
-                    `linear-gradient(135deg, ${empresa.colorAcento} 0%, ${empresa.colorAcento}dd 100%)` :
+                  background: empresa?.colorSecundario ? 
+                    `linear-gradient(135deg, ${empresa.colorSecundario} 0%, ${empresa.colorSecundario}dd 100%)` :
                     'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                   color: 'white',
                   border: 'none',
@@ -1282,22 +1282,22 @@ export default function AreaPersonalCliente() {
                   fontWeight: '600',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
-                  boxShadow: empresa?.colorAcento ? 
-                    `0 4px 12px ${empresa.colorAcento}40` :
+                  boxShadow: empresa?.colorSecundario ? 
+                    `0 4px 12px ${empresa.colorSecundario}40` :
                     '0 4px 12px rgba(245,158,11,0.3)',
                   width: '100%'
                 }}
                 onClick={abrirModalPassword}
                 onMouseOver={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = empresa?.colorAcento ? 
-                    `0 6px 16px ${empresa.colorAcento}60` :
+                  e.currentTarget.style.boxShadow = empresa?.colorSecundario ? 
+                    `0 6px 16px ${empresa.colorSecundario}60` :
                     '0 6px 16px rgba(245,158,11,0.4)';
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = empresa?.colorAcento ? 
-                    `0 4px 12px ${empresa.colorAcento}40` :
+                  e.currentTarget.style.boxShadow = empresa?.colorSecundario ? 
+                    `0 4px 12px ${empresa.colorSecundario}40` :
                     '0 4px 12px rgba(245,158,11,0.3)';
                 }}>
                   🔒 Cambiar Contraseña
