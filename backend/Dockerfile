@@ -10,5 +10,5 @@ COPY target/*.jar app.jar
 # Exponer puerto
 EXPOSE 8080
 
-# Comando para ejecutar la aplicación
-ENTRYPOINT ["java", "-jar", "app.jar"] 
+# Comando para ejecutar la aplicación con perfil railway
+ENTRYPOINT ["java", "-Dspring.profiles.active=railway", "-jar", "app.jar"] 
