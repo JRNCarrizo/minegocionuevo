@@ -15,7 +15,12 @@ Caused by: java.lang.IllegalStateException: Cannot load driver class: org.postgr
 Caused by: java.lang.ClassNotFoundException: org.hibernate.hikaricp.internal.HikariConnectionProvider
 ```
 
-## Solución Implementada (Simplificada)
+## Problema Adicional - Placeholders
+```
+Caused by: org.springframework.util.PropertyPlaceholderHelper.parseStringValue
+```
+
+## Solución Implementada (Simplificada y Robusta)
 
 ### 1. Eliminación de Configuraciones Personalizadas
 Se han eliminado las configuraciones personalizadas que causaban conflictos:
@@ -28,14 +33,17 @@ En `pom.xml`:
 - Se agregó `<scope>runtime</scope>` a la dependencia de PostgreSQL
 - Se asegura que el driver esté disponible en tiempo de ejecución
 
-### 3. Configuración de Producción Simplificada
-Se ha creado `application-prod.properties` con:
-- Configuración específica para PostgreSQL
-- Configuración básica de HikariCP
-- Deshabilitación de características problemáticas
-- Uso de `spring.datasource.driver-class-name` en lugar de `driverClassName`
+### 3. Configuración de Producción con Fallback
+Se han creado múltiples configuraciones:
+- `application-prod.properties` - Para producción con variables de entorno
+- `application-simple.properties` - Para producción sin variables de entorno (fallback)
+- Valores por defecto en todas las variables de entorno
 
-### 4. Variables de Entorno Requeridas
+### 4. Perfil por Defecto Simplificado
+- El perfil por defecto es ahora `simple` en lugar de `prod`
+- Esto evita errores cuando las variables de entorno no están configuradas
+
+### 5. Variables de Entorno Requeridas
 
 Asegúrate de tener configuradas estas variables de entorno:
 
@@ -54,11 +62,20 @@ MINE_NEGOCIO_APP_FRONTEND_URL=https://tu-dominio.com
 MAIL_FROM=noreply@tu-dominio.com
 ```
 
-### 5. Perfil de Spring Boot
-El perfil por defecto está configurado como `prod`. Si necesitas usar un perfil específico, configura:
+### 6. Perfiles de Spring Boot Disponibles
 
 ```bash
+# Para desarrollo local
+SPRING_PROFILES_ACTIVE=h2
+
+# Para Railway
+SPRING_PROFILES_ACTIVE=railway
+
+# Para producción con variables de entorno
 SPRING_PROFILES_ACTIVE=prod
+
+# Para producción sin variables de entorno (fallback)
+SPRING_PROFILES_ACTIVE=simple
 ```
 
 ## Pasos para Desplegar
@@ -69,7 +86,10 @@ Ejecuta el script de verificación (en Linux/Mac):
 ./verificar-produccion.sh
 ```
 
-O verifica manualmente que todas las variables requeridas estén configuradas.
+O el script de configuración automática:
+```bash
+./configurar-produccion.sh
+```
 
 ### 2. Compilar la Aplicación
 ```bash
@@ -84,11 +104,18 @@ jar -tf target/backend-0.0.1-SNAPSHOT.jar | grep postgresql
 ```
 
 ### 4. Ejecutar en Producción
+
+**Opción A: Con variables de entorno configuradas**
+```bash
+SPRING_PROFILES_ACTIVE=prod java -jar target/backend-0.0.1-SNAPSHOT.jar
+```
+
+**Opción B: Sin variables de entorno (usando fallback)**
 ```bash
 java -jar target/backend-0.0.1-SNAPSHOT.jar
 ```
 
-O si usas Docker:
+**Opción C: Con Docker**
 ```bash
 docker build -t minegocio-backend .
 docker run -p 8080:8080 --env-file .env minegocio-backend
@@ -101,12 +128,14 @@ docker run -p 8080:8080 --env-file .env minegocio-backend
 - Las variables de entorno se configuran desde el dashboard de Railway
 
 ### Render
-- Usa el perfil `prod` por defecto
+- Usa el perfil `simple` por defecto (más seguro)
 - Configura las variables de entorno en el dashboard de Render
+- O configura `SPRING_PROFILES_ACTIVE=prod` si tienes variables configuradas
 
 ### Heroku
-- Usa el perfil `prod` por defecto
+- Usa el perfil `simple` por defecto
 - Configura las variables de entorno con `heroku config:set`
+- O configura `SPRING_PROFILES_ACTIVE=prod` si tienes variables configuradas
 
 ## Troubleshooting
 
@@ -142,6 +171,12 @@ docker run -p 8080:8080 --env-file .env minegocio-backend
    find src/main/java -name "*Config.java" -type f
    ```
 
+6. **Usa el perfil simple como fallback**:
+   ```bash
+   # Si las variables de entorno causan problemas, usa el perfil simple
+   SPRING_PROFILES_ACTIVE=simple java -jar target/backend-0.0.1-SNAPSHOT.jar
+   ```
+
 ### Logs Útiles para Debugging
 
 Agrega estas configuraciones temporalmente para debugging:
@@ -164,16 +199,24 @@ logging.level.org.springframework.boot.autoconfigure=DEBUG
 ### application-prod.properties
 - Cambiado `driverClassName` por `driver-class-name`
 - Configuración explícita del driver de PostgreSQL
-- Configuración básica de HikariCP sin personalizaciones complejas
+- Valores por defecto para todas las variables de entorno
+
+### application-simple.properties
+- Configuración completa sin variables de entorno
+- Valores hardcodeados para producción sin dependencias externas
+- Perfil de fallback seguro
+
+### application.properties
+- Perfil por defecto cambiado a `simple`
+- Mejor manejo de errores de placeholders
 
 ### Eliminados
 - `JpaConfig.java` - Configuración personalizada de JPA
 - `DataSourceConfig.java` - Configuración personalizada de DataSource
 
-### Enfoque Simplificado
-- Se confía en la auto-configuración de Spring Boot
-- Se evitan configuraciones personalizadas que pueden causar conflictos
-- Se mantiene solo la configuración esencial en los archivos properties
+### Scripts Nuevos
+- `configurar-produccion.sh` - Configuración automática de variables de entorno
+- `verificar-produccion.sh` - Verificación de variables de entorno
 
 ## Ventajas de la Solución Simplificada
 
@@ -181,6 +224,8 @@ logging.level.org.springframework.boot.autoconfigure=DEBUG
 2. **Auto-configuración de Spring Boot** = Configuración probada y estable
 3. **Mantenimiento más fácil** = Menos archivos de configuración
 4. **Compatibilidad garantizada** = Spring Boot maneja las versiones automáticamente
+5. **Fallback robusto** = Funciona incluso sin variables de entorno
+6. **Mejor manejo de errores** = Valores por defecto para evitar crashes
 
 ## Contacto
 
@@ -190,4 +235,5 @@ Si el problema persiste después de seguir estos pasos, verifica:
 3. Que las credenciales de la base de datos sean correctas
 4. Que el puerto 8080 esté disponible
 5. Que el driver de PostgreSQL esté incluido en el JAR final
-6. Que no haya configuraciones personalizadas que interfieran 
+6. Que no haya configuraciones personalizadas que interfieran
+7. Que uses el perfil `simple` como fallback si hay problemas con variables de entorno 
