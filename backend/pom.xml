@@ -30,28 +30,6 @@
 		<java.version>17</java.version>
 	</properties>
 
-	<profiles>
-		<!-- Perfil de desarrollo -->
-		<profile>
-			<id>dev</id>
-			<dependencies>
-				<dependency>
-					<groupId>com.h2database</groupId>
-					<artifactId>h2</artifactId>
-					<scope>runtime</scope>
-				</dependency>
-			</dependencies>
-		</profile>
-		
-		<!-- Perfil de producción -->
-		<profile>
-			<id>prod</id>
-			<dependencies>
-				<!-- PostgreSQL ya está en dependencias principales -->
-			</dependencies>
-		</profile>
-	</profiles>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

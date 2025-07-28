@@ -19,8 +19,8 @@ RUN chmod +x mvnw
 # Copiar código fuente
 COPY src src
 
-# Construir la aplicación con perfil de producción
-RUN ./mvnw clean package -Pprod -DskipTests
+# Construir la aplicación
+RUN ./mvnw clean package -DskipTests
 
 # Exponer puerto
 EXPOSE 8080

@@ -5,7 +5,6 @@
     "dockerfilePath": "Dockerfile"
   },
   "variables": {
-    "SPRING_PROFILES_ACTIVE": "railway",
-    "MAVEN_PROFILE": "prod"
+    "SPRING_PROFILES_ACTIVE": "railway"
   }
 } 
