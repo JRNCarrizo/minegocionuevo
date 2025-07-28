@@ -620,12 +620,7 @@ export default function CatalogoPublico() {
               margin: '0 0 8px 0', 
               fontSize: isMobile ? '24px' : isTablet ? '26px' : '28px', 
               fontWeight: '700', 
-              color: empresa?.colorTituloPrincipal || empresa?.colorTexto || '#1e293b',
-              background: empresa?.colorTituloPrincipal ? `linear-gradient(135deg, ${empresa.colorTituloPrincipal} 0%, ${empresa.colorTituloPrincipal}dd 100%)` : 
-                empresa?.colorPrimario ? `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorPrimario}dd 100%)` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
+              color: empresa?.colorTituloPrincipal || '#1f2937'
             }}>
               Catálogo de Productos
             </h2>
@@ -888,7 +883,8 @@ export default function CatalogoPublico() {
               border: `1px solid ${empresa?.colorPrimario ? `${empresa.colorPrimario}20` : 'rgba(0,0,0,0.1)'}`,
               width: 'fit-content',
               alignSelf: 'flex-start',
-              marginTop: isMobile ? '12px' : '16px'
+              marginTop: isMobile ? '12px' : '16px',
+              whiteSpace: 'nowrap'
             }}>
               {productos.length} producto{productos.length !== 1 ? 's' : ''} encontrado{productos.length !== 1 ? 's' : ''}
             </div>
