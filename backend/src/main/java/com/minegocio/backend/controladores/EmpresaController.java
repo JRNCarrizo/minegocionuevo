@@ -97,10 +97,6 @@ public class EmpresaController {
             System.out.println("=== DEBUG: Actualizando personalización ===");
             System.out.println("Empresa ID: " + id);
             System.out.println("Datos recibidos: " + personalizacion);
-            System.out.println("Descripción recibida: " + personalizacion.get("descripcion"));
-            System.out.println("Descripción es null?: " + (personalizacion.get("descripcion") == null));
-            System.out.println("Descripción está vacía?: " + ("".equals(personalizacion.get("descripcion"))));
-            System.out.println("Texto de bienvenida recibido: " + personalizacion.get("textoBienvenida"));
             System.out.println("Color Título Principal recibido: " + personalizacion.get("colorTituloPrincipal"));
             System.out.println("Color Card Filtros recibido: " + personalizacion.get("colorCardFiltros"));
             System.out.println("Imagen de fondo URL recibida: " + personalizacion.get("imagenFondoUrl"));

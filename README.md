@@ -298,31 +298,110 @@ MINE_NEGOCIO_APP_FRONTEND_URL=https://negocio360.org
 
 El Blueprint recreará automáticamente tanto el backend como la base de datos con la configuración correcta.
 
-# Opción 1: Con Maven (si funciona)
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+# ============================================
+# FLUJO COMPLETO DE DESARROLLO Y PRODUCCIÓN
+# ============================================
 
-# Opción 2: Con Java directamente (más confiable)
-mvn clean package -DskipTests
-java -jar target/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
+## 🛠️ DESARROLLO LOCAL (H2 Persistente)
 
-# 1. Asegúrate que en pom.xml esté así:
-# H2 - DESCOMENTADO
+### 1. Configurar para desarrollo:
+```bash
+# En la carpeta backend, ejecuta:
+switch-to-development.bat
+```
+
+### 2. Ejecutar el proyecto:
+```bash
+# Opción A: Script automático (Recomendado)
+run-h2-persistent.bat
+
+# Opción B: Comando manual
+mvn spring-boot:run -Dspring-boot.run.profiles=dev-h2-persistent
+```
+
+### 3. Acceder a la aplicación:
+- **Backend:** http://localhost:8080
+- **Consola H2:** http://localhost:8080/h2-console
+- **Frontend:** http://localhost:5173
+
+---
+
+## 🚀 PRODUCCIÓN (PostgreSQL en Railway)
+
+### 1. Configurar para producción:
+```bash
+# En la carpeta backend, ejecuta:
+switch-to-production.bat
+```
+
+### 2. Deploy a Railway:
+```bash
+git add .
+git commit -m "Switch to production"
+git push origin main
+```
+
+### 3. Railway detectará automáticamente los cambios y redeployará
+
+---
+
+## 🔄 CAMBIO RÁPIDO ENTRE ENTORNOS
+
+| Entorno | Script | Comando |
+|---------|--------|---------|
+| **Desarrollo** | `switch-to-development.bat` | `mvn spring-boot:run -Dspring-boot.run.profiles=dev-h2-persistent` |
+| **Producción** | `switch-to-production.bat` | `git push origin main` |
+
+---
+
+## 📁 ARCHIVOS IMPORTANTES
+
+```
+backend/
+├── switch-to-development.bat     # Cambiar a H2
+├── switch-to-production.bat      # Cambiar a PostgreSQL
+├── run-h2-persistent.bat         # Ejecutar H2 persistente
+├── clear-h2-data.bat            # Limpiar datos H2
+├── data/                        # Datos H2 persistentes
+└── src/main/resources/
+    ├── application-dev-h2-persistent.properties  # Config H2
+    └── application-railway.properties            # Config PostgreSQL
+```
+
+# ============================================
+# CONFIGURACIÓN DE DEPENDENCIAS
+# ============================================
+
+## Para desarrollo local (H2):
+```xml
+<!-- H2 - ACTIVO -->
 <dependency>
     <groupId>com.h2database</groupId>
     <artifactId>h2</artifactId>
-    <scope>runtime</scope>
 </dependency>
 
-# PostgreSQL - COMENTADO
+<!-- PostgreSQL - COMENTADO -->
 <!--
 <dependency>
     <groupId>org.postgresql</groupId>
     <artifactId>postgresql</artifactId>
-    <scope>runtime</scope>
+</dependency>
+-->
+```
+
+## Para producción (PostgreSQL):
+```xml
+<!-- H2 - COMENTADO -->
+<!--
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
 </dependency>
 -->
 
-# 2. Ejecuta con:
-java -jar target/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev-h2
-
-java -jar target/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=railway
+<!-- PostgreSQL - ACTIVO -->
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+</dependency>
+```

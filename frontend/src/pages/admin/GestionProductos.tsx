@@ -96,8 +96,9 @@ const GestionProductos: React.FC = () => {
   const [mostrarScannerStock, setMostrarScannerStock] = useState(false);
   const [mostrarScannerUSB, setMostrarScannerUSB] = useState(false);
   const [productoEscaneado, setProductoEscaneado] = useState<Producto | null>(null);
+  const [stockOriginal, setStockOriginal] = useState<number>(0);
   const [cantidadStock, setCantidadStock] = useState<number>(1);
-  const [productosAgregados, setProductosAgregados] = useState<Array<{producto: Producto, cantidad: number}>>([]);
+  const [productosAgregados, setProductosAgregados] = useState<Array<{producto: Producto, cantidad: number, stockOriginal: number}>>([]);
   const [mostrarResumen, setMostrarResumen] = useState(false);
   const [guardandoStock, setGuardandoStock] = useState(false);
   const [modoTerminar, setModoTerminar] = useState(false);
@@ -521,8 +522,11 @@ const GestionProductos: React.FC = () => {
       try {
         setGuardandoStock(true);
         
+        // Guardar el stock original antes de modificarlo
+        setStockOriginal(producto.stock);
+        
         // Agregar el producto a la lista de productos agregados
-        const nuevoProducto = { producto, cantidad: 1 };
+        const nuevoProducto = { producto, cantidad: 1, stockOriginal: producto.stock };
         setProductosAgregados(prev => [...prev, nuevoProducto]);
         
         // Actualizar el stock en el servidor
@@ -566,7 +570,7 @@ const GestionProductos: React.FC = () => {
         
         // Calcular la diferencia de stock
         const diferenciaStock = cantidadStock - ultimoProducto.cantidad;
-        const nuevoStock = productoEscaneado.stock + diferenciaStock;
+        const nuevoStock = stockOriginal + cantidadStock;
         
         // Actualizar el stock en el servidor
         await ApiService.actualizarStock(empresaId, productoEscaneado.id, nuevoStock);
@@ -606,6 +610,7 @@ const GestionProductos: React.FC = () => {
     setModoTerminar(false);
     setProductosAgregados([]);
     setProductoEscaneado(null);
+    setStockOriginal(0);
     setCantidadStock(1);
   };
 
@@ -3723,7 +3728,7 @@ const GestionProductos: React.FC = () => {
                       Código: {productoEscaneado.codigoBarras || 'Sin código'}
                     </p>
                     <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
-                      Stock actual: <strong style={{ color: '#059669' }}>{productoEscaneado.stock}</strong>
+                      Stock actual: <strong style={{ color: '#059669' }}>{stockOriginal}</strong>
                     </p>
                   </div>
                 </div>
@@ -3779,7 +3784,7 @@ const GestionProductos: React.FC = () => {
                       border: '1px solid #bbf7d0',
                       whiteSpace: 'nowrap'
                     }}>
-                      Nuevo: <strong>{productoEscaneado.stock + cantidadStock}</strong>
+                      Nuevo: <strong>{stockOriginal + cantidadStock}</strong>
                     </div>
                   </div>
                 </div>
@@ -4008,8 +4013,8 @@ const GestionProductos: React.FC = () => {
                               Código: {item.producto.codigoBarras || 'Sin código'}
                             </p>
                             <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
-                              Stock anterior: <strong>{item.producto.stock - item.cantidad}</strong> → 
-                              Stock actual: <strong style={{ color: '#059669' }}>{item.producto.stock}</strong>
+                              Stock anterior: <strong>{item.stockOriginal}</strong> → 
+                              Stock actual: <strong style={{ color: '#059669' }}>{item.stockOriginal + item.cantidad}</strong>
                             </p>
                           </div>
                           <div style={{
