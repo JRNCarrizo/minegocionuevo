@@ -1,4 +1,4 @@
-# Usar imagen base de Java
+# Usar imagen base de Java - FORCE RAILWAY REBUILD
 FROM openjdk:17-jdk-slim
 
 # Establecer directorio de trabajo
@@ -25,5 +25,5 @@ RUN ./mvnw clean package -DskipTests -U
 # Exponer puerto
 EXPOSE 8080
 
-# Comando para ejecutar la aplicación
+# Comando para ejecutar la aplicación - VERSION 0.0.2
 ENTRYPOINT ["java", "-Dspring.profiles.active=railway", "-jar", "target/backend-0.0.2-SNAPSHOT.jar"] 
