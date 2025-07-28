@@ -38,11 +38,11 @@
 			</activation>
 			<dependencies>
 				<!-- H2 - Solo para desarrollo -->
-				<dependency>
+				<!-- <dependency>
 					<groupId>com.h2database</groupId>
 					<artifactId>h2</artifactId>
 					<scope>runtime</scope>
-				</dependency>
+				</dependency> -->
 			</dependencies>
 		</profile>
 		
