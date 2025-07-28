@@ -7,19 +7,31 @@ Estás experimentando errores 500 en producción cuando:
 - Intentas cargar la configuración de empresa
 - Intentas cargar estadísticas de ventas
 
+**Error específico encontrado:**
+```
+Driver org.h2.Driver claims to not accept jdbcUrl, jdbc:postgresql://maglev.proxy.rlwy.net:47286/railway
+```
+
 ## 🛠️ **Cambios Realizados**
 
-### 1. **Mejorado el Manejo de Errores**
+### 1. **Resuelto Conflicto de Drivers de Base de Datos**
+- ✅ Implementado perfiles Maven para separar H2 (desarrollo) y PostgreSQL (producción)
+- ✅ H2 solo disponible en perfil `dev`
+- ✅ PostgreSQL solo disponible en perfil `prod`
+- ✅ Eliminado conflicto entre drivers
+
+### 2. **Mejorado el Manejo de Errores**
 - ✅ Agregado logging detallado en endpoints críticos
 - ✅ Mejorado el manejo de excepciones en `AdminController`
 - ✅ Agregado endpoint `/health` para diagnóstico
 
-### 2. **Configuración de Logs Mejorada**
+### 3. **Configuración de Logs Mejorada**
 - ✅ Activado logging DEBUG en producción para Railway
 - ✅ Agregado logging de SQL y Hibernate
 - ✅ Configurado logging a archivo `/tmp/minegocio.log`
 
-### 3. **Script de Verificación**
+### 4. **Scripts de Build**
+- ✅ Creado `railway-build.sh` para build de producción
 - ✅ Creado `verificar-produccion.sh` para diagnosticar problemas
 - ✅ Endpoint `/api/admin/health` para verificar conectividad
 
@@ -29,11 +41,22 @@ Estás experimentando errores 500 en producción cuando:
 ```bash
 # Hacer commit y push de los cambios
 git add .
-git commit -m "Fix: Mejorado manejo de errores y logging para producción"
+git commit -m "Fix: Resuelto conflicto de drivers H2/PostgreSQL con perfiles Maven"
 git push origin main
 ```
 
-### **Paso 2: Verificar Variables de Entorno en Railway**
+### **Paso 2: Configurar Railway para Usar Perfil de Producción**
+En Railway, asegúrate de que el build use el perfil correcto:
+
+```bash
+# En Railway, el build command debería ser:
+./mvnw clean package -Pprod -DskipTests
+
+# O usar el script:
+./railway-build.sh
+```
+
+### **Paso 3: Verificar Variables de Entorno en Railway**
 Asegúrate de que estas variables estén configuradas en Railway:
 
 ```bash
@@ -45,7 +68,7 @@ PORT=8080
 MINE_NEGOCIO_APP_FRONTEND_URL=https://tu-frontend-en-render.com
 ```
 
-### **Paso 3: Verificar el Estado de la Aplicación**
+### **Paso 4: Verificar el Estado de la Aplicación**
 ```bash
 # Ejecutar el script de verificación
 ./backend/verificar-produccion.sh
@@ -54,7 +77,7 @@ MINE_NEGOCIO_APP_FRONTEND_URL=https://tu-frontend-en-render.com
 curl https://minegocio-backend-production.up.railway.app/api/admin/health
 ```
 
-### **Paso 4: Revisar Logs en Railway**
+### **Paso 5: Revisar Logs en Railway**
 1. Ve a tu dashboard de Railway
 2. Selecciona tu servicio backend
 3. Ve a la pestaña "Logs"
@@ -62,29 +85,29 @@ curl https://minegocio-backend-production.up.railway.app/api/admin/health
 
 ## 🔍 **Diagnóstico de Errores Comunes**
 
-### **Error 1: Problemas de Base de Datos**
+### **Error 1: Conflicto de Drivers (RESUELTO)**
+```
+❌ Error: Driver org.h2.Driver claims to not accept jdbcUrl, jdbc:postgresql://...
+```
+**Solución:** ✅ Implementado perfiles Maven para separar drivers
+
+### **Error 2: Problemas de Base de Datos**
 ```
 ❌ Error: Cannot load driver class: org.postgresql.Driver
 ```
-**Solución:** Verificar que PostgreSQL esté en el classpath y las variables de entorno estén correctas.
+**Solución:** Verificar que se use el perfil `prod` en Railway
 
-### **Error 2: Problemas de Autenticación**
+### **Error 3: Problemas de Autenticación**
 ```
 ❌ Error: Token no válido
 ```
 **Solución:** Verificar que el JWT secret esté configurado correctamente.
 
-### **Error 3: Problemas de Conexión**
+### **Error 4: Problemas de Conexión**
 ```
 ❌ Error: Connection refused
 ```
 **Solución:** Verificar que la URL de la base de datos sea correcta y accesible.
-
-### **Error 4: Problemas de Permisos**
-```
-❌ Error: Permission denied
-```
-**Solución:** Verificar que las credenciales de la base de datos tengan permisos suficientes.
 
 ## 📊 **Endpoints para Verificar**
 
@@ -139,6 +162,15 @@ Authorization: Bearer TU_TOKEN_JWT
 
 ## 🐛 **Debugging Avanzado**
 
+### **Verificar Perfil de Build**
+```bash
+# Verificar que se use el perfil correcto
+./mvnw clean package -Pprod -DskipTests
+
+# Verificar dependencias en el JAR
+jar -tf target/backend-0.0.1-SNAPSHOT.jar | grep -E "(h2|postgresql)"
+```
+
 ### **Verificar Logs Detallados**
 Los logs ahora incluyen información detallada:
 - ✅ Tokens JWT
@@ -153,30 +185,23 @@ El endpoint `/health` te dará información sobre:
 - ✅ Existencia del usuario
 - ✅ Existencia de la empresa
 
-### **Verificar Base de Datos**
-```sql
--- Verificar que las tablas existan
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public';
-
--- Verificar datos de empresa
-SELECT * FROM empresas LIMIT 5;
-
--- Verificar datos de usuario
-SELECT * FROM usuarios LIMIT 5;
-```
-
 ## 📞 **Siguientes Pasos**
 
 1. **Hacer deploy** de los cambios
-2. **Verificar** que la aplicación se inicie correctamente
-3. **Revisar logs** en Railway para identificar errores específicos
+2. **Verificar** que Railway use el perfil `prod`
+3. **Revisar logs** en Railway para confirmar que no hay errores de driver
 4. **Probar** los endpoints con el script de verificación
 5. **Reportar** cualquier error específico que encuentres
 
 ## 🔧 **Comandos Útiles**
 
 ```bash
+# Build para producción (sin H2)
+./mvnw clean package -Pprod -DskipTests
+
+# Build para desarrollo (con H2)
+./mvnw clean package -Pdev -DskipTests
+
 # Verificar estado de la aplicación
 curl https://minegocio-backend-production.up.railway.app/api/admin/health
 
@@ -189,9 +214,11 @@ curl https://minegocio-backend-production.up.railway.app/api/admin/health
 
 ## 📝 **Notas Importantes**
 
+- **Perfiles Maven** resuelven el conflicto de drivers
+- **H2 solo en desarrollo**, PostgreSQL solo en producción
 - **Logs detallados** están activados temporalmente para debugging
 - **El endpoint `/health`** no requiere autenticación
 - **Los errores 500** ahora incluyen más información de debugging
 - **La aplicación** debería ser más robusta después de estos cambios
 
-¡Con estos cambios deberías poder identificar y resolver el problema específico que está causando los errores 500! 
+¡Con estos cambios el conflicto de drivers debería estar resuelto y la aplicación debería funcionar correctamente en producción! 

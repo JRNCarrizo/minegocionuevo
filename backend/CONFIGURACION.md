@@ -19,11 +19,11 @@
 
 ### Desarrollo Local (H2)
 ```bash
-# Por defecto usa H2 (no necesitas especificar perfil)
-./mvnw spring-boot:run
+# Usar perfil de desarrollo (incluye H2)
+./mvnw spring-boot:run -Pdev
 
-# O explícitamente:
-./mvnw spring-boot:run -Dspring.profiles.active=h2
+# O por defecto (ya incluye H2)
+./mvnw spring-boot:run
 ```
 
 ### Producción en Railway
@@ -55,18 +55,19 @@ MINE_NEGOCIO_APP_FRONTEND_URL=https://tu-frontend-en-render.com
 |----------------|------------------|---------------------|
 | Base de datos | H2 en memoria | PostgreSQL |
 | DDL | create-drop | update |
-| Logs SQL | DEBUG | WARN |
+| Logs SQL | DEBUG | DEBUG |
 | Consola H2 | Habilitada | Deshabilitada |
 | Puerto | 8080 | ${PORT} |
 | Archivos | ./uploads/ | /tmp/uploads/ |
 | Frontend URL | localhost:5173 | Variable de entorno |
+| Driver | H2 | PostgreSQL |
 
 ## 🛠️ Comandos Útiles
 
 ### Desarrollo
 ```bash
-# Iniciar con H2
-./mvnw spring-boot:run
+# Iniciar con H2 (perfil dev)
+./mvnw spring-boot:run -Pdev
 
 # Acceder a consola H2
 # http://localhost:8080/h2-console
@@ -77,8 +78,8 @@ MINE_NEGOCIO_APP_FRONTEND_URL=https://tu-frontend-en-render.com
 
 ### Producción
 ```bash
-# Compilar
-./mvnw clean package -DskipTests
+# Compilar para producción (sin H2)
+./mvnw clean package -Pprod -DskipTests
 
 # Ejecutar JAR
 java -jar target/backend-0.0.1-SNAPSHOT.jar
@@ -87,17 +88,23 @@ java -jar target/backend-0.0.1-SNAPSHOT.jar
 ## 🔍 Troubleshooting
 
 ### Si la aplicación no inicia:
-1. **Verifica que H2 esté en el classpath** (para desarrollo)
-2. **Verifica que PostgreSQL esté en el classpath** (para producción)
+1. **Verifica que H2 esté en el classpath** (para desarrollo) - usa `-Pdev`
+2. **Verifica que PostgreSQL esté en el classpath** (para producción) - usa `-Pprod`
 3. **Verifica las variables de entorno** (para Railway)
 
 ### Si hay problemas de conexión:
 1. **Desarrollo**: Verifica que el puerto 8080 esté libre
 2. **Producción**: Verifica las credenciales de PostgreSQL en Railway
 
+### Error de Driver Conflict:
+Si ves el error "Driver org.h2.Driver claims to not accept jdbcUrl, jdbc:postgresql://...":
+1. **Desarrollo**: Usa `./mvnw spring-boot:run -Pdev`
+2. **Producción**: Usa `./mvnw clean package -Pprod`
+
 ## 📝 Notas
 
 - **Desarrollo**: Usa H2 en memoria, se reinicia cada vez
 - **Producción**: Usa PostgreSQL persistente en Railway
 - **Frontend**: Se despliega en Render, se conecta al backend en Railway
-- **Base de datos**: Se crea automáticamente en Railway 
+- **Base de datos**: Se crea automáticamente en Railway
+- **Perfiles Maven**: Evitan conflictos entre drivers de base de datos 

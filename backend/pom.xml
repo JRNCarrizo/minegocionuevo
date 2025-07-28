@@ -29,6 +29,37 @@
 	<properties>
 		<java.version>17</java.version>
 	</properties>
+	<profiles>
+		<!-- Perfil de desarrollo (por defecto) -->
+		<profile>
+			<id>dev</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<dependencies>
+				<!-- H2 - Solo para desarrollo -->
+				<dependency>
+					<groupId>com.h2database</groupId>
+					<artifactId>h2</artifactId>
+					<scope>runtime</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+		
+		<!-- Perfil de producción -->
+		<profile>
+			<id>prod</id>
+			<dependencies>
+				<!-- PostgreSQL - Solo para producción -->
+				<dependency>
+					<groupId>org.postgresql</groupId>
+					<artifactId>postgresql</artifactId>
+					<scope>runtime</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -51,21 +82,7 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
-		<!-- Base de datos -->
-		
-		<!-- H2 - Para desarrollo local -->
-		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-		
-		<!-- PostgreSQL - Para producción (Railway) -->
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<scope>runtime</scope>
-		</dependency>
+		<!-- Base de datos - Se maneja por perfiles -->
 		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
