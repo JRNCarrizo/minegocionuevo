@@ -4,10 +4,6 @@ FROM openjdk:17-jdk-slim
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Forzar rebuild sin cache
-ARG BUILD_DATE=unknown
-RUN echo "Build date: $BUILD_DATE"
-
 # Copiar archivos de Maven
 COPY mvnw .
 COPY .mvn .mvn
@@ -19,8 +15,8 @@ RUN chmod +x mvnw
 # Copiar código fuente
 COPY src src
 
-# Construir con perfil de producción (solo PostgreSQL, sin H2) - FORZAR REBUILD COMPLETO
-RUN ./mvnw clean package -Pprod -DskipTests
+# Construir la aplicación
+RUN ./mvnw clean package -DskipTests
 
 # Exponer puerto
 EXPOSE 8080
