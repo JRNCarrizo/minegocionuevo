@@ -317,6 +317,7 @@ public class AdminController {
      * Endpoint de debug para probar multipart
      */
     @PostMapping("/debug/multipart")
+    @Transactional
     public ResponseEntity<?> debugMultipart(@RequestParam(value = "archivo", required = false) MultipartFile archivo, HttpServletRequest request) {
         try {
             System.out.println("=== DEBUG MULTIPART ===");
@@ -343,6 +344,7 @@ public class AdminController {
      * Subir logo de la empresa
      */
     @PostMapping("/empresa/logo")
+    @Transactional
     public ResponseEntity<?> subirLogoEmpresa(@RequestParam("logo") MultipartFile archivo, HttpServletRequest request) {
         try {
             System.out.println("=== DEBUG SUBIR LOGO ===");
@@ -430,6 +432,7 @@ public class AdminController {
      * Sube la imagen de fondo de la empresa
      */
     @PostMapping("/empresa/fondo")
+    @Transactional
     public ResponseEntity<?> subirFondoEmpresa(@RequestParam("fondo") MultipartFile archivo, HttpServletRequest request) {
         try {
             String token = request.getHeader("Authorization");
