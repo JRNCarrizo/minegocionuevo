@@ -2,6 +2,7 @@ package com.minegocio.backend.controladores;
 
 import com.minegocio.backend.dto.PedidoDTO;
 import com.minegocio.backend.servicios.PedidoService;
+import com.minegocio.backend.utils.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -182,11 +183,11 @@ public class PedidoController {
             
             PedidoService.PedidoEstadisticas estadisticas = pedidoService.obtenerEstadisticasPedidos(empresaId);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("totalPedidos", estadisticas.getTotalPedidos());
-            response.put("totalTransacciones", estadisticas.getTotalTransacciones());
-            response.put("totalProductos", estadisticas.getTotalProductos());
-            response.put("cantidadPedidos", estadisticas.getCantidadPedidos());
+            Map<String, Object> data = new HashMap<>();
+            data.put("totalPedidos", estadisticas.getTotalPedidos());
+            data.put("totalTransacciones", estadisticas.getTotalTransacciones());
+            data.put("totalProductos", estadisticas.getTotalProductos());
+            data.put("cantidadPedidos", estadisticas.getCantidadPedidos());
             
             System.out.println("Respuesta generada:");
             System.out.println("  - totalPedidos: " + estadisticas.getTotalPedidos());
@@ -195,7 +196,7 @@ public class PedidoController {
             System.out.println("  - cantidadPedidos: " + estadisticas.getCantidadPedidos());
             System.out.println("=== FIN DEBUG CONTROLADOR ESTADISTICAS PEDIDOS ===");
             
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Estadísticas obtenidas correctamente", data));
         } catch (Exception e) {
             System.err.println("=== ERROR EN ESTADISTICAS PEDIDOS ===");
             System.err.println("Error: " + e.getMessage());
