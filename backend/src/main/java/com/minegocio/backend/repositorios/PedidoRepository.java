@@ -146,6 +146,12 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Pedido> findPedidosCompletosPorCliente(@Param("cliente") Cliente cliente, @Param("empresa") Empresa empresa);
     
     /**
+     * Obtiene todos los pedidos de un cliente por email en una empresa (incluye pedidos públicos)
+     */
+    @Query("SELECT p FROM Pedido p WHERE p.empresa = :empresa AND (p.cliente = :cliente OR p.clienteEmail = :clienteEmail) ORDER BY p.fechaCreacion DESC")
+    List<Pedido> findPedidosPorClienteOEmail(@Param("cliente") Cliente cliente, @Param("clienteEmail") String clienteEmail, @Param("empresa") Empresa empresa);
+    
+    /**
      * Busca pedidos por empresa, rango de fechas y observaciones que contengan un texto específico
      */
     @Query("SELECT p FROM Pedido p WHERE p.empresa.id = :empresaId AND p.fechaCreacion BETWEEN :fechaInicio AND :fechaFin AND p.observaciones LIKE %:observacion% ORDER BY p.fechaCreacion DESC")

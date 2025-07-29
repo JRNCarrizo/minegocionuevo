@@ -67,6 +67,7 @@ public class PedidoService {
         Pedido pedido = new Pedido();
         pedido.setEmpresa(empresa);
         pedido.setCliente(cliente); // Puede ser null para pedidos públicos
+        pedido.setClienteEmail(pedidoDTO.getClienteEmail()); // Guardar email del cliente
         pedido.setDireccionEntrega(pedidoDTO.getDireccionEntrega());
         pedido.setEstado(Pedido.EstadoPedido.PENDIENTE);
         pedido.setObservaciones(pedidoDTO.getNotas());
@@ -198,7 +199,8 @@ public class PedidoService {
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
         System.out.println("Empresa encontrada: " + empresa.getNombre());
         
-        List<Pedido> pedidos = pedidoRepository.findPedidosCompletosPorCliente(cliente, empresa);
+        // Buscar pedidos tanto por cliente como por email del cliente
+        List<Pedido> pedidos = pedidoRepository.findPedidosPorClienteOEmail(cliente, cliente.getEmail(), empresa);
         System.out.println("Pedidos encontrados en BD: " + pedidos.size());
         
         List<PedidoDTO> pedidosDTO = pedidos.stream().map(this::convertirADTO).collect(Collectors.toList());

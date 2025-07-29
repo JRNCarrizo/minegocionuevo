@@ -60,6 +60,10 @@ public class Pedido {
     @JoinColumn(name = "cliente_id", nullable = true)
     private Cliente cliente;
 
+    // Email del cliente (para pedidos públicos sin cliente registrado)
+    @Column(name = "cliente_email", length = 255)
+    private String clienteEmail;
+
     // Relación con empresa
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
@@ -164,6 +168,9 @@ public class Pedido {
 
     public Cliente getCliente() { return cliente; }
     public void setCliente(Cliente cliente) { this.cliente = cliente; }
+
+    public String getClienteEmail() { return clienteEmail; }
+    public void setClienteEmail(String clienteEmail) { this.clienteEmail = clienteEmail; }
 
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
