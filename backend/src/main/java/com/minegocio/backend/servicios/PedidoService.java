@@ -169,6 +169,7 @@ public class PedidoService {
         return crearPedido(empresaId, pedidoDTO, null);
     }
 
+    @Transactional
     public List<PedidoDTO> obtenerPedidosPorEmpresa(Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
@@ -176,6 +177,7 @@ public class PedidoService {
                 .stream().map(this::convertirADTO).collect(Collectors.toList());
     }
 
+    @Transactional
     public List<PedidoDTO> obtenerPedidosPorCliente(Long clienteId) {
         Cliente cliente = clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
@@ -186,6 +188,7 @@ public class PedidoService {
     /**
      * Obtiene pedidos de un cliente específico en una empresa específica
      */
+    @Transactional
     public List<PedidoDTO> obtenerPedidosPorClienteYEmpresa(Long clienteId, Long empresaId) {
         System.out.println("=== DEBUG PEDIDO SERVICE - obtenerPedidosPorClienteYEmpresa ===");
         System.out.println("ClienteId: " + clienteId);
@@ -408,6 +411,7 @@ public class PedidoService {
     /**
      * Obtiene estadísticas generales de pedidos por empresa
      */
+    @Transactional
     public PedidoEstadisticas obtenerEstadisticasPedidos(Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
