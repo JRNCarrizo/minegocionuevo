@@ -433,7 +433,7 @@ public class PedidoService {
         
         System.out.println("Empresa encontrada: " + empresa.getNombre());
         
-        List<Pedido> pedidos = pedidoRepository.findByEmpresaOrderByFechaCreacionDesc(empresa);
+        List<Pedido> pedidos = pedidoRepository.findByEmpresaWithDetallesOrderByFechaCreacionDesc(empresa);
         System.out.println("Total de pedidos encontrados: " + pedidos.size());
         
         // Contar pedidos por estado
@@ -482,7 +482,7 @@ public class PedidoService {
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
         
-        List<Pedido> pedidos = pedidoRepository.findByEmpresaAndFechaCreacionBetween(empresa, fechaInicio, fechaFin);
+        List<Pedido> pedidos = pedidoRepository.findByEmpresaAndFechaCreacionBetweenWithDetalles(empresa, fechaInicio, fechaFin);
         
         BigDecimal totalPedidos = pedidos.stream()
                 .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)

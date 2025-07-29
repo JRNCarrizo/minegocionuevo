@@ -164,4 +164,16 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
      * Cuenta pedidos por empresa ID
      */
     long countByEmpresaId(Long empresaId);
+    
+    /**
+     * Busca pedidos por empresa con detalles cargados (para estadísticas)
+     */
+    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.detalles WHERE p.empresa = :empresa ORDER BY p.fechaCreacion DESC")
+    List<Pedido> findByEmpresaWithDetallesOrderByFechaCreacionDesc(@Param("empresa") Empresa empresa);
+    
+    /**
+     * Busca pedidos por empresa y rango de fechas con detalles cargados (para estadísticas)
+     */
+    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.detalles WHERE p.empresa = :empresa AND p.fechaCreacion BETWEEN :fechaInicio AND :fechaFin ORDER BY p.fechaCreacion DESC")
+    List<Pedido> findByEmpresaAndFechaCreacionBetweenWithDetalles(@Param("empresa") Empresa empresa, @Param("fechaInicio") LocalDateTime fechaInicio, @Param("fechaFin") LocalDateTime fechaFin);
 }
