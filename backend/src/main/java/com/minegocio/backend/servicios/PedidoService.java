@@ -379,6 +379,7 @@ public class PedidoService {
     /**
      * Obtiene el total de ventas de una empresa
      */
+    @Transactional
     public Double obtenerTotalVentasPorEmpresa(Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
@@ -440,6 +441,7 @@ public class PedidoService {
     /**
      * Obtiene estadísticas de pedidos por rango de fechas
      */
+    @Transactional
     public PedidoEstadisticas obtenerEstadisticasPedidosPorFecha(Long empresaId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
@@ -468,6 +470,7 @@ public class PedidoService {
     /**
      * Obtiene estadísticas diarias de pedidos
      */
+    @Transactional
     public PedidoEstadisticas obtenerEstadisticasDiarias(Long empresaId, LocalDateTime fecha) {
         LocalDateTime inicio = fecha.toLocalDate().atStartOfDay();
         LocalDateTime fin = fecha.toLocalDate().atTime(23, 59, 59);
@@ -477,6 +480,7 @@ public class PedidoService {
     /**
      * Obtiene estadísticas mensuales de pedidos
      */
+    @Transactional
     public PedidoEstadisticas obtenerEstadisticasMensuales(Long empresaId, int año, int mes) {
         LocalDateTime inicio = LocalDateTime.of(año, mes, 1, 0, 0, 0);
         LocalDateTime fin = inicio.plusMonths(1).minusSeconds(1);
@@ -486,6 +490,7 @@ public class PedidoService {
     /**
      * Obtiene estadísticas anuales de pedidos
      */
+    @Transactional
     public PedidoEstadisticas obtenerEstadisticasAnuales(Long empresaId, int año) {
         LocalDateTime inicio = LocalDateTime.of(año, 1, 1, 0, 0, 0);
         LocalDateTime fin = LocalDateTime.of(año, 12, 31, 23, 59, 59);
