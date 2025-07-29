@@ -304,9 +304,37 @@ public class PedidoService {
     private PedidoDTO convertirADTO(Pedido pedido) {
         PedidoDTO dto = new PedidoDTO();
         dto.setId(pedido.getId());
-        dto.setClienteId(pedido.getCliente().getId());
-        dto.setClienteNombre(pedido.getCliente().getNombreCompleto());
-        dto.setClienteEmail(pedido.getCliente().getEmail());
+        
+        // Manejar cliente (puede ser null para pedidos públicos)
+        if (pedido.getCliente() != null) {
+            dto.setClienteId(pedido.getCliente().getId());
+            dto.setClienteNombre(pedido.getCliente().getNombreCompleto());
+            dto.setClienteEmail(pedido.getCliente().getEmail());
+            
+            // Crear objeto cliente para el modal
+            ClienteDTO clienteDTO = new ClienteDTO();
+            clienteDTO.setId(pedido.getCliente().getId());
+            clienteDTO.setNombre(pedido.getCliente().getNombre());
+            clienteDTO.setApellidos(pedido.getCliente().getApellidos());
+            clienteDTO.setEmail(pedido.getCliente().getEmail());
+            clienteDTO.setTelefono(pedido.getCliente().getTelefono());
+            dto.setCliente(clienteDTO);
+        } else {
+            // Para pedidos públicos sin cliente registrado
+            dto.setClienteId(null);
+            dto.setClienteNombre("Cliente Público");
+            dto.setClienteEmail(pedido.getClienteEmail());
+            
+            // Crear objeto cliente para el modal
+            ClienteDTO clienteDTO = new ClienteDTO();
+            clienteDTO.setId(null);
+            clienteDTO.setNombre("Cliente");
+            clienteDTO.setApellidos("Público");
+            clienteDTO.setEmail(pedido.getClienteEmail());
+            clienteDTO.setTelefono("");
+            dto.setCliente(clienteDTO);
+        }
+        
         dto.setFechaCreacion(pedido.getFechaCreacion());
         dto.setEstado(pedido.getEstado());
         dto.setTotal(pedido.getTotal());
@@ -315,15 +343,6 @@ public class PedidoService {
         dto.setEmpresaId(pedido.getEmpresa().getId());
         dto.setEmpresaNombre(pedido.getEmpresa().getNombre());
         dto.setNumeroPedido(pedido.getNumeroPedido());
-        
-        // Crear objeto cliente para el modal
-        ClienteDTO clienteDTO = new ClienteDTO();
-        clienteDTO.setId(pedido.getCliente().getId());
-        clienteDTO.setNombre(pedido.getCliente().getNombre());
-        clienteDTO.setApellidos(pedido.getCliente().getApellidos());
-        clienteDTO.setEmail(pedido.getCliente().getEmail());
-        clienteDTO.setTelefono(pedido.getCliente().getTelefono());
-        dto.setCliente(clienteDTO);
         
         dto.setDetalles(pedido.getDetalles().stream().map(det -> {
             DetallePedidoDTO d = new DetallePedidoDTO();

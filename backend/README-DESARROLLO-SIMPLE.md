@@ -89,3 +89,6 @@ mvn clean compile
 ### Error: "Port already in use"
 - Cambiar puerto en `application.properties`
 - O matar proceso en puerto 8080 
+
+# Ejecutar con perfil de producción (Railway)
+mvn spring-boot:run -Dspring-boot.run.profiles=railway
