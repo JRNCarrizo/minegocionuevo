@@ -314,6 +314,32 @@ public class AdminController {
     }
 
     /**
+     * Endpoint de debug para probar multipart
+     */
+    @PostMapping("/debug/multipart")
+    public ResponseEntity<?> debugMultipart(@RequestParam(value = "archivo", required = false) MultipartFile archivo, HttpServletRequest request) {
+        try {
+            System.out.println("=== DEBUG MULTIPART ===");
+            System.out.println("📁 Archivo recibido: " + (archivo != null ? archivo.getOriginalFilename() : "null"));
+            System.out.println("📏 Tamaño archivo: " + (archivo != null ? archivo.getSize() : "null"));
+            System.out.println("📋 Tipo contenido: " + (archivo != null ? archivo.getContentType() : "null"));
+            System.out.println("🔧 Content-Type header: " + request.getHeader("Content-Type"));
+            System.out.println("=== FIN DEBUG MULTIPART ===");
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Debug multipart exitoso",
+                "archivoRecibido", archivo != null,
+                "nombreArchivo", archivo != null ? archivo.getOriginalFilename() : "null",
+                "tamañoArchivo", archivo != null ? archivo.getSize() : 0
+            ));
+        } catch (Exception e) {
+            System.err.println("❌ Error en debug multipart: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error en debug multipart: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Subir logo de la empresa
      */
     @PostMapping("/empresa/logo")
