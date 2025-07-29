@@ -700,7 +700,7 @@ export default function ProductoDetalleModal({
                       padding: '16px 24px',
                       background: producto.stock === 0 || !clienteLogueado
                         ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-                        : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                        : `linear-gradient(135deg, ${empresa?.colorSecundario || '#64748b'} 0%, ${empresa?.colorSecundario ? `${empresa.colorSecundario}dd` : '#475569'} 100%)`,
                       color: 'white',
                       border: 'none',
                       borderRadius: '12px',
@@ -717,7 +717,9 @@ export default function ProductoDetalleModal({
                     onMouseOver={(e) => {
                       if (producto.stock !== 0 && clienteLogueado) {
                         e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.3)';
+                        e.currentTarget.style.boxShadow = empresa?.colorSecundario 
+                          ? `0 8px 25px ${empresa.colorSecundario}40`
+                          : '0 8px 25px rgba(100, 116, 139, 0.3)';
                       }
                     }}
                     onMouseOut={(e) => {
