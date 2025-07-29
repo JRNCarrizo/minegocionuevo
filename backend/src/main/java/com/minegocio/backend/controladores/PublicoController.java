@@ -337,9 +337,9 @@ public class PublicoController {
             // Obtener todos los productos activos de la empresa
             List<ProductoDTO> productos = productoService.obtenerTodosLosProductos(empresaId);
             
-            // Filtrar solo productos activos y con stock disponible
+            // Filtrar solo productos activos
             List<ProductoDTO> productosActivos = productos.stream()
-                .filter(p -> p.getActivo() != null && p.getActivo() && p.getStock() != null && p.getStock() > 0)
+                .filter(p -> p.getActivo() != null && p.getActivo())
                 .collect(Collectors.toList());
             
             // Aplicar filtros adicionales si se proporcionan
@@ -399,8 +399,8 @@ public class PublicoController {
             
             ProductoDTO prod = producto.get();
             
-            // Solo devolver el producto si está activo y tiene stock disponible
-            if (prod.getActivo() == null || !prod.getActivo() || prod.getStock() == null || prod.getStock() <= 0) {
+            // Solo devolver el producto si está activo
+            if (prod.getActivo() == null || !prod.getActivo()) {
                 return ResponseEntity.notFound().build();
             }
             
