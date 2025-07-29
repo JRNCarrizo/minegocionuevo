@@ -144,6 +144,17 @@ public class HistorialCargaProductosService {
             int pagina,
             int tamanio) {
         
+        System.out.println("=== DEBUG SERVICIO HISTORIAL CARGA PRODUCTOS ===");
+        System.out.println("EmpresaId: " + empresaId);
+        System.out.println("ProductoId: " + productoId);
+        System.out.println("TipoOperacion: " + tipoOperacion);
+        System.out.println("UsuarioId: " + usuarioId);
+        System.out.println("FechaInicio: " + fechaInicio);
+        System.out.println("FechaFin: " + fechaFin);
+        System.out.println("CodigoBarras: " + codigoBarras);
+        System.out.println("Pagina: " + pagina);
+        System.out.println("Tamanio: " + tamanio);
+        
         try {
             Pageable pageable = PageRequest.of(pagina, tamanio, 
                     Sort.by(Sort.Direction.DESC, "fechaOperacion"));
@@ -155,16 +166,28 @@ public class HistorialCargaProductosService {
                 fechaInicio == null && fechaFin == null && 
                 (codigoBarras == null || codigoBarras.trim().isEmpty())) {
                 
+                System.out.println("Usando método simple (sin filtros)");
                 historialPage = historialRepository.findByEmpresaIdOrderByFechaOperacionDescPaged(empresaId, pageable);
             } else {
                 // Si hay filtros, usar el método complejo
+                System.out.println("Usando método complejo (con filtros)");
                 historialPage = historialRepository.buscarConFiltros(
                         empresaId, productoId, tipoOperacion, usuarioId, 
                         fechaInicio, fechaFin, codigoBarras, pageable);
             }
             
+            System.out.println("Resultado del repositorio:");
+            System.out.println("  - Total elementos: " + historialPage.getTotalElements());
+            System.out.println("  - Total páginas: " + historialPage.getTotalPages());
+            System.out.println("  - Página actual: " + historialPage.getNumber());
+            System.out.println("  - Tamaño: " + historialPage.getSize());
+            System.out.println("  - Contenido: " + historialPage.getContent().size() + " elementos");
+            
             Page<HistorialCargaProductosDTO> dtoPage = historialPage
                     .map(HistorialCargaProductosDTO::new);
+            
+            System.out.println("DTOs generados: " + dtoPage.getContent().size() + " elementos");
+            System.out.println("=== FIN DEBUG SERVICIO HISTORIAL CARGA PRODUCTOS ===");
             
             return new ApiResponse<>(true, "Búsqueda realizada correctamente", dtoPage);
             

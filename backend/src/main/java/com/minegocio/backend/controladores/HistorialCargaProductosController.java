@@ -4,6 +4,10 @@ import com.minegocio.backend.dto.HistorialCargaProductosDTO;
 import com.minegocio.backend.entidades.HistorialCargaProductos;
 import com.minegocio.backend.servicios.HistorialCargaProductosService;
 import com.minegocio.backend.utils.ApiResponse;
+import com.minegocio.backend.repositorios.HistorialCargaProductosRepository;
+import com.minegocio.backend.repositorios.EmpresaRepository;
+import com.minegocio.backend.repositorios.ProductoRepository;
+import com.minegocio.backend.repositorios.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -25,6 +29,18 @@ public class HistorialCargaProductosController {
     
     @Autowired
     private HistorialCargaProductosService historialService;
+    
+    @Autowired
+    private HistorialCargaProductosRepository historialRepository;
+    
+    @Autowired
+    private EmpresaRepository empresaRepository;
+    
+    @Autowired
+    private ProductoRepository productoRepository;
+    
+    @Autowired
+    private UsuarioRepository usuarioRepository;
     
     // Registrar una nueva operación de carga
     @PostMapping("/registrar")
@@ -77,12 +93,35 @@ public class HistorialCargaProductosController {
             @RequestParam(defaultValue = "0") int pagina,
             @RequestParam(defaultValue = "20") int tamanio) {
         
+        System.out.println("=== DEBUG HISTORIAL CARGA PRODUCTOS ===");
+        System.out.println("EmpresaId: " + empresaId);
+        System.out.println("ProductoId: " + productoId);
+        System.out.println("TipoOperacion: " + tipoOperacion);
+        System.out.println("UsuarioId: " + usuarioId);
+        System.out.println("FechaInicio: " + fechaInicio);
+        System.out.println("FechaFin: " + fechaFin);
+        System.out.println("CodigoBarras: " + codigoBarras);
+        System.out.println("Pagina: " + pagina);
+        System.out.println("Tamanio: " + tamanio);
+        
         ApiResponse<Page<HistorialCargaProductosDTO>> response = historialService.buscarConFiltros(
                 empresaId, productoId, tipoOperacion, usuarioId, 
                 fechaInicio, fechaFin, codigoBarras, pagina, tamanio);
         
+        System.out.println("Respuesta del servicio:");
+        System.out.println("  - Success: " + response.isSuccess());
+        System.out.println("  - Mensaje: " + response.getMensaje());
+        System.out.println("  - Data: " + (response.getData() != null ? "No null" : "null"));
+        
         if (response.isSuccess() && response.getData() != null) {
             Page<HistorialCargaProductosDTO> page = response.getData();
+            
+            System.out.println("Datos de la página:");
+            System.out.println("  - Total elementos: " + page.getTotalElements());
+            System.out.println("  - Total páginas: " + page.getTotalPages());
+            System.out.println("  - Página actual: " + page.getNumber());
+            System.out.println("  - Tamaño: " + page.getSize());
+            System.out.println("  - Contenido: " + page.getContent().size() + " elementos");
             
             // Crear la estructura que espera el frontend
             Map<String, Object> resultado = new HashMap<>();
@@ -92,8 +131,17 @@ public class HistorialCargaProductosController {
             resultado.put("paginaActual", page.getNumber());
             resultado.put("tamano", page.getSize());
             
+            System.out.println("Resultado final enviado al frontend:");
+            System.out.println("  - contenido: " + page.getContent().size() + " elementos");
+            System.out.println("  - totalElementos: " + page.getTotalElements());
+            System.out.println("  - totalPaginas: " + page.getTotalPages());
+            System.out.println("=== FIN DEBUG HISTORIAL CARGA PRODUCTOS ===");
+            
             return ResponseEntity.ok(resultado);
         } else {
+            System.out.println("Error en la respuesta del servicio");
+            System.out.println("=== FIN DEBUG HISTORIAL CARGA PRODUCTOS ===");
+            
             // Si hay error, devolver estructura vacía
             Map<String, Object> resultado = new HashMap<>();
             resultado.put("contenido", new ArrayList<>());
@@ -200,5 +248,52 @@ public class HistorialCargaProductosController {
                 empresaId, null, tipoOperacion, null, null, null, null, pagina, tamanio);
         
         return ResponseEntity.ok(response);
+    }
+    
+    // Endpoint de debug para verificar datos
+    @GetMapping("/debug/{empresaId}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<Map<String, Object>> debugHistorial(@PathVariable Long empresaId) {
+        System.out.println("=== DEBUG HISTORIAL CARGA PRODUCTOS - ENDPOINT DEBUG ===");
+        System.out.println("EmpresaId: " + empresaId);
+        
+        Map<String, Object> debugInfo = new HashMap<>();
+        
+        try {
+            // Verificar si la empresa existe
+            boolean empresaExiste = empresaRepository.existsById(empresaId);
+            debugInfo.put("empresaExiste", empresaExiste);
+            System.out.println("Empresa existe: " + empresaExiste);
+            
+            // Contar total de registros en historial
+            long totalRegistros = historialRepository.count();
+            debugInfo.put("totalRegistrosHistorial", totalRegistros);
+            System.out.println("Total registros en historial: " + totalRegistros);
+            
+            // Contar registros por empresa
+            long registrosPorEmpresa = historialRepository.countByEmpresaId(empresaId);
+            debugInfo.put("registrosPorEmpresa", registrosPorEmpresa);
+            System.out.println("Registros por empresa: " + registrosPorEmpresa);
+            
+            // Verificar si hay productos en la empresa
+            long productosEnEmpresa = productoRepository.count();
+            debugInfo.put("productosEnEmpresa", productosEnEmpresa);
+            System.out.println("Productos en empresa: " + productosEnEmpresa);
+            
+            // Verificar si hay usuarios en la empresa
+            long usuariosEnEmpresa = usuarioRepository.count();
+            debugInfo.put("usuariosEnEmpresa", usuariosEnEmpresa);
+            System.out.println("Usuarios en empresa: " + usuariosEnEmpresa);
+            
+            System.out.println("=== FIN DEBUG HISTORIAL CARGA PRODUCTOS ===");
+            
+            return ResponseEntity.ok(debugInfo);
+            
+        } catch (Exception e) {
+            System.err.println("Error en debug: " + e.getMessage());
+            e.printStackTrace();
+            debugInfo.put("error", e.getMessage());
+            return ResponseEntity.ok(debugInfo);
+        }
     }
 } 
