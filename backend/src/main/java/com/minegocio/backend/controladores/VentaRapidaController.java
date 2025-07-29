@@ -262,14 +262,19 @@ public class VentaRapidaController {
                 return ResponseEntity.status(400).body(Map.of("error", "ID de empresa no válido"));
             }
 
-            // Parsear fechas o usar fechas por defecto
-            LocalDateTime inicio = fechaInicio != null ? LocalDateTime.parse(fechaInicio) : 
-                                 LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
-            LocalDateTime fin = fechaFin != null ? LocalDateTime.parse(fechaFin) : 
-                               LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
-
-            VentaRapidaService.VentaRapidaEstadisticas estadisticas = 
-                ventaRapidaService.obtenerEstadisticasVentasRapidas(empresaId, inicio, fin);
+            VentaRapidaService.VentaRapidaEstadisticas estadisticas;
+            LocalDateTime inicio = null;
+            LocalDateTime fin = null;
+            
+            if (fechaInicio != null && fechaFin != null) {
+                // Si se proporcionan fechas específicas, usar el método con fechas
+                inicio = LocalDateTime.parse(fechaInicio);
+                fin = LocalDateTime.parse(fechaFin);
+                estadisticas = ventaRapidaService.obtenerEstadisticasVentasRapidas(empresaId, inicio, fin);
+            } else {
+                // Si no se proporcionan fechas, obtener todas las ventas
+                estadisticas = ventaRapidaService.obtenerEstadisticasVentasRapidas(empresaId);
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("totalVentas", estadisticas.getTotalVentas());
