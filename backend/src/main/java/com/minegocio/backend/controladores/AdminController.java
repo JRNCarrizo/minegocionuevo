@@ -10,6 +10,7 @@ import com.minegocio.backend.servicios.CloudinaryService;
 import com.minegocio.backend.seguridad.JwtUtils;
 import com.minegocio.backend.dto.EmpresaDTO;
 import com.minegocio.backend.servicios.VentaRapidaService.VentaRapidaEstadisticas;
+import com.minegocio.backend.utils.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -293,14 +294,27 @@ public class AdminController {
             System.out.println("💰 Total general de ventas: " + totalVentas);
             System.out.println("=== FIN DEBUG ESTADISTICAS VENTAS ===");
             
-            return ResponseEntity.ok(Map.of(
-                "mensaje", "Estadísticas obtenidas correctamente",
-                "data", Map.of(
-                    "totalVentas", totalVentas,
-                    "totalVentasPedidos", totalVentasPedidos != null ? totalVentasPedidos : 0.0,
-                    "totalVentasRapidas", totalVentasRapidas != null ? totalVentasRapidas : 0.0
-                )
-            ));
+            // Obtener estadísticas adicionales de ventas rápidas
+            Integer totalTransacciones = 0;
+            Integer totalProductos = 0;
+            Integer cantidadVentas = 0;
+            
+            if (estadisticasVentaRapida != null) {
+                totalTransacciones = estadisticasVentaRapida.getTotalTransacciones();
+                totalProductos = estadisticasVentaRapida.getTotalProductos();
+                cantidadVentas = estadisticasVentaRapida.getCantidadVentas();
+            }
+            
+            Map<String, Object> estadisticas = Map.of(
+                "totalVentas", totalVentas,
+                "totalTransacciones", totalTransacciones,
+                "totalProductos", totalProductos,
+                "cantidadVentas", cantidadVentas,
+                "totalVentasPedidos", totalVentasPedidos != null ? totalVentasPedidos : 0.0,
+                "totalVentasRapidas", totalVentasRapidas != null ? totalVentasRapidas : 0.0
+            );
+            
+            return ResponseEntity.ok(new ApiResponse<>(true, "Estadísticas obtenidas correctamente", estadisticas));
             
         } catch (Exception e) {
             System.err.println("=== ERROR CRÍTICO EN ESTADISTICAS VENTAS ===");
