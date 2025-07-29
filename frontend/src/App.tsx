@@ -2,29 +2,28 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { useSubdominio } from './hooks/useSubdominio';
 import { CartProvider } from './hooks/useCart';
-import PaginaRegistro from './pages/PaginaRegistro';
-import PaginaPrincipal from './pages/PaginaPrincipal';
-import LoginAdministrador from './pages/LoginAdministrador';
-import DashboardAdministrador from './pages/DashboardAdministrador';
-import NuevoProducto from './pages/admin/NuevoProducto';
-import GestionProductos from './pages/admin/GestionProductos';
-import DetalleProducto from './pages/admin/DetalleProducto';
-import EditarProducto from './pages/admin/EditarProducto';
-import GestionPedidos from './pages/admin/GestionPedidos';
-import GestionClientes from './pages/admin/GestionClientes';
-import ConfiguracionEmpresa from './pages/admin/ConfiguracionEmpresa';
-import CajaRapida from './pages/admin/CajaRapida';
-import HistorialVentasRapidas from './pages/admin/HistorialVentasRapidas';
-import ControlInventario from './pages/admin/ControlInventario';
-import HistorialCargaProductos from './pages/admin/HistorialCargaProductos';
-import DashboardSuperAdmin from './pages/DashboardSuperAdmin';
-import GestionEmpresas from './pages/admin/GestionEmpresas';
-import GestionSuscripciones from './pages/admin/GestionSuscripciones';
-import CatalogoPublico from './pages/CatalogoPublico';
-import ProductoPublico from './pages/ProductoPublico';
-import LoginCliente from './pages/LoginCliente';
-import RegistroCliente from './pages/RegistroCliente';
-import AreaPersonalCliente from './pages/AreaPersonalCliente';
+import PaginaRegistro from './pages/PaginaRegistro.tsx';
+import PaginaPrincipal from './pages/PaginaPrincipal.tsx';
+import LoginAdministrador from './pages/LoginAdministrador.tsx';
+import DashboardAdministrador from './pages/DashboardAdministrador.tsx';
+import NuevoProducto from './pages/admin/NuevoProducto.tsx';
+import GestionProductos from './pages/admin/GestionProductos.tsx';
+import DetalleProducto from './pages/admin/DetalleProducto.tsx';
+import EditarProducto from './pages/admin/EditarProducto.tsx';
+import GestionPedidos from './pages/admin/GestionPedidos.tsx';
+import GestionClientes from './pages/admin/GestionClientes.tsx';
+import ConfiguracionEmpresa from './pages/admin/ConfiguracionEmpresa.tsx';
+import CajaRapida from './pages/admin/CajaRapida.tsx';
+import HistorialVentasRapidas from './pages/admin/HistorialVentasRapidas.tsx';
+import ControlInventario from './pages/admin/ControlInventario.tsx';
+import HistorialCargaProductos from './pages/admin/HistorialCargaProductos.tsx';
+import Estadisticas from './pages/admin/Estadisticas.tsx';
+import DashboardSuperAdmin from './pages/DashboardSuperAdmin.tsx';
+import CatalogoPublico from './pages/CatalogoPublico.tsx';
+import ProductoPublico from './pages/ProductoPublico.tsx';
+import LoginCliente from './pages/LoginCliente.tsx';
+import RegistroCliente from './pages/RegistroCliente.tsx';
+import AreaPersonalCliente from './pages/AreaPersonalCliente.tsx';
 
 function AppContent() {
   const { esSubdominioPrincipal, cargando } = useSubdominio();
@@ -60,9 +59,8 @@ function AppContent() {
           <Route path="/admin/historial-ventas" element={<HistorialVentasRapidas />} />
           <Route path="/admin/control-inventario" element={<ControlInventario />} />
           <Route path="/admin/historial-carga-productos" element={<HistorialCargaProductos />} />
+          <Route path="/admin/estadisticas" element={<Estadisticas />} />
           <Route path="/dashboard-super-admin" element={<DashboardSuperAdmin />} />
-          <Route path="/super-admin/empresas" element={<GestionEmpresas />} />
-          <Route path="/super-admin/suscripciones" element={<GestionSuscripciones />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
       ) : (

@@ -95,6 +95,7 @@ const GestionProductos: React.FC = () => {
   // Estados para el sistema de escáner de stock
   const [mostrarScannerStock, setMostrarScannerStock] = useState(false);
   const [mostrarScannerUSB, setMostrarScannerUSB] = useState(false);
+  const [mostrarModalSeleccionScanner, setMostrarModalSeleccionScanner] = useState(false);
   const [productoEscaneado, setProductoEscaneado] = useState<Producto | null>(null);
   const [stockOriginal, setStockOriginal] = useState<number>(0);
   const [cantidadStock, setCantidadStock] = useState<number>(1);
@@ -488,7 +489,12 @@ const GestionProductos: React.FC = () => {
   };
 
   // Funciones para el sistema de escáner de stock
-  const abrirScannerStock = () => {
+  const abrirModalSeleccionScanner = () => {
+    setMostrarModalSeleccionScanner(true);
+  };
+
+  const seleccionarScannerCámara = () => {
+    setMostrarModalSeleccionScanner(false);
     setMostrarScannerStock(true);
     setProductoEscaneado(null);
     setCantidadStock(1);
@@ -496,7 +502,8 @@ const GestionProductos: React.FC = () => {
     setMostrarResumen(false);
   };
 
-  const abrirScannerUSB = () => {
+  const seleccionarScannerUSB = () => {
+    setMostrarModalSeleccionScanner(false);
     setMostrarScannerUSB(true);
     setProductoEscaneado(null);
     setCantidadStock(1);
@@ -769,9 +776,9 @@ const GestionProductos: React.FC = () => {
               </div>
             </div>
 
-            {/* Tarjeta Agregar Stock */}
+            {/* Tarjeta Scanner */}
             <div 
-              onClick={abrirScannerStock}
+              onClick={abrirModalSeleccionScanner}
               style={{
                 background: 'white',
                 borderRadius: '1rem',
@@ -785,7 +792,7 @@ const GestionProductos: React.FC = () => {
               onMouseOver={(e) => {
                 e.currentTarget.style.transform = 'translateY(-8px)';
                 e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                e.currentTarget.style.borderColor = '#10b981';
+                e.currentTarget.style.borderColor = '#8b5cf6';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
@@ -801,7 +808,7 @@ const GestionProductos: React.FC = () => {
                 <div style={{
                   width: '2.5rem',
                   height: '2.5rem',
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                   borderRadius: '0.75rem',
                   display: 'flex',
                   alignItems: 'center',
@@ -810,7 +817,7 @@ const GestionProductos: React.FC = () => {
                   marginRight: '0.75rem',
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                 }}>
-                  📦
+                  📱
                 </div>
                 <div>
                   <h3 style={{
@@ -819,7 +826,7 @@ const GestionProductos: React.FC = () => {
                     color: '#1e293b',
                     marginBottom: '0.25rem'
                   }}>
-                    Escanér Cámara
+                    Scanner
                   </h3>
                   <p style={{
                     fontSize: '0.875rem',
@@ -834,84 +841,11 @@ const GestionProductos: React.FC = () => {
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                color: '#10b981',
+                color: '#8b5cf6',
                 fontSize: '0.875rem',
                 fontWeight: '600'
               }}>
-                Escanear productos →
-              </div>
-            </div>
-
-            {/* Tarjeta Escáner USB */}
-            <div 
-              onClick={abrirScannerUSB}
-              style={{
-                background: 'white',
-                borderRadius: '1rem',
-                padding: '1.5rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: '1px solid #e2e8f0',
-                transition: 'all 0.3s ease',
-                animation: 'slideInUp 0.6s ease-out 0.5s both'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                e.currentTarget.style.borderColor = '#3b82f6';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
-              }}
-            >
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: '1rem'
-              }}>
-                <div style={{
-                  width: '2.5rem',
-                  height: '2.5rem',
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                  borderRadius: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.25rem',
-                  marginRight: '0.75rem',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                }}>
-                  🔌
-                </div>
-                <div>
-                  <h3 style={{
-                    fontSize: '1.125rem',
-                    fontWeight: '600',
-                    color: '#1e293b',
-                    marginBottom: '0.25rem'
-                  }}>
-                    Escáner USB
-                  </h3>
-                  <p style={{
-                    fontSize: '0.875rem',
-                    color: '#64748b',
-                    margin: 0,
-                    lineHeight: '1.5'
-                  }}>
-                    Usa un escáner físico USB para añadir stock 
-                  </p>
-                </div>
-              </div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                color: '#3b82f6',
-                fontSize: '0.875rem',
-                fontWeight: '600'
-              }}>
-                Conectar escáner →
+                Elegir tipo de scanner →
               </div>
             </div>
 
@@ -4104,6 +4038,195 @@ const GestionProductos: React.FC = () => {
                   Continuar Escaneando
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de selección de tipo de scanner */}
+      {mostrarModalSeleccionScanner && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            maxWidth: '500px',
+            width: '100%',
+            maxHeight: 'calc(100vh - 40px)',
+            overflow: 'hidden',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+              color: 'white',
+              padding: '20px',
+              textAlign: 'center',
+              flexShrink: 0
+            }}>
+              <div style={{ fontSize: '40px', marginBottom: '8px' }}>📱</div>
+              <h2 style={{ margin: '0 0 6px 0', fontSize: '20px', fontWeight: '700' }}>
+                Seleccionar Tipo de Scanner
+              </h2>
+              <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>
+                Elige cómo quieres escanear los códigos de barras
+              </p>
+            </div>
+
+            {/* Contenido */}
+            <div style={{ 
+              padding: '20px', 
+              flex: 1, 
+              overflow: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Opción Scanner Cámara */}
+                <button
+                  onClick={seleccionarScannerCámara}
+                  style={{
+                    background: 'white',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    textAlign: 'left'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = '#10b981';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(16, 185, 129, 0.15)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px',
+                    flexShrink: 0
+                  }}>
+                    📱
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: '0 0 3px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                      Scanner Cámara
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
+                      Usa la cámara de tu dispositivo para escanear códigos de barras
+                    </p>
+                  </div>
+                  <div style={{ fontSize: '18px', color: '#10b981' }}>→</div>
+                </button>
+
+                {/* Opción Scanner USB */}
+                <button
+                  onClick={seleccionarScannerUSB}
+                  style={{
+                    background: 'white',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    textAlign: 'left'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = '#3b82f6';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(59, 130, 246, 0.15)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px',
+                    flexShrink: 0
+                  }}>
+                    🔌
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: '0 0 3px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                      Scanner USB/Bluetooth
+                    </h3>
+                    <p style={{ margin: '0', fontSize: '13px', color: '#64748b' }}>
+                      Conecta un escáner físico USB o Bluetooth para escanear
+                    </p>
+                  </div>
+                  <div style={{ fontSize: '18px', color: '#3b82f6' }}>→</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              background: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              padding: '16px 20px',
+              display: 'flex',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <button
+                onClick={() => setMostrarModalSeleccionScanner(false)}
+                style={{
+                  background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>✕</span>
+                Cancelar
+              </button>
             </div>
           </div>
         </div>

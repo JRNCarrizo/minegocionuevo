@@ -160,39 +160,11 @@ export default function DashboardAdministrador() {
       color: '#059669'
     },
     {
-      titulo: 'Gestionar Productos',
-      descripcion: 'Administra tu catálogo de productos',
-      icono: '📦',
-      enlace: '/admin/productos',
-      color: '#3b82f6'
-    },
-    {
-      titulo: 'Gestionar Clientes',
-      descripcion: 'Administra tu base de clientes',
-      icono: '👤',
-      enlace: '/admin/clientes',
-      color: '#8b5cf6'
-    },
-    {
-      titulo: 'Caja Rápida',
-      descripcion: 'Sistema de caja Mostrador',
-      icono: '💰',
-      enlace: '/admin/caja-rapida',
-      color: '#10b981'
-    },
-    {
       titulo: 'Historial de Ventas',
       descripcion: 'Consulta el historial de caja rápida',
       icono: '📊',
       enlace: '/admin/historial-ventas',
       color: '#8b5cf6'
-    },
-    {
-      titulo: 'Gestionar Pedidos',
-      descripcion: 'Gestiona los pedidos pendientes',
-      icono: '📋',
-      enlace: '/admin/pedidos',
-      color: '#f59e0b'
     },
     {
       titulo: 'Control de Inventario',
@@ -365,7 +337,7 @@ export default function DashboardAdministrador() {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
-            textAlign: isMobile ? 'center' : 'left'
+            textAlign: 'center'
           }}>
             Panel de Administración
           </h1>
@@ -373,289 +345,347 @@ export default function DashboardAdministrador() {
             fontSize: isMobile ? '1rem' : '1.125rem',
             color: '#64748b',
             lineHeight: '1.6',
-            textAlign: isMobile ? 'center' : 'left'
+            textAlign: 'center'
           }}>
             Bienvenido{datosUsuario?.nombre ? ` ${datosUsuario.nombre}` : ''}. 
             Aquí tienes un resumen de {datosUsuario?.empresaNombre || 'tu negocio'}.
           </p>
         </div>
 
-        {/* Menú de navegación rápida */}
-        <div style={{
-          marginBottom: '3rem',
-          animation: 'slideInUp 0.6s ease-out 0.1s both'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: isMobile ? '0.5rem' : '1rem',
-            flexWrap: 'wrap',
-            flexDirection: isMobile ? 'column' : 'row'
-          }}>
-            <Link 
-              to="/admin/productos" 
-              style={{
-                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.5rem',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '0.75rem',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                fontWeight: '600',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                width: isMobile ? '100%' : 'auto',
-                textAlign: isMobile ? 'center' : 'left'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
-              }}
-            >
-              📦 Productos
-            </Link>
-            <Link 
-              to="/admin/pedidos" 
-              style={{
-                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.5rem',
-                background: 'white',
-                color: '#3b82f6',
-                textDecoration: 'none',
-                borderRadius: '0.75rem',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                fontWeight: '600',
-                border: '2px solid #3b82f6',
-                transition: 'all 0.2s ease',
-                width: isMobile ? '100%' : 'auto',
-                textAlign: isMobile ? 'center' : 'left'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#3b82f6';
-                e.currentTarget.style.color = 'white';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#3b82f6';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              📋 Pedidos
-            </Link>
-            <Link 
-              to="/admin/clientes" 
-              style={{
-                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.5rem',
-                background: 'white',
-                color: '#3b82f6',
-                textDecoration: 'none',
-                borderRadius: '0.75rem',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                fontWeight: '600',
-                border: '2px solid #3b82f6',
-                transition: 'all 0.2s ease',
-                width: isMobile ? '100%' : 'auto',
-                textAlign: isMobile ? 'center' : 'left'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#3b82f6';
-                e.currentTarget.style.color = 'white';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#3b82f6';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              👥 Clientes
-            </Link>
-            <Link 
-              to="/admin/configuracion" 
-              style={{
-                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.5rem',
-                background: 'white',
-                color: '#3b82f6',
-                textDecoration: 'none',
-                borderRadius: '0.75rem',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                fontWeight: '600',
-                border: '2px solid #3b82f6',
-                transition: 'all 0.2s ease',
-                width: isMobile ? '100%' : 'auto',
-                textAlign: isMobile ? 'center' : 'left'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#3b82f6';
-                e.currentTarget.style.color = 'white';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#3b82f6';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              ⚙️ Configuración
-            </Link>
-            <Link 
-              to="/admin/caja-rapida" 
-              style={{
-                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.5rem',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '0.75rem',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                fontWeight: '600',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
-                width: isMobile ? '100%' : 'auto',
-                textAlign: isMobile ? 'center' : 'left'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
-              }}
-            >
-              💰 Caja Rápida
-            </Link>
-          </div>
-        </div>
-
-        {/* Estadísticas */}
+        {/* Accesos Directos */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
           gap: isMobile ? '1rem' : '1.5rem',
           marginBottom: isMobile ? '2rem' : '3rem'
         }}>
-          {tarjetasEstadisticas.map((tarjeta, index) => (
-            <div 
-              key={index} 
-              style={{
-                background: 'white',
-                borderRadius: isMobile ? '0.75rem' : '1rem',
-                padding: isMobile ? '1.5rem' : '2rem',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: '1px solid #e2e8f0',
-                animation: `slideInUp 0.6s ease-out ${index * 0.1}s both`,
-                gridColumn: isMobile ? 'span 1' : (tarjeta.titulo === 'Ventas' ? 'span 2' : 'span 1')
-              }}
-            >
-              {tarjeta.titulo === 'Ventas' ? (
-                // Diseño especial para la tarjeta de ventas
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                    <h3 style={{ fontSize: '0.875rem', color: '#64748b', margin: 0, fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {tarjeta.titulo}
-                    </h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '3rem', height: '3rem', background: tarjeta.gradiente, borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)', flexShrink: 0 }}>
-                        {tarjeta.icono}
-                      </div>
-                      {/* Ojito para mostrar/ocultar monto */}
-                      <button
-                        onClick={alternarMostrarVentas}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: '1.5rem',
-                          marginLeft: '4px',
-                          color: mostrarVentas ? '#64748b' : '#d1d5db',
-                          outline: 'none',
-                          padding: 0
-                        }}
-                        title={mostrarVentas ? 'Ocultar monto' : 'Mostrar monto'}
-                      >
-                        {mostrarVentas ? '👁️' : '🙈'}
-                      </button>
-                    </div>
-                  </div>
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', fontWeight: '800', color: tarjeta.color, margin: 0, lineHeight: '1', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-                      {cargandoEstadisticas ? (
-                        <div style={{ width: '80px', height: '50px', background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'loading 1.5s infinite', borderRadius: '0.5rem' }} />
-                      ) : (
-                        tarjeta.valor
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // Diseño original para las otras tarjetas
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '1rem',
-                  minWidth: 0
-                }}>
-                  <div style={{
-                    flex: 1,
-                    minWidth: 0
-                  }}>
-                    <h3 style={{
-                      fontSize: '0.875rem',
-                      color: '#64748b',
-                      marginBottom: '0.5rem',
-                      fontWeight: '500',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      {tarjeta.titulo}
-                    </h3>
-                    <div style={{
-                      fontSize: '2rem',
-                      fontWeight: '800',
-                      color: tarjeta.color,
-                      margin: 0,
-                      lineHeight: '1'
-                    }}>
-                      {cargandoEstadisticas ? (
-                        <div style={{
-                          width: '60px',
-                          height: '40px',
-                          background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
-                          backgroundSize: '200% 100%',
-                          animation: 'loading 1.5s infinite',
-                          borderRadius: '0.5rem'
-                        }} />
-                      ) : (
-                        tarjeta.valor
-                      )}
-                    </div>
-                  </div>
-                  <div style={{
-                    width: '4rem',
-                    height: '4rem',
-                    background: tarjeta.gradiente,
-                    borderRadius: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '2rem',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    flexShrink: 0
-                  }}>
-                    {tarjeta.icono}
-                  </div>
-                </div>
-              )}
+          {/* Card Productos */}
+          <Link 
+            to="/admin/productos"
+            style={{
+              background: 'white',
+              borderRadius: isMobile ? '0.75rem' : '1rem',
+              padding: isMobile ? '1.5rem' : '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              border: '1px solid #e2e8f0',
+              textDecoration: 'none',
+              color: 'inherit',
+              transition: 'all 0.3s ease',
+              display: 'block',
+              animation: 'slideInUp 0.6s ease-out 0.1s both'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 20px 40px rgba(59, 130, 246, 0.15)';
+              e.currentTarget.style.borderColor = '#3b82f6';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              height: '100%'
+            }}>
+              <div style={{
+                width: '4rem',
+                height: '4rem',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                borderRadius: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '2rem',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                marginBottom: '1rem'
+              }}>
+                📦
+              </div>
+              <h3 style={{
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: '#1e293b',
+                margin: '0 0 0.5rem 0'
+              }}>
+                Productos
+              </h3>
+              <p style={{
+                fontSize: '0.875rem',
+                color: '#64748b',
+                margin: 0
+              }}>
+                Gestionar catálogo
+              </p>
             </div>
-          ))}
+          </Link>
+
+          {/* Card Clientes */}
+          <Link 
+            to="/admin/clientes"
+            style={{
+              background: 'white',
+              borderRadius: isMobile ? '0.75rem' : '1rem',
+              padding: isMobile ? '1.5rem' : '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              border: '1px solid #e2e8f0',
+              textDecoration: 'none',
+              color: 'inherit',
+              transition: 'all 0.3s ease',
+              display: 'block',
+              animation: 'slideInUp 0.6s ease-out 0.2s both'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 20px 40px rgba(16, 185, 129, 0.15)';
+              e.currentTarget.style.borderColor = '#10b981';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              height: '100%'
+            }}>
+              <div style={{
+                width: '4rem',
+                height: '4rem',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                borderRadius: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '2rem',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                marginBottom: '1rem'
+              }}>
+                👥
+              </div>
+              <h3 style={{
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: '#1e293b',
+                margin: '0 0 0.5rem 0'
+              }}>
+                Clientes
+              </h3>
+              <p style={{
+                fontSize: '0.875rem',
+                color: '#64748b',
+                margin: 0
+              }}>
+                Gestionar clientes
+              </p>
+            </div>
+          </Link>
+
+          {/* Card Pedidos */}
+          <Link 
+            to="/admin/pedidos"
+            style={{
+              background: 'white',
+              borderRadius: isMobile ? '0.75rem' : '1rem',
+              padding: isMobile ? '1.5rem' : '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              border: '1px solid #e2e8f0',
+              textDecoration: 'none',
+              color: 'inherit',
+              transition: 'all 0.3s ease',
+              display: 'block',
+              animation: 'slideInUp 0.6s ease-out 0.3s both'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 20px 40px rgba(245, 158, 11, 0.15)';
+              e.currentTarget.style.borderColor = '#f59e0b';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              height: '100%'
+            }}>
+              <div style={{
+                width: '4rem',
+                height: '4rem',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                borderRadius: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '2rem',
+                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                marginBottom: '1rem'
+              }}>
+                📋
+              </div>
+              <h3 style={{
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: '#1e293b',
+                margin: '0 0 0.5rem 0'
+              }}>
+                Pedidos
+              </h3>
+              <p style={{
+                fontSize: '0.875rem',
+                color: '#64748b',
+                margin: 0
+              }}>
+                Gestionar pedidos
+              </p>
+            </div>
+          </Link>
+
+          {/* Card Venta Rápida */}
+          <Link 
+            to="/admin/caja-rapida"
+            style={{
+              background: 'white',
+              borderRadius: isMobile ? '0.75rem' : '1rem',
+              padding: isMobile ? '1.5rem' : '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              border: '1px solid #e2e8f0',
+              textDecoration: 'none',
+              color: 'inherit',
+              transition: 'all 0.3s ease',
+              display: 'block',
+              animation: 'slideInUp 0.6s ease-out 0.4s both'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 20px 40px rgba(139, 92, 246, 0.15)';
+              e.currentTarget.style.borderColor = '#8b5cf6';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              height: '100%'
+            }}>
+              <div style={{
+                width: '4rem',
+                height: '4rem',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                borderRadius: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '2rem',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                marginBottom: '1rem'
+              }}>
+                💰
+              </div>
+              <h3 style={{
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: '#1e293b',
+                margin: '0 0 0.5rem 0'
+              }}>
+                Venta Rápida
+              </h3>
+              <p style={{
+                fontSize: '0.875rem',
+                color: '#64748b',
+                margin: 0
+              }}>
+                Caja mostrador
+              </p>
+            </div>
+          </Link>
+
+          {/* Card Estadísticas */}
+          <Link 
+            to="/admin/estadisticas"
+            style={{
+              background: 'white',
+              borderRadius: isMobile ? '0.75rem' : '1rem',
+              padding: isMobile ? '1.5rem' : '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              border: '1px solid #e2e8f0',
+              textDecoration: 'none',
+              color: 'inherit',
+              transition: 'all 0.3s ease',
+              display: 'block',
+              animation: 'slideInUp 0.6s ease-out 0.5s both'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 20px 40px rgba(236, 72, 153, 0.15)';
+              e.currentTarget.style.borderColor = '#ec4899';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              height: '100%'
+            }}>
+              <div style={{
+                width: '4rem',
+                height: '4rem',
+                background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+                borderRadius: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '2rem',
+                boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)',
+                marginBottom: '1rem'
+              }}>
+                📊
+              </div>
+              <h3 style={{
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: '#1e293b',
+                margin: '0 0 0.5rem 0'
+              }}>
+                Estadísticas
+              </h3>
+              <p style={{
+                fontSize: '0.875rem',
+                color: '#64748b',
+                margin: 0
+              }}>
+                Ver reportes
+              </p>
+            </div>
+          </Link>
         </div>
 
-        {/* Acciones rápidas */}
+        {/* Funciones Avanzadas */}
         <div style={{
           marginBottom: '3rem',
           animation: 'slideInUp 0.6s ease-out 0.4s both'
@@ -664,9 +694,10 @@ export default function DashboardAdministrador() {
             fontSize: '1.875rem',
             fontWeight: '600',
             color: '#1e293b',
-            marginBottom: '1.5rem'
+            marginBottom: '1.5rem',
+            textAlign: 'center'
           }}>
-            Acciones Rápidas
+            Funciones Avanzadas
           </h2>
           <div style={{
             display: 'grid',
