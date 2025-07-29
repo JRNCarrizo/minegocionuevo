@@ -420,16 +420,16 @@ public class PedidoService {
         List<Pedido> pedidos = pedidoRepository.findByEmpresaOrderByFechaCreacionDesc(empresa);
         
         BigDecimal totalPedidos = pedidos.stream()
-                .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)
+                .filter(pedido -> pedido.getEstado() != Pedido.EstadoPedido.CANCELADO)
                 .map(Pedido::getTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         int totalTransacciones = (int) pedidos.stream()
-                .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)
+                .filter(pedido -> pedido.getEstado() != Pedido.EstadoPedido.CANCELADO)
                 .count();
         
         int totalProductos = pedidos.stream()
-                .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)
+                .filter(pedido -> pedido.getEstado() != Pedido.EstadoPedido.CANCELADO)
                 .flatMapToInt(pedido -> (pedido.getDetalles() != null ? pedido.getDetalles().stream().mapToInt(DetallePedido::getCantidad) : java.util.stream.IntStream.empty()))
                 .sum();
         

@@ -282,8 +282,15 @@ public class VentaRapidaService {
      * Obtiene estadísticas de ventas rápidas para una empresa
      */
     public VentaRapidaEstadisticas obtenerEstadisticasVentasRapidas(Long empresaId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+        System.out.println("=== DEBUG ESTADISTICAS VENTAS RAPIDAS CON FECHAS ===");
+        System.out.println("🔍 Buscando ventas para empresa ID: " + empresaId);
+        System.out.println("📅 Fecha inicio: " + fechaInicio);
+        System.out.println("📅 Fecha fin: " + fechaFin);
+        
         List<VentaRapida> ventas = ventaRapidaRepository.findByEmpresaIdAndFechaVentaBetweenOrderByFechaVentaDesc(
             empresaId, fechaInicio, fechaFin);
+        
+        System.out.println("📊 Ventas encontradas en rango: " + ventas.size());
 
         BigDecimal totalVentas = ventas.stream()
                 .map(VentaRapida::getTotal)
@@ -294,6 +301,11 @@ public class VentaRapidaService {
         int totalProductos = ventas.stream()
                 .mapToInt(venta -> venta.getDetalles().size())
                 .sum();
+
+        System.out.println("💰 Total ventas en rango: " + totalVentas);
+        System.out.println("🔄 Total transacciones en rango: " + totalTransacciones);
+        System.out.println("📦 Total productos en rango: " + totalProductos);
+        System.out.println("=== FIN DEBUG ESTADISTICAS VENTAS RAPIDAS CON FECHAS ===");
 
         return new VentaRapidaEstadisticas(totalVentas, totalTransacciones, totalProductos, ventas.size());
     }
@@ -302,7 +314,17 @@ public class VentaRapidaService {
      * Obtiene estadísticas de ventas rápidas para una empresa (todas las ventas)
      */
     public VentaRapidaEstadisticas obtenerEstadisticasVentasRapidas(Long empresaId) {
+        System.out.println("=== DEBUG ESTADISTICAS VENTAS RAPIDAS ===");
+        System.out.println("🔍 Buscando ventas para empresa ID: " + empresaId);
+        
         List<VentaRapida> ventas = ventaRapidaRepository.findByEmpresaIdOrderByFechaVentaDesc(empresaId);
+        
+        System.out.println("📊 Ventas encontradas: " + ventas.size());
+        
+        if (!ventas.isEmpty()) {
+            System.out.println("📋 Primera venta: ID=" + ventas.get(0).getId() + ", Total=" + ventas.get(0).getTotal());
+            System.out.println("📋 Última venta: ID=" + ventas.get(ventas.size()-1).getId() + ", Total=" + ventas.get(ventas.size()-1).getTotal());
+        }
 
         BigDecimal totalVentas = ventas.stream()
                 .map(VentaRapida::getTotal)
@@ -313,6 +335,11 @@ public class VentaRapidaService {
         int totalProductos = ventas.stream()
                 .mapToInt(venta -> venta.getDetalles().size())
                 .sum();
+
+        System.out.println("💰 Total ventas: " + totalVentas);
+        System.out.println("🔄 Total transacciones: " + totalTransacciones);
+        System.out.println("📦 Total productos: " + totalProductos);
+        System.out.println("=== FIN DEBUG ESTADISTICAS VENTAS RAPIDAS ===");
 
         return new VentaRapidaEstadisticas(totalVentas, totalTransacciones, totalProductos, ventas.size());
     }
