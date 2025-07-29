@@ -95,11 +95,22 @@ public class PedidoService {
             }
 
             // Descontar stock
+            System.out.println("=== DEBUG STOCK PEDIDO ===");
+            System.out.println("Producto: " + producto.getNombre() + " (ID: " + producto.getId() + ")");
+            System.out.println("Stock antes del descuento: " + producto.getStock());
+            System.out.println("Cantidad a descontar: " + detalleDTO.getCantidad());
+            
             if (producto.getStock() < detalleDTO.getCantidad()) {
                 throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre());
             }
+            
+            Integer stockAnterior = producto.getStock();
             producto.setStock(producto.getStock() - detalleDTO.getCantidad());
             productoRepository.save(producto);
+            
+            System.out.println("Stock después del descuento: " + producto.getStock());
+            System.out.println("Verificación: " + stockAnterior + " - " + detalleDTO.getCantidad() + " = " + producto.getStock());
+            System.out.println("=== FIN DEBUG STOCK PEDIDO ===");
 
             DetallePedido detalle = new DetallePedido();
             detalle.setPedido(pedido);
@@ -148,7 +159,7 @@ public class PedidoService {
                 
                 // Usar el usuarioId del parámetro si existe, sino el ID del cliente
                 Long userId = usuarioId != null ? usuarioId : (guardado.getCliente() != null ? guardado.getCliente().getId() : null);
-                historialInventarioService.registrarOperacionInventario(request, userId, empresaId);
+                historialInventarioService.registrarOperacionInventario(request, userId, empresaId, false);
             } catch (Exception e) {
                 // Log del error pero no fallar la operación principal
                 System.err.println("Error al registrar historial de inventario en pedido: " + e.getMessage());
@@ -414,10 +425,28 @@ public class PedidoService {
      */
     @Transactional
     public PedidoEstadisticas obtenerEstadisticasPedidos(Long empresaId) {
+        System.out.println("=== DEBUG ESTADISTICAS PEDIDOS ===");
+        System.out.println("EmpresaId: " + empresaId);
+        
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
         
+        System.out.println("Empresa encontrada: " + empresa.getNombre());
+        
         List<Pedido> pedidos = pedidoRepository.findByEmpresaOrderByFechaCreacionDesc(empresa);
+        System.out.println("Total de pedidos encontrados: " + pedidos.size());
+        
+        // Contar pedidos por estado
+        long pedidosPendientes = pedidos.stream().filter(p -> p.getEstado() == Pedido.EstadoPedido.PENDIENTE).count();
+        long pedidosConfirmados = pedidos.stream().filter(p -> p.getEstado() == Pedido.EstadoPedido.CONFIRMADO).count();
+        long pedidosEntregados = pedidos.stream().filter(p -> p.getEstado() == Pedido.EstadoPedido.ENTREGADO).count();
+        long pedidosCancelados = pedidos.stream().filter(p -> p.getEstado() == Pedido.EstadoPedido.CANCELADO).count();
+        
+        System.out.println("Pedidos por estado:");
+        System.out.println("  - PENDIENTE: " + pedidosPendientes);
+        System.out.println("  - CONFIRMADO: " + pedidosConfirmados);
+        System.out.println("  - ENTREGADO: " + pedidosEntregados);
+        System.out.println("  - CANCELADO: " + pedidosCancelados);
         
         BigDecimal totalPedidos = pedidos.stream()
                 .filter(pedido -> pedido.getEstado() != Pedido.EstadoPedido.CANCELADO)
@@ -434,6 +463,13 @@ public class PedidoService {
                 .sum();
         
         int cantidadPedidos = pedidos.size();
+        
+        System.out.println("Estadísticas calculadas:");
+        System.out.println("  - Total pedidos (monetario): " + totalPedidos);
+        System.out.println("  - Total transacciones: " + totalTransacciones);
+        System.out.println("  - Total productos: " + totalProductos);
+        System.out.println("  - Cantidad pedidos: " + cantidadPedidos);
+        System.out.println("=== FIN DEBUG ESTADISTICAS PEDIDOS ===");
         
         return new PedidoEstadisticas(totalPedidos, totalTransacciones, totalProductos, cantidadPedidos);
     }

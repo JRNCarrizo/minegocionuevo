@@ -106,7 +106,7 @@ public class VentaRapidaService {
                     request.setCodigoBarras(producto.getCodigoBarras());
                     request.setMetodoEntrada("VENTA_RAPIDA");
                     
-                    historialInventarioService.registrarOperacionInventario(request, usuarioId, empresaId);
+                    historialInventarioService.registrarOperacionInventario(request, usuarioId, empresaId, false);
                 } catch (Exception e) {
                     // Log del error pero no fallar la operación principal
                     System.err.println("Error al registrar historial de inventario en venta rápida: " + e.getMessage());

@@ -38,6 +38,14 @@ public class HistorialInventarioService {
      */
     @Transactional
     public ApiResponse<HistorialInventarioDTO> registrarOperacionInventario(InventarioRequestDTO request, Long usuarioId, Long empresaId) {
+        return registrarOperacionInventario(request, usuarioId, empresaId, true);
+    }
+
+    /**
+     * Registrar una operación de inventario con opción de actualizar stock
+     */
+    @Transactional
+    public ApiResponse<HistorialInventarioDTO> registrarOperacionInventario(InventarioRequestDTO request, Long usuarioId, Long empresaId, boolean actualizarStock) {
         try {
             // Validar que el producto existe y pertenece a la empresa
             Optional<Producto> productoOpt = productoRepository.findByIdAndEmpresaId(request.getProductoId(), empresaId);
@@ -105,9 +113,11 @@ public class HistorialInventarioService {
                 return new ApiResponse<>(false, "El stock no puede ser negativo", null);
             }
 
-            // Actualizar el stock del producto
-            producto.setStock(stockNuevo);
-            productoRepository.save(producto);
+            // Actualizar el stock del producto solo si se solicita
+            if (actualizarStock) {
+                producto.setStock(stockNuevo);
+                productoRepository.save(producto);
+            }
 
             // Crear el registro de historial
             HistorialInventario historial = new HistorialInventario();

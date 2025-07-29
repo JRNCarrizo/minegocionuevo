@@ -177,6 +177,9 @@ public class PedidoController {
     @GetMapping("/estadisticas")
     public ResponseEntity<?> obtenerEstadisticasPedidos(@PathVariable Long empresaId) {
         try {
+            System.out.println("=== DEBUG CONTROLADOR ESTADISTICAS PEDIDOS ===");
+            System.out.println("EmpresaId recibido: " + empresaId);
+            
             PedidoService.PedidoEstadisticas estadisticas = pedidoService.obtenerEstadisticasPedidos(empresaId);
             
             Map<String, Object> response = new HashMap<>();
@@ -185,8 +188,18 @@ public class PedidoController {
             response.put("totalProductos", estadisticas.getTotalProductos());
             response.put("cantidadPedidos", estadisticas.getCantidadPedidos());
             
+            System.out.println("Respuesta generada:");
+            System.out.println("  - totalPedidos: " + estadisticas.getTotalPedidos());
+            System.out.println("  - totalTransacciones: " + estadisticas.getTotalTransacciones());
+            System.out.println("  - totalProductos: " + estadisticas.getTotalProductos());
+            System.out.println("  - cantidadPedidos: " + estadisticas.getCantidadPedidos());
+            System.out.println("=== FIN DEBUG CONTROLADOR ESTADISTICAS PEDIDOS ===");
+            
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            System.err.println("=== ERROR EN ESTADISTICAS PEDIDOS ===");
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Error al obtener estadísticas: " + e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
