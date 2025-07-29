@@ -1055,6 +1055,27 @@ export default function CatalogoPublico() {
                     margin: 0,
                     padding: 0
                   }}>
+                    
+                    {/* Cartelito de Agotado */}
+                    {producto.stock === 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        left: '8px',
+                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '11px' : '12px',
+                        fontWeight: '700',
+                        zIndex: 10,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        backdropFilter: 'blur(4px)'
+                      }}>
+                        ❌ AGOTADO
+                      </div>
+                    )}
                     {producto.imagenes && producto.imagenes.length > 0 ? (
                       <img 
                         src={producto.imagenes[0]} 
@@ -1242,12 +1263,14 @@ export default function CatalogoPublico() {
                         </div>
                       )}
                       
-                      {/* Precio */}
+                      {/* Precio y Stock */}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'flex-start',
-                        marginBottom: '12px'
+                        justifyContent: 'space-between',
+                        marginBottom: '12px',
+                        flexWrap: 'wrap',
+                        gap: '8px'
                       }}>
                         <span style={{
                           fontSize: vista === 'lista' ? '18px' : vista === 'intermedia' ? (isMobile ? '18px' : '24px') : (isMobile ? '20px' : '28px'),
@@ -1257,6 +1280,51 @@ export default function CatalogoPublico() {
                         }}>
                           {formatearPrecio(producto.precio, empresa.moneda)}
                         </span>
+                        
+                        {/* Stock disponible en tiempo real */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          background: (() => {
+                            const stockDisponible = producto.stock - cantidadEnCarrito;
+                            if (stockDisponible <= 0) return 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)';
+                            if (stockDisponible <= 2) return 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
+                            return 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
+                          })(),
+                          border: (() => {
+                            const stockDisponible = producto.stock - cantidadEnCarrito;
+                            if (stockDisponible <= 0) return '1px solid #fecaca';
+                            if (stockDisponible <= 2) return '1px solid #fbbf24';
+                            return '1px solid #bbf7d0';
+                          })(),
+                          fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '11px' : '12px',
+                          fontWeight: '600',
+                          color: (() => {
+                            const stockDisponible = producto.stock - cantidadEnCarrito;
+                            if (stockDisponible <= 0) return '#dc2626';
+                            if (stockDisponible <= 2) return '#92400e';
+                            return '#166534';
+                          })()
+                        }}>
+                          <span>
+                            {(() => {
+                              const stockDisponible = producto.stock - cantidadEnCarrito;
+                              if (stockDisponible <= 0) return '❌';
+                              if (stockDisponible <= 2) return '⚠️';
+                              return '✓';
+                            })()}
+                          </span>
+                          <span>
+                            {(() => {
+                              const stockDisponible = producto.stock - cantidadEnCarrito;
+                              if (stockDisponible <= 0) return 'Agotado';
+                              return `${stockDisponible} disponible${stockDisponible !== 1 ? 's' : ''}`;
+                            })()}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -1323,7 +1391,9 @@ export default function CatalogoPublico() {
                           <button
                             onClick={async (e) => {
                               e.stopPropagation();
-                              if (cantidadEnCarrito < producto.stock) {
+                              const stockDisponible = producto.stock - cantidadEnCarrito;
+                              
+                              if (stockDisponible > 0) {
                                 if (cantidadEnCarrito === 0) {
                                   // Si no está en el carrito, agregarlo
                                   const agregado = await addToCart({
@@ -1341,26 +1411,45 @@ export default function CatalogoPublico() {
                                   // Si ya está en el carrito, aumentar cantidad
                                   await updateQuantity(producto.id, cantidadEnCarrito + 1, undefined, subdominio || undefined);
                                 }
+                              } else {
+                                toast.error('No hay más stock disponible');
                               }
                             }}
-                            disabled={cantidadEnCarrito >= producto.stock}
+                            disabled={(() => {
+                              const stockDisponible = producto.stock - cantidadEnCarrito;
+                              return stockDisponible <= 0;
+                            })()}
                             style={{
                               width: vista === 'lista' && !isMobile ? '20px' : '24px',
                               height: vista === 'lista' && !isMobile ? '20px' : '24px',
-                              background: cantidadEnCarrito >= producto.stock
-                                ? 'rgba(0,0,0,0.1)'
-                                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                              color: cantidadEnCarrito >= producto.stock ? '#6b7280' : 'white',
+                              background: (() => {
+                                const stockDisponible = producto.stock - cantidadEnCarrito;
+                                if (stockDisponible <= 0) return 'rgba(0,0,0,0.1)';
+                                return 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                              })(),
+                              color: (() => {
+                                const stockDisponible = producto.stock - cantidadEnCarrito;
+                                if (stockDisponible <= 0) return '#6b7280';
+                                return 'white';
+                              })(),
                               border: 'none',
                               borderRadius: vista === 'lista' && !isMobile ? '4px' : '6px',
                               fontSize: vista === 'lista' && !isMobile ? '10px' : '12px',
                               fontWeight: '700',
-                              cursor: cantidadEnCarrito >= producto.stock ? 'not-allowed' : 'pointer',
+                              cursor: (() => {
+                                const stockDisponible = producto.stock - cantidadEnCarrito;
+                                if (stockDisponible <= 0) return 'not-allowed';
+                                return 'pointer';
+                              })(),
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               transition: 'all 0.3s ease',
-                              opacity: cantidadEnCarrito >= producto.stock ? 0.6 : 1
+                              opacity: (() => {
+                                const stockDisponible = producto.stock - cantidadEnCarrito;
+                                if (stockDisponible <= 0) return 0.6;
+                                return 1;
+                              })()
                             }}
                           >
                             +
@@ -1369,23 +1458,35 @@ export default function CatalogoPublico() {
 
                         {/* Botón agregar al carrito */}
                         <button
-                          disabled={producto.stock === 0}
+                          disabled={(() => {
+                            const stockDisponible = producto.stock - cantidadEnCarrito;
+                            return stockDisponible <= 0;
+                          })()}
                           style={{
                             padding: vista === 'lista' && !isMobile ? '6px 8px' : '8px 12px',
                             height: vista === 'lista' && !isMobile ? '32px' : '36px',
-                            background: producto.stock === 0 
-                              ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-                              : cantidadEnCarrito > 0
-                                ? `linear-gradient(135deg, ${empresa?.colorSecundario || '#64748b'} 0%, ${empresa?.colorSecundario ? `${empresa.colorSecundario}dd` : '#475569'} 100%)`
-                                : `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`,
+                            background: (() => {
+                              const stockDisponible = producto.stock - cantidadEnCarrito;
+                              if (stockDisponible <= 0) return 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)';
+                              if (cantidadEnCarrito > 0) return `linear-gradient(135deg, ${empresa?.colorSecundario || '#64748b'} 0%, ${empresa?.colorSecundario ? `${empresa.colorSecundario}dd` : '#475569'} 100%)`;
+                              return `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`;
+                            })(),
                             color: 'white',
                             border: 'none',
                             borderRadius: '8px',
                             fontSize: vista === 'lista' && !isMobile ? '11px' : '12px',
                             fontWeight: '600',
-                            cursor: producto.stock === 0 ? 'not-allowed' : 'pointer',
+                            cursor: (() => {
+                              const stockDisponible = producto.stock - cantidadEnCarrito;
+                              if (stockDisponible <= 0) return 'not-allowed';
+                              return 'pointer';
+                            })(),
                             transition: 'all 0.3s ease',
-                            opacity: producto.stock === 0 ? 0.6 : 1,
+                            opacity: (() => {
+                              const stockDisponible = producto.stock - cantidadEnCarrito;
+                              if (stockDisponible <= 0) return 0.6;
+                              return 1;
+                            })(),
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -1396,7 +1497,9 @@ export default function CatalogoPublico() {
                           onClick={async (e) => {
                             e.stopPropagation();
                             
-                            if (producto.stock === 0) {
+                            const stockDisponible = producto.stock - cantidadEnCarrito;
+                            
+                            if (stockDisponible <= 0) {
                               toast.error('Este producto está agotado');
                               return;
                             }
@@ -1425,22 +1528,31 @@ export default function CatalogoPublico() {
                             }
                           }}
                         >
-                          {producto.stock === 0 ? (
-                            <>
-                              <span>❌</span>
-                              <span>{vista === 'lista' && !isMobile ? 'Sin stock' : 'Agotado'}</span>
-                            </>
-                          ) : cantidadEnCarrito > 0 ? (
-                            <>
-                              <span>🛒</span>
-                              <span>{vista === 'lista' && !isMobile ? `${cantidadEnCarrito}` : `${cantidadEnCarrito} en carrito`}</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>🛒</span>
-                              <span>{vista === 'lista' && !isMobile ? 'Agregar' : 'Agregar'}</span>
-                            </>
-                          )}
+                          {(() => {
+                            const stockDisponible = producto.stock - cantidadEnCarrito;
+                            if (stockDisponible <= 0) {
+                              return (
+                                <>
+                                  <span>❌</span>
+                                  <span>{vista === 'lista' && !isMobile ? 'Sin stock' : 'Agotado'}</span>
+                                </>
+                              );
+                            } else if (cantidadEnCarrito > 0) {
+                              return (
+                                <>
+                                  <span>🛒</span>
+                                  <span>{vista === 'lista' && !isMobile ? `${cantidadEnCarrito}` : `${cantidadEnCarrito} en carrito`}</span>
+                                </>
+                              );
+                            } else {
+                              return (
+                                <>
+                                  <span>🛒</span>
+                                  <span>{vista === 'lista' && !isMobile ? 'Agregar' : 'Agregar'}</span>
+                                </>
+                              );
+                            }
+                          })()}
                         </button>
                       </div>
                     ) : (
