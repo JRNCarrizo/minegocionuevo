@@ -6,6 +6,10 @@ import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
+import com.minegocio.backend.repositorios.ClienteRepository;
+import com.minegocio.backend.repositorios.ProductoRepository;
+import com.minegocio.backend.repositorios.PedidoRepository;
+import com.minegocio.backend.repositorios.VentaRapidaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,11 +33,23 @@ public class EmpresaService {
     @Autowired
     private EmpresaRepository empresaRepository;
 
-    @Autowired
+        @Autowired
     private UsuarioRepository usuarioRepository;
-
+    
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private ClienteRepository clienteRepository;
+    
+    @Autowired
+    private ProductoRepository productoRepository;
+    
+    @Autowired
+    private PedidoRepository pedidoRepository;
+    
+    @Autowired
+    private VentaRapidaRepository ventaRapidaRepository;
 
     /**
      * Registra una nueva empresa con su administrador
@@ -236,10 +252,25 @@ public class EmpresaService {
             empresaConStats.put("moneda", empresa.getMoneda());
             empresaConStats.put("activa", empresa.getActiva());
             
-            // Estadísticas (por ahora en 0, se pueden calcular después)
-            empresaConStats.put("totalClientes", 0);
-            empresaConStats.put("totalProductos", 0);
-            empresaConStats.put("totalPedidos", 0);
+            // Calcular estadísticas reales
+            Long empresaId = empresa.getId();
+            
+            // Total de clientes
+            long totalClientes = clienteRepository.countByEmpresaId(empresaId);
+            
+            // Total de productos
+            long totalProductos = productoRepository.countByEmpresaId(empresaId);
+            
+            // Total de pedidos
+            long totalPedidos = pedidoRepository.countByEmpresaId(empresaId);
+            
+            // Total de ventas rápidas
+            long totalVentasRapidas = ventaRapidaRepository.countByEmpresaId(empresaId);
+            
+            empresaConStats.put("totalClientes", totalClientes);
+            empresaConStats.put("totalProductos", totalProductos);
+            empresaConStats.put("totalPedidos", totalPedidos);
+            empresaConStats.put("totalVentasRapidas", totalVentasRapidas);
             
             return empresaConStats;
         }).collect(Collectors.toList());
