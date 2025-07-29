@@ -344,27 +344,32 @@ public class PedidoService {
         dto.setEmpresaNombre(pedido.getEmpresa().getNombre());
         dto.setNumeroPedido(pedido.getNumeroPedido());
         
-        dto.setDetalles(pedido.getDetalles().stream().map(det -> {
-            DetallePedidoDTO d = new DetallePedidoDTO();
-            d.setId(det.getId());
-            d.setProductoId(det.getProducto().getId());
-            d.setProductoNombre(det.getNombreProducto());
-            d.setProductoDescripcion(det.getDescripcionProducto());
-            d.setProductoCategoria(det.getCategoriaProducto());
-            d.setProductoMarca(det.getMarcaProducto());
-            
-            // Obtener la imagen principal del producto
-            String imagenPrincipal = "";
-            if (det.getProducto().getImagenes() != null && !det.getProducto().getImagenes().isEmpty()) {
-                imagenPrincipal = det.getProducto().getImagenes().get(0);
-            }
-            d.setProductoImagen(imagenPrincipal);
-            
-            d.setCantidad(det.getCantidad());
-            d.setPrecioUnitario(det.getPrecioUnitario());
-            d.setSubtotal(det.getPrecioTotal());
-            return d;
-        }).collect(Collectors.toList()));
+        // Manejar detalles (pueden ser null)
+        if (pedido.getDetalles() != null && !pedido.getDetalles().isEmpty()) {
+            dto.setDetalles(pedido.getDetalles().stream().map(det -> {
+                DetallePedidoDTO d = new DetallePedidoDTO();
+                d.setId(det.getId());
+                d.setProductoId(det.getProducto().getId());
+                d.setProductoNombre(det.getNombreProducto());
+                d.setProductoDescripcion(det.getDescripcionProducto());
+                d.setProductoCategoria(det.getCategoriaProducto());
+                d.setProductoMarca(det.getMarcaProducto());
+                
+                // Obtener la imagen principal del producto
+                String imagenPrincipal = "";
+                if (det.getProducto().getImagenes() != null && !det.getProducto().getImagenes().isEmpty()) {
+                    imagenPrincipal = det.getProducto().getImagenes().get(0);
+                }
+                d.setProductoImagen(imagenPrincipal);
+                
+                d.setCantidad(det.getCantidad());
+                d.setPrecioUnitario(det.getPrecioUnitario());
+                d.setSubtotal(det.getPrecioTotal());
+                return d;
+            }).collect(Collectors.toList()));
+        } else {
+            dto.setDetalles(new java.util.ArrayList<>());
+        }
         return dto;
     }
     
@@ -420,7 +425,7 @@ public class PedidoService {
         
         int totalProductos = pedidos.stream()
                 .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)
-                .flatMapToInt(pedido -> pedido.getDetalles().stream().mapToInt(DetallePedido::getCantidad))
+                .flatMapToInt(pedido -> (pedido.getDetalles() != null ? pedido.getDetalles().stream().mapToInt(DetallePedido::getCantidad) : java.util.stream.IntStream.empty()))
                 .sum();
         
         int cantidadPedidos = pedidos.size();
@@ -448,7 +453,7 @@ public class PedidoService {
         
         int totalProductos = pedidos.stream()
                 .filter(pedido -> pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO)
-                .flatMapToInt(pedido -> pedido.getDetalles().stream().mapToInt(DetallePedido::getCantidad))
+                .flatMapToInt(pedido -> (pedido.getDetalles() != null ? pedido.getDetalles().stream().mapToInt(DetallePedido::getCantidad) : java.util.stream.IntStream.empty()))
                 .sum();
         
         int cantidadPedidos = pedidos.size();
