@@ -281,15 +281,29 @@ public class VentaRapidaController {
             LocalDateTime inicio = null;
             LocalDateTime fin = null;
             
+            System.out.println("=== DEBUG ESTADISTICAS VENTAS RAPIDAS ===");
+            System.out.println("📅 Fecha inicio recibida: " + fechaInicio);
+            System.out.println("📅 Fecha fin recibida: " + fechaFin);
+            
             if (fechaInicio != null && fechaFin != null) {
-                // Si se proporcionan fechas específicas, usar el método con fechas
-                inicio = LocalDateTime.parse(fechaInicio);
-                fin = LocalDateTime.parse(fechaFin);
-                estadisticas = ventaRapidaService.obtenerEstadisticasVentasRapidas(empresaId, inicio, fin);
+                try {
+                    // Si se proporcionan fechas específicas, usar el método con fechas
+                    inicio = LocalDateTime.parse(fechaInicio);
+                    fin = LocalDateTime.parse(fechaFin);
+                    System.out.println("📅 Fecha inicio parseada: " + inicio);
+                    System.out.println("📅 Fecha fin parseada: " + fin);
+                    estadisticas = ventaRapidaService.obtenerEstadisticasVentasRapidas(empresaId, inicio, fin);
+                } catch (Exception e) {
+                    System.err.println("❌ Error parseando fechas: " + e.getMessage());
+                    throw new RuntimeException("Formato de fecha inválido. Use formato: yyyy-MM-dd'T'HH:mm:ss", e);
+                }
             } else {
                 // Si no se proporcionan fechas, obtener todas las ventas
+                System.out.println("📊 Obteniendo todas las ventas (sin filtro de fecha)");
                 estadisticas = ventaRapidaService.obtenerEstadisticasVentasRapidas(empresaId);
             }
+            
+            System.out.println("=== FIN DEBUG ESTADISTICAS VENTAS RAPIDAS ===");
 
             Map<String, Object> response = new HashMap<>();
             response.put("totalVentas", estadisticas.getTotalVentas());

@@ -319,48 +319,71 @@ public class AdminController {
     @PostMapping("/empresa/logo")
     public ResponseEntity<?> subirLogoEmpresa(@RequestParam("logo") MultipartFile archivo, HttpServletRequest request) {
         try {
+            System.out.println("=== DEBUG SUBIR LOGO ===");
+            System.out.println("📁 Archivo recibido: " + (archivo != null ? archivo.getOriginalFilename() : "null"));
+            System.out.println("📏 Tamaño archivo: " + (archivo != null ? archivo.getSize() : "null"));
+            System.out.println("📋 Tipo contenido: " + (archivo != null ? archivo.getContentType() : "null"));
+            
             String token = request.getHeader("Authorization");
             if (token == null || !token.startsWith("Bearer ")) {
+                System.out.println("❌ Token no válido");
                 return ResponseEntity.status(401).body(Map.of("error", "Token no válido"));
             }
             
             token = token.substring(7);
             String email = jwtUtils.extractUsername(token);
+            System.out.println("👤 Email extraído: " + email);
             
             Optional<Usuario> usuario = autenticacionService.obtenerPorEmail(email);
             if (usuario.isEmpty()) {
+                System.out.println("❌ Usuario no encontrado");
                 return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
             }
             
             Empresa empresa = usuario.get().getEmpresa();
             if (empresa == null) {
+                System.out.println("❌ Empresa no encontrada");
                 return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
             }
             
+            System.out.println("🏢 Empresa ID: " + empresa.getId());
+            System.out.println("🏢 Empresa nombre: " + empresa.getNombre());
+            
             // Validar archivo
             if (archivo.isEmpty()) {
+                System.out.println("❌ Archivo vacío");
                 return ResponseEntity.badRequest().body(Map.of("error", "No se seleccionó ningún archivo"));
             }
             
             if (!archivo.getContentType().startsWith("image/")) {
+                System.out.println("❌ Tipo de archivo no válido: " + archivo.getContentType());
                 return ResponseEntity.badRequest().body(Map.of("error", "El archivo debe ser una imagen"));
             }
             
             if (archivo.getSize() > 2 * 1024 * 1024) { // 2MB
+                System.out.println("❌ Archivo muy grande: " + archivo.getSize());
                 return ResponseEntity.badRequest().body(Map.of("error", "El archivo no puede superar 2MB"));
             }
             
+            System.out.println("✅ Validaciones pasadas, procediendo a subir...");
+            
             // Eliminar logo anterior si existe
             if (empresa.getLogoUrl() != null && !empresa.getLogoUrl().isEmpty()) {
+                System.out.println("🗑️ Eliminando logo anterior: " + empresa.getLogoUrl());
                 cloudinaryService.eliminarImagen(empresa.getLogoUrl());
             }
             
             // Subir nueva imagen
+            System.out.println("☁️ Subiendo imagen a Cloudinary...");
             String urlLogo = cloudinaryService.subirImagen(archivo, empresa.getId());
+            System.out.println("✅ URL del logo: " + urlLogo);
             
             // Actualizar empresa con nueva URL del logo
             empresa.setLogoUrl(urlLogo);
             empresaService.guardar(empresa);
+            System.out.println("💾 Empresa actualizada en base de datos");
+            
+            System.out.println("=== FIN DEBUG SUBIR LOGO ===");
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Logo subido correctamente",
@@ -370,9 +393,10 @@ public class AdminController {
             ));
             
         } catch (Exception e) {
-            System.err.println("Error al subir logo: " + e.getMessage());
+            System.err.println("=== ERROR CRÍTICO SUBIR LOGO ===");
+            System.err.println("Error: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body(Map.of("error", "Error interno del servidor"));
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
         }
     }
 
