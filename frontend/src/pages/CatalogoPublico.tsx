@@ -1375,7 +1375,9 @@ export default function CatalogoPublico() {
                             height: vista === 'lista' && !isMobile ? '32px' : '36px',
                             background: producto.stock === 0 
                               ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-                              : `linear-gradient(135deg, ${empresa?.colorSecundario || '#64748b'} 0%, ${empresa?.colorSecundario ? `${empresa.colorSecundario}dd` : '#475569'} 100%)`,
+                              : cantidadEnCarrito > 0
+                                ? `linear-gradient(135deg, ${empresa?.colorSecundario || '#64748b'} 0%, ${empresa?.colorSecundario ? `${empresa.colorSecundario}dd` : '#475569'} 100%)`
+                                : `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`,
                             color: 'white',
                             border: 'none',
                             borderRadius: '8px',
