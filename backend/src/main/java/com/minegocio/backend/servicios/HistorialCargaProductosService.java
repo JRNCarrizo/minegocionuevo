@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -112,6 +113,7 @@ public class HistorialCargaProductosService {
     }
     
     // Obtener historial paginado por empresa
+    @Transactional(readOnly = true)
     public ApiResponse<Page<HistorialCargaProductosDTO>> obtenerHistorialPorEmpresa(
             Long empresaId, int pagina, int tamanio) {
         
@@ -133,6 +135,7 @@ public class HistorialCargaProductosService {
     }
     
     // Búsqueda avanzada con filtros
+    @Transactional(readOnly = true)
     public ApiResponse<Page<HistorialCargaProductosDTO>> buscarConFiltros(
             Long empresaId,
             Long productoId,
@@ -242,6 +245,7 @@ public class HistorialCargaProductosService {
     }
     
     // Obtener historial por producto
+    @Transactional(readOnly = true)
     public ApiResponse<Page<HistorialCargaProductosDTO>> obtenerHistorialPorProducto(
             Long empresaId, Long productoId, int pagina, int tamanio) {
         
