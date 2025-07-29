@@ -159,7 +159,14 @@ export default function ProductoPublico() {
         }}
         onShowCart={() => setShowCart(true)}
       />
-      <CartModal open={showCart} onClose={() => setShowCart(false)} />
+              <CartModal 
+          open={showCart} 
+          onClose={() => setShowCart(false)} 
+          onCompraExitosa={() => {
+            // Recargar el producto para actualizar stock
+            cargarProducto();
+          }}
+        />
 
       <main className="contenedor">
         {/* Breadcrumb */}

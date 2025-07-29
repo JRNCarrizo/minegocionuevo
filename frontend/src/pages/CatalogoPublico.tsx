@@ -289,7 +289,11 @@ export default function CatalogoPublico() {
         }}
         onShowCart={() => setShowCart(true)}
       />
-      <CartModal open={showCart} onClose={() => setShowCart(false)} />
+              <CartModal 
+          open={showCart} 
+          onClose={() => setShowCart(false)} 
+          onCompraExitosa={cargarProductos}
+        />
       <ProductoDetalleModal 
         open={showProductoModal} 
         onClose={() => {

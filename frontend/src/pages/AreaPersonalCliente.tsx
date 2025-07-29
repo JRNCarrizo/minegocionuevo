@@ -1022,7 +1022,14 @@ export default function AreaPersonalCliente() {
         onCerrarSesion={cerrarSesion}
         onShowCart={() => setShowCart(true)}
       />
-      <CartModal open={showCart} onClose={() => setShowCart(false)} />
+              <CartModal 
+          open={showCart} 
+          onClose={() => setShowCart(false)} 
+          onCompraExitosa={() => {
+            // Recargar la página para actualizar datos
+            window.location.reload();
+          }}
+        />
 
       <main className="contenedor" style={{
         paddingTop: isMobile ? '12rem' : '3rem'

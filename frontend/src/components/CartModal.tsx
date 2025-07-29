@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 interface CartModalProps {
   open: boolean;
   onClose: () => void;
+  onCompraExitosa?: () => void; // Callback para recargar productos
 }
 
 const getClienteInfo = () => {
@@ -22,7 +23,7 @@ const getClienteInfo = () => {
   return null;
 };
 
-const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
+const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa }) => {
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
   const [showConfirm, setShowConfirm] = useState(false);
   const [compraRealizada, setCompraRealizada] = useState(false);
@@ -81,6 +82,12 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose }) => {
       setCompraRealizada(true);
       clearCart();
       toast.success('¡Pedido creado exitosamente! Revisa tu historial en "Mi Cuenta".');
+      
+      // Recargar productos para actualizar stock
+      if (onCompraExitosa) {
+        onCompraExitosa();
+      }
+      
       setTimeout(() => {
         setShowConfirm(false);
         setCompraRealizada(false);
