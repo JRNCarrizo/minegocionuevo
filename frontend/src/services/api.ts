@@ -765,12 +765,15 @@ class ApiService {
   }
 
   async obtenerHistorialVentaRapida(fechaInicio?: string, fechaFin?: string) {
-    const params = new URLSearchParams();
-    if (fechaInicio) params.append('fechaInicio', fechaInicio);
-    if (fechaFin) params.append('fechaFin', fechaFin);
-    
-    const response = await this.api.get(`/admin/venta-rapida/historial?${params}`);
-    return response.data;
+    if (fechaInicio && fechaFin) {
+      // Si hay fechas, usar el endpoint específico para filtrado por fecha
+      const response = await this.api.get(`/admin/venta-rapida/historial/por-fecha?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+      return response.data;
+    } else {
+      // Si no hay fechas, usar el endpoint general
+      const response = await this.api.get('/admin/venta-rapida/historial');
+      return response.data;
+    }
   }
 
   // Métodos de notificaciones
