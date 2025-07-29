@@ -295,15 +295,29 @@ public class AdminController {
             System.out.println("=== FIN DEBUG ESTADISTICAS VENTAS ===");
             
             // Obtener estadísticas adicionales de ventas rápidas
-            Integer totalTransacciones = 0;
+            Integer totalTransaccionesVentaRapida = 0;
             Integer totalProductos = 0;
             Integer cantidadVentas = 0;
             
             if (estadisticasVentaRapida != null) {
-                totalTransacciones = estadisticasVentaRapida.getTotalTransacciones();
+                totalTransaccionesVentaRapida = estadisticasVentaRapida.getTotalTransacciones();
                 totalProductos = estadisticasVentaRapida.getTotalProductos();
                 cantidadVentas = estadisticasVentaRapida.getCantidadVentas();
             }
+            
+            // Obtener estadísticas de pedidos para transacciones
+            Integer totalTransaccionesPedidos = 0;
+            try {
+                PedidoService.PedidoEstadisticas estadisticasPedidos = pedidoService.obtenerEstadisticasPedidos(empresa.getId());
+                totalTransaccionesPedidos = estadisticasPedidos.getTotalTransacciones();
+                System.out.println("✅ Total transacciones pedidos: " + totalTransaccionesPedidos);
+            } catch (Exception e) {
+                System.err.println("❌ Error al obtener transacciones de pedidos: " + e.getMessage());
+                totalTransaccionesPedidos = 0;
+            }
+            
+            // Sumar transacciones de ventas rápidas + pedidos
+            Integer totalTransacciones = totalTransaccionesVentaRapida + totalTransaccionesPedidos;
             
             Map<String, Object> estadisticas = Map.of(
                 "totalVentas", totalVentas,
