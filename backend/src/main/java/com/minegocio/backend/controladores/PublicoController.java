@@ -337,9 +337,9 @@ public class PublicoController {
             // Obtener todos los productos activos de la empresa
             List<ProductoDTO> productos = productoService.obtenerTodosLosProductos(empresaId);
             
-            // Filtrar solo productos activos
+            // Filtrar solo productos activos y con stock disponible
             List<ProductoDTO> productosActivos = productos.stream()
-                .filter(p -> p.getActivo() != null && p.getActivo())
+                .filter(p -> p.getActivo() != null && p.getActivo() && p.getStock() != null && p.getStock() > 0)
                 .collect(Collectors.toList());
             
             // Aplicar filtros adicionales si se proporcionan
@@ -399,8 +399,8 @@ public class PublicoController {
             
             ProductoDTO prod = producto.get();
             
-            // Solo devolver el producto si está activo
-            if (prod.getActivo() == null || !prod.getActivo()) {
+            // Solo devolver el producto si está activo y tiene stock disponible
+            if (prod.getActivo() == null || !prod.getActivo() || prod.getStock() == null || prod.getStock() <= 0) {
                 return ResponseEntity.notFound().build();
             }
             
@@ -583,6 +583,85 @@ public class PublicoController {
                 "error", "Error al crear productos demo",
                 "detalle", e.getMessage()
             ));
+        }
+    }
+
+    /**
+     * Actualiza el stock de un producto en tiempo real (para el carrito)
+     */
+    @PostMapping("/{subdominio}/productos/{id}/actualizar-stock-carrito")
+    public ResponseEntity<?> actualizarStockCarrito(
+            @PathVariable String subdominio,
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> request) {
+        try {
+            System.out.println("=== DEBUG ACTUALIZAR STOCK CARRITO ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("ProductoId: " + id);
+            
+            Integer cantidadEnCarrito = (Integer) request.get("cantidadEnCarrito");
+            if (cantidadEnCarrito == null) {
+                cantidadEnCarrito = 0;
+            }
+            
+            System.out.println("Cantidad en carrito: " + cantidadEnCarrito);
+            
+            Optional<Empresa> empresa = empresaService.obtenerPorSubdominio(subdominio);
+            
+            if (empresa.isEmpty()) {
+                var error = java.util.Map.of(
+                    "error", "Empresa no encontrada"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            Long empresaId = empresa.get().getId();
+            Optional<ProductoDTO> producto = productoService.obtenerProductoPorId(id, empresaId);
+            
+            if (producto.isEmpty()) {
+                var error = java.util.Map.of(
+                    "error", "Producto no encontrado"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            ProductoDTO prod = producto.get();
+            
+            // Solo devolver el producto si está activo
+            if (prod.getActivo() == null || !prod.getActivo()) {
+                var error = java.util.Map.of(
+                    "error", "Producto no disponible"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            int stockDisponible = prod.getStock() - cantidadEnCarrito;
+            boolean disponible = stockDisponible > 0;
+            
+            System.out.println("Stock total: " + prod.getStock());
+            System.out.println("Stock disponible: " + stockDisponible);
+            System.out.println("Disponible: " + disponible);
+            
+            var respuesta = java.util.Map.of(
+                "productoId", id,
+                "stockTotal", prod.getStock(),
+                "cantidadEnCarrito", cantidadEnCarrito,
+                "stockDisponible", stockDisponible,
+                "disponible", disponible,
+                "productoNombre", prod.getNombre(),
+                "precio", prod.getPrecio()
+            );
+            
+            return ResponseEntity.ok(respuesta);
+        } catch (Exception e) {
+            System.err.println("Error al actualizar stock del carrito: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
