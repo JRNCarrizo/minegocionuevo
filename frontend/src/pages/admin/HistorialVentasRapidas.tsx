@@ -77,13 +77,20 @@ const HistorialVentasRapidas: React.FC = () => {
     try {
       setLoading(true);
       let response;
+      let estadisticasResponse;
 
       if (fechaInicio && fechaFin) {
+        // Obtener ventas filtradas por fecha
         response = await ventaRapidaService.obtenerVentasPorFecha(fechaInicio, fechaFin);
+        // Obtener estadísticas filtradas por fecha
+        estadisticasResponse = await ventaRapidaService.obtenerEstadisticas(fechaInicio, fechaFin);
       } else if (metodoPago) {
         response = await ventaRapidaService.obtenerVentasPorMetodoPago(metodoPago);
+        // Para método de pago, mantener estadísticas generales por ahora
+        estadisticasResponse = await ventaRapidaService.obtenerEstadisticas();
       } else {
         response = await ventaRapidaService.obtenerHistorial();
+        estadisticasResponse = await ventaRapidaService.obtenerEstadisticas();
       }
 
       if (response.data) {
@@ -91,6 +98,11 @@ const HistorialVentasRapidas: React.FC = () => {
         setFiltroActivo(true);
       } else {
         setError(response.mensaje || 'Error al aplicar filtros');
+      }
+
+      // Actualizar estadísticas si se obtuvieron correctamente
+      if (estadisticasResponse.data) {
+        setEstadisticas(estadisticasResponse.data);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
@@ -105,6 +117,7 @@ const HistorialVentasRapidas: React.FC = () => {
     setMetodoPago('');
     setFiltroActivo(false);
     cargarHistorial();
+    cargarEstadisticas(); // Recargar estadísticas generales
   };
 
   const cargarEstadisticasDiarias = async () => {
