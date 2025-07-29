@@ -188,6 +188,10 @@ public class VentaRapidaController {
             @RequestParam String fechaInicio,
             @RequestParam String fechaFin) {
         try {
+            System.out.println("=== DEBUG FILTRADO POR FECHA ===");
+            System.out.println("📅 Fecha inicio recibida: " + fechaInicio);
+            System.out.println("📅 Fecha fin recibida: " + fechaFin);
+            
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
@@ -200,13 +204,24 @@ public class VentaRapidaController {
                 return ResponseEntity.status(400).body(Map.of("error", "ID de empresa no válido"));
             }
 
+            System.out.println("🏢 Empresa ID: " + empresaId);
+
             LocalDate inicio = LocalDate.parse(fechaInicio);
             LocalDate fin = LocalDate.parse(fechaFin);
+            
+            System.out.println("📅 Fecha inicio parseada: " + inicio);
+            System.out.println("📅 Fecha fin parseada: " + fin);
 
             List<VentaRapidaHistorialDTO> ventas = ventaRapidaService.obtenerVentasPorFecha(empresaId, inicio, fin);
+            
+            System.out.println("📊 Ventas encontradas en rango: " + ventas.size());
+            System.out.println("=== FIN DEBUG FILTRADO POR FECHA ===");
+            
             return ResponseEntity.ok(ventas);
 
         } catch (Exception e) {
+            System.err.println("❌ Error en filtrado por fecha: " + e.getMessage());
+            e.printStackTrace();
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Error al obtener ventas por fecha: " + e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
