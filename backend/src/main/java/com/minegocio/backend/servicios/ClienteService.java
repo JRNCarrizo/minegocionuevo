@@ -228,13 +228,34 @@ public class ClienteService {
         dto.setFechaCreacion(pedido.getFechaCreacion());
         dto.setEmpresaId(pedido.getEmpresa().getId());
         dto.setEmpresaNombre(pedido.getEmpresa().getNombre());
-        dto.setClienteId(pedido.getCliente().getId());
-        dto.setClienteNombre(pedido.getCliente().getNombre() + " " + pedido.getCliente().getApellidos());
-        dto.setClienteEmail(pedido.getCliente().getEmail());
         
-        // Convertir cliente
-        ClienteDTO clienteDTO = convertirADTO(pedido.getCliente());
-        dto.setCliente(clienteDTO);
+        // Manejar cliente (puede ser null para pedidos públicos)
+        if (pedido.getCliente() != null) {
+            dto.setClienteId(pedido.getCliente().getId());
+            dto.setClienteNombre(pedido.getCliente().getNombre() + " " + pedido.getCliente().getApellidos());
+            dto.setClienteEmail(pedido.getCliente().getEmail());
+            
+            // Convertir cliente
+            ClienteDTO clienteDTO = convertirADTO(pedido.getCliente());
+            dto.setCliente(clienteDTO);
+        } else {
+            // Para pedidos públicos sin cliente registrado
+            dto.setClienteId(null);
+            dto.setClienteNombre("Cliente Público");
+            dto.setClienteEmail(pedido.getClienteEmail());
+            
+            // Crear cliente DTO por defecto
+            ClienteDTO clienteDTO = new ClienteDTO();
+            clienteDTO.setId(null);
+            clienteDTO.setNombre("Cliente");
+            clienteDTO.setApellidos("Público");
+            clienteDTO.setEmail(pedido.getClienteEmail());
+            clienteDTO.setTelefono("");
+            clienteDTO.setActivo(true);
+            clienteDTO.setEmpresaId(pedido.getEmpresa().getId());
+            clienteDTO.setEmpresaNombre(pedido.getEmpresa().getNombre());
+            dto.setCliente(clienteDTO);
+        }
         
         // Convertir detalles (simplificado)
         dto.setDetalles(new java.util.ArrayList<>());

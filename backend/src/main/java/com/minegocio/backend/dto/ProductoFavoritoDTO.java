@@ -18,9 +18,17 @@ public class ProductoFavoritoDTO {
     
     public ProductoFavoritoDTO(ProductoFavorito productoFavorito) {
         this.id = productoFavorito.getId();
-        this.clienteId = productoFavorito.getCliente().getId();
-        this.clienteNombre = productoFavorito.getCliente().getNombre() + " " + 
-                           (productoFavorito.getCliente().getApellidos() != null ? productoFavorito.getCliente().getApellidos() : "");
+        
+        // Manejar cliente (puede ser null)
+        if (productoFavorito.getCliente() != null) {
+            this.clienteId = productoFavorito.getCliente().getId();
+            this.clienteNombre = productoFavorito.getCliente().getNombre() + " " + 
+                               (productoFavorito.getCliente().getApellidos() != null ? productoFavorito.getCliente().getApellidos() : "");
+        } else {
+            this.clienteId = null;
+            this.clienteNombre = "Cliente Público";
+        }
+        
         this.producto = convertirProductoADTO(productoFavorito.getProducto());
         this.empresaId = productoFavorito.getEmpresa().getId();
         this.empresaNombre = productoFavorito.getEmpresa().getNombre();
