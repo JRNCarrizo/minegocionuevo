@@ -679,8 +679,8 @@ export default function CatalogoPublico() {
               {/* Filtros */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',
-                gap: isMobile ? '12px' : '16px',
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',
+                gap: isMobile ? '8px' : '16px',
                 flex: 1
               }}>
                 <div>
