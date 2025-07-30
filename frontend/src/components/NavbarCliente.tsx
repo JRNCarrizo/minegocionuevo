@@ -54,7 +54,7 @@ export default function NavbarCliente({
         padding: isMobile ? '0 16px' : '0 20px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: isMobile ? 'space-between' : 'space-between',
+        justifyContent: isMobile ? (clienteInfo ? 'space-between' : 'center') : 'space-between',
         height: isMobile ? 'auto' : '70px',
         flexDirection: isMobile ? 'column' : 'row',
         paddingTop: isMobile ? '12px' : '0',
@@ -65,10 +65,11 @@ export default function NavbarCliente({
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: isMobile ? (clienteInfo ? 'space-between' : 'center') : 'flex-start',
+          justifyContent: isMobile ? (clienteInfo ? 'space-between' : 'flex-start') : 'flex-start',
           width: isMobile ? '100%' : 'auto',
           gap: isMobile ? '8px' : '12px',
-          position: isMobile ? 'relative' : 'static'
+          position: isMobile ? 'relative' : 'static',
+          flex: isMobile && !clienteInfo ? '1' : 'auto'
         }}>
           <div style={{
             display: 'flex',
@@ -76,7 +77,8 @@ export default function NavbarCliente({
             gap: isMobile ? '8px' : '12px',
             justifyContent: isMobile ? (clienteInfo ? 'flex-start' : 'center') : 'flex-start',
             width: isMobile ? '100%' : 'auto',
-            flex: isMobile ? (clienteInfo ? '1' : 'auto') : 'auto'
+            flex: isMobile ? (clienteInfo ? '1' : 'auto') : 'auto',
+            position: isMobile && !clienteInfo ? 'relative' : 'static'
           }}>
             {estaEnCuenta ? (
               <Link to="/" style={{
