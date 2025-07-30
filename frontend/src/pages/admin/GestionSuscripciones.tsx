@@ -69,6 +69,7 @@ interface Estadisticas {
 }
 
 const GestionSuscripciones: React.FC = () => {
+  console.log('🔍 GestionSuscripciones - Componente iniciado');
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
   
@@ -110,6 +111,7 @@ const GestionSuscripciones: React.FC = () => {
   }, []);
 
   const cargarDatos = async () => {
+    console.log('🔍 GestionSuscripciones - Iniciando carga de datos...');
     setLoading(true);
     try {
       // Cargar planes (usando datos mock por ahora)
@@ -190,6 +192,7 @@ const GestionSuscripciones: React.FC = () => {
           ingresosTotales: 599.97
         }
       ];
+      console.log('🔍 GestionSuscripciones - Planes mock cargados:', planesMock.length);
       setPlanes(planesMock);
 
       // Cargar suscripciones (datos mock)
@@ -249,12 +252,14 @@ const GestionSuscripciones: React.FC = () => {
         ingresosMensuales: 1599.78,
         ingresosAnuales: 19197.36
       };
+      console.log('🔍 GestionSuscripciones - Estadísticas mock cargadas');
       setEstadisticas(estadisticasMock);
 
     } catch (error) {
       console.error('Error cargando datos:', error);
       toast.error('Error al cargar los datos de suscripciones');
     } finally {
+      console.log('🔍 GestionSuscripciones - Carga de datos completada');
       setLoading(false);
     }
   };

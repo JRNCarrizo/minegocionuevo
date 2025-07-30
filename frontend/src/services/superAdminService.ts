@@ -82,6 +82,158 @@ class SuperAdminService {
     }
   }
 
+  // Métodos para gestión de planes
+  async obtenerPlanes() {
+    try {
+      const response = await ApiService.getSuperAdminPlanes();
+      return response;
+    } catch (error) {
+      console.error('Error al obtener planes:', error);
+      throw error;
+    }
+  }
+
+  async obtenerPlan(id: number) {
+    try {
+      const response = await ApiService.getSuperAdminPlan(id);
+      return response;
+    } catch (error) {
+      console.error('Error al obtener plan:', error);
+      throw error;
+    }
+  }
+
+  async crearPlan(plan: any) {
+    try {
+      const response = await ApiService.createSuperAdminPlan(plan);
+      return response;
+    } catch (error) {
+      console.error('Error al crear plan:', error);
+      throw error;
+    }
+  }
+
+  async actualizarPlan(id: number, plan: any) {
+    try {
+      const response = await ApiService.updateSuperAdminPlan(id, plan);
+      return response;
+    } catch (error) {
+      console.error('Error al actualizar plan:', error);
+      throw error;
+    }
+  }
+
+  async eliminarPlan(id: number) {
+    try {
+      const response = await ApiService.deleteSuperAdminPlan(id);
+      return response;
+    } catch (error) {
+      console.error('Error al eliminar plan:', error);
+      throw error;
+    }
+  }
+
+  // Métodos para gestión de suscripciones
+  async obtenerSuscripciones(params: any = {}) {
+    try {
+      const response = await ApiService.getSuperAdminSuscripciones(params);
+      return response;
+    } catch (error) {
+      console.error('Error al obtener suscripciones:', error);
+      throw error;
+    }
+  }
+
+  async obtenerSuscripcion(id: number) {
+    try {
+      const response = await ApiService.getSuperAdminSuscripcion(id);
+      return response;
+    } catch (error) {
+      console.error('Error al obtener suscripción:', error);
+      throw error;
+    }
+  }
+
+  async crearSuscripcion(suscripcion: any) {
+    try {
+      const response = await ApiService.createSuperAdminSuscripcion(suscripcion);
+      return response;
+    } catch (error) {
+      console.error('Error al crear suscripción:', error);
+      throw error;
+    }
+  }
+
+  async cancelarSuscripcion(id: number, motivo: string) {
+    try {
+      const response = await ApiService.cancelarSuperAdminSuscripcion(id, motivo);
+      return response;
+    } catch (error) {
+      console.error('Error al cancelar suscripción:', error);
+      throw error;
+    }
+  }
+
+  async suspenderSuscripcion(id: number) {
+    try {
+      const response = await ApiService.suspenderSuperAdminSuscripcion(id);
+      return response;
+    } catch (error) {
+      console.error('Error al suspender suscripción:', error);
+      throw error;
+    }
+  }
+
+  async reactivarSuscripcion(id: number) {
+    try {
+      const response = await ApiService.reactivarSuperAdminSuscripcion(id);
+      return response;
+    } catch (error) {
+      console.error('Error al reactivar suscripción:', error);
+      throw error;
+    }
+  }
+
+  async renovarSuscripcion(id: number) {
+    try {
+      const response = await ApiService.renovarSuperAdminSuscripcion(id);
+      return response;
+    } catch (error) {
+      console.error('Error al renovar suscripción:', error);
+      throw error;
+    }
+  }
+
+  async obtenerSuscripcionesPorExpirar() {
+    try {
+      const response = await ApiService.getSuperAdminSuscripcionesPorExpirar();
+      return response;
+    } catch (error) {
+      console.error('Error al obtener suscripciones por expirar:', error);
+      throw error;
+    }
+  }
+
+  async obtenerSuscripcionesExpiradas() {
+    try {
+      const response = await ApiService.getSuperAdminSuscripcionesExpiradas();
+      return response;
+    } catch (error) {
+      console.error('Error al obtener suscripciones expiradas:', error);
+      throw error;
+    }
+  }
+
+  async procesarRenovacionesAutomaticas() {
+    try {
+      const response = await ApiService.procesarRenovacionesAutomaticas();
+      return response;
+    } catch (error) {
+      console.error('Error al procesar renovaciones automáticas:', error);
+      throw error;
+    }
+  }
+
   async obtenerEmpresasPorExpirar() {
     try {
       const response = await ApiService.getSuperAdminEmpresasPorExpirar();

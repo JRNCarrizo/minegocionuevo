@@ -1055,6 +1055,89 @@ class ApiService {
     return response.data;
   }
 
+  // Métodos para gestión de planes
+  async getSuperAdminPlanes() {
+    const response = await this.api.get('/super-admin/suscripciones/planes');
+    return response.data;
+  }
+
+  async getSuperAdminPlan(id: number) {
+    const response = await this.api.get(`/super-admin/suscripciones/planes/${id}`);
+    return response.data;
+  }
+
+  async createSuperAdminPlan(plan: any) {
+    const response = await this.api.post('/super-admin/suscripciones/planes', plan);
+    return response.data;
+  }
+
+  async updateSuperAdminPlan(id: number, plan: any) {
+    const response = await this.api.put(`/super-admin/suscripciones/planes/${id}`, plan);
+    return response.data;
+  }
+
+  async deleteSuperAdminPlan(id: number) {
+    const response = await this.api.delete(`/super-admin/suscripciones/planes/${id}`);
+    return response.data;
+  }
+
+  // Métodos para gestión de suscripciones
+  async getSuperAdminSuscripciones(params: any = {}) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, value.toString());
+      }
+    });
+    const response = await this.api.get(`/super-admin/suscripciones?${queryParams}`);
+    return response.data;
+  }
+
+  async getSuperAdminSuscripcion(id: number) {
+    const response = await this.api.get(`/super-admin/suscripciones/${id}`);
+    return response.data;
+  }
+
+  async createSuperAdminSuscripcion(suscripcion: any) {
+    const response = await this.api.post('/super-admin/suscripciones', suscripcion);
+    return response.data;
+  }
+
+  async cancelarSuperAdminSuscripcion(id: number, motivo: string) {
+    const response = await this.api.post(`/super-admin/suscripciones/${id}/cancelar`, { motivo });
+    return response.data;
+  }
+
+  async suspenderSuperAdminSuscripcion(id: number) {
+    const response = await this.api.post(`/super-admin/suscripciones/${id}/suspender`);
+    return response.data;
+  }
+
+  async reactivarSuperAdminSuscripcion(id: number) {
+    const response = await this.api.post(`/super-admin/suscripciones/${id}/reactivar`);
+    return response.data;
+  }
+
+  async renovarSuperAdminSuscripcion(id: number) {
+    const response = await this.api.post(`/super-admin/suscripciones/${id}/renovar`);
+    return response.data;
+  }
+
+  async getSuperAdminSuscripcionesPorExpirar() {
+    const response = await this.api.get('/super-admin/suscripciones/por-expirar');
+    return response.data;
+  }
+
+  async getSuperAdminSuscripcionesExpiradas() {
+    const response = await this.api.get('/super-admin/suscripciones/expiradas');
+    return response.data;
+  }
+
+  async procesarRenovacionesAutomaticas() {
+    const response = await this.api.post('/super-admin/suscripciones/procesar-renovaciones');
+    return response.data;
+  }
+
   async getSuperAdminEmpresasPorExpirar() {
     const response = await this.api.get('/super-admin/empresas/por-expirar');
     return response.data;
