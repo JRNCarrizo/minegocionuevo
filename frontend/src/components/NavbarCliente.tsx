@@ -317,8 +317,7 @@ export default function NavbarCliente({
               alignItems: 'center',
               gap: isMobile ? '8px' : '12px',
               flexDirection: isMobile ? 'row' : 'row',
-              justifyContent: isMobile ? 'center' : 'flex-start',
-              width: isMobile ? '100%' : 'auto'
+              justifyContent: isMobile ? 'center' : 'flex-start'
             }}>
               <Link to="/cuenta" style={{
                 color: 'white',
@@ -328,19 +327,12 @@ export default function NavbarCliente({
                 padding: isMobile ? '6px 10px' : '8px 12px',
                 borderRadius: '8px',
                 transition: 'all 0.2s ease',
-                background: 'rgba(255,255,255,0.1)',
-                flex: isMobile ? '1' : 'auto',
-                textAlign: 'center',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px'
+                background: 'rgba(255,255,255,0.1)'
               }}
               onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
               onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               >
-                <span>👤</span>
-                <span>Mi Cuenta</span>
+                👤 Mi Cuenta
               </Link>
               
               {/* Saludo del cliente - solo en desktop */}
@@ -387,10 +379,7 @@ export default function NavbarCliente({
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '4px',
-                  flex: isMobile ? '1' : 'auto',
-                  textAlign: 'center'
+                  gap: '6px'
                 }}
                 onMouseOver={(e) => e.currentTarget.style.background = 'rgba(220, 53, 69, 1)'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'rgba(220, 53, 69, 0.8)'}
