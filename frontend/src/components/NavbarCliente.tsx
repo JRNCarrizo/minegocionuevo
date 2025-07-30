@@ -54,7 +54,7 @@ export default function NavbarCliente({
         padding: isMobile ? '0 16px' : '0 20px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: isMobile ? (clienteInfo ? 'space-between' : 'center') : 'space-between',
+        justifyContent: isMobile ? (clienteInfo ? 'space-between' : 'flex-start') : 'space-between',
         height: isMobile ? 'auto' : '70px',
         flexDirection: isMobile ? 'column' : 'row',
         paddingTop: isMobile ? '12px' : '0',
@@ -100,14 +100,14 @@ export default function NavbarCliente({
               title="Volver al catálogo"
               >
                 <div style={{
-                  width: isMobile ? '40px' : '50px',
-                  height: isMobile ? '40px' : '50px',
+                  width: isMobile ? '50px' : '60px',
+                  height: isMobile ? '50px' : '60px',
                   background: 'transparent',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: isMobile ? '20px' : '24px',
+                  fontSize: isMobile ? '24px' : '28px',
                   overflow: 'hidden'
                 }}>
                   {empresa.logoUrl ? (
@@ -164,14 +164,14 @@ export default function NavbarCliente({
                 title="Volver arriba"
                 >
                 <div style={{
-                  width: isMobile ? '40px' : '50px',
-                  height: isMobile ? '40px' : '50px',
+                  width: isMobile ? '50px' : '60px',
+                  height: isMobile ? '50px' : '60px',
                   background: 'transparent',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: isMobile ? '20px' : '24px',
+                  fontSize: isMobile ? '24px' : '28px',
                   overflow: 'hidden'
                 }}>
                   {empresa.logoUrl ? (
