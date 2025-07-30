@@ -70,6 +70,8 @@ interface Estadisticas {
 
 const GestionSuscripciones: React.FC = () => {
   console.log('🔍 GestionSuscripciones - Componente iniciado');
+  console.log('🔍 GestionSuscripciones - URL actual:', window.location.href);
+  console.log('🔍 GestionSuscripciones - Pathname:', window.location.pathname);
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
   
@@ -107,7 +109,13 @@ const GestionSuscripciones: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log('🔍 GestionSuscripciones - useEffect ejecutado');
+    console.log('🔍 GestionSuscripciones - Estado inicial loading:', loading);
     cargarDatos();
+    
+    return () => {
+      console.log('🔍 GestionSuscripciones - Componente desmontado');
+    };
   }, []);
 
   const cargarDatos = async () => {
@@ -256,7 +264,9 @@ const GestionSuscripciones: React.FC = () => {
       setEstadisticas(estadisticasMock);
 
     } catch (error) {
-      console.error('Error cargando datos:', error);
+      console.error('🔍 GestionSuscripciones - Error cargando datos:', error);
+      console.error('🔍 GestionSuscripciones - Tipo de error:', typeof error);
+      console.error('🔍 GestionSuscripciones - Mensaje de error:', error instanceof Error ? error.message : 'Error desconocido');
       toast.error('Error al cargar los datos de suscripciones');
     } finally {
       console.log('🔍 GestionSuscripciones - Carga de datos completada');
@@ -447,7 +457,12 @@ const GestionSuscripciones: React.FC = () => {
     marginRight: '15px'
   };
 
+  console.log('🔍 GestionSuscripciones - Renderizando componente, loading:', loading);
+  console.log('🔍 GestionSuscripciones - Planes cargados:', planes.length);
+  console.log('🔍 GestionSuscripciones - Suscripciones cargadas:', suscripciones.length);
+  
   if (loading) {
+    console.log('🔍 GestionSuscripciones - Mostrando pantalla de carga');
     return (
       <div style={containerStyle}>
         <div style={loadingStyle}>
@@ -458,6 +473,9 @@ const GestionSuscripciones: React.FC = () => {
     );
   }
 
+  console.log('🔍 GestionSuscripciones - Renderizando contenido principal');
+  console.log('🔍 GestionSuscripciones - Active tab:', activeTab);
+  
   return (
     <div style={containerStyle}>
       {/* Header */}

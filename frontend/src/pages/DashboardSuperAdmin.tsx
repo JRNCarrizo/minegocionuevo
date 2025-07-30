@@ -477,7 +477,10 @@ const DashboardSuperAdmin: React.FC = () => {
         
         <div 
           style={actionCardStyle}
-          onClick={() => navigate('/super-admin/suscripciones')}
+          onClick={() => {
+            console.log('🔍 DashboardSuperAdmin - Navegando a /super-admin/suscripciones');
+            navigate('/super-admin/suscripciones');
+          }}
         >
           <div style={{ marginBottom: '15px' }}>
             <FaCreditCard color="var(--color-primario)" size={40} />
