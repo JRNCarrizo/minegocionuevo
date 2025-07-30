@@ -34,7 +34,11 @@ export default function Estadisticas() {
 
   useEffect(() => {
     const cargarEstadisticas = async () => {
+      console.log('🔍 Datos usuario:', datosUsuario);
+      console.log('🔍 Empresa ID:', datosUsuario?.empresaId);
+      
       if (!datosUsuario?.empresaId) {
+        console.log('❌ No hay empresa ID, no se pueden cargar estadísticas');
         return;
       }
 
@@ -43,6 +47,7 @@ export default function Estadisticas() {
         const empresaId = datosUsuario.empresaId;
 
         // Cargar estadísticas de ventas rápidas
+        console.log('🔍 Token actual:', localStorage.getItem('token'));
         const responseVentas = await ApiService.obtenerEstadisticasVentas();
         const statsVentas = responseVentas.data || {};
         console.log('🔍 Estadísticas recibidas del backend:', statsVentas);
@@ -70,9 +75,20 @@ export default function Estadisticas() {
           totalProductosCatalogo: totalProductosCatalogo,
           totalUnidadesVendidas: statsVentas.totalUnidadesVendidas || 0
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error al cargar estadísticas:', error);
-        toast.error('Error al cargar las estadísticas');
+        console.error('🔍 Detalles del error:', {
+          message: error?.message,
+          status: error?.response?.status,
+          statusText: error?.response?.statusText,
+          data: error?.response?.data
+        });
+        
+        if (error?.response?.status === 403) {
+          toast.error('Error de autorización. Por favor, inicia sesión nuevamente.');
+        } else {
+          toast.error('Error al cargar las estadísticas');
+        }
       } finally {
         setCargando(false);
       }

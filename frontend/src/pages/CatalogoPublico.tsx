@@ -1060,26 +1060,7 @@ export default function CatalogoPublico() {
                     padding: 0
                   }}>
                     
-                    {/* Cartelito de Agotado */}
-                    {producto.stock === 0 && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '8px',
-                        left: '8px',
-                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                        color: 'white',
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '11px' : '12px',
-                        fontWeight: '700',
-                        zIndex: 10,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        backdropFilter: 'blur(4px)'
-                      }}>
-                        ❌ AGOTADO
-                      </div>
-                    )}
+
                     {producto.imagenes && producto.imagenes.length > 0 ? (
                       <img 
                         src={producto.imagenes[0]} 
@@ -1145,25 +1126,7 @@ export default function CatalogoPublico() {
                       </div>
                     )}
 
-                    {/* Badge de stock */}
-                    {producto.stock !== null && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '8px',
-                        right: '8px',
-                        background: producto.stock > 0 
-                          ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                          : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                        color: 'white',
-                        padding: '4px 8px',
-                        borderRadius: '12px',
-                        fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '12px' : '14px',
-                        fontWeight: '600',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                      }}>
-                        {producto.stock > 0 ? `📦 ${producto.stock}` : '❌ Agotado'}
-                      </div>
-                    )}
+
 
                     {/* Botón de favoritos */}
                     <button
