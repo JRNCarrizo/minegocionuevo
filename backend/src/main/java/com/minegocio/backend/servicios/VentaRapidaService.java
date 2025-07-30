@@ -302,12 +302,19 @@ public class VentaRapidaService {
                 .mapToInt(venta -> venta.getDetalles().size())
                 .sum();
 
+        // Calcular total de unidades vendidas
+        int totalUnidadesVendidas = ventas.stream()
+                .flatMapToInt(venta -> venta.getDetalles().stream()
+                        .mapToInt(detalle -> detalle.getCantidad()))
+                .sum();
+
         System.out.println("💰 Total ventas en rango: " + totalVentas);
         System.out.println("🔄 Total transacciones en rango: " + totalTransacciones);
         System.out.println("📦 Total productos en rango: " + totalProductos);
+        System.out.println("📊 Total unidades vendidas en rango: " + totalUnidadesVendidas);
         System.out.println("=== FIN DEBUG ESTADISTICAS VENTAS RAPIDAS CON FECHAS ===");
 
-        return new VentaRapidaEstadisticas(totalVentas, totalTransacciones, totalProductos, ventas.size());
+        return new VentaRapidaEstadisticas(totalVentas, totalTransacciones, totalProductos, ventas.size(), totalUnidadesVendidas);
     }
 
     /**
@@ -336,12 +343,19 @@ public class VentaRapidaService {
                 .mapToInt(venta -> venta.getDetalles().size())
                 .sum();
 
+        // Calcular total de unidades vendidas
+        int totalUnidadesVendidas = ventas.stream()
+                .flatMapToInt(venta -> venta.getDetalles().stream()
+                        .mapToInt(detalle -> detalle.getCantidad()))
+                .sum();
+
         System.out.println("💰 Total ventas: " + totalVentas);
         System.out.println("🔄 Total transacciones: " + totalTransacciones);
         System.out.println("📦 Total productos: " + totalProductos);
+        System.out.println("📊 Total unidades vendidas: " + totalUnidadesVendidas);
         System.out.println("=== FIN DEBUG ESTADISTICAS VENTAS RAPIDAS ===");
 
-        return new VentaRapidaEstadisticas(totalVentas, totalTransacciones, totalProductos, ventas.size());
+        return new VentaRapidaEstadisticas(totalVentas, totalTransacciones, totalProductos, ventas.size(), totalUnidadesVendidas);
     }
 
     /**
@@ -386,12 +400,14 @@ public class VentaRapidaService {
         private final int totalTransacciones;
         private final int totalProductos;
         private final int cantidadVentas;
+        private final int totalUnidadesVendidas;
 
-        public VentaRapidaEstadisticas(BigDecimal totalVentas, int totalTransacciones, int totalProductos, int cantidadVentas) {
+        public VentaRapidaEstadisticas(BigDecimal totalVentas, int totalTransacciones, int totalProductos, int cantidadVentas, int totalUnidadesVendidas) {
             this.totalVentas = totalVentas;
             this.totalTransacciones = totalTransacciones;
             this.totalProductos = totalProductos;
             this.cantidadVentas = cantidadVentas;
+            this.totalUnidadesVendidas = totalUnidadesVendidas;
         }
 
         // Getters
@@ -399,5 +415,6 @@ public class VentaRapidaService {
         public int getTotalTransacciones() { return totalTransacciones; }
         public int getTotalProductos() { return totalProductos; }
         public int getCantidadVentas() { return cantidadVentas; }
+        public int getTotalUnidadesVendidas() { return totalUnidadesVendidas; }
     }
 } 

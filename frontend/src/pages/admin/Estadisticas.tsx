@@ -14,6 +14,7 @@ interface Estadisticas {
   totalPedidos: number;
   totalClientes: number;
   totalProductosCatalogo: number;
+  totalUnidadesVendidas: number;
 }
 
 export default function Estadisticas() {
@@ -26,7 +27,8 @@ export default function Estadisticas() {
     cantidadVentas: 0,
     totalPedidos: 0,
     totalClientes: 0,
-    totalProductosCatalogo: 0
+    totalProductosCatalogo: 0,
+    totalUnidadesVendidas: 0
   });
   const [cargando, setCargando] = useState(true);
 
@@ -63,7 +65,8 @@ export default function Estadisticas() {
           cantidadVentas: statsVentas.cantidadVentas || 0,
           totalPedidos: totalPedidos,
           totalClientes: totalClientes,
-          totalProductosCatalogo: totalProductosCatalogo
+          totalProductosCatalogo: totalProductosCatalogo,
+          totalUnidadesVendidas: statsVentas.totalUnidadesVendidas || 0
         });
       } catch (error) {
         console.error('Error al cargar estadísticas:', error);
@@ -99,12 +102,12 @@ export default function Estadisticas() {
       descripcion: 'Total de transacciones'
     },
     {
-      titulo: 'Productos Vendidos',
-      valor: estadisticas.totalProductos,
+      titulo: 'Unidades Vendidas',
+      valor: estadisticas.totalUnidadesVendidas,
       icono: '📦',
       color: '#f59e0b',
       gradiente: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      descripcion: 'Unidades vendidas'
+      descripcion: 'Total de unidades vendidas'
     },
     {
       titulo: 'Ventas Rápidas',
