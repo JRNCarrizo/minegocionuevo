@@ -402,8 +402,8 @@ export default function DashboardAdministrador() {
         {/* Accesos Directos */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
-          gap: isMobile ? '1rem' : '1.5rem',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)',
+          gap: isMobile ? '0.75rem' : isTablet ? '1rem' : '1.5rem',
           marginBottom: isMobile ? '2rem' : '3rem'
         }}>
           {/* Card Productos */}
@@ -412,7 +412,7 @@ export default function DashboardAdministrador() {
             style={{
               background: 'white',
               borderRadius: isMobile ? '0.75rem' : '1rem',
-              padding: isMobile ? '1.5rem' : '2rem',
+              padding: isMobile ? '1rem' : '2rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               border: '1px solid #e2e8f0',
               textDecoration: 'none',
@@ -477,7 +477,7 @@ export default function DashboardAdministrador() {
             style={{
               background: 'white',
               borderRadius: isMobile ? '0.75rem' : '1rem',
-              padding: isMobile ? '1.5rem' : '2rem',
+              padding: isMobile ? '1rem' : '2rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               border: '1px solid #e2e8f0',
               textDecoration: 'none',
@@ -542,7 +542,7 @@ export default function DashboardAdministrador() {
             style={{
               background: 'white',
               borderRadius: isMobile ? '0.75rem' : '1rem',
-              padding: isMobile ? '1.5rem' : '2rem',
+              padding: isMobile ? '1rem' : '2rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               border: '1px solid #e2e8f0',
               textDecoration: 'none',
@@ -607,7 +607,7 @@ export default function DashboardAdministrador() {
             style={{
               background: 'white',
               borderRadius: isMobile ? '0.75rem' : '1rem',
-              padding: isMobile ? '1.5rem' : '2rem',
+              padding: isMobile ? '1rem' : '2rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               border: '1px solid #e2e8f0',
               textDecoration: 'none',
@@ -748,8 +748,8 @@ export default function DashboardAdministrador() {
           </h2>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: isMobile ? '1rem' : '1.5rem'
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: isMobile ? '0.75rem' : '1.5rem'
           }}>
             {accionesRapidas.map((accion, index) => (
               <Link 
@@ -758,7 +758,7 @@ export default function DashboardAdministrador() {
                 style={{
                   background: 'white',
                   borderRadius: isMobile ? '0.75rem' : '1rem',
-                  padding: isMobile ? '1.5rem' : '2rem',
+                  padding: isMobile ? '1rem' : '2rem',
                   textDecoration: 'none',
                   color: 'inherit',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
