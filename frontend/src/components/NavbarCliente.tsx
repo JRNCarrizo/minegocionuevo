@@ -65,9 +65,10 @@ export default function NavbarCliente({
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: isMobile ? 'space-between' : 'flex-start',
+          justifyContent: isMobile ? 'center' : 'flex-start',
           width: isMobile ? '100%' : 'auto',
-          gap: isMobile ? '8px' : '12px'
+          gap: isMobile ? '8px' : '12px',
+          position: isMobile ? 'relative' : 'static'
         }}>
           <div style={{
             display: 'flex',
@@ -188,9 +189,13 @@ export default function NavbarCliente({
             )}
           </div>
 
-          {/* Inicial del cliente en móvil - ahora en la misma línea a la derecha */}
+          {/* Inicial del cliente en móvil - ahora posicionado absolutamente a la derecha */}
           {isMobile && clienteInfo && (
             <div style={{
+              position: 'absolute',
+              right: '0',
+              top: '50%',
+              transform: 'translateY(-50%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
