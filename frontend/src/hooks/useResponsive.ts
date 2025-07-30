@@ -21,27 +21,42 @@ export const useBreakpoint = () => {
       const currentWidth = window.innerWidth;
       setWidth(currentWidth);
 
+      let newBreakpoint: Breakpoint;
       if (currentWidth < breakpoints.xs) {
-        setBreakpoint('xs');
+        newBreakpoint = 'xs';
       } else if (currentWidth < breakpoints.sm) {
-        setBreakpoint('sm');
+        newBreakpoint = 'sm';
       } else if (currentWidth < breakpoints.md) {
-        setBreakpoint('md');
+        newBreakpoint = 'md';
       } else if (currentWidth < breakpoints.lg) {
-        setBreakpoint('lg');
+        newBreakpoint = 'lg';
       } else {
-        setBreakpoint('xl');
+        newBreakpoint = 'xl';
       }
+
+      console.log('🔍 useBreakpoint - Cambio detectado:', {
+        width: currentWidth,
+        breakpoint: newBreakpoint
+      });
+
+      setBreakpoint(newBreakpoint);
     };
 
     // Establecer el breakpoint inicial
     handleResize();
 
-    // Agregar event listener
+    // Agregar event listeners
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', () => {
+      // Pequeño delay para que el navegador procese el cambio de orientación
+      setTimeout(handleResize, 100);
+    });
 
     // Cleanup
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, []);
 
   return { breakpoint, width };
@@ -80,19 +95,39 @@ export const useScreenSize = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
 
-      setScreenSize({
+      const newScreenSize = {
         width,
         height,
         isMobile: width < breakpoints.sm,
         isTablet: width >= breakpoints.sm && width < breakpoints.lg,
         isDesktop: width >= breakpoints.lg,
+      };
+
+      console.log('🔍 useScreenSize - Cambio detectado:', {
+        width,
+        height,
+        isMobile: newScreenSize.isMobile,
+        isTablet: newScreenSize.isTablet,
+        isDesktop: newScreenSize.isDesktop
       });
+
+      setScreenSize(newScreenSize);
     };
 
+    // Ejecutar inmediatamente
     handleResize();
+    
+    // Agregar event listeners
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', () => {
+      // Pequeño delay para que el navegador procese el cambio de orientación
+      setTimeout(handleResize, 100);
+    });
 
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, []);
 
   return screenSize;
@@ -192,6 +227,18 @@ export const useResponsive = () => {
   const isTouch = useIsTouchDevice();
   const prefersReducedMotion = usePrefersReducedMotion();
   const prefersDark = usePrefersDarkMode();
+
+  // Log para debugging
+  console.log('🔍 useResponsive - Estado actual:', {
+    breakpoint: breakpoint.breakpoint,
+    width: breakpoint.width,
+    isMobile: screenSize.isMobile,
+    isTablet: screenSize.isTablet,
+    isDesktop: screenSize.isDesktop,
+    orientation: orientation,
+    innerWidth: window.innerWidth,
+    innerHeight: window.innerHeight
+  });
 
   return {
     breakpoint: breakpoint.breakpoint,

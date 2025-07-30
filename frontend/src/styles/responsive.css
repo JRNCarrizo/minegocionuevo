@@ -536,4 +536,125 @@
   .card-responsive:hover {
     transform: none;
   }
+}
+
+/* ===== MEJORAS ESPECÍFICAS PARA EL DASHBOARD ===== */
+
+/* Asegurar que el contenido se ajuste correctamente al viewport */
+.dashboard-container {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Mejorar la detección de orientación en móviles */
+@media screen and (orientation: portrait) {
+  .dashboard-container {
+    padding-top: 80px;
+  }
+}
+
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .dashboard-container {
+    padding-top: 60px;
+  }
+}
+
+/* Asegurar que las cards se ajusten correctamente */
+.dashboard-card {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+/* Mejorar el grid para diferentes tamaños */
+.dashboard-grid {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .dashboard-card {
+    min-height: 100px;
+    padding: 0.75rem;
+  }
+}
+
+/* Tablets pequeñas */
+@media (min-width: 481px) and (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* Tablets grandes */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+/* Desktops */
+@media (min-width: 1025px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* Asegurar que el texto se ajuste correctamente */
+.dashboard-title {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+  font-size: clamp(0.875rem, 2.5vw, 1.125rem);
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* Mejorar el padding del contenedor principal */
+.dashboard-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem);
+  padding-top: clamp(80px, 10vh, 120px);
+}
+
+/* Asegurar que las notificaciones se muestren correctamente */
+.notifications-container {
+  position: fixed;
+  top: 80px;
+  right: 1rem;
+  z-index: 1000;
+  max-width: 350px;
+}
+
+@media (max-width: 768px) {
+  .notifications-container {
+    top: 70px;
+    right: 0.5rem;
+    left: 0.5rem;
+    max-width: none;
+  }
 } 

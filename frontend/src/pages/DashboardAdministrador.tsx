@@ -9,7 +9,8 @@ import type { Notificacion } from '../types';
 
 export default function DashboardAdministrador() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
-  const { isMobile, isTablet} = useResponsive();
+  const { isMobile, isTablet, width } = useResponsive();
+  const [isResponsiveReady, setIsResponsiveReady] = useState(false);
   const [estadisticas, setEstadisticas] = useState({
     productos: 0,
     clientes: 0,
@@ -89,6 +90,14 @@ export default function DashboardAdministrador() {
 
     cargarEstadisticas();
   }, [datosUsuario?.empresaId]);
+
+  // Manejar cuando el responsive está listo
+  useEffect(() => {
+    if (width > 0) {
+      console.log('🔍 Dashboard - Responsive listo:', { width, isMobile, isTablet });
+      setIsResponsiveReady(true);
+    }
+  }, [width, isMobile, isTablet]);
 
   // Cargar notificaciones recientes
   useEffect(() => {
@@ -307,6 +316,44 @@ export default function DashboardAdministrador() {
     setMostrarTodas(false);
   };
 
+  // Mostrar pantalla de carga mientras el responsive se detecta
+  if (!isResponsiveReady) {
+    return (
+      <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
+        <NavbarAdmin 
+          onCerrarSesion={cerrarSesionConToast}
+          empresaNombre={datosUsuario?.empresaNombre}
+          nombreAdministrador={datosUsuario?.nombre}
+        />
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: 'calc(100vh - 80px)',
+          paddingTop: '80px'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            color: 'var(--color-texto-secundario)'
+          }}>
+            <div style={{
+              border: '4px solid var(--color-borde)',
+              borderTop: '4px solid var(--color-primario)',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 1rem auto'
+            }}></div>
+            <p>Cargando panel...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('🔍 Dashboard - Renderizando contenido principal con responsive:', { isMobile, isTablet, width });
+  
   return (
     <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
       {/* Navegación */}
