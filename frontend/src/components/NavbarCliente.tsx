@@ -54,7 +54,7 @@ export default function NavbarCliente({
         padding: isMobile ? '0 16px' : '0 20px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: isMobile ? (clienteInfo ? 'space-between' : 'flex-start') : 'space-between',
+        justifyContent: isMobile ? (clienteInfo ? 'space-between' : 'flex-start') : (clienteInfo ? 'space-between' : 'center'),
         height: isMobile ? 'auto' : '70px',
         flexDirection: isMobile ? 'column' : 'row',
         paddingTop: isMobile ? '12px' : '0',
@@ -75,7 +75,7 @@ export default function NavbarCliente({
             display: 'flex',
             alignItems: 'center',
             gap: isMobile ? '8px' : '12px',
-            justifyContent: isMobile ? (clienteInfo ? 'flex-start' : 'center') : 'flex-start',
+            justifyContent: isMobile ? (clienteInfo ? 'flex-start' : 'flex-start') : 'flex-start',
             width: isMobile ? '100%' : 'auto',
             flex: isMobile ? (clienteInfo ? '1' : 'auto') : 'auto',
             position: isMobile && !clienteInfo ? 'relative' : 'static'
