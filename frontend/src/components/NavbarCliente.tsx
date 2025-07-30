@@ -324,10 +324,15 @@ export default function NavbarCliente({
                 textDecoration: 'none',
                 fontSize: isMobile ? '12px' : '14px',
                 fontWeight: '600',
-                padding: isMobile ? '6px 10px' : '8px 12px',
+                padding: isMobile ? '8px 12px' : '8px 12px',
                 borderRadius: '8px',
                 transition: 'all 0.2s ease',
-                background: 'rgba(255,255,255,0.1)'
+                background: 'rgba(255,255,255,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: isMobile ? '36px' : 'auto',
+                minWidth: isMobile ? '80px' : 'auto'
               }}
               onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
               onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
@@ -371,7 +376,7 @@ export default function NavbarCliente({
                   background: 'rgba(220, 53, 69, 0.8)',
                   color: 'white',
                   border: 'none',
-                  padding: isMobile ? '6px 10px' : '8px 12px',
+                  padding: isMobile ? '8px 12px' : '8px 12px',
                   borderRadius: '8px',
                   fontSize: isMobile ? '12px' : '14px',
                   fontWeight: '600',
@@ -379,13 +384,15 @@ export default function NavbarCliente({
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  justifyContent: 'center',
+                  gap: '4px',
+                  height: isMobile ? '36px' : 'auto',
+                  minWidth: isMobile ? '80px' : 'auto'
                 }}
                 onMouseOver={(e) => e.currentTarget.style.background = 'rgba(220, 53, 69, 1)'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'rgba(220, 53, 69, 0.8)'}
               >
-                <span>🚪</span>
-                <span>Salir</span>
+                🚪 Salir
               </button>
             </div>
           ) : (
