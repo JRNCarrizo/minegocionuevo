@@ -317,7 +317,8 @@ export default function NavbarCliente({
               alignItems: 'center',
               gap: isMobile ? '8px' : '12px',
               flexDirection: isMobile ? 'row' : 'row',
-              justifyContent: isMobile ? 'center' : 'flex-start'
+              justifyContent: isMobile ? 'space-between' : 'flex-start',
+              width: isMobile ? '100%' : 'auto'
             }}>
               <Link to="/cuenta" style={{
                 color: 'white',
