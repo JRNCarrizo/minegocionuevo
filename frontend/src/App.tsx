@@ -19,6 +19,7 @@ import ControlInventario from './pages/admin/ControlInventario.tsx';
 import HistorialCargaProductos from './pages/admin/HistorialCargaProductos.tsx';
 import Estadisticas from './pages/admin/Estadisticas.tsx';
 import DashboardSuperAdmin from './pages/DashboardSuperAdmin.tsx';
+import GestionEmpresas from './pages/admin/GestionEmpresas.tsx';
 import CatalogoPublico from './pages/CatalogoPublico.tsx';
 import ProductoPublico from './pages/ProductoPublico.tsx';
 import LoginCliente from './pages/LoginCliente.tsx';
@@ -61,6 +62,7 @@ function AppContent() {
           <Route path="/admin/historial-carga-productos" element={<HistorialCargaProductos />} />
           <Route path="/admin/estadisticas" element={<Estadisticas />} />
           <Route path="/dashboard-super-admin" element={<DashboardSuperAdmin />} />
+          <Route path="/super-admin/empresas" element={<GestionEmpresas />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
       ) : (

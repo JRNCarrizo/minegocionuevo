@@ -88,7 +88,7 @@ export default function Estadisticas() {
       icono: '💰',
       color: '#10b981',
       gradiente: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-      descripcion: 'Total de ventas rápidas'
+      descripcion: 'Total de ventas'
     },
     {
       titulo: 'Transacciones',

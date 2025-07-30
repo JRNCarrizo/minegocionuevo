@@ -1025,13 +1025,18 @@ class ApiService {
   }
 
   async getSuperAdminEmpresas(params: any = {}) {
+    console.log('🔍 ApiService - Iniciando llamada a /super-admin/empresas');
+    console.log('🔍 ApiService - Parámetros:', params);
     const queryParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         queryParams.append(key, value.toString());
       }
     });
+    console.log('🔍 ApiService - URL final:', `/super-admin/empresas?${queryParams}`);
     const response = await this.api.get(`/super-admin/empresas?${queryParams}`);
+    console.log('🔍 ApiService - Respuesta completa:', response);
+    console.log('🔍 ApiService - Datos de respuesta:', response.data);
     return response.data;
   }
 

@@ -62,7 +62,9 @@ class SuperAdminService {
 
   async obtenerEmpresas(page = 0, size = 10): Promise<EmpresasResponse> {
     try {
+      console.log('🔍 SuperAdminService - Iniciando llamada a API...');
       const response = await ApiService.getSuperAdminEmpresas({ page, size });
+      console.log('🔍 SuperAdminService - Respuesta recibida:', response);
       return response;
     } catch (error) {
       console.error('Error al obtener empresas:', error);
