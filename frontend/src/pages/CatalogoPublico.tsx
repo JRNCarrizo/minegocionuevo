@@ -782,7 +782,8 @@ export default function CatalogoPublico() {
               gap: isMobile ? '8px' : '8px',
               flexWrap: 'wrap',
               justifyContent: isMobile ? 'center' : 'flex-start',
-              width: '100%'
+              width: '100%',
+              margin: isMobile ? '0 auto' : '0'
             }}>
                                   <span style={{
                     fontSize: isMobile ? '14px' : '16px',
