@@ -65,7 +65,7 @@ export default function NavbarCliente({
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: isMobile ? 'center' : 'flex-start',
+          justifyContent: isMobile ? 'space-between' : 'flex-start',
           width: isMobile ? '100%' : 'auto',
           gap: isMobile ? '8px' : '12px',
           position: isMobile ? 'relative' : 'static'
@@ -74,7 +74,9 @@ export default function NavbarCliente({
             display: 'flex',
             alignItems: 'center',
             gap: isMobile ? '8px' : '12px',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            width: isMobile ? 'auto' : 'auto',
+            flex: isMobile ? '1' : 'auto'
           }}>
             {estaEnCuenta ? (
               <Link to="/" style={{
@@ -189,13 +191,9 @@ export default function NavbarCliente({
             )}
           </div>
 
-          {/* Inicial del cliente en móvil - ahora posicionado absolutamente a la derecha */}
+          {/* Inicial del cliente en móvil - ahora a la derecha */}
           {isMobile && clienteInfo && (
             <div style={{
-              position: 'absolute',
-              right: '0',
-              top: '50%',
-              transform: 'translateY(-50%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
