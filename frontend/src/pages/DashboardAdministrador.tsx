@@ -748,8 +748,8 @@ export default function DashboardAdministrador() {
           </h2>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: isMobile ? '0.75rem' : '1.5rem'
+            gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: isMobile ? '1rem' : '1.5rem'
           }}>
             {accionesRapidas.map((accion, index) => (
               <Link 
@@ -758,7 +758,7 @@ export default function DashboardAdministrador() {
                 style={{
                   background: 'white',
                   borderRadius: isMobile ? '0.75rem' : '1rem',
-                  padding: isMobile ? '1rem' : '2rem',
+                  padding: isMobile ? '1.5rem' : '2rem',
                   textDecoration: 'none',
                   color: 'inherit',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
