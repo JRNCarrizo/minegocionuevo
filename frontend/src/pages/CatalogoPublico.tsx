@@ -660,21 +660,23 @@ export default function CatalogoPublico() {
               maxWidth: isMobile ? '100%' : '600px',
               margin: '0 auto'
             }}>
-              {/* Icono de lupa */}
-              <div style={{
-                width: isMobile ? '40px' : '48px',
-                height: isMobile ? '40px' : '48px',
-                background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#10b981'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#059669'} 100%)`,
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: isMobile ? '18px' : '20px',
-                color: 'white',
-                flexShrink: 0
-              }}>
-                🔍
-              </div>
+              {/* Icono de lupa - solo en tablet y desktop */}
+              {!isMobile && (
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#10b981'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#059669'} 100%)`,
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '20px',
+                  color: 'white',
+                  flexShrink: 0
+                }}>
+                  🔍
+                </div>
+              )}
               
               {/* Filtros */}
               <div style={{
