@@ -127,10 +127,17 @@ export default function NavbarCliente({
                 </div>
                 <span style={{
                   fontSize: '18px',
-                  fontWeight: '700',
+                  fontWeight: '300',
                   color: 'white',
-                  fontFamily: "'Playfair Display', serif",
-                  letterSpacing: '0.5px'
+                  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                  letterSpacing: '1.2px',
+                  textTransform: 'uppercase',
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  position: 'relative'
                 }}>
                   {empresa.nombre}
                 </span>
@@ -184,8 +191,17 @@ export default function NavbarCliente({
                 </div>
                 <span style={{
                   fontSize: '18px',
-                  fontWeight: '700',
-                  color: 'white'
+                  fontWeight: '300',
+                  color: 'white',
+                  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                  letterSpacing: '1.2px',
+                  textTransform: 'uppercase',
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  position: 'relative'
                 }}>
                   {empresa.nombre}
                 </span>
