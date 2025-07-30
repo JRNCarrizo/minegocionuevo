@@ -298,11 +298,14 @@ public class AdminController {
             Integer totalTransaccionesVentaRapida = 0;
             Integer totalProductos = 0;
             Integer cantidadVentas = 0;
+            Integer totalUnidadesVendidas = 0;
             
             if (estadisticasVentaRapida != null) {
                 totalTransaccionesVentaRapida = estadisticasVentaRapida.getTotalTransacciones();
                 totalProductos = estadisticasVentaRapida.getTotalProductos();
                 cantidadVentas = estadisticasVentaRapida.getCantidadVentas();
+                totalUnidadesVendidas = estadisticasVentaRapida.getTotalUnidadesVendidas();
+                System.out.println("📊 Total unidades vendidas: " + totalUnidadesVendidas);
             }
             
             // Obtener estadísticas de pedidos para transacciones
@@ -324,6 +327,7 @@ public class AdminController {
                 "totalTransacciones", totalTransacciones,
                 "totalProductos", totalProductos,
                 "cantidadVentas", cantidadVentas,
+                "totalUnidadesVendidas", totalUnidadesVendidas,
                 "totalVentasPedidos", totalVentasPedidos != null ? totalVentasPedidos : 0.0,
                 "totalVentasRapidas", totalVentasRapidas != null ? totalVentasRapidas : 0.0
             );

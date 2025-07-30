@@ -45,6 +45,8 @@ export default function Estadisticas() {
         // Cargar estadísticas de ventas rápidas
         const responseVentas = await ApiService.obtenerEstadisticasVentas();
         const statsVentas = responseVentas.data || {};
+        console.log('🔍 Estadísticas recibidas del backend:', statsVentas);
+        console.log('🔍 Total unidades vendidas:', statsVentas.totalUnidadesVendidas);
 
         // Cargar estadísticas de pedidos
         const responsePedidos = await ApiService.obtenerPedidos(empresaId, 0, 1);
