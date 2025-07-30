@@ -76,8 +76,8 @@ export default function NavbarCliente({
             alignItems: 'center',
             gap: isMobile ? '8px' : '12px',
             justifyContent: isMobile ? (clienteInfo ? 'flex-start' : 'flex-start') : 'flex-start',
-            width: isMobile ? '100%' : 'auto',
-            flex: isMobile ? (clienteInfo ? '1' : 'auto') : 'auto',
+            width: isMobile ? 'auto' : 'auto',
+            flex: 'auto',
             position: isMobile && !clienteInfo ? 'relative' : 'static'
           }}>
             {estaEnCuenta ? (
