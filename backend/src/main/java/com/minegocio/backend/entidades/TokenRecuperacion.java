@@ -2,6 +2,7 @@ package com.minegocio.backend.entidades;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import com.minegocio.backend.entidades.Empresa;
 
 @Entity
 @Table(name = "tokens_recuperacion")
@@ -16,6 +17,10 @@ public class TokenRecuperacion {
 
     @Column(nullable = false)
     private String email;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
 
     @Column(nullable = false)
     private LocalDateTime fechaCreacion;
@@ -59,6 +64,14 @@ public class TokenRecuperacion {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Empresa getEmpresa() {
+        return empresa;
+    }
+
+    public void setEmpresa(Empresa empresa) {
+        this.empresa = empresa;
     }
 
     public LocalDateTime getFechaCreacion() {

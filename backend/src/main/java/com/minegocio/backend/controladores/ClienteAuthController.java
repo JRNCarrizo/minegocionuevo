@@ -19,6 +19,11 @@ import java.util.Map;
 import java.util.Optional;
 import com.minegocio.backend.dto.ProductoFavoritoDTO;
 import com.minegocio.backend.servicios.ProductoFavoritoService;
+import com.minegocio.backend.servicios.EmailService;
+import com.minegocio.backend.entidades.TokenRecuperacion;
+import com.minegocio.backend.repositorios.TokenRecuperacionRepository;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Controlador para autenticación de clientes en el portal público
@@ -39,6 +44,12 @@ public class ClienteAuthController {
     
     @Autowired
     private JwtUtils jwtUtils;
+    
+    @Autowired
+    private EmailService emailService;
+    
+    @Autowired
+    private TokenRecuperacionRepository tokenRecuperacionRepository;
 
     /**
      * Registro de nuevo cliente
@@ -544,6 +555,183 @@ public class ClienteAuthController {
         }
     }
     
+    /**
+     * Solicitar recuperación de contraseña
+     */
+    @PostMapping("/solicitar-recuperacion")
+    public ResponseEntity<?> solicitarRecuperacionPassword(
+            @PathVariable String subdominio,
+            @RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El email es requerido"));
+            }
+            
+            // Verificar que la empresa existe
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
+            }
+            
+            Empresa empresa = empresaOpt.get();
+            
+            // Buscar cliente por email
+            Optional<ClienteDTO> clienteOpt = clienteService.obtenerClientePorEmail(empresa.getId(), email);
+            if (clienteOpt.isEmpty()) {
+                // Por seguridad, no revelamos si el email existe o no
+                return ResponseEntity.ok(Map.of("mensaje", "Si el email existe en nuestra base de datos, recibirás un enlace de recuperación"));
+            }
+            
+            ClienteDTO cliente = clienteOpt.get();
+            
+            // Generar token de recuperación
+            String token = UUID.randomUUID().toString();
+            
+            // Guardar token en la base de datos
+            TokenRecuperacion tokenRecuperacion = new TokenRecuperacion();
+            tokenRecuperacion.setToken(token);
+            tokenRecuperacion.setEmail(cliente.getEmail());
+            tokenRecuperacion.setEmpresa(empresa);
+            tokenRecuperacion.setFechaCreacion(LocalDateTime.now());
+            tokenRecuperacion.setFechaExpiracion(LocalDateTime.now().plusHours(1));
+            tokenRecuperacion.setUsado(false);
+            
+            tokenRecuperacionRepository.save(tokenRecuperacion);
+            
+            // Enviar email con enlace de recuperación
+            emailService.enviarEmailRecuperacionCliente(
+                cliente.getEmail(), 
+                token, 
+                cliente.getNombre(), 
+                subdominio
+            );
+            
+            return ResponseEntity.ok(Map.of("mensaje", "Si el email existe en nuestra base de datos, recibirás un enlace de recuperación"));
+            
+        } catch (Exception e) {
+            System.err.println("Error al solicitar recuperación de contraseña: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+    
+    /**
+     * Validar token de recuperación
+     */
+    @GetMapping("/validar-token/{token}")
+    public ResponseEntity<?> validarTokenRecuperacion(
+            @PathVariable String subdominio,
+            @PathVariable String token) {
+        try {
+            // Verificar que la empresa existe
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
+            }
+            
+            Empresa empresa = empresaOpt.get();
+            
+            // Buscar token en la base de datos
+            Optional<TokenRecuperacion> tokenOpt = tokenRecuperacionRepository.findByTokenAndEmpresaAndUsadoFalse(token, empresa);
+            if (tokenOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("valido", false, "error", "Token inválido o expirado"));
+            }
+            
+            TokenRecuperacion tokenRecuperacion = tokenOpt.get();
+            
+            // Verificar si el token ha expirado
+            if (tokenRecuperacion.getFechaExpiracion().isBefore(LocalDateTime.now())) {
+                return ResponseEntity.badRequest().body(Map.of("valido", false, "error", "Token expirado"));
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "valido", true,
+                "email", tokenRecuperacion.getEmail()
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("Error al validar token: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+    
+    /**
+     * Cambiar contraseña con token
+     */
+    @PostMapping("/cambiar-password-token")
+    public ResponseEntity<?> cambiarPasswordConToken(
+            @PathVariable String subdominio,
+            @RequestBody Map<String, String> request) {
+        try {
+            String token = request.get("token");
+            String nuevaPassword = request.get("password");
+            
+            if (token == null || nuevaPassword == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Token y nueva contraseña son requeridos"));
+            }
+            
+            // Verificar que la empresa existe
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
+            }
+            
+            Empresa empresa = empresaOpt.get();
+            
+            // Buscar token en la base de datos
+            Optional<TokenRecuperacion> tokenOpt = tokenRecuperacionRepository.findByTokenAndEmpresaAndUsadoFalse(token, empresa);
+            if (tokenOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Token inválido o expirado"));
+            }
+            
+            TokenRecuperacion tokenRecuperacion = tokenOpt.get();
+            
+            // Verificar si el token ha expirado
+            if (tokenRecuperacion.getFechaExpiracion().isBefore(LocalDateTime.now())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Token expirado"));
+            }
+            
+            // Buscar cliente por email
+            Optional<ClienteDTO> clienteOpt = clienteService.obtenerClientePorEmail(empresa.getId(), tokenRecuperacion.getEmail());
+            if (clienteOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Cliente no encontrado"));
+            }
+            
+            ClienteDTO cliente = clienteOpt.get();
+            
+            // Actualizar contraseña
+            cliente.setPassword(passwordEncoder.encode(nuevaPassword));
+            ClienteDTO clienteActualizado = clienteService.actualizarCliente(empresa.getId(), cliente.getId(), cliente);
+            
+            // Marcar token como usado
+            tokenRecuperacion.setUsado(true);
+            tokenRecuperacionRepository.save(tokenRecuperacion);
+            
+            // Enviar email de confirmación
+            emailService.enviarEmailConfirmacionCambioCliente(
+                cliente.getEmail(), 
+                cliente.getNombre()
+            );
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Contraseña actualizada exitosamente",
+                "cliente", Map.of(
+                    "id", clienteActualizado.getId(),
+                    "email", clienteActualizado.getEmail(),
+                    "nombre", clienteActualizado.getNombre()
+                )
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("Error al cambiar contraseña con token: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+
     /**
      * ENDPOINT TEMPORAL PARA DEBUG - Listar todos los clientes
      */

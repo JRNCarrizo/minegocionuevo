@@ -28,6 +28,8 @@ import ProductoPublico from './pages/ProductoPublico.tsx';
 import LoginCliente from './pages/LoginCliente.tsx';
 import RegistroCliente from './pages/RegistroCliente.tsx';
 import AreaPersonalCliente from './pages/AreaPersonalCliente.tsx';
+import ResetPasswordCliente from './pages/ResetPasswordCliente.tsx';
+import RecuperarPasswordCliente from './pages/RecuperarPasswordCliente.tsx';
 
 function AppContent() {
   const { esSubdominioPrincipal, cargando } = useSubdominio();
@@ -79,6 +81,8 @@ function AppContent() {
           <Route path="/producto/:id" element={<ProductoPublico />} />
           <Route path="/login" element={<LoginCliente />} />
           <Route path="/registro" element={<RegistroCliente />} />
+          <Route path="/reset-password" element={<ResetPasswordCliente />} />
+          <Route path="/recuperar-password" element={<RecuperarPasswordCliente />} />
           <Route path="/cuenta" element={<AreaPersonalCliente />} />
           <Route path="/carrito" element={<div>Carrito de compras (por implementar)</div>} />
           <Route path="/checkout" element={<div>Proceso de compra (por implementar)</div>} />

@@ -1229,6 +1229,24 @@ class ApiService {
     });
     return response.data;
   }
+
+  // Métodos para recuperación de contraseña de clientes
+  async solicitarRecuperacionPasswordCliente(subdominio: string, email: string) {
+    const response = await this.api.post(`/publico/${subdominio}/auth/solicitar-recuperacion`, {
+      email
+    });
+    return response.data;
+  }
+
+  async validarTokenRecuperacionCliente(subdominio: string, token: string) {
+    const response = await this.api.get(`/publico/${subdominio}/auth/validar-token/${token}`);
+    return response.data;
+  }
+
+  async cambiarPasswordConTokenCliente(subdominio: string, data: { token: string; password: string }) {
+    const response = await this.api.post(`/publico/${subdominio}/auth/cambiar-password-token`, data);
+    return response.data;
+  }
 }
 
 export default new ApiService();

@@ -265,6 +265,60 @@ export default function LoginAdministrador() {
             </p>
           </div>
 
+          {/* Botón de Google PRIMERO, separado del formulario */}
+          <GoogleLoginButton
+            onSuccess={manejarLoginGoogle}
+            onError={(error) => {
+              console.error('Error en Google login:', error);
+              toast.error('Error al iniciar sesión con Google');
+            }}
+            buttonText="Continuar con Google"
+            variant="outline"
+            disabled={cargando}
+            className="boton-primario"
+            style={{
+              width: '100%',
+              padding: '0.875rem',
+              fontSize: '1.125rem',
+              fontWeight: 600,
+              borderRadius: '0.75rem',
+              marginBottom: '2rem',
+              boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+              background: 'white',
+              border: '2px solid #e5e7eb',
+              color: '#374151',
+              transition: 'all 0.2s ease',
+              cursor: cargando ? 'not-allowed' : 'pointer',
+              opacity: cargando ? 0.7 : 1
+            }}
+          />
+
+          {/* Separador */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            margin: '1.5rem 0',
+            color: '#64748b',
+            fontSize: '0.875rem'
+          }}>
+            <div style={{
+              flex: 1,
+              height: '1px',
+              background: '#e2e8f0'
+            }} />
+            <span style={{
+              padding: '0 1rem',
+              background: 'rgba(255, 255, 255, 0.95)'
+            }}>
+              o continúa con email
+            </span>
+            <div style={{
+              flex: 1,
+              height: '1px',
+              background: '#e2e8f0'
+            }} />
+          </div>
+
           <form onSubmit={handleSubmit(manejarLogin)}>
             <div style={{ marginBottom: '1.5rem' }}>
               <label htmlFor="email" style={{
@@ -360,63 +414,16 @@ export default function LoginAdministrador() {
               )}
             </div>
 
-            {/* Separador y Google login FUERA del formulario pero arriba */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              margin: '1rem 0',
-              color: '#64748b',
-              fontSize: '0.875rem'
-            }}>
-              <div style={{
-                flex: 1,
-                height: '1px',
-                background: '#e2e8f0'
-              }} />
-              <span style={{
-                padding: '0 1rem',
-                background: 'rgba(255, 255, 255, 0.95)'
-              }}>
-                continúa con
-              </span>
-              <div style={{
-                flex: 1,
-                height: '1px',
-                background: '#e2e8f0'
-              }} />
-            </div>
-            <GoogleLoginButton
-              onSuccess={manejarLoginGoogle}
-              onError={(error) => {
-                console.error('Error en Google login:', error);
-                toast.error('Error al iniciar sesión con Google');
-              }}
-              buttonText="Continuar con Google"
-              variant="outline"
-              disabled={cargando}
-              className="boton-primario"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1.125rem',
-                fontWeight: 600,
-                borderRadius: '0.75rem',
-                marginBottom: '1rem',
-                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)'
-              }}
-            />
-
             <button
               type="submit"
               className="boton-primario"
               style={{
                 width: '100%',
-                padding: '0.75rem',
+                padding: '0.875rem',
                 fontSize: '1.125rem',
                 fontWeight: 600,
                 borderRadius: '0.75rem',
-                marginTop: '0.5rem',
-                marginBottom: '0.5rem',
+                marginBottom: '1rem',
                 boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: 'white',

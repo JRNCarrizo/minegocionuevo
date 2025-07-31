@@ -1,6 +1,7 @@
 package com.minegocio.backend.repositorios;
 
 import com.minegocio.backend.entidades.TokenRecuperacion;
+import com.minegocio.backend.entidades.Empresa;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -43,4 +44,9 @@ public interface TokenRecuperacionRepository extends JpaRepository<TokenRecupera
     @Modifying
     @Query("DELETE FROM TokenRecuperacion t WHERE t.usado = true")
     void eliminarTokensUsados();
+
+    /**
+     * Busca un token válido por token y empresa
+     */
+    Optional<TokenRecuperacion> findByTokenAndEmpresaAndUsadoFalse(String token, Empresa empresa);
 } 
