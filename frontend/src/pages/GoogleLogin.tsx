@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
 import api from '../services/api';
+import { setCookie } from '../utils/cookies';
 
 interface GoogleUser {
   email: string;
@@ -60,15 +61,18 @@ export default function GoogleLogin() {
         });
         
         if (loginResponse.token) {
-          // Guardar el token en localStorage
+          // Guardar el token en cookies (se comparte entre subdominios)
+          setCookie('clienteToken', loginResponse.token, 7);
+          setCookie('clienteInfo', JSON.stringify(loginResponse.cliente), 7);
+          
+          // También guardar en localStorage como respaldo
           localStorage.setItem('clienteToken', loginResponse.token);
           localStorage.setItem('clienteInfo', JSON.stringify(loginResponse.cliente));
           
           console.log('=== DEBUG TOKEN GUARDADO ===');
-          console.log('Token guardado:', loginResponse.token.substring(0, 20) + '...');
+          console.log('Token guardado en cookies:', 'SÍ');
+          console.log('Token guardado en localStorage:', localStorage.getItem('clienteToken') ? 'SÍ' : 'NO');
           console.log('Cliente info guardado:', loginResponse.cliente);
-          console.log('localStorage clienteToken:', localStorage.getItem('clienteToken')?.substring(0, 20) + '...');
-          console.log('localStorage clienteInfo:', localStorage.getItem('clienteInfo'));
           console.log('==========================');
           
           console.log('Login exitoso con Google para:', loginResponse.cliente.email);

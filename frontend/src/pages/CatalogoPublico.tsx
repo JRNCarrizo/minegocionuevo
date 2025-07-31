@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useSubdominio } from '../hooks/useSubdominio';
+import { getCookie } from '../utils/cookies';
 import { useCart } from '../hooks/useCart';
 import { useResponsive } from '../hooks/useResponsive';
 import CartModal from '../components/CartModal';
@@ -42,10 +43,19 @@ export default function CatalogoPublico() {
 
   // Verificar si hay un cliente logueado
   useEffect(() => {
-    const token = localStorage.getItem('clienteToken');
-    const cliente = localStorage.getItem('clienteInfo');
+    // Buscar token en cookies primero (se comparte entre subdominios)
+    let token = getCookie('clienteToken');
+    let cliente = getCookie('clienteInfo');
+    
+    // Si no está en cookies, buscar en localStorage
+    if (!token) {
+      token = localStorage.getItem('clienteToken');
+      cliente = localStorage.getItem('clienteInfo');
+    }
     
     console.log('=== DEBUG CATÁLOGO - VERIFICACIÓN CLIENTE ===');
+    console.log('Token en cookies:', getCookie('clienteToken') ? 'SÍ' : 'NO');
+    console.log('Token en localStorage:', localStorage.getItem('clienteToken') ? 'SÍ' : 'NO');
     console.log('Token encontrado:', token ? token.substring(0, 20) + '...' : 'null');
     console.log('Cliente info encontrado:', cliente);
     console.log('URL actual:', window.location.href);

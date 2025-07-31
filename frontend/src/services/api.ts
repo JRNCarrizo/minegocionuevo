@@ -13,6 +13,7 @@ import type {
   PaginatedResponse
 } from '../types';
 import { API_CONFIG } from '../config/api';
+import { getCookie } from '../utils/cookies';
 
 const API_BASE_URL = API_CONFIG.getBaseUrl();
 
@@ -94,7 +95,12 @@ class ApiService {
            /\/publico\/.*\/favoritos/.test(config.url)) &&
           !/\/auth\//.test(config.url) // Excluir endpoints de autenticación
         ) {
-          const tokenCliente = localStorage.getItem('clienteToken');
+          // Buscar token en cookies primero (se comparte entre subdominios)
+          let tokenCliente = getCookie('clienteToken');
+          if (!tokenCliente) {
+            tokenCliente = localStorage.getItem('clienteToken');
+          }
+          
           if (tokenCliente) {
             console.log('👤 Token cliente agregado');
             config.headers.Authorization = `Bearer ${tokenCliente}`;
