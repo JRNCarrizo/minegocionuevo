@@ -71,7 +71,9 @@ export default function GoogleLoginButton({
       toast.error('Error al iniciar sesión con Google');
       onError?.(error);
       setIsLoading(false);
-    }
+    },
+    // Configurar para usar el dominio principal en producción
+    flow: 'implicit'
   });
 
   const getButtonStyles = () => {
