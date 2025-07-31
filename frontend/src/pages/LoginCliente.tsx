@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useSubdominio } from '../hooks/useSubdominio';
 import api from '../services/api';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 interface LoginClienteForm {
   email: string;
@@ -54,6 +55,55 @@ export default function LoginCliente() {
       
       // Manejo más detallado de errores
       let mensaje = 'Error al iniciar sesión. Verifica tus credenciales.';
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { error?: string; mensaje?: string } } };
+        if (axiosError.response?.data?.error) {
+          mensaje = axiosError.response.data.error;
+        } else if (axiosError.response?.data?.mensaje) {
+          mensaje = axiosError.response.data.mensaje;
+        }
+      }
+      
+      toast.error(mensaje);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const manejarLoginGoogle = async (googleUser: { email: string; name: string; picture?: string; sub: string }) => {
+    const subdominioFinal = subdominio || 'minegocio';
+    
+    if (!subdominioFinal) {
+      toast.error('No se pudo identificar la tienda');
+      return;
+    }
+
+    setCargando(true);
+    try {
+      console.log('Intentando login con Google para cliente:', googleUser.email);
+      
+      // Llamada al backend para login con Google
+      const response = await api.loginClienteConGoogle(subdominioFinal, googleUser);
+      
+      if (response.token) {
+        // Guardar el token en localStorage
+        localStorage.setItem('clienteToken', response.token);
+        localStorage.setItem('clienteInfo', JSON.stringify(response.cliente));
+        
+        console.log('Login exitoso con Google para:', response.cliente.email);
+        
+        toast.success('¡Bienvenido!');
+        navigate('/');
+      } else {
+        console.error('No se recibió token en la respuesta (Google)');
+        toast.error('Error: No se recibió token de autenticación');
+      }
+    } catch (error: unknown) {
+      console.error('Error en login de cliente con Google:', error);
+      
+      // Manejo más detallado de errores
+      let mensaje = 'Error al iniciar sesión con Google.';
       
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { data?: { error?: string; mensaje?: string } } };
@@ -489,7 +539,45 @@ export default function LoginCliente() {
                   Crear cuenta
                 </Link>
               </div>
-            </form>
+                          </form>
+
+              {/* Separador */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                margin: '1rem 0',
+                color: '#64748b',
+                fontSize: '0.875rem'
+              }}>
+                <div style={{
+                  flex: 1,
+                  height: '1px',
+                  background: '#e2e8f0'
+                }} />
+                <span style={{
+                  padding: '0 1rem',
+                  background: 'white'
+                }}>
+                  o continúa con
+                </span>
+                <div style={{
+                  flex: 1,
+                  height: '1px',
+                  background: '#e2e8f0'
+                }} />
+              </div>
+
+              {/* Botón de Google - FUERA del formulario */}
+              <GoogleLoginButton
+                onSuccess={manejarLoginGoogle}
+                onError={(error) => {
+                  console.error('Error en Google login:', error);
+                  toast.error('Error al iniciar sesión con Google');
+                }}
+                buttonText="Continuar con Google"
+                variant="outline"
+                disabled={cargando}
+              />
           </div>
         </div>
       </main>

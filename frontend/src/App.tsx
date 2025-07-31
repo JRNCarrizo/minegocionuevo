@@ -5,6 +5,8 @@ import { CartProvider } from './hooks/useCart';
 import PaginaRegistro from './pages/PaginaRegistro.tsx';
 import PaginaPrincipal from './pages/PaginaPrincipal.tsx';
 import LoginAdministrador from './pages/LoginAdministrador.tsx';
+import RecuperarPassword from './pages/RecuperarPassword.tsx';
+import NuevaPassword from './pages/NuevaPassword.tsx';
 import DashboardAdministrador from './pages/DashboardAdministrador.tsx';
 import NuevoProducto from './pages/admin/NuevoProducto.tsx';
 import GestionProductos from './pages/admin/GestionProductos.tsx';
@@ -47,6 +49,9 @@ function AppContent() {
           <Route path="/" element={<PaginaPrincipal />} />
           <Route path="/registro" element={<PaginaRegistro />} />
           <Route path="/login" element={<Navigate to="/admin/login" replace />} />
+          <Route path="/recuperar" element={<RecuperarPassword />} />
+          <Route path="/reset" element={<NuevaPassword />} />
+          <Route path="/recuperar-contraseña" element={<NuevaPassword />} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/login" element={<LoginAdministrador />} />
           <Route path="/admin/dashboard" element={<DashboardAdministrador />} />

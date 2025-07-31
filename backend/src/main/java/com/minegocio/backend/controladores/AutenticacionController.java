@@ -40,6 +40,48 @@ public class AutenticacionController {
     }
 
     /**
+     * Autentica un usuario con Google y devuelve un token JWT
+     */
+    @PostMapping("/google/login")
+    public ResponseEntity<?> autenticarUsuarioGoogle(@RequestBody Map<String, Object> googleData) {
+        try {
+            String email = (String) googleData.get("email");
+            String name = (String) googleData.get("name");
+            String picture = (String) googleData.get("picture");
+            String sub = (String) googleData.get("sub");
+
+            System.out.println("=== DEBUG GOOGLE LOGIN ===");
+            System.out.println("Email: " + email);
+            System.out.println("Name: " + name);
+            System.out.println("Sub: " + sub);
+
+            JwtRespuestaDTO jwtRespuesta = autenticacionService.autenticarUsuarioGoogle(email, name, picture, sub);
+            return ResponseEntity.ok(jwtRespuesta);
+        } catch (RuntimeException e) {
+            if ("USUARIO_NUEVO_GOOGLE".equals(e.getMessage())) {
+                // Usuario nuevo, devolver información para completar registro
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(Map.of(
+                            "usuarioNuevo", true,
+                            "mensaje", "Usuario nuevo detectado",
+                            "datosGoogle", Map.of(
+                                "email", googleData.get("email"),
+                                "name", googleData.get("name"),
+                                "picture", googleData.get("picture"),
+                                "sub", googleData.get("sub")
+                            )
+                        ));
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", e.getMessage()));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+
+    /**
      * Valida un token JWT
      */
     @PostMapping("/validar-token")

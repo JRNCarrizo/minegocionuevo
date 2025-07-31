@@ -195,6 +195,17 @@ class ApiService {
     return response.data;
   }
 
+  // Métodos de Google OAuth
+  async loginConGoogle(googleData: { email: string; name: string; picture?: string; sub: string }): Promise<LoginResponse> {
+    const response = await this.api.post('/auth/google/login', googleData);
+    return response.data;
+  }
+
+  async loginClienteConGoogle(subdominio: string, googleData: { email: string; name: string; picture?: string; sub: string }) {
+    const response = await this.api.post(`/cliente/${subdominio}/auth/google/login`, googleData);
+    return response.data;
+  }
+
   async obtenerPerfil(): Promise<ApiResponse<Usuario>> {
     const response = await this.api.get('/auth/perfil');
     return response.data;
@@ -1196,6 +1207,26 @@ class ApiService {
       }
     });
     const response = await this.api.get(`/super-admin/logs?${queryParams}`);
+    return response.data;
+  }
+
+  // Métodos de recuperación de contraseña
+  async solicitarRecuperacionPassword(email: string) {
+    const response = await this.api.post('/auth/recuperar-password', { email });
+    return response.data;
+  }
+
+  async validarTokenRecuperacion(token: string) {
+    const response = await this.api.get(`/auth/validar-token/${token}`);
+    return response.data;
+  }
+
+  async cambiarPasswordRecuperacion(token: string, nuevaPassword: string, confirmarPassword: string) {
+    const response = await this.api.post('/auth/cambiar-password', {
+      token,
+      nuevaPassword,
+      confirmarPassword
+    });
     return response.data;
   }
 }

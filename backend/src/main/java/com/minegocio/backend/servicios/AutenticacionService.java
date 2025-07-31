@@ -166,4 +166,71 @@ public class AutenticacionService {
     public Optional<Usuario> obtenerPorEmail(String email) {
         return usuarioRepository.findByEmail(email);
     }
+
+    /**
+     * Autentica un usuario con Google y genera un token JWT
+     */
+    public JwtRespuestaDTO autenticarUsuarioGoogle(String email, String name, String picture, String sub) {
+        System.out.println("=== DEBUG GOOGLE AUTH ===");
+        System.out.println("Intentando autenticar con Google email: " + email);
+
+        // Buscar usuario por email
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+
+        if (usuarioOpt.isEmpty()) {
+            System.out.println("Usuario nuevo con Google: " + email);
+            // Para usuarios nuevos, lanzamos una excepción especial
+            throw new RuntimeException("USUARIO_NUEVO_GOOGLE");
+        }
+
+        Usuario usuarioEntity = usuarioOpt.get();
+        System.out.println("Usuario encontrado - ID: " + usuarioEntity.getId());
+        System.out.println("Usuario activo: " + usuarioEntity.getActivo());
+        System.out.println("Email verificado: " + usuarioEntity.getEmailVerificado());
+
+        if (!usuarioEntity.getActivo()) {
+            System.out.println("Usuario no activo");
+            throw new RuntimeException("Cuenta deshabilitada");
+        }
+
+        // Para Google, asumimos que el email ya está verificado
+        // Podemos actualizar la información del usuario si es necesario
+        if (usuarioEntity.getNombre() == null || usuarioEntity.getNombre().isEmpty()) {
+            usuarioEntity.setNombre(name);
+            usuarioRepository.save(usuarioEntity);
+        }
+
+        System.out.println("✓ Usuario autenticado con Google correctamente");
+
+        // Generar token JWT
+        String token = jwtUtils.generarJwtToken(
+            usuarioEntity.getEmail(), 
+            usuarioEntity.getId(), 
+            usuarioEntity.getEmpresa() != null ? usuarioEntity.getEmpresa().getId() : null,
+            usuarioEntity.getNombre() + " " + (usuarioEntity.getApellidos() != null ? usuarioEntity.getApellidos() : "")
+        );
+
+        // Obtener información de la empresa si existe
+        String empresaNombre = null;
+        String empresaSubdominio = null;
+        Long empresaId = null;
+
+        if (usuarioEntity.getEmpresa() != null) {
+            empresaNombre = usuarioEntity.getEmpresa().getNombre();
+            empresaSubdominio = usuarioEntity.getEmpresa().getSubdominio();
+            empresaId = usuarioEntity.getEmpresa().getId();
+        }
+
+        return new JwtRespuestaDTO(
+            token,
+            usuarioEntity.getEmail(),
+            usuarioEntity.getEmail(),
+            usuarioEntity.getNombre(),
+            usuarioEntity.getApellidos(),
+            List.of(usuarioEntity.getRol().name()),
+            empresaId,
+            empresaNombre,
+            empresaSubdominio
+        );
+    }
 }

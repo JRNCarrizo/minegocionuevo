@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../services/api';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 interface LoginForm {
   email: string;
@@ -67,6 +68,80 @@ export default function LoginAdministrador() {
       
       // Mostrar mensaje de error específico
       let mensajeError = 'Error al iniciar sesión. Verifica tus credenciales.';
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
+        mensajeError = axiosError.response?.data?.error || 
+                      axiosError.response?.data?.message || 
+                      mensajeError;
+      }
+      
+      toast.error(mensajeError);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const manejarLoginGoogle = async (googleUser: { email: string; name: string; picture?: string; sub: string }) => {
+    setCargando(true);
+    try {
+      console.log('Intentando login con Google:', googleUser.email);
+      
+      // Llamada al backend para login con Google
+      const response = await ApiService.loginConGoogle(googleUser);
+      
+      console.log('Respuesta del backend (Google):', response);
+      
+      // Verificar si es un usuario nuevo
+      if (response.usuarioNuevo) {
+        console.log('🔵 Usuario nuevo detectado, redirigiendo al registro');
+        
+        // Guardar datos de Google en localStorage para el registro
+        localStorage.setItem('googleUserData', JSON.stringify(response.datosGoogle));
+        
+        toast.success('¡Bienvenido! Completa tu información para crear tu empresa');
+        navigate('/registro', { 
+          state: { 
+            googleUser: response.datosGoogle,
+            fromGoogle: true 
+          } 
+        });
+        return;
+      }
+      
+      // Extraer información del usuario de la respuesta
+      const user = {
+        id: 1, // TODO: obtener del JWT o respuesta
+        nombre: response.nombre || googleUser.name,
+        apellidos: response.apellidos || '',
+        email: response.email || googleUser.email,
+        rol: response.roles[0],
+        empresaId: response.empresaId,
+        empresaNombre: response.empresaNombre,
+        empresaSubdominio: response.empresaSubdominio
+      };
+      
+      // Guardar token y usuario
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      console.log('Usuario guardado en localStorage (Google):', user);
+      
+      // Verificar si es super admin y redirigir al panel correspondiente
+      if (user.rol === 'SUPER_ADMIN') {
+        console.log('🔵 Redirigiendo a Super Admin Dashboard (Google)');
+        toast.success('¡Bienvenido Super Administrador!');
+        navigate('/dashboard-super-admin');
+      } else {
+        console.log('🔵 Redirigiendo a Admin Dashboard (Google)');
+        toast.success('¡Bienvenido de vuelta!');
+        navigate('/admin/dashboard');
+      }
+    } catch (error: unknown) {
+      console.error('Error en login con Google:', error);
+      
+      // Mostrar mensaje de error específico
+      let mensajeError = 'Error al iniciar sesión con Google.';
       
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
@@ -182,14 +257,64 @@ export default function LoginAdministrador() {
               Iniciar Sesión
             </h1>
             <p style={{
-              color: '#64748b',
               fontSize: '1rem',
-              lineHeight: '1.5'
+              color: '#64748b',
+              lineHeight: '1.6'
             }}>
               Accede a tu panel de administración
             </p>
           </div>
 
+          {/* Botón de Google PRIMERO y destacado */}
+          <GoogleLoginButton
+            onSuccess={manejarLoginGoogle}
+            onError={(error) => {
+              console.error('Error en Google login:', error);
+              toast.error('Error al iniciar sesión con Google');
+            }}
+            buttonText="Continuar con Google"
+            variant="outline"
+            disabled={cargando}
+            className="boton-primario"
+            style={{
+              width: '100%',
+              padding: '1rem',
+              fontSize: '1.125rem',
+              fontWeight: 600,
+              borderRadius: '0.75rem',
+              marginBottom: '1.5rem',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)',
+              border: '2px solid #4285f4'
+            }}
+          />
+
+          {/* Separador */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            margin: '1.5rem 0',
+            color: '#64748b',
+            fontSize: '0.875rem'
+          }}>
+            <div style={{
+              flex: 1,
+              height: '1px',
+              background: '#e2e8f0'
+            }} />
+            <span style={{
+              padding: '0 1rem',
+              background: 'rgba(255, 255, 255, 0.95)'
+            }}>
+              continúa con
+            </span>
+            <div style={{
+              flex: 1,
+              height: '1px',
+              background: '#e2e8f0'
+            }} />
+          </div>
+
+          {/* Formulario tradicional */}
           <form onSubmit={handleSubmit(manejarLogin)}>
             <div style={{ marginBottom: '1.5rem' }}>
               <label htmlFor="email" style={{
@@ -199,29 +324,29 @@ export default function LoginAdministrador() {
                 color: '#374151',
                 marginBottom: '0.5rem'
               }}>
-                Email
+                Correo Electrónico
               </label>
               <input
                 type="email"
                 id="email"
-                style={{
-                  width: '100%',
-                  padding: '0.875rem 1rem',
-                  border: errors.email ? '2px solid #ef4444' : '2px solid #e5e7eb',
-                  borderRadius: '0.75rem',
-                  fontSize: '1rem',
-                  transition: 'all 0.2s ease',
-                  backgroundColor: 'white',
-                  outline: 'none'
-                }}
-                placeholder="admin@minegocio.com"
-                {...register('email', { 
-                  required: 'El email es obligatorio',
+                {...register('email', {
+                  required: 'El correo electrónico es obligatorio',
                   pattern: {
                     value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Email inválido'
+                    message: 'Ingresa un correo electrónico válido'
                   }
                 })}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  fontSize: '1rem',
+                  border: errors.email ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                  borderRadius: '0.75rem',
+                  backgroundColor: 'white',
+                  transition: 'all 0.2s ease',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="tu@email.com"
               />
               {errors.email && (
                 <p style={{
@@ -238,7 +363,7 @@ export default function LoginAdministrador() {
               )}
             </div>
 
-            <div style={{ marginBottom: '2rem' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
               <label htmlFor="password" style={{
                 display: 'block',
                 fontSize: '0.875rem',
@@ -251,24 +376,20 @@ export default function LoginAdministrador() {
               <input
                 type="password"
                 id="password"
+                {...register('password', {
+                  required: 'La contraseña es obligatoria'
+                })}
                 style={{
                   width: '100%',
-                  padding: '0.875rem 1rem',
-                  border: errors.password ? '2px solid #ef4444' : '2px solid #e5e7eb',
-                  borderRadius: '0.75rem',
+                  padding: '0.75rem 1rem',
                   fontSize: '1rem',
-                  transition: 'all 0.2s ease',
+                  border: errors.password ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                  borderRadius: '0.75rem',
                   backgroundColor: 'white',
-                  outline: 'none'
+                  transition: 'all 0.2s ease',
+                  boxSizing: 'border-box'
                 }}
-                placeholder="Tu contraseña"
-                {...register('password', { 
-                  required: 'La contraseña es obligatoria',
-                  minLength: {
-                    value: 6,
-                    message: 'La contraseña debe tener al menos 6 caracteres'
-                  }
-                })}
+                placeholder="••••••••"
               />
               {errors.password && (
                 <p style={{
@@ -287,60 +408,32 @@ export default function LoginAdministrador() {
 
             <button
               type="submit"
-              disabled={cargando}
+              className="boton-primario"
               style={{
                 width: '100%',
-                padding: '1rem 2rem',
-                background: cargando ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                padding: '0.75rem',
+                fontSize: '1.125rem',
+                fontWeight: 600,
+                borderRadius: '0.75rem',
+                marginBottom: '1rem',
+                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '0.75rem',
-                fontSize: '1rem',
-                fontWeight: '600',
+                transition: 'background 0.2s ease',
                 cursor: cargando ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: cargando ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.3)',
-                opacity: cargando ? 0.7 : 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem'
+                opacity: cargando ? 0.7 : 1
               }}
-              onMouseOver={(e) => {
-                if (!cargando) {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!cargando) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
-                }
-              }}
+              disabled={cargando}
             >
-              {cargando ? (
-                <>
-                  <div style={{
-                    width: '20px',
-                    height: '20px',
-                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                    borderTop: '2px solid white',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }} />
-                  Iniciando sesión...
-                </>
-              ) : (
-                'Iniciar Sesión'
-              )}
+              {cargando ? 'Ingresando...' : 'Iniciar sesión'}
             </button>
 
-            <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-              <Link to="/recuperar-password" style={{
-                fontSize: '0.875rem',
+            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+              <Link to="/recuperar" style={{
                 color: '#3b82f6',
                 textDecoration: 'none',
+                fontWeight: '600',
                 transition: 'color 0.2s ease'
               }}
               onMouseOver={(e) => e.currentTarget.style.color = '#2563eb'}

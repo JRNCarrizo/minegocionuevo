@@ -243,6 +243,15 @@ export interface LoginResponse {
   empresaId: number;
   empresaNombre: string;
   empresaSubdominio: string;
+  // Propiedades para usuarios nuevos con Google
+  usuarioNuevo?: boolean;
+  mensaje?: string;
+  datosGoogle?: {
+    email: string;
+    name: string;
+    picture?: string;
+    sub: string;
+  };
 }
 
 export interface Notificacion {

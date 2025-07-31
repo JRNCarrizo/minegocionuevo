@@ -219,6 +219,78 @@ public class ClienteAuthController {
     }
 
     /**
+     * Login de cliente con Google
+     */
+    @PostMapping("/auth/google/login")
+    public ResponseEntity<?> loginClienteGoogle(
+            @PathVariable String subdominio,
+            @RequestBody Map<String, Object> googleData) {
+        try {
+            String email = (String) googleData.get("email");
+            String name = (String) googleData.get("name");
+            String picture = (String) googleData.get("picture");
+            String sub = (String) googleData.get("sub");
+
+            System.out.println("=== DEBUG GOOGLE LOGIN CLIENTE ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("Email: " + email);
+            System.out.println("Name: " + name);
+            System.out.println("Sub: " + sub);
+
+            // Verificar que la empresa existe
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of(
+                    "error", "Empresa no encontrada"
+                ));
+            }
+            
+            Empresa empresa = empresaOpt.get();
+            
+            // Buscar cliente por email
+            Optional<ClienteDTO> clienteOpt = clienteService.obtenerClientePorEmail(empresa.getId(), email);
+            if (clienteOpt.isEmpty()) {
+                return ResponseEntity.status(401).body(Map.of(
+                    "error", "No existe una cuenta con este email de Google. Por favor, regístrate primero."
+                ));
+            }
+            
+            ClienteDTO cliente = clienteOpt.get();
+            
+            // Verificar que el cliente esté activo
+            if (!cliente.getActivo()) {
+                return ResponseEntity.status(401).body(Map.of(
+                    "error", "Cuenta deshabilitada"
+                ));
+            }
+            
+            // Generar token JWT
+            String token = generarTokenCliente(cliente, empresa);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Login exitoso con Google",
+                "token", token,
+                "cliente", Map.of(
+                    "id", cliente.getId(),
+                    "nombre", cliente.getNombre(),
+                    "apellidos", cliente.getApellidos(),
+                    "email", cliente.getEmail()
+                ),
+                "empresa", Map.of(
+                    "nombre", empresa.getNombre(),
+                    "subdominio", empresa.getSubdominio()
+                )
+            ));
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error interno del servidor",
+                "detalle", e.getMessage()
+            ));
+        }
+    }
+
+    /**
      * Obtener perfil del cliente logueado
      */
     @GetMapping("/perfil")
