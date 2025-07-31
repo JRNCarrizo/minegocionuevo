@@ -339,6 +339,55 @@ export default function LoginCliente() {
               </p>
             </div>
 
+            {/* Botón de Google PRIMERO y destacado */}
+            <GoogleLoginButton
+              onSuccess={manejarLoginGoogle}
+              onError={(error) => {
+                console.error('Error en Google login:', error);
+                toast.error('Error al iniciar sesión con Google');
+              }}
+              buttonText="Continuar con Google"
+              variant="outline"
+              disabled={cargando}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                fontSize: '1.125rem',
+                fontWeight: 600,
+                borderRadius: '0.75rem',
+                marginBottom: '1.5rem',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)',
+                border: '2px solid #4285f4'
+              }}
+            />
+
+            {/* Separador */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              margin: '1.5rem 0',
+              color: '#64748b',
+              fontSize: '0.875rem'
+            }}>
+              <div style={{
+                flex: 1,
+                height: '1px',
+                background: '#e2e8f0'
+              }} />
+              <span style={{
+                padding: '0 1rem',
+                background: 'rgba(255, 255, 255, 0.95)'
+              }}>
+                continúa con
+              </span>
+              <div style={{
+                flex: 1,
+                height: '1px',
+                background: '#e2e8f0'
+              }} />
+            </div>
+
+            {/* Formulario tradicional */}
             <form onSubmit={handleSubmit(manejarLogin)}>
               <div style={{ marginBottom: '1.5rem' }}>
                 <label htmlFor="email" style={{
@@ -539,45 +588,7 @@ export default function LoginCliente() {
                   Crear cuenta
                 </Link>
               </div>
-                          </form>
-
-              {/* Separador */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                margin: '1rem 0',
-                color: '#64748b',
-                fontSize: '0.875rem'
-              }}>
-                <div style={{
-                  flex: 1,
-                  height: '1px',
-                  background: '#e2e8f0'
-                }} />
-                <span style={{
-                  padding: '0 1rem',
-                  background: 'white'
-                }}>
-                  o continúa con
-                </span>
-                <div style={{
-                  flex: 1,
-                  height: '1px',
-                  background: '#e2e8f0'
-                }} />
-              </div>
-
-              {/* Botón de Google - FUERA del formulario */}
-              <GoogleLoginButton
-                onSuccess={manejarLoginGoogle}
-                onError={(error) => {
-                  console.error('Error en Google login:', error);
-                  toast.error('Error al iniciar sesión con Google');
-                }}
-                buttonText="Continuar con Google"
-                variant="outline"
-                disabled={cargando}
-              />
+            </form>
           </div>
         </div>
       </main>

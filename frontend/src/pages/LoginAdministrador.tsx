@@ -257,64 +257,14 @@ export default function LoginAdministrador() {
               Iniciar Sesión
             </h1>
             <p style={{
-              fontSize: '1rem',
               color: '#64748b',
-              lineHeight: '1.6'
+              fontSize: '1rem',
+              lineHeight: '1.5'
             }}>
               Accede a tu panel de administración
             </p>
           </div>
 
-          {/* Botón de Google PRIMERO y destacado */}
-          <GoogleLoginButton
-            onSuccess={manejarLoginGoogle}
-            onError={(error) => {
-              console.error('Error en Google login:', error);
-              toast.error('Error al iniciar sesión con Google');
-            }}
-            buttonText="Continuar con Google"
-            variant="outline"
-            disabled={cargando}
-            className="boton-primario"
-            style={{
-              width: '100%',
-              padding: '1rem',
-              fontSize: '1.125rem',
-              fontWeight: 600,
-              borderRadius: '0.75rem',
-              marginBottom: '1.5rem',
-              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)',
-              border: '2px solid #4285f4'
-            }}
-          />
-
-          {/* Separador */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            margin: '1.5rem 0',
-            color: '#64748b',
-            fontSize: '0.875rem'
-          }}>
-            <div style={{
-              flex: 1,
-              height: '1px',
-              background: '#e2e8f0'
-            }} />
-            <span style={{
-              padding: '0 1rem',
-              background: 'rgba(255, 255, 255, 0.95)'
-            }}>
-              continúa con
-            </span>
-            <div style={{
-              flex: 1,
-              height: '1px',
-              background: '#e2e8f0'
-            }} />
-          </div>
-
-          {/* Formulario tradicional */}
           <form onSubmit={handleSubmit(manejarLogin)}>
             <div style={{ marginBottom: '1.5rem' }}>
               <label htmlFor="email" style={{
@@ -324,29 +274,29 @@ export default function LoginAdministrador() {
                 color: '#374151',
                 marginBottom: '0.5rem'
               }}>
-                Correo Electrónico
+                Email
               </label>
               <input
                 type="email"
                 id="email"
-                {...register('email', {
-                  required: 'El correo electrónico es obligatorio',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Ingresa un correo electrónico válido'
-                  }
-                })}
                 style={{
                   width: '100%',
-                  padding: '0.75rem 1rem',
-                  fontSize: '1rem',
-                  border: errors.email ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                  padding: '0.875rem 1rem',
+                  border: errors.email ? '2px solid #ef4444' : '2px solid #e5e7eb',
                   borderRadius: '0.75rem',
-                  backgroundColor: 'white',
+                  fontSize: '1rem',
                   transition: 'all 0.2s ease',
-                  boxSizing: 'border-box'
+                  backgroundColor: 'white',
+                  outline: 'none'
                 }}
-                placeholder="tu@email.com"
+                placeholder="admin@minegocio.com"
+                {...register('email', { 
+                  required: 'El email es obligatorio',
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: 'Email inválido'
+                  }
+                })}
               />
               {errors.email && (
                 <p style={{
@@ -363,7 +313,7 @@ export default function LoginAdministrador() {
               )}
             </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: '2rem' }}>
               <label htmlFor="password" style={{
                 display: 'block',
                 fontSize: '0.875rem',
@@ -376,20 +326,24 @@ export default function LoginAdministrador() {
               <input
                 type="password"
                 id="password"
-                {...register('password', {
-                  required: 'La contraseña es obligatoria'
-                })}
                 style={{
                   width: '100%',
-                  padding: '0.75rem 1rem',
-                  fontSize: '1rem',
-                  border: errors.password ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                  padding: '0.875rem 1rem',
+                  border: errors.password ? '2px solid #ef4444' : '2px solid #e5e7eb',
                   borderRadius: '0.75rem',
-                  backgroundColor: 'white',
+                  fontSize: '1rem',
                   transition: 'all 0.2s ease',
-                  boxSizing: 'border-box'
+                  backgroundColor: 'white',
+                  outline: 'none'
                 }}
-                placeholder="••••••••"
+                placeholder="Tu contraseña"
+                {...register('password', { 
+                  required: 'La contraseña es obligatoria',
+                  minLength: {
+                    value: 6,
+                    message: 'La contraseña debe tener al menos 6 caracteres'
+                  }
+                })}
               />
               {errors.password && (
                 <p style={{
@@ -406,6 +360,52 @@ export default function LoginAdministrador() {
               )}
             </div>
 
+            {/* Separador y Google login FUERA del formulario pero arriba */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              margin: '1rem 0',
+              color: '#64748b',
+              fontSize: '0.875rem'
+            }}>
+              <div style={{
+                flex: 1,
+                height: '1px',
+                background: '#e2e8f0'
+              }} />
+              <span style={{
+                padding: '0 1rem',
+                background: 'rgba(255, 255, 255, 0.95)'
+              }}>
+                continúa con
+              </span>
+              <div style={{
+                flex: 1,
+                height: '1px',
+                background: '#e2e8f0'
+              }} />
+            </div>
+            <GoogleLoginButton
+              onSuccess={manejarLoginGoogle}
+              onError={(error) => {
+                console.error('Error en Google login:', error);
+                toast.error('Error al iniciar sesión con Google');
+              }}
+              buttonText="Continuar con Google"
+              variant="outline"
+              disabled={cargando}
+              className="boton-primario"
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                fontSize: '1.125rem',
+                fontWeight: 600,
+                borderRadius: '0.75rem',
+                marginBottom: '1rem',
+                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)'
+              }}
+            />
+
             <button
               type="submit"
               className="boton-primario"
@@ -415,7 +415,8 @@ export default function LoginAdministrador() {
                 fontSize: '1.125rem',
                 fontWeight: 600,
                 borderRadius: '0.75rem',
-                marginBottom: '1rem',
+                marginTop: '0.5rem',
+                marginBottom: '0.5rem',
                 boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: 'white',
