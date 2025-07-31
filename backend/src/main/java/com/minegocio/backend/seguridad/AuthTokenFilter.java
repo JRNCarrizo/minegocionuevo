@@ -149,7 +149,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                           requestPath.startsWith("/swagger-ui/") ||
                           requestPath.startsWith("/v3/api-docs/") ||
                           requestPath.equals("/error") ||
-                          requestPath.startsWith("/error");
+                          requestPath.startsWith("/error") ||
+                          // Endpoints de autenticación de clientes (Google login, recuperación de contraseña, etc.)
+                          (requestPath.contains("/cliente/") && requestPath.contains("/auth/"));
         
         System.out.println("🔍 Checking if endpoint is public: " + requestPath + " -> " + isPublic);
         return isPublic;

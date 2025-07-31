@@ -89,7 +89,8 @@ class ApiService {
         if (
           config.url &&
           (/\/cliente\//.test(config.url) ||
-           /\/pedidos\/cliente/.test(config.url))
+           /\/pedidos\/cliente/.test(config.url)) &&
+          !/\/auth\//.test(config.url) // Excluir endpoints de autenticación
         ) {
           const tokenCliente = localStorage.getItem('clienteToken');
           if (tokenCliente) {
