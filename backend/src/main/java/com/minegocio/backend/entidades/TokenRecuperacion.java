@@ -19,7 +19,7 @@ public class TokenRecuperacion {
     private String email;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "empresa_id", nullable = false)
+    @JoinColumn(name = "empresa_id", nullable = true)
     private Empresa empresa;
 
     @Column(nullable = false)
@@ -39,6 +39,14 @@ public class TokenRecuperacion {
         this.email = email;
         this.fechaCreacion = LocalDateTime.now();
         this.fechaExpiracion = fechaExpiracion;
+    }
+
+    public TokenRecuperacion(String token, String email, LocalDateTime fechaExpiracion, Empresa empresa) {
+        this.token = token;
+        this.email = email;
+        this.fechaCreacion = LocalDateTime.now();
+        this.fechaExpiracion = fechaExpiracion;
+        this.empresa = empresa;
     }
 
     // Getters y Setters

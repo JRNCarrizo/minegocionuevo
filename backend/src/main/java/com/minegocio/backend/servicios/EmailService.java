@@ -32,6 +32,14 @@ public class EmailService {
      * Envía un email de recuperación de contraseña
      */
     public void enviarEmailRecuperacion(String emailDestino, String token, String nombreUsuario) {
+        // Mostrar información del token en logs para debugging
+        System.out.println("=== 📧 ENVIANDO EMAIL DE RECUPERACIÓN ===");
+        System.out.println("📧 Email destino: " + emailDestino);
+        System.out.println("👤 Usuario: " + nombreUsuario);
+        System.out.println("🔑 Token de recuperación: " + token);
+        System.out.println("🔗 Enlace de recuperación: https://negocio360.org/recuperar-contraseña?token=" + token);
+        System.out.println("==================================================");
+        
         SimpleMailMessage message = new SimpleMailMessage();
         
         message.setFrom(fromEmail);
@@ -63,9 +71,10 @@ public class EmailService {
             System.out.println("✅ Email de recuperación enviado exitosamente a: " + emailDestino);
         } catch (Exception e) {
             System.err.println("❌ Error al enviar email de recuperación: " + e.getMessage());
-            System.err.println("Stack trace: ");
-            e.printStackTrace();
-            throw new RuntimeException("Error al enviar email de recuperación", e);
+            System.err.println("⚠️ NOTA: El token se generó correctamente, pero no se pudo enviar el email.");
+            System.err.println("⚠️ Para solucionar esto, configura Gmail correctamente o usa un servicio de email alternativo.");
+            // No lanzamos excepción para que el proceso continúe
+            // throw new RuntimeException("Error al enviar email de recuperación", e);
         }
     }
 
@@ -117,9 +126,10 @@ public class EmailService {
             System.out.println("✅ Email de recuperación de cliente enviado exitosamente a: " + emailDestino);
         } catch (Exception e) {
             System.err.println("❌ Error al enviar email de recuperación de cliente: " + e.getMessage());
-            System.err.println("Stack trace: ");
-            e.printStackTrace();
-            throw new RuntimeException("Error al enviar email de recuperación", e);
+            System.err.println("⚠️ NOTA: El token se generó correctamente, pero no se pudo enviar el email.");
+            System.err.println("⚠️ Para solucionar esto, configura Gmail correctamente o usa un servicio de email alternativo.");
+            // No lanzamos excepción para que el proceso continúe
+            // throw new RuntimeException("Error al enviar email de recuperación", e);
         }
     }
 

@@ -39,6 +39,9 @@ class ApiService {
           (/\/publico\/[^/]+\/productos/.test(config.url) ||
            /\/publico\/[^/]+\/empresa/.test(config.url) ||
            /\/auth\/login/.test(config.url) ||
+           /\/auth\/recuperar-password/.test(config.url) ||
+           /\/auth\/validar-token/.test(config.url) ||
+           /\/auth\/cambiar-password/.test(config.url) ||
            /\/empresas\/registro/.test(config.url) ||
            /\/empresas\/verificar-subdominio/.test(config.url))
         ) {

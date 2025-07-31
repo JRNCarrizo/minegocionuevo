@@ -9,7 +9,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Map;
+
+import com.minegocio.backend.entidades.Empresa;
+import com.minegocio.backend.entidades.Usuario;
+import com.minegocio.backend.repositorios.EmpresaRepository;
+import com.minegocio.backend.repositorios.UsuarioRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * Controlador REST para la autenticación de usuarios
@@ -21,6 +28,15 @@ public class AutenticacionController {
 
     @Autowired
     private AutenticacionService autenticacionService;
+
+    @Autowired
+    private EmpresaRepository empresaRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /**
      * Autentica un usuario y devuelve un token JWT
@@ -200,6 +216,68 @@ public class AutenticacionController {
                         "success", false,
                         "error", "Error interno del servidor"
                     ));
+        }
+    }
+
+    /**
+     * Endpoint de prueba para crear un usuario administrador
+     */
+    @PostMapping("/crear-usuario-prueba")
+    public ResponseEntity<?> crearUsuarioPrueba() {
+        try {
+            // Crear una empresa de prueba si no existe
+            Empresa empresaPrueba = empresaRepository.findBySubdominio("test")
+                .orElseGet(() -> {
+                    Empresa empresa = new Empresa();
+                    empresa.setNombre("Empresa de Prueba");
+                    empresa.setSubdominio("test");
+                    empresa.setEmail("test@test.com");
+                    empresa.setTelefono("123456789");
+                    empresa.setDireccion("Dirección de Prueba");
+                    empresa.setCiudad("Ciudad de Prueba");
+                    empresa.setCodigoPostal("12345");
+                    empresa.setPais("País de Prueba");
+                    empresa.setDescripcion("Empresa de prueba para testing");
+                    empresa.setFechaFinPrueba(LocalDateTime.now().plusMonths(1));
+                    return empresaRepository.save(empresa);
+                });
+
+            // Crear usuario administrador de prueba
+            Usuario usuarioPrueba = new Usuario();
+            usuarioPrueba.setNombre("Admin");
+            usuarioPrueba.setApellidos("Test");
+            usuarioPrueba.setEmail("admin@test.com");
+            usuarioPrueba.setPassword(passwordEncoder.encode("password123"));
+            usuarioPrueba.setTelefono("123456789");
+            usuarioPrueba.setRol(Usuario.RolUsuario.ADMINISTRADOR);
+            usuarioPrueba.setActivo(true);
+            usuarioPrueba.setEmailVerificado(true);
+            usuarioPrueba.setEmpresa(empresaPrueba);
+
+            usuarioPrueba = usuarioRepository.save(usuarioPrueba);
+
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Usuario de prueba creado exitosamente",
+                "usuario", Map.of(
+                    "id", usuarioPrueba.getId(),
+                    "nombre", usuarioPrueba.getNombre(),
+                    "apellidos", usuarioPrueba.getApellidos(),
+                    "email", usuarioPrueba.getEmail(),
+                    "rol", usuarioPrueba.getRol(),
+                    "empresa", Map.of(
+                        "id", empresaPrueba.getId(),
+                        "nombre", empresaPrueba.getNombre(),
+                        "subdominio", empresaPrueba.getSubdominio()
+                    )
+                ),
+                "credenciales", Map.of(
+                    "email", "admin@test.com",
+                    "password", "password123"
+                )
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Error al crear usuario de prueba: " + e.getMessage()));
         }
     }
 }

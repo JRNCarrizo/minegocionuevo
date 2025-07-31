@@ -18,6 +18,9 @@ public class RecuperacionPasswordController {
     @Autowired
     private RecuperacionPasswordService recuperacionService;
 
+    @Autowired
+    private com.minegocio.backend.servicios.EmailService emailService;
+
     /**
      * Solicita la recuperación de contraseña
      */

@@ -1,6 +1,7 @@
 package com.minegocio.backend.servicios;
 
 import com.minegocio.backend.dto.RecuperacionPasswordDTO;
+import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.TokenRecuperacion;
 import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.repositorios.TokenRecuperacionRepository;
@@ -46,6 +47,9 @@ public class RecuperacionPasswordService {
 
         Usuario usuario = usuarioOpt.get();
         
+        // Obtener la empresa del usuario (puede ser null para super admin)
+        Empresa empresa = usuario.getEmpresa();
+        
         // Verificar si ya existe un token válido para este email
         Optional<TokenRecuperacion> tokenExistente = tokenRepository.findTokenValidoByEmail(email, LocalDateTime.now());
         if (tokenExistente.isPresent()) {
@@ -57,7 +61,8 @@ public class RecuperacionPasswordService {
         String token = generarTokenSeguro();
         LocalDateTime fechaExpiracion = LocalDateTime.now().plusHours(1); // Expira en 1 hora
         
-        TokenRecuperacion tokenRecuperacion = new TokenRecuperacion(token, email, fechaExpiracion);
+        // Crear token con empresa (puede ser null para super admin)
+        TokenRecuperacion tokenRecuperacion = new TokenRecuperacion(token, email, fechaExpiracion, empresa);
         tokenRepository.save(tokenRecuperacion);
 
         // Enviar email
@@ -149,5 +154,12 @@ public class RecuperacionPasswordService {
      */
     private String generarTokenSeguro() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    /**
+     * Getter para el repositorio de usuarios (para debug)
+     */
+    public UsuarioRepository getUsuarioRepository() {
+        return usuarioRepository;
     }
 } 
