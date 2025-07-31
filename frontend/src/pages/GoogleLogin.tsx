@@ -64,6 +64,13 @@ export default function GoogleLogin() {
           localStorage.setItem('clienteToken', loginResponse.token);
           localStorage.setItem('clienteInfo', JSON.stringify(loginResponse.cliente));
           
+          console.log('=== DEBUG TOKEN GUARDADO ===');
+          console.log('Token guardado:', loginResponse.token.substring(0, 20) + '...');
+          console.log('Cliente info guardado:', loginResponse.cliente);
+          console.log('localStorage clienteToken:', localStorage.getItem('clienteToken')?.substring(0, 20) + '...');
+          console.log('localStorage clienteInfo:', localStorage.getItem('clienteInfo'));
+          console.log('==========================');
+          
           console.log('Login exitoso con Google para:', loginResponse.cliente.email);
           
           toast.success('¡Bienvenido!');

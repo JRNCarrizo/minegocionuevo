@@ -45,14 +45,23 @@ export default function CatalogoPublico() {
     const token = localStorage.getItem('clienteToken');
     const cliente = localStorage.getItem('clienteInfo');
     
+    console.log('=== DEBUG CATÁLOGO - VERIFICACIÓN CLIENTE ===');
+    console.log('Token encontrado:', token ? token.substring(0, 20) + '...' : 'null');
+    console.log('Cliente info encontrado:', cliente);
+    console.log('URL actual:', window.location.href);
+    console.log('==========================================');
+    
     if (token && cliente) {
       try {
         setClienteInfo(JSON.parse(cliente));
+        console.log('Cliente info establecido correctamente');
       } catch (error) {
         console.error('Error al parsear clienteInfo:', error);
         localStorage.removeItem('clienteToken');
         localStorage.removeItem('clienteInfo');
       }
+    } else {
+      console.log('No hay token o cliente info disponible');
     }
   }, []);
 
