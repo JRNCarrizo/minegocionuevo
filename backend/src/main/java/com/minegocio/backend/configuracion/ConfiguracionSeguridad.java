@@ -74,7 +74,7 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                     // Endpoints de autenticación de clientes (Google login, recuperación de contraseña, etc.)
-                    .requestMatchers("/api/cliente/*/auth/**").permitAll()
+                    .requestMatchers("/api/publico/*/auth/**").permitAll()
                     .requestMatchers("/api/super-admin/**").hasAnyRole("SUPER_ADMIN", "ADMINISTRADOR")
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")

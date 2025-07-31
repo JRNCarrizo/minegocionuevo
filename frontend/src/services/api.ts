@@ -206,7 +206,7 @@ class ApiService {
   }
 
   async loginClienteConGoogle(subdominio: string, googleData: { email: string; name: string; picture?: string; sub: string }) {
-    const response = await this.api.post(`/cliente/${subdominio}/auth/google/login`, googleData);
+    const response = await this.api.post(`/publico/${subdominio}/auth/google/login`, googleData);
     return response.data;
   }
 

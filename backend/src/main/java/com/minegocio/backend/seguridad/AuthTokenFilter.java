@@ -151,7 +151,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                           requestPath.equals("/error") ||
                           requestPath.startsWith("/error") ||
                           // Endpoints de autenticación de clientes (Google login, recuperación de contraseña, etc.)
-                          (requestPath.contains("/cliente/") && requestPath.contains("/auth/"));
+                          (requestPath.contains("/publico/") && requestPath.contains("/auth/"));
         
         System.out.println("🔍 Checking if endpoint is public: " + requestPath + " -> " + isPublic);
         return isPublic;
