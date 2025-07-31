@@ -232,7 +232,7 @@ public class ClienteAuthController {
     /**
      * Login de cliente con Google
      */
-    @PostMapping("/auth/google/login")
+    @PostMapping("/google/login")
     public ResponseEntity<?> loginClienteGoogle(
             @PathVariable String subdominio,
             @RequestBody Map<String, Object> googleData) {
