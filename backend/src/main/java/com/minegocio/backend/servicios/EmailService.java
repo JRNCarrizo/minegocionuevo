@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class EmailService {
@@ -14,6 +15,18 @@ public class EmailService {
     
     @Value("${minegocio.app.frontend.url}")
     private String frontendUrl;
+    
+    @Value("${minegocio.app.email.from}")
+    private String fromEmail;
+    
+    @PostConstruct
+    public void init() {
+        System.out.println("=== EMAIL SERVICE INIT ===");
+        System.out.println("Frontend URL: " + frontendUrl);
+        System.out.println("From Email: " + fromEmail);
+        System.out.println("JavaMailSender: " + (emailSender != null ? "Configurado" : "NO CONFIGURADO"));
+        System.out.println("==========================");
+    }
 
     /**
      * Envía un email de recuperación de contraseña
@@ -21,6 +34,7 @@ public class EmailService {
     public void enviarEmailRecuperacion(String emailDestino, String token, String nombreUsuario) {
         SimpleMailMessage message = new SimpleMailMessage();
         
+        message.setFrom(fromEmail);
         message.setTo(emailDestino);
         message.setSubject("Recuperación de Contraseña - Negocio360");
         
@@ -39,10 +53,18 @@ public class EmailService {
         message.setText(contenido);
         
         try {
+            System.out.println("=== DEBUG EMAIL ===");
+            System.out.println("From: " + fromEmail);
+            System.out.println("To: " + emailDestino);
+            System.out.println("Subject: " + message.getSubject());
+            System.out.println("Enviando email de recuperación...");
+            
             emailSender.send(message);
-            System.out.println("Email de recuperación enviado a: " + emailDestino);
+            System.out.println("✅ Email de recuperación enviado exitosamente a: " + emailDestino);
         } catch (Exception e) {
-            System.err.println("Error al enviar email de recuperación: " + e.getMessage());
+            System.err.println("❌ Error al enviar email de recuperación: " + e.getMessage());
+            System.err.println("Stack trace: ");
+            e.printStackTrace();
             throw new RuntimeException("Error al enviar email de recuperación", e);
         }
     }
@@ -53,14 +75,15 @@ public class EmailService {
     public void enviarEmailRecuperacionCliente(String emailDestino, String token, String nombreUsuario, String subdominio) {
         SimpleMailMessage message = new SimpleMailMessage();
         
+        message.setFrom(fromEmail);
         message.setTo(emailDestino);
         message.setSubject("Recuperación de Contraseña - Tu Tienda");
         
         // Construir el enlace dinámicamente basado en el subdominio y la URL del frontend
         String baseUrl = frontendUrl;
         if (baseUrl.contains("localhost")) {
-            // Para desarrollo, usar el formato subdominio.localhost:3000
-            baseUrl = "http://" + subdominio + ".localhost:3000";
+            // Para desarrollo, usar el formato subdominio.localhost:5173
+            baseUrl = "http://" + subdominio + ".localhost:5173";
         } else {
             // Para producción, usar el formato subdominio.negocio360.org
             baseUrl = "https://" + subdominio + ".negocio360.org";
@@ -82,10 +105,20 @@ public class EmailService {
         message.setText(contenido);
         
         try {
+            System.out.println("=== DEBUG EMAIL CLIENTE ===");
+            System.out.println("From: " + fromEmail);
+            System.out.println("To: " + emailDestino);
+            System.out.println("Subject: " + message.getSubject());
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("Enlace de recuperación: " + enlaceRecuperacion);
+            System.out.println("Enviando email de recuperación de cliente...");
+            
             emailSender.send(message);
-            System.out.println("Email de recuperación de cliente enviado a: " + emailDestino);
+            System.out.println("✅ Email de recuperación de cliente enviado exitosamente a: " + emailDestino);
         } catch (Exception e) {
-            System.err.println("Error al enviar email de recuperación de cliente: " + e.getMessage());
+            System.err.println("❌ Error al enviar email de recuperación de cliente: " + e.getMessage());
+            System.err.println("Stack trace: ");
+            e.printStackTrace();
             throw new RuntimeException("Error al enviar email de recuperación", e);
         }
     }
@@ -96,6 +129,7 @@ public class EmailService {
     public void enviarEmailConfirmacionCambioCliente(String emailDestino, String nombreUsuario) {
         SimpleMailMessage message = new SimpleMailMessage();
         
+        message.setFrom(fromEmail);
         message.setTo(emailDestino);
         message.setSubject("Contraseña Actualizada - Tu Tienda");
         
@@ -125,6 +159,7 @@ public class EmailService {
     public void enviarEmailConfirmacionCambio(String emailDestino, String nombreUsuario) {
         SimpleMailMessage message = new SimpleMailMessage();
         
+        message.setFrom(fromEmail);
         message.setTo(emailDestino);
         message.setSubject("Contraseña Actualizada - Negocio360");
         

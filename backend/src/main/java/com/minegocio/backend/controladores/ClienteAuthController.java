@@ -563,6 +563,9 @@ public class ClienteAuthController {
             @PathVariable String subdominio,
             @RequestBody Map<String, String> request) {
         try {
+            // Limpiar tokens expirados antes de procesar
+            limpiarTokensExpirados();
+            
             String email = request.get("email");
             
             if (email == null || email.trim().isEmpty()) {
@@ -601,12 +604,20 @@ public class ClienteAuthController {
             tokenRecuperacionRepository.save(tokenRecuperacion);
             
             // Enviar email con enlace de recuperación
+            System.out.println("=== ENVIANDO EMAIL DE RECUPERACIÓN ===");
+            System.out.println("Email del cliente: " + cliente.getEmail());
+            System.out.println("Nombre del cliente: " + cliente.getNombre());
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("Token generado: " + token);
+            
             emailService.enviarEmailRecuperacionCliente(
                 cliente.getEmail(), 
                 token, 
                 cliente.getNombre(), 
                 subdominio
             );
+            
+            System.out.println("✅ Email enviado exitosamente");
             
             return ResponseEntity.ok(Map.of("mensaje", "Si el email existe en nuestra base de datos, recibirás un enlace de recuperación"));
             
@@ -1254,5 +1265,41 @@ public class ClienteAuthController {
         
         public String getPasswordNueva() { return passwordNueva; }
         public void setPasswordNueva(String passwordNueva) { this.passwordNueva = passwordNueva; }
+    }
+
+    /**
+     * Limpiar tokens expirados (método interno)
+     */
+    private void limpiarTokensExpirados() {
+        try {
+            tokenRecuperacionRepository.eliminarTokensExpirados(LocalDateTime.now());
+            System.out.println("Tokens expirados limpiados automáticamente");
+        } catch (Exception e) {
+            System.err.println("Error al limpiar tokens expirados: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Endpoint de prueba para verificar el envío de emails
+     */
+    @PostMapping("/test-email")
+    public ResponseEntity<?> testEmail(@PathVariable String subdominio) {
+        try {
+            System.out.println("=== TEST EMAIL ===");
+            System.out.println("Probando envío de email...");
+            
+            emailService.enviarEmailRecuperacionCliente(
+                "test@example.com", 
+                "test-token-123", 
+                "Usuario Test", 
+                subdominio
+            );
+            
+            return ResponseEntity.ok(Map.of("mensaje", "Email de prueba enviado correctamente"));
+        } catch (Exception e) {
+            System.err.println("Error en test de email: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error al enviar email de prueba: " + e.getMessage()));
+        }
     }
 }
