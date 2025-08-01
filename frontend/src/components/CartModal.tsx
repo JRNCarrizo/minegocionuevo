@@ -3,6 +3,7 @@ import { useCart } from "../hooks/useCart";
 import ConfirmarCompraModal from "./ConfirmarCompraModal";
 import apiService from "../services/api";
 import { useSubdominio } from "../hooks/useSubdominio";
+import { useResponsive } from "../hooks/useResponsive";
 import toast from "react-hot-toast";
 import * as cookies from "../utils/cookies";
 
@@ -38,6 +39,7 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
   const [loading, setLoading] = useState(false);
   const usuario = getClienteInfo();
   const { empresa, subdominio } = useSubdominio();
+  const { isMobile } = useResponsive();
 
   const handleConfirmarCompra = async (datos: { nombre: string; email: string; direccion: string; acordarConVendedor?: boolean }) => {
     if (!usuario || !items.length || !empresa?.id) {
@@ -144,11 +146,11 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
           onClick={e => e.stopPropagation()}
           style={{
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-            borderRadius: '20px',
+            borderRadius: isMobile ? '16px' : '20px',
             padding: '0',
-            width: '90vw',
+            width: isMobile ? '95vw' : '90vw',
             maxWidth: '800px',
-            maxHeight: '85vh',
+            maxHeight: isMobile ? '90vh' : '85vh',
             overflow: 'hidden',
             boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
             border: '1px solid rgba(255,255,255,0.2)',
@@ -162,18 +164,26 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
               `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)` :
               'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
-            padding: '24px 32px',
-            borderTopLeftRadius: '20px',
-            borderTopRightRadius: '20px',
+            padding: isMobile ? '16px 20px' : '24px 32px',
+            borderTopLeftRadius: isMobile ? '16px' : '20px',
+            borderTopRightRadius: isMobile ? '16px' : '20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'
           }}>
             <div>
-              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
+              <h2 style={{ 
+                margin: 0, 
+                fontSize: isMobile ? '20px' : '24px', 
+                fontWeight: '600' 
+              }}>
                 🛒 Carrito de Compras
               </h2>
-              <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
+              <p style={{ 
+                margin: '4px 0 0 0', 
+                opacity: 0.9, 
+                fontSize: isMobile ? '12px' : '14px' 
+              }}>
                 {items.length} {items.length === 1 ? 'producto' : 'productos'} en tu carrito
               </p>
             </div>
@@ -183,10 +193,10 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                 background: 'rgba(255,255,255,0.2)',
                 border: 'none',
                 borderRadius: '50%',
-                width: '40px',
-                height: '40px',
+                width: isMobile ? '36px' : '40px',
+                height: isMobile ? '36px' : '40px',
                 color: 'white',
-                fontSize: '20px',
+                fontSize: isMobile ? '18px' : '20px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -201,7 +211,11 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
           </div>
 
           {/* Content */}
-          <div style={{ padding: '32px', maxHeight: 'calc(85vh - 140px)', overflow: 'auto' }}>
+          <div style={{ 
+            padding: isMobile ? '20px' : '32px', 
+            maxHeight: isMobile ? 'calc(90vh - 120px)' : 'calc(85vh - 140px)', 
+            overflow: 'auto' 
+          }}>
           {items.length === 0 ? (
               <div style={{
                 textAlign: 'center',
@@ -262,7 +276,7 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                       style={{
                         background: 'white',
                         borderRadius: '16px',
-                        padding: '20px',
+                        padding: isMobile ? '16px' : '20px',
                         marginBottom: '16px',
                         border: '2px solid #e2e8f0',
                         transition: 'all 0.2s ease',
@@ -277,15 +291,21 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                         e.currentTarget.style.boxShadow = 'none';
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: isMobile ? 'column' : 'row',
+                        alignItems: isMobile ? 'flex-start' : 'center', 
+                        gap: isMobile ? '12px' : '16px' 
+                      }}>
                         {/* Imagen */}
                         <div style={{
-                          width: '80px',
-                          height: '80px',
+                          width: isMobile ? '60px' : '80px',
+                          height: isMobile ? '60px' : '80px',
                           borderRadius: '12px',
                           overflow: 'hidden',
                           flexShrink: 0,
-                          background: '#f1f5f9'
+                          background: '#f1f5f9',
+                          alignSelf: isMobile ? 'center' : 'flex-start'
                         }}>
                           {item.imagen ? (
                             <img 
@@ -334,18 +354,19 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <h4 style={{ 
                             margin: '0 0 8px 0', 
-                            fontSize: '18px', 
+                            fontSize: isMobile ? '16px' : '18px', 
                             fontWeight: '600', 
                             color: '#1e293b',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
+                            wordBreak: 'break-word'
                           }}>
                         {item.nombre}
                           </h4>
                           <p style={{ 
                             margin: '0 0 12px 0', 
-                            fontSize: '20px', 
+                            fontSize: isMobile ? '18px' : '20px', 
                             fontWeight: '700', 
                             color: '#059669' 
                           }}>
@@ -353,20 +374,25 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                           </p>
                           
                           {/* Controles de cantidad */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: isMobile ? '8px' : '12px',
+                            flexWrap: 'wrap'
+                          }}>
                             <button
                               onClick={() => updateQuantity(item.id, Math.max(1, item.cantidad - 1), undefined, empresa?.subdominio)}
                               style={{
                                 background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
                                 border: '2px solid #cbd5e1',
                                 borderRadius: '8px',
-                                width: '36px',
-                                height: '36px',
+                                width: isMobile ? '32px' : '36px',
+                                height: isMobile ? '32px' : '36px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 cursor: 'pointer',
-                                fontSize: '18px',
+                                fontSize: isMobile ? '16px' : '18px',
                                 fontWeight: '600',
                                 color: '#475569',
                                 transition: 'all 0.2s ease'
@@ -392,12 +418,12 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                                 await updateQuantity(item.id, nuevaCantidad, undefined, empresa?.subdominio);
                               }}
                               style={{
-                                width: '60px',
-                                height: '36px',
+                                width: isMobile ? '50px' : '60px',
+                                height: isMobile ? '32px' : '36px',
                                 border: '2px solid #cbd5e1',
                                 borderRadius: '8px',
                                 textAlign: 'center',
-                                fontSize: '16px',
+                                fontSize: isMobile ? '14px' : '16px',
                                 fontWeight: '600',
                                 color: '#1e293b',
                                 background: 'white'
@@ -410,13 +436,13 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                                 background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
                                 border: '2px solid #cbd5e1',
                                 borderRadius: '8px',
-                                width: '36px',
-                                height: '36px',
+                                width: isMobile ? '32px' : '36px',
+                                height: isMobile ? '32px' : '36px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 cursor: 'pointer',
-                                fontSize: '18px',
+                                fontSize: isMobile ? '16px' : '18px',
                                 fontWeight: '600',
                                 color: '#475569',
                                 transition: 'all 0.2s ease'
@@ -436,10 +462,14 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                         </div>
 
                         {/* Subtotal y eliminar */}
-                        <div style={{ textAlign: 'right', minWidth: '120px' }}>
+                        <div style={{ 
+                          textAlign: isMobile ? 'left' : 'right', 
+                          minWidth: isMobile ? 'auto' : '120px',
+                          alignSelf: isMobile ? 'flex-start' : 'flex-end'
+                        }}>
                           <p style={{ 
                             margin: '0 0 8px 0', 
-                            fontSize: '18px', 
+                            fontSize: isMobile ? '16px' : '18px', 
                             fontWeight: '700', 
                             color: '#8b5cf6' 
                           }}>
@@ -451,8 +481,8 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                               background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
                               border: '2px solid #fecaca',
                               borderRadius: '8px',
-                              padding: '8px 16px',
-                              fontSize: '14px',
+                              padding: isMobile ? '6px 12px' : '8px 16px',
+                              fontSize: isMobile ? '12px' : '14px',
                               fontWeight: '600',
                               color: '#dc2626',
                               cursor: 'pointer',
@@ -478,8 +508,8 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                 {/* Resumen y acciones */}
                 <div style={{
                   background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                  borderRadius: '20px',
-                  padding: '32px',
+                  borderRadius: isMobile ? '16px' : '20px',
+                  padding: isMobile ? '20px' : '32px',
                   border: '2px solid #e2e8f0',
                   width: '100%',
                   maxWidth: '600px',
@@ -488,13 +518,13 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                   {/* Título centrado */}
                   <div style={{ 
                     textAlign: 'center', 
-                    marginBottom: '24px',
-                    paddingBottom: '20px',
+                    marginBottom: isMobile ? '20px' : '24px',
+                    paddingBottom: isMobile ? '16px' : '20px',
                     borderBottom: '2px solid #e2e8f0'
                   }}>
                     <h3 style={{ 
                       margin: '0 0 8px 0', 
-                      fontSize: '24px', 
+                      fontSize: isMobile ? '20px' : '24px', 
                       fontWeight: '700', 
                       color: '#1e293b',
                       textAlign: 'center'
@@ -503,7 +533,7 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                     </h3>
                     <p style={{ 
                       margin: 0, 
-                      fontSize: '32px', 
+                      fontSize: isMobile ? '28px' : '32px', 
                       fontWeight: '800', 
                       color: '#059669',
                       textAlign: 'center'
@@ -516,7 +546,7 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                   <div style={{ 
                     display: 'flex', 
                     flexDirection: 'column',
-                    gap: '16px',
+                    gap: isMobile ? '12px' : '16px',
                     alignItems: 'center'
                   }}>
                     <button
@@ -527,9 +557,9 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                           `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorPrimario}dd 100%)` :
                           'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                         border: 'none',
-                        borderRadius: '16px',
-                        padding: '16px 40px',
-                        fontSize: '18px',
+                        borderRadius: isMobile ? '12px' : '16px',
+                        padding: isMobile ? '14px 32px' : '16px 40px',
+                        fontSize: isMobile ? '16px' : '18px',
                         fontWeight: '700',
                         color: 'white',
                         cursor: loading ? 'not-allowed' : 'pointer',

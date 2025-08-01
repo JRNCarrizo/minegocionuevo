@@ -133,11 +133,16 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
           <div style={{
             background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
             borderRadius: '12px',
-            padding: '20px',
+            padding: isMobile ? '16px' : '20px',
             marginBottom: '24px',
             border: '1px solid #bae6fd'
           }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+            <h3 style={{ 
+              margin: '0 0 16px 0', 
+              fontSize: isMobile ? '16px' : '18px', 
+              fontWeight: '600', 
+              color: '#1e293b' 
+            }}>
               📋 Información Personal
             </h3>
             <div style={{ 
@@ -146,35 +151,98 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
               gap: isMobile ? '12px' : '16px' 
             }}>
               <div>
-                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Nombre Completo</p>
-                <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                <p style={{ 
+                  margin: '0 0 4px 0', 
+                  fontSize: isMobile ? '11px' : '12px', 
+                  color: '#64748b', 
+                  fontWeight: '500' 
+                }}>
+                  Nombre Completo
+                </p>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: isMobile ? '14px' : '16px', 
+                  fontWeight: '600', 
+                  color: '#1e293b',
+                  wordBreak: 'break-word'
+                }}>
                   {cliente.nombre} {cliente.apellidos}
                 </p>
               </div>
               <div>
-                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Email</p>
-                <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                <p style={{ 
+                  margin: '0 0 4px 0', 
+                  fontSize: isMobile ? '11px' : '12px', 
+                  color: '#64748b', 
+                  fontWeight: '500' 
+                }}>
+                  Email
+                </p>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: isMobile ? '14px' : '16px', 
+                  fontWeight: '600', 
+                  color: '#1e293b',
+                  wordBreak: 'break-all'
+                }}>
                   {cliente.email}
                 </p>
               </div>
               <div>
-                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Teléfono</p>
-                <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                <p style={{ 
+                  margin: '0 0 4px 0', 
+                  fontSize: isMobile ? '11px' : '12px', 
+                  color: '#64748b', 
+                  fontWeight: '500' 
+                }}>
+                  Teléfono
+                </p>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: isMobile ? '14px' : '16px', 
+                  fontWeight: '600', 
+                  color: '#1e293b' 
+                }}>
                   {cliente.telefono || 'No especificado'}
                 </p>
               </div>
               <div>
-                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Fecha de Registro</p>
-                <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
-                  {(() => { const fecha = cliente.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
+                <p style={{ 
+                  margin: '0 0 4px 0', 
+                  fontSize: isMobile ? '11px' : '12px', 
+                  color: '#64748b', 
+                  fontWeight: '500' 
+                }}>
+                  Fecha de Registro
+                </p>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: isMobile ? '14px' : '16px', 
+                  fontWeight: '600', 
+                  color: '#1e293b',
+                  wordBreak: 'break-word'
+                }}>
+                  {(() => { const fecha = cliente.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: isMobile ? 'short' : '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
                 </p>
               </div>
             </div>
             
             {(cliente.direccion || cliente.ciudad || cliente.pais) && (
               <div style={{ marginTop: '16px' }}>
-                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Dirección</p>
-                <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>
+                <p style={{ 
+                  margin: '0 0 4px 0', 
+                  fontSize: isMobile ? '11px' : '12px', 
+                  color: '#64748b', 
+                  fontWeight: '500' 
+                }}>
+                  Dirección
+                </p>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: isMobile ? '13px' : '14px', 
+                  color: '#475569',
+                  wordBreak: 'break-word'
+                }}>
                   {[cliente.direccion, cliente.ciudad, cliente.pais].filter(Boolean).join(', ') || 'No especificada'}
                 </p>
               </div>
@@ -185,11 +253,16 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
           <div style={{
             background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
             borderRadius: '12px',
-            padding: '20px',
+            padding: isMobile ? '16px' : '20px',
             marginBottom: '24px',
             border: '1px solid #e2e8f0'
           }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+            <h3 style={{ 
+              margin: '0 0 16px 0', 
+              fontSize: isMobile ? '16px' : '18px', 
+              fontWeight: '600', 
+              color: '#1e293b' 
+            }}>
               💰 Estadísticas de Compras
             </h3>
             <div style={{ 
@@ -200,42 +273,69 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
               <div style={{
                 background: '#fff',
                 borderRadius: '12px',
-                padding: '16px',
+                padding: isMobile ? '12px' : '16px',
                 textAlign: 'center',
                 border: '1px solid #e2e8f0'
               }}>
-                <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#64748b' }}>
+                <p style={{ 
+                  margin: '0 0 8px 0', 
+                  fontSize: isMobile ? '12px' : '14px', 
+                  color: '#64748b' 
+                }}>
                   Total Pedidos
                 </p>
-                <p style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#3b82f6' }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: isMobile ? '20px' : '24px', 
+                  fontWeight: '700', 
+                  color: '#3b82f6' 
+                }}>
                   {cliente.totalPedidos || 0}
                 </p>
               </div>
               <div style={{
                 background: '#fff',
                 borderRadius: '12px',
-                padding: '16px',
+                padding: isMobile ? '12px' : '16px',
                 textAlign: 'center',
                 border: '1px solid #e2e8f0'
               }}>
-                <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#64748b' }}>
+                <p style={{ 
+                  margin: '0 0 8px 0', 
+                  fontSize: isMobile ? '12px' : '14px', 
+                  color: '#64748b' 
+                }}>
                   Total Compras
                 </p>
-                <p style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#059669' }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: isMobile ? '20px' : '24px', 
+                  fontWeight: '700', 
+                  color: '#059669' 
+                }}>
                   ${(cliente.totalCompras || 0).toFixed(2)}
                 </p>
               </div>
               <div style={{
                 background: '#fff',
                 borderRadius: '12px',
-                padding: '16px',
+                padding: isMobile ? '12px' : '16px',
                 textAlign: 'center',
                 border: '1px solid #e2e8f0'
               }}>
-                <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#64748b' }}>
+                <p style={{ 
+                  margin: '0 0 8px 0', 
+                  fontSize: isMobile ? '12px' : '14px', 
+                  color: '#64748b' 
+                }}>
                   Promedio por Pedido
                 </p>
-                <p style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#f59e0b' }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: isMobile ? '20px' : '24px', 
+                  fontWeight: '700', 
+                  color: '#f59e0b' 
+                }}>
                   ${cliente.totalPedidos && cliente.totalPedidos > 0 ? ((cliente.totalCompras || 0) / cliente.totalPedidos).toFixed(2) : '0.00'}
                 </p>
               </div>
@@ -244,7 +344,12 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
 
           {/* Historial de pedidos */}
           <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
+            <h3 style={{ 
+              margin: '0 0 16px 0', 
+              fontSize: isMobile ? '18px' : '20px', 
+              fontWeight: '600', 
+              color: '#1e293b' 
+            }}>
               🛒 Historial de Pedidos ({pedidos.length})
             </h3>
             
@@ -252,26 +357,34 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
               <div style={{
                 background: '#f8fafc',
                 borderRadius: '12px',
-                padding: '32px',
+                padding: isMobile ? '24px' : '32px',
                 textAlign: 'center',
                 border: '1px solid #e2e8f0'
               }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>
+                <div style={{ 
+                  fontSize: isMobile ? '36px' : '48px', 
+                  marginBottom: '16px', 
+                  opacity: 0.5 
+                }}>
                   📭
                 </div>
-                <p style={{ margin: 0, fontSize: '16px', color: '#64748b' }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: isMobile ? '14px' : '16px', 
+                  color: '#64748b' 
+                }}>
                   Este cliente aún no ha realizado ningún pedido.
                 </p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '12px' }}>
                 {pedidos.map((pedido, index) => (
                   <div 
                     key={pedido.id || index} 
                     style={{
                       background: '#fff',
                       borderRadius: '12px',
-                      padding: '16px',
+                      padding: isMobile ? '12px' : '16px',
                       border: '2px solid #e2e8f0',
                       transition: 'all 0.2s ease',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
@@ -285,30 +398,38 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
                       e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: isMobile ? 'column' : 'row',
+                      justifyContent: 'space-between', 
+                      alignItems: isMobile ? 'flex-start' : 'center',
+                      gap: isMobile ? '8px' : '0'
+                    }}>
                       <div>
                         <h4 style={{ 
                           margin: '0 0 4px 0', 
-                          fontSize: '16px', 
+                          fontSize: isMobile ? '14px' : '16px', 
                           fontWeight: '600', 
-                          color: '#1e293b'
+                          color: '#1e293b',
+                          wordBreak: 'break-word'
                         }}>
                           Pedido #{pedido.numeroPedido || pedido.id}
                         </h4>
                         <p style={{ 
                           margin: '0 0 8px 0', 
-                          fontSize: '14px', 
-                          color: '#64748b'
+                          fontSize: isMobile ? '12px' : '14px', 
+                          color: '#64748b',
+                          wordBreak: 'break-word'
                         }}>
-                          {(() => { const fecha = pedido.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
+                          {(() => { const fecha = pedido.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: isMobile ? 'short' : '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
                         </p>
                         <span
                           style={{
                             backgroundColor: obtenerColorEstado(pedido.estado) + '20',
                             color: obtenerColorEstado(pedido.estado),
-                            padding: '4px 12px',
+                            padding: isMobile ? '3px 8px' : '4px 12px',
                             borderRadius: '12px',
-                            fontSize: '12px',
+                            fontSize: isMobile ? '10px' : '12px',
                             fontWeight: '600',
                             border: `1px solid ${obtenerColorEstado(pedido.estado)}30`
                           }}
@@ -316,10 +437,13 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
                           {obtenerTextoEstado(pedido.estado)}
                         </span>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
+                      <div style={{ 
+                        textAlign: isMobile ? 'left' : 'right',
+                        alignSelf: isMobile ? 'flex-start' : 'flex-end'
+                      }}>
                         <p style={{ 
                           margin: 0, 
-                          fontSize: '18px', 
+                          fontSize: isMobile ? '16px' : '18px', 
                           fontWeight: '700', 
                           color: '#059669'
                         }}>
@@ -327,7 +451,7 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
                         </p>
                         <p style={{ 
                           margin: '4px 0 0 0', 
-                          fontSize: '12px', 
+                          fontSize: isMobile ? '10px' : '12px', 
                           color: '#64748b'
                         }}>
                           {pedido.detalles?.length || 0} producto{(pedido.detalles?.length || 0) !== 1 ? 's' : ''}
@@ -528,7 +652,7 @@ export default function GestionClientes() {
       }}>
         <div className="mb-8">
           <h1 className="titulo-2 mb-4" style={{ 
-            fontSize: '32px', 
+            fontSize: isMobile ? '24px' : '32px', 
             fontWeight: '700', 
             color: '#1e293b',
             letterSpacing: '-0.025em',
@@ -537,7 +661,7 @@ export default function GestionClientes() {
             👥 Gestión de Clientes
           </h1>
           <p className="texto-gris" style={{ 
-            fontSize: '16px', 
+            fontSize: isMobile ? '14px' : '16px', 
             color: '#64748b',
             marginBottom: '8px'
           }}>
@@ -554,22 +678,25 @@ export default function GestionClientes() {
 
         {/* Estadísticas rápidas */}
         <div className="grid grid-2 mb-6" style={{ 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px'
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: isMobile ? '12px' : '16px'
         }}>
           <div className="tarjeta" style={{
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
             borderRadius: '16px',
-            padding: '24px',
+            padding: isMobile ? '16px' : '24px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
           }}>
-            <h3 className="texto-pequeno texto-gris mb-1" style={{ fontSize: '14px', color: '#64748b' }}>
+            <h3 className="texto-pequeno texto-gris mb-1" style={{ 
+              fontSize: isMobile ? '12px' : '14px', 
+              color: '#64748b' 
+            }}>
               👥 Total Clientes
             </h3>
             <p className="titulo-2" style={{ 
               color: '#3b82f6', 
-              fontSize: '28px', 
+              fontSize: isMobile ? '24px' : '28px', 
               fontWeight: '700',
               margin: 0
             }}>
@@ -580,15 +707,18 @@ export default function GestionClientes() {
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
             borderRadius: '16px',
-            padding: '24px',
+            padding: isMobile ? '16px' : '24px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
           }}>
-            <h3 className="texto-pequeno texto-gris mb-1" style={{ fontSize: '14px', color: '#64748b' }}>
+            <h3 className="texto-pequeno texto-gris mb-1" style={{ 
+              fontSize: isMobile ? '12px' : '14px', 
+              color: '#64748b' 
+            }}>
               ✅ Clientes Activos
             </h3>
             <p className="titulo-2" style={{ 
               color: '#10b981', 
-              fontSize: '28px', 
+              fontSize: isMobile ? '24px' : '28px', 
               fontWeight: '700',
               margin: 0
             }}>
@@ -599,15 +729,18 @@ export default function GestionClientes() {
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
             borderRadius: '16px',
-            padding: '24px',
+            padding: isMobile ? '16px' : '24px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
           }}>
-            <h3 className="texto-pequeno texto-gris mb-1" style={{ fontSize: '14px', color: '#64748b' }}>
+            <h3 className="texto-pequeno texto-gris mb-1" style={{ 
+              fontSize: isMobile ? '12px' : '14px', 
+              color: '#64748b' 
+            }}>
               🛒 Total Pedidos
             </h3>
             <p className="titulo-2" style={{ 
               color: '#f59e0b', 
-              fontSize: '28px', 
+              fontSize: isMobile ? '24px' : '28px', 
               fontWeight: '700',
               margin: 0
             }}>
@@ -618,15 +751,18 @@ export default function GestionClientes() {
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
             borderRadius: '16px',
-            padding: '24px',
+            padding: isMobile ? '16px' : '24px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
           }}>
-            <h3 className="texto-pequeno texto-gris mb-1" style={{ fontSize: '14px', color: '#64748b' }}>
+            <h3 className="texto-pequeno texto-gris mb-1" style={{ 
+              fontSize: isMobile ? '12px' : '14px', 
+              color: '#64748b' 
+            }}>
               💰 Total Ventas
             </h3>
             <p className="titulo-2" style={{ 
               color: '#059669', 
-              fontSize: '28px', 
+              fontSize: isMobile ? '24px' : '28px', 
               fontWeight: '700',
               margin: 0
             }}>
@@ -640,11 +776,11 @@ export default function GestionClientes() {
           background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
           border: '1px solid #e2e8f0',
           borderRadius: '16px',
-          padding: '24px',
+          padding: isMobile ? '16px' : '24px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
         }}>
           <h3 className="titulo-3 mb-4" style={{
-            fontSize: '20px',
+            fontSize: isMobile ? '18px' : '20px',
             fontWeight: '600',
             color: '#1e293b',
             marginBottom: '16px'
@@ -659,10 +795,10 @@ export default function GestionClientes() {
             placeholder="Buscar por nombre, email o teléfono..."
             style={{
               width: '100%',
-              padding: '12px 16px',
+              padding: isMobile ? '10px 14px' : '12px 16px',
               border: '2px solid #e2e8f0',
               borderRadius: '12px',
-              fontSize: '16px',
+              fontSize: isMobile ? '14px' : '16px',
               transition: 'all 0.2s ease'
             }}
           />
@@ -673,24 +809,25 @@ export default function GestionClientes() {
           background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
           border: '1px solid #e2e8f0',
           borderRadius: '16px',
-          padding: '24px',
+          padding: isMobile ? '16px' : '24px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
         }}>
           <h3 className="titulo-3 mb-6" style={{
-            fontSize: '22px',
+            fontSize: isMobile ? '20px' : '22px',
             fontWeight: '600',
             color: '#1e293b',
             marginBottom: '24px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            flexWrap: 'wrap'
           }}>
             👥 Clientes ({clientesFiltrados.length})
             <span style={{
               background: '#e2e8f0',
               color: '#64748b',
-              fontSize: '14px',
-              padding: '4px 12px',
+              fontSize: isMobile ? '12px' : '14px',
+              padding: isMobile ? '3px 8px' : '4px 12px',
               borderRadius: '20px',
               fontWeight: '500'
             }}>
@@ -701,18 +838,22 @@ export default function GestionClientes() {
           {clientesFiltrados.length === 0 ? (
             <div className="text-center py-12">
               <div style={{
-                fontSize: '48px',
+                fontSize: isMobile ? '36px' : '48px',
                 marginBottom: '16px',
                 opacity: 0.5
               }}>
                 📭
               </div>
-              <p className="texto-gris" style={{ fontSize: '16px', color: '#64748b' }}>
+              <p className="texto-gris" style={{ 
+                fontSize: isMobile ? '14px' : '16px', 
+                color: '#64748b',
+                padding: isMobile ? '0 16px' : '0'
+              }}>
                 {busqueda ? 'No se encontraron clientes que coincidan con la búsqueda.' : 'No hay clientes registrados.'}
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4" style={{ gap: isMobile ? '12px' : '16px' }}>
               {clientesFiltrados.map(cliente => (
                 <div
                   key={cliente.id}

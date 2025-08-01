@@ -57,9 +57,9 @@ export default function NavbarCliente({
         justifyContent: isMobile ? (clienteInfo ? 'space-between' : 'flex-start') : (clienteInfo ? 'space-between' : 'center'),
         height: isMobile ? 'auto' : '70px',
         flexDirection: isMobile ? 'column' : 'row',
-        paddingTop: isMobile ? '12px' : '0',
-        paddingBottom: isMobile ? '12px' : '0',
-        gap: isMobile ? '12px' : '0'
+        paddingTop: isMobile ? '8px' : '0',
+        paddingBottom: isMobile ? '8px' : '0',
+        gap: isMobile ? '8px' : '0'
       }}>
         {/* Logo y nombre de empresa con inicial del cliente en móvil */}
         <div style={{
