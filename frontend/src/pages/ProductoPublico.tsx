@@ -7,6 +7,7 @@ import CartModal from '../components/CartModal';
 import NavbarCliente from '../components/NavbarCliente';
 import { useCart } from '../hooks/useCart';
 import toast from 'react-hot-toast';
+import { getCookie } from '../utils/cookies';
 
 export default function ProductoPublico() {
   const { id } = useParams<{ id: string }>();
@@ -54,8 +55,18 @@ export default function ProductoPublico() {
   }, [empresa, subdominio, id, cargarProducto]);
 
   useEffect(() => {
-    const token = localStorage.getItem('clienteToken');
-    const cliente = localStorage.getItem('clienteInfo');
+    // Buscar token en cookies primero (se comparte entre subdominios)
+    let token = getCookie('clienteToken');
+    let cliente = getCookie('clienteInfo');
+    
+    // Si no está en cookies, buscar en localStorage
+    if (!token) {
+      token = localStorage.getItem('clienteToken');
+    }
+    if (!cliente) {
+      cliente = localStorage.getItem('clienteInfo');
+    }
+    
     if (token && cliente) {
       try {
         setClienteInfo(JSON.parse(cliente));

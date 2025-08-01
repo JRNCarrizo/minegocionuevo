@@ -161,7 +161,12 @@ export default function CatalogoPublico() {
     
     const subdominioDesarrollo = localStorage.getItem('subdominio-desarrollo');
     const subdominioFinal = subdominio || subdominioDesarrollo;
-    const token = localStorage.getItem('clienteToken');
+    
+    // Buscar token en cookies primero (se comparte entre subdominios)
+    let token = getCookie('clienteToken');
+    if (!token) {
+      token = localStorage.getItem('clienteToken');
+    }
     
     if (!subdominioFinal || !token) return;
 
@@ -185,7 +190,12 @@ export default function CatalogoPublico() {
 
     const subdominioDesarrollo = localStorage.getItem('subdominio-desarrollo');
     const subdominioFinal = subdominio || subdominioDesarrollo;
-    const token = localStorage.getItem('clienteToken');
+    
+    // Buscar token en cookies primero (se comparte entre subdominios)
+    let token = getCookie('clienteToken');
+    if (!token) {
+      token = localStorage.getItem('clienteToken');
+    }
     
     if (!subdominioFinal || !token) {
       toast.error('Error de autenticación');

@@ -3,6 +3,7 @@ import { useCart } from '../hooks/useCart';
 import apiService from '../services/api';
 import type { Producto } from '../types';
 import toast from 'react-hot-toast';
+import { getCookie } from '../utils/cookies';
 
 interface ProductoDetalleModalProps {
   open: boolean;
@@ -30,19 +31,29 @@ export default function ProductoDetalleModal({
   const [clienteLogueado, setClienteLogueado] = useState(false);
   
   useEffect(() => {
-    const token = localStorage.getItem('clienteToken');
-    const cliente = localStorage.getItem('clienteInfo');
+    // Buscar token en cookies primero (se comparte entre subdominios)
+    let token = getCookie('clienteToken');
+    let cliente = getCookie('clienteInfo');
+    
+    // Si no está en cookies, buscar en localStorage
+    if (!token) {
+      token = localStorage.getItem('clienteToken');
+    }
+    if (!cliente) {
+      cliente = localStorage.getItem('clienteInfo');
+    }
+    
     setClienteLogueado(!!(token && cliente));
   }, []);
 
   // Función para navegar entre imágenes
   const navegarImagen = (direccion: 'anterior' | 'siguiente') => {
-    if (!producto || !producto.imagenes) return;
+    if (!producto || !producto.imagenes || producto.imagenes.length === 0) return;
     
     if (direccion === 'anterior') {
-      setImagenActual(prev => prev > 0 ? prev - 1 : producto.imagenes.length - 1);
+      setImagenActual(prev => prev > 0 ? prev - 1 : producto.imagenes!.length - 1);
     } else {
-      setImagenActual(prev => prev < producto.imagenes.length - 1 ? prev + 1 : 0);
+      setImagenActual(prev => prev < producto.imagenes!.length - 1 ? prev + 1 : 0);
     }
   };
 
@@ -148,7 +159,7 @@ export default function ProductoDetalleModal({
       nombre: producto.nombre,
       precio: producto.precio,
       cantidad,
-      imagen: producto.imagenes && producto.imagenes[0]
+      imagen: producto.imagenes && producto.imagenes.length > 0 ? producto.imagenes[0] : undefined
     }, undefined, subdominio || undefined);
     
     if (agregado) {
@@ -392,7 +403,7 @@ export default function ProductoDetalleModal({
                       fontSize: '14px',
                       fontWeight: '500'
                     }}>
-                      {imagenActual + 1} / {producto.imagenes.length}
+                      {imagenActual + 1} / {producto.imagenes!.length}
                     </div>
                     
                     {/* Indicación de controles de teclado */}
@@ -415,14 +426,14 @@ export default function ProductoDetalleModal({
                   </div>
                   
                   {/* Miniaturas */}
-                  {producto.imagenes.length > 1 && (
+                  {producto.imagenes!.length > 1 && (
                     <div style={{
                       display: 'flex',
                       gap: '8px',
                       overflowX: 'auto',
                       paddingBottom: '8px'
                     }}>
-                      {producto.imagenes.map((imagen, index) => (
+                      {producto.imagenes!.map((imagen, index) => (
                         <img
                           key={index}
                           src={imagen}
