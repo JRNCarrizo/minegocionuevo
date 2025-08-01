@@ -68,6 +68,7 @@ public class ConfiguracionSeguridad {
                 auth.requestMatchers("/api/publico/**").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/verificacion/**").permitAll()
+                    .requestMatchers("/api/verificacion-cliente/**").permitAll()
                     .requestMatchers("/api/debug/**").permitAll()
                     .requestMatchers("/api/empresas/registro").permitAll()
                     .requestMatchers("/api/empresas/verificar-subdominio/**").permitAll()
