@@ -275,7 +275,7 @@ export default function CatalogoPublico() {
       ...estilosPersonalizados,
       background: fondoPrincipal,
       minHeight: '100vh',
-      paddingTop: isMobile ? '100px' : '80px'
+      paddingTop: isMobile ? '120px' : '80px'
     }}>
       <NavbarCliente
         empresa={empresa}

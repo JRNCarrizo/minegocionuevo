@@ -267,20 +267,81 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                   marginBottom: '32px',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
                   gap: '16px'
                 }}>
+                  {/* Header de la lista */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                    borderRadius: '12px',
+                    padding: isMobile ? '12px 16px' : '16px 20px',
+                    border: '2px solid #e2e8f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '8px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <span style={{
+                        fontSize: isMobile ? '14px' : '16px',
+                        fontWeight: '600',
+                        color: '#1e293b'
+                      }}>
+                        📦 Productos en el carrito
+                      </span>
+                      <span style={{
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontSize: isMobile ? '12px' : '14px',
+                        fontWeight: '600'
+                      }}>
+                        {items.length} {items.length === 1 ? 'producto' : 'productos'}
+                      </span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      flexWrap: 'wrap'
+                    }}>
+                      <span style={{
+                        fontSize: isMobile ? '12px' : '14px',
+                        color: '#64748b',
+                        fontWeight: '500'
+                      }}>
+                        Total unidades: {items.reduce((sum, item) => sum + item.cantidad, 0)}
+                      </span>
+                      <span style={{
+                        fontSize: isMobile ? '14px' : '16px',
+                        fontWeight: '700',
+                        color: '#059669'
+                      }}>
+                        ${total.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Lista de productos */}
                   {items.map((item, index) => (
                     <div 
                       key={item.id}
                       style={{
                         background: 'white',
                         borderRadius: '16px',
-                        padding: isMobile ? '16px' : '20px',
-                        marginBottom: '16px',
+                        padding: '0',
                         border: '2px solid #e2e8f0',
                         transition: 'all 0.2s ease',
-                        animation: `slideInUp 0.3s ease-out ${index * 0.1}s both`
+                        animation: `slideInUp 0.3s ease-out ${index * 0.1}s both`,
+                        display: 'flex',
+                        alignItems: 'stretch',
+                        overflow: 'hidden',
+                        minHeight: isMobile ? '120px' : '140px'
                       }}
                       onMouseOver={(e) => {
                         e.currentTarget.style.borderColor = '#8b5cf6';
@@ -291,67 +352,71 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                         e.currentTarget.style.boxShadow = 'none';
                       }}
                     >
-                      <div style={{ 
-                        display: 'flex', 
-                        flexDirection: isMobile ? 'column' : 'row',
-                        alignItems: isMobile ? 'flex-start' : 'center', 
-                        gap: isMobile ? '12px' : '16px' 
+                      {/* Imagen del producto - lado izquierdo */}
+                      <div style={{
+                        width: isMobile ? '120px' : '140px',
+                        height: '100%',
+                        minWidth: isMobile ? '120px' : '140px',
+                        maxWidth: isMobile ? '120px' : '140px',
+                        flexShrink: 0,
+                        position: 'relative',
+                        overflow: 'hidden'
                       }}>
-                        {/* Imagen */}
-                        <div style={{
-                          width: isMobile ? '60px' : '80px',
-                          height: isMobile ? '60px' : '80px',
-                          borderRadius: '12px',
-                          overflow: 'hidden',
-                          flexShrink: 0,
-                          background: '#f1f5f9',
-                          alignSelf: isMobile ? 'center' : 'flex-start'
-                        }}>
-                          {item.imagen ? (
-                            <img 
-                              src={item.imagen} 
-                              alt={item.nombre}
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover'
-                              }}
-                              onError={(e) => {
-                                e.currentTarget.src = 'https://via.placeholder.com/80x80?text=Sin+Imagen';
-                              }}
-                            />
-                          ) : (
-                            <div style={{
+                        {item.imagen ? (
+                          <img 
+                            src={item.imagen} 
+                            alt={item.nombre}
+                            style={{
                               width: '100%',
                               height: '100%',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#64748b',
-                              fontSize: '10px',
-                              textAlign: 'center',
-                              padding: '8px'
+                              objectFit: 'cover'
+                            }}
+                            onError={(e) => {
+                              e.currentTarget.src = 'https://via.placeholder.com/140x140?text=Sin+Imagen';
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                            color: '#64748b',
+                            fontSize: '12px',
+                            textAlign: 'center',
+                            padding: '16px'
+                          }}>
+                            <div style={{
+                              fontSize: '24px',
+                              marginBottom: '4px',
+                              opacity: 0.7
                             }}>
-                              <div style={{
-                                fontSize: '20px',
-                                marginBottom: '4px',
-                                opacity: 0.7
-                              }}>
-                                📸
-                              </div>
-                              <div style={{
-                                fontSize: '8px',
-                                opacity: 0.8
-                              }}>
-                                Sin imagen
-                              </div>
+                              📸
                             </div>
-                          )}
-                        </div>
+                            <div style={{
+                              fontSize: '10px',
+                              opacity: 0.8
+                            }}>
+                              Sin imagen
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
-                        {/* Información del producto */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                      {/* Información del producto - lado derecho */}
+                      <div style={{ 
+                        flex: 1,
+                        padding: isMobile ? '16px' : '20px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        minWidth: 0
+                      }}>
+                        {/* Información principal */}
+                        <div style={{ flex: 1 }}>
                           <h4 style={{ 
                             margin: '0 0 8px 0', 
                             fontSize: isMobile ? '16px' : '18px', 
@@ -362,17 +427,76 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                             whiteSpace: 'nowrap',
                             wordBreak: 'break-word'
                           }}>
-                        {item.nombre}
+                            {item.nombre}
                           </h4>
-                          <p style={{ 
-                            margin: '0 0 12px 0', 
-                            fontSize: isMobile ? '18px' : '20px', 
-                            fontWeight: '700', 
-                            color: '#059669' 
-                          }}>
-                            ${item.precio.toFixed(2)}
-                          </p>
                           
+                          {/* Precio unitario y total */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '12px',
+                            flexWrap: 'wrap',
+                            gap: '8px'
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px'
+                            }}>
+                              <span style={{
+                                fontSize: isMobile ? '14px' : '16px',
+                                color: '#64748b',
+                                fontWeight: '500'
+                              }}>
+                                Precio unitario: ${item.precio.toFixed(2)}
+                              </span>
+                              <span style={{
+                                fontSize: isMobile ? '18px' : '20px',
+                                fontWeight: '700',
+                                color: '#8b5cf6'
+                              }}>
+                                Total: ${(item.precio * item.cantidad).toFixed(2)}
+                              </span>
+                            </div>
+                            
+                            {/* Cantidad */}
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              <span style={{
+                                fontSize: isMobile ? '12px' : '14px',
+                                color: '#64748b',
+                                fontWeight: '500'
+                              }}>
+                                Cantidad
+                              </span>
+                              <span style={{
+                                fontSize: isMobile ? '16px' : '18px',
+                                fontWeight: '700',
+                                color: '#059669',
+                                background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                                padding: '4px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid #bbf7d0'
+                              }}>
+                                {item.cantidad} {item.cantidad === 1 ? 'unidad' : 'unidades'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Controles y acciones */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px',
+                          flexWrap: 'wrap'
+                        }}>
                           {/* Controles de cantidad */}
                           <div style={{ 
                             display: 'flex', 
@@ -409,10 +533,10 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                               -
                             </button>
                             
-                        <input
-                          type="number"
-                          min={1}
-                          value={item.cantidad}
+                            <input
+                              type="number"
+                              min={1}
+                              value={item.cantidad}
                               onChange={async e => {
                                 const nuevaCantidad = Number(e.target.value);
                                 await updateQuantity(item.id, nuevaCantidad, undefined, empresa?.subdominio);
@@ -459,34 +583,23 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
                               +
                             </button>
                           </div>
-                        </div>
 
-                        {/* Subtotal y eliminar */}
-                        <div style={{ 
-                          textAlign: isMobile ? 'left' : 'right', 
-                          minWidth: isMobile ? 'auto' : '120px',
-                          alignSelf: isMobile ? 'flex-start' : 'flex-end'
-                        }}>
-                          <p style={{ 
-                            margin: '0 0 8px 0', 
-                            fontSize: isMobile ? '16px' : '18px', 
-                            fontWeight: '700', 
-                            color: '#8b5cf6' 
-                          }}>
-                            ${(item.precio * item.cantidad).toFixed(2)}
-                          </p>
+                          {/* Botón eliminar */}
                           <button
                             onClick={() => removeFromCart(item.id)}
                             style={{
                               background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
                               border: '2px solid #fecaca',
                               borderRadius: '8px',
-                              padding: isMobile ? '6px 12px' : '8px 16px',
+                              padding: isMobile ? '8px 12px' : '10px 16px',
                               fontSize: isMobile ? '12px' : '14px',
                               fontWeight: '600',
                               color: '#dc2626',
                               cursor: 'pointer',
-                              transition: 'all 0.2s ease'
+                              transition: 'all 0.2s ease',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
                             }}
                             onMouseOver={(e) => {
                               e.currentTarget.style.background = 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)';
