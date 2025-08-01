@@ -19,6 +19,7 @@ interface ClienteInfo {
 }
 
 function EstadoBadge({ estado }: { estado: string }) {
+  const { isMobile } = useResponsive();
   const colores: Record<string, string> = {
     PENDIENTE: '#f59e0b',
     CONFIRMADO: '#3b82f6',
@@ -33,13 +34,17 @@ function EstadoBadge({ estado }: { estado: string }) {
         background: colores[estado] + '22',
         color: colores[estado],
         borderRadius: 8,
-        padding: '2px 10px',
+        padding: isMobile ? '2px 8px' : '2px 10px',
         fontWeight: 600,
-        fontSize: 13,
-        marginLeft: 8
+        fontSize: isMobile ? 11 : 13,
+        marginLeft: isMobile ? 0 : 8,
+        whiteSpace: 'nowrap',
+        textAlign: 'center',
+        display: 'inline-block',
+        minWidth: isMobile ? '60px' : 'auto'
       }}
     >
-      {estado.charAt(0) + estado.slice(1).toLowerCase()}
+      {isMobile ? estado.charAt(0) + estado.slice(1).toLowerCase().substring(0, 3) : estado.charAt(0) + estado.slice(1).toLowerCase()}
     </span>
   );
 }
@@ -1083,8 +1088,8 @@ export default function AreaPersonalCliente() {
         {/* Cabecera mejorada */}
         <div style={{
           textAlign: 'center',
-          marginBottom: '40px',
-          padding: '40px 20px',
+          marginBottom: isMobile ? '20px' : '40px',
+          padding: isMobile ? '24px 16px' : '40px 20px',
           background: empresa?.colorPrimario ? 
             `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)` :
             'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -1093,24 +1098,24 @@ export default function AreaPersonalCliente() {
           boxShadow: empresa?.colorPrimario ? 
             `0 10px 30px ${empresa.colorPrimario}40` :
             '0 10px 30px rgba(102, 126, 234, 0.3)',
-          marginTop: isMobile ? '40px' : '60px'
+          marginTop: isMobile ? '20px' : '60px'
         }}>
           <div style={{
-            width: '80px',
-            height: '80px',
+            width: isMobile ? '60px' : '80px',
+            height: isMobile ? '60px' : '80px',
             background: 'rgba(255,255,255,0.2)',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 20px',
-            fontSize: '32px'
+            fontSize: isMobile ? '24px' : '32px'
           }}>
             👤
           </div>
           <h1 style={{ 
             margin: '0 0 8px 0', 
-            fontSize: '32px', 
+            fontSize: isMobile ? '24px' : '32px', 
             fontWeight: '700',
             textShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
@@ -1118,7 +1123,7 @@ export default function AreaPersonalCliente() {
           </h1>
           <p style={{ 
             margin: 0, 
-            fontSize: '18px', 
+            fontSize: isMobile ? '14px' : '18px', 
             opacity: 0.9,
             fontWeight: '300'
           }}>
@@ -1126,16 +1131,22 @@ export default function AreaPersonalCliente() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gap: '32px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ 
+          display: 'grid', 
+          gap: isMobile ? '20px' : '32px', 
+          maxWidth: '1200px', 
+          margin: '0 auto',
+          padding: isMobile ? '0 16px' : '0'
+        }}>
             {/* Información del perfil */}
           <div style={{
             background: '#fff',
             borderRadius: '20px',
-            padding: '32px',
+            padding: isMobile ? '20px' : '32px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
             border: '1px solid rgba(255,255,255,0.2)',
             position: 'relative',
-            overflow: 'hidden'
+              overflow: 'hidden'
           }}>
             <div style={{
               position: 'absolute',
@@ -1192,22 +1203,22 @@ export default function AreaPersonalCliente() {
               {/* Campos de información - centrados */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: '20px',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: isMobile ? '16px' : '20px',
                 width: '100%',
                 maxWidth: '800px',
                 margin: '0 auto'
               }}>
                 <div style={{
                   background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                  padding: '24px',
+                  padding: isMobile ? '16px' : '24px',
                   borderRadius: '16px',
                   border: '1px solid #e2e8f0',
                   textAlign: 'center'
                 }}>
                   <p style={{ 
                     margin: '0 0 12px 0', 
-                    fontSize: '13px', 
+                    fontSize: isMobile ? '11px' : '13px', 
                     color: '#64748b', 
                     fontWeight: '600', 
                     textTransform: 'uppercase',
@@ -1217,9 +1228,10 @@ export default function AreaPersonalCliente() {
                   </p>
                   <p style={{ 
                     margin: 0, 
-                    fontSize: '18px', 
+                    fontSize: isMobile ? '16px' : '18px', 
                     fontWeight: '600', 
-                    color: '#1e293b'
+                    color: '#1e293b',
+                    wordBreak: 'break-word'
                   }}>
                     {cliente?.nombre} {cliente?.apellidos}
                   </p>
@@ -1227,14 +1239,14 @@ export default function AreaPersonalCliente() {
 
                 <div style={{
                   background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                  padding: '24px',
+                  padding: isMobile ? '16px' : '24px',
                   borderRadius: '16px',
                   border: '1px solid #e2e8f0',
                   textAlign: 'center'
                 }}>
                   <p style={{ 
                     margin: '0 0 12px 0', 
-                    fontSize: '13px', 
+                    fontSize: isMobile ? '11px' : '13px', 
                     color: '#64748b', 
                     fontWeight: '600', 
                     textTransform: 'uppercase',
@@ -1244,9 +1256,10 @@ export default function AreaPersonalCliente() {
                   </p>
                   <p style={{ 
                     margin: 0, 
-                    fontSize: '18px', 
+                    fontSize: isMobile ? '16px' : '18px', 
                     fontWeight: '600', 
-                    color: '#1e293b'
+                    color: '#1e293b',
+                    wordBreak: 'break-all'
                   }}>
                     {cliente?.email}
                   </p>
@@ -1255,14 +1268,14 @@ export default function AreaPersonalCliente() {
                 {cliente?.telefono && (
                   <div style={{
                     background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                    padding: '24px',
+                    padding: isMobile ? '16px' : '24px',
                     borderRadius: '16px',
                     border: '1px solid #e2e8f0',
                     textAlign: 'center'
                   }}>
                     <p style={{ 
                       margin: '0 0 12px 0', 
-                      fontSize: '13px', 
+                      fontSize: isMobile ? '11px' : '13px', 
                       color: '#64748b', 
                       fontWeight: '600', 
                       textTransform: 'uppercase',
@@ -1272,9 +1285,10 @@ export default function AreaPersonalCliente() {
                     </p>
                     <p style={{ 
                       margin: 0, 
-                      fontSize: '18px', 
+                      fontSize: isMobile ? '16px' : '18px', 
                       fontWeight: '600', 
-                      color: '#1e293b'
+                      color: '#1e293b',
+                      wordBreak: 'break-all'
                     }}>
                       {cliente.telefono}
                     </p>
@@ -1363,7 +1377,7 @@ export default function AreaPersonalCliente() {
           <div style={{
             background: '#fff',
             borderRadius: '20px',
-            padding: '32px',
+            padding: isMobile ? '20px' : '32px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
             border: '1px solid rgba(255,255,255,0.2)',
             position: 'relative',
@@ -1383,11 +1397,13 @@ export default function AreaPersonalCliente() {
             {/* Navegación de Pestañas */}
             <div style={{
               display: 'flex',
-              marginBottom: '32px',
+              marginBottom: isMobile ? '20px' : '32px',
               background: '#f8fafc',
               borderRadius: '12px',
               padding: '4px',
-              border: '1px solid #e2e8f0'
+              border: '1px solid #e2e8f0',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: isMobile ? '4px' : '0'
             }}>
               <button
                 onClick={() => setTabActiva('pedidos')}
@@ -1399,15 +1415,15 @@ export default function AreaPersonalCliente() {
                   color: tabActiva === 'pedidos' ? 'white' : '#64748b',
                   border: 'none',
                   borderRadius: '8px',
-                  padding: '12px 20px',
-                  fontSize: '16px',
+                  padding: isMobile ? '10px 16px' : '12px 20px',
+                  fontSize: isMobile ? '14px' : '16px',
                   fontWeight: '600',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px'
+                  gap: isMobile ? '6px' : '8px'
                 }}
               >
                 📦 Mis Pedidos
@@ -1437,15 +1453,15 @@ export default function AreaPersonalCliente() {
                   color: tabActiva === 'favoritos' ? 'white' : '#64748b',
                   border: 'none',
                   borderRadius: '8px',
-                  padding: '12px 20px',
-                  fontSize: '16px',
+                  padding: isMobile ? '10px 16px' : '12px 20px',
+                  fontSize: isMobile ? '14px' : '16px',
                   fontWeight: '600',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px'
+                  gap: isMobile ? '6px' : '8px'
                 }}
               >
                 ❤️ Favoritos
@@ -1542,7 +1558,7 @@ export default function AreaPersonalCliente() {
                         <div key={pedido.id} style={{
                           background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
                           borderRadius: '16px',
-                          padding: '24px',
+                          padding: isMobile ? '16px' : '24px',
                           border: '2px solid #e2e8f0',
                           transition: 'all 0.2s ease',
                           cursor: 'pointer'
@@ -1556,127 +1572,197 @@ export default function AreaPersonalCliente() {
                           e.currentTarget.style.boxShadow = 'none';
                         }}
                         onClick={() => setDetallePedido(pedido)}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          {/* Header del pedido - Responsive */}
+                          <div style={{ 
+                            display: 'flex', 
+                            flexDirection: isMobile ? 'column' : 'row',
+                            alignItems: isMobile ? 'flex-start' : 'center', 
+                            justifyContent: 'space-between', 
+                            marginBottom: '16px',
+                            gap: isMobile ? '12px' : '0'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                               <div style={{
-                                width: '40px',
-                                height: '40px',
+                                width: isMobile ? '32px' : '40px',
+                                height: isMobile ? '32px' : '40px',
                                 background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                                 borderRadius: '10px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 color: 'white',
-                                fontSize: '18px',
-                                fontWeight: '600'
+                                fontSize: isMobile ? '14px' : '18px',
+                                fontWeight: '600',
+                                flexShrink: 0
                               }}>
                                 📦
                               </div>
-                          <div>
-                                <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <h3 style={{ 
+                                  margin: '0 0 4px 0', 
+                                  fontSize: isMobile ? '16px' : '18px', 
+                                  fontWeight: '600', 
+                                  color: '#1e293b',
+                                  wordBreak: 'break-word'
+                                }}>
                                   Pedido #{pedido.numeroPedido || pedido.id}
                                 </h3>
-                                <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
+                                <p style={{ 
+                                  margin: 0, 
+                                  fontSize: isMobile ? '12px' : '14px', 
+                                  color: '#64748b',
+                                  wordBreak: 'break-word'
+                                }}>
                                   {new Date(pedido.fechaCreacion).toLocaleDateString('es-ES', {
-                                    weekday: 'long',
+                                    weekday: isMobile ? 'short' : 'long',
                                     year: 'numeric',
-                                    month: 'long',
+                                    month: isMobile ? 'short' : 'long',
                                     day: 'numeric'
                                   })}
                                 </p>
-                          </div>
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            
+                            {/* Botones y estado - Responsive */}
+                            <div style={{ 
+                              display: 'flex', 
+                              flexDirection: isMobile ? 'column' : 'row',
+                              alignItems: isMobile ? 'stretch' : 'center', 
+                              gap: isMobile ? '8px' : '12px',
+                              width: isMobile ? '100%' : 'auto'
+                            }}>
                               <EstadoBadge estado={pedido.estado} />
-                              <button style={{
-                                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '8px',
-                                padding: '8px 16px',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDetallePedido(pedido);
-                              }}
-                              onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
-                              onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                                👁️ Ver Detalles
-                              </button>
                               
-                              {/* Botón de cancelar solo para pedidos pendientes o confirmados */}
-                              {(pedido.estado === 'PENDIENTE' || pedido.estado === 'CONFIRMADO') && (
+                              <div style={{
+                                display: 'flex',
+                                gap: '8px',
+                                flexDirection: isMobile ? 'row' : 'row'
+                              }}>
                                 <button style={{
-                                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '8px',
-                                  padding: '8px 16px',
-                                  fontSize: '14px',
+                                  padding: isMobile ? '6px 12px' : '8px 16px',
+                                  fontSize: isMobile ? '12px' : '14px',
                                   fontWeight: '600',
                                   cursor: 'pointer',
-                                  transition: 'all 0.2s ease'
+                                  transition: 'all 0.2s ease',
+                                  flex: isMobile ? 1 : 'auto',
+                                  whiteSpace: 'nowrap'
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (window.confirm('¿Estás seguro de que quieres cancelar este pedido? El stock será restaurado.')) {
-                                    cancelarPedido(pedido.id);
-                                  }
+                                  setDetallePedido(pedido);
                                 }}
                                 onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
                                 onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                                  ❌ Cancelar
+                                  {isMobile ? '👁️ Ver' : '👁️ Ver Detalles'}
                                 </button>
-                              )}
+                                
+                                {/* Botón de cancelar solo para pedidos pendientes o confirmados */}
+                                {(pedido.estado === 'PENDIENTE' || pedido.estado === 'CONFIRMADO') && (
+                                  <button style={{
+                                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: isMobile ? '6px 12px' : '8px 16px',
+                                    fontSize: isMobile ? '12px' : '14px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    flex: isMobile ? 1 : 'auto',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm('¿Estás seguro de que quieres cancelar este pedido? El stock será restaurado.')) {
+                                      cancelarPedido(pedido.id);
+                                    }
+                                  }}
+                                  onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+                                  onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                                    {isMobile ? '❌ Cancelar' : '❌ Cancelar'}
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                        </div>
+                          </div>
                           
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '16px', alignItems: 'center' }}>
+                          {/* Contenido del pedido - Responsive */}
+                          <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: isMobile ? '1fr' : '1fr auto', 
+                            gap: isMobile ? '12px' : '16px', 
+                            alignItems: isMobile ? 'flex-start' : 'center' 
+                          }}>
                             <div>
-                              <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#64748b', fontWeight: '500' }}>
+                              <p style={{ 
+                                margin: '0 0 8px 0', 
+                                fontSize: isMobile ? '12px' : '14px', 
+                                color: '#64748b', 
+                                fontWeight: '500' 
+                              }}>
                                 Productos:
                               </p>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {pedido.detalles?.slice(0, 3).map(det => (
+                              <div style={{ 
+                                display: 'flex', 
+                                flexWrap: 'wrap', 
+                                gap: isMobile ? '6px' : '8px' 
+                              }}>
+                                {pedido.detalles?.slice(0, isMobile ? 2 : 3).map(det => (
                                   <span key={det.id} style={{
                                     background: 'white',
-                                    padding: '4px 12px',
+                                    padding: isMobile ? '3px 8px' : '4px 12px',
                                     borderRadius: '8px',
-                                    fontSize: '12px',
+                                    fontSize: isMobile ? '10px' : '12px',
                                     color: '#1e293b',
-                                    border: '1px solid #e2e8f0'
+                                    border: '1px solid #e2e8f0',
+                                    wordBreak: 'break-word',
+                                    maxWidth: isMobile ? '120px' : 'none'
                                   }}>
                                     {det.nombreProducto} {det.cantidad}
                                   </span>
                                 ))}
-                                {pedido.detalles && pedido.detalles.length > 3 && (
+                                {pedido.detalles && pedido.detalles.length > (isMobile ? 2 : 3) && (
                                   <span style={{
                                     background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                                     color: 'white',
-                                    padding: '4px 12px',
+                                    padding: isMobile ? '3px 8px' : '4px 12px',
                                     borderRadius: '8px',
-                                    fontSize: '12px',
+                                    fontSize: isMobile ? '10px' : '12px',
                                     fontWeight: '600'
                                   }}>
-                                    +{pedido.detalles.length - 3} más
+                                    +{pedido.detalles.length - (isMobile ? 2 : 3)} más
                                   </span>
                                 )}
                               </div>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#64748b' }}>
+                            
+                            {/* Total - Responsive */}
+                            <div style={{ 
+                              textAlign: isMobile ? 'left' : 'right',
+                              alignSelf: isMobile ? 'flex-start' : 'center'
+                            }}>
+                              <p style={{ 
+                                margin: '0 0 4px 0', 
+                                fontSize: isMobile ? '12px' : '14px', 
+                                color: '#64748b' 
+                              }}>
                                 Total
                               </p>
-                              <p style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#8b5cf6' }}>
+                              <p style={{ 
+                                margin: 0, 
+                                fontSize: isMobile ? '20px' : '24px', 
+                                fontWeight: '700', 
+                                color: '#8b5cf6' 
+                              }}>
                                 ${pedido.total?.toFixed(2)}
                               </p>
                             </div>
+                          </div>
                         </div>
-                      </div>
                     ))}
                   </div>
                 )}
