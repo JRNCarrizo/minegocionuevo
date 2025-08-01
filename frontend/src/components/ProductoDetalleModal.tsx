@@ -44,6 +44,26 @@ export default function ProductoDetalleModal({
     }
     
     setClienteLogueado(!!(token && cliente));
+  }, [open]); // Re-run when modal opens/closes
+
+  // Escuchar cambios en localStorage para detectar login/logout
+  useEffect(() => {
+    const handleStorageChange = () => {
+      let token = getCookie('clienteToken');
+      let cliente = getCookie('clienteInfo');
+      
+      if (!token) {
+        token = localStorage.getItem('clienteToken');
+      }
+      if (!cliente) {
+        cliente = localStorage.getItem('clienteInfo');
+      }
+      
+      setClienteLogueado(!!(token && cliente));
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Función para navegar entre imágenes
@@ -98,6 +118,29 @@ export default function ProductoDetalleModal({
   useEffect(() => {
     if (open && productoId) {
       cargarProducto();
+      
+      // Re-validar autenticación cuando se abre el modal
+      let token = getCookie('clienteToken');
+      let cliente = getCookie('clienteInfo');
+      
+      if (!token) {
+        token = localStorage.getItem('clienteToken');
+      }
+      if (!cliente) {
+        cliente = localStorage.getItem('clienteInfo');
+      }
+      
+      const isAuthenticated = !!(token && cliente);
+      console.log('=== ProductoDetalleModal Auth Check ===');
+      console.log('Modal opened:', open);
+      console.log('Token from cookies:', !!getCookie('clienteToken'));
+      console.log('Token from localStorage:', !!localStorage.getItem('clienteToken'));
+      console.log('Cliente from cookies:', !!getCookie('clienteInfo'));
+      console.log('Cliente from localStorage:', !!localStorage.getItem('clienteInfo'));
+      console.log('Is authenticated:', isAuthenticated);
+      console.log('=====================================');
+      
+      setClienteLogueado(isAuthenticated);
     } else {
       setProducto(null);
       setError(null);
@@ -129,6 +172,23 @@ export default function ProductoDetalleModal({
 
   const agregarAlCarrito = async () => {
     if (!producto) return;
+    
+    // Verificar autenticación nuevamente antes de agregar al carrito
+    let token = getCookie('clienteToken');
+    let cliente = getCookie('clienteInfo');
+    
+    if (!token) {
+      token = localStorage.getItem('clienteToken');
+    }
+    if (!cliente) {
+      cliente = localStorage.getItem('clienteInfo');
+    }
+    
+    if (!token || !cliente) {
+      toast.error('Debes iniciar sesión para agregar productos al carrito');
+      setClienteLogueado(false);
+      return;
+    }
     
     if (!clienteLogueado) {
       toast.error('Debes iniciar sesión para agregar productos al carrito');
