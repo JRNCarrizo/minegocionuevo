@@ -93,6 +93,12 @@ export default function ProductoPublico() {
   const agregarAlCarrito = async () => {
     if (!producto) return;
     
+    // Verificar si el usuario está autenticado
+    if (!clienteInfo) {
+      toast.error('Debes iniciar sesión para agregar productos al carrito');
+      return;
+    }
+    
     if (producto.stock === 0) {
       toast.error('Este producto está agotado');
       return;
@@ -132,6 +138,12 @@ export default function ProductoPublico() {
   const comprarAhora = () => {
     if (!producto) return;
     
+    // Verificar si el usuario está autenticado
+    if (!clienteInfo) {
+      toast.error('Debes iniciar sesión para realizar compras');
+      return;
+    }
+    
     // TODO: Implementar compra directa
     alert(`Compra directa del producto ${producto.nombre} (cantidad: ${cantidad})`);
   };
@@ -166,6 +178,9 @@ export default function ProductoPublico() {
         onCerrarSesion={() => {
           localStorage.removeItem('clienteToken');
           localStorage.removeItem('clienteInfo');
+          // También limpiar cookies
+          document.cookie = 'clienteToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          document.cookie = 'clienteInfo=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
           setClienteInfo(null);
         }}
         onShowCart={() => setShowCart(true)}

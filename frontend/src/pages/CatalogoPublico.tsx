@@ -314,6 +314,9 @@ export default function CatalogoPublico() {
         onCerrarSesion={() => {
           localStorage.removeItem('clienteToken');
           localStorage.removeItem('clienteInfo');
+          // También limpiar cookies
+          document.cookie = 'clienteToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          document.cookie = 'clienteInfo=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
           setClienteInfo(null);
         }}
         onShowCart={() => setShowCart(true)}
