@@ -114,18 +114,26 @@ public class ClienteAuthController {
             nuevoClienteDTO.setPassword(passwordEncriptado);
             nuevoClienteDTO.setActivo(false); // Inactivo hasta verificar email
             nuevoClienteDTO.setEmailVerificado(false);
-            nuevoClienteDTO.setTokenVerificacion(UUID.randomUUID().toString());
+            String tokenGenerado = UUID.randomUUID().toString();
+            nuevoClienteDTO.setTokenVerificacion(tokenGenerado);
             
             System.out.println("Datos del ClienteDTO creado:");
             System.out.println("  Nombre: '" + nuevoClienteDTO.getNombre() + "'");
             System.out.println("  Apellidos: '" + nuevoClienteDTO.getApellidos() + "'");
             System.out.println("  Email: '" + nuevoClienteDTO.getEmail() + "'");
             System.out.println("  Password en ClienteDTO: " + (nuevoClienteDTO.getPassword() != null && !nuevoClienteDTO.getPassword().isEmpty() ? "[PRESENTE - " + nuevoClienteDTO.getPassword().length() + " chars]" : "[AUSENTE]"));
+            System.out.println("  Token generado: '" + tokenGenerado + "'");
             
             ClienteDTO clienteCreado = clienteService.crearCliente(empresa.getId(), nuevoClienteDTO);
             
             // Enviar email de verificación
             try {
+                System.out.println("=== DEBUG ENVÍO EMAIL ===");
+                System.out.println("Email: " + clienteCreado.getEmail());
+                System.out.println("Nombre: " + clienteCreado.getNombre());
+                System.out.println("Token para email: '" + clienteCreado.getTokenVerificacion() + "'");
+                System.out.println("Subdominio: " + empresa.getSubdominio());
+                
                 emailService.enviarEmailVerificacionCliente(
                     clienteCreado.getEmail(),
                     clienteCreado.getNombre(),
