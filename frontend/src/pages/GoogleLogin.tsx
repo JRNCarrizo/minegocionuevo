@@ -237,7 +237,7 @@ export default function GoogleLogin() {
           onClick={() => {
             console.log('Usando redirección directa...');
             // Usar redirección directa en lugar de popup
-            const clientId = 'TU_GOOGLE_CLIENT_ID'; // Necesitarás reemplazar esto
+            const clientId = '517609256268-6iphhaug4u1rhfldegttms507nrh7fuq.apps.googleusercontent.com';
             const redirectUri = encodeURIComponent(window.location.origin + '/google-callback');
             const scope = encodeURIComponent('email profile');
             const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&response_type=code`;
