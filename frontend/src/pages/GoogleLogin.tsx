@@ -150,21 +150,6 @@ export default function GoogleLogin() {
     }
   }, [searchParams, isLoading, autoLoginTriggered]);
 
-  const handleGoogleLogin = () => {
-    // Obtener el subdominio directamente del query param
-    const subdominioParam = searchParams.get('subdominio');
-    console.log('=== DEBUG GOOGLE LOGIN ===');
-    console.log('Subdominio del query param:', subdominioParam);
-    console.log('URL actual:', window.location.href);
-    console.log('==========================');
-    
-    if (!subdominioParam) {
-      toast.error('No se pudo identificar la tienda');
-      return;
-    }
-    login();
-  };
-
   return (
     <div style={{
       minHeight: '100vh',
