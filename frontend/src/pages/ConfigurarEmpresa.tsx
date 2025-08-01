@@ -55,6 +55,7 @@ export default function ConfigurarEmpresa() {
   const [cargando, setCargando] = useState(false);
   const [subdominioVerificado, setSubdominioVerificado] = useState<boolean | null>(null);
   const [verificandoSubdominio, setVerificandoSubdominio] = useState(false);
+  const [datosGoogle, setDatosGoogle] = useState<any>(null);
   const navigate = useNavigate();
 
   const {
@@ -79,6 +80,27 @@ export default function ConfigurarEmpresa() {
       categoriaEmpresa: ''
     }
   });
+
+  // Detectar datos de Google al cargar la página
+  useEffect(() => {
+    const googleData = localStorage.getItem('googleUserData');
+    if (googleData) {
+      try {
+        const parsedData = JSON.parse(googleData);
+        setDatosGoogle(parsedData);
+        
+        // Pre-llenar campos con datos de Google
+        setValue('emailEmpresa', parsedData.email);
+        
+        // Limpiar datos de Google del localStorage
+        localStorage.removeItem('googleUserData');
+        
+        toast.success('Datos de Google cargados automáticamente');
+      } catch (error) {
+        console.error('Error parsing Google data:', error);
+      }
+    }
+  }, [setValue]);
 
   const subdominioActual = watch('subdominio');
 

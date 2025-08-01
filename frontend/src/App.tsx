@@ -56,7 +56,9 @@ function AppContent() {
         // Rutas para el dominio principal (registro de empresas)
         <>
           <Route path="/" element={<PaginaPrincipal />} />
-          <Route path="/registro" element={<PaginaRegistro />} />
+          <Route path="/registro" element={<RegistroEmpresaEtapa1 />} />
+          <Route path="/configurar-empresa" element={<ConfigurarEmpresa />} />
+          <Route path="/confirmacion-registro-admin" element={<ConfirmacionRegistroAdmin />} />
           <Route path="/login" element={<Navigate to="/admin/login" replace />} />
           <Route path="/recuperar" element={<RecuperarPassword />} />
           <Route path="/reset" element={<NuevaPassword />} />

@@ -41,11 +41,23 @@ export default function GoogleLogin() {
         
         // Obtener el subdominio directamente del query param
         const subdominioParam = searchParams.get('subdominio');
+        
+        // Si no hay subdominio, estamos en el dominio principal (registro de empresa)
         if (!subdominioParam) {
-          toast.error('No se pudo identificar la tienda');
+          // Guardar datos de Google para el registro de empresa
+          localStorage.setItem('googleUserData', JSON.stringify({
+            email: userInfo.email,
+            name: userInfo.name,
+            picture: userInfo.picture,
+            sub: userInfo.sub
+          }));
+          
+          // Redirigir a la etapa 2 del registro de empresa
+          navigate('/configurar-empresa');
           return;
         }
 
+        // Si hay subdominio, es login de cliente (código existente)
         // Llamada al backend para login con Google
         const loginResponse = await api.loginClienteConGoogle(subdominioParam, {
           email: userInfo.email,
