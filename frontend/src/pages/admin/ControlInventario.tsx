@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import BarcodeScanner from '../../components/BarcodeScanner';
 import NavbarAdmin from '../../components/NavbarAdmin';
@@ -100,145 +100,58 @@ const ControlInventario: React.FC = () => {
     }
   }, [datosUsuario?.empresaId]);
 
-  const cargarHistorialInventarios = async () => {
-    if (!datosUsuario?.empresaId) {
-      console.log('❌ No hay empresaId disponible para cargar historial');
-      return;
-    }
-
-    console.log('🔍 Datos del usuario:', datosUsuario);
-    console.log('🔍 EmpresaId:', datosUsuario.empresaId);
-
+  // Función para cargar historial de inventarios físicos
+  const cargarHistorialInventarios = useCallback(async () => {
+    if (!datosUsuario?.empresaId) return;
+    
     try {
-      console.log('📋 Cargando historial de inventarios físicos...');
       const response = await inventarioService.obtenerHistorialInventariosFisicos(0, 50);
       
-      console.log('📋 Respuesta completa del servicio:', response);
-      
       if (response && response.success && response.data) {
-        console.log('✅ Historial de inventarios físicos cargado:', response.data);
         const inventarios = response.data.content || response.data || [];
-        
-        console.log('📋 Inventarios procesados:', inventarios);
-        console.log('📋 Cantidad de inventarios:', inventarios.length);
-        
-        // Debug: verificar las fechas de cada inventario
-        inventarios.forEach((inventario: { id: number; fecha: string }, index: number) => {
-          console.log(`📅 Inventario ${index + 1}:`, {
-            id: inventario.id,
-            fecha: inventario.fecha,
-            fechaTipo: typeof inventario.fecha,
-            fechaValida: inventario.fecha ? !isNaN(new Date(inventario.fecha).getTime()) : false
-          });
-        });
-        
         setHistorialInventarios(inventarios);
-        console.log('✅ Estado actualizado con', inventarios.length, 'inventarios');
       } else {
-        console.error('❌ Error en respuesta de historial:', response);
-        console.log('📋 Respuesta no exitosa o sin datos');
-        
-        // Fallback a localStorage si la API no está disponible
-        const historialGuardado = localStorage.getItem(`historialInventarios_${datosUsuario.empresaId}`);
-        console.log('🔍 Buscando en localStorage con key:', `historialInventarios_${datosUsuario.empresaId}`);
-        console.log('🔍 Contenido de localStorage:', historialGuardado);
-        if (historialGuardado) {
-          const historial = JSON.parse(historialGuardado);
-          console.log('✅ Historial cargado desde localStorage:', historial);
-          setHistorialInventarios(historial);
-        } else {
-          console.log('❌ No se encontró historial en localStorage');
-          setHistorialInventarios([]);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error al cargar historial de inventarios físicos:', error);
-      console.error('❌ Detalles del error:', {
-        message: (error as Error).message,
-        stack: (error as Error).stack,
-        name: (error as Error).name
-      });
-      
-      // Fallback a localStorage si hay error
-      const historialGuardado = localStorage.getItem(`historialInventarios_${datosUsuario.empresaId}`);
-      console.log('🔍 Fallback: Buscando en localStorage con key:', `historialInventarios_${datosUsuario.empresaId}`);
-      console.log('🔍 Fallback: Contenido de localStorage:', historialGuardado);
-      if (historialGuardado) {
-        const historial = JSON.parse(historialGuardado);
-        console.log('✅ Historial cargado desde localStorage (fallback):', historial);
-        setHistorialInventarios(historial);
-      } else {
-        console.log('❌ No se encontró historial en localStorage (fallback)');
         setHistorialInventarios([]);
       }
-    }
-  };
-
-  const cargarEstadisticasOperaciones = async () => {
-    if (!datosUsuario?.empresaId) {
-      console.log('❌ No hay empresaId disponible para cargar estadísticas');
-      return;
-    }
-
-    try {
-      console.log('📊 Cargando estadísticas de operaciones...');
-      const response = await inventarioService.obtenerEstadisticas();
-      console.log('📊 Respuesta de estadísticas:', response);
-      
-      if (response && response.success) {
-        console.log('📊 Estadísticas cargadas:', response.data);
-        setEstadisticasOperaciones(response.data);
-      } else {
-        console.error('❌ Error en respuesta de estadísticas:', response);
-        setEstadisticasOperaciones(null);
-      }
     } catch (error) {
-      console.error('❌ Error al cargar estadísticas de operaciones:', error);
-      console.error('❌ Detalles del error:', {
-        message: (error as Error).message,
-        stack: (error as Error).stack,
-        name: (error as Error).name
-      });
-      setEstadisticasOperaciones(null);
+      console.error('Error al cargar historial de inventarios físicos:', error);
+      setHistorialInventarios([]);
     }
-  };
+  }, [datosUsuario?.empresaId]);
 
-  const cargarHistorialOperaciones = async (pagina: number = 0) => {
+  // Función para cargar estadísticas de operaciones
+  const cargarEstadisticasOperaciones = useCallback(async () => {
+    if (!datosUsuario?.empresaId) return;
+    
     try {
-      console.log('📋 Cargando historial de operaciones - página:', pagina);
-      setCargandoHistorial(true);
-      const response = await inventarioService.obtenerHistorial(pagina, 20);
-      console.log('📋 Respuesta de historial de operaciones:', response);
+      const response = await inventarioService.obtenerEstadisticas();
       
       if (response && response.success && response.data) {
-        console.log('✅ Historial de operaciones cargado:', response.data);
+        setEstadisticasOperaciones(response.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar estadísticas de operaciones:', error);
+    }
+  }, [datosUsuario?.empresaId]);
+
+  // Función para cargar historial de operaciones
+  const cargarHistorialOperaciones = useCallback(async () => {
+    if (!datosUsuario?.empresaId) return;
+    
+    try {
+      const response = await inventarioService.obtenerHistorial(0, 20);
+      
+      if (response && response.success && response.data) {
         const operaciones = response.data.content || response.data || [];
-        console.log('📋 Operaciones procesadas:', operaciones);
-        console.log('📋 Cantidad de operaciones:', operaciones.length);
-        
         setHistorialOperaciones(operaciones);
-        setTotalPaginasHistorial(response.data.totalPages || 0);
-        setPaginaHistorial(pagina);
-        console.log('✅ Estado actualizado con', operaciones.length, 'operaciones');
       } else {
-        console.error('❌ Error en respuesta de historial de operaciones:', response);
         setHistorialOperaciones([]);
-        setTotalPaginasHistorial(0);
       }
     } catch (error) {
       console.error('Error al cargar historial de operaciones:', error);
-      console.error('❌ Detalles del error:', {
-        message: (error as Error).message,
-        stack: (error as Error).stack,
-        name: (error as Error).name
-      });
-      toast.error('Error al cargar el historial de operaciones');
       setHistorialOperaciones([]);
-      setTotalPaginasHistorial(0);
-    } finally {
-      setCargandoHistorial(false);
     }
-  };
+  }, [datosUsuario?.empresaId]);
 
   const iniciarInventario = () => {
     const nuevoInventario: Inventario = {
@@ -901,9 +814,15 @@ const ControlInventario: React.FC = () => {
       // Resetear estados
       setInventarioActual(null);
       setProductosEscaneados(new Map());
-      setEstadisticas(null);
       setModoEscaneo('INICIAR');
       setMostrarResumen(false);
+      
+      // Recargar estadísticas y historiales después de guardar
+      await Promise.all([
+        cargarEstadisticasOperaciones(),
+        cargarHistorialInventarios(),
+        cargarHistorialOperaciones()
+      ]);
       
       toast.success('Inventario guardado y procesado exitosamente');
       
@@ -1008,32 +927,7 @@ const ControlInventario: React.FC = () => {
     setSeccionExpandida(seccionExpandida === seccion ? null : seccion);
   };
 
-  // Función de prueba para verificar conectividad con el backend
-  const probarConectividadBackend = async () => {
-    try {
-      console.log('🔧 Probando conectividad con el backend...');
-      
-      // Probar endpoint de estadísticas
-      console.log('📊 Probando endpoint de estadísticas...');
-      const responseEstadisticas = await ApiService.obtenerEstadisticasInventario();
-      console.log('📊 Respuesta estadísticas:', responseEstadisticas);
-      
-      // Probar endpoint de historial
-      console.log('📋 Probando endpoint de historial...');
-      const responseHistorial = await ApiService.obtenerHistorialInventario(0, 10);
-      console.log('📋 Respuesta historial:', responseHistorial);
-      
-      // Probar endpoint de inventarios físicos
-      console.log('📋 Probando endpoint de inventarios físicos...');
-      const responseInventarios = await ApiService.obtenerHistorialInventariosFisicos(0, 10);
-      console.log('📋 Respuesta inventarios físicos:', responseInventarios);
-      
-      toast.success('✅ Pruebas de conectividad completadas. Revisa la consola.');
-    } catch (error) {
-      console.error('❌ Error en pruebas de conectividad:', error);
-      toast.error('❌ Error en pruebas de conectividad. Revisa la consola.');
-    }
-  };
+
 
   // Mostrar estado de carga mientras se cargan los datos del usuario
   if (cargandoUsuario) {
@@ -1716,151 +1610,7 @@ const ControlInventario: React.FC = () => {
                 )}
               </button>
               
-              {/* Botón de prueba temporal */}
-              <button
-                onClick={() => {
-                  console.log('🔍 DEBUG - Botón de prueba clickeado');
-                  console.log('🔍 DEBUG - inventarioActual:', inventarioActual);
-                  console.log('🔍 DEBUG - estadisticas:', estadisticas);
-                  console.log('🔍 DEBUG - productosEscaneados:', productosEscaneados);
-                  toast.success('Revisa la consola para ver los datos de debug');
-                }}
-                className="boton boton-secundario"
-                style={{
-                  background: 'white',
-                  color: '#3b82f6',
-                  border: '2px solid #3b82f6',
-                  padding: isMobile ? '8px 16px' : '10px 20px',
-                  borderRadius: '8px',
-                  fontSize: isMobile ? '12px' : '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  width: isMobile ? '100%' : 'auto'
-                }}
-              >
-                🔍 Debug
-              </button>
-              
-              {/* Botón para probar productos no escaneados */}
-              <button
-                onClick={async () => {
-                  console.log('🧪 Probando funcionalidad de productos no escaneados...');
-                  const hayProductos = await obtenerProductosNoEscaneados();
-                  console.log('🧪 Resultado:', hayProductos);
-                  if (hayProductos) {
-                    toast.success('Se encontraron productos no escaneados. Revisa el modal.');
-                  } else {
-                    toast.success('No se encontraron productos no escaneados.');
-                  }
-                }}
-                className="boton boton-secundario"
-                style={{
-                  background: 'white',
-                  color: '#f59e0b',
-                  border: '2px solid #f59e0b',
-                  padding: isMobile ? '8px 16px' : '10px 20px',
-                  borderRadius: '8px',
-                  fontSize: isMobile ? '12px' : '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  width: isMobile ? '100%' : 'auto'
-                }}
-              >
-                🧪 Probar No Escaneados
-              </button>
-              
-              {/* Botón para probar con productos inactivos */}
-              <button
-                onClick={async () => {
-                  console.log('🧪 Probando con productos incluyendo inactivos...');
-                  try {
-                    const response = await ApiService.obtenerTodosLosProductosIncluirInactivos(datosUsuario!.empresaId);
-                    console.log('🧪 Response con inactivos:', response);
-                    
-                    if (response.data) {
-                      const todosLosProductos = response.data;
-                      const productosEscaneadosIds = new Set(Array.from(productosEscaneados.values()).map(p => p.id));
-                      const productosNoEscaneados = todosLosProductos.filter(producto => !productosEscaneadosIds.has(producto.id));
-                      
-                      console.log('🧪 Productos no escaneados (incluyendo inactivos):', productosNoEscaneados.length);
-                      console.log('🧪 Productos no escaneados:', productosNoEscaneados.map(p => ({ id: p.id, nombre: p.nombre, activo: p.activo })));
-                      
-                      if (productosNoEscaneados.length > 0) {
-                        setProductosNoEscaneados(productosNoEscaneados);
-                        setProductosSeleccionadosComoFaltantes(new Set());
-                        setMostrarModalProductosNoEscaneados(true);
-                        toast.success('Se encontraron productos no escaneados (incluyendo inactivos).');
-                      } else {
-                        toast.success('No se encontraron productos no escaneados (incluyendo inactivos).');
-                      }
-                    }
-                  } catch (error) {
-                    console.error('🧪 Error:', error);
-                    toast.error('Error al probar con productos inactivos');
-                  }
-                }}
-                className="boton boton-secundario"
-                style={{
-                  background: 'white',
-                  color: '#8b5cf6',
-                  border: '2px solid #8b5cf6',
-                  padding: isMobile ? '8px 16px' : '10px 20px',
-                  borderRadius: '8px',
-                  fontSize: isMobile ? '12px' : '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  width: isMobile ? '100%' : 'auto'
-                }}
-              >
-                🧪 Probar Con Inactivos
-              </button>
-              
-              {/* Botón para debug detallado */}
-              <button
-                onClick={async () => {
-                  console.log('🔬 DEBUG DETALLADO - Estado actual:');
-                  console.log('🔬 productosEscaneados:', productosEscaneados);
-                  console.log('🔬 productosEscaneados.size:', productosEscaneados.size);
-                  console.log('🔬 productosEscaneados.values():', Array.from(productosEscaneados.values()));
-                  
-                  try {
-                    const response = await ApiService.obtenerTodosLosProductos(datosUsuario!.empresaId);
-                    console.log('🔬 API Response (activos):', response);
-                    const productosActivos = Array.isArray(response) ? response : (response.data || []);
-                    console.log('🔬 Total productos activos en API:', productosActivos.length);
-                    console.log('🔬 Productos activos:', productosActivos);
-                    
-                    // También probar con productos incluyendo inactivos
-                    const responseInactivos = await ApiService.obtenerTodosLosProductosIncluirInactivos(datosUsuario!.empresaId);
-                    console.log('🔬 API Response (incluyendo inactivos):', responseInactivos);
-                    const productosTodos = Array.isArray(responseInactivos) ? responseInactivos : (responseInactivos.data || []);
-                    console.log('🔬 Total productos (incluyendo inactivos):', productosTodos.length);
-                    console.log('🔬 Productos inactivos:', productosTodos.filter(p => p.activo === false));
-                  } catch (error) {
-                    console.error('🔬 Error al obtener productos:', error);
-                  }
-                  
-                  toast.success('Revisa la consola para debug detallado');
-                }}
-                className="boton boton-secundario"
-                style={{
-                  background: 'white',
-                  color: '#dc2626',
-                  border: '2px solid #dc2626',
-                  padding: isMobile ? '8px 16px' : '10px 20px',
-                  borderRadius: '8px',
-                  fontSize: isMobile ? '12px' : '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  width: isMobile ? '100%' : 'auto'
-                }}
-              >
-                🔬 Debug Detallado
-              </button>
+
               
               <button
                 onClick={() => {
@@ -1985,70 +1735,8 @@ const ControlInventario: React.FC = () => {
               📊 Operaciones
               </button>
 
-            {/* Botón de debug temporal */}
-            <button
-              onClick={() => {
-                console.log('🔧 DEBUG: Probando funciones de carga...');
-                console.log('🔧 Estado actual:', {
-                  historialInventarios: historialInventarios.length,
-                  historialOperaciones: historialOperaciones.length,
-                  estadisticasOperaciones: estadisticasOperaciones,
-                  datosUsuario: datosUsuario
-                });
-                cargarHistorialInventarios();
-                cargarHistorialOperaciones();
-                cargarEstadisticasOperaciones();
-              }}
-              className="boton boton-secundario"
-              style={{
-                background: '#f59e0b',
-                color: 'white',
-                border: '2px solid #f59e0b',
-                padding: '12px 20px',
-                borderRadius: '12px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                flex: isMobile ? '1' : 'auto',
-                minWidth: isMobile ? 'auto' : '120px'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#d97706';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = '#f59e0b';
-              }}
-            >
-              🔧 Debug
-            </button>
 
-            {/* Botón de prueba de conectividad */}
-            <button
-              onClick={probarConectividadBackend}
-              className="boton boton-secundario"
-              style={{
-                background: '#8b5cf6',
-                color: 'white',
-                border: '2px solid #8b5cf6',
-                padding: '12px 20px',
-                borderRadius: '12px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                flex: isMobile ? '1' : 'auto',
-                minWidth: isMobile ? 'auto' : '140px'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#7c3aed';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = '#8b5cf6';
-              }}
-            >
-              🌐 Test API
-            </button>
+
           </div>
 
           {/* Contenido expandible - Inventarios Físicos */}
