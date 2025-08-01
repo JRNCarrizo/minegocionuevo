@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '../hooks/useCart';
+import { useClienteAuth } from '../hooks/useClienteAuth';
 import apiService from '../services/api';
 import type { Producto } from '../types';
 import toast from 'react-hot-toast';
@@ -27,44 +28,10 @@ export default function ProductoDetalleModal({
   const [cantidad, setCantidad] = useState(1);
   const { addToCart, items } = useCart();
   
-  // Verificar si hay un cliente logueado
-  const [clienteLogueado, setClienteLogueado] = useState(false);
+  // Usar el hook de autenticación del cliente
+  const { isAuthenticated: clienteLogueado, checkAuth } = useClienteAuth();
   
-  useEffect(() => {
-    // Buscar token en cookies primero (se comparte entre subdominios)
-    let token = getCookie('clienteToken');
-    let cliente = getCookie('clienteInfo');
-    
-    // Si no está en cookies, buscar en localStorage
-    if (!token) {
-      token = localStorage.getItem('clienteToken');
-    }
-    if (!cliente) {
-      cliente = localStorage.getItem('clienteInfo');
-    }
-    
-    setClienteLogueado(!!(token && cliente));
-  }, [open]); // Re-run when modal opens/closes
-
-  // Escuchar cambios en localStorage para detectar login/logout
-  useEffect(() => {
-    const handleStorageChange = () => {
-      let token = getCookie('clienteToken');
-      let cliente = getCookie('clienteInfo');
-      
-      if (!token) {
-        token = localStorage.getItem('clienteToken');
-      }
-      if (!cliente) {
-        cliente = localStorage.getItem('clienteInfo');
-      }
-      
-      setClienteLogueado(!!(token && cliente));
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  // El hook useClienteAuth maneja automáticamente la autenticación
 
   // Función para navegar entre imágenes
   const navegarImagen = (direccion: 'anterior' | 'siguiente') => {
@@ -140,7 +107,7 @@ export default function ProductoDetalleModal({
       console.log('Is authenticated:', isAuthenticated);
       console.log('=====================================');
       
-      setClienteLogueado(isAuthenticated);
+      // El hook useClienteAuth maneja automáticamente el estado
     } else {
       setProducto(null);
       setError(null);
@@ -173,23 +140,7 @@ export default function ProductoDetalleModal({
   const agregarAlCarrito = async () => {
     if (!producto) return;
     
-    // Verificar autenticación nuevamente antes de agregar al carrito
-    let token = getCookie('clienteToken');
-    let cliente = getCookie('clienteInfo');
-    
-    if (!token) {
-      token = localStorage.getItem('clienteToken');
-    }
-    if (!cliente) {
-      cliente = localStorage.getItem('clienteInfo');
-    }
-    
-    if (!token || !cliente) {
-      toast.error('Debes iniciar sesión para agregar productos al carrito');
-      setClienteLogueado(false);
-      return;
-    }
-    
+    // Verificar autenticación usando el hook
     if (!clienteLogueado) {
       toast.error('Debes iniciar sesión para agregar productos al carrito');
       return;

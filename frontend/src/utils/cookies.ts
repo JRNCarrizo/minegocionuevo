@@ -30,5 +30,9 @@ export const deleteCookie = (name: string) => {
     ? 'localhost' 
     : '.negocio360.org';
   
+  // Limpiar cookie con dominio específico
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=${domain}`;
+  
+  // También limpiar cookie sin dominio (por si acaso)
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
 }; 

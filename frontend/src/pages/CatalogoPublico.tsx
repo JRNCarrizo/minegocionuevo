@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSubdominio } from '../hooks/useSubdominio';
 import { getCookie } from '../utils/cookies';
 import { useCart } from '../hooks/useCart';
+import { useClienteAuth } from '../hooks/useClienteAuth';
 import { useResponsive } from '../hooks/useResponsive';
 import CartModal from '../components/CartModal';
 import ProductoDetalleModal from '../components/ProductoDetalleModal';
@@ -23,7 +24,7 @@ export default function CatalogoPublico() {
   const [filtroMarca, setFiltroMarca] = useState<string>('');
   const [categorias, setCategorias] = useState<string[]>([]);
   const [marcas, setMarcas] = useState<string[]>([]);
-  const [clienteInfo, setClienteInfo] = useState<{ nombre: string; email: string } | null>(null);
+  const { clienteInfo, isAuthenticated, cerrarSesion } = useClienteAuth();
   const [showCart, setShowCart] = useState(false);
   type VistaProducto = 'lista' | 'intermedia' | 'grande';
   const [vista, setVista] = useState<VistaProducto>('intermedia');
@@ -41,39 +42,7 @@ export default function CatalogoPublico() {
   const [favoritos, setFavoritos] = useState<Set<number>>(new Set());
   const [cargandoFavoritos, setCargandoFavoritos] = useState(false);
 
-  // Verificar si hay un cliente logueado
-  useEffect(() => {
-    // Buscar token en cookies primero (se comparte entre subdominios)
-    let token = getCookie('clienteToken');
-    let cliente = getCookie('clienteInfo');
-    
-    // Si no está en cookies, buscar en localStorage
-    if (!token) {
-      token = localStorage.getItem('clienteToken');
-      cliente = localStorage.getItem('clienteInfo');
-    }
-    
-    console.log('=== DEBUG CATÁLOGO - VERIFICACIÓN CLIENTE ===');
-    console.log('Token en cookies:', getCookie('clienteToken') ? 'SÍ' : 'NO');
-    console.log('Token en localStorage:', localStorage.getItem('clienteToken') ? 'SÍ' : 'NO');
-    console.log('Token encontrado:', token ? token.substring(0, 20) + '...' : 'null');
-    console.log('Cliente info encontrado:', cliente);
-    console.log('URL actual:', window.location.href);
-    console.log('==========================================');
-    
-    if (token && cliente) {
-      try {
-        setClienteInfo(JSON.parse(cliente));
-        console.log('Cliente info establecido correctamente');
-      } catch (error) {
-        console.error('Error al parsear clienteInfo:', error);
-        localStorage.removeItem('clienteToken');
-        localStorage.removeItem('clienteInfo');
-      }
-    } else {
-      console.log('No hay token o cliente info disponible');
-    }
-  }, []);
+  // El hook useClienteAuth maneja automáticamente la autenticación
 
   const cargarProductos = useCallback(async () => {
     if (!subdominio) {
@@ -311,14 +280,7 @@ export default function CatalogoPublico() {
       <NavbarCliente
         empresa={empresa}
         clienteInfo={clienteInfo}
-        onCerrarSesion={() => {
-          localStorage.removeItem('clienteToken');
-          localStorage.removeItem('clienteInfo');
-          // También limpiar cookies
-          document.cookie = 'clienteToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-          document.cookie = 'clienteInfo=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-          setClienteInfo(null);
-        }}
+        onCerrarSesion={cerrarSesion}
         onShowCart={() => setShowCart(true)}
       />
               <CartModal 

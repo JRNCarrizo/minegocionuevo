@@ -6,6 +6,7 @@ import type { Producto } from '../types';
 import CartModal from '../components/CartModal';
 import NavbarCliente from '../components/NavbarCliente';
 import { useCart } from '../hooks/useCart';
+import { useClienteAuth } from '../hooks/useClienteAuth';
 import toast from 'react-hot-toast';
 import { getCookie } from '../utils/cookies';
 
@@ -18,7 +19,7 @@ export default function ProductoPublico() {
   const [imagenActual, setImagenActual] = useState(0);
   const [cantidad, setCantidad] = useState(1);
   const [showCart, setShowCart] = useState(false);
-  const [clienteInfo, setClienteInfo] = useState<{ nombre: string; email: string } | null>(null);
+  const { clienteInfo, cerrarSesion } = useClienteAuth();
   const { addToCart, items } = useCart();
 
   const cargarProducto = useCallback(async () => {
@@ -54,30 +55,7 @@ export default function ProductoPublico() {
     }
   }, [empresa, subdominio, id, cargarProducto]);
 
-  useEffect(() => {
-    // Buscar token en cookies primero (se comparte entre subdominios)
-    let token = getCookie('clienteToken');
-    let cliente = getCookie('clienteInfo');
-    
-    // Si no está en cookies, buscar en localStorage
-    if (!token) {
-      token = localStorage.getItem('clienteToken');
-    }
-    if (!cliente) {
-      cliente = localStorage.getItem('clienteInfo');
-    }
-    
-    if (token && cliente) {
-      try {
-        setClienteInfo(JSON.parse(cliente));
-      } catch (error) {
-        console.log(error)
-        setClienteInfo(null);
-      }
-    } else {
-      setClienteInfo(null);
-    }
-  }, []);
+  // El hook useClienteAuth maneja automáticamente la autenticación
 
   const formatearPrecio = (precio: number, moneda: string = 'USD') => {
     const simbolos: { [key: string]: string } = {
@@ -175,14 +153,7 @@ export default function ProductoPublico() {
       <NavbarCliente
         empresa={empresa}
         clienteInfo={clienteInfo}
-        onCerrarSesion={() => {
-          localStorage.removeItem('clienteToken');
-          localStorage.removeItem('clienteInfo');
-          // También limpiar cookies
-          document.cookie = 'clienteToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-          document.cookie = 'clienteInfo=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-          setClienteInfo(null);
-        }}
+        onCerrarSesion={cerrarSesion}
         onShowCart={() => setShowCart(true)}
       />
               <CartModal 
