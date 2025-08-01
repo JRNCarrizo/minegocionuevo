@@ -79,8 +79,23 @@ public class ClienteService {
      * Obtiene un cliente por email sin importar su estado de activación
      */
     public Optional<ClienteDTO> obtenerClientePorEmailCualquierEstado(Long empresaId, String email) {
+        System.out.println("=== CLIENTE SERVICE - BUSCANDO CLIENTE ===");
+        System.out.println("Email: " + email);
+        System.out.println("Empresa ID: " + empresaId);
+        
         Optional<Cliente> cliente = clienteRepository.findByEmailAndEmpresaId(email, empresaId);
-        return cliente.map(this::convertirADTOConEstadisticas);
+        System.out.println("Cliente encontrado en BD: " + cliente.isPresent());
+        
+        if (cliente.isPresent()) {
+            Cliente c = cliente.get();
+            System.out.println("Cliente en BD - ID: " + c.getId() + ", Email: " + c.getEmail() + ", Activo: " + c.getActivo() + ", Verificado: " + c.getEmailVerificado());
+        }
+        
+        Optional<ClienteDTO> resultado = cliente.map(this::convertirADTOConEstadisticas);
+        System.out.println("Resultado DTO: " + resultado.isPresent());
+        System.out.println("==========================================");
+        
+        return resultado;
     }
     
     /**

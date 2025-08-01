@@ -22,8 +22,11 @@ import com.minegocio.backend.servicios.ProductoFavoritoService;
 import com.minegocio.backend.servicios.EmailService;
 import com.minegocio.backend.entidades.TokenRecuperacion;
 import com.minegocio.backend.repositorios.TokenRecuperacionRepository;
+import com.minegocio.backend.entidades.Usuario;
+import com.minegocio.backend.repositorios.UsuarioRepository;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.HashMap;
 
 /**
  * Controlador para autenticación de clientes en el portal público
@@ -50,6 +53,9 @@ public class ClienteAuthController {
     
     @Autowired
     private TokenRecuperacionRepository tokenRecuperacionRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     /**
      * Registro de nuevo cliente
@@ -88,12 +94,20 @@ public class ClienteAuthController {
             Empresa empresa = empresaOpt.get();
             
             // Verificar que el email no esté en uso (incluyendo clientes no verificados)
+            System.out.println("=== VERIFICANDO EMAIL CLIENTE ===");
+            System.out.println("Email a verificar: " + registroDTO.getEmail());
+            System.out.println("Empresa ID: " + empresa.getId());
+            
             Optional<ClienteDTO> clienteExistente = clienteService.obtenerClientePorEmailCualquierEstado(empresa.getId(), registroDTO.getEmail());
+            System.out.println("Cliente encontrado: " + clienteExistente.isPresent());
+            
             if (clienteExistente.isPresent()) {
                 ClienteDTO cliente = clienteExistente.get();
+                System.out.println("Cliente encontrado - ID: " + cliente.getId() + ", Email: " + cliente.getEmail() + ", Verificado: " + cliente.getEmailVerificado());
                 
                 // Si el cliente existe pero no está verificado, permitir reenviar el email de verificación
                 if (!cliente.getEmailVerificado()) {
+                    System.out.println("Cliente no verificado - devolviendo 409 con emailNoVerificado=true");
                     return ResponseEntity.status(409).body(Map.of(
                         "error", "El email ya está registrado pero no ha sido verificado. Revisa tu correo electrónico o solicita un nuevo enlace de verificación.",
                         "emailNoVerificado", true,
@@ -102,10 +116,14 @@ public class ClienteAuthController {
                 }
                 
                 // Si el cliente existe y está verificado, no permitir registro
+                System.out.println("Cliente verificado - devolviendo 409");
                 return ResponseEntity.status(409).body(Map.of(
                     "error", "El email ya está registrado y verificado. Puedes iniciar sesión directamente."
                 ));
             }
+            
+            System.out.println("Email disponible para registro");
+            System.out.println("================================");
             
             // Crear nuevo cliente
             System.out.println("Datos del RegistroDTO:");
@@ -570,6 +588,69 @@ public class ClienteAuthController {
             "mensaje", "pong",
             "timestamp", System.currentTimeMillis()
         ));
+    }
+
+    /**
+     * Endpoint de depuración para verificar datos en la base de datos
+     */
+    @GetMapping("/debug-email/{email}")
+    public ResponseEntity<?> debugEmail(@PathVariable String subdominio, @PathVariable String email) {
+        try {
+            // Verificar que la empresa existe
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
+            }
+            
+            Empresa empresa = empresaOpt.get();
+            
+            // Buscar en tabla clientes
+            Optional<ClienteDTO> clienteEnClientes = clienteService.obtenerClientePorEmailCualquierEstado(empresa.getId(), email);
+            
+            // Buscar en tabla usuarios (para comparar)
+            Optional<Usuario> usuarioEnUsuarios = usuarioRepository.findByEmail(email);
+            
+            Map<String, Object> resultado = new HashMap<>();
+            resultado.put("email", email);
+            resultado.put("empresa", empresa.getNombre());
+            resultado.put("empresaId", empresa.getId());
+            
+            if (clienteEnClientes.isPresent()) {
+                ClienteDTO cliente = clienteEnClientes.get();
+                Map<String, Object> clienteInfo = new HashMap<>();
+                clienteInfo.put("id", cliente.getId());
+                clienteInfo.put("nombre", cliente.getNombre());
+                clienteInfo.put("apellidos", cliente.getApellidos());
+                clienteInfo.put("email", cliente.getEmail());
+                clienteInfo.put("activo", cliente.getActivo());
+                clienteInfo.put("emailVerificado", cliente.getEmailVerificado());
+                resultado.put("encontradoEnClientes", clienteInfo);
+            } else {
+                resultado.put("encontradoEnClientes", null);
+            }
+            
+            if (usuarioEnUsuarios.isPresent()) {
+                Usuario usuario = usuarioEnUsuarios.get();
+                Map<String, Object> usuarioInfo = new HashMap<>();
+                usuarioInfo.put("id", usuario.getId());
+                usuarioInfo.put("nombre", usuario.getNombre());
+                usuarioInfo.put("email", usuario.getEmail());
+                usuarioInfo.put("activo", usuario.getActivo());
+                usuarioInfo.put("emailVerificado", usuario.getEmailVerificado());
+                usuarioInfo.put("empresaId", usuario.getEmpresa() != null ? usuario.getEmpresa().getId() : null);
+                resultado.put("encontradoEnUsuarios", usuarioInfo);
+            } else {
+                resultado.put("encontradoEnUsuarios", null);
+            }
+            
+            return ResponseEntity.ok(resultado);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error en depuración",
+                "detalle", e.getMessage()
+            ));
+        }
     }
     
     /**
