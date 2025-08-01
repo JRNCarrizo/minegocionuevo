@@ -22,6 +22,7 @@ interface EstadisticasPedidos {
 
 // Componente Modal para detalles del pedido
 function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, open: boolean, onClose: () => void }) {
+  const { isMobile } = useResponsive();
   const [productoSeleccionado, setProductoSeleccionado] = useState<DetallePedido | null>(null);
   const [mostrarProducto, setMostrarProducto] = useState(false);
 
@@ -75,7 +76,7 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
           background: '#fff',
           borderRadius: '16px',
           padding: '0',
-          maxWidth: '900px',
+          maxWidth: isMobile ? '95vw' : '900px',
           width: '95vw',
           maxHeight: '90vh',
           overflow: 'hidden',
@@ -125,7 +126,7 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
           </div>
 
           {/* Contenido del modal */}
-          <div style={{ padding: '32px', maxHeight: 'calc(90vh - 120px)', overflow: 'auto' }}>
+          <div style={{ padding: isMobile ? '16px' : '32px', maxHeight: 'calc(90vh - 120px)', overflow: 'auto' }}>
             {/* Información del cliente */}
             <div style={{
               background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
@@ -137,7 +138,11 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
               <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
                 👤 Información del Cliente
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', 
+                gap: isMobile ? '12px' : '16px' 
+              }}>
                 <div>
                   <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Nombre</p>
                   <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
@@ -167,7 +172,13 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
               marginBottom: '24px',
               border: '1px solid #e2e8f0'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: isMobile ? 'column' : 'row',
+                alignItems: isMobile ? 'flex-start' : 'center', 
+                justifyContent: 'space-between',
+                gap: isMobile ? '16px' : '0'
+              }}>
                 <div>
                   <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
                     Estado del Pedido
@@ -212,16 +223,17 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
                   )}
                 </div>
                 <div style={{
-                  width: '60px',
-                  height: '60px',
+                  width: isMobile ? '50px' : '60px',
+                  height: isMobile ? '50px' : '60px',
                   borderRadius: '50%',
                   background: `linear-gradient(135deg, ${obtenerColorEstado(pedido.estado)}20 0%, ${obtenerColorEstado(pedido.estado)}40 100%)`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: `3px solid ${obtenerColorEstado(pedido.estado)}30`
+                  border: `3px solid ${obtenerColorEstado(pedido.estado)}30`,
+                  alignSelf: isMobile ? 'center' : 'flex-end'
                 }}>
-                  <span style={{ fontSize: '24px', color: obtenerColorEstado(pedido.estado) }}>
+                  <span style={{ fontSize: isMobile ? '20px' : '24px', color: obtenerColorEstado(pedido.estado) }}>
                     {pedido.estado === 'PENDIENTE' && '⏳'}
                     {pedido.estado === 'CONFIRMADO' && '✅'}
                     {pedido.estado === 'PREPARANDO' && '👨‍🍳'}
@@ -1168,26 +1180,28 @@ export default function GestionPedidos() {
             🔍 Filtrar por Estado
           </h3>
           <div className="flex gap-2 flex-wrap" style={{
-            gap: isMobile ? '0.5rem' : '0.5rem'
+            gap: isMobile ? '0.5rem' : '0.5rem',
+            flexDirection: isMobile ? 'column' : 'row'
           }}>
-            <button
-              onClick={() => setFiltroEstado('todos')}
-              className={`boton ${filtroEstado === 'todos' ? 'boton-primario' : 'boton-secundario'}`}
-              style={{
-                background: filtroEstado === 'todos' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : '#f8fafc',
-                color: filtroEstado === 'todos' ? 'white' : '#64748b',
-                border: '2px solid',
-                borderColor: filtroEstado === 'todos' ? '#3b82f6' : '#e2e8f0',
-                borderRadius: '12px',
-                padding: isMobile ? '8px 12px' : '10px 16px',
-                fontSize: isMobile ? '12px' : '14px',
-                fontWeight: '600',
-                transition: 'all 0.2s ease',
-                boxShadow: filtroEstado === 'todos' ? '0 4px 12px rgba(59,130,246,0.3)' : 'none'
-              }}
-            >
-              📊 Todos ({pedidos.length})
-            </button>
+                          <button
+                onClick={() => setFiltroEstado('todos')}
+                className={`boton ${filtroEstado === 'todos' ? 'boton-primario' : 'boton-secundario'}`}
+                style={{
+                  background: filtroEstado === 'todos' ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : '#f8fafc',
+                  color: filtroEstado === 'todos' ? 'white' : '#64748b',
+                  border: '2px solid',
+                  borderColor: filtroEstado === 'todos' ? '#3b82f6' : '#e2e8f0',
+                  borderRadius: '12px',
+                  padding: isMobile ? '8px 12px' : '10px 16px',
+                  fontSize: isMobile ? '12px' : '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s ease',
+                  boxShadow: filtroEstado === 'todos' ? '0 4px 12px rgba(59,130,246,0.3)' : 'none',
+                  width: isMobile ? '100%' : 'auto'
+                }}
+              >
+                📊 Todos ({pedidos.length})
+              </button>
             {ESTADOS_PEDIDO.map(estado => (
               <button
                 key={estado}
@@ -1203,7 +1217,8 @@ export default function GestionPedidos() {
                   fontSize: isMobile ? '12px' : '14px',
                   fontWeight: '600',
                   transition: 'all 0.2s ease',
-                  boxShadow: filtroEstado === estado ? `0 4px 12px ${obtenerColorEstado(estado)}40` : 'none'
+                  boxShadow: filtroEstado === estado ? `0 4px 12px ${obtenerColorEstado(estado)}40` : 'none',
+                  width: isMobile ? '100%' : 'auto'
                 }}
               >
                 {estado === 'PENDIENTE' && '⏳'}
@@ -1273,7 +1288,7 @@ export default function GestionPedidos() {
                     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                     border: '2px solid #e2e8f0',
                     borderRadius: '16px',
-                    padding: '24px',
+                    padding: isMobile ? '16px' : '24px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                   }}
@@ -1288,31 +1303,51 @@ export default function GestionPedidos() {
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
+                  {/* Header del pedido - Responsive */}
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: isMobile ? 'column' : 'row',
+                    alignItems: isMobile ? 'flex-start' : 'center', 
+                    justifyContent: 'space-between', 
+                    marginBottom: isMobile ? '16px' : '24px',
+                    gap: isMobile ? '12px' : '0'
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <h4 className="titulo-3 mb-1" style={{
-                        fontSize: '20px',
+                        fontSize: isMobile ? '18px' : '20px',
                         fontWeight: '700',
                         color: '#1e293b',
-                        marginBottom: '8px'
+                        marginBottom: '8px',
+                        wordBreak: 'break-word'
                       }}>
                         🛒 Pedido #{pedido.numeroPedido || pedido.id}
                       </h4>
                       <p className="texto-pequeno texto-gris" style={{
-                        fontSize: '14px',
+                        fontSize: isMobile ? '12px' : '14px',
                         color: '#64748b',
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
+                        flexDirection: isMobile ? 'column' : 'row',
+                        alignItems: isMobile ? 'flex-start' : 'center',
+                        gap: isMobile ? '4px' : '8px',
+                        flexWrap: 'wrap'
                       }}>
-                        👤 {pedido.cliente?.nombre} {pedido.cliente?.apellidos}
-                        <span style={{ color: '#cbd5e1' }}>•</span>
-                        📅 {(() => { const fecha = pedido.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
+                        <span style={{ wordBreak: 'break-word' }}>
+                          👤 {pedido.cliente?.nombre} {pedido.cliente?.apellidos}
+                        </span>
+                        {!isMobile && <span style={{ color: '#cbd5e1' }}>•</span>}
+                        <span style={{ wordBreak: 'break-word' }}>
+                          📅 {(() => { const fecha = pedido.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: isMobile ? 'short' : '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
+                        </span>
                       </p>
                     </div>
-                    <div className="text-right">
+                    
+                    {/* Información del total - Responsive */}
+                    <div style={{ 
+                      textAlign: isMobile ? 'left' : 'right',
+                      alignSelf: isMobile ? 'flex-start' : 'center'
+                    }}>
                       <p className="titulo-3" style={{ 
-                        fontSize: '24px', 
+                        fontSize: isMobile ? '20px' : '24px', 
                         fontWeight: '700', 
                         color: '#059669',
                         marginBottom: '8px'
@@ -1320,10 +1355,10 @@ export default function GestionPedidos() {
                         ${pedido.total?.toFixed(2)}
                       </p>
                       <p className="texto-pequeno texto-gris" style={{ 
-                        fontSize: '14px', 
+                        fontSize: isMobile ? '12px' : '14px', 
                         color: '#64748b',
                         background: '#f1f5f9',
-                        padding: '6px 12px',
+                        padding: isMobile ? '4px 8px' : '6px 12px',
                         borderRadius: '8px',
                         display: 'inline-block',
                         fontWeight: '500'
@@ -1333,18 +1368,26 @@ export default function GestionPedidos() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  {/* Estado y botones - Responsive */}
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: isMobile ? 'column' : 'row',
+                    alignItems: isMobile ? 'flex-start' : 'center', 
+                    justifyContent: 'space-between',
+                    gap: isMobile ? '12px' : '0'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span
                         className="px-3 py-1 rounded-full texto-pequeno"
                         style={{
                           backgroundColor: obtenerColorEstado(pedido.estado) + '20',
                           color: obtenerColorEstado(pedido.estado),
                           fontWeight: '600',
-                          padding: '8px 16px',
+                          padding: isMobile ? '6px 12px' : '8px 16px',
                           borderRadius: '20px',
-                          fontSize: '14px',
-                          border: `2px solid ${obtenerColorEstado(pedido.estado)}30`
+                          fontSize: isMobile ? '12px' : '14px',
+                          border: `2px solid ${obtenerColorEstado(pedido.estado)}30`,
+                          whiteSpace: 'nowrap'
                         }}
                       >
                         {pedido.estado === 'PENDIENTE' && '⏳'}
@@ -1357,7 +1400,13 @@ export default function GestionPedidos() {
                       </span>
                     </div>
 
-                    <div className="flex gap-2">
+                    {/* Botones de acción - Responsive */}
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: isMobile ? 'column' : 'row',
+                      gap: isMobile ? '8px' : '8px',
+                      width: isMobile ? '100%' : 'auto'
+                    }}>
                       {pedido.estado === 'PENDIENTE' && (
                         <>
                           <button
@@ -1368,15 +1417,17 @@ export default function GestionPedidos() {
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
-                              padding: '8px 16px',
-                              fontSize: '14px',
+                              padding: isMobile ? '8px 12px' : '8px 16px',
+                              fontSize: isMobile ? '12px' : '14px',
                               fontWeight: '600',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
-                              boxShadow: '0 2px 8px rgba(16,185,129,0.3)'
+                              boxShadow: '0 2px 8px rgba(16,185,129,0.3)',
+                              width: isMobile ? '100%' : 'auto',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            ✅ Confirmar
+                            {isMobile ? '✅ Confirmar' : '✅ Confirmar'}
                           </button>
                           <button
                             onClick={() => cambiarEstadoPedido(pedido.id, 'CANCELADO')}
@@ -1386,15 +1437,17 @@ export default function GestionPedidos() {
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
-                              padding: '8px 16px',
-                              fontSize: '14px',
+                              padding: isMobile ? '8px 12px' : '8px 16px',
+                              fontSize: isMobile ? '12px' : '14px',
                               fontWeight: '600',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
-                              boxShadow: '0 2px 8px rgba(239,68,68,0.3)'
+                              boxShadow: '0 2px 8px rgba(239,68,68,0.3)',
+                              width: isMobile ? '100%' : 'auto',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            ❌ Rechazar
+                            {isMobile ? '❌ Rechazar' : '❌ Rechazar'}
                           </button>
                         </>
                       )}
@@ -1408,15 +1461,17 @@ export default function GestionPedidos() {
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
-                              padding: '8px 16px',
-                              fontSize: '14px',
+                              padding: isMobile ? '8px 12px' : '8px 16px',
+                              fontSize: isMobile ? '12px' : '14px',
                               fontWeight: '600',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
-                              boxShadow: '0 2px 8px rgba(99,102,241,0.3)'
+                              boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
+                              width: isMobile ? '100%' : 'auto',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            👨‍🍳 Preparar
+                            {isMobile ? '👨‍🍳 Preparar' : '👨‍🍳 Preparar'}
                           </button>
                           <button
                             onClick={() => cambiarEstadoPedido(pedido.id, 'CANCELADO')}
@@ -1426,15 +1481,17 @@ export default function GestionPedidos() {
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
-                              padding: '8px 16px',
-                              fontSize: '14px',
+                              padding: isMobile ? '8px 12px' : '8px 16px',
+                              fontSize: isMobile ? '12px' : '14px',
                               fontWeight: '600',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
-                              boxShadow: '0 2px 8px rgba(239,68,68,0.3)'
+                              boxShadow: '0 2px 8px rgba(239,68,68,0.3)',
+                              width: isMobile ? '100%' : 'auto',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            ❌ Cancelar
+                            {isMobile ? '❌ Cancelar' : '❌ Cancelar'}
                           </button>
                         </>
                       )}
@@ -1448,15 +1505,17 @@ export default function GestionPedidos() {
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
-                              padding: '8px 16px',
-                              fontSize: '14px',
+                              padding: isMobile ? '8px 12px' : '8px 16px',
+                              fontSize: isMobile ? '12px' : '14px',
                               fontWeight: '600',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
-                              boxShadow: '0 2px 8px rgba(139,92,246,0.3)'
+                              boxShadow: '0 2px 8px rgba(139,92,246,0.3)',
+                              width: isMobile ? '100%' : 'auto',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            🚚 Marcar como Enviado
+                            {isMobile ? '🚚 Enviar' : '🚚 Marcar como Enviado'}
                           </button>
                           <button
                             onClick={() => cambiarEstadoPedido(pedido.id, 'CANCELADO')}
@@ -1466,15 +1525,17 @@ export default function GestionPedidos() {
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
-                              padding: '8px 16px',
-                              fontSize: '14px',
+                              padding: isMobile ? '8px 12px' : '8px 16px',
+                              fontSize: isMobile ? '12px' : '14px',
                               fontWeight: '600',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
-                              boxShadow: '0 2px 8px rgba(239,68,68,0.3)'
+                              boxShadow: '0 2px 8px rgba(239,68,68,0.3)',
+                              width: isMobile ? '100%' : 'auto',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            ❌ Cancelar
+                            {isMobile ? '❌ Cancelar' : '❌ Cancelar'}
                           </button>
                         </>
                       )}
@@ -1488,15 +1549,17 @@ export default function GestionPedidos() {
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
-                              padding: '8px 16px',
-                              fontSize: '14px',
+                              padding: isMobile ? '8px 12px' : '8px 16px',
+                              fontSize: isMobile ? '12px' : '14px',
                               fontWeight: '600',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
-                              boxShadow: '0 2px 8px rgba(16,185,129,0.3)'
+                              boxShadow: '0 2px 8px rgba(16,185,129,0.3)',
+                              width: isMobile ? '100%' : 'auto',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            🎉 Marcar como Entregado
+                            {isMobile ? '🎉 Entregar' : '🎉 Marcar como Entregado'}
                           </button>
                           <button
                             onClick={() => cambiarEstadoPedido(pedido.id, 'CANCELADO')}
@@ -1506,27 +1569,31 @@ export default function GestionPedidos() {
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
-                              padding: '8px 16px',
-                              fontSize: '14px',
+                              padding: isMobile ? '8px 12px' : '8px 16px',
+                              fontSize: isMobile ? '12px' : '14px',
                               fontWeight: '600',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
-                              boxShadow: '0 2px 8px rgba(239,68,68,0.3)'
+                              boxShadow: '0 2px 8px rgba(239,68,68,0.3)',
+                              width: isMobile ? '100%' : 'auto',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            ❌ Cancelar
+                            {isMobile ? '❌ Cancelar' : '❌ Cancelar'}
                           </button>
                         </>
                       )}
                       {pedido.estado === 'CANCELADO' && (
                         <span className="texto-pequeno" style={{ 
                           color: '#ef4444',
-                          fontSize: '14px',
+                          fontSize: isMobile ? '12px' : '14px',
                           fontWeight: '600',
-                          padding: '8px 16px',
+                          padding: isMobile ? '6px 12px' : '8px 16px',
                           background: '#fef2f2',
                           borderRadius: '8px',
-                          border: '1px solid #fecaca'
+                          border: '1px solid #fecaca',
+                          width: isMobile ? '100%' : 'auto',
+                          textAlign: isMobile ? 'center' : 'left'
                         }}>
                           ❌ Pedido cancelado
                         </span>
@@ -1534,12 +1601,14 @@ export default function GestionPedidos() {
                       {pedido.estado === 'ENTREGADO' && (
                         <span className="texto-pequeno" style={{ 
                           color: '#10b981',
-                          fontSize: '14px',
+                          fontSize: isMobile ? '12px' : '14px',
                           fontWeight: '600',
-                          padding: '8px 16px',
+                          padding: isMobile ? '6px 12px' : '8px 16px',
                           background: '#f0fdf4',
                           borderRadius: '8px',
-                          border: '1px solid #bbf7d0'
+                          border: '1px solid #bbf7d0',
+                          width: isMobile ? '100%' : 'auto',
+                          textAlign: isMobile ? 'center' : 'left'
                         }}>
                           🎉 Pedido entregado
                         </span>
@@ -1552,15 +1621,17 @@ export default function GestionPedidos() {
                           color: 'white',
                           border: 'none',
                           borderRadius: '8px',
-                          padding: '8px 16px',
-                          fontSize: '14px',
+                          padding: isMobile ? '8px 12px' : '8px 16px',
+                          fontSize: isMobile ? '12px' : '14px',
                           fontWeight: '600',
                           cursor: 'pointer',
                           transition: 'all 0.2s ease',
-                          boxShadow: '0 2px 8px rgba(59,130,246,0.3)'
+                          boxShadow: '0 2px 8px rgba(59,130,246,0.3)',
+                          width: isMobile ? '100%' : 'auto',
+                          whiteSpace: 'nowrap'
                         }}
                       >
-                        👁️ Ver Detalles
+                        {isMobile ? '👁️ Ver' : '👁️ Ver Detalles'}
                       </button>
                     </div>
                   </div>
