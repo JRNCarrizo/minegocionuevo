@@ -212,6 +212,59 @@ export default function GoogleLogin() {
           </span>
         </div>
 
+        {/* Mensaje sobre popups */}
+        <div style={{
+          background: '#fef3c7',
+          border: '1px solid #f59e0b',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '1rem',
+          fontSize: '0.875rem',
+          color: '#92400e'
+        }}>
+          <div style={{ fontWeight: '600', marginBottom: '8px' }}>
+            💡 Si aparece una ventana emergente bloqueada:
+          </div>
+          <ul style={{ margin: 0, paddingLeft: '20px' }}>
+            <li>Haz clic en "Permitir" en la notificación del navegador</li>
+            <li>O haz clic en el ícono de escudo en la barra de direcciones</li>
+            <li>Luego recarga la página</li>
+          </ul>
+        </div>
+
+        {/* Botón de respaldo para redirección directa */}
+        <button
+          onClick={() => {
+            console.log('Usando redirección directa...');
+            // Usar redirección directa en lugar de popup
+            const clientId = 'TU_GOOGLE_CLIENT_ID'; // Necesitarás reemplazar esto
+            const redirectUri = encodeURIComponent(window.location.origin + '/google-callback');
+            const scope = encodeURIComponent('email profile');
+            const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&response_type=code`;
+            window.location.href = url;
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.75rem',
+            padding: '0.875rem 1.5rem',
+            borderRadius: '0.75rem',
+            fontSize: '1rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            border: 'none',
+            outline: 'none',
+            width: '100%',
+            background: '#10b981',
+            color: 'white',
+            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+          }}
+        >
+          🔄 Continuar sin popup
+        </button>
+
         {!searchParams.get('subdominio') && (
           <p style={{
             color: '#ef4444',
