@@ -42,6 +42,7 @@ public class InventarioFisicoService {
     /**
      * Obtener historial de inventarios físicos por empresa
      */
+    @Transactional(readOnly = true)
     public ApiResponse<Page<InventarioFisicoDTO>> obtenerHistorialPorEmpresa(Long empresaId, int pagina, int tamano) {
         try {
             Pageable pageable = PageRequest.of(pagina, tamano);
@@ -58,6 +59,7 @@ public class InventarioFisicoService {
     /**
      * Obtener inventario físico por ID
      */
+    @Transactional(readOnly = true)
     public ApiResponse<InventarioFisicoDTO> obtenerInventarioPorId(Long inventarioId, Long empresaId) {
         try {
             InventarioFisico inventario = inventarioFisicoRepository.findById(inventarioId)

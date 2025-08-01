@@ -173,32 +173,16 @@ public class HistorialInventarioService {
     /**
      * Obtener historial de inventario por empresa
      */
+    @Transactional(readOnly = true)
     public ApiResponse<Page<HistorialInventarioDTO>> obtenerHistorialPorEmpresa(Long empresaId, int pagina, int tamano) {
         try {
-            System.out.println("=== DEBUG CONSULTA HISTORIAL ===");
-            System.out.println("Consultando historial para empresa: " + empresaId);
-            System.out.println("Página: " + pagina + ", Tamaño: " + tamano);
-            
             Pageable pageable = PageRequest.of(pagina, tamano);
             Page<HistorialInventario> historialPage = historialInventarioRepository.findByEmpresaId(empresaId, pageable);
-            
-            System.out.println("Total de elementos encontrados: " + historialPage.getTotalElements());
-            System.out.println("Total de páginas: " + historialPage.getTotalPages());
-            System.out.println("Elementos en esta página: " + historialPage.getContent().size());
-            
-            if (!historialPage.getContent().isEmpty()) {
-                System.out.println("Primer elemento: " + historialPage.getContent().get(0).getId());
-                System.out.println("Último elemento: " + historialPage.getContent().get(historialPage.getContent().size() - 1).getId());
-            }
-            
-            System.out.println("=== FIN DEBUG CONSULTA HISTORIAL ===");
             
             Page<HistorialInventarioDTO> historialDTOPage = historialPage.map(HistorialInventarioDTO::new);
             
             return new ApiResponse<>(true, "Historial obtenido exitosamente", historialDTOPage);
         } catch (Exception e) {
-            System.err.println("Error al obtener historial: " + e.getMessage());
-            e.printStackTrace();
             return new ApiResponse<>(false, "Error al obtener el historial: " + e.getMessage(), null);
         }
     }
@@ -206,6 +190,7 @@ public class HistorialInventarioService {
     /**
      * Obtener historial de inventario por producto
      */
+    @Transactional(readOnly = true)
     public ApiResponse<List<HistorialInventarioDTO>> obtenerHistorialPorProducto(Long empresaId, Long productoId) {
         try {
             List<HistorialInventario> historial = historialInventarioRepository.findByEmpresaIdAndProductoId(empresaId, productoId);
@@ -222,6 +207,7 @@ public class HistorialInventarioService {
     /**
      * Obtener historial de inventario por rango de fechas
      */
+    @Transactional(readOnly = true)
     public ApiResponse<List<HistorialInventarioDTO>> obtenerHistorialPorFechas(Long empresaId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         try {
             List<HistorialInventario> historial = historialInventarioRepository.findByEmpresaIdAndFechaOperacionBetween(empresaId, fechaInicio, fechaFin);
@@ -238,6 +224,7 @@ public class HistorialInventarioService {
     /**
      * Obtener estadísticas de inventario
      */
+    @Transactional(readOnly = true)
     public ApiResponse<EstadisticasInventarioDTO> obtenerEstadisticas(Long empresaId) {
         try {
             Object[] estadisticas = historialInventarioRepository.getEstadisticasByEmpresaId(empresaId);
@@ -260,6 +247,7 @@ public class HistorialInventarioService {
     /**
      * Obtener estadísticas de inventario por rango de fechas
      */
+    @Transactional(readOnly = true)
     public ApiResponse<EstadisticasInventarioDTO> obtenerEstadisticasPorFechas(Long empresaId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         try {
             System.out.println("=== DEBUG ESTADÍSTICAS POR FECHAS ===");
@@ -302,6 +290,7 @@ public class HistorialInventarioService {
     /**
      * Obtener productos más movidos en inventario
      */
+    @Transactional(readOnly = true)
     public ApiResponse<List<Object[]>> obtenerProductosMasMovidos(Long empresaId, int limite) {
         try {
             Pageable pageable = PageRequest.of(0, limite);
@@ -316,6 +305,7 @@ public class HistorialInventarioService {
     /**
      * Obtener usuarios más activos en inventario
      */
+    @Transactional(readOnly = true)
     public ApiResponse<List<Object[]>> obtenerUsuariosMasActivos(Long empresaId, int limite) {
         try {
             Pageable pageable = PageRequest.of(0, limite);
@@ -330,6 +320,7 @@ public class HistorialInventarioService {
     /**
      * Buscar historial por código de barras
      */
+    @Transactional(readOnly = true)
     public ApiResponse<List<HistorialInventarioDTO>> buscarPorCodigoBarras(Long empresaId, String codigoBarras) {
         try {
             List<HistorialInventario> historial = historialInventarioRepository.findByEmpresaIdAndCodigoBarras(empresaId, codigoBarras);
@@ -337,7 +328,7 @@ public class HistorialInventarioService {
                     .map(HistorialInventarioDTO::new)
                     .collect(Collectors.toList());
             
-            return new ApiResponse<>(true, "Historial por código de barras obtenido exitosamente", historialDTO);
+            return new ApiResponse<>(true, "Búsqueda por código de barras completada exitosamente", historialDTO);
         } catch (Exception e) {
             return new ApiResponse<>(false, "Error al buscar por código de barras: " + e.getMessage(), null);
         }
