@@ -1294,6 +1294,35 @@ class ApiService {
     const response = await this.api.post('/verificacion-cliente/test-email', { email, subdominio });
     return response.data;
   }
+
+  // Métodos para registro en dos etapas
+  async registrarAdministrador(data: {
+    nombre: string;
+    apellidos: string;
+    email: string;
+    password: string;
+    telefono?: string;
+    aceptaMarketing: boolean;
+  }): Promise<{ mensaje: string; requiereVerificacion: boolean }> {
+    const response = await this.api.post('/auth/registrar-administrador', data);
+    return response.data;
+  }
+
+  async crearEmpresa(data: {
+    nombre: string;
+    subdominio: string;
+    email: string;
+    telefono?: string;
+    direccion?: string;
+    ciudad?: string;
+    codigoPostal?: string;
+    pais?: string;
+    descripcion?: string;
+    categoria: string;
+  }): Promise<{ mensaje: string; empresa: any }> {
+    const response = await this.api.post('/empresas/crear-empresa', data);
+    return response.data;
+  }
 }
 
 export default new ApiService();

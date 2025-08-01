@@ -34,6 +34,9 @@ import GoogleLogin from './pages/GoogleLogin.tsx';
 import VerificarEmail from './pages/VerificarEmail.tsx';
 import VerificarEmailCliente from './pages/VerificarEmailCliente.tsx';
 import ConfirmacionRegistro from './pages/ConfirmacionRegistro.tsx';
+import ConfirmacionRegistroAdmin from './pages/ConfirmacionRegistroAdmin.tsx';
+import RegistroEmpresaEtapa1 from './pages/RegistroEmpresaEtapa1.tsx';
+import ConfigurarEmpresa from './pages/ConfigurarEmpresa.tsx';
 
 function AppContent() {
   const { esSubdominioPrincipal, cargando } = useSubdominio();
