@@ -148,7 +148,7 @@ export default function GoogleLogin() {
       
       return () => clearTimeout(timer);
     }
-  }, [searchParams, isLoading, autoLoginTriggered, login]);
+  }, [searchParams, isLoading, autoLoginTriggered]);
 
   const handleGoogleLogin = () => {
     // Obtener el subdominio directamente del query param
