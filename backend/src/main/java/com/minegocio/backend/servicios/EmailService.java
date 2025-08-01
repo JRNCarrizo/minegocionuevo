@@ -126,14 +126,27 @@ public class EmailService {
             System.out.println("Subject: " + message.getSubject());
             System.out.println("Subdominio: " + subdominio);
             System.out.println("Enlace de recuperación: " + enlaceRecuperacion);
+            System.out.println("Contenido del email:");
+            System.out.println("--- INICIO CONTENIDO ---");
+            System.out.println(contenido);
+            System.out.println("--- FIN CONTENIDO ---");
             System.out.println("Enviando email de recuperación de cliente...");
+            
+            // Verificar configuración del mailSender
+            System.out.println("Configuración del mailSender:");
+            System.out.println("Host configurado: " + mailSender.toString());
             
             mailSender.send(message);
             System.out.println("✅ Email de recuperación de cliente enviado exitosamente a: " + emailDestino);
+            System.out.println("✅ Email enviado exitosamente");
         } catch (Exception e) {
             System.err.println("❌ Error al enviar email de recuperación de cliente: " + e.getMessage());
+            System.err.println("❌ Stack trace completo:");
+            e.printStackTrace();
             System.err.println("⚠️ NOTA: El token se generó correctamente, pero no se pudo enviar el email.");
             System.err.println("⚠️ Para solucionar esto, configura Gmail correctamente o usa un servicio de email alternativo.");
+            System.err.println("⚠️ Verifica que la contraseña de aplicación de Gmail sea correcta.");
+            System.err.println("⚠️ Verifica que el email no esté en la carpeta de spam.");
             // No lanzamos excepción para que el proceso continúe
             // throw new RuntimeException("Error al enviar email de recuperación", e);
         }

@@ -2477,7 +2477,7 @@ export default function AreaPersonalCliente() {
                 onClick={cambiarPassword}
                 disabled={cambiandoPassword}
                 style={{
-                  background: `linear-gradient(135deg, ${empresa?.colorAcento || '#f59e0b'} 0%, ${empresa?.colorAcento ? `${empresa.colorAcento}dd` : '#d97706'} 100%)`,
+                  background: `linear-gradient(135deg, ${empresa?.colorSecundario || '#63016a'} 0%, ${empresa?.colorSecundario ? `${empresa.colorSecundario}dd` : '#4c1d95'} 100%)`,
                   color: 'white',
                   border: 'none',
                   borderRadius: '10px',

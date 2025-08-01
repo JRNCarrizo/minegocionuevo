@@ -1289,6 +1289,11 @@ class ApiService {
     const response = await this.api.post('/verificacion-cliente/reenviar-email', { email, subdominio });
     return response.data;
   }
+
+  async testEmail(email: string, subdominio: string) {
+    const response = await this.api.post('/verificacion-cliente/test-email', { email, subdominio });
+    return response.data;
+  }
 }
 
 export default new ApiService();

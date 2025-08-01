@@ -300,18 +300,31 @@ public class ClienteService {
      * Verifica el email de un cliente usando el token de verificación
      */
     public boolean verificarEmailCliente(String tokenVerificacion, Long empresaId) {
+        System.out.println("=== DEBUG ClienteService.verificarEmailCliente ===");
+        System.out.println("Token: " + tokenVerificacion);
+        System.out.println("EmpresaId: " + empresaId);
+        
         Optional<Cliente> clienteOpt = clienteRepository.findByTokenVerificacionAndEmpresaId(tokenVerificacion, empresaId);
         
+        System.out.println("Cliente encontrado: " + clienteOpt.isPresent());
+        
         if (clienteOpt.isEmpty()) {
+            System.out.println("❌ Cliente no encontrado con token y empresaId");
             return false;
         }
         
         Cliente cliente = clienteOpt.get();
+        System.out.println("Cliente encontrado: " + cliente.getNombre() + " " + cliente.getApellidos() + " (ID: " + cliente.getId() + ")");
+        System.out.println("Fecha creación: " + cliente.getFechaCreacion());
+        System.out.println("Fecha actual: " + java.time.LocalDateTime.now());
         
         // Verificar que el token no haya expirado (24 horas)
         if (cliente.getFechaCreacion().plusHours(24).isBefore(java.time.LocalDateTime.now())) {
+            System.out.println("❌ Token expirado");
             return false;
         }
+        
+        System.out.println("✅ Token válido, activando cliente");
         
         // Activar el cliente y marcar email como verificado
         cliente.setActivo(true);
@@ -320,6 +333,7 @@ public class ClienteService {
         
         clienteRepository.save(cliente);
         
+        System.out.println("✅ Cliente activado y email verificado");
         return true;
     }
 
