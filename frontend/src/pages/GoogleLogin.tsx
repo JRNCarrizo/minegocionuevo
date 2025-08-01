@@ -16,13 +16,7 @@ export default function GoogleLogin() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    // Obtener el subdominio de los parámetros de URL
-    const subdominioParam = searchParams.get('subdominio');
-    
-    console.log('GoogleLogin - Subdominio:', subdominioParam);
-  }, [searchParams]);
+  const [autoLoginTriggered, setAutoLoginTriggered] = useState(false);
 
   const login = useGoogleLogin({
     onSuccess: async (response) => {
@@ -137,6 +131,25 @@ export default function GoogleLogin() {
     }
   });
 
+  useEffect(() => {
+    // Obtener el subdominio de los parámetros de URL
+    const subdominioParam = searchParams.get('subdominio');
+    
+    console.log('GoogleLogin - Subdominio:', subdominioParam);
+    
+    // Iniciar automáticamente el flujo de Google si tenemos el subdominio y no se ha iniciado ya
+    if (subdominioParam && !isLoading && !autoLoginTriggered) {
+      console.log('Iniciando flujo de Google automáticamente...');
+      setAutoLoginTriggered(true);
+      // Pequeño delay para que la página se cargue completamente
+      const timer = setTimeout(() => {
+        login();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, isLoading, autoLoginTriggered, login]);
+
   const handleGoogleLogin = () => {
     // Obtener el subdominio directamente del query param
     const subdominioParam = searchParams.get('subdominio');
@@ -179,13 +192,18 @@ export default function GoogleLogin() {
             color: '#1f2937',
             marginBottom: '0.5rem'
           }}>
-            Iniciar Sesión
+            {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </h1>
           <p style={{
             color: '#6b7280',
             fontSize: '1rem'
           }}>
-            {searchParams.get('subdominio') ? `Continuar con Google para ${searchParams.get('subdominio')}` : 'Continuar con Google'}
+            {isLoading 
+              ? 'Redirigiendo a Google...' 
+              : searchParams.get('subdominio') 
+                ? `Continuar con Google para ${searchParams.get('subdominio')}` 
+                : 'Continuar con Google'
+            }
           </p>
         </div>
 
@@ -234,7 +252,7 @@ export default function GoogleLogin() {
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite'
               }} />
-              Procesando...
+              {autoLoginTriggered ? 'Redirigiendo a Google...' : 'Procesando...'}
             </>
           ) : (
             <>
@@ -244,7 +262,7 @@ export default function GoogleLogin() {
                 <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                 <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
-              Continuar con Google
+              {autoLoginTriggered ? 'Iniciando automáticamente...' : 'Continuar con Google'}
             </>
           )}
         </button>
