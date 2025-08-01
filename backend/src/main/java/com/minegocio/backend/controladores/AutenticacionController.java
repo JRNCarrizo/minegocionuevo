@@ -47,8 +47,17 @@ public class AutenticacionController {
             JwtRespuestaDTO jwtRespuesta = autenticacionService.autenticarUsuario(loginDTO);
             return ResponseEntity.ok(jwtRespuesta);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Credenciales inválidas"));
+            if ("EMAIL_NO_VERIFICADO".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                            "error", "Debe verificar su email antes de iniciar sesión",
+                            "codigo", "EMAIL_NO_VERIFICADO",
+                            "mensaje", "Revise su bandeja de entrada y haga clic en el enlace de verificación"
+                        ));
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Credenciales inválidas"));
+            }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error interno del servidor"));

@@ -66,6 +66,11 @@ public class AutenticacionService {
             throw new RuntimeException("Credenciales inválidas");
         }
 
+        if (!usuarioEntity.getEmailVerificado()) {
+            System.out.println("Email no verificado");
+            throw new RuntimeException("EMAIL_NO_VERIFICADO");
+        }
+
         System.out.println("Procediendo con autenticación Spring Security...");
 
         // DEBUG: Verificar contraseña manualmente antes de Spring Security

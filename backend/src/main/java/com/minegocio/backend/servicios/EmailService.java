@@ -7,24 +7,30 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 
+/**
+ * Servicio para el envío de emails
+ */
 @Service
 public class EmailService {
 
     @Autowired
-    private JavaMailSender emailSender;
-    
-    @Value("${minegocio.app.frontend.url}")
-    private String frontendUrl;
-    
+    private JavaMailSender mailSender;
+
     @Value("${minegocio.app.email.from}")
     private String fromEmail;
-    
+
+    @Value("${minegocio.app.frontend.url}")
+    private String frontendUrl;
+
+    @Value("${minegocio.app.nombre}")
+    private String appNombre;
+
     @PostConstruct
     public void init() {
         System.out.println("=== EMAIL SERVICE INIT ===");
         System.out.println("Frontend URL: " + frontendUrl);
         System.out.println("From Email: " + fromEmail);
-        System.out.println("JavaMailSender: " + (emailSender != null ? "Configurado" : "NO CONFIGURADO"));
+        System.out.println("JavaMailSender: " + (mailSender != null ? "Configurado" : "NO CONFIGURADO"));
         System.out.println("==========================");
     }
 
@@ -67,7 +73,7 @@ public class EmailService {
             System.out.println("Subject: " + message.getSubject());
             System.out.println("Enviando email de recuperación...");
             
-            emailSender.send(message);
+            mailSender.send(message);
             System.out.println("✅ Email de recuperación enviado exitosamente a: " + emailDestino);
         } catch (Exception e) {
             System.err.println("❌ Error al enviar email de recuperación: " + e.getMessage());
@@ -122,7 +128,7 @@ public class EmailService {
             System.out.println("Enlace de recuperación: " + enlaceRecuperacion);
             System.out.println("Enviando email de recuperación de cliente...");
             
-            emailSender.send(message);
+            mailSender.send(message);
             System.out.println("✅ Email de recuperación de cliente enviado exitosamente a: " + emailDestino);
         } catch (Exception e) {
             System.err.println("❌ Error al enviar email de recuperación de cliente: " + e.getMessage());
@@ -155,7 +161,7 @@ public class EmailService {
         message.setText(contenido);
         
         try {
-            emailSender.send(message);
+            mailSender.send(message);
             System.out.println("Email de confirmación de cliente enviado a: " + emailDestino);
         } catch (Exception e) {
             System.err.println("Error al enviar email de confirmación de cliente: " + e.getMessage());
@@ -185,11 +191,107 @@ public class EmailService {
         message.setText(contenido);
         
         try {
-            emailSender.send(message);
+            mailSender.send(message);
             System.out.println("Email de confirmación enviado a: " + emailDestino);
         } catch (Exception e) {
             System.err.println("Error al enviar email de confirmación: " + e.getMessage());
             // No lanzamos excepción aquí porque el cambio de contraseña ya se realizó
         }
+    }
+
+    /**
+     * Envía email de verificación de cuenta
+     */
+    public void enviarEmailVerificacion(String emailDestinatario, String nombreUsuario, String tokenVerificacion) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(emailDestinatario);
+        message.setSubject("Verifica tu cuenta - " + appNombre);
+        
+        String contenido = String.format(
+            "Hola %s,\n\n" +
+            "Gracias por registrarte en %s. Para completar tu registro, " +
+            "por favor verifica tu cuenta haciendo clic en el siguiente enlace:\n\n" +
+            "%s/verificar-email?token=%s\n\n" +
+            "Este enlace expirará en 24 horas.\n\n" +
+            "Si no solicitaste este registro, puedes ignorar este email.\n\n" +
+            "Saludos,\n" +
+            "El equipo de %s",
+            nombreUsuario,
+            appNombre,
+            frontendUrl,
+            tokenVerificacion,
+            appNombre
+        );
+        
+        message.setText(contenido);
+        mailSender.send(message);
+    }
+
+    /**
+     * Envía email de bienvenida después de verificar la cuenta
+     */
+    public void enviarEmailBienvenida(String emailDestinatario, String nombreUsuario, String nombreEmpresa) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(emailDestinatario);
+        message.setSubject("¡Bienvenido a " + appNombre + "!");
+        
+        String contenido = String.format(
+            "Hola %s,\n\n" +
+            "¡Tu cuenta ha sido verificada exitosamente!\n\n" +
+            "Tu empresa '%s' ya está activa en %s y puedes comenzar a usar todas las funcionalidades.\n\n" +
+            "Tu período de prueba de 1 mes ha comenzado. Durante este tiempo podrás:\n" +
+            "- Gestionar productos y servicios\n" +
+            "- Administrar clientes\n" +
+            "- Procesar pedidos y ventas\n" +
+            "- Personalizar tu tienda\n" +
+            "- Y mucho más...\n\n" +
+            "Para acceder a tu panel de administración, visita:\n" +
+            "%s\n\n" +
+            "Si tienes alguna pregunta, no dudes en contactarnos.\n\n" +
+            "¡Gracias por elegir %s!\n\n" +
+            "Saludos,\n" +
+            "El equipo de %s",
+            nombreUsuario,
+            nombreEmpresa,
+            appNombre,
+            frontendUrl,
+            appNombre,
+            appNombre
+        );
+        
+        message.setText(contenido);
+        mailSender.send(message);
+    }
+
+    /**
+     * Envía email de recordatorio de verificación
+     */
+    public void enviarEmailRecordatorioVerificacion(String emailDestinatario, String nombreUsuario, String tokenVerificacion) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(emailDestinatario);
+        message.setSubject("Recordatorio: Verifica tu cuenta - " + appNombre);
+        
+        String contenido = String.format(
+            "Hola %s,\n\n" +
+            "Notamos que aún no has verificado tu cuenta en %s. " +
+            "Para completar tu registro y comenzar a usar la plataforma, " +
+            "por favor verifica tu cuenta haciendo clic en el siguiente enlace:\n\n" +
+            "%s/verificar-email?token=%s\n\n" +
+            "Este enlace expirará en 24 horas.\n\n" +
+            "Si ya verificaste tu cuenta, puedes ignorar este email.\n\n" +
+            "Saludos,\n" +
+            "El equipo de %s",
+            nombreUsuario,
+            appNombre,
+            frontendUrl,
+            tokenVerificacion,
+            appNombre
+        );
+        
+        message.setText(contenido);
+        mailSender.send(message);
     }
 } 

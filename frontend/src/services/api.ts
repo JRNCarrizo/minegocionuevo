@@ -1259,6 +1259,21 @@ class ApiService {
     const response = await this.api.post(`/publico/${subdominio}/auth/cambiar-password-token`, data);
     return response.data;
   }
+
+  // Métodos de verificación de email
+  async verificarEmail(token: string) {
+    const response = await this.api.post('/verificacion/verificar-email', null, {
+      params: { token }
+    });
+    return response.data;
+  }
+
+  async reenviarEmailVerificacion(email: string) {
+    const response = await this.api.post('/verificacion/reenviar-email', null, {
+      params: { email }
+    });
+    return response.data;
+  }
 }
 
 export default new ApiService();

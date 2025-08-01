@@ -68,15 +68,29 @@ export default function LoginAdministrador() {
       
       // Mostrar mensaje de error específico
       let mensajeError = 'Error al iniciar sesión. Verifica tus credenciales.';
+      let mostrarBotonReenvio = false;
       
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
-        mensajeError = axiosError.response?.data?.error || 
-                      axiosError.response?.data?.message || 
-                      mensajeError;
+        const axiosError = error as { response?: { data?: { error?: string; message?: string; codigo?: string } } };
+        const codigoError = axiosError.response?.data?.codigo;
+        
+        if (codigoError === 'EMAIL_NO_VERIFICADO') {
+          mensajeError = 'Debe verificar su email antes de iniciar sesión. Revise su bandeja de entrada.';
+          mostrarBotonReenvio = true;
+        } else {
+          mensajeError = axiosError.response?.data?.error || 
+                        axiosError.response?.data?.message || 
+                        mensajeError;
+        }
       }
       
       toast.error(mensajeError);
+      
+      // Mostrar botón de reenvío si es necesario
+      if (mostrarBotonReenvio) {
+        // Aquí podrías mostrar un modal o componente para reenviar el email
+        console.log('Mostrar opción de reenvío de email');
+      }
     } finally {
       setCargando(false);
     }

@@ -141,6 +141,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     private boolean isPublicEndpoint(String requestPath) {
         boolean isPublic = requestPath.startsWith("/api/publico/") ||
                           requestPath.startsWith("/api/auth/") ||
+                          requestPath.startsWith("/api/verificacion/") ||
                           requestPath.startsWith("/api/debug/") ||
                           requestPath.startsWith("/api/empresas/registro") ||
                           requestPath.startsWith("/api/empresas/verificar-subdominio/") ||

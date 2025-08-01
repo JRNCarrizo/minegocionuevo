@@ -159,12 +159,13 @@ export default function PaginaRegistro() {
 
     setCargando(true);
     try {
-      await apiService.registrarEmpresa(datos);
+      const respuesta = await apiService.registrarEmpresa(datos);
       setRegistroExitoso(true);
-      toast.success('¡Empresa registrada exitosamente!');
-    } catch (error) {
+      toast.success(respuesta.mensaje || '¡Registro exitoso!');
+    } catch (error: any) {
       console.error('Error en el registro:', error);
-      toast.error('Error al registrar la empresa. Por favor, inténtelo de nuevo.');
+      const mensajeError = error.response?.data?.mensaje || 'Error al registrar la empresa. Por favor, inténtelo de nuevo.';
+      toast.error(mensajeError);
     } finally {
       setCargando(false);
     }
@@ -191,8 +192,14 @@ export default function PaginaRegistro() {
             </div>
             <h1 className="titulo-2 mb-4">¡Registro Exitoso!</h1>
             <p className="texto-medio texto-gris mb-6">
-              Tu empresa ha sido registrada correctamente. En breve recibirás un email con las instrucciones para activar tu cuenta.
+              Tu empresa ha sido registrada correctamente. Se ha enviado un email de verificación a tu dirección de correo.
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h3 className="text-blue-800 font-semibold mb-2">📧 Verifica tu email</h3>
+              <p className="text-blue-700 text-sm">
+                Para activar tu cuenta y comenzar a usar MiNegocio, debes verificar tu email haciendo clic en el enlace que se envió a tu bandeja de entrada.
+              </p>
+            </div>
             <div className="flex flex-columna" style={{ gap: '1rem' }}>
               <Link to="/login" className="boton boton-primario">
                 Ir al Panel de Administración

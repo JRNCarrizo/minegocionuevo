@@ -31,6 +31,7 @@ import AreaPersonalCliente from './pages/AreaPersonalCliente.tsx';
 import ResetPasswordCliente from './pages/ResetPasswordCliente.tsx';
 import RecuperarPasswordCliente from './pages/RecuperarPasswordCliente.tsx';
 import GoogleLogin from './pages/GoogleLogin.tsx';
+import VerificarEmail from './pages/VerificarEmail.tsx';
 
 function AppContent() {
   const { esSubdominioPrincipal, cargando } = useSubdominio();
@@ -55,8 +56,9 @@ function AppContent() {
           <Route path="/recuperar" element={<RecuperarPassword />} />
           <Route path="/reset" element={<NuevaPassword />} />
                      <Route path="/recuperar-contraseña" element={<NuevaPassword />} />
-           <Route path="/google-login" element={<GoogleLogin />} />
-           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                     <Route path="/google-login" element={<GoogleLogin />} />
+          <Route path="/verificar-email" element={<VerificarEmail />} />
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/login" element={<LoginAdministrador />} />
           <Route path="/admin/dashboard" element={<DashboardAdministrador />} />
           <Route path="/admin/productos" element={<GestionProductos />} />

@@ -36,9 +36,10 @@ public class EmpresaController {
             EmpresaDTO empresaDTO = empresaService.registrarEmpresa(registroDTO);
             
             return ResponseEntity.ok(Map.of(
-                "mensaje", "Empresa registrada exitosamente",
+                "mensaje", "Registro exitoso. Revise su email para verificar la cuenta.",
                 "empresa", empresaDTO,
-                "instrucciones", "Revise su email para verificar la cuenta. Su período de prueba de 1 mes ha comenzado."
+                "instrucciones", "Se ha enviado un email de verificación a su dirección de correo. Haga clic en el enlace del email para activar su cuenta y comenzar su período de prueba de 1 mes.",
+                "requiereVerificacion", true
             ));
             
         } catch (RuntimeException e) {

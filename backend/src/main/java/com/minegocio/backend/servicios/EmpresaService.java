@@ -50,6 +50,9 @@ public class EmpresaService {
     
     @Autowired
     private VentaRapidaRepository ventaRapidaRepository;
+    
+    @Autowired
+    private EmailService emailService;
 
     /**
      * Registra una nueva empresa con su administrador
@@ -90,7 +93,7 @@ public class EmpresaService {
 
         empresa = empresaRepository.save(empresa);
 
-        // Crear el usuario administrador
+        // Crear el usuario administrador (inicialmente inactivo hasta verificar email)
         Usuario administrador = new Usuario();
         administrador.setNombre(registroDTO.getNombreAdministrador());
         administrador.setApellidos(registroDTO.getApellidosAdministrador());
@@ -99,9 +102,23 @@ public class EmpresaService {
         administrador.setTelefono(registroDTO.getTelefonoAdministrador());
         administrador.setRol(Usuario.RolUsuario.ADMINISTRADOR);
         administrador.setEmpresa(empresa);
+        administrador.setActivo(false); // Inactivo hasta verificar email
+        administrador.setEmailVerificado(false);
         administrador.setTokenVerificacion(UUID.randomUUID().toString());
 
-        usuarioRepository.save(administrador);
+        administrador = usuarioRepository.save(administrador);
+
+        // Enviar email de verificación
+        try {
+            emailService.enviarEmailVerificacion(
+                administrador.getEmail(),
+                administrador.getNombre(),
+                administrador.getTokenVerificacion()
+            );
+        } catch (Exception e) {
+            System.err.println("Error enviando email de verificación: " + e.getMessage());
+            // No lanzar excepción para no fallar el registro
+        }
 
         return new EmpresaDTO(empresa);
     }
@@ -395,6 +412,81 @@ public class EmpresaService {
         System.out.println("  - Color Card Filtros: " + empresa.getColorCardFiltros());
         System.out.println("=== FIN DEBUG ACTUALIZAR CONFIGURACIÓN ===");
         return new EmpresaDTO(empresa);
+    }
+
+    /**
+     * Verifica el email de un usuario usando el token de verificación
+     */
+    public boolean verificarEmailUsuario(String tokenVerificacion) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByTokenVerificacion(tokenVerificacion);
+        
+        if (usuarioOpt.isEmpty()) {
+            return false;
+        }
+        
+        Usuario usuario = usuarioOpt.get();
+        
+        // Verificar que el token no haya expirado (24 horas)
+        if (usuario.getFechaCreacion().plusHours(24).isBefore(LocalDateTime.now())) {
+            return false;
+        }
+        
+        // Activar el usuario y marcar email como verificado
+        usuario.setActivo(true);
+        usuario.setEmailVerificado(true);
+        usuario.setTokenVerificacion(null); // Limpiar token usado
+        
+        usuarioRepository.save(usuario);
+        
+        // Enviar email de bienvenida
+        try {
+            emailService.enviarEmailBienvenida(
+                usuario.getEmail(),
+                usuario.getNombre(),
+                usuario.getEmpresa().getNombre()
+            );
+        } catch (Exception e) {
+            System.err.println("Error enviando email de bienvenida: " + e.getMessage());
+        }
+        
+        return true;
+    }
+
+    /**
+     * Reenvía el email de verificación
+     */
+    public boolean reenviarEmailVerificacion(String email) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+        
+        if (usuarioOpt.isEmpty()) {
+            return false;
+        }
+        
+        Usuario usuario = usuarioOpt.get();
+        
+        // Solo reenviar si el email no está verificado
+        if (usuario.getEmailVerificado()) {
+            return false;
+        }
+        
+        // Generar nuevo token si no tiene uno
+        if (usuario.getTokenVerificacion() == null) {
+            usuario.setTokenVerificacion(UUID.randomUUID().toString());
+            usuarioRepository.save(usuario);
+        }
+        
+        // Enviar email de verificación
+        try {
+            emailService.enviarEmailVerificacion(
+                usuario.getEmail(),
+                usuario.getNombre(),
+                usuario.getTokenVerificacion()
+            );
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error reenviando email de verificación: " + e.getMessage());
+            return false;
+        }
     }
 
     /**
