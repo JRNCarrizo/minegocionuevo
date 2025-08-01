@@ -44,7 +44,11 @@ class ApiService {
            /\/auth\/validar-token/.test(config.url) ||
            /\/auth\/cambiar-password/.test(config.url) ||
            /\/empresas\/registro/.test(config.url) ||
-           /\/empresas\/verificar-subdominio/.test(config.url))
+           /\/empresas\/verificar-subdominio/.test(config.url) ||
+           /\/verificacion\/verificar-email/.test(config.url) ||
+           /\/verificacion\/reenviar-email/.test(config.url) ||
+           /\/verificacion-cliente\/verificar-email/.test(config.url) ||
+           /\/verificacion-cliente\/reenviar-email/.test(config.url))
         ) {
           console.log('🔓 Endpoint público - sin token');
           delete config.headers.Authorization;
