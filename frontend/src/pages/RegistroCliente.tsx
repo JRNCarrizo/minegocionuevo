@@ -67,7 +67,7 @@ const RegistroCliente: React.FC = () => {
       if (response.requiereVerificacion) {
         toast.success('¡Cuenta creada exitosamente! Por favor, verifica tu email para activar tu cuenta.');
         reset();
-        navigate('/login');
+        navigate(`/confirmacion-registro?email=${encodeURIComponent(datos.email)}`);
       } else {
         toast.success('¡Cuenta creada exitosamente!');
         reset();

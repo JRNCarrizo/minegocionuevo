@@ -33,6 +33,7 @@ import RecuperarPasswordCliente from './pages/RecuperarPasswordCliente.tsx';
 import GoogleLogin from './pages/GoogleLogin.tsx';
 import VerificarEmail from './pages/VerificarEmail.tsx';
 import VerificarEmailCliente from './pages/VerificarEmailCliente.tsx';
+import ConfirmacionRegistro from './pages/ConfirmacionRegistro.tsx';
 
 function AppContent() {
   const { esSubdominioPrincipal, cargando } = useSubdominio();
@@ -86,6 +87,7 @@ function AppContent() {
           <Route path="/producto/:id" element={<ProductoPublico />} />
           <Route path="/login" element={<LoginCliente />} />
           <Route path="/registro" element={<RegistroCliente />} />
+          <Route path="/confirmacion-registro" element={<ConfirmacionRegistro />} />
           <Route path="/reset-password" element={<ResetPasswordCliente />} />
           <Route path="/recuperar-password" element={<RecuperarPasswordCliente />} />
           <Route path="/verificar-email" element={<VerificarEmailCliente />} />
