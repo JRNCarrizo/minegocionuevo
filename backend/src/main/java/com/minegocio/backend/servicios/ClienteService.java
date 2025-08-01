@@ -128,7 +128,12 @@ public class ClienteService {
         cliente.setCiudad(clienteDTO.getCiudad());
         cliente.setPais(clienteDTO.getPais());
         cliente.setCodigoPostal(clienteDTO.getCodigoPostal());
-        cliente.setActivo(true);
+        
+        // Establecer estado de activación y verificación según el DTO
+        cliente.setActivo(clienteDTO.getActivo() != null ? clienteDTO.getActivo() : true);
+        cliente.setEmailVerificado(clienteDTO.getEmailVerificado() != null ? clienteDTO.getEmailVerificado() : false);
+        cliente.setTokenVerificacion(clienteDTO.getTokenVerificacion());
+        
         cliente.setEmpresa(empresa);
         
         System.out.println("Entidad Cliente antes de guardar:");
@@ -199,6 +204,8 @@ public class ClienteService {
         dto.setPais(cliente.getPais());
         dto.setCodigoPostal(cliente.getCodigoPostal());
         dto.setActivo(cliente.getActivo());
+        dto.setEmailVerificado(cliente.getEmailVerificado());
+        dto.setTokenVerificacion(cliente.getTokenVerificacion());
         dto.setEmpresaId(cliente.getEmpresa().getId());
         dto.setEmpresaNombre(cliente.getEmpresa().getNombre());
         dto.setPassword(cliente.getPassword()); // ¡IMPORTANTE! Incluir la contraseña
@@ -334,5 +341,21 @@ public class ClienteService {
             System.err.println("Error reenviando email de verificación de cliente: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Marca un cliente como verificado (usado para Google login)
+     */
+    public ClienteDTO marcarClienteComoVerificado(Long empresaId, Long clienteId) {
+        Cliente cliente = clienteRepository.findByIdAndEmpresaIdAndActivoTrue(clienteId, empresaId)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        
+        // Marcar como verificado y limpiar token
+        cliente.setEmailVerificado(true);
+        cliente.setTokenVerificacion(null);
+        
+        clienteRepository.save(cliente);
+        
+        return convertirADTOConEstadisticas(cliente);
     }
 }

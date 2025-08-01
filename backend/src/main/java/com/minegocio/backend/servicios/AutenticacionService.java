@@ -185,6 +185,7 @@ public class AutenticacionService {
         if (usuarioOpt.isEmpty()) {
             System.out.println("Usuario nuevo con Google: " + email);
             // Para usuarios nuevos, lanzamos una excepción especial
+            // (Se maneja en el controlador para redirigir al registro)
             throw new RuntimeException("USUARIO_NUEVO_GOOGLE");
         }
 
@@ -198,10 +199,23 @@ public class AutenticacionService {
             throw new RuntimeException("Cuenta deshabilitada");
         }
 
-        // Para Google, asumimos que el email ya está verificado
-        // Podemos actualizar la información del usuario si es necesario
+        // Para Google, marcamos automáticamente como verificado y activo
+        boolean necesitaGuardar = false;
+        
+        if (!usuarioEntity.getEmailVerificado()) {
+            System.out.println("Marcando usuario como verificado por Google");
+            usuarioEntity.setEmailVerificado(true);
+            usuarioEntity.setTokenVerificacion(null); // Limpiar token de verificación
+            necesitaGuardar = true;
+        }
+        
+        // Actualizar información del usuario si es necesario
         if (usuarioEntity.getNombre() == null || usuarioEntity.getNombre().isEmpty()) {
             usuarioEntity.setNombre(name);
+            necesitaGuardar = true;
+        }
+        
+        if (necesitaGuardar) {
             usuarioRepository.save(usuarioEntity);
         }
 

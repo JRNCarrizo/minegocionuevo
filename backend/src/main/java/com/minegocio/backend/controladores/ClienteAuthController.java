@@ -279,19 +279,47 @@ public class ClienteAuthController {
             
             // Buscar cliente por email
             Optional<ClienteDTO> clienteOpt = clienteService.obtenerClientePorEmail(empresa.getId(), email);
+            ClienteDTO cliente;
+            
             if (clienteOpt.isEmpty()) {
-                return ResponseEntity.status(401).body(Map.of(
-                    "error", "No existe una cuenta con este email de Google. Por favor, regístrate primero."
-                ));
-            }
-            
-            ClienteDTO cliente = clienteOpt.get();
-            
-            // Verificar que el cliente esté activo
-            if (!cliente.getActivo()) {
-                return ResponseEntity.status(401).body(Map.of(
-                    "error", "Cuenta deshabilitada"
-                ));
+                // Cliente no existe, crearlo automáticamente con Google
+                System.out.println("Cliente no encontrado, creando nuevo cliente con Google");
+                
+                // Extraer nombre y apellidos del nombre completo de Google
+                String[] nombreCompleto = name != null ? name.split(" ", 2) : new String[]{"Usuario", "Google"};
+                String nombre = nombreCompleto[0];
+                String apellidos = nombreCompleto.length > 1 ? nombreCompleto[1] : "";
+                
+                // Crear nuevo cliente DTO
+                ClienteDTO nuevoClienteDTO = new ClienteDTO();
+                nuevoClienteDTO.setNombre(nombre);
+                nuevoClienteDTO.setApellidos(apellidos);
+                nuevoClienteDTO.setEmail(email);
+                nuevoClienteDTO.setTelefono("");
+                nuevoClienteDTO.setPassword(""); // No se necesita password para Google
+                nuevoClienteDTO.setActivo(true); // Activo inmediatamente
+                nuevoClienteDTO.setEmailVerificado(true); // Verificado automáticamente por Google
+                nuevoClienteDTO.setTokenVerificacion(null); // No necesita token de verificación
+                
+                // Crear el cliente
+                cliente = clienteService.crearCliente(empresa.getId(), nuevoClienteDTO);
+                System.out.println("Nuevo cliente creado con Google: " + cliente.getId());
+                
+            } else {
+                // Cliente existe, verificar que esté activo y marcar como verificado si no lo está
+                cliente = clienteOpt.get();
+                
+                if (!cliente.getActivo()) {
+                    return ResponseEntity.status(401).body(Map.of(
+                        "error", "Cuenta deshabilitada"
+                    ));
+                }
+                
+                // Si el cliente no está verificado, marcarlo como verificado automáticamente
+                if (!cliente.getEmailVerificado()) {
+                    System.out.println("Cliente encontrado pero no verificado, marcando como verificado por Google");
+                    cliente = clienteService.marcarClienteComoVerificado(empresa.getId(), cliente.getId());
+                }
             }
             
             // Generar token JWT
@@ -313,6 +341,8 @@ public class ClienteAuthController {
             ));
             
         } catch (Exception e) {
+            System.err.println("Error en login Google: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                 "error", "Error interno del servidor",
                 "detalle", e.getMessage()
