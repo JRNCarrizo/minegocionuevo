@@ -78,4 +78,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * Cuenta usuarios activos en todo el sistema
      */
     Long countByActivoTrue();
+
+    /**
+     * Busca usuarios por ID de empresa
+     */
+    List<Usuario> findByEmpresaId(Long empresaId);
 }

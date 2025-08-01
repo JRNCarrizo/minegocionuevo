@@ -294,4 +294,23 @@ public class EmailService {
         message.setText(contenido);
         mailSender.send(message);
     }
+
+    /**
+     * Envía un email genérico
+     */
+    public void enviarEmail(String emailDestinatario, String asunto, String contenido) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        
+        message.setFrom(fromEmail);
+        message.setTo(emailDestinatario);
+        message.setSubject(asunto);
+        message.setText(contenido);
+        
+        try {
+            mailSender.send(message);
+            System.out.println("✅ Email enviado exitosamente a: " + emailDestinatario);
+        } catch (Exception e) {
+            System.err.println("❌ Error al enviar email: " + e.getMessage());
+        }
+    }
 } 

@@ -7,7 +7,7 @@ import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.repositorios.TokenRecuperacionRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +28,7 @@ public class RecuperacionPasswordService {
     private EmailService emailService;
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     /**
      * Solicita la recuperación de contraseña

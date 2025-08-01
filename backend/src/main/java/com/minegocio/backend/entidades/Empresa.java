@@ -115,6 +115,15 @@ public class Empresa {
     @Column(name = "activa")
     private Boolean activa = true;
 
+    @Column(name = "fecha_baja")
+    private LocalDateTime fechaBaja;
+
+    @Column(name = "motivo_baja", length = 500)
+    private String motivoBaja;
+
+    @Column(name = "baja_permanente")
+    private Boolean bajaPermanente = false;
+
     // Relaciones
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Usuario> usuarios = new HashSet<>();
@@ -244,4 +253,33 @@ public class Empresa {
 
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
     public void setFechaActualizacion(LocalDateTime fechaActualizacion) { this.fechaActualizacion = fechaActualizacion; }
+
+    // Métodos para baja de cuenta
+    public LocalDateTime getFechaBaja() { return fechaBaja; }
+    public void setFechaBaja(LocalDateTime fechaBaja) { this.fechaBaja = fechaBaja; }
+
+    public String getMotivoBaja() { return motivoBaja; }
+    public void setMotivoBaja(String motivoBaja) { this.motivoBaja = motivoBaja; }
+
+    public Boolean getBajaPermanente() { return bajaPermanente; }
+    public void setBajaPermanente(Boolean bajaPermanente) { this.bajaPermanente = bajaPermanente; }
+
+    // Métodos de utilidad para baja
+    public boolean estaDadaDeBaja() {
+        return !activa && fechaBaja != null;
+    }
+
+    public void darDeBaja(String motivo, boolean permanente) {
+        this.activa = false;
+        this.fechaBaja = LocalDateTime.now();
+        this.motivoBaja = motivo;
+        this.bajaPermanente = permanente;
+    }
+
+    public void reactivar() {
+        this.activa = true;
+        this.fechaBaja = null;
+        this.motivoBaja = null;
+        this.bajaPermanente = false;
+    }
 }

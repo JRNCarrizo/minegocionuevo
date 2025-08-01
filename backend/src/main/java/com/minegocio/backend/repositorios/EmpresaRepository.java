@@ -87,4 +87,24 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
      * Nota: Este método no está implementado porque Empresa no tiene campo ultimoAcceso
      */
     // long countByUltimoAccesoBefore(LocalDateTime fecha);
+
+    /**
+     * Busca empresas dadas de baja
+     */
+    List<Empresa> findByActivaFalseAndFechaBajaIsNotNull();
+
+    /**
+     * Cuenta empresas activas
+     */
+    long countByActivaTrue();
+
+    /**
+     * Cuenta empresas dadas de baja
+     */
+    long countByActivaFalseAndFechaBajaIsNotNull();
+
+    /**
+     * Cuenta empresas con baja permanente
+     */
+    long countByBajaPermanenteTrue();
 }
