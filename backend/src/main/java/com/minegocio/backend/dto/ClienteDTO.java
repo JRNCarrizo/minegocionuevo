@@ -45,6 +45,7 @@ public class ClienteDTO {
     // Campos para autenticación
     private String password;
     private Boolean emailVerificado;
+    private String tokenVerificacion;
     
     // Campos para estadísticas de compras
     private Integer totalPedidos;
@@ -184,6 +185,14 @@ public class ClienteDTO {
     
     public void setEmailVerificado(Boolean emailVerificado) {
         this.emailVerificado = emailVerificado;
+    }
+    
+    public String getTokenVerificacion() {
+        return tokenVerificacion;
+    }
+    
+    public void setTokenVerificacion(String tokenVerificacion) {
+        this.tokenVerificacion = tokenVerificacion;
     }
     
     // Getters y setters para estadísticas de compras

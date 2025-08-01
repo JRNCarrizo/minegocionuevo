@@ -229,6 +229,50 @@ public class EmailService {
     }
 
     /**
+     * Envía un email de verificación para clientes
+     */
+    public void enviarEmailVerificacionCliente(String emailDestinatario, String nombreUsuario, String tokenVerificacion, String subdominio) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        
+        message.setFrom(fromEmail);
+        message.setTo(emailDestinatario);
+        message.setSubject("Verifica tu cuenta - Tu Tienda");
+        
+        // Construir el enlace dinámicamente basado en el subdominio y la URL del frontend
+        String baseUrl = frontendUrl;
+        if (baseUrl.contains("localhost")) {
+            // Para desarrollo, usar el formato subdominio.localhost:5173
+            baseUrl = "http://" + subdominio + ".localhost:5173";
+        } else {
+            // Para producción, usar el formato subdominio.negocio360.org
+            baseUrl = "https://" + subdominio + ".negocio360.org";
+        }
+        
+        String enlaceVerificacion = baseUrl + "/verificar-email?token=" + tokenVerificacion;
+        
+        String contenido = String.format(
+            "Hola %s,\n\n" +
+            "Gracias por registrarte en nuestra tienda.\n\n" +
+            "Para activar tu cuenta, haz clic en el siguiente enlace:\n" +
+            "%s\n\n" +
+            "Este enlace expirará en 24 horas.\n\n" +
+            "Si no creaste esta cuenta, puedes ignorar este email.\n\n" +
+            "Saludos,\n" +
+            "Tu tienda",
+            nombreUsuario, enlaceVerificacion
+        );
+        
+        message.setText(contenido);
+        
+        try {
+            mailSender.send(message);
+            System.out.println("✅ Email de verificación de cliente enviado exitosamente a: " + emailDestinatario);
+        } catch (Exception e) {
+            System.err.println("❌ Error al enviar email de verificación de cliente: " + e.getMessage());
+        }
+    }
+
+    /**
      * Envía email de bienvenida después de verificar la cuenta
      */
     public void enviarEmailBienvenida(String emailDestinatario, String nombreUsuario, String nombreEmpresa) {

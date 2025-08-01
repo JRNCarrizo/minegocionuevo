@@ -57,7 +57,9 @@ export default function LoginCliente() {
       
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { data?: { error?: string; mensaje?: string } } };
-        if (axiosError.response?.data?.error) {
+        if (axiosError.response?.data?.error === 'EMAIL_NO_VERIFICADO') {
+          mensaje = 'Debes verificar tu email antes de poder iniciar sesión. Revisa tu bandeja de entrada.';
+        } else if (axiosError.response?.data?.error) {
           mensaje = axiosError.response.data.error;
         } else if (axiosError.response?.data?.mensaje) {
           mensaje = axiosError.response.data.mensaje;

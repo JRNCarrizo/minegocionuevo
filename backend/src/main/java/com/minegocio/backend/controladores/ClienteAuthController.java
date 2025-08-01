@@ -112,8 +112,9 @@ public class ClienteAuthController {
             nuevoClienteDTO.setEmail(registroDTO.getEmail());
             nuevoClienteDTO.setTelefono(registroDTO.getTelefono());
             nuevoClienteDTO.setPassword(passwordEncriptado);
-            nuevoClienteDTO.setActivo(true);
-            nuevoClienteDTO.setEmailVerificado(true); // Por simplicidad, por ahora no requiere verificación
+            nuevoClienteDTO.setActivo(false); // Inactivo hasta verificar email
+            nuevoClienteDTO.setEmailVerificado(false);
+            nuevoClienteDTO.setTokenVerificacion(UUID.randomUUID().toString());
             
             System.out.println("Datos del ClienteDTO creado:");
             System.out.println("  Nombre: '" + nuevoClienteDTO.getNombre() + "'");
@@ -123,12 +124,22 @@ public class ClienteAuthController {
             
             ClienteDTO clienteCreado = clienteService.crearCliente(empresa.getId(), nuevoClienteDTO);
             
-            // Generar token JWT para el cliente
-            String token = generarTokenCliente(clienteCreado, empresa);
+            // Enviar email de verificación
+            try {
+                emailService.enviarEmailVerificacionCliente(
+                    clienteCreado.getEmail(),
+                    clienteCreado.getNombre(),
+                    clienteCreado.getTokenVerificacion(),
+                    empresa.getSubdominio()
+                );
+            } catch (Exception e) {
+                System.err.println("Error enviando email de verificación al cliente: " + e.getMessage());
+                // No lanzar excepción para no fallar el registro
+            }
             
             return ResponseEntity.status(201).body(Map.of(
-                "mensaje", "Cliente registrado exitosamente",
-                "token", token,
+                "mensaje", "Cliente registrado exitosamente. Por favor, verifica tu email para activar tu cuenta.",
+                "requiereVerificacion", true,
                 "cliente", Map.of(
                     "id", clienteCreado.getId(),
                     "nombre", clienteCreado.getNombre(),
@@ -200,6 +211,14 @@ public class ClienteAuthController {
             if (!cliente.getActivo()) {
                 return ResponseEntity.status(401).body(Map.of(
                     "error", "Cuenta deshabilitada"
+                ));
+            }
+            
+            // Verificar que el email esté verificado
+            if (!cliente.getEmailVerificado()) {
+                return ResponseEntity.status(403).body(Map.of(
+                    "error", "EMAIL_NO_VERIFICADO",
+                    "mensaje", "Debes verificar tu email antes de poder iniciar sesión"
                 ));
             }
             

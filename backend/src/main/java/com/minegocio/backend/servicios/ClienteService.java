@@ -33,6 +33,9 @@ public class ClienteService {
     
     @Autowired
     private NotificacionService notificacionService;
+    
+    @Autowired
+    private EmailService emailService;
 
     public List<ClienteDTO> obtenerTodosLosClientes(Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId)
@@ -261,5 +264,75 @@ public class ClienteService {
         dto.setDetalles(new java.util.ArrayList<>());
         
         return dto;
+    }
+
+    /**
+     * Verifica el email de un cliente usando el token de verificación
+     */
+    public boolean verificarEmailCliente(String tokenVerificacion) {
+        Optional<Cliente> clienteOpt = clienteRepository.findByTokenVerificacion(tokenVerificacion);
+        
+        if (clienteOpt.isEmpty()) {
+            return false;
+        }
+        
+        Cliente cliente = clienteOpt.get();
+        
+        // Verificar que el token no haya expirado (24 horas)
+        if (cliente.getFechaCreacion().plusHours(24).isBefore(java.time.LocalDateTime.now())) {
+            return false;
+        }
+        
+        // Activar el cliente y marcar email como verificado
+        cliente.setActivo(true);
+        cliente.setEmailVerificado(true);
+        cliente.setTokenVerificacion(null); // Limpiar token usado
+        
+        clienteRepository.save(cliente);
+        
+        return true;
+    }
+
+    /**
+     * Reenvía el email de verificación para un cliente
+     */
+    public boolean reenviarEmailVerificacionCliente(String email, String subdominio) {
+        // Buscar cliente por email en la empresa específica
+        Optional<Empresa> empresaOpt = empresaRepository.findBySubdominio(subdominio);
+        if (empresaOpt.isEmpty()) {
+            return false;
+        }
+        
+        Optional<Cliente> clienteOpt = clienteRepository.findByEmailAndEmpresaIdAndActivoTrue(email, empresaOpt.get().getId());
+        if (clienteOpt.isEmpty()) {
+            return false;
+        }
+        
+        Cliente cliente = clienteOpt.get();
+        
+        // Solo reenviar si el email no está verificado
+        if (cliente.getEmailVerificado()) {
+            return false;
+        }
+        
+        // Generar nuevo token si no tiene uno
+        if (cliente.getTokenVerificacion() == null) {
+            cliente.setTokenVerificacion(java.util.UUID.randomUUID().toString());
+            clienteRepository.save(cliente);
+        }
+        
+        // Enviar email de verificación
+        try {
+            emailService.enviarEmailVerificacionCliente(
+                cliente.getEmail(),
+                cliente.getNombre(),
+                cliente.getTokenVerificacion(),
+                subdominio
+            );
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error reenviando email de verificación de cliente: " + e.getMessage());
+            return false;
+        }
     }
 }

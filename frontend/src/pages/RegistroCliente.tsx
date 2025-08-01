@@ -62,13 +62,17 @@ const RegistroCliente: React.FC = () => {
         password: datos.contraseña
       };
       
-      await api.registrarCliente(subdominio, datosCliente);
+      const response = await api.registrarCliente(subdominio, datosCliente);
 
-      toast.success('¡Cuenta creada exitosamente!');
-      reset();
-      
-      // Redirigir al login después de registro exitoso
-      navigate('/login');
+      if (response.requiereVerificacion) {
+        toast.success('¡Cuenta creada exitosamente! Por favor, verifica tu email para activar tu cuenta.');
+        reset();
+        navigate('/login');
+      } else {
+        toast.success('¡Cuenta creada exitosamente!');
+        reset();
+        navigate('/login');
+      }
       
     } catch (error: unknown) {
       const mensaje = error instanceof Error ? error.message : 'Error al crear la cuenta';

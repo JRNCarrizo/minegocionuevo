@@ -1274,6 +1274,17 @@ class ApiService {
     });
     return response.data;
   }
+
+  // Métodos de verificación de email para clientes
+  async verificarEmailCliente(token: string) {
+    const response = await this.api.post('/verificacion-cliente/verificar-email', { token });
+    return response.data;
+  }
+
+  async reenviarEmailVerificacionCliente(email: string, subdominio: string) {
+    const response = await this.api.post('/verificacion-cliente/reenviar-email', { email, subdominio });
+    return response.data;
+  }
 }
 
 export default new ApiService();
