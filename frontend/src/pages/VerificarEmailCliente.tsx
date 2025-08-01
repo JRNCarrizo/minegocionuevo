@@ -19,12 +19,24 @@ export default function VerificarEmailCliente() {
       return;
     }
 
-    verificarEmail(token);
+    // Obtener el subdominio de la URL actual
+    const hostname = window.location.hostname;
+    let subdominio = '';
+    
+    if (hostname.includes('localhost')) {
+      // Para desarrollo: subdominio.localhost:5173
+      subdominio = hostname.split('.')[0];
+    } else {
+      // Para producción: subdominio.negocio360.org
+      subdominio = hostname.split('.')[0];
+    }
+
+    verificarEmail(token, subdominio);
   }, [searchParams]);
 
-  const verificarEmail = async (token: string) => {
+  const verificarEmail = async (token: string, subdominio: string) => {
     try {
-      const response = await api.verificarEmailCliente(token);
+      const response = await api.verificarEmailCliente(token, subdominio);
       
       if (response.exito) {
         setVerificado(true);

@@ -1280,8 +1280,8 @@ class ApiService {
   }
 
   // Métodos de verificación de email para clientes
-  async verificarEmailCliente(token: string) {
-    const response = await this.api.post('/verificacion-cliente/verificar-email', { token });
+  async verificarEmailCliente(token: string, subdominio: string) {
+    const response = await this.api.post('/verificacion-cliente/verificar-email', { token, subdominio });
     return response.data;
   }
 

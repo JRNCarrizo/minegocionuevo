@@ -2,6 +2,8 @@ package com.minegocio.backend.controladores;
 
 import com.minegocio.backend.servicios.ClienteService;
 import com.minegocio.backend.servicios.EmailService;
+import com.minegocio.backend.servicios.EmpresaService;
+import com.minegocio.backend.entidades.Empresa;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,9 @@ public class VerificacionClienteController {
 
     @Autowired
     private EmailService emailService;
+    
+    @Autowired
+    private EmpresaService empresaService;
 
     /**
      * Verifica el email de un cliente usando el token de verificación
@@ -31,6 +36,7 @@ public class VerificacionClienteController {
     public ResponseEntity<?> verificarEmail(@RequestBody Map<String, String> request) {
         try {
             String token = request.get("token");
+            String subdominio = request.get("subdominio");
             
             if (token == null || token.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
@@ -38,8 +44,25 @@ public class VerificacionClienteController {
                     "mensaje", "Token de verificación requerido"
                 ));
             }
+            
+            if (subdominio == null || subdominio.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "exito", false,
+                    "mensaje", "Subdominio requerido"
+                ));
+            }
 
-            boolean verificado = clienteService.verificarEmailCliente(token);
+            // Verificar que la empresa existe
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            if (empresaOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "exito", false,
+                    "mensaje", "Empresa no encontrada"
+                ));
+            }
+            
+            Empresa empresa = empresaOpt.get();
+            boolean verificado = clienteService.verificarEmailCliente(token, empresa.getId());
             
             if (verificado) {
                 return ResponseEntity.ok(Map.of(

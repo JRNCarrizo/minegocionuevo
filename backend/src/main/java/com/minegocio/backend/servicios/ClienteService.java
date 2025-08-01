@@ -299,8 +299,8 @@ public class ClienteService {
     /**
      * Verifica el email de un cliente usando el token de verificación
      */
-    public boolean verificarEmailCliente(String tokenVerificacion) {
-        Optional<Cliente> clienteOpt = clienteRepository.findByTokenVerificacion(tokenVerificacion);
+    public boolean verificarEmailCliente(String tokenVerificacion, Long empresaId) {
+        Optional<Cliente> clienteOpt = clienteRepository.findByTokenVerificacionAndEmpresaId(tokenVerificacion, empresaId);
         
         if (clienteOpt.isEmpty()) {
             return false;

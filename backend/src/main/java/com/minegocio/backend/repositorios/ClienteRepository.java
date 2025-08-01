@@ -55,6 +55,11 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     Optional<Cliente> findByTokenVerificacion(String token);
 
     /**
+     * Busca cliente por token de verificación y empresa ID
+     */
+    Optional<Cliente> findByTokenVerificacionAndEmpresaId(String token, Long empresaId);
+
+    /**
      * Busca clientes por empresa y estado de verificación de email
      */
     List<Cliente> findByEmpresaAndEmailVerificado(Empresa empresa, Boolean emailVerificado);
