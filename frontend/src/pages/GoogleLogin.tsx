@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
@@ -16,6 +16,7 @@ export default function GoogleLogin() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const hasStarted = useRef(false);
 
   const login = useGoogleLogin({
     onSuccess: async (response) => {
@@ -135,19 +136,20 @@ export default function GoogleLogin() {
     const subdominioParam = searchParams.get('subdominio');
     
     console.log('GoogleLogin - Subdominio:', subdominioParam);
+    console.log('Has started:', hasStarted.current);
     
-    // Iniciar automáticamente el flujo de Google si tenemos el subdominio
-    if (subdominioParam) {
+    // Iniciar automáticamente el flujo de Google solo una vez
+    if (subdominioParam && !hasStarted.current) {
       console.log('Iniciando flujo de Google automáticamente...');
+      hasStarted.current = true;
+      
       // Pequeño delay para que la página se cargue completamente
-      const timer = setTimeout(() => {
+      setTimeout(() => {
         console.log('Ejecutando login()...');
         login();
       }, 100);
-      
-      return () => clearTimeout(timer);
     }
-  }, [searchParams, login]);
+  }, [searchParams]);
 
   return (
     <div style={{
@@ -209,8 +211,6 @@ export default function GoogleLogin() {
             Conectando con Google...
           </span>
         </div>
-
-
 
         {!searchParams.get('subdominio') && (
           <p style={{
