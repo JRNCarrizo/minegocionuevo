@@ -4,6 +4,7 @@ import ConfirmarCompraModal from "./ConfirmarCompraModal";
 import apiService from "../services/api";
 import { useSubdominio } from "../hooks/useSubdominio";
 import toast from "react-hot-toast";
+import * as cookies from "../utils/cookies";
 
 interface CartModalProps {
   open: boolean;
@@ -12,7 +13,14 @@ interface CartModalProps {
 }
 
 const getClienteInfo = () => {
-  const cliente = localStorage.getItem("clienteInfo");
+  // Buscar en cookies primero (se comparte entre subdominios)
+  let cliente = cookies.getCookie("clienteInfo");
+  
+  // Si no está en cookies, buscar en localStorage
+  if (!cliente) {
+    cliente = localStorage.getItem("clienteInfo");
+  }
+  
   if (cliente) {
     try {
       return JSON.parse(cliente);

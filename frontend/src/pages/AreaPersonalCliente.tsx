@@ -7,6 +7,7 @@ import CartModal from '../components/CartModal';
 import NavbarCliente from '../components/NavbarCliente';
 import ProductoDetalleModal from '../components/ProductoDetalleModal';
 import api from '../services/api';
+import * as cookies from '../utils/cookies';
 import type { Pedido, DetallePedido, ProductoFavorito, Producto } from '../types';
 
 interface ClienteInfo {
@@ -567,8 +568,17 @@ export default function AreaPersonalCliente() {
 
   // Verificar si hay un cliente logueado para el navbar
   useEffect(() => {
-    const token = localStorage.getItem('clienteToken');
-    const cliente = localStorage.getItem('clienteInfo');
+    // Buscar token en cookies primero (se comparte entre subdominios)
+    let token = cookies.getCookie('clienteToken');
+    let cliente = cookies.getCookie('clienteInfo');
+    
+    // Si no está en cookies, buscar en localStorage
+    if (!token) {
+      token = localStorage.getItem('clienteToken');
+    }
+    if (!cliente) {
+      cliente = localStorage.getItem('clienteInfo');
+    }
     
     if (token && cliente) {
       try {
@@ -577,6 +587,8 @@ export default function AreaPersonalCliente() {
         console.error('Error al parsear clienteInfo:', error);
         localStorage.removeItem('clienteToken');
         localStorage.removeItem('clienteInfo');
+        cookies.deleteCookie('clienteToken');
+        cookies.deleteCookie('clienteInfo');
       }
     }
   }, []);
@@ -595,7 +607,12 @@ export default function AreaPersonalCliente() {
         return;
       }
 
-      const token = localStorage.getItem('clienteToken');
+      // Buscar token en cookies primero (se comparte entre subdominios)
+      let token = cookies.getCookie('clienteToken');
+      if (!token) {
+        token = localStorage.getItem('clienteToken');
+      }
+      
       if (!token) {
         toast.error('Debes iniciar sesión');
         navigate('/login');
@@ -655,6 +672,8 @@ export default function AreaPersonalCliente() {
         if ((error as { response?: { status?: number } }).response?.status === 401) {
           localStorage.removeItem('clienteToken');
           localStorage.removeItem('clienteInfo');
+          cookies.deleteCookie('clienteToken');
+          cookies.deleteCookie('clienteInfo');
           navigate('/login');
         }
       } finally {
@@ -687,6 +706,8 @@ export default function AreaPersonalCliente() {
   const cerrarSesion = () => {
     localStorage.removeItem('clienteToken');
     localStorage.removeItem('clienteInfo');
+    cookies.deleteCookie('clienteToken');
+    cookies.deleteCookie('clienteInfo');
     setClienteInfo(null);
     toast.success('Sesión cerrada');
     navigate('/');
@@ -742,7 +763,12 @@ export default function AreaPersonalCliente() {
 
     setEditando(true);
     try {
-      const token = localStorage.getItem('clienteToken');
+      // Buscar token en cookies primero (se comparte entre subdominios)
+      let token = cookies.getCookie('clienteToken');
+      if (!token) {
+        token = localStorage.getItem('clienteToken');
+      }
+      
       if (!token) {
         toast.error('Sesión expirada');
         navigate('/login');
@@ -821,7 +847,12 @@ export default function AreaPersonalCliente() {
 
     setCambiandoPassword(true);
     try {
-      const token = localStorage.getItem('clienteToken');
+      // Buscar token en cookies primero (se comparte entre subdominios)
+      let token = cookies.getCookie('clienteToken');
+      if (!token) {
+        token = localStorage.getItem('clienteToken');
+      }
+      
       if (!token) {
         toast.error('Sesión expirada');
         navigate('/login');
@@ -890,7 +921,12 @@ export default function AreaPersonalCliente() {
     
     const subdominioDesarrollo = localStorage.getItem('subdominio-desarrollo');
     const subdominioFinal = subdominio || subdominioDesarrollo;
-    const token = localStorage.getItem('clienteToken');
+    
+    // Buscar token en cookies primero (se comparte entre subdominios)
+    let token = cookies.getCookie('clienteToken');
+    if (!token) {
+      token = localStorage.getItem('clienteToken');
+    }
     
     if (!subdominioFinal || !token) {
       toast.error('Error de autenticación');
@@ -913,7 +949,12 @@ export default function AreaPersonalCliente() {
   const agregarFavorito = async (productoId: number) => {
     const subdominioDesarrollo = localStorage.getItem('subdominio-desarrollo');
     const subdominioFinal = subdominio || subdominioDesarrollo;
-    const token = localStorage.getItem('clienteToken');
+    
+    // Buscar token en cookies primero (se comparte entre subdominios)
+    let token = cookies.getCookie('clienteToken');
+    if (!token) {
+      token = localStorage.getItem('clienteToken');
+    }
     
     if (!subdominioFinal || !token) {
       toast.error('Error de autenticación');
@@ -937,7 +978,12 @@ export default function AreaPersonalCliente() {
   const removerFavorito = async (productoId: number) => {
     const subdominioDesarrollo = localStorage.getItem('subdominio-desarrollo');
     const subdominioFinal = subdominio || subdominioDesarrollo;
-    const token = localStorage.getItem('clienteToken');
+    
+    // Buscar token en cookies primero (se comparte entre subdominios)
+    let token = cookies.getCookie('clienteToken');
+    if (!token) {
+      token = localStorage.getItem('clienteToken');
+    }
     
     if (!subdominioFinal || !token) {
       toast.error('Error de autenticación');

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useSubdominio } from '../hooks/useSubdominio';
 import api from '../services/api';
+import * as cookies from '../utils/cookies';
 
 interface ClienteInfo {
   id: number;
@@ -20,8 +21,17 @@ export default function AreaPersonal() {
 
   useEffect(() => {
     const cargarPerfilCliente = async () => {
-      const token = localStorage.getItem('clienteToken');
-      const clienteInfo = localStorage.getItem('clienteInfo');
+      // Buscar token en cookies primero (se comparte entre subdominios)
+      let token = cookies.getCookie('clienteToken');
+      let clienteInfo = cookies.getCookie('clienteInfo');
+      
+      // Si no está en cookies, buscar en localStorage
+      if (!token) {
+        token = localStorage.getItem('clienteToken');
+      }
+      if (!clienteInfo) {
+        clienteInfo = localStorage.getItem('clienteInfo');
+      }
       
       if (!token || !clienteInfo) {
         toast.error('Debes iniciar sesión para acceder a esta área');
@@ -43,6 +53,8 @@ export default function AreaPersonal() {
         // Si hay error, limpiar datos y redirigir al login
         localStorage.removeItem('clienteToken');
         localStorage.removeItem('clienteInfo');
+        cookies.deleteCookie('clienteToken');
+        cookies.deleteCookie('clienteInfo');
         toast.error('Sesión expirada. Inicia sesión nuevamente');
         navigate('/cliente/login');
       } finally {
@@ -56,6 +68,8 @@ export default function AreaPersonal() {
   const cerrarSesion = () => {
     localStorage.removeItem('clienteToken');
     localStorage.removeItem('clienteInfo');
+    cookies.deleteCookie('clienteToken');
+    cookies.deleteCookie('clienteInfo');
     toast.success('Has cerrado sesión');
     navigate('/');
   };
