@@ -74,6 +74,14 @@ public class ClienteService {
         Optional<Cliente> cliente = clienteRepository.findByEmailAndEmpresaIdAndActivoTrue(email, empresaId);
         return cliente.map(this::convertirADTOConEstadisticas);
     }
+
+    /**
+     * Obtiene un cliente por email sin importar su estado de activación
+     */
+    public Optional<ClienteDTO> obtenerClientePorEmailCualquierEstado(Long empresaId, String email) {
+        Optional<Cliente> cliente = clienteRepository.findByEmailAndEmpresaId(email, empresaId);
+        return cliente.map(this::convertirADTOConEstadisticas);
+    }
     
     /**
      * Obtiene un cliente con su historial completo de pedidos

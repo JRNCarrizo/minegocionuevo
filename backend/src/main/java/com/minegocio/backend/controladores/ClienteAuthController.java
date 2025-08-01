@@ -87,11 +87,23 @@ public class ClienteAuthController {
             
             Empresa empresa = empresaOpt.get();
             
-            // Verificar que el email no esté en uso
-            Optional<ClienteDTO> clienteExistente = clienteService.obtenerClientePorEmail(empresa.getId(), registroDTO.getEmail());
+            // Verificar que el email no esté en uso (incluyendo clientes no verificados)
+            Optional<ClienteDTO> clienteExistente = clienteService.obtenerClientePorEmailCualquierEstado(empresa.getId(), registroDTO.getEmail());
             if (clienteExistente.isPresent()) {
+                ClienteDTO cliente = clienteExistente.get();
+                
+                // Si el cliente existe pero no está verificado, permitir reenviar el email de verificación
+                if (!cliente.getEmailVerificado()) {
+                    return ResponseEntity.status(409).body(Map.of(
+                        "error", "El email ya está registrado pero no ha sido verificado. Revisa tu correo electrónico o solicita un nuevo enlace de verificación.",
+                        "emailNoVerificado", true,
+                        "email", cliente.getEmail()
+                    ));
+                }
+                
+                // Si el cliente existe y está verificado, no permitir registro
                 return ResponseEntity.status(409).body(Map.of(
-                    "error", "El email ya está registrado"
+                    "error", "El email ya está registrado y verificado. Puedes iniciar sesión directamente."
                 ));
             }
             

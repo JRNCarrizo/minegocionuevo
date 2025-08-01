@@ -75,8 +75,31 @@ const RegistroCliente: React.FC = () => {
       }
       
     } catch (error: unknown) {
-      const mensaje = error instanceof Error ? error.message : 'Error al crear la cuenta';
-      toast.error(mensaje);
+      console.error('Error en registro:', error);
+      
+      // Manejar errores específicos
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as any;
+        
+        if (axiosError.response?.status === 409) {
+          const errorData = axiosError.response.data;
+          
+          if (errorData.emailNoVerificado) {
+            toast.error('Este email ya está registrado pero no ha sido verificado. Revisa tu correo electrónico o solicita un nuevo enlace de verificación.');
+          } else {
+            toast.error('Este email ya está registrado y verificado. Puedes iniciar sesión directamente.');
+          }
+        } else if (axiosError.response?.status === 400) {
+          toast.error('Datos de registro inválidos. Por favor, verifica la información ingresada.');
+        } else if (axiosError.response?.status === 404) {
+          toast.error('Tienda no encontrada.');
+        } else {
+          toast.error(axiosError.response?.data?.error || 'Error al crear la cuenta');
+        }
+      } else {
+        const mensaje = error instanceof Error ? error.message : 'Error al crear la cuenta';
+        toast.error(mensaje);
+      }
     } finally {
       setCargando(false);
     }

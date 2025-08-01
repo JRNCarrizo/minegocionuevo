@@ -96,6 +96,11 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     Optional<Cliente> findByEmailAndEmpresaIdAndActivoTrue(String email, Long empresaId);
 
     /**
+     * Busca cliente por email y empresa ID (sin importar estado de activación)
+     */
+    Optional<Cliente> findByEmailAndEmpresaId(String email, Long empresaId);
+
+    /**
      * Cuenta clientes activos por empresa
      */
     Long countByEmpresaAndActivoTrue(Empresa empresa);
