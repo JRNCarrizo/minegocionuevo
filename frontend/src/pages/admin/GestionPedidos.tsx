@@ -250,14 +250,25 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
               <div style={{
                 background: '#f8fafc',
                 borderRadius: '12px',
-                padding: '20px',
+                padding: isMobile ? '16px' : '20px',
                 marginBottom: '24px',
                 border: '1px solid #e2e8f0'
               }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+                <h3 style={{ 
+                  margin: '0 0 12px 0', 
+                  fontSize: isMobile ? '16px' : '18px', 
+                  fontWeight: '600', 
+                  color: '#1e293b' 
+                }}>
                   📍 Dirección de Entrega
                 </h3>
-                <p style={{ margin: 0, fontSize: '16px', color: '#475569', lineHeight: '1.5' }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: isMobile ? '14px' : '16px', 
+                  color: '#475569', 
+                  lineHeight: '1.5',
+                  wordBreak: 'break-word'
+                }}>
                   {pedido.direccionEntrega}
                 </p>
               </div>
@@ -265,17 +276,22 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
 
             {/* Productos */}
             <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
+              <h3 style={{ 
+                margin: '0 0 16px 0', 
+                fontSize: isMobile ? '18px' : '20px', 
+                fontWeight: '600', 
+                color: '#1e293b' 
+              }}>
                 🛍️ Productos ({pedido.detalles?.length || 0})
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
                 {pedido.detalles?.map((detalle, index) => (
                   <div 
                     key={detalle.id || index} 
                     style={{
                       background: '#fff',
                       borderRadius: '12px',
-                      padding: '20px',
+                      padding: isMobile ? '16px' : '20px',
                       border: '2px solid #e2e8f0',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
@@ -291,16 +307,24 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
                     }}
                     onClick={() => verDetalleProducto(detalle)}
                   >
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                      {/* Imagen del producto */}
-                      <div style={{ flexShrink: 0 }}>
+                    {/* Layout principal del producto - Responsive */}
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: isMobile ? 'column' : 'row',
+                      gap: isMobile ? '12px' : '16px' 
+                    }}>
+                      {/* Imagen del producto - Responsive */}
+                      <div style={{ 
+                        flexShrink: 0,
+                        alignSelf: isMobile ? 'center' : 'flex-start'
+                      }}>
                         {detalle.productoImagen ? (
                           <img 
                             src={detalle.productoImagen} 
                             alt={detalle.productoNombre || detalle.nombreProducto}
                             style={{
-                              width: '80px',
-                              height: '80px',
+                              width: isMobile ? '60px' : '80px',
+                              height: isMobile ? '60px' : '80px',
                               objectFit: 'cover',
                               borderRadius: '12px',
                               border: '2px solid #e2e8f0'
@@ -311,8 +335,8 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
                           />
                         ) : (
                           <div style={{
-                            width: '80px',
-                            height: '80px',
+                            width: isMobile ? '60px' : '80px',
+                            height: isMobile ? '60px' : '80px',
                             background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
                             borderRadius: '12px',
                             border: '2px solid #e2e8f0',
@@ -320,33 +344,47 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
                             alignItems: 'center',
                             justifyContent: 'center'
                           }}>
-                            <span style={{ fontSize: '12px', color: '#64748b', textAlign: 'center' }}>
+                            <span style={{ 
+                              fontSize: isMobile ? '10px' : '12px', 
+                              color: '#64748b', 
+                              textAlign: 'center' 
+                            }}>
                               Sin imagen
                             </span>
                           </div>
                         )}
                       </div>
                       
-                      {/* Información del producto */}
+                      {/* Información del producto - Responsive */}
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                          <div style={{ flex: 1 }}>
+                        {/* Header del producto - Responsive */}
+                        <div style={{ 
+                          display: 'flex', 
+                          flexDirection: isMobile ? 'column' : 'row',
+                          justifyContent: 'space-between', 
+                          alignItems: isMobile ? 'flex-start' : 'flex-start', 
+                          marginBottom: '8px',
+                          gap: isMobile ? '8px' : '0'
+                        }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <h4 style={{ 
                               margin: '0 0 4px 0', 
-                              fontSize: '16px', 
+                              fontSize: isMobile ? '14px' : '16px', 
                               fontWeight: '600', 
                               color: '#1e293b',
-                              lineHeight: '1.3'
+                              lineHeight: '1.3',
+                              wordBreak: 'break-word'
                             }}>
                               {detalle.productoNombre || detalle.nombreProducto}
                             </h4>
                             {(detalle.productoMarca || detalle.marcaProducto) && (
                               <p style={{ 
                                 margin: '0 0 8px 0', 
-                                fontSize: '14px', 
+                                fontSize: isMobile ? '12px' : '14px', 
                                 color: '#64748b',
                                 lineHeight: '1.4',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                wordBreak: 'break-word'
                               }}>
                                 🏷️ {detalle.productoMarca || detalle.marcaProducto}
                               </p>
@@ -356,70 +394,114 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
                                 display: 'inline-block',
                                 background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
                                 color: '#1e40af',
-                                fontSize: '12px',
-                                padding: '4px 12px',
+                                fontSize: isMobile ? '10px' : '12px',
+                                padding: isMobile ? '3px 8px' : '4px 12px',
                                 borderRadius: '12px',
                                 fontWeight: '500',
-                                border: '1px solid #93c5fd'
+                                border: '1px solid #93c5fd',
+                                wordBreak: 'break-word'
                               }}>
                                 {detalle.productoCategoria || detalle.categoriaProducto}
                               </span>
                             )}
                           </div>
                           
-                          {/* Precios */}
-                          <div style={{ textAlign: 'right', marginLeft: '16px' }}>
-                            <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b' }}>
+                          {/* Precios - Responsive */}
+                          <div style={{ 
+                            textAlign: isMobile ? 'left' : 'right', 
+                            marginLeft: isMobile ? '0' : '16px',
+                            alignSelf: isMobile ? 'flex-start' : 'flex-end'
+                          }}>
+                            <p style={{ 
+                              margin: '0 0 4px 0', 
+                              fontSize: isMobile ? '10px' : '12px', 
+                              color: '#64748b' 
+                            }}>
                               Precio unitario
                             </p>
-                            <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#059669' }}>
+                            <p style={{ 
+                              margin: 0, 
+                              fontSize: isMobile ? '14px' : '16px', 
+                              fontWeight: '600', 
+                              color: '#059669' 
+                            }}>
                               ${detalle.precioUnitario?.toFixed(2)}
                             </p>
                           </div>
                         </div>
                         
-                        {/* Cantidad y subtotal */}
+                        {/* Cantidad y subtotal - Responsive */}
                         <div style={{ 
                           display: 'flex', 
+                          flexDirection: isMobile ? 'column' : 'row',
                           justifyContent: 'space-between', 
-                          alignItems: 'center',
+                          alignItems: isMobile ? 'flex-start' : 'center',
                           padding: '12px 0',
                           borderTop: '1px solid #f1f5f9',
-                          marginTop: '12px'
+                          marginTop: '12px',
+                          gap: isMobile ? '8px' : '0'
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '14px', color: '#64748b' }}>Cantidad:</span>
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px',
+                            flexWrap: 'wrap'
+                          }}>
                             <span style={{ 
-                              fontSize: '16px', 
+                              fontSize: isMobile ? '12px' : '14px', 
+                              color: '#64748b' 
+                            }}>
+                              Cantidad:
+                            </span>
+                            <span style={{ 
+                              fontSize: isMobile ? '14px' : '16px', 
                               fontWeight: '600', 
                               color: '#1e293b',
                               background: '#f1f5f9',
-                              padding: '4px 12px',
+                              padding: isMobile ? '3px 8px' : '4px 12px',
                               borderRadius: '8px'
                             }}>
                               {detalle.cantidad}
                             </span>
                           </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b' }}>
+                          <div style={{ 
+                            textAlign: isMobile ? 'left' : 'right',
+                            alignSelf: isMobile ? 'flex-start' : 'flex-end'
+                          }}>
+                            <p style={{ 
+                              margin: '0 0 4px 0', 
+                              fontSize: isMobile ? '10px' : '12px', 
+                              color: '#64748b' 
+                            }}>
                               Subtotal
                             </p>
-                            <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>
+                            <p style={{ 
+                              margin: 0, 
+                              fontSize: isMobile ? '16px' : '18px', 
+                              fontWeight: '700', 
+                              color: '#1e293b' 
+                            }}>
                               ${detalle.subtotal?.toFixed(2) || detalle.precioTotal?.toFixed(2)}
                             </p>
                           </div>
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Indicador de click - Responsive */}
                     <div style={{ 
                       textAlign: 'center', 
                       marginTop: '12px',
-                      padding: '8px',
+                      padding: isMobile ? '6px' : '8px',
                       background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
                       borderRadius: '8px',
                       border: '1px solid #bae6fd'
                     }}>
-                      <span style={{ fontSize: '12px', color: '#0369a1', fontWeight: '500' }}>
+                      <span style={{ 
+                        fontSize: isMobile ? '10px' : '12px', 
+                        color: '#0369a1', 
+                        fontWeight: '500' 
+                      }}>
                         👆 Haz clic para ver más detalles del producto
                       </span>
                     </div>
@@ -432,47 +514,109 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
             <div style={{
               background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
               borderRadius: '16px',
-              padding: '24px',
+              padding: isMobile ? '16px' : '24px',
               border: '2px solid #e2e8f0'
             }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
+              <h3 style={{ 
+                margin: '0 0 16px 0', 
+                fontSize: isMobile ? '18px' : '20px', 
+                fontWeight: '600', 
+                color: '#1e293b' 
+              }}>
                 💰 Resumen de Totales
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '16px', color: '#64748b' }}>Subtotal:</span>
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '12px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: isMobile ? 'column' : 'row',
+                  justifyContent: 'space-between', 
+                  alignItems: isMobile ? 'flex-start' : 'center',
+                  gap: isMobile ? '4px' : '0'
+                }}>
+                  <span style={{ 
+                    fontSize: isMobile ? '14px' : '16px', 
+                    color: '#64748b' 
+                  }}>
+                    Subtotal:
+                  </span>
+                  <span style={{ 
+                    fontSize: isMobile ? '14px' : '16px', 
+                    fontWeight: '600', 
+                    color: '#1e293b' 
+                  }}>
                     ${pedido.subtotal?.toFixed(2) || pedido.total?.toFixed(2)}
                   </span>
                 </div>
                 {pedido.impuestos && pedido.impuestos > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '16px', color: '#64748b' }}>Impuestos:</span>
-                    <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: isMobile ? 'column' : 'row',
+                    justifyContent: 'space-between', 
+                    alignItems: isMobile ? 'flex-start' : 'center',
+                    gap: isMobile ? '4px' : '0'
+                  }}>
+                    <span style={{ 
+                      fontSize: isMobile ? '14px' : '16px', 
+                      color: '#64748b' 
+                    }}>
+                      Impuestos:
+                    </span>
+                    <span style={{ 
+                      fontSize: isMobile ? '14px' : '16px', 
+                      fontWeight: '600', 
+                      color: '#1e293b' 
+                    }}>
                       ${pedido.impuestos.toFixed(2)}
                     </span>
                   </div>
                 )}
                 {pedido.descuento && pedido.descuento > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '16px', color: '#64748b' }}>Descuento:</span>
-                    <span style={{ fontSize: '16px', fontWeight: '600', color: '#059669' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: isMobile ? 'column' : 'row',
+                    justifyContent: 'space-between', 
+                    alignItems: isMobile ? 'flex-start' : 'center',
+                    gap: isMobile ? '4px' : '0'
+                  }}>
+                    <span style={{ 
+                      fontSize: isMobile ? '14px' : '16px', 
+                      color: '#64748b' 
+                    }}>
+                      Descuento:
+                    </span>
+                    <span style={{ 
+                      fontSize: isMobile ? '14px' : '16px', 
+                      fontWeight: '600', 
+                      color: '#059669' 
+                    }}>
                       -${pedido.descuento.toFixed(2)}
                     </span>
                   </div>
                 )}
                 <div style={{ 
                   display: 'flex', 
+                  flexDirection: isMobile ? 'column' : 'row',
                   justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  padding: '16px 0',
+                  alignItems: isMobile ? 'flex-start' : 'center',
+                  padding: isMobile ? '12px 0' : '16px 0',
                   borderTop: '2px solid #cbd5e1',
-                  marginTop: '8px'
+                  marginTop: '8px',
+                  gap: isMobile ? '8px' : '0'
                 }}>
-                  <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1e293b' }}>
+                  <h3 style={{ 
+                    margin: 0, 
+                    fontSize: isMobile ? '18px' : '20px', 
+                    fontWeight: '700', 
+                    color: '#1e293b' 
+                  }}>
                     Total del Pedido
                   </h3>
-                  <p style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#059669' }}>
+                  <p style={{ 
+                    margin: 0, 
+                    fontSize: isMobile ? '20px' : '24px', 
+                    fontWeight: '800', 
+                    color: '#059669' 
+                  }}>
                     ${pedido.total?.toFixed(2)}
                   </p>
                 </div>
