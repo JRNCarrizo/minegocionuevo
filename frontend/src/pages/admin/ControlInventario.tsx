@@ -113,9 +113,14 @@ const ControlInventario: React.FC = () => {
       console.log('📋 Cargando historial de inventarios físicos...');
       const response = await inventarioService.obtenerHistorialInventariosFisicos(0, 50);
       
-      if (response.success && response.data) {
+      console.log('📋 Respuesta completa del servicio:', response);
+      
+      if (response && response.success && response.data) {
         console.log('✅ Historial de inventarios físicos cargado:', response.data);
-        const inventarios = response.data.content || [];
+        const inventarios = response.data.content || response.data || [];
+        
+        console.log('📋 Inventarios procesados:', inventarios);
+        console.log('📋 Cantidad de inventarios:', inventarios.length);
         
         // Debug: verificar las fechas de cada inventario
         inventarios.forEach((inventario: { id: number; fecha: string }, index: number) => {
@@ -128,8 +133,11 @@ const ControlInventario: React.FC = () => {
         });
         
         setHistorialInventarios(inventarios);
+        console.log('✅ Estado actualizado con', inventarios.length, 'inventarios');
       } else {
         console.error('❌ Error en respuesta de historial:', response);
+        console.log('📋 Respuesta no exitosa o sin datos');
+        
         // Fallback a localStorage si la API no está disponible
         const historialGuardado = localStorage.getItem(`historialInventarios_${datosUsuario.empresaId}`);
         console.log('🔍 Buscando en localStorage con key:', `historialInventarios_${datosUsuario.empresaId}`);
@@ -140,10 +148,17 @@ const ControlInventario: React.FC = () => {
           setHistorialInventarios(historial);
         } else {
           console.log('❌ No se encontró historial en localStorage');
+          setHistorialInventarios([]);
         }
       }
     } catch (error) {
       console.error('❌ Error al cargar historial de inventarios físicos:', error);
+      console.error('❌ Detalles del error:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+        name: (error as Error).name
+      });
+      
       // Fallback a localStorage si hay error
       const historialGuardado = localStorage.getItem(`historialInventarios_${datosUsuario.empresaId}`);
       console.log('🔍 Fallback: Buscando en localStorage con key:', `historialInventarios_${datosUsuario.empresaId}`);
@@ -154,6 +169,7 @@ const ControlInventario: React.FC = () => {
         setHistorialInventarios(historial);
       } else {
         console.log('❌ No se encontró historial en localStorage (fallback)');
+        setHistorialInventarios([]);
       }
     }
   };
@@ -169,29 +185,56 @@ const ControlInventario: React.FC = () => {
       const response = await inventarioService.obtenerEstadisticas();
       console.log('📊 Respuesta de estadísticas:', response);
       
-      if (response.success) {
+      if (response && response.success) {
         console.log('📊 Estadísticas cargadas:', response.data);
         setEstadisticasOperaciones(response.data);
       } else {
         console.error('❌ Error en respuesta de estadísticas:', response);
+        setEstadisticasOperaciones(null);
       }
     } catch (error) {
       console.error('❌ Error al cargar estadísticas de operaciones:', error);
+      console.error('❌ Detalles del error:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+        name: (error as Error).name
+      });
+      setEstadisticasOperaciones(null);
     }
   };
 
   const cargarHistorialOperaciones = async (pagina: number = 0) => {
     try {
+      console.log('📋 Cargando historial de operaciones - página:', pagina);
       setCargandoHistorial(true);
       const response = await inventarioService.obtenerHistorial(pagina, 20);
-      if (response.success && response.data) {
-        setHistorialOperaciones(response.data.content || []);
+      console.log('📋 Respuesta de historial de operaciones:', response);
+      
+      if (response && response.success && response.data) {
+        console.log('✅ Historial de operaciones cargado:', response.data);
+        const operaciones = response.data.content || response.data || [];
+        console.log('📋 Operaciones procesadas:', operaciones);
+        console.log('📋 Cantidad de operaciones:', operaciones.length);
+        
+        setHistorialOperaciones(operaciones);
         setTotalPaginasHistorial(response.data.totalPages || 0);
         setPaginaHistorial(pagina);
+        console.log('✅ Estado actualizado con', operaciones.length, 'operaciones');
+      } else {
+        console.error('❌ Error en respuesta de historial de operaciones:', response);
+        setHistorialOperaciones([]);
+        setTotalPaginasHistorial(0);
       }
     } catch (error) {
       console.error('Error al cargar historial de operaciones:', error);
+      console.error('❌ Detalles del error:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+        name: (error as Error).name
+      });
       toast.error('Error al cargar el historial de operaciones');
+      setHistorialOperaciones([]);
+      setTotalPaginasHistorial(0);
     } finally {
       setCargandoHistorial(false);
     }
@@ -963,6 +1006,33 @@ const ControlInventario: React.FC = () => {
 
   const toggleSeccion = (seccion: string) => {
     setSeccionExpandida(seccionExpandida === seccion ? null : seccion);
+  };
+
+  // Función de prueba para verificar conectividad con el backend
+  const probarConectividadBackend = async () => {
+    try {
+      console.log('🔧 Probando conectividad con el backend...');
+      
+      // Probar endpoint de estadísticas
+      console.log('📊 Probando endpoint de estadísticas...');
+      const responseEstadisticas = await ApiService.obtenerEstadisticasInventario();
+      console.log('📊 Respuesta estadísticas:', responseEstadisticas);
+      
+      // Probar endpoint de historial
+      console.log('📋 Probando endpoint de historial...');
+      const responseHistorial = await ApiService.obtenerHistorialInventario(0, 10);
+      console.log('📋 Respuesta historial:', responseHistorial);
+      
+      // Probar endpoint de inventarios físicos
+      console.log('📋 Probando endpoint de inventarios físicos...');
+      const responseInventarios = await ApiService.obtenerHistorialInventariosFisicos(0, 10);
+      console.log('📋 Respuesta inventarios físicos:', responseInventarios);
+      
+      toast.success('✅ Pruebas de conectividad completadas. Revisa la consola.');
+    } catch (error) {
+      console.error('❌ Error en pruebas de conectividad:', error);
+      toast.error('❌ Error en pruebas de conectividad. Revisa la consola.');
+    }
   };
 
   // Mostrar estado de carga mientras se cargan los datos del usuario
@@ -1914,6 +1984,71 @@ const ControlInventario: React.FC = () => {
             >
               📊 Operaciones
               </button>
+
+            {/* Botón de debug temporal */}
+            <button
+              onClick={() => {
+                console.log('🔧 DEBUG: Probando funciones de carga...');
+                console.log('🔧 Estado actual:', {
+                  historialInventarios: historialInventarios.length,
+                  historialOperaciones: historialOperaciones.length,
+                  estadisticasOperaciones: estadisticasOperaciones,
+                  datosUsuario: datosUsuario
+                });
+                cargarHistorialInventarios();
+                cargarHistorialOperaciones();
+                cargarEstadisticasOperaciones();
+              }}
+              className="boton boton-secundario"
+              style={{
+                background: '#f59e0b',
+                color: 'white',
+                border: '2px solid #f59e0b',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: isMobile ? '1' : 'auto',
+                minWidth: isMobile ? 'auto' : '120px'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#d97706';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = '#f59e0b';
+              }}
+            >
+              🔧 Debug
+            </button>
+
+            {/* Botón de prueba de conectividad */}
+            <button
+              onClick={probarConectividadBackend}
+              className="boton boton-secundario"
+              style={{
+                background: '#8b5cf6',
+                color: 'white',
+                border: '2px solid #8b5cf6',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: isMobile ? '1' : 'auto',
+                minWidth: isMobile ? 'auto' : '140px'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#7c3aed';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = '#8b5cf6';
+              }}
+            >
+              🌐 Test API
+            </button>
           </div>
 
           {/* Contenido expandible - Inventarios Físicos */}
