@@ -524,33 +524,6 @@ export default function DashboardAdministrador() {
             Bienvenido{datosUsuario?.nombre ? ` ${datosUsuario.nombre}` : ''}. 
             Aquí tienes un resumen de {datosUsuario?.empresaNombre || 'tu negocio'}.
           </p>
-          {/* Botón temporal para reiniciar contadores */}
-          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-            <button
-              onClick={() => {
-                if (datosUsuario?.empresaId) {
-                  localStorage.removeItem(`clientesVistos_${datosUsuario.empresaId}`);
-                  localStorage.removeItem(`pedidosVistos_${datosUsuario.empresaId}`);
-                  setClientesNuevos(0);
-                  setPedidosNuevos(0);
-                  cargarContadoresNuevos();
-                }
-              }}
-              style={{
-                background: '#ef4444',
-                color: 'white',
-                border: 'none',
-                padding: '0.5rem 1rem',
-                borderRadius: '0.5rem',
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                opacity: 0.7
-              }}
-              title="Reiniciar contadores (temporal)"
-            >
-              🔄 Reiniciar contadores
-            </button>
-          </div>
         </div>
 
         {/* Accesos Directos */}
