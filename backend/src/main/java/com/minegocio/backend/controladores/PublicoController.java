@@ -7,6 +7,7 @@ import com.minegocio.backend.servicios.EmpresaService;
 import com.minegocio.backend.servicios.ProductoService;
 import com.minegocio.backend.servicios.ClienteService;
 import com.minegocio.backend.servicios.PedidoService;
+import com.minegocio.backend.servicios.EmailService;
 import com.minegocio.backend.dto.ClienteDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
