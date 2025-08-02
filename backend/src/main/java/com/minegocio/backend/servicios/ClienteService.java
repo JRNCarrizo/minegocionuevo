@@ -371,7 +371,8 @@ public class ClienteService {
                 cliente.getEmail(),
                 cliente.getNombre(),
                 cliente.getTokenVerificacion(),
-                subdominio
+                subdominio,
+                empresaOpt.get().getNombre()
             );
             return true;
         } catch (Exception e) {

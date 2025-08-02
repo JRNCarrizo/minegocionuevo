@@ -244,12 +244,12 @@ public class EmailService {
     /**
      * Envía un email de verificación para clientes
      */
-    public void enviarEmailVerificacionCliente(String emailDestinatario, String nombreUsuario, String tokenVerificacion, String subdominio) {
+    public void enviarEmailVerificacionCliente(String emailDestinatario, String nombreUsuario, String tokenVerificacion, String subdominio, String nombreEmpresa) {
         SimpleMailMessage message = new SimpleMailMessage();
         
         message.setFrom(fromEmail);
         message.setTo(emailDestinatario);
-        message.setSubject("Verifica tu cuenta - Tu Tienda");
+        message.setSubject("Verifica tu cuenta - " + nombreEmpresa);
         
         // Construir el enlace dinámicamente basado en el subdominio y la URL del frontend
         String baseUrl = frontendUrl;
@@ -271,7 +271,7 @@ public class EmailService {
             "Este enlace expirará en 24 horas.\n\n" +
             "Si no creaste esta cuenta, puedes ignorar este email.\n\n" +
             "Saludos,\n" +
-            "Tu tienda",
+            "negocio360",
             nombreUsuario, enlaceVerificacion
         );
         

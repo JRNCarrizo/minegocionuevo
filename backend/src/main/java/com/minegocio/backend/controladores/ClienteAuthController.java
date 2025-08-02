@@ -155,7 +155,8 @@ public class ClienteAuthController {
                     clienteCreado.getEmail(),
                     clienteCreado.getNombre(),
                     clienteCreado.getTokenVerificacion(),
-                    empresa.getSubdominio()
+                    empresa.getSubdominio(),
+                    empresa.getNombre()
                 );
             } catch (Exception e) {
                 System.err.println("Error enviando email de verificación al cliente: " + e.getMessage());
