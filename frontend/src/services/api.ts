@@ -41,7 +41,6 @@ class ApiService {
            /\/publico\/[^/]+\/empresa/.test(config.url) ||
            /\/auth\/login/.test(config.url) ||
            /\/auth\/registrar-administrador/.test(config.url) ||
-           /\/auth\/crear-empresa/.test(config.url) ||
            /\/auth\/verificar-token-admin/.test(config.url) ||
            /\/auth\/recuperar-password/.test(config.url) ||
            /\/auth\/validar-token/.test(config.url) ||
