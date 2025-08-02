@@ -7,6 +7,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
+import com.minegocio.backend.utilidades.FechaUtil;
 
 /**
  * Servicio para el envío de emails
@@ -402,7 +403,7 @@ public class EmailService {
             clienteEmail,
             direccionEntrega,
             total,
-            java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+            FechaUtil.ahora().format(FechaUtil.FORMATO_FECHA_HORA),
             frontendUrl
         );
         
@@ -443,7 +444,7 @@ public class EmailService {
             clienteNombre,
             clienteEmail,
             total,
-            java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+            FechaUtil.ahora().format(FechaUtil.FORMATO_FECHA_HORA)
         );
         
         message.setText(contenido);
