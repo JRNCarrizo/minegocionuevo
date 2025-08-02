@@ -357,14 +357,15 @@ export default function DashboardAdministrador() {
     try {
       const empresaId = datosUsuario.empresaId;
       
-      // Calcular fecha de hace 24 horas
-      const hace24Horas = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      // Obtener IDs de elementos vistos desde localStorage
+      const clientesVistos = JSON.parse(localStorage.getItem(`clientesVistos_${empresaId}`) || '[]');
+      const pedidosVistos = JSON.parse(localStorage.getItem(`pedidosVistos_${empresaId}`) || '[]');
       
-      // Cargar clientes nuevos (creados en las últimas 24 horas)
+      // Cargar clientes nuevos (no vistos)
       try {
         const responseClientes = await ApiService.obtenerClientesPaginado(empresaId, 0, 1000);
         const clientesNuevos = responseClientes.content?.filter((cliente: Cliente) => 
-          new Date(cliente.fechaCreacion) > hace24Horas
+          !clientesVistos.includes(cliente.id)
         ).length || 0;
         setClientesNuevos(clientesNuevos);
       } catch (error) {
@@ -372,11 +373,11 @@ export default function DashboardAdministrador() {
         setClientesNuevos(0);
       }
       
-      // Cargar pedidos nuevos (creados en las últimas 24 horas)
+      // Cargar pedidos nuevos (no vistos)
       try {
         const responsePedidos = await ApiService.obtenerPedidos(empresaId, 0, 1000);
         const pedidosNuevos = responsePedidos.content?.filter((pedido: Pedido) => 
-          new Date(pedido.fechaCreacion) > hace24Horas
+          !pedidosVistos.includes(pedido.id)
         ).length || 0;
         setPedidosNuevos(pedidosNuevos);
       } catch (error) {
@@ -389,13 +390,55 @@ export default function DashboardAdministrador() {
   };
 
   // Función para limpiar contador de clientes nuevos
-  const limpiarContadorClientes = () => {
-    // No hacer nada - los contadores se basan en las últimas 24 horas
+  const limpiarContadorClientes = async () => {
+    if (!datosUsuario?.empresaId) return;
+    
+    try {
+      const empresaId = datosUsuario.empresaId;
+      const response = await ApiService.obtenerClientesPaginado(empresaId, 0, 1000);
+      const todosLosIds = response.content?.map((cliente: Cliente) => cliente.id) || [];
+      localStorage.setItem(`clientesVistos_${empresaId}`, JSON.stringify(todosLosIds));
+      setClientesNuevos(0);
+    } catch (error) {
+      console.error('Error al limpiar contador de clientes:', error);
+    }
   };
 
   // Función para limpiar contador de pedidos nuevos
-  const limpiarContadorPedidos = () => {
-    // No hacer nada - los contadores se basan en las últimas 24 horas
+  const limpiarContadorPedidos = async () => {
+    if (!datosUsuario?.empresaId) return;
+    
+    try {
+      const empresaId = datosUsuario.empresaId;
+      const response = await ApiService.obtenerPedidos(empresaId, 0, 1000);
+      const todosLosIds = response.content?.map((pedido: Pedido) => pedido.id) || [];
+      localStorage.setItem(`pedidosVistos_${empresaId}`, JSON.stringify(todosLosIds));
+      setPedidosNuevos(0);
+    } catch (error) {
+      console.error('Error al limpiar contador de pedidos:', error);
+    }
+  };
+
+  // Función para agregar un nuevo cliente al contador
+  const agregarClienteNuevo = (clienteId: number) => {
+    if (!datosUsuario?.empresaId) return;
+    
+    const empresaId = datosUsuario.empresaId;
+    const clientesVistos = JSON.parse(localStorage.getItem(`clientesVistos_${empresaId}`) || '[]');
+    if (!clientesVistos.includes(clienteId)) {
+      setClientesNuevos(prev => prev + 1);
+    }
+  };
+
+  // Función para agregar un nuevo pedido al contador
+  const agregarPedidoNuevo = (pedidoId: number) => {
+    if (!datosUsuario?.empresaId) return;
+    
+    const empresaId = datosUsuario.empresaId;
+    const pedidosVistos = JSON.parse(localStorage.getItem(`pedidosVistos_${empresaId}`) || '[]');
+    if (!pedidosVistos.includes(pedidoId)) {
+      setPedidosNuevos(prev => prev + 1);
+    }
   };
 
 
@@ -481,6 +524,33 @@ export default function DashboardAdministrador() {
             Bienvenido{datosUsuario?.nombre ? ` ${datosUsuario.nombre}` : ''}. 
             Aquí tienes un resumen de {datosUsuario?.empresaNombre || 'tu negocio'}.
           </p>
+          {/* Botón temporal para reiniciar contadores */}
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <button
+              onClick={() => {
+                if (datosUsuario?.empresaId) {
+                  localStorage.removeItem(`clientesVistos_${datosUsuario.empresaId}`);
+                  localStorage.removeItem(`pedidosVistos_${datosUsuario.empresaId}`);
+                  setClientesNuevos(0);
+                  setPedidosNuevos(0);
+                  cargarContadoresNuevos();
+                }
+              }}
+              style={{
+                background: '#ef4444',
+                color: 'white',
+                border: 'none',
+                padding: '0.5rem 1rem',
+                borderRadius: '0.5rem',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                opacity: 0.7
+              }}
+              title="Reiniciar contadores (temporal)"
+            >
+              🔄 Reiniciar contadores
+            </button>
+          </div>
         </div>
 
         {/* Accesos Directos */}

@@ -535,6 +535,19 @@ export default function GestionClientes() {
   useEffect(() => {
     if (empresaId) {
       cargarClientes();
+      
+      // Marcar todos los clientes como vistos
+      const marcarClientesComoVistos = async () => {
+        try {
+          const response = await api.obtenerClientesPaginado(empresaId, 0, 1000);
+          const todosLosIds = response.content?.map((cliente: Cliente) => cliente.id) || [];
+          localStorage.setItem(`clientesVistos_${empresaId}`, JSON.stringify(todosLosIds));
+        } catch (error) {
+          console.error('Error al marcar clientes como vistos:', error);
+        }
+      };
+      
+      marcarClientesComoVistos();
     }
   }, [empresaId, cargarClientes]);
 

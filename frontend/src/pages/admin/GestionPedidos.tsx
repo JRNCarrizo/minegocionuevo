@@ -931,6 +931,19 @@ export default function GestionPedidos() {
       console.log('useEffect ejecutado con empresaId:', empresaId);
       cargarPedidos();
       cargarEstadisticas();
+      
+      // Marcar todos los pedidos como vistos
+      const marcarPedidosComoVistos = async () => {
+        try {
+          const response = await api.obtenerPedidos(empresaId, 0, 1000);
+          const todosLosIds = response.content?.map((pedido: Pedido) => pedido.id) || [];
+          localStorage.setItem(`pedidosVistos_${empresaId}`, JSON.stringify(todosLosIds));
+        } catch (error) {
+          console.error('Error al marcar pedidos como vistos:', error);
+        }
+      };
+      
+      marcarPedidosComoVistos();
     }
   }, [empresaId]);
 
