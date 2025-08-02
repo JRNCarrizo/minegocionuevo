@@ -72,7 +72,7 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/debug/**").permitAll()
                     .requestMatchers("/api/empresas/registro").permitAll()
                     .requestMatchers("/api/empresas/verificar-subdominio/**").permitAll()
-                    .requestMatchers("/api/empresas/crear-empresa").permitAll()
+                    .requestMatchers("/api/empresas/crear-empresa/**").permitAll()
                     .requestMatchers("/api/archivos/**").permitAll()
                     .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
