@@ -5,7 +5,7 @@ import ApiService from '../services/api';
 import NavbarAdmin from '../components/NavbarAdmin';
 import { useUsuarioActual } from '../hooks/useUsuarioActual';
 import { useResponsive } from '../hooks/useResponsive';
-import type { Notificacion } from '../types';
+import type { Notificacion, Cliente, Pedido } from '../types';
 
 export default function DashboardAdministrador() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
@@ -29,6 +29,10 @@ export default function DashboardAdministrador() {
   const [mostrarTodas, setMostrarTodas] = useState(false);
   const [todasLasNotificaciones, setTodasLasNotificaciones] = useState<Notificacion[]>([]);
   const [cargandoTodas, setCargandoTodas] = useState(false);
+  
+  // Estados para contadores de elementos nuevos
+  const [clientesNuevos, setClientesNuevos] = useState(0);
+  const [pedidosNuevos, setPedidosNuevos] = useState(0);
 
   useEffect(() => {
     const cargarEstadisticas = async () => {
@@ -98,6 +102,13 @@ export default function DashboardAdministrador() {
       setIsResponsiveReady(true);
     }
   }, [width, isMobile, isTablet]);
+
+  // Cargar contadores de elementos nuevos cuando cambie el usuario
+  useEffect(() => {
+    if (datosUsuario?.empresaId) {
+      cargarContadoresNuevos();
+    }
+  }, [datosUsuario?.empresaId]);
 
   // Cargar notificaciones recientes
   useEffect(() => {
@@ -316,6 +327,65 @@ export default function DashboardAdministrador() {
     setMostrarTodas(false);
   };
 
+  // Función para cargar contadores de elementos nuevos
+  const cargarContadoresNuevos = async () => {
+    if (!datosUsuario?.empresaId) return;
+
+    try {
+      const empresaId = datosUsuario.empresaId;
+      
+      // Obtener la última visita a clientes desde localStorage
+      const ultimaVisitaClientes = localStorage.getItem(`ultimaVisitaClientes_${empresaId}`) || '0';
+      const fechaUltimaVisitaClientes = new Date(parseInt(ultimaVisitaClientes));
+      
+      // Obtener la última visita a pedidos desde localStorage
+      const ultimaVisitaPedidos = localStorage.getItem(`ultimaVisitaPedidos_${empresaId}`) || '0';
+      const fechaUltimaVisitaPedidos = new Date(parseInt(ultimaVisitaPedidos));
+      
+      // Cargar clientes nuevos (creados después de la última visita)
+      try {
+        const responseClientes = await ApiService.obtenerClientesPaginado(empresaId, 0, 1000);
+        const clientesNuevos = responseClientes.content?.filter((cliente: Cliente) => 
+          new Date(cliente.fechaCreacion) > fechaUltimaVisitaClientes
+        ).length || 0;
+        setClientesNuevos(clientesNuevos);
+      } catch (error) {
+        console.error('Error al cargar clientes nuevos:', error);
+        setClientesNuevos(0);
+      }
+      
+      // Cargar pedidos nuevos (creados después de la última visita)
+      try {
+        const responsePedidos = await ApiService.obtenerPedidos(empresaId, 0, 1000);
+        const pedidosNuevos = responsePedidos.content?.filter((pedido: Pedido) => 
+          new Date(pedido.fechaCreacion) > fechaUltimaVisitaPedidos
+        ).length || 0;
+        setPedidosNuevos(pedidosNuevos);
+      } catch (error) {
+        console.error('Error al cargar pedidos nuevos:', error);
+        setPedidosNuevos(0);
+      }
+    } catch (error) {
+      console.error('Error al cargar contadores nuevos:', error);
+    }
+  };
+
+  // Función para limpiar contador de clientes nuevos
+  const limpiarContadorClientes = () => {
+    if (datosUsuario?.empresaId) {
+      localStorage.setItem(`ultimaVisitaClientes_${datosUsuario.empresaId}`, Date.now().toString());
+      setClientesNuevos(0);
+    }
+  };
+
+  // Función para limpiar contador de pedidos nuevos
+  const limpiarContadorPedidos = () => {
+    if (datosUsuario?.empresaId) {
+      localStorage.setItem(`ultimaVisitaPedidos_${datosUsuario.empresaId}`, Date.now().toString());
+      setPedidosNuevos(0);
+    }
+  };
+
   // Mostrar pantalla de carga mientras el responsive se detecta
   if (!isResponsiveReady) {
     return (
@@ -474,6 +544,7 @@ export default function DashboardAdministrador() {
           {/* Card Clientes */}
           <Link 
             to="/admin/clientes"
+            onClick={limpiarContadorClientes}
             style={{
               background: 'white',
               borderRadius: isMobile ? '0.75rem' : '1rem',
@@ -484,7 +555,8 @@ export default function DashboardAdministrador() {
               color: 'inherit',
               transition: 'all 0.3s ease',
               display: 'block',
-              animation: 'slideInUp 0.6s ease-out 0.2s both'
+              animation: 'slideInUp 0.6s ease-out 0.2s both',
+              position: 'relative'
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.transform = 'translateY(-8px)';
@@ -504,6 +576,29 @@ export default function DashboardAdministrador() {
               textAlign: 'center',
               height: '100%'
             }}>
+              {/* Indicador de clientes nuevos */}
+              {clientesNuevos > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: isMobile ? '0.5rem' : '1rem',
+                  right: isMobile ? '0.5rem' : '1rem',
+                  background: '#ef4444',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: isMobile ? '1.5rem' : '2rem',
+                  height: isMobile ? '1.5rem' : '2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  fontWeight: '600',
+                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                  animation: 'pulse 2s infinite',
+                  zIndex: 10
+                }}>
+                  {clientesNuevos > 99 ? '99+' : clientesNuevos}
+                </div>
+              )}
               <div style={{
                 width: '4rem',
                 height: '4rem',
@@ -539,6 +634,7 @@ export default function DashboardAdministrador() {
           {/* Card Pedidos */}
           <Link 
             to="/admin/pedidos"
+            onClick={limpiarContadorPedidos}
             style={{
               background: 'white',
               borderRadius: isMobile ? '0.75rem' : '1rem',
@@ -549,7 +645,8 @@ export default function DashboardAdministrador() {
               color: 'inherit',
               transition: 'all 0.3s ease',
               display: 'block',
-              animation: 'slideInUp 0.6s ease-out 0.3s both'
+              animation: 'slideInUp 0.6s ease-out 0.3s both',
+              position: 'relative'
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.transform = 'translateY(-8px)';
@@ -569,6 +666,29 @@ export default function DashboardAdministrador() {
               textAlign: 'center',
               height: '100%'
             }}>
+              {/* Indicador de pedidos nuevos */}
+              {pedidosNuevos > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: isMobile ? '0.5rem' : '1rem',
+                  right: isMobile ? '0.5rem' : '1rem',
+                  background: '#ef4444',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: isMobile ? '1.5rem' : '2rem',
+                  height: isMobile ? '1.5rem' : '2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  fontWeight: '600',
+                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                  animation: 'pulse 2s infinite',
+                  zIndex: 10
+                }}>
+                  {pedidosNuevos > 99 ? '99+' : pedidosNuevos}
+                </div>
+              )}
               <div style={{
                 width: '4rem',
                 height: '4rem',
@@ -1416,6 +1536,21 @@ export default function DashboardAdministrador() {
           
           .notification-time {
             font-size: 0.65rem !important;
+          }
+        }
+        
+        @keyframes pulse {
+          0% {
+            transform: scale(1);
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+          }
+          50% {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.5);
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
           }
         }
       `}</style>
