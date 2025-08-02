@@ -225,7 +225,7 @@ public class EmailService {
             "Hola %s,\n\n" +
             "Gracias por registrarte en %s. Para completar tu registro, " +
             "por favor verifica tu cuenta haciendo clic en el siguiente enlace:\n\n" +
-            "%s/verificar-email?token=%s\n\n" +
+            "%s/verificar-email-admin?token=%s\n\n" +
             "Este enlace expirará en 24 horas.\n\n" +
             "Si no solicitaste este registro, puedes ignorar este email.\n\n" +
             "Saludos,\n" +

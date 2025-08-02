@@ -150,6 +150,61 @@ public class AutenticacionController {
     }
 
     /**
+     * Verifica el token de verificación de email del administrador
+     */
+    @PostMapping("/verificar-token-admin")
+    public ResponseEntity<?> verificarTokenAdmin(@RequestBody Map<String, String> request) {
+        try {
+            System.out.println("=== VERIFICACIÓN TOKEN ADMIN ===");
+            String token = request.get("token");
+            System.out.println("Token recibido: " + token);
+            
+            if (token == null || token.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Token requerido"));
+            }
+            
+            // Buscar usuario por token de verificación
+            var usuarioOpt = usuarioRepository.findByTokenVerificacion(token);
+            if (usuarioOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Token de verificación inválido"));
+            }
+            
+            Usuario usuario = usuarioOpt.get();
+            System.out.println("Usuario encontrado: " + usuario.getEmail());
+            
+            // Verificar que el usuario no esté ya verificado
+            if (usuario.getEmailVerificado()) {
+                return ResponseEntity.ok(Map.of(
+                    "mensaje", "Email ya verificado",
+                    "emailVerificado", true,
+                    "redirectTo", "/configurar-empresa"
+                ));
+            }
+            
+            // Marcar email como verificado
+            usuario.setEmailVerificado(true);
+            usuario.setTokenVerificacion(null); // Limpiar token usado
+            usuarioRepository.save(usuario);
+            
+            System.out.println("✅ Email verificado para: " + usuario.getEmail());
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Email verificado exitosamente",
+                "emailVerificado", true,
+                "redirectTo", "/configurar-empresa",
+                "email", usuario.getEmail()
+            ));
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error verificando token: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+
+    /**
      * Cierra sesión (invalidar token en el cliente)
      */
     @PostMapping("/logout")
@@ -316,8 +371,7 @@ public class AutenticacionController {
             System.out.println("✅ Empresa temporal creada: " + empresaTemporal.getId());
             System.out.println("Token de verificación: " + tokenVerificacion);
             
-            // Enviar email de verificación (temporalmente comentado para diagnosticar)
-            /*
+            // Enviar email de verificación
             try {
                 emailService.enviarEmailVerificacion(nuevoUsuario.getEmail(), nuevoUsuario.getNombre(), tokenVerificacion);
                 System.out.println("✅ Email de verificación enviado");
@@ -325,7 +379,6 @@ public class AutenticacionController {
                 System.out.println("❌ Error enviando email: " + e.getMessage());
                 // No fallar el registro si el email no se puede enviar
             }
-            */
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Administrador registrado exitosamente",
