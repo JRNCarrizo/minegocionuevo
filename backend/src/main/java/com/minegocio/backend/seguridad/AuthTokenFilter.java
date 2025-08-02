@@ -139,8 +139,16 @@ public class AuthTokenFilter extends OncePerRequestFilter {
      * Verifica si el endpoint es público y no requiere autenticación
      */
     private boolean isPublicEndpoint(String requestPath) {
+        // Endpoints específicos de /api/auth/ que son públicos
+        boolean isPublicAuth = requestPath.equals("/api/auth/login") ||
+                              requestPath.equals("/api/auth/registrar-administrador") ||
+                              requestPath.equals("/api/auth/verificar-token-admin") ||
+                              requestPath.equals("/api/auth/recuperar-password") ||
+                              requestPath.startsWith("/api/auth/validar-token/") ||
+                              requestPath.equals("/api/auth/cambiar-password");
+        
         boolean isPublic = requestPath.startsWith("/api/publico/") ||
-                          requestPath.startsWith("/api/auth/") ||
+                          isPublicAuth ||
                           requestPath.startsWith("/api/verificacion/") ||
                           requestPath.startsWith("/api/verificacion-cliente/") ||
                           requestPath.startsWith("/api/debug/") ||
