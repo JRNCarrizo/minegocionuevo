@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useResponsive } from '../../hooks/useResponsive';
+import { useUsuario } from '../../contexts/UsuarioContext';
 import type { Empresa, ApiError } from '../../types';
 
 interface ConfiguracionEmpresa {
@@ -240,6 +241,7 @@ const CheckboxField = ({
 export default function ConfiguracionEmpresa() {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
+  const { datosUsuario, actualizarEmpresaNombre, cerrarSesion } = useUsuario();
   const [configuracion, setConfiguracion] = useState<ConfiguracionEmpresa>({
     nombre: '',
     descripcion: '',
@@ -287,8 +289,6 @@ export default function ConfiguracionEmpresa() {
   
   // Estado para detectar cambios sin guardar
   const [configuracionOriginal, setConfiguracionOriginal] = useState<ConfiguracionEmpresa | null>(null);
-  const [empresaNombre, setEmpresaNombre] = useState<string>('');
-  const [nombreAdministrador, setNombreAdministrador] = useState<string>('');
 
   const cargarConfiguracion = useCallback(async (mostrarToast = true) => {
     try {
@@ -378,8 +378,7 @@ export default function ConfiguracionEmpresa() {
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        setEmpresaNombre(user.empresaNombre || '');
-        setNombreAdministrador(user.nombre || '');
+
         setEmpresaId(user.empresaId || null); // Asignar el ID de la empresa
       } catch (error) {
         console.error('Error al parsear datos del usuario:', error);
@@ -393,11 +392,7 @@ export default function ConfiguracionEmpresa() {
     cargarConfiguracion(false); // No mostrar toast al cargar la página
   }, [cargarConfiguracion]);
 
-  const cerrarSesion = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/admin/login';
-  };
+
 
   const manejarCambio = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -665,6 +660,10 @@ export default function ConfiguracionEmpresa() {
       
       const response = await ApiService.actualizarEmpresaAdmin(datosEmpresa);
       console.log('✅ Respuesta del servidor:', response);
+      
+      // Actualizar el nombre de la empresa en el contexto global
+      actualizarEmpresaNombre(configuracion.nombre);
+      
       toast.success('Configuración guardada correctamente');
       cargarConfiguracion(false);
     } catch (error: unknown) {
@@ -694,8 +693,8 @@ export default function ConfiguracionEmpresa() {
       <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
         <NavbarAdmin 
           onCerrarSesion={cerrarSesion}
-          empresaNombre={empresaNombre}
-          nombreAdministrador={nombreAdministrador}
+          empresaNombre={datosUsuario?.empresaNombre}
+          nombreAdministrador={datosUsuario?.nombre}
         />
         <div className="contenedor" style={{ 
           paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
@@ -717,8 +716,8 @@ export default function ConfiguracionEmpresa() {
       {/* Navegación */}
       <NavbarAdmin 
         onCerrarSesion={cerrarSesion}
-        empresaNombre={empresaNombre}
-        nombreAdministrador={nombreAdministrador}
+        empresaNombre={datosUsuario?.empresaNombre}
+        nombreAdministrador={datosUsuario?.nombre}
       />
 
       {/* Contenido principal */}
