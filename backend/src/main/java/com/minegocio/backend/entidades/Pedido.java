@@ -49,6 +49,9 @@ public class Pedido {
     @Column(name = "direccion_entrega", length = 500)
     private String direccionEntrega;
 
+    @Column(name = "metodo_pago", length = 50)
+    private String metodoPago;
+
     @Column(name = "fecha_entrega_estimada")
     private LocalDateTime fechaEntregaEstimada;
 
@@ -93,7 +96,7 @@ public class Pedido {
 
     // Enum para estados del pedido
     public enum EstadoPedido {
-        PENDIENTE, CONFIRMADO, PREPARANDO, ENVIADO, ENTREGADO, CANCELADO
+        PENDIENTE, PENDIENTE_PAGO, CONFIRMADO, PREPARANDO, ENVIADO, ENTREGADO, CANCELADO
     }
 
     // Métodos de utilidad
@@ -159,6 +162,9 @@ public class Pedido {
 
     public String getDireccionEntrega() { return direccionEntrega; }
     public void setDireccionEntrega(String direccionEntrega) { this.direccionEntrega = direccionEntrega; }
+
+    public String getMetodoPago() { return metodoPago; }
+    public void setMetodoPago(String metodoPago) { this.metodoPago = metodoPago; }
 
     public LocalDateTime getFechaEntregaEstimada() { return fechaEntregaEstimada; }
     public void setFechaEntregaEstimada(LocalDateTime fechaEntregaEstimada) { this.fechaEntregaEstimada = fechaEntregaEstimada; }

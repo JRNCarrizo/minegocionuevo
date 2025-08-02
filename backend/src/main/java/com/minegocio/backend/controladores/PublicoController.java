@@ -89,6 +89,14 @@ public class PublicoController {
             empresaData.put("moneda", empresa.getMoneda() != null ? empresa.getMoneda() : "USD");
             empresaData.put("instagramUrl", empresa.getInstagramUrl() != null ? empresa.getInstagramUrl() : "");
             empresaData.put("facebookUrl", empresa.getFacebookUrl() != null ? empresa.getFacebookUrl() : "");
+            // Métodos de pago - Transferencia bancaria
+            empresaData.put("transferenciaBancariaHabilitada", empresa.getTransferenciaBancariaHabilitada() != null ? empresa.getTransferenciaBancariaHabilitada() : false);
+            empresaData.put("banco", empresa.getBanco() != null ? empresa.getBanco() : "");
+            empresaData.put("tipoCuenta", empresa.getTipoCuenta() != null ? empresa.getTipoCuenta() : "");
+            empresaData.put("numeroCuenta", empresa.getNumeroCuenta() != null ? empresa.getNumeroCuenta() : "");
+            empresaData.put("cbu", empresa.getCbu() != null ? empresa.getCbu() : "");
+            empresaData.put("alias", empresa.getAlias() != null ? empresa.getAlias() : "");
+            empresaData.put("titular", empresa.getTitular() != null ? empresa.getTitular() : "");
 
             
             Map<String, Object> response = new java.util.HashMap<>();
@@ -101,6 +109,58 @@ public class PublicoController {
             return ResponseEntity.internalServerError().body(Map.of(
                 "error", "Error interno del servidor",
                 "mensaje", "Error al procesar la solicitud"
+            ));
+        }
+    }
+
+    /**
+     * Obtener datos bancarios de una empresa
+     */
+    @GetMapping("/{subdominio}/datos-bancarios")
+    public ResponseEntity<?> obtenerDatosBancarios(@PathVariable String subdominio) {
+        try {
+            System.out.println("Buscando datos bancarios para empresa con subdominio: " + subdominio);
+            Optional<Empresa> empresaOpt = empresaService.obtenerPorSubdominio(subdominio);
+            
+            if (empresaOpt.isEmpty()) {
+                System.out.println("No se encontró empresa con subdominio: " + subdominio);
+                return ResponseEntity.status(404).body(Map.of(
+                    "error", "No se encontró empresa con el subdominio: " + subdominio,
+                    "mensaje", "Empresa no encontrada"
+                ));
+            }
+            
+            Empresa empresa = empresaOpt.get();
+            
+            // Verificar si la transferencia bancaria está habilitada
+            if (empresa.getTransferenciaBancariaHabilitada() == null || !empresa.getTransferenciaBancariaHabilitada()) {
+                return ResponseEntity.status(404).body(Map.of(
+                    "error", "La transferencia bancaria no está habilitada para esta empresa",
+                    "mensaje", "Método de pago no disponible"
+                ));
+            }
+            
+            // Crear respuesta con datos bancarios
+            Map<String, Object> datosBancarios = new java.util.HashMap<>();
+            datosBancarios.put("banco", empresa.getBanco() != null ? empresa.getBanco() : "");
+            datosBancarios.put("tipoCuenta", empresa.getTipoCuenta() != null ? empresa.getTipoCuenta() : "");
+            datosBancarios.put("numeroCuenta", empresa.getNumeroCuenta() != null ? empresa.getNumeroCuenta() : "");
+            datosBancarios.put("cbu", empresa.getCbu() != null ? empresa.getCbu() : "");
+            datosBancarios.put("alias", empresa.getAlias() != null ? empresa.getAlias() : "");
+            datosBancarios.put("titular", empresa.getTitular() != null ? empresa.getTitular() : "");
+            datosBancarios.put("empresaNombre", empresa.getNombre());
+            
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("mensaje", "Datos bancarios obtenidos correctamente");
+            response.put("data", datosBancarios);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("Error al obtener datos bancarios: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Error interno del servidor",
+                "mensaje", "No se pudieron obtener los datos bancarios"
             ));
         }
     }
@@ -875,11 +935,25 @@ public class PublicoController {
             String clienteNombre = (String) pedidoData.get("clienteNombre");
             String clienteEmail = (String) pedidoData.get("clienteEmail");
             String direccionEnvio = (String) pedidoData.get("direccionEnvio");
+            String metodoPago = (String) pedidoData.get("metodoPago");
             Number totalNumber = (Number) pedidoData.get("total");
             BigDecimal total = BigDecimal.valueOf(totalNumber.doubleValue());
             
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> detallesData = (List<Map<String, Object>>) pedidoData.get("detalles");
+            
+            // Validar método de pago
+            String estadoInicial = "PENDIENTE";
+            if ("TRANSFERENCIA".equals(metodoPago)) {
+                // Verificar si la transferencia bancaria está habilitada
+                if (empresa.get().getTransferenciaBancariaHabilitada() == null || !empresa.get().getTransferenciaBancariaHabilitada()) {
+                    var error = java.util.Map.of(
+                        "error", "La transferencia bancaria no está habilitada para esta empresa"
+                    );
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+                }
+                estadoInicial = "PENDIENTE_PAGO";
+            }
             
             // Crear DTO del pedido
             com.minegocio.backend.dto.PedidoDTO pedidoDTO = new com.minegocio.backend.dto.PedidoDTO();
@@ -888,6 +962,8 @@ public class PublicoController {
             pedidoDTO.setDireccionEntrega(direccionEnvio);
             pedidoDTO.setTotal(total);
             pedidoDTO.setEmpresaId(empresaId);
+            pedidoDTO.setEstado(estadoInicial);
+            pedidoDTO.setMetodoPago(metodoPago);
             
             // Si hay clienteId, establecerlo; si no, dejarlo como null
             Object clienteIdObj = pedidoData.get("clienteId");

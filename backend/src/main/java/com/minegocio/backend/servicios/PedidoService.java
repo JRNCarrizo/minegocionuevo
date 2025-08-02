@@ -69,7 +69,15 @@ public class PedidoService {
         pedido.setCliente(cliente); // Puede ser null para pedidos públicos
         pedido.setClienteEmail(pedidoDTO.getClienteEmail()); // Guardar email del cliente
         pedido.setDireccionEntrega(pedidoDTO.getDireccionEntrega());
-        pedido.setEstado(Pedido.EstadoPedido.PENDIENTE);
+        pedido.setMetodoPago(pedidoDTO.getMetodoPago());
+        
+        // Establecer estado según el método de pago
+        if (pedidoDTO.getEstado() != null) {
+            pedido.setEstado(pedidoDTO.getEstado());
+        } else {
+            pedido.setEstado(Pedido.EstadoPedido.PENDIENTE);
+        }
+        
         pedido.setObservaciones(pedidoDTO.getNotas());
         pedido.setNumeroPedido(pedido.generarNumeroPedido());
         
@@ -353,6 +361,7 @@ public class PedidoService {
         dto.setEstado(pedido.getEstado());
         dto.setTotal(pedido.getTotal());
         dto.setDireccionEntrega(pedido.getDireccionEntrega());
+        dto.setMetodoPago(pedido.getMetodoPago());
         dto.setNotas(pedido.getObservaciones());
         dto.setEmpresaId(pedido.getEmpresa().getId());
         dto.setEmpresaNombre(pedido.getEmpresa().getNombre());

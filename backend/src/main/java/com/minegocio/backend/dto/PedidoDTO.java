@@ -33,6 +33,8 @@ public class PedidoDTO {
     @Size(max = 255, message = "La dirección de envío no puede exceder 255 caracteres")
     private String direccionEntrega; // Cambiar direccionEnvio por direccionEntrega
     
+    private String metodoPago; // Método de pago utilizado
+    
     @NotEmpty(message = "El pedido debe tener al menos un detalle")
     @Valid
     private List<DetallePedidoDTO> detalles;
@@ -139,6 +141,14 @@ public class PedidoDTO {
     
     public void setDireccionEntrega(String direccionEntrega) {
         this.direccionEntrega = direccionEntrega;
+    }
+    
+    public String getMetodoPago() {
+        return metodoPago;
+    }
+    
+    public void setMetodoPago(String metodoPago) {
+        this.metodoPago = metodoPago;
     }
     
     public List<DetallePedidoDTO> getDetalles() {

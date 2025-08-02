@@ -102,6 +102,28 @@ public class Empresa {
     @Column(name = "facebook_url", length = 255)
     private String facebookUrl;
 
+    // Métodos de pago - Transferencia bancaria
+    @Column(name = "transferencia_bancaria_habilitada")
+    private Boolean transferenciaBancariaHabilitada = false;
+
+    @Column(name = "banco", length = 100)
+    private String banco;
+
+    @Column(name = "tipo_cuenta", length = 50)
+    private String tipoCuenta;
+
+    @Column(name = "numero_cuenta", length = 50)
+    private String numeroCuenta;
+
+    @Column(name = "cbu", length = 22)
+    private String cbu;
+
+    @Column(name = "alias", length = 50)
+    private String alias;
+
+    @Column(name = "titular", length = 100)
+    private String titular;
+
 
 
     // Estado de la suscripción
@@ -227,6 +249,37 @@ public class Empresa {
 
     public String getFacebookUrl() { return facebookUrl; }
     public void setFacebookUrl(String facebookUrl) { this.facebookUrl = facebookUrl; }
+
+    // Métodos de pago - Transferencia bancaria
+    public Boolean getTransferenciaBancariaHabilitada() { return transferenciaBancariaHabilitada; }
+
+    public void setTransferenciaBancariaHabilitada(Boolean transferenciaBancariaHabilitada) { 
+        this.transferenciaBancariaHabilitada = transferenciaBancariaHabilitada; 
+    }
+
+    public String getBanco() { return banco; }
+
+    public void setBanco(String banco) { this.banco = banco; }
+
+    public String getTipoCuenta() { return tipoCuenta; }
+
+    public void setTipoCuenta(String tipoCuenta) { this.tipoCuenta = tipoCuenta; }
+
+    public String getNumeroCuenta() { return numeroCuenta; }
+
+    public void setNumeroCuenta(String numeroCuenta) { this.numeroCuenta = numeroCuenta; }
+
+    public String getCbu() { return cbu; }
+
+    public void setCbu(String cbu) { this.cbu = cbu; }
+
+    public String getAlias() { return alias; }
+
+    public void setAlias(String alias) { this.alias = alias; }
+
+    public String getTitular() { return titular; }
+
+    public void setTitular(String titular) { this.titular = titular; }
 
 
 

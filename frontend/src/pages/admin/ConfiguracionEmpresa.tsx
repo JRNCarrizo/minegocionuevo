@@ -38,6 +38,14 @@ interface ConfiguracionEmpresa {
   mostrarStock: boolean;
   permitirResenas: boolean;
   mostrarCategorias: boolean;
+  // Métodos de pago
+  transferenciaBancariaHabilitada: boolean;
+  banco: string;
+  tipoCuenta: string;
+  numeroCuenta: string;
+  cbu: string;
+  alias: string;
+  titular: string;
   // Redes sociales
   instagramUrl: string;
   facebookUrl: string;
@@ -272,6 +280,14 @@ export default function ConfiguracionEmpresa() {
     mostrarStock: true,
     permitirResenas: true,
     mostrarCategorias: true,
+    // Métodos de pago
+    transferenciaBancariaHabilitada: false,
+    banco: '',
+    tipoCuenta: '',
+    numeroCuenta: '',
+    cbu: '',
+    alias: '',
+    titular: '',
     instagramUrl: '',
     facebookUrl: ''
   });
@@ -340,7 +356,15 @@ export default function ConfiguracionEmpresa() {
         imagenFondoUrl: empresa.imagenFondoUrl || '',
         moneda: empresa.moneda || 'ARS',
         instagramUrl: empresa.instagramUrl || '',
-        facebookUrl: empresa.facebookUrl || ''
+        facebookUrl: empresa.facebookUrl || '',
+        // Métodos de pago
+        transferenciaBancariaHabilitada: empresa.transferenciaBancariaHabilitada || false,
+        banco: empresa.banco || '',
+        tipoCuenta: empresa.tipoCuenta || '',
+        numeroCuenta: empresa.numeroCuenta || '',
+        cbu: empresa.cbu || '',
+        alias: empresa.alias || '',
+        titular: empresa.titular || ''
       };
       
       setConfiguracion(nuevaConfiguracion);
@@ -1721,6 +1745,159 @@ export default function ConfiguracionEmpresa() {
                   />
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Configuración de Métodos de Pago */}
+          <div className="tarjeta">
+            <div className="p-6 border-bottom" style={{ 
+              borderBottom: '1px solid var(--color-borde)', 
+              backgroundColor: 'var(--color-fondo-hover)',
+              padding: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <div className="flex items-centro" style={{ 
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '0.5rem' : '0.75rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>💳</span>
+                <h3 className="titulo-3" style={{ 
+                  marginBottom: '0',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem'
+                }}>
+                  Métodos de Pago
+                </h3>
+              </div>
+            </div>
+            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              
+              {/* Habilitar Transferencia Bancaria */}
+              <div className="space-y-4">
+                <CheckboxField
+                  label="Habilitar pago por transferencia bancaria"
+                  name="transferenciaBancariaHabilitada"
+                  checked={configuracion.transferenciaBancariaHabilitada}
+                  onChange={manejarCambio}
+                  description="Los clientes podrán pagar mediante transferencia bancaria"
+                />
+              </div>
+
+              {/* Datos Bancarios */}
+              {configuracion.transferenciaBancariaHabilitada && (
+                <div className="space-y-4">
+                  <h4 className="etiqueta" style={{ 
+                    marginBottom: '1rem',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    textAlign: isMobile ? 'center' : 'left'
+                  }}>
+                    Datos Bancarios
+                  </h4>
+                  
+                  <div className="grid grid-2" style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                    gap: isMobile ? '1rem' : '1.5rem'
+                  }}>
+                    <InputField
+                      icon="🏦"
+                      label="Banco"
+                      name="banco"
+                      value={configuracion.banco}
+                      onChange={manejarCambio}
+                      placeholder="Ej: Banco Galicia"
+                      description="Nombre del banco"
+                    />
+                    <InputField
+                      icon="📋"
+                      label="Tipo de Cuenta"
+                      name="tipoCuenta"
+                      value={configuracion.tipoCuenta}
+                      onChange={manejarCambio}
+                      placeholder="Ej: Cuenta Corriente"
+                      description="Tipo de cuenta bancaria"
+                    />
+                  </div>
+
+                  <div className="grid grid-2" style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                    gap: isMobile ? '1rem' : '1.5rem'
+                  }}>
+                    <InputField
+                      icon="🔢"
+                      label="Número de Cuenta"
+                      name="numeroCuenta"
+                      value={configuracion.numeroCuenta}
+                      onChange={manejarCambio}
+                      placeholder="Ej: 1234567890"
+                      description="Número de cuenta bancaria"
+                    />
+                    <InputField
+                      icon="🏷️"
+                      label="Titular"
+                      name="titular"
+                      value={configuracion.titular}
+                      onChange={manejarCambio}
+                      placeholder="Ej: Tu Empresa S.A."
+                      description="Nombre del titular de la cuenta"
+                    />
+                  </div>
+
+                  <div className="grid grid-2" style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                    gap: isMobile ? '1rem' : '1.5rem'
+                  }}>
+                    <InputField
+                      icon="🔗"
+                      label="CBU"
+                      name="cbu"
+                      value={configuracion.cbu}
+                      onChange={manejarCambio}
+                      placeholder="Ej: 0070123456789012345678"
+                      description="Clave Bancaria Uniforme"
+                    />
+                    <InputField
+                      icon="🏷️"
+                      label="Alias"
+                      name="alias"
+                      value={configuracion.alias}
+                      onChange={manejarCambio}
+                      placeholder="Ej: TU.EMPRESA.GALICIA"
+                      description="Alias de la cuenta bancaria"
+                    />
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4" style={{
+                    backgroundColor: 'var(--color-fondo-hover)',
+                    border: '1px solid var(--color-borde)',
+                    borderRadius: 'var(--radio-borde)',
+                    padding: '1rem'
+                  }}>
+                    <div className="flex items-start" style={{ gap: '0.75rem' }}>
+                      <span style={{ fontSize: '1.25rem' }}>💡</span>
+                      <div>
+                        <h5 className="font-semibold text-blue-800" style={{ 
+                          fontWeight: '600',
+                          color: 'var(--color-texto)',
+                          marginBottom: '0.5rem'
+                        }}>
+                          Información Importante
+                        </h5>
+                        <p className="text-sm text-blue-700" style={{ 
+                          fontSize: '0.875rem',
+                          color: 'var(--color-texto-secundario)',
+                          lineHeight: '1.5'
+                        }}>
+                          Estos datos bancarios serán mostrados a los clientes cuando seleccionen 
+                          el método de pago por transferencia. Asegúrate de que la información 
+                          sea correcta y esté actualizada.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

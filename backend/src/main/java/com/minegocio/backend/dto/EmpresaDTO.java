@@ -35,6 +35,15 @@ public class EmpresaDTO {
     private String instagramUrl;
     private String facebookUrl;
     
+    // Métodos de pago - Transferencia bancaria
+    private Boolean transferenciaBancariaHabilitada;
+    private String banco;
+    private String tipoCuenta;
+    private String numeroCuenta;
+    private String cbu;
+    private String alias;
+    private String titular;
+    
     private Empresa.EstadoSuscripcion estadoSuscripcion;
     private LocalDateTime fechaFinPrueba;
     private Boolean activa;
@@ -74,6 +83,13 @@ public class EmpresaDTO {
         this.moneda = empresa.getMoneda();
         this.instagramUrl = empresa.getInstagramUrl();
         this.facebookUrl = empresa.getFacebookUrl();
+        this.transferenciaBancariaHabilitada = empresa.getTransferenciaBancariaHabilitada();
+        this.banco = empresa.getBanco();
+        this.tipoCuenta = empresa.getTipoCuenta();
+        this.numeroCuenta = empresa.getNumeroCuenta();
+        this.cbu = empresa.getCbu();
+        this.alias = empresa.getAlias();
+        this.titular = empresa.getTitular();
         this.estadoSuscripcion = empresa.getEstadoSuscripcion();
         this.fechaFinPrueba = empresa.getFechaFinPrueba();
         this.activa = empresa.getActiva();
@@ -179,4 +195,28 @@ public class EmpresaDTO {
 
     public Long getTotalPedidos() { return totalPedidos; }
     public void setTotalPedidos(Long totalPedidos) { this.totalPedidos = totalPedidos; }
+
+    // Métodos de pago - Transferencia bancaria
+    public Boolean getTransferenciaBancariaHabilitada() { return transferenciaBancariaHabilitada; }
+    public void setTransferenciaBancariaHabilitada(Boolean transferenciaBancariaHabilitada) { 
+        this.transferenciaBancariaHabilitada = transferenciaBancariaHabilitada; 
+    }
+
+    public String getBanco() { return banco; }
+    public void setBanco(String banco) { this.banco = banco; }
+
+    public String getTipoCuenta() { return tipoCuenta; }
+    public void setTipoCuenta(String tipoCuenta) { this.tipoCuenta = tipoCuenta; }
+
+    public String getNumeroCuenta() { return numeroCuenta; }
+    public void setNumeroCuenta(String numeroCuenta) { this.numeroCuenta = numeroCuenta; }
+
+    public String getCbu() { return cbu; }
+    public void setCbu(String cbu) { this.cbu = cbu; }
+
+    public String getAlias() { return alias; }
+    public void setAlias(String alias) { this.alias = alias; }
+
+    public String getTitular() { return titular; }
+    public void setTitular(String titular) { this.titular = titular; }
 }

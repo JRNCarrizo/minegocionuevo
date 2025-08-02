@@ -25,6 +25,14 @@ export interface Empresa {
   instagramUrl?: string;
   facebookUrl?: string;
   mercadolibreUrl?: string;
+  // Métodos de pago - Transferencia bancaria
+  transferenciaBancariaHabilitada?: boolean;
+  banco?: string;
+  tipoCuenta?: string;
+  numeroCuenta?: string;
+  cbu?: string;
+  alias?: string;
+  titular?: string;
   estadoSuscripcion: 'PRUEBA' | 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA';
   fechaFinPrueba: string;
   activa: boolean;
@@ -108,7 +116,7 @@ export interface Cliente {
 export interface Pedido {
   id: number;
   numeroPedido: string;
-  estado: 'PENDIENTE' | 'CONFIRMADO' | 'PREPARANDO' | 'ENVIADO' | 'ENTREGADO' | 'CANCELADO';
+  estado: 'PENDIENTE' | 'PENDIENTE_PAGO' | 'CONFIRMADO' | 'PREPARANDO' | 'ENVIADO' | 'ENTREGADO' | 'CANCELADO';
   total: number;
   subtotal: number;
   impuestos?: number;
@@ -117,6 +125,7 @@ export interface Pedido {
   direccionEntrega?: string;
   fechaEntregaEstimada?: string;
   fechaEntregaReal?: string;
+  metodoPago?: string;
   cliente: Cliente;
   detalles: DetallePedido[];
   fechaCreacion: string;

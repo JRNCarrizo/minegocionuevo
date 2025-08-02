@@ -402,6 +402,29 @@ public class EmpresaService {
         if (empresaDTO.getFacebookUrl() != null) {
             empresa.setFacebookUrl(empresaDTO.getFacebookUrl());
         }
+
+        // Actualizar métodos de pago - Transferencia bancaria
+        if (empresaDTO.getTransferenciaBancariaHabilitada() != null) {
+            empresa.setTransferenciaBancariaHabilitada(empresaDTO.getTransferenciaBancariaHabilitada());
+        }
+        if (empresaDTO.getBanco() != null) {
+            empresa.setBanco(empresaDTO.getBanco());
+        }
+        if (empresaDTO.getTipoCuenta() != null) {
+            empresa.setTipoCuenta(empresaDTO.getTipoCuenta());
+        }
+        if (empresaDTO.getNumeroCuenta() != null) {
+            empresa.setNumeroCuenta(empresaDTO.getNumeroCuenta());
+        }
+        if (empresaDTO.getCbu() != null) {
+            empresa.setCbu(empresaDTO.getCbu());
+        }
+        if (empresaDTO.getAlias() != null) {
+            empresa.setAlias(empresaDTO.getAlias());
+        }
+        if (empresaDTO.getTitular() != null) {
+            empresa.setTitular(empresaDTO.getTitular());
+        }
         
 
         empresa = empresaRepository.save(empresa);
