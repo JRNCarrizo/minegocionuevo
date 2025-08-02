@@ -137,7 +137,9 @@ export default function ConfigurarEmpresa() {
       console.error('Error al configurar empresa:', error);
       
       if (error.response?.status === 409) {
-        toast.error('Este subdominio ya está en uso');
+        // Mostrar el mensaje específico del backend
+        const mensajeError = error.response?.data?.error || 'Este recurso ya está en uso';
+        toast.error(mensajeError);
       } else if (error.response?.status === 400) {
         toast.error('Datos de empresa inválidos. Por favor, verifica la información.');
       } else {
@@ -155,15 +157,16 @@ export default function ConfigurarEmpresa() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '2rem'
+      padding: '1rem'
     }}>
       <div style={{
         background: 'white',
         borderRadius: '20px',
-        padding: '3rem',
+        padding: window.innerWidth < 768 ? '1.5rem' : '3rem',
         boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
         width: '100%',
-        maxWidth: '800px'
+        maxWidth: '800px',
+        margin: '1rem'
       }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -180,7 +183,7 @@ export default function ConfigurarEmpresa() {
             <span style={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}>2</span>
           </div>
           <h1 style={{
-            fontSize: '2.5rem',
+            fontSize: window.innerWidth < 768 ? '2rem' : '2.5rem',
             fontWeight: '700',
             color: '#1e293b',
             margin: '0 0 0.5rem 0'
@@ -189,7 +192,7 @@ export default function ConfigurarEmpresa() {
           </h1>
           <p style={{
             color: '#64748b',
-            fontSize: '1.1rem',
+            fontSize: window.innerWidth < 768 ? '1rem' : '1.1rem',
             margin: 0
           }}>
             Paso 2 de 2: Información de tu Empresa
@@ -250,7 +253,7 @@ export default function ConfigurarEmpresa() {
             border: '2px solid #e2e8f0'
           }}>
             <h3 style={{
-              fontSize: '1.2rem',
+              fontSize: window.innerWidth < 768 ? '1.1rem' : '1.2rem',
               fontWeight: '600',
               color: '#1e293b',
               margin: '0 0 1rem 0'
@@ -258,7 +261,11 @@ export default function ConfigurarEmpresa() {
               Información Básica
             </h3>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr', 
+              gap: '1rem' 
+            }}>
               {/* Nombre de la empresa */}
               <div>
                 <label htmlFor="nombreEmpresa" style={{
@@ -371,7 +378,7 @@ export default function ConfigurarEmpresa() {
             border: '2px solid #e2e8f0'
           }}>
             <h3 style={{
-              fontSize: '1.2rem',
+              fontSize: window.innerWidth < 768 ? '1.1rem' : '1.2rem',
               fontWeight: '600',
               color: '#1e293b',
               margin: '0 0 1rem 0'
@@ -379,7 +386,11 @@ export default function ConfigurarEmpresa() {
               Información de Contacto
             </h3>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr', 
+              gap: '1rem' 
+            }}>
               {/* Email de la empresa */}
               <div>
                 <label htmlFor="emailEmpresa" style={{
@@ -453,7 +464,7 @@ export default function ConfigurarEmpresa() {
             border: '2px solid #e2e8f0'
           }}>
             <h3 style={{
-              fontSize: '1.2rem',
+              fontSize: window.innerWidth < 768 ? '1.1rem' : '1.2rem',
               fontWeight: '600',
               color: '#1e293b',
               margin: '0 0 1rem 0'
@@ -491,7 +502,11 @@ export default function ConfigurarEmpresa() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: window.innerWidth < 768 ? '1fr' : window.innerWidth < 1024 ? '1fr 1fr' : '1fr 1fr 1fr', 
+                gap: '1rem' 
+              }}>
                 {/* Ciudad */}
                 <div>
                   <label htmlFor="ciudadEmpresa" style={{
@@ -593,8 +608,8 @@ export default function ConfigurarEmpresa() {
               color: 'white',
               border: 'none',
               borderRadius: '10px',
-              padding: '1rem',
-              fontSize: '1rem',
+              padding: window.innerWidth < 768 ? '0.875rem' : '1rem',
+              fontSize: window.innerWidth < 768 ? '0.875rem' : '1rem',
               fontWeight: '600',
               cursor: (cargando || !subdominioVerificado) ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease',

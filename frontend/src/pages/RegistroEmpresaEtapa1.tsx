@@ -124,15 +124,16 @@ export default function RegistroEmpresaEtapa1() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '2rem'
+      padding: '1rem'
     }}>
       <div style={{
         background: 'white',
         borderRadius: '20px',
-        padding: '3rem',
+        padding: window.innerWidth < 768 ? '1.5rem' : '3rem',
         boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
         width: '100%',
-        maxWidth: '600px'
+        maxWidth: '600px',
+        margin: '1rem'
       }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -149,7 +150,7 @@ export default function RegistroEmpresaEtapa1() {
             <span style={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}>1</span>
           </div>
           <h1 style={{
-            fontSize: '2.5rem',
+            fontSize: window.innerWidth < 768 ? '2rem' : '2.5rem',
             fontWeight: '700',
             color: '#1e293b',
             margin: '0 0 0.5rem 0'
@@ -158,7 +159,7 @@ export default function RegistroEmpresaEtapa1() {
           </h1>
           <p style={{
             color: '#64748b',
-            fontSize: '1.1rem',
+            fontSize: window.innerWidth < 768 ? '1rem' : '1.1rem',
             margin: 0
           }}>
             Paso 1 de 2: Información del Administrador
@@ -212,7 +213,11 @@ export default function RegistroEmpresaEtapa1() {
 
         <form onSubmit={handleSubmit(enviarFormulario)} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Campos del formulario */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr', 
+              gap: '1rem' 
+            }}>
             {/* Nombre */}
             <div>
               <label htmlFor="nombreAdministrador" style={{
@@ -452,8 +457,8 @@ export default function RegistroEmpresaEtapa1() {
               color: 'white',
               border: 'none',
               borderRadius: '10px',
-              padding: '1rem',
-              fontSize: '1rem',
+              padding: window.innerWidth < 768 ? '0.875rem' : '1rem',
+              fontSize: window.innerWidth < 768 ? '0.875rem' : '1rem',
               fontWeight: '600',
               cursor: cargando ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease',
