@@ -456,4 +456,126 @@ public class EmailService {
             System.err.println("❌ Error al enviar notificación de pedido cancelado: " + e.getMessage());
         }
     }
+
+    /**
+     * Envía confirmación de compra al cliente
+     */
+    public void enviarConfirmacionCompraCliente(String emailCliente, String nombreCliente, String nombreEmpresa, String numeroPedido, BigDecimal total, String direccionEntrega) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        
+        message.setFrom(fromEmail);
+        message.setTo(emailCliente);
+        message.setSubject("🛒 Confirmación de Compra - " + nombreEmpresa);
+        
+        String contenido = String.format(
+            "Hola %s,\n\n" +
+            "¡Gracias por tu compra en %s!\n\n" +
+            "📋 Detalles de tu pedido:\n" +
+            "• Número de pedido: %s\n" +
+            "• Total: $%.2f\n" +
+            "• Dirección de entrega: %s\n" +
+            "• Estado: Pendiente de confirmación\n\n" +
+            "⏰ Fecha y hora: %s\n\n" +
+            "Tu pedido ha sido recibido y está siendo procesado. Te notificaremos cuando sea confirmado por nuestro equipo.\n\n" +
+            "Si tienes alguna pregunta, no dudes en contactarnos.\n\n" +
+            "Saludos,\n" +
+            "Equipo de %s",
+            nombreCliente,
+            nombreEmpresa,
+            numeroPedido,
+            total,
+            direccionEntrega,
+            FechaUtil.ahoraFormateado(),
+            nombreEmpresa
+        );
+        
+        message.setText(contenido);
+        
+        try {
+            mailSender.send(message);
+            System.out.println("✅ Confirmación de compra enviada al cliente: " + emailCliente);
+        } catch (Exception e) {
+            System.err.println("❌ Error al enviar confirmación de compra al cliente: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Envía confirmación de pedido por administrador al cliente
+     */
+    public void enviarConfirmacionAdminCliente(String emailCliente, String nombreCliente, String nombreEmpresa, String numeroPedido, BigDecimal total) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        
+        message.setFrom(fromEmail);
+        message.setTo(emailCliente);
+        message.setSubject("✅ Pedido Confirmado - " + nombreEmpresa);
+        
+        String contenido = String.format(
+            "Hola %s,\n\n" +
+            "¡Excelentes noticias! Tu pedido en %s ha sido confirmado.\n\n" +
+            "📋 Detalles del pedido:\n" +
+            "• Número de pedido: %s\n" +
+            "• Total: $%.2f\n" +
+            "• Estado: Confirmado\n\n" +
+            "⏰ Fecha y hora de confirmación: %s\n\n" +
+            "Tu pedido está siendo preparado y pronto estará en camino. Te notificaremos cuando sea enviado.\n\n" +
+            "Gracias por confiar en nosotros.\n\n" +
+            "Saludos,\n" +
+            "Equipo de %s",
+            nombreCliente,
+            nombreEmpresa,
+            numeroPedido,
+            total,
+            FechaUtil.ahoraFormateado(),
+            nombreEmpresa
+        );
+        
+        message.setText(contenido);
+        
+        try {
+            mailSender.send(message);
+            System.out.println("✅ Confirmación de administrador enviada al cliente: " + emailCliente);
+        } catch (Exception e) {
+            System.err.println("❌ Error al enviar confirmación de administrador al cliente: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Envía notificación de entrega al cliente
+     */
+    public void enviarNotificacionEntregaCliente(String emailCliente, String nombreCliente, String nombreEmpresa, String numeroPedido, BigDecimal total) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        
+        message.setFrom(fromEmail);
+        message.setTo(emailCliente);
+        message.setSubject("🎉 ¡Tu Pedido Ha Sido Entregado! - " + nombreEmpresa);
+        
+        String contenido = String.format(
+            "Hola %s,\n\n" +
+            "¡Tu pedido ha sido entregado exitosamente!\n\n" +
+            "📋 Detalles del pedido:\n" +
+            "• Número de pedido: %s\n" +
+            "• Total: $%.2f\n" +
+            "• Estado: Entregado\n\n" +
+            "⏰ Fecha y hora de entrega: %s\n\n" +
+            "Esperamos que disfrutes tu compra. Si tienes alguna pregunta o necesitas asistencia, no dudes en contactarnos.\n\n" +
+            "¡Gracias por elegir %s!\n\n" +
+            "Saludos,\n" +
+            "Equipo de %s",
+            nombreCliente,
+            numeroPedido,
+            total,
+            FechaUtil.ahoraFormateado(),
+            nombreEmpresa,
+            nombreEmpresa
+        );
+        
+        message.setText(contenido);
+        
+        try {
+            mailSender.send(message);
+            System.out.println("✅ Notificación de entrega enviada al cliente: " + emailCliente);
+        } catch (Exception e) {
+            System.err.println("❌ Error al enviar notificación de entrega al cliente: " + e.getMessage());
+        }
+    }
 } 

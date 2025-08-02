@@ -182,11 +182,32 @@ public class PedidoController {
             
             PedidoDTO pedidoActualizado = pedidoService.actualizarEstadoPedido(empresaId, pedidoId, nuevoEstado);
             
-            // Enviar notificación si el pedido fue cancelado
-            if ("CANCELADO".equals(nuevoEstado)) {
-                try {
-                    var empresa = empresaService.obtenerPorId(empresaId);
-                    if (empresa.isPresent()) {
+            // Enviar notificaciones según el estado
+            try {
+                var empresa = empresaService.obtenerPorId(empresaId);
+                if (empresa.isPresent()) {
+                    // Email al cliente cuando el admin confirma el pedido
+                    if ("CONFIRMADO".equals(nuevoEstado)) {
+                        emailService.enviarConfirmacionAdminCliente(
+                            pedidoActualizado.getClienteEmail(),
+                            pedidoActualizado.getClienteNombre(),
+                            empresa.get().getNombre(),
+                            pedidoActualizado.getNumeroPedido(),
+                            pedidoActualizado.getTotal()
+                        );
+                    }
+                    // Email al cliente cuando el pedido es entregado
+                    else if ("ENTREGADO".equals(nuevoEstado)) {
+                        emailService.enviarNotificacionEntregaCliente(
+                            pedidoActualizado.getClienteEmail(),
+                            pedidoActualizado.getClienteNombre(),
+                            empresa.get().getNombre(),
+                            pedidoActualizado.getNumeroPedido(),
+                            pedidoActualizado.getTotal()
+                        );
+                    }
+                    // Email a la empresa cuando el pedido es cancelado
+                    else if ("CANCELADO".equals(nuevoEstado)) {
                         emailService.enviarNotificacionPedidoCancelado(
                             empresa.get().getEmail(),
                             empresa.get().getNombre(),
@@ -196,10 +217,10 @@ public class PedidoController {
                             pedidoActualizado.getTotal()
                         );
                     }
-                } catch (Exception e) {
-                    System.err.println("Error enviando notificación de pedido cancelado: " + e.getMessage());
-                    // No lanzar excepción para no fallar la actualización del estado
                 }
+            } catch (Exception e) {
+                System.err.println("Error enviando notificaciones de cambio de estado: " + e.getMessage());
+                // No lanzar excepción para no fallar la actualización del estado
             }
             
             System.out.println("Estado actualizado exitosamente a: " + pedidoActualizado.getEstado());

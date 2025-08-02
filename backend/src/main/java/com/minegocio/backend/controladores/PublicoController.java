@@ -928,6 +928,21 @@ public class PublicoController {
                 // No lanzar excepción para no fallar la creación del pedido
             }
             
+            // Enviar confirmación de compra al cliente
+            try {
+                emailService.enviarConfirmacionCompraCliente(
+                    clienteEmail,
+                    clienteNombre,
+                    empresa.get().getNombre(),
+                    pedidoCreado.getNumeroPedido(),
+                    total,
+                    direccionEnvio
+                );
+            } catch (Exception e) {
+                System.err.println("Error enviando confirmación de compra al cliente: " + e.getMessage());
+                // No lanzar excepción para no fallar la creación del pedido
+            }
+            
             var respuesta = java.util.Map.of(
                 "mensaje", "Pedido creado exitosamente",
                 "pedido", pedidoCreado
