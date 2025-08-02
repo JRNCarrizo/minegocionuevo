@@ -523,7 +523,15 @@ export default function GestionClientes() {
         totalPedidos: c.totalPedidos,
         totalCompras: c.totalCompras
       })));
-      setClientes(clientesApi);
+      
+      // Ordenar clientes por fecha de creación (más recientes primero)
+      const clientesOrdenados = clientesApi.sort((a, b) => {
+        const fechaA = new Date(a.fechaCreacion);
+        const fechaB = new Date(b.fechaCreacion);
+        return fechaB.getTime() - fechaA.getTime(); // Orden descendente (más reciente primero)
+      });
+      
+      setClientes(clientesOrdenados);
     } catch (error) {
       console.error('Error al cargar clientes:', error);
       toast.error('Error al cargar los clientes');
@@ -540,7 +548,16 @@ export default function GestionClientes() {
       const marcarClientesComoVistos = async () => {
         try {
           const response = await api.obtenerClientesPaginado(empresaId, 0, 1000);
-          const todosLosIds = response.content?.map((cliente: Cliente) => cliente.id) || [];
+          const clientesApi: Cliente[] = response.content || [];
+          
+          // Ordenar clientes por fecha de creación (más recientes primero)
+          const clientesOrdenados = clientesApi.sort((a, b) => {
+            const fechaA = new Date(a.fechaCreacion);
+            const fechaB = new Date(b.fechaCreacion);
+            return fechaB.getTime() - fechaA.getTime();
+          });
+          
+          const todosLosIds = clientesOrdenados.map((cliente: Cliente) => cliente.id);
           localStorage.setItem(`clientesVistos_${empresaId}`, JSON.stringify(todosLosIds));
         } catch (error) {
           console.error('Error al marcar clientes como vistos:', error);

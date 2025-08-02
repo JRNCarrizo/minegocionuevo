@@ -936,7 +936,16 @@ export default function GestionPedidos() {
       const marcarPedidosComoVistos = async () => {
         try {
           const response = await api.obtenerPedidos(empresaId, 0, 1000);
-          const todosLosIds = response.content?.map((pedido: Pedido) => pedido.id) || [];
+          const pedidosApi: Pedido[] = response.content || [];
+          
+          // Ordenar pedidos por fecha de creación (más recientes primero)
+          const pedidosOrdenados = pedidosApi.sort((a, b) => {
+            const fechaA = new Date(a.fechaCreacion);
+            const fechaB = new Date(b.fechaCreacion);
+            return fechaB.getTime() - fechaA.getTime();
+          });
+          
+          const todosLosIds = pedidosOrdenados.map((pedido: Pedido) => pedido.id);
           localStorage.setItem(`pedidosVistos_${empresaId}`, JSON.stringify(todosLosIds));
         } catch (error) {
           console.error('Error al marcar pedidos como vistos:', error);
@@ -993,7 +1002,15 @@ export default function GestionPedidos() {
       // Verificar si la respuesta tiene la estructura esperada
       const pedidosApi: Pedido[] = response.content || [];
       console.log('Pedidos cargados:', pedidosApi);
-      setPedidos(pedidosApi);
+      
+      // Ordenar pedidos por fecha de creación (más recientes primero)
+      const pedidosOrdenados = pedidosApi.sort((a, b) => {
+        const fechaA = new Date(a.fechaCreacion);
+        const fechaB = new Date(b.fechaCreacion);
+        return fechaB.getTime() - fechaA.getTime(); // Orden descendente (más reciente primero)
+      });
+      
+      setPedidos(pedidosOrdenados);
     } catch (e) {
       console.error('Error al cargar pedidos:', e);
       toast.error('Error al cargar los pedidos');
