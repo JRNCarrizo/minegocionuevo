@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -461,10 +462,14 @@ public class AutenticacionController {
      * Endpoint para crear empresa (Etapa 2 del registro)
      */
     @PostMapping("/crear-empresa")
-    public ResponseEntity<?> crearEmpresa(@RequestBody Map<String, Object> datos) {
+    public ResponseEntity<?> crearEmpresa(@RequestBody Map<String, Object> datos, Authentication authentication) {
         try {
             System.out.println("=== CREAR EMPRESA ===");
             System.out.println("Datos recibidos: " + datos);
+            
+            // Obtener el email del usuario autenticado
+            String emailAdmin = authentication.getName();
+            System.out.println("Email del administrador autenticado: " + emailAdmin);
             
             // Extraer datos del request
             String nombre = (String) datos.get("nombre");
@@ -493,17 +498,20 @@ public class AutenticacionController {
                     .body(Map.of("error", "Este subdominio ya está en uso"));
             }
             
-            // Buscar la empresa temporal por email
-            Empresa empresaTemporal = empresaRepository.findByEmail(email).orElse(null);
+            // Buscar la empresa temporal por el email del administrador (no del formulario)
+            Empresa empresaTemporal = empresaRepository.findByEmail(emailAdmin).orElse(null);
             
             if (empresaTemporal == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "No se encontró una empresa temporal para este email"));
+                return ResponseEntity.badRequest().body(Map.of("error", "No se encontró una empresa temporal para este administrador"));
             }
+            
+            System.out.println("✅ Empresa temporal encontrada: " + empresaTemporal.getId());
+            System.out.println("Actualizando empresa temporal con datos reales...");
             
             // Actualizar la empresa temporal con los datos reales
             empresaTemporal.setNombre(nombre);
             empresaTemporal.setSubdominio(subdominio);
-            empresaTemporal.setEmail(email);
+            empresaTemporal.setEmail(email); // Usar el email del formulario (email de la empresa)
             empresaTemporal.setTelefono(telefono != null ? telefono : "");
             empresaTemporal.setDireccion(direccion != null ? direccion : "");
             empresaTemporal.setCiudad(ciudad != null ? ciudad : "");
@@ -516,7 +524,10 @@ public class AutenticacionController {
             
             empresaTemporal = empresaRepository.save(empresaTemporal);
             
-            System.out.println("✅ Empresa creada exitosamente: " + empresaTemporal.getId());
+            System.out.println("✅ Empresa actualizada exitosamente: " + empresaTemporal.getId());
+            System.out.println("Nombre: " + empresaTemporal.getNombre());
+            System.out.println("Subdominio: " + empresaTemporal.getSubdominio());
+            System.out.println("Email: " + empresaTemporal.getEmail());
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Empresa configurada exitosamente",
