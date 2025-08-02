@@ -20,9 +20,7 @@ const esquemaValidacionEtapa2 = yup.object({
   direccionEmpresa: yup.string().max(200).optional(),
   ciudadEmpresa: yup.string().max(100).optional(),
   codigoPostalEmpresa: yup.string().max(20).optional(),
-  paisEmpresa: yup.string().max(100).optional(),
-  descripcionEmpresa: yup.string().max(500).optional(),
-  categoriaEmpresa: yup.string().required('La categoría es obligatoria')
+  paisEmpresa: yup.string().max(100).optional()
 });
 
 interface FormularioEtapa2 {
@@ -34,22 +32,9 @@ interface FormularioEtapa2 {
   ciudadEmpresa: string;
   codigoPostalEmpresa: string;
   paisEmpresa: string;
-  descripcionEmpresa: string;
-  categoriaEmpresa: string;
 }
 
-const categorias = [
-  'Alimentos y Bebidas',
-  'Ropa y Accesorios',
-  'Electrónicos',
-  'Hogar y Jardín',
-  'Salud y Belleza',
-  'Deportes y Aire Libre',
-  'Juguetes y Entretenimiento',
-  'Automotriz',
-  'Servicios',
-  'Otros'
-];
+
 
 export default function ConfigurarEmpresa() {
   const [cargando, setCargando] = useState(false);
@@ -75,9 +60,7 @@ export default function ConfigurarEmpresa() {
       direccionEmpresa: '',
       ciudadEmpresa: '',
       codigoPostalEmpresa: '',
-      paisEmpresa: '',
-      descripcionEmpresa: '',
-      categoriaEmpresa: ''
+      paisEmpresa: ''
     }
   });
 
@@ -144,9 +127,7 @@ export default function ConfigurarEmpresa() {
         direccion: datos.direccionEmpresa,
         ciudad: datos.ciudadEmpresa,
         codigoPostal: datos.codigoPostalEmpresa,
-        pais: datos.paisEmpresa,
-        descripcion: datos.descripcionEmpresa,
-        categoria: datos.categoriaEmpresa
+        pais: datos.paisEmpresa
       });
 
       toast.success('¡Empresa configurada exitosamente!');
@@ -312,43 +293,7 @@ export default function ConfigurarEmpresa() {
                 )}
               </div>
 
-              {/* Categoría */}
-              <div>
-                <label htmlFor="categoriaEmpresa" style={{
-                  display: 'block',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: '0.5rem'
-                }}>
-                  Categoría *
-                </label>
-                <select
-                  id="categoriaEmpresa"
-                  {...register('categoriaEmpresa')}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: errors.categoriaEmpresa ? '2px solid #ef4444' : '2px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '0.875rem',
-                    transition: 'all 0.2s ease',
-                    background: 'white'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                  onBlur={(e) => e.target.style.borderColor = errors.categoriaEmpresa ? '#ef4444' : '#e2e8f0'}
-                >
-                  <option value="">Selecciona una categoría</option>
-                  {categorias.map(categoria => (
-                    <option key={categoria} value={categoria}>{categoria}</option>
-                  ))}
-                </select>
-                {errors.categoriaEmpresa && (
-                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#ef4444' }}>
-                    {errors.categoriaEmpresa.message}
-                  </p>
-                )}
-              </div>
+
             </div>
 
             {/* Subdominio */}
@@ -362,6 +307,14 @@ export default function ConfigurarEmpresa() {
               }}>
                 Subdominio *
               </label>
+              <p style={{
+                fontSize: '0.75rem',
+                color: '#64748b',
+                margin: '0 0 0.5rem 0',
+                lineHeight: '1.4'
+              }}>
+                Este será la URL de tu tienda online. Por ejemplo: si escribes "miempresa", tu tienda estará disponible en miempresa.negocio360.org
+              </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <input
                   id="subdominio"
@@ -629,52 +582,7 @@ export default function ConfigurarEmpresa() {
             </div>
           </div>
 
-          {/* Descripción */}
-          <div style={{
-            background: '#f8fafc',
-            borderRadius: '12px',
-            padding: '1.5rem',
-            border: '2px solid #e2e8f0'
-          }}>
-            <h3 style={{
-              fontSize: '1.2rem',
-              fontWeight: '600',
-              color: '#1e293b',
-              margin: '0 0 1rem 0'
-            }}>
-              Descripción (opcional)
-            </h3>
-            
-            <div>
-              <label htmlFor="descripcionEmpresa" style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#374151',
-                marginBottom: '0.5rem'
-              }}>
-                Descripción de la empresa
-              </label>
-              <textarea
-                id="descripcionEmpresa"
-                {...register('descripcionEmpresa')}
-                rows={4}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '8px',
-                  fontSize: '0.875rem',
-                  transition: 'all 0.2s ease',
-                  resize: 'vertical',
-                  fontFamily: 'inherit'
-                }}
-                placeholder="Describe brevemente tu empresa o emprendimiento..."
-                onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-              />
-            </div>
-          </div>
+
 
           {/* Botón de envío */}
           <button

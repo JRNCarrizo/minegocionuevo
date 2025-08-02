@@ -4,18 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 const ConfirmacionRegistroAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [contador, setContador] = useState(10);
 
   const email = searchParams.get('email');
-
-  useEffect(() => {
-    if (contador > 0) {
-      const timer = setTimeout(() => setContador(contador - 1), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      navigate('/configurar-empresa');
-    }
-  }, [contador, navigate]);
 
   return (
     <div style={{
@@ -157,30 +147,7 @@ const ConfirmacionRegistroAdmin: React.FC = () => {
           </p>
         </div>
 
-        {/* Contador de redirección */}
-        <div style={{
-          background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-          borderRadius: '12px',
-          padding: '1.5rem',
-          margin: '0 0 2rem 0',
-          border: '2px solid #cbd5e1'
-        }}>
-          <p style={{
-            fontSize: '1rem',
-            color: '#64748b',
-            margin: '0 0 0.5rem 0'
-          }}>
-            Serás redirigido automáticamente en:
-          </p>
-          <div style={{
-            fontSize: '2rem',
-            fontWeight: '700',
-            color: '#3b82f6',
-            fontFamily: 'monospace'
-          }}>
-            {contador} segundos
-          </div>
-        </div>
+
 
         {/* Botones */}
         <div style={{
@@ -189,31 +156,6 @@ const ConfirmacionRegistroAdmin: React.FC = () => {
           justifyContent: 'center',
           flexWrap: 'wrap'
         }}>
-          <button
-            onClick={() => navigate('/configurar-empresa')}
-            style={{
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-              padding: '12px 24px',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            Configurar Empresa
-          </button>
-
           <button
             onClick={() => navigate('/')}
             style={{
