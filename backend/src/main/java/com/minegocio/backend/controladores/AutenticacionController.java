@@ -268,22 +268,30 @@ public class AutenticacionController {
                     .body(Map.of("error", "Este email ya está registrado"));
             }
             
-            // Crear una empresa temporal para evitar la restricción NOT NULL
-            Empresa empresaTemporal = new Empresa();
-            empresaTemporal.setNombre("Empresa Temporal - " + email);
-            empresaTemporal.setSubdominio("temp-" + System.currentTimeMillis());
-            empresaTemporal.setEmail(email);
-            empresaTemporal.setTelefono(telefono != null ? telefono : "");
-            empresaTemporal.setDireccion("");
-            empresaTemporal.setCiudad("");
-            empresaTemporal.setCodigoPostal("");
-            empresaTemporal.setPais("");
-            empresaTemporal.setDescripcion("Empresa temporal para registro en dos etapas");
-            empresaTemporal.setFechaFinPrueba(LocalDateTime.now().plusDays(1));
-            empresaTemporal.setActiva(false); // Marcar como inactiva
-            empresaTemporal.setEstadoSuscripcion(Empresa.EstadoSuscripcion.SUSPENDIDA);
+            // Verificar si ya existe una empresa temporal para este email
+            Empresa empresaTemporal = empresaRepository.findByEmail(email).orElse(null);
             
-            empresaTemporal = empresaRepository.save(empresaTemporal);
+            if (empresaTemporal == null) {
+                // Crear una empresa temporal para evitar la restricción NOT NULL
+                empresaTemporal = new Empresa();
+                empresaTemporal.setNombre("Empresa Temporal - " + email);
+                empresaTemporal.setSubdominio("temp-" + System.currentTimeMillis());
+                empresaTemporal.setEmail(email);
+                empresaTemporal.setTelefono(telefono != null ? telefono : "");
+                empresaTemporal.setDireccion("");
+                empresaTemporal.setCiudad("");
+                empresaTemporal.setCodigoPostal("");
+                empresaTemporal.setPais("");
+                empresaTemporal.setDescripcion("Empresa temporal para registro en dos etapas");
+                empresaTemporal.setFechaFinPrueba(LocalDateTime.now().plusDays(1));
+                empresaTemporal.setActiva(false); // Marcar como inactiva
+                empresaTemporal.setEstadoSuscripcion(Empresa.EstadoSuscripcion.SUSPENDIDA);
+                
+                empresaTemporal = empresaRepository.save(empresaTemporal);
+                System.out.println("✅ Nueva empresa temporal creada: " + empresaTemporal.getId());
+            } else {
+                System.out.println("✅ Reutilizando empresa temporal existente: " + empresaTemporal.getId());
+            }
             
             // Crear el usuario administrador con la empresa temporal
             Usuario nuevoUsuario = new Usuario();
