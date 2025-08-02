@@ -303,50 +303,57 @@ export default function ConfigurarEmpresa() {
 
             </div>
 
-            {/* Subdominio */}
-            <div style={{ marginTop: '1rem' }}>
-              <label htmlFor="subdominio" style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#374151',
-                marginBottom: '0.5rem'
-              }}>
-                Subdominio *
-              </label>
-              <p style={{
-                fontSize: '0.75rem',
-                color: '#64748b',
-                margin: '0 0 0.5rem 0',
-                lineHeight: '1.4'
-              }}>
-                Este será la URL de tu tienda online. Por ejemplo: si escribes "miempresa", tu tienda estará disponible en miempresa.negocio360.org
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input
-                  id="subdominio"
-                  type="text"
-                  {...register('subdominio')}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    border: errors.subdominio ? '2px solid #ef4444' : '2px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '0.875rem',
-                    transition: 'all 0.2s ease'
-                  }}
-                  placeholder="miempresa"
-                  onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                  onBlur={(e) => e.target.style.borderColor = errors.subdominio ? '#ef4444' : '#e2e8f0'}
-                />
-                <span style={{
-                  color: '#64748b',
-                  fontSize: '0.875rem',
-                  whiteSpace: 'nowrap'
-                }}>
-                  .negocio360.org
-                </span>
-              </div>
+                         {/* Subdominio */}
+             <div style={{ marginTop: '1rem' }}>
+               <label htmlFor="subdominio" style={{
+                 display: 'block',
+                 fontSize: '0.875rem',
+                 fontWeight: '600',
+                 color: '#374151',
+                 marginBottom: '0.5rem'
+               }}>
+                 Subdominio *
+               </label>
+               <p style={{
+                 fontSize: '0.75rem',
+                 color: '#64748b',
+                 margin: '0 0 0.5rem 0',
+                 lineHeight: '1.4'
+               }}>
+                 Este será la URL de tu tienda online. Por ejemplo: si escribes "miempresa", tu tienda estará disponible en miempresa.negocio360.org
+               </p>
+               <div style={{ 
+                 display: 'flex', 
+                 alignItems: 'center', 
+                 gap: window.innerWidth < 768 ? '0.25rem' : '0.5rem',
+                 flexWrap: window.innerWidth < 768 ? 'wrap' : 'nowrap'
+               }}>
+                 <input
+                   id="subdominio"
+                   type="text"
+                   {...register('subdominio')}
+                   style={{
+                     flex: window.innerWidth < 768 ? '0 0 calc(100% - 120px)' : 1,
+                     padding: '0.75rem',
+                     border: errors.subdominio ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                     borderRadius: '8px',
+                     fontSize: '0.875rem',
+                     transition: 'all 0.2s ease',
+                     minWidth: window.innerWidth < 768 ? '120px' : 'auto'
+                   }}
+                   placeholder="miempresa"
+                   onFocus={(e) => e.target.style.borderColor = '#10b981'}
+                   onBlur={(e) => e.target.style.borderColor = errors.subdominio ? '#ef4444' : '#e2e8f0'}
+                 />
+                 <span style={{
+                   color: '#64748b',
+                   fontSize: window.innerWidth < 768 ? '0.75rem' : '0.875rem',
+                   whiteSpace: 'nowrap',
+                   flexShrink: 0
+                 }}>
+                   .negocio360.org
+                 </span>
+               </div>
               {errors.subdominio && (
                 <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#ef4444' }}>
                   {errors.subdominio.message}
@@ -391,39 +398,47 @@ export default function ConfigurarEmpresa() {
               gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr', 
               gap: '1rem' 
             }}>
-              {/* Email de la empresa */}
-              <div>
-                <label htmlFor="emailEmpresa" style={{
-                  display: 'block',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: '0.5rem'
-                }}>
-                  Email de la Empresa *
-                </label>
-                <input
-                  id="emailEmpresa"
-                  type="email"
-                  {...register('emailEmpresa')}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: errors.emailEmpresa ? '2px solid #ef4444' : '2px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '0.875rem',
-                    transition: 'all 0.2s ease'
-                  }}
-                  placeholder="contacto@miempresa.com"
-                  onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                  onBlur={(e) => e.target.style.borderColor = errors.emailEmpresa ? '#ef4444' : '#e2e8f0'}
-                />
-                {errors.emailEmpresa && (
-                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#ef4444' }}>
-                    {errors.emailEmpresa.message}
-                  </p>
-                )}
-              </div>
+                             {/* Email de la empresa */}
+               <div>
+                 <label htmlFor="emailEmpresa" style={{
+                   display: 'block',
+                   fontSize: '0.875rem',
+                   fontWeight: '600',
+                   color: '#374151',
+                   marginBottom: '0.5rem'
+                 }}>
+                   Email de la Empresa *
+                 </label>
+                 <p style={{
+                   fontSize: '0.75rem',
+                   color: '#64748b',
+                   margin: '0 0 0.5rem 0',
+                   lineHeight: '1.4'
+                 }}>
+                   Este email se usará para recibir notificaciones de pedidos, consultas de clientes y comunicaciones importantes de la plataforma.
+                 </p>
+                 <input
+                   id="emailEmpresa"
+                   type="email"
+                   {...register('emailEmpresa')}
+                   style={{
+                     width: '100%',
+                     padding: '0.75rem',
+                     border: errors.emailEmpresa ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                     borderRadius: '8px',
+                     fontSize: '0.875rem',
+                     transition: 'all 0.2s ease'
+                   }}
+                   placeholder="contacto@miempresa.com"
+                   onFocus={(e) => e.target.style.borderColor = '#10b981'}
+                   onBlur={(e) => e.target.style.borderColor = errors.emailEmpresa ? '#ef4444' : '#e2e8f0'}
+                 />
+                 {errors.emailEmpresa && (
+                   <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#ef4444' }}>
+                     {errors.emailEmpresa.message}
+                   </p>
+                 )}
+               </div>
 
               {/* Teléfono */}
               <div>
