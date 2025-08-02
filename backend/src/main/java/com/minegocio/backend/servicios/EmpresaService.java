@@ -440,11 +440,20 @@ public class EmpresaService {
         
         // Enviar email de bienvenida
         try {
-            emailService.enviarEmailBienvenida(
-                usuario.getEmail(),
-                usuario.getNombre(),
-                usuario.getEmpresa().getNombre()
-            );
+            if (usuario.getEmpresa() != null) {
+                emailService.enviarEmailBienvenida(
+                    usuario.getEmail(),
+                    usuario.getNombre(),
+                    usuario.getEmpresa().getNombre()
+                );
+            } else {
+                // Usuario sin empresa (flujo de dos etapas)
+                emailService.enviarEmailBienvenida(
+                    usuario.getEmail(),
+                    usuario.getNombre(),
+                    "Tu cuenta"
+                );
+            }
         } catch (Exception e) {
             System.err.println("Error enviando email de bienvenida: " + e.getMessage());
         }

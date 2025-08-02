@@ -60,7 +60,7 @@ public class Usuario {
 
     // Relación con empresa
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "empresa_id", nullable = false)
+    @JoinColumn(name = "empresa_id", nullable = true)
     private Empresa empresa;
 
     // Timestamps

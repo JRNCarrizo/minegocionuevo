@@ -3,6 +3,7 @@ package com.minegocio.backend.controladores;
 import com.minegocio.backend.dto.JwtRespuestaDTO;
 import com.minegocio.backend.dto.LoginDTO;
 import com.minegocio.backend.servicios.AutenticacionService;
+import com.minegocio.backend.servicios.EmailService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Usuario;
@@ -37,6 +39,9 @@ public class AutenticacionController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EmailService emailService;
 
     /**
      * Autentica un usuario y devuelve un token JWT
@@ -225,6 +230,86 @@ public class AutenticacionController {
                         "success", false,
                         "error", "Error interno del servidor"
                     ));
+        }
+    }
+
+    /**
+     * Registra un nuevo administrador (Etapa 1 del flujo de registro)
+     */
+    @PostMapping("/registrar-administrador")
+    public ResponseEntity<?> registrarAdministrador(@RequestBody Map<String, Object> datos) {
+        try {
+            System.out.println("=== REGISTRO ADMINISTRADOR ETAPA 1 ===");
+            System.out.println("Datos recibidos: " + datos);
+            
+            String nombre = (String) datos.get("nombre");
+            String apellidos = (String) datos.get("apellidos");
+            String email = (String) datos.get("email");
+            String password = (String) datos.get("password");
+            String telefono = (String) datos.get("telefono");
+            
+            // Validaciones básicas
+            if (nombre == null || nombre.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El nombre es obligatorio"));
+            }
+            if (apellidos == null || apellidos.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Los apellidos son obligatorios"));
+            }
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El email es obligatorio"));
+            }
+            if (password == null || password.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "La contraseña es obligatoria"));
+            }
+            
+            // Verificar si el email ya existe
+            if (usuarioRepository.findByEmail(email).isPresent()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "Este email ya está registrado"));
+            }
+            
+            // Crear el usuario administrador (sin empresa por ahora)
+            Usuario nuevoUsuario = new Usuario();
+            nuevoUsuario.setNombre(nombre);
+            nuevoUsuario.setApellidos(apellidos);
+            nuevoUsuario.setEmail(email);
+            nuevoUsuario.setPassword(passwordEncoder.encode(password));
+            nuevoUsuario.setTelefono(telefono != null ? telefono : "");
+            nuevoUsuario.setRol(Usuario.RolUsuario.ADMINISTRADOR);
+            nuevoUsuario.setActivo(true);
+            nuevoUsuario.setEmailVerificado(false); // Requiere verificación
+            nuevoUsuario.setEmpresa(null); // Sin empresa por ahora
+            
+            // Generar token de verificación
+            String tokenVerificacion = UUID.randomUUID().toString();
+            nuevoUsuario.setTokenVerificacion(tokenVerificacion);
+            nuevoUsuario.setFechaCreacion(LocalDateTime.now());
+            
+            nuevoUsuario = usuarioRepository.save(nuevoUsuario);
+            
+            System.out.println("✅ Usuario administrador creado: " + nuevoUsuario.getEmail());
+            System.out.println("Token de verificación: " + tokenVerificacion);
+            
+            // Enviar email de verificación
+            try {
+                emailService.enviarEmailVerificacion(nuevoUsuario.getEmail(), nuevoUsuario.getNombre(), tokenVerificacion);
+                System.out.println("✅ Email de verificación enviado");
+            } catch (Exception e) {
+                System.out.println("❌ Error enviando email: " + e.getMessage());
+                // No fallar el registro si el email no se puede enviar
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Administrador registrado exitosamente",
+                "requiereVerificacion", true,
+                "email", nuevoUsuario.getEmail()
+            ));
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error en registro: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error interno del servidor"));
         }
     }
 
