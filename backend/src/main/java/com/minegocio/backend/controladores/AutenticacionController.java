@@ -456,4 +456,83 @@ public class AutenticacionController {
                 .body(Map.of("error", "Error al crear usuario de prueba: " + e.getMessage()));
         }
     }
+
+    /**
+     * Endpoint para crear empresa (Etapa 2 del registro)
+     */
+    @PostMapping("/crear-empresa")
+    public ResponseEntity<?> crearEmpresa(@RequestBody Map<String, Object> datos) {
+        try {
+            System.out.println("=== CREAR EMPRESA ===");
+            System.out.println("Datos recibidos: " + datos);
+            
+            // Extraer datos del request
+            String nombre = (String) datos.get("nombre");
+            String subdominio = (String) datos.get("subdominio");
+            String email = (String) datos.get("email");
+            String telefono = (String) datos.get("telefono");
+            String direccion = (String) datos.get("direccion");
+            String ciudad = (String) datos.get("ciudad");
+            String codigoPostal = (String) datos.get("codigoPostal");
+            String pais = (String) datos.get("pais");
+            
+            // Validaciones básicas
+            if (nombre == null || nombre.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El nombre de la empresa es obligatorio"));
+            }
+            if (subdominio == null || subdominio.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El subdominio es obligatorio"));
+            }
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El email de la empresa es obligatorio"));
+            }
+            
+            // Verificar si el subdominio ya existe
+            if (empresaRepository.findBySubdominio(subdominio).isPresent()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "Este subdominio ya está en uso"));
+            }
+            
+            // Buscar la empresa temporal por email
+            Empresa empresaTemporal = empresaRepository.findByEmail(email).orElse(null);
+            
+            if (empresaTemporal == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se encontró una empresa temporal para este email"));
+            }
+            
+            // Actualizar la empresa temporal con los datos reales
+            empresaTemporal.setNombre(nombre);
+            empresaTemporal.setSubdominio(subdominio);
+            empresaTemporal.setEmail(email);
+            empresaTemporal.setTelefono(telefono != null ? telefono : "");
+            empresaTemporal.setDireccion(direccion != null ? direccion : "");
+            empresaTemporal.setCiudad(ciudad != null ? ciudad : "");
+            empresaTemporal.setCodigoPostal(codigoPostal != null ? codigoPostal : "");
+            empresaTemporal.setPais(pais != null ? pais : "");
+            empresaTemporal.setDescripcion("Empresa configurada");
+            empresaTemporal.setFechaFinPrueba(LocalDateTime.now().plusDays(30));
+            empresaTemporal.setActiva(true);
+            empresaTemporal.setEstadoSuscripcion(Empresa.EstadoSuscripcion.ACTIVA);
+            
+            empresaTemporal = empresaRepository.save(empresaTemporal);
+            
+            System.out.println("✅ Empresa creada exitosamente: " + empresaTemporal.getId());
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Empresa configurada exitosamente",
+                "empresa", Map.of(
+                    "id", empresaTemporal.getId(),
+                    "nombre", empresaTemporal.getNombre(),
+                    "subdominio", empresaTemporal.getSubdominio(),
+                    "email", empresaTemporal.getEmail()
+                )
+            ));
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error creando empresa: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
 }
