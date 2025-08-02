@@ -40,6 +40,9 @@ class ApiService {
           (/\/publico\/[^/]+\/productos/.test(config.url) ||
            /\/publico\/[^/]+\/empresa/.test(config.url) ||
            /\/auth\/login/.test(config.url) ||
+           /\/auth\/registrar-administrador/.test(config.url) ||
+           /\/auth\/crear-empresa/.test(config.url) ||
+           /\/auth\/verificar-token-admin/.test(config.url) ||
            /\/auth\/recuperar-password/.test(config.url) ||
            /\/auth\/validar-token/.test(config.url) ||
            /\/auth\/cambiar-password/.test(config.url) ||
@@ -1322,10 +1325,8 @@ class ApiService {
     ciudad?: string;
     codigoPostal?: string;
     pais?: string;
-    descripcion?: string;
-    categoria: string;
   }): Promise<{ mensaje: string; empresa: any }> {
-    const response = await this.api.post('/empresas/crear-empresa', data);
+    const response = await this.api.post('/auth/crear-empresa', data);
     return response.data;
   }
 }
