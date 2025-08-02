@@ -115,7 +115,8 @@ const InputField = ({
   onChange, 
   required = false,
   placeholder = "",
-  className = ""
+  className = "",
+  description = ""
 }: {
   icon: string;
   label: string;
@@ -126,11 +127,17 @@ const InputField = ({
   required?: boolean;
   placeholder?: string;
   className?: string;
+  description?: string;
 }) => (
   <div className={`grupo-campo ${className}`}>
     <label className="etiqueta">
       {label} {required && <span style={{ color: 'var(--color-error)' }}>*</span>}
     </label>
+    {description && (
+      <p className="texto-pequeno texto-gris" style={{ marginBottom: '0.5rem' }}>
+        {description}
+      </p>
+    )}
     <div className="relative">
       <div className="absolute" style={{ top: '50%', left: '0.75rem', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
         <span style={{ color: 'var(--color-texto-secundario)', fontSize: '1.125rem' }}>{icon}</span>
@@ -784,6 +791,9 @@ export default function ConfiguracionEmpresa() {
                   <label className="etiqueta">
                     Subdominio <span style={{ color: 'var(--color-error)' }}>*</span>
                   </label>
+                  <p className="texto-pequeno texto-gris" style={{ marginBottom: '0.5rem' }}>
+                    Este será la URL de tu tienda online. Por ejemplo: si escribes "miempresa", tu tienda estará disponible en miempresa.negocio360.org
+                  </p>
                   <div className="flex">
                     <div className="relative" style={{ flex: 1 }}>
                       <div className="absolute" style={{ top: '50%', left: '0.75rem', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
@@ -837,6 +847,7 @@ export default function ConfiguracionEmpresa() {
                   onChange={manejarCambio}
                   required
                   placeholder="contacto@tuempresa.com"
+                  description="Este email se usará para recibir notificaciones de pedidos, consultas de clientes y comunicaciones importantes de la plataforma."
                 />
                 <InputField
                   icon="📱"
@@ -1075,15 +1086,15 @@ export default function ConfiguracionEmpresa() {
               {/* Texto secundario */}
               <InputField
                 icon="📝"
-                label="Descripción de la Empresa"
+                label="Texto Secundario"
                 type="textarea"
                 name="descripcion"
                 value={configuracion.descripcion}
                 onChange={manejarCambio}
-                placeholder="Describe tu negocio, productos y servicios..."
+                placeholder="Eslogan, contenido adicional o descripción breve..."
               />
               <p className="texto-pequeno texto-gris" style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
-                💡 <strong>Guía:</strong> Este texto aparecerá debajo del título en la tarjeta de presentación.
+                💡 <strong>Guía:</strong> Este texto aparecerá debajo del título de bienvenida en la tarjeta de presentación. Puede ser un eslogan, contenido adicional o descripción breve de tu negocio.
               </p>
 
               {/* Imagen de fondo para la card de presentación */}
