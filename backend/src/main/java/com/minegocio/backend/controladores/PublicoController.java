@@ -943,7 +943,7 @@ public class PublicoController {
             List<Map<String, Object>> detallesData = (List<Map<String, Object>>) pedidoData.get("detalles");
             
             // Validar método de pago
-            String estadoInicial = "PENDIENTE";
+            com.minegocio.backend.entidades.Pedido.EstadoPedido estadoInicial = com.minegocio.backend.entidades.Pedido.EstadoPedido.PENDIENTE;
             if ("TRANSFERENCIA".equals(metodoPago)) {
                 // Verificar si la transferencia bancaria está habilitada
                 if (empresa.get().getTransferenciaBancariaHabilitada() == null || !empresa.get().getTransferenciaBancariaHabilitada()) {
@@ -952,7 +952,7 @@ public class PublicoController {
                     );
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
                 }
-                estadoInicial = "PENDIENTE_PAGO";
+                estadoInicial = com.minegocio.backend.entidades.Pedido.EstadoPedido.PENDIENTE_PAGO;
             }
             
             // Crear DTO del pedido
