@@ -535,6 +535,8 @@ export default function GestionClientes() {
   useEffect(() => {
     if (empresaId) {
       cargarClientes();
+      // Limpiar contador de clientes nuevos al cargar la página
+      localStorage.setItem(`ultimaVisitaClientes_${empresaId}`, Date.now().toString());
     }
   }, [empresaId, cargarClientes]);
 

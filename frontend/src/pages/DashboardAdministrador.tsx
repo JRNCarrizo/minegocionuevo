@@ -110,6 +110,29 @@ export default function DashboardAdministrador() {
     }
   }, [datosUsuario?.empresaId]);
 
+  // Recargar contadores cuando la página vuelva a estar visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && datosUsuario?.empresaId) {
+        cargarContadoresNuevos();
+      }
+    };
+
+    const handleFocus = () => {
+      if (datosUsuario?.empresaId) {
+        cargarContadoresNuevos();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [datosUsuario?.empresaId]);
+
   // Cargar notificaciones recientes
   useEffect(() => {
     const cargarNotificaciones = async () => {

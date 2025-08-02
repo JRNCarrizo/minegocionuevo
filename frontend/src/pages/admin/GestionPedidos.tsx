@@ -931,6 +931,8 @@ export default function GestionPedidos() {
       console.log('useEffect ejecutado con empresaId:', empresaId);
       cargarPedidos();
       cargarEstadisticas();
+      // Limpiar contador de pedidos nuevos al cargar la página
+      localStorage.setItem(`ultimaVisitaPedidos_${empresaId}`, Date.now().toString());
     }
   }, [empresaId]);
 
