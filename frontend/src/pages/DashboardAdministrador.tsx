@@ -466,7 +466,7 @@ export default function DashboardAdministrador() {
                 color: '#64748b',
                 margin: 0
               }}>
-                Gestionar catálogo
+                Gestionar productos
               </p>
             </div>
           </Link>
@@ -1049,22 +1049,24 @@ export default function DashboardAdministrador() {
               <p style={{ fontSize: '0.875rem' }}>Las notificaciones aparecerán aquí cuando haya actividad en tu negocio</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '0.75rem' : '1rem' }}>
               {(mostrarTodas ? todasLasNotificaciones : notificaciones.slice(0, 5)).map((notificacion, index) => (
                 <div 
                   key={notificacion.id}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: isMobile ? 'flex-start' : 'center',
                     justifyContent: 'space-between',
-                    padding: '1rem',
+                    padding: isMobile ? '0.75rem' : '1rem',
                     borderRadius: '0.75rem',
                     background: notificacion.leida ? 'transparent' : 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%)',
                     border: notificacion.leida ? '1px solid #e2e8f0' : '1px solid rgba(59, 130, 246, 0.2)',
                     transition: 'all 0.2s ease',
                     cursor: modoSeleccion ? 'default' : 'pointer',
                     animation: `slideInUp 0.6s ease-out ${index * 0.1}s both`,
-                    position: 'relative'
+                    position: 'relative',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: isMobile ? '0.75rem' : '0'
                   }}
                   onClick={async (e) => {
                     console.log(e);
@@ -1098,7 +1100,13 @@ export default function DashboardAdministrador() {
                 >
                   {/* Checkbox para selección */}
                   {modoSeleccion && (
-                    <div style={{ position: 'absolute', left: '0.5rem', top: '50%', transform: 'translateY(-50%)' }}>
+                    <div style={{ 
+                      position: isMobile ? 'static' : 'absolute', 
+                      left: isMobile ? 'auto' : '0.5rem', 
+                      top: isMobile ? 'auto' : '50%', 
+                      transform: isMobile ? 'none' : 'translateY(-50%)',
+                      marginBottom: isMobile ? '0.5rem' : '0'
+                    }}>
                       <input
                         type="checkbox"
                         checked={notificacionesSeleccionadas.includes(notificacion.id)}
@@ -1122,14 +1130,14 @@ export default function DashboardAdministrador() {
                         eliminarNotificacion(notificacion.id);
                       }}
                       style={{
-                        position: 'absolute',
-                        right: '0.5rem',
-                        top: '0.5rem',
+                        position: isMobile ? 'static' : 'absolute',
+                        right: isMobile ? 'auto' : '0.5rem',
+                        top: isMobile ? 'auto' : '0.5rem',
                         background: 'rgba(239, 68, 68, 0.1)',
                         border: '1px solid rgba(239, 68, 68, 0.2)',
                         borderRadius: '50%',
-                        width: '2rem',
-                        height: '2rem',
+                        width: isMobile ? '1.75rem' : '2rem',
+                        height: isMobile ? '1.75rem' : '2rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1137,15 +1145,21 @@ export default function DashboardAdministrador() {
                         fontSize: '0.75rem',
                         color: '#ef4444',
                         transition: 'all 0.2s ease',
-                        opacity: 0
+                        opacity: isMobile ? '1' : '0',
+                        alignSelf: isMobile ? 'flex-end' : 'auto',
+                        marginBottom: isMobile ? '0.5rem' : '0'
                       }}
                       onMouseOver={(e) => {
-                        e.currentTarget.style.opacity = '1';
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                        if (!isMobile) {
+                          e.currentTarget.style.opacity = '1';
+                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                        }
                       }}
                       onMouseOut={(e) => {
-                        e.currentTarget.style.opacity = '0';
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                        if (!isMobile) {
+                          e.currentTarget.style.opacity = '0';
+                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                        }
                       }}
                       title="Eliminar notificación"
                     >
@@ -1155,57 +1169,71 @@ export default function DashboardAdministrador() {
                   
                   <div style={{ 
                     display: 'flex', 
-                    alignItems: 'center',
-                    marginLeft: modoSeleccion ? '2rem' : '0',
-                    marginRight: !modoSeleccion ? '2rem' : '0',
-                    flex: 1
+                    alignItems: isMobile ? 'flex-start' : 'center',
+                    marginLeft: modoSeleccion && !isMobile ? '2rem' : '0',
+                    marginRight: !modoSeleccion && !isMobile ? '2rem' : '0',
+                    flex: 1,
+                    flexDirection: isMobile ? 'row' : 'row',
+                    gap: isMobile ? '0.75rem' : '1rem'
                   }}>
                     <div style={{
-                      width: '2.5rem',
-                      height: '2.5rem',
+                      width: isMobile ? '2rem' : '2.5rem',
+                      height: isMobile ? '2rem' : '2.5rem',
                       background: notificacion.color ? `linear-gradient(135deg, ${notificacion.color} 0%, ${notificacion.color}dd 100%)` : 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
                       borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '1rem',
-                      marginRight: '1rem',
+                      fontSize: isMobile ? '0.875rem' : '1rem',
+                      marginRight: isMobile ? '0' : '1rem',
                       color: 'white',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                      flexShrink: 0
                     }}>
                       {notificacion.icono || '🔔'}
                     </div>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{
-                        fontSize: '1rem',
+                        fontSize: isMobile ? '0.875rem' : '1rem',
                         fontWeight: '600',
                         color: '#1e293b',
                         margin: 0,
-                        marginBottom: '0.25rem'
+                        marginBottom: '0.25rem',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word'
                       }}>
                         {notificacion.titulo}
                       </p>
                       <p style={{
-                        fontSize: '0.875rem',
+                        fontSize: isMobile ? '0.75rem' : '0.875rem',
                         color: '#64748b',
-                        margin: 0
+                        margin: 0,
+                        lineHeight: '1.4',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word'
                       }}>
                         {notificacion.descripcion}
                       </p>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem',
+                    alignSelf: isMobile ? 'flex-start' : 'center',
+                    marginTop: isMobile ? '0.5rem' : '0'
+                  }}>
                     {!notificacion.leida && (
                       <div style={{
-                        width: '8px',
-                        height: '8px',
+                        width: isMobile ? '6px' : '8px',
+                        height: isMobile ? '6px' : '8px',
                         background: '#3b82f6',
                         borderRadius: '50%',
                         flexShrink: 0
                       }} />
                     )}
                     <span style={{
-                      fontSize: '0.875rem',
+                      fontSize: isMobile ? '0.75rem' : '0.875rem',
                       color: '#64748b',
                       fontWeight: '500'
                     }}>
@@ -1218,7 +1246,7 @@ export default function DashboardAdministrador() {
               {!mostrarTodas && notificaciones.length > 5 && (
                 <div style={{
                   textAlign: 'center',
-                  padding: '1rem'
+                  padding: isMobile ? '0.75rem' : '1rem'
                 }}>
                   {cargandoTodas ? (
                     <div style={{
@@ -1227,12 +1255,12 @@ export default function DashboardAdministrador() {
                       justifyContent: 'center',
                       gap: '0.5rem',
                       color: '#3b82f6',
-                      fontSize: '0.875rem',
+                      fontSize: isMobile ? '0.75rem' : '0.875rem',
                       fontWeight: '500'
                     }}>
                       <div style={{
-                        width: '16px',
-                        height: '16px',
+                        width: isMobile ? '14px' : '16px',
+                        height: isMobile ? '14px' : '16px',
                         border: '2px solid #e2e8f0',
                         borderTop: '2px solid #3b82f6',
                         borderRadius: '50%',
@@ -1247,13 +1275,16 @@ export default function DashboardAdministrador() {
                         background: 'none',
                         border: 'none',
                         color: '#3b82f6',
-                        fontSize: '0.875rem',
+                        fontSize: isMobile ? '0.75rem' : '0.875rem',
                         fontWeight: '500',
                         cursor: 'pointer',
-                        padding: '0.5rem 1rem',
+                        padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem',
                         borderRadius: '0.5rem',
                         transition: 'all 0.2s ease',
-                        textDecoration: 'underline'
+                        textDecoration: 'underline',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        maxWidth: '100%'
                       }}
                       onMouseOver={(e) => {
                         e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
@@ -1273,7 +1304,7 @@ export default function DashboardAdministrador() {
               {mostrarTodas && (
                 <div style={{
                   textAlign: 'center',
-                  padding: '1rem',
+                  padding: isMobile ? '0.75rem' : '1rem',
                   borderTop: '1px solid #e2e8f0',
                   marginTop: '1rem'
                 }}>
@@ -1283,12 +1314,15 @@ export default function DashboardAdministrador() {
                       background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
                       color: 'white',
                       border: 'none',
-                      padding: '0.5rem 1rem',
+                      padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem',
                       borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
+                      fontSize: isMobile ? '0.75rem' : '0.875rem',
                       fontWeight: '500',
                       cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s ease',
+                      wordWrap: 'break-word',
+                      overflowWrap: 'break-word',
+                      maxWidth: '100%'
                     }}
                     onMouseOver={(e) => {
                       e.currentTarget.style.transform = 'translateY(-1px)';
@@ -1349,6 +1383,39 @@ export default function DashboardAdministrador() {
           
           .actions-grid {
             grid-template-columns: 1fr !important;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .dashboard-title {
+            font-size: 1.5rem !important;
+          }
+          
+          .notification-container {
+            padding: 0.5rem !important;
+          }
+          
+          .notification-item {
+            padding: 0.5rem !important;
+            gap: 0.5rem !important;
+          }
+          
+          .notification-icon {
+            width: 1.75rem !important;
+            height: 1.75rem !important;
+            font-size: 0.75rem !important;
+          }
+          
+          .notification-title {
+            font-size: 0.8rem !important;
+          }
+          
+          .notification-description {
+            font-size: 0.7rem !important;
+          }
+          
+          .notification-time {
+            font-size: 0.65rem !important;
           }
         }
       `}</style>
