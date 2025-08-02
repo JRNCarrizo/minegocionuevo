@@ -37,6 +37,7 @@ import ConfirmacionRegistro from './pages/ConfirmacionRegistro.tsx';
 import ConfirmacionRegistroAdmin from './pages/ConfirmacionRegistroAdmin.tsx';
 import RegistroEmpresaEtapa1 from './pages/RegistroEmpresaEtapa1.tsx';
 import ConfigurarEmpresa from './pages/ConfigurarEmpresa.tsx';
+import VerificarEmailAdmin from './pages/VerificarEmailAdmin.tsx';
 
 function AppContent() {
   const { esSubdominioPrincipal, cargando } = useSubdominio();
@@ -65,6 +66,7 @@ function AppContent() {
                      <Route path="/recuperar-contraseña" element={<NuevaPassword />} />
                      <Route path="/google-login" element={<GoogleLogin />} />
           <Route path="/verificar-email" element={<VerificarEmail />} />
+          <Route path="/verificar-email-admin" element={<VerificarEmailAdmin />} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/login" element={<LoginAdministrador />} />
           <Route path="/admin/dashboard" element={<DashboardAdministrador />} />

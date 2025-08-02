@@ -1295,6 +1295,11 @@ class ApiService {
     return response.data;
   }
 
+  async verificarTokenAdmin(token: string) {
+    const response = await this.api.post('/auth/verificar-token-admin', { token });
+    return response.data;
+  }
+
   // Métodos para registro en dos etapas
   async registrarAdministrador(data: {
     nombre: string;
