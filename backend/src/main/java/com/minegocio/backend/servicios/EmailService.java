@@ -403,7 +403,7 @@ public class EmailService {
             clienteEmail,
             direccionEntrega,
             total,
-            FechaUtil.ahora().format(FechaUtil.FORMATO_FECHA_HORA),
+            FechaUtil.ahoraFormateado(),
             frontendUrl
         );
         
@@ -444,7 +444,7 @@ public class EmailService {
             clienteNombre,
             clienteEmail,
             total,
-            FechaUtil.ahora().format(FechaUtil.FORMATO_FECHA_HORA)
+            FechaUtil.ahoraFormateado()
         );
         
         message.setText(contenido);

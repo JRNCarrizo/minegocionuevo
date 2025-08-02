@@ -2,6 +2,7 @@ package com.minegocio.backend.utilidades;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -17,10 +18,18 @@ public class FechaUtil {
     
     /**
      * Obtiene la fecha y hora actual en la zona horaria de Argentina
+     * @return String formateado en dd/MM/yyyy HH:mm en zona horaria de Argentina
+     */
+    public static String ahoraFormateado() {
+        return ZonedDateTime.now(ZONA_HORARIA_ARGENTINA).format(FORMATO_FECHA_HORA);
+    }
+    
+    /**
+     * Obtiene la fecha y hora actual en la zona horaria de Argentina
      * @return LocalDateTime en zona horaria de Argentina
      */
     public static LocalDateTime ahora() {
-        return LocalDateTime.now(ZONA_HORARIA_ARGENTINA);
+        return ZonedDateTime.now(ZONA_HORARIA_ARGENTINA).toLocalDateTime();
     }
     
     /**
