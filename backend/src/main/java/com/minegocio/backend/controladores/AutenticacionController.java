@@ -290,7 +290,8 @@ public class AutenticacionController {
             System.out.println("✅ Usuario administrador creado: " + nuevoUsuario.getEmail());
             System.out.println("Token de verificación: " + tokenVerificacion);
             
-            // Enviar email de verificación
+            // Enviar email de verificación (temporalmente comentado para diagnosticar)
+            /*
             try {
                 emailService.enviarEmailVerificacion(nuevoUsuario.getEmail(), nuevoUsuario.getNombre(), tokenVerificacion);
                 System.out.println("✅ Email de verificación enviado");
@@ -298,6 +299,7 @@ public class AutenticacionController {
                 System.out.println("❌ Error enviando email: " + e.getMessage());
                 // No fallar el registro si el email no se puede enviar
             }
+            */
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Administrador registrado exitosamente",
@@ -309,7 +311,7 @@ public class AutenticacionController {
             System.out.println("❌ Error en registro: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Error interno del servidor"));
+                .body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
         }
     }
 
