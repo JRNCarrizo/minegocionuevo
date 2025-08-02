@@ -357,50 +357,28 @@ export default function DashboardAdministrador() {
     try {
       const empresaId = datosUsuario.empresaId;
       
-      // Obtener la última visita a clientes desde localStorage
-      const ultimaVisitaClientes = localStorage.getItem(`ultimaVisitaClientes_${empresaId}`);
-      const ultimaVisitaPedidos = localStorage.getItem(`ultimaVisitaPedidos_${empresaId}`);
+      // Calcular fecha de hace 24 horas
+      const hace24Horas = new Date(Date.now() - 24 * 60 * 60 * 1000);
       
-      // Si no hay fecha de última visita, no mostrar contadores (es la primera vez)
-      if (!ultimaVisitaClientes || !ultimaVisitaPedidos) {
-        setClientesNuevos(0);
-        setPedidosNuevos(0);
-        return;
-      }
-      
-      const fechaUltimaVisitaClientes = new Date(parseInt(ultimaVisitaClientes));
-      const fechaUltimaVisitaPedidos = new Date(parseInt(ultimaVisitaPedidos));
-      
-      // Verificar que las fechas sean válidas
-      if (isNaN(fechaUltimaVisitaClientes.getTime()) || isNaN(fechaUltimaVisitaPedidos.getTime())) {
-        setClientesNuevos(0);
-        setPedidosNuevos(0);
-        return;
-      }
-      
-      // Cargar clientes nuevos (creados después de la última visita)
+      // Cargar clientes nuevos (creados en las últimas 24 horas)
       try {
         const responseClientes = await ApiService.obtenerClientesPaginado(empresaId, 0, 1000);
-        const clientesNuevos = responseClientes.content?.filter((cliente: Cliente) => {
-          const fechaCreacion = new Date(cliente.fechaCreacion);
-          return fechaCreacion > fechaUltimaVisitaClientes;
-        }).length || 0;
+        const clientesNuevos = responseClientes.content?.filter((cliente: Cliente) => 
+          new Date(cliente.fechaCreacion) > hace24Horas
+        ).length || 0;
         setClientesNuevos(clientesNuevos);
-        console.log(`Clientes nuevos: ${clientesNuevos} (última visita: ${fechaUltimaVisitaClientes.toLocaleString()})`);
       } catch (error) {
         console.error('Error al cargar clientes nuevos:', error);
         setClientesNuevos(0);
       }
       
-      // Cargar pedidos nuevos (creados después de la última visita)
+      // Cargar pedidos nuevos (creados en las últimas 24 horas)
       try {
         const responsePedidos = await ApiService.obtenerPedidos(empresaId, 0, 1000);
-        const pedidosNuevos = responsePedidos.content?.filter((pedido: Pedido) => {
-          const fechaCreacion = new Date(pedido.fechaCreacion);
-          return fechaCreacion > fechaUltimaVisitaPedidos;
-        }).length || 0;
+        const pedidosNuevos = responsePedidos.content?.filter((pedido: Pedido) => 
+          new Date(pedido.fechaCreacion) > hace24Horas
+        ).length || 0;
         setPedidosNuevos(pedidosNuevos);
-        console.log(`Pedidos nuevos: ${pedidosNuevos} (última visita: ${fechaUltimaVisitaPedidos.toLocaleString()})`);
       } catch (error) {
         console.error('Error al cargar pedidos nuevos:', error);
         setPedidosNuevos(0);
@@ -412,31 +390,15 @@ export default function DashboardAdministrador() {
 
   // Función para limpiar contador de clientes nuevos
   const limpiarContadorClientes = () => {
-    if (datosUsuario?.empresaId) {
-      localStorage.setItem(`ultimaVisitaClientes_${datosUsuario.empresaId}`, Date.now().toString());
-      setClientesNuevos(0);
-    }
+    // No hacer nada - los contadores se basan en las últimas 24 horas
   };
 
   // Función para limpiar contador de pedidos nuevos
   const limpiarContadorPedidos = () => {
-    if (datosUsuario?.empresaId) {
-      localStorage.setItem(`ultimaVisitaPedidos_${datosUsuario.empresaId}`, Date.now().toString());
-      setPedidosNuevos(0);
-    }
+    // No hacer nada - los contadores se basan en las últimas 24 horas
   };
 
-  // Función para reiniciar contadores (para debugging)
-  const reiniciarContadores = () => {
-    if (datosUsuario?.empresaId) {
-      const empresaId = datosUsuario.empresaId;
-      localStorage.removeItem(`ultimaVisitaClientes_${empresaId}`);
-      localStorage.removeItem(`ultimaVisitaPedidos_${empresaId}`);
-      setClientesNuevos(0);
-      setPedidosNuevos(0);
-      console.log('Contadores reiniciados');
-    }
-  };
+
 
   // Mostrar pantalla de carga mientras el responsive se detecta
   if (!isResponsiveReady) {
@@ -519,25 +481,6 @@ export default function DashboardAdministrador() {
             Bienvenido{datosUsuario?.nombre ? ` ${datosUsuario.nombre}` : ''}. 
             Aquí tienes un resumen de {datosUsuario?.empresaNombre || 'tu negocio'}.
           </p>
-          {/* Botón temporal para reiniciar contadores */}
-          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-            <button
-              onClick={reiniciarContadores}
-              style={{
-                background: '#ef4444',
-                color: 'white',
-                border: 'none',
-                padding: '0.5rem 1rem',
-                borderRadius: '0.5rem',
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                opacity: 0.7
-              }}
-              title="Reiniciar contadores (temporal)"
-            >
-              🔄 Reiniciar contadores
-            </button>
-          </div>
         </div>
 
         {/* Accesos Directos */}

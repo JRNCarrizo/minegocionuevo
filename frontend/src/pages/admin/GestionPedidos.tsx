@@ -931,10 +931,6 @@ export default function GestionPedidos() {
       console.log('useEffect ejecutado con empresaId:', empresaId);
       cargarPedidos();
       cargarEstadisticas();
-      // Limpiar contador de pedidos nuevos al cargar la página
-      const timestamp = Date.now();
-      localStorage.setItem(`ultimaVisitaPedidos_${empresaId}`, timestamp.toString());
-      console.log(`Contador de pedidos limpiado - timestamp: ${new Date(timestamp).toLocaleString()}`);
     }
   }, [empresaId]);
 

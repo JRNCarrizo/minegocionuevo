@@ -535,10 +535,6 @@ export default function GestionClientes() {
   useEffect(() => {
     if (empresaId) {
       cargarClientes();
-      // Limpiar contador de clientes nuevos al cargar la página
-      const timestamp = Date.now();
-      localStorage.setItem(`ultimaVisitaClientes_${empresaId}`, timestamp.toString());
-      console.log(`Contador de clientes limpiado - timestamp: ${new Date(timestamp).toLocaleString()}`);
     }
   }, [empresaId, cargarClientes]);
 
