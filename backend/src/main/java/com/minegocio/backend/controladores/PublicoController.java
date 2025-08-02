@@ -37,6 +37,9 @@ public class PublicoController {
     
     @Autowired
     private PedidoService pedidoService;
+    
+    @Autowired
+    private EmailService emailService;
 
     /**
      * Obtener información pública de una empresa por subdominio
@@ -811,6 +814,21 @@ public class PublicoController {
             
             System.out.println("Pedido cancelado exitosamente: " + pedidoCancelado.getNumeroPedido());
             
+            // Enviar notificación por email a la empresa
+            try {
+                emailService.enviarNotificacionPedidoCancelado(
+                    empresa.get().getEmail(),
+                    empresa.get().getNombre(),
+                    pedidoCancelado.getNumeroPedido(),
+                    pedidoCancelado.getClienteNombre(),
+                    pedidoCancelado.getClienteEmail(),
+                    pedidoCancelado.getTotal()
+                );
+            } catch (Exception e) {
+                System.err.println("Error enviando notificación de pedido cancelado: " + e.getMessage());
+                // No lanzar excepción para no fallar la cancelación del pedido
+            }
+            
             var respuesta = java.util.Map.of(
                 "mensaje", "Pedido cancelado exitosamente",
                 "pedido", pedidoCancelado
@@ -892,6 +910,22 @@ public class PublicoController {
             com.minegocio.backend.dto.PedidoDTO pedidoCreado = pedidoService.crearPedido(empresaId, pedidoDTO);
             
             System.out.println("Pedido creado exitosamente: " + pedidoCreado.getNumeroPedido());
+            
+            // Enviar notificación por email a la empresa
+            try {
+                emailService.enviarNotificacionNuevoPedido(
+                    empresa.get().getEmail(),
+                    empresa.get().getNombre(),
+                    pedidoCreado.getNumeroPedido(),
+                    clienteNombre,
+                    clienteEmail,
+                    total,
+                    direccionEnvio
+                );
+            } catch (Exception e) {
+                System.err.println("Error enviando notificación de nuevo pedido: " + e.getMessage());
+                // No lanzar excepción para no fallar la creación del pedido
+            }
             
             var respuesta = java.util.Map.of(
                 "mensaje", "Pedido creado exitosamente",

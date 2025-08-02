@@ -6,6 +6,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
+import java.math.BigDecimal;
 
 /**
  * Servicio para el envío de emails
@@ -368,6 +369,90 @@ public class EmailService {
             System.out.println("✅ Email enviado exitosamente a: " + emailDestinatario);
         } catch (Exception e) {
             System.err.println("❌ Error al enviar email: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Envía notificación de nuevo pedido al email de contacto de la empresa
+     */
+    public void enviarNotificacionNuevoPedido(String emailEmpresa, String nombreEmpresa, String numeroPedido, String clienteNombre, String clienteEmail, BigDecimal total, String direccionEntrega) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        
+        message.setFrom(fromEmail);
+        message.setTo(emailEmpresa);
+        message.setSubject("🛒 Nuevo Pedido Recibido - " + nombreEmpresa);
+        
+        String contenido = String.format(
+            "Hola,\n\n" +
+            "Has recibido un nuevo pedido en tu tienda %s.\n\n" +
+            "📋 Detalles del pedido:\n" +
+            "• Número de pedido: %s\n" +
+            "• Cliente: %s\n" +
+            "• Email del cliente: %s\n" +
+            "• Dirección de entrega: %s\n" +
+            "• Total: $%.2f\n\n" +
+            "⏰ Fecha y hora: %s\n\n" +
+            "Por favor, accede a tu panel de administración para gestionar este pedido:\n" +
+            "%s\n\n" +
+            "Saludos,\n" +
+            "negocio360",
+            nombreEmpresa,
+            numeroPedido,
+            clienteNombre,
+            clienteEmail,
+            direccionEntrega,
+            total,
+            java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+            frontendUrl
+        );
+        
+        message.setText(contenido);
+        
+        try {
+            mailSender.send(message);
+            System.out.println("✅ Notificación de nuevo pedido enviada a: " + emailEmpresa);
+        } catch (Exception e) {
+            System.err.println("❌ Error al enviar notificación de nuevo pedido: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Envía notificación de pedido cancelado al email de contacto de la empresa
+     */
+    public void enviarNotificacionPedidoCancelado(String emailEmpresa, String nombreEmpresa, String numeroPedido, String clienteNombre, String clienteEmail, BigDecimal total) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        
+        message.setFrom(fromEmail);
+        message.setTo(emailEmpresa);
+        message.setSubject("❌ Pedido Cancelado - " + nombreEmpresa);
+        
+        String contenido = String.format(
+            "Hola,\n\n" +
+            "Un pedido ha sido cancelado en tu tienda %s.\n\n" +
+            "📋 Detalles del pedido cancelado:\n" +
+            "• Número de pedido: %s\n" +
+            "• Cliente: %s\n" +
+            "• Email del cliente: %s\n" +
+            "• Total: $%.2f\n\n" +
+            "⏰ Fecha y hora de cancelación: %s\n\n" +
+            "El stock de los productos ha sido restaurado automáticamente.\n\n" +
+            "Saludos,\n" +
+            "negocio360",
+            nombreEmpresa,
+            numeroPedido,
+            clienteNombre,
+            clienteEmail,
+            total,
+            java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+        );
+        
+        message.setText(contenido);
+        
+        try {
+            mailSender.send(message);
+            System.out.println("✅ Notificación de pedido cancelado enviada a: " + emailEmpresa);
+        } catch (Exception e) {
+            System.err.println("❌ Error al enviar notificación de pedido cancelado: " + e.getMessage());
         }
     }
 } 

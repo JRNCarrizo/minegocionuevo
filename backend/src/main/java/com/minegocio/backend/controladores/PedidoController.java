@@ -2,6 +2,7 @@ package com.minegocio.backend.controladores;
 
 import com.minegocio.backend.dto.PedidoDTO;
 import com.minegocio.backend.servicios.PedidoService;
+import com.minegocio.backend.servicios.EmailService;
 import com.minegocio.backend.utils.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,11 +21,37 @@ public class PedidoController {
 
     @Autowired
     private PedidoService pedidoService;
+    
+    @Autowired
+    private EmailService emailService;
+    
+    @Autowired
+    private com.minegocio.backend.servicios.EmpresaService empresaService;
 
     @PostMapping
     public ResponseEntity<?> crearPedido(@PathVariable Long empresaId, @RequestBody PedidoDTO pedidoDTO) {
         try {
             PedidoDTO nuevoPedido = pedidoService.crearPedido(empresaId, pedidoDTO);
+            
+            // Enviar notificación por email a la empresa
+            try {
+                var empresa = empresaService.obtenerPorId(empresaId);
+                if (empresa.isPresent()) {
+                    emailService.enviarNotificacionNuevoPedido(
+                        empresa.get().getEmail(),
+                        empresa.get().getNombre(),
+                        nuevoPedido.getNumeroPedido(),
+                        nuevoPedido.getClienteNombre(),
+                        nuevoPedido.getClienteEmail(),
+                        nuevoPedido.getTotal(),
+                        nuevoPedido.getDireccionEntrega()
+                    );
+                }
+            } catch (Exception e) {
+                System.err.println("Error enviando notificación de nuevo pedido: " + e.getMessage());
+                // No lanzar excepción para no fallar la creación del pedido
+            }
+            
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevoPedido);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear el pedido: " + e.getMessage());
@@ -154,6 +181,26 @@ public class PedidoController {
             }
             
             PedidoDTO pedidoActualizado = pedidoService.actualizarEstadoPedido(empresaId, pedidoId, nuevoEstado);
+            
+            // Enviar notificación si el pedido fue cancelado
+            if ("CANCELADO".equals(nuevoEstado)) {
+                try {
+                    var empresa = empresaService.obtenerPorId(empresaId);
+                    if (empresa.isPresent()) {
+                        emailService.enviarNotificacionPedidoCancelado(
+                            empresa.get().getEmail(),
+                            empresa.get().getNombre(),
+                            pedidoActualizado.getNumeroPedido(),
+                            pedidoActualizado.getClienteNombre(),
+                            pedidoActualizado.getClienteEmail(),
+                            pedidoActualizado.getTotal()
+                        );
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error enviando notificación de pedido cancelado: " + e.getMessage());
+                    // No lanzar excepción para no fallar la actualización del estado
+                }
+            }
             
             System.out.println("Estado actualizado exitosamente a: " + pedidoActualizado.getEstado());
             System.out.println("=== FIN DEBUG ACTUALIZAR ESTADO PEDIDO ===");
