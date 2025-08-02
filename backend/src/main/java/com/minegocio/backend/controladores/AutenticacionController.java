@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.minegocio.backend.entidades.Empresa;
@@ -496,6 +497,13 @@ public class AutenticacionController {
             if (empresaRepository.findBySubdominio(subdominio).isPresent()) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", "Este subdominio ya está en uso"));
+            }
+            
+            // Verificar si el email de la empresa ya existe (excluyendo la empresa temporal del admin)
+            Optional<Empresa> empresaExistente = empresaRepository.findByEmail(email);
+            if (empresaExistente.isPresent() && !empresaExistente.get().getEmail().equals(emailAdmin)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "Este email de empresa ya está en uso"));
             }
             
             // Buscar la empresa temporal por el email del administrador (no del formulario)
