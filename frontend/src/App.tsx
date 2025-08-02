@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { useSubdominio } from './hooks/useSubdominio';
 import { CartProvider } from './hooks/useCart';
+import { UsuarioProvider } from './contexts/UsuarioContext';
 import PaginaRegistro from './pages/PaginaRegistro.tsx';
 import PaginaPrincipal from './pages/PaginaPrincipal.tsx';
 import LoginAdministrador from './pages/LoginAdministrador.tsx';
@@ -138,7 +139,9 @@ function App() {
             }}
           />
           
-          <AppContent />
+          <UsuarioProvider>
+            <AppContent />
+          </UsuarioProvider>
         </div>
       </CartProvider>
     </Router>
