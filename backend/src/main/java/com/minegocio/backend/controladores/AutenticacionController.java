@@ -268,7 +268,24 @@ public class AutenticacionController {
                     .body(Map.of("error", "Este email ya está registrado"));
             }
             
-            // Crear el usuario administrador (sin empresa por ahora)
+            // Crear una empresa temporal para evitar la restricción NOT NULL
+            Empresa empresaTemporal = new Empresa();
+            empresaTemporal.setNombre("Empresa Temporal - " + email);
+            empresaTemporal.setSubdominio("temp-" + System.currentTimeMillis());
+            empresaTemporal.setEmail(email);
+            empresaTemporal.setTelefono(telefono != null ? telefono : "");
+            empresaTemporal.setDireccion("");
+            empresaTemporal.setCiudad("");
+            empresaTemporal.setCodigoPostal("");
+            empresaTemporal.setPais("");
+            empresaTemporal.setDescripcion("Empresa temporal para registro en dos etapas");
+            empresaTemporal.setFechaFinPrueba(LocalDateTime.now().plusDays(1));
+            empresaTemporal.setActiva(false); // Marcar como inactiva
+            empresaTemporal.setEstadoSuscripcion(Empresa.EstadoSuscripcion.SUSPENDIDA);
+            
+            empresaTemporal = empresaRepository.save(empresaTemporal);
+            
+            // Crear el usuario administrador con la empresa temporal
             Usuario nuevoUsuario = new Usuario();
             nuevoUsuario.setNombre(nombre);
             nuevoUsuario.setApellidos(apellidos);
@@ -278,7 +295,7 @@ public class AutenticacionController {
             nuevoUsuario.setRol(Usuario.RolUsuario.ADMINISTRADOR);
             nuevoUsuario.setActivo(true);
             nuevoUsuario.setEmailVerificado(false); // Requiere verificación
-            nuevoUsuario.setEmpresa(null); // Sin empresa por ahora
+            nuevoUsuario.setEmpresa(empresaTemporal); // Usar empresa temporal
             
             // Generar token de verificación
             String tokenVerificacion = UUID.randomUUID().toString();
@@ -288,6 +305,7 @@ public class AutenticacionController {
             nuevoUsuario = usuarioRepository.save(nuevoUsuario);
             
             System.out.println("✅ Usuario administrador creado: " + nuevoUsuario.getEmail());
+            System.out.println("✅ Empresa temporal creada: " + empresaTemporal.getId());
             System.out.println("Token de verificación: " + tokenVerificacion);
             
             // Enviar email de verificación (temporalmente comentado para diagnosticar)
@@ -304,7 +322,8 @@ public class AutenticacionController {
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Administrador registrado exitosamente",
                 "requiereVerificacion", true,
-                "email", nuevoUsuario.getEmail()
+                "email", nuevoUsuario.getEmail(),
+                "empresaTemporalId", empresaTemporal.getId()
             ));
             
         } catch (Exception e) {
