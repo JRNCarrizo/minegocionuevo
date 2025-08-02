@@ -932,7 +932,9 @@ export default function GestionPedidos() {
       cargarPedidos();
       cargarEstadisticas();
       // Limpiar contador de pedidos nuevos al cargar la página
-      localStorage.setItem(`ultimaVisitaPedidos_${empresaId}`, Date.now().toString());
+      const timestamp = Date.now();
+      localStorage.setItem(`ultimaVisitaPedidos_${empresaId}`, timestamp.toString());
+      console.log(`Contador de pedidos limpiado - timestamp: ${new Date(timestamp).toLocaleString()}`);
     }
   }, [empresaId]);
 

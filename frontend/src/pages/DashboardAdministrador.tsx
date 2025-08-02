@@ -358,20 +358,35 @@ export default function DashboardAdministrador() {
       const empresaId = datosUsuario.empresaId;
       
       // Obtener la última visita a clientes desde localStorage
-      const ultimaVisitaClientes = localStorage.getItem(`ultimaVisitaClientes_${empresaId}`) || '0';
-      const fechaUltimaVisitaClientes = new Date(parseInt(ultimaVisitaClientes));
+      const ultimaVisitaClientes = localStorage.getItem(`ultimaVisitaClientes_${empresaId}`);
+      const ultimaVisitaPedidos = localStorage.getItem(`ultimaVisitaPedidos_${empresaId}`);
       
-      // Obtener la última visita a pedidos desde localStorage
-      const ultimaVisitaPedidos = localStorage.getItem(`ultimaVisitaPedidos_${empresaId}`) || '0';
+      // Si no hay fecha de última visita, no mostrar contadores (es la primera vez)
+      if (!ultimaVisitaClientes || !ultimaVisitaPedidos) {
+        setClientesNuevos(0);
+        setPedidosNuevos(0);
+        return;
+      }
+      
+      const fechaUltimaVisitaClientes = new Date(parseInt(ultimaVisitaClientes));
       const fechaUltimaVisitaPedidos = new Date(parseInt(ultimaVisitaPedidos));
+      
+      // Verificar que las fechas sean válidas
+      if (isNaN(fechaUltimaVisitaClientes.getTime()) || isNaN(fechaUltimaVisitaPedidos.getTime())) {
+        setClientesNuevos(0);
+        setPedidosNuevos(0);
+        return;
+      }
       
       // Cargar clientes nuevos (creados después de la última visita)
       try {
         const responseClientes = await ApiService.obtenerClientesPaginado(empresaId, 0, 1000);
-        const clientesNuevos = responseClientes.content?.filter((cliente: Cliente) => 
-          new Date(cliente.fechaCreacion) > fechaUltimaVisitaClientes
-        ).length || 0;
+        const clientesNuevos = responseClientes.content?.filter((cliente: Cliente) => {
+          const fechaCreacion = new Date(cliente.fechaCreacion);
+          return fechaCreacion > fechaUltimaVisitaClientes;
+        }).length || 0;
         setClientesNuevos(clientesNuevos);
+        console.log(`Clientes nuevos: ${clientesNuevos} (última visita: ${fechaUltimaVisitaClientes.toLocaleString()})`);
       } catch (error) {
         console.error('Error al cargar clientes nuevos:', error);
         setClientesNuevos(0);
@@ -380,10 +395,12 @@ export default function DashboardAdministrador() {
       // Cargar pedidos nuevos (creados después de la última visita)
       try {
         const responsePedidos = await ApiService.obtenerPedidos(empresaId, 0, 1000);
-        const pedidosNuevos = responsePedidos.content?.filter((pedido: Pedido) => 
-          new Date(pedido.fechaCreacion) > fechaUltimaVisitaPedidos
-        ).length || 0;
+        const pedidosNuevos = responsePedidos.content?.filter((pedido: Pedido) => {
+          const fechaCreacion = new Date(pedido.fechaCreacion);
+          return fechaCreacion > fechaUltimaVisitaPedidos;
+        }).length || 0;
         setPedidosNuevos(pedidosNuevos);
+        console.log(`Pedidos nuevos: ${pedidosNuevos} (última visita: ${fechaUltimaVisitaPedidos.toLocaleString()})`);
       } catch (error) {
         console.error('Error al cargar pedidos nuevos:', error);
         setPedidosNuevos(0);
@@ -406,6 +423,18 @@ export default function DashboardAdministrador() {
     if (datosUsuario?.empresaId) {
       localStorage.setItem(`ultimaVisitaPedidos_${datosUsuario.empresaId}`, Date.now().toString());
       setPedidosNuevos(0);
+    }
+  };
+
+  // Función para reiniciar contadores (para debugging)
+  const reiniciarContadores = () => {
+    if (datosUsuario?.empresaId) {
+      const empresaId = datosUsuario.empresaId;
+      localStorage.removeItem(`ultimaVisitaClientes_${empresaId}`);
+      localStorage.removeItem(`ultimaVisitaPedidos_${empresaId}`);
+      setClientesNuevos(0);
+      setPedidosNuevos(0);
+      console.log('Contadores reiniciados');
     }
   };
 
@@ -490,6 +519,25 @@ export default function DashboardAdministrador() {
             Bienvenido{datosUsuario?.nombre ? ` ${datosUsuario.nombre}` : ''}. 
             Aquí tienes un resumen de {datosUsuario?.empresaNombre || 'tu negocio'}.
           </p>
+          {/* Botón temporal para reiniciar contadores */}
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <button
+              onClick={reiniciarContadores}
+              style={{
+                background: '#ef4444',
+                color: 'white',
+                border: 'none',
+                padding: '0.5rem 1rem',
+                borderRadius: '0.5rem',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                opacity: 0.7
+              }}
+              title="Reiniciar contadores (temporal)"
+            >
+              🔄 Reiniciar contadores
+            </button>
+          </div>
         </div>
 
         {/* Accesos Directos */}

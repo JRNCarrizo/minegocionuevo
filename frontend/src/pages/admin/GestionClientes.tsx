@@ -536,7 +536,9 @@ export default function GestionClientes() {
     if (empresaId) {
       cargarClientes();
       // Limpiar contador de clientes nuevos al cargar la página
-      localStorage.setItem(`ultimaVisitaClientes_${empresaId}`, Date.now().toString());
+      const timestamp = Date.now();
+      localStorage.setItem(`ultimaVisitaClientes_${empresaId}`, timestamp.toString());
+      console.log(`Contador de clientes limpiado - timestamp: ${new Date(timestamp).toLocaleString()}`);
     }
   }, [empresaId, cargarClientes]);
 
