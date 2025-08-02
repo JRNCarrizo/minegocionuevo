@@ -66,7 +66,13 @@ public class ConfiguracionSeguridad {
                 auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                 auth.requestMatchers("/actuator/**").permitAll(); // Health checks para Railway
                 auth.requestMatchers("/api/publico/**").permitAll()
-                    .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/auth/login").permitAll()
+                    .requestMatchers("/api/auth/registrar-administrador").permitAll()
+                    .requestMatchers("/api/auth/verificar-token-admin").permitAll()
+                    .requestMatchers("/api/auth/recuperar-password").permitAll()
+                    .requestMatchers("/api/auth/validar-token/**").permitAll()
+                    .requestMatchers("/api/auth/cambiar-password").permitAll()
+                    .requestMatchers("/api/auth/crear-empresa").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/verificacion/**").permitAll()
                     .requestMatchers("/api/verificacion-cliente/**").permitAll()
                     .requestMatchers("/api/debug/**").permitAll()
