@@ -396,9 +396,20 @@ public class SuperAdminService {
         dto.setTotalPedidos(pedidoRepository.countByEmpresaId(empresa.getId()));
         
         // Nuevas estadísticas para superadmin
-        dto.setTotalVentasRapidas(ventaRapidaRepository.countByEmpresaId(empresa.getId()));
-        dto.setTotalTransacciones(pedidoRepository.countByEmpresaId(empresa.getId()));
-        dto.setUltimaConexion(empresa.getFechaActualizacion());
+        Long ventasRapidas = ventaRapidaRepository.countByEmpresaId(empresa.getId());
+        Long pedidos = pedidoRepository.countByEmpresaId(empresa.getId());
+        Long transacciones = ventasRapidas + pedidos; // Total de transacciones = ventas rápidas + pedidos
+        LocalDateTime ultimaConexion = empresa.getFechaActualizacion() != null ? 
+            empresa.getFechaActualizacion() : empresa.getFechaCreacion();
+        
+        System.out.println("🔍 Empresa: " + empresa.getNombre());
+        System.out.println("  - Ventas Rápidas: " + ventasRapidas);
+        System.out.println("  - Transacciones: " + transacciones);
+        System.out.println("  - Última Conexión: " + ultimaConexion);
+        
+        dto.setTotalVentasRapidas(ventasRapidas);
+        dto.setTotalTransacciones(transacciones);
+        dto.setUltimaConexion(ultimaConexion);
         
         return dto;
     }

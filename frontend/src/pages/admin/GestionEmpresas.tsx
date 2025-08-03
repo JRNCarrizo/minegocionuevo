@@ -50,6 +50,18 @@ const GestionEmpresas: React.FC = () => {
       console.log('🔍 Respuesta del backend:', response);
       console.log('🔍 Datos de empresas:', response.data);
       console.log('🔍 Cantidad de empresas:', response.data?.length || 0);
+      
+      // Debug de las nuevas estadísticas
+      if (response.data && response.data.length > 0) {
+        console.log('🔍 Debug nuevas estadísticas:');
+        response.data.forEach((empresa: any, index: number) => {
+          console.log(`  Empresa ${index + 1}: ${empresa.nombre}`);
+          console.log(`    - Ventas Rápidas: ${empresa.totalVentasRapidas}`);
+          console.log(`    - Transacciones: ${empresa.totalTransacciones}`);
+          console.log(`    - Última Conexión: ${empresa.ultimaConexion}`);
+        });
+      }
+      
       setEmpresas(response.data || []);
     } catch (err) {
       console.error('Error al cargar empresas:', err);
