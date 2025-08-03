@@ -155,14 +155,18 @@ public class SuperAdminService {
                                           LocalDateTime fechaDesde, LocalDateTime fechaHasta, Pageable pageable) {
         System.out.println("🔍 SuperAdminService.obtenerEmpresas - Iniciando...");
         System.out.println("🔍 Parámetros: filtro=" + filtro + ", estadoSuscripcion=" + estadoSuscripcion + ", plan=" + plan);
+        System.out.println("🔍 Pageable: page=" + pageable.getPageNumber() + ", size=" + pageable.getPageSize());
         
         // Implementar lógica de filtrado y paginación
         // Ordenar por fecha de creación descendente (más recientes primero)
         Page<Empresa> empresas = empresaRepository.findAllByOrderByFechaCreacionDesc(pageable);
         System.out.println("🔍 Empresas encontradas: " + empresas.getTotalElements());
+        System.out.println("🔍 Contenido de empresas: " + empresas.getContent().size() + " elementos");
         
+        System.out.println("🔍 Iniciando conversión de DTOs...");
         Page<EmpresaDTO> resultado = empresas.map(this::convertirAEmpresaDTO);
         System.out.println("🔍 DTOs convertidos: " + resultado.getTotalElements());
+        System.out.println("🔍 Contenido de DTOs: " + resultado.getContent().size() + " elementos");
         
         return resultado;
     }
@@ -427,6 +431,11 @@ public class SuperAdminService {
         dto.setTotalVentasRapidas(ventasRapidas);
         dto.setTotalTransacciones(transacciones);
         dto.setUltimaConexion(ultimaConexion);
+        
+        System.out.println("✅ DTO final para " + empresa.getNombre() + ":");
+        System.out.println("  - totalVentasRapidas: " + dto.getTotalVentasRapidas());
+        System.out.println("  - totalTransacciones: " + dto.getTotalTransacciones());
+        System.out.println("  - ultimaConexion: " + dto.getUltimaConexion());
         
         return dto;
     }
