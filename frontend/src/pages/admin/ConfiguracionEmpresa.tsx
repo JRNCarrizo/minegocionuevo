@@ -672,10 +672,27 @@ export default function ConfiguracionEmpresa() {
         imagenFondoUrl,
         moneda: configuracion.moneda,
         instagramUrl: configuracion.instagramUrl,
-        facebookUrl: configuracion.facebookUrl
+        facebookUrl: configuracion.facebookUrl,
+        // Métodos de pago - Transferencia bancaria
+        transferenciaBancariaHabilitada: configuracion.transferenciaBancariaHabilitada,
+        banco: configuracion.banco,
+        tipoCuenta: configuracion.tipoCuenta,
+        numeroCuenta: configuracion.numeroCuenta,
+        cbu: configuracion.cbu,
+        alias: configuracion.alias,
+        titular: configuracion.titular
       };
       
       console.log('📋 Datos completos de la empresa a enviar:', datosEmpresa);
+      console.log('🏦 Datos de transferencia bancaria:', {
+        habilitada: configuracion.transferenciaBancariaHabilitada,
+        banco: configuracion.banco,
+        tipoCuenta: configuracion.tipoCuenta,
+        numeroCuenta: configuracion.numeroCuenta,
+        cbu: configuracion.cbu,
+        alias: configuracion.alias,
+        titular: configuracion.titular
+      });
       console.log('👋 Texto de bienvenida a enviar:', configuracion.textoBienvenida);
       console.log('👋 Texto de bienvenida es null?:', configuracion.textoBienvenida === null);
       console.log('👋 Texto de bienvenida es undefined?:', configuracion.textoBienvenida === undefined);

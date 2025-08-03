@@ -310,6 +310,14 @@ public class EmpresaService {
         System.out.println("Descripción recibida: " + empresaDTO.getDescripcion());
         System.out.println("Color Título Principal recibido: " + empresaDTO.getColorTituloPrincipal());
         System.out.println("Color Card Filtros recibido: " + empresaDTO.getColorCardFiltros());
+        System.out.println("🏦 Datos de transferencia bancaria recibidos:");
+        System.out.println("  - Habilitada: " + empresaDTO.getTransferenciaBancariaHabilitada());
+        System.out.println("  - Banco: " + empresaDTO.getBanco());
+        System.out.println("  - Tipo Cuenta: " + empresaDTO.getTipoCuenta());
+        System.out.println("  - Número Cuenta: " + empresaDTO.getNumeroCuenta());
+        System.out.println("  - CBU: " + empresaDTO.getCbu());
+        System.out.println("  - Alias: " + empresaDTO.getAlias());
+        System.out.println("  - Titular: " + empresaDTO.getTitular());
         
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
@@ -433,6 +441,14 @@ public class EmpresaService {
         System.out.println("  - Descripción: " + empresa.getDescripcion());
         System.out.println("  - Color Título Principal: " + empresa.getColorTituloPrincipal());
         System.out.println("  - Color Card Filtros: " + empresa.getColorCardFiltros());
+        System.out.println("🏦 Datos de transferencia bancaria guardados:");
+        System.out.println("  - Habilitada: " + empresa.getTransferenciaBancariaHabilitada());
+        System.out.println("  - Banco: " + empresa.getBanco());
+        System.out.println("  - Tipo Cuenta: " + empresa.getTipoCuenta());
+        System.out.println("  - Número Cuenta: " + empresa.getNumeroCuenta());
+        System.out.println("  - CBU: " + empresa.getCbu());
+        System.out.println("  - Alias: " + empresa.getAlias());
+        System.out.println("  - Titular: " + empresa.getTitular());
         System.out.println("=== FIN DEBUG ACTUALIZAR CONFIGURACIÓN ===");
         return new EmpresaDTO(empresa);
     }
