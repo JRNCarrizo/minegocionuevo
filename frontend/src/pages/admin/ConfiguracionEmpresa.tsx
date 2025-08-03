@@ -367,7 +367,9 @@ export default function ConfiguracionEmpresa() {
     fondo: configuracion.colorFondo,
     texto: configuracion.colorTexto,
     tituloPrincipal: configuracion.colorTituloPrincipal,
-    cardFiltros: configuracion.colorCardFiltros
+    cardFiltros: configuracion.colorCardFiltros,
+    mostrarStock: configuracion.mostrarStock,
+    mostrarCategorias: configuracion.mostrarCategorias
   }), [
     configuracion.colorPrimario,
     configuracion.colorSecundario,
@@ -375,7 +377,9 @@ export default function ConfiguracionEmpresa() {
     configuracion.colorFondo,
     configuracion.colorTexto,
     configuracion.colorTituloPrincipal,
-    configuracion.colorCardFiltros
+    configuracion.colorCardFiltros,
+    configuracion.mostrarStock,
+    configuracion.mostrarCategorias
   ]);
 
   const cargarConfiguracion = useCallback(async (mostrarToast = false) => {
@@ -1086,52 +1090,54 @@ export default function ConfiguracionEmpresa() {
                       </div>
                     </div>
 
-                    {/* Mini Card de Filtros */}
-                    <div 
-                      style={{ 
-                        backgroundColor: previewTema.cardFiltros,
-                        padding: '0.5rem',
-                        borderRadius: '6px',
-                        marginBottom: '0.75rem',
-                        border: `1px solid ${previewTema.secundario}20`,
-                        fontSize: '0.6rem'
-                      }}
-                    >
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '0.25rem',
-                        marginBottom: '0.25rem'
-                      }}>
-                        <span style={{ fontSize: '0.7rem' }}>🔍</span>
-                        <span style={{ fontWeight: '600', color: previewTema.texto }}>Filtros</span>
-                      </div>
-                      <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: '1fr 1fr', 
-                        gap: '0.25rem',
-                        fontSize: '0.5rem'
-                      }}>
+                    {/* Mini Card de Filtros - Solo se muestra si mostrarCategorias está habilitado */}
+                    {previewTema.mostrarCategorias && (
+                      <div 
+                        style={{ 
+                          backgroundColor: previewTema.cardFiltros,
+                          padding: '0.5rem',
+                          borderRadius: '6px',
+                          marginBottom: '0.75rem',
+                          border: `1px solid ${previewTema.secundario}20`,
+                          fontSize: '0.6rem'
+                        }}
+                      >
                         <div style={{ 
-                          background: '#fff', 
-                          padding: '0.2rem', 
-                          borderRadius: '3px',
-                          border: '1px solid #e2e8f0',
-                          color: previewTema.texto
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '0.25rem',
+                          marginBottom: '0.25rem'
                         }}>
-                          Categoría
+                          <span style={{ fontSize: '0.7rem' }}>🔍</span>
+                          <span style={{ fontWeight: '600', color: previewTema.texto }}>Filtros</span>
                         </div>
                         <div style={{ 
-                          background: '#fff', 
-                          padding: '0.2rem', 
-                          borderRadius: '3px',
-                          border: '1px solid #e2e8f0',
-                          color: previewTema.texto
+                          display: 'grid', 
+                          gridTemplateColumns: '1fr 1fr', 
+                          gap: '0.25rem',
+                          fontSize: '0.5rem'
                         }}>
-                          Marca
+                          <div style={{ 
+                            background: '#fff', 
+                            padding: '0.2rem', 
+                            borderRadius: '3px',
+                            border: '1px solid #e2e8f0',
+                            color: previewTema.texto
+                          }}>
+                            Categoría
+                          </div>
+                          <div style={{ 
+                            background: '#fff', 
+                            padding: '0.2rem', 
+                            borderRadius: '3px',
+                            border: '1px solid #e2e8f0',
+                            color: previewTema.texto
+                          }}>
+                            Marca
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Mini Cards de Productos */}
                     <div style={{ display: 'grid', gap: '0.75rem', gridTemplateColumns: '1fr 1fr' }}>
@@ -1174,6 +1180,19 @@ export default function ConfiguracionEmpresa() {
                         }}>
                           $99.99
                         </div>
+                        {previewTema.mostrarStock && (
+                          <div style={{ 
+                            fontSize: '0.5rem', 
+                            marginTop: '0.25rem',
+                            padding: '0.1rem 0.3rem',
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            borderRadius: '3px',
+                            color: previewTema.texto,
+                            fontWeight: '500'
+                          }}>
+                            Stock: 15
+                          </div>
+                        )}
                       </div>
 
                       {/* Card Producto 2 */}
@@ -1215,6 +1234,19 @@ export default function ConfiguracionEmpresa() {
                         }}>
                           $149.99
                         </div>
+                        {previewTema.mostrarStock && (
+                          <div style={{ 
+                            fontSize: '0.5rem', 
+                            marginTop: '0.25rem',
+                            padding: '0.1rem 0.3rem',
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            borderRadius: '3px',
+                            color: previewTema.texto,
+                            fontWeight: '500'
+                          }}>
+                            Stock: 8
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1275,6 +1307,19 @@ export default function ConfiguracionEmpresa() {
                       <div>⚫ <strong>Textos:</strong> Nombres y precios de productos</div>
                       <div>🟣 <strong>Título Principal:</strong> Títulos del catálogo</div>
                       <div>🟠 <strong>Card Filtros:</strong> Fondo de filtros de búsqueda</div>
+                    </div>
+                    
+                    {/* Información de Funcionalidades */}
+                    <div style={{ marginTop: '1rem', padding: '0.5rem', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '6px' }}>
+                      <div style={{ marginBottom: '0.5rem', fontWeight: '600' }}>Funcionalidades del Catálogo:</div>
+                      <div style={{ display: 'grid', gap: '0.25rem', gridTemplateColumns: '1fr' }}>
+                        <div style={{ fontSize: '0.7rem' }}>
+                          📊 <strong>Mostrar Stock:</strong> {previewTema.mostrarStock ? '✅ Habilitado' : '❌ Deshabilitado'}
+                        </div>
+                        <div style={{ fontSize: '0.7rem' }}>
+                          🏷️ <strong>Mostrar Categorías:</strong> {previewTema.mostrarCategorias ? '✅ Habilitado' : '❌ Deshabilitado'}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
