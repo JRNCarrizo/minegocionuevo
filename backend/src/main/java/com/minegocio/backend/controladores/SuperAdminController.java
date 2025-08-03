@@ -133,6 +133,18 @@ public class SuperAdminController {
             // Usar SuperAdminService para obtener empresas con estadísticas completas
             var resultado = superAdminService.obtenerEmpresas(null, null, null, null, null, pageable);
             
+            System.out.println("🔍 === RESPUESTA FINAL ===");
+            System.out.println("🔍 Total empresas en respuesta: " + resultado.getContent().size());
+            
+            // Debug de las primeras 3 empresas
+            for (int i = 0; i < Math.min(3, resultado.getContent().size()); i++) {
+                var empresa = resultado.getContent().get(i);
+                System.out.println("🔍 Empresa " + (i+1) + ": " + empresa.getNombre());
+                System.out.println("  - totalVentasRapidas: " + empresa.getTotalVentasRapidas());
+                System.out.println("  - totalTransacciones: " + empresa.getTotalTransacciones());
+                System.out.println("  - ultimaConexion: " + empresa.getUltimaConexion());
+            }
+            
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Empresas obtenidas correctamente",
                 "data", resultado.getContent()
