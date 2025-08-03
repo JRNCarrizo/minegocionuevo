@@ -404,6 +404,7 @@ public class SuperAdminService {
         try {
             PedidoService.PedidoEstadisticas estadisticasPedidos = pedidoService.obtenerEstadisticasPedidos(empresa.getId());
             totalTransaccionesPedidos = estadisticasPedidos.getTotalTransacciones();
+            System.out.println("📊 Empresa " + empresa.getNombre() + " - Transacciones de pedidos: " + totalTransaccionesPedidos);
         } catch (Exception e) {
             System.err.println("❌ Error al obtener transacciones de pedidos para empresa " + empresa.getNombre() + ": " + e.getMessage());
             totalTransaccionesPedidos = 0;
@@ -414,12 +415,14 @@ public class SuperAdminService {
         try {
             VentaRapidaEstadisticas estadisticasVentaRapida = ventaRapidaService.obtenerEstadisticasVentasRapidas(empresa.getId());
             totalTransaccionesVentaRapida = estadisticasVentaRapida != null ? estadisticasVentaRapida.getTotalTransacciones() : 0;
+            System.out.println("📊 Empresa " + empresa.getNombre() + " - Transacciones de ventas rápidas: " + totalTransaccionesVentaRapida);
         } catch (Exception e) {
             System.err.println("❌ Error al obtener transacciones de ventas rápidas para empresa " + empresa.getNombre() + ": " + e.getMessage());
             totalTransaccionesVentaRapida = 0;
         }
         
         Long transacciones = (long) (totalTransaccionesVentaRapida + totalTransaccionesPedidos);
+        System.out.println("📊 Empresa " + empresa.getNombre() + " - Total transacciones (pedidos + ventas rápidas): " + transacciones);
         LocalDateTime ultimaConexion = empresa.getFechaActualizacion() != null ? 
             empresa.getFechaActualizacion() : empresa.getFechaCreacion();
         
