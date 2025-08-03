@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import com.minegocio.backend.entidades.Cliente;
+import com.minegocio.backend.repositorios.ClienteRepository;
 
 @RestController
 @RequestMapping("/api/publico")
@@ -42,6 +43,9 @@ public class PublicoController {
     
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private ClienteRepository clienteRepository;
 
     /**
      * Obtener información pública de una empresa por subdominio
@@ -1062,7 +1066,7 @@ public class PublicoController {
             Long empresaId = empresa.get().getId();
             
             // Buscar cliente
-            Optional<Cliente> clienteOpt = clienteService.obtenerPorId(clienteId);
+            Optional<ClienteDTO> clienteOpt = clienteService.obtenerClientePorId(empresaId, clienteId);
             if (clienteOpt.isEmpty()) {
                 var error = java.util.Map.of(
                     "error", "Cliente no encontrado"
@@ -1070,8 +1074,12 @@ public class PublicoController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
             }
             
-            Cliente cliente = clienteOpt.get();
-            System.out.println("Cliente encontrado: " + cliente.getNombre() + " " + cliente.getApellidos() + " - Email: " + cliente.getEmail());
+            ClienteDTO clienteDTO = clienteOpt.get();
+            System.out.println("Cliente encontrado: " + clienteDTO.getNombre() + " " + clienteDTO.getApellidos() + " - Email: " + clienteDTO.getEmail());
+            
+            // Obtener la entidad Cliente para usar en el método de pedidos
+            Cliente cliente = clienteRepository.findById(clienteId)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado en repositorio"));
             
             // Buscar todos los pedidos de la empresa
             List<com.minegocio.backend.dto.PedidoDTO> todosLosPedidos = pedidoService.obtenerPedidosPorEmpresa(empresaId);
@@ -1081,7 +1089,7 @@ public class PublicoController {
             List<com.minegocio.backend.dto.PedidoDTO> pedidosDelCliente = todosLosPedidos.stream()
                 .filter(pedido -> {
                     boolean porClienteId = clienteId.equals(pedido.getClienteId());
-                    boolean porEmail = cliente.getEmail().equals(pedido.getClienteEmail());
+                    boolean porEmail = clienteDTO.getEmail().equals(pedido.getClienteEmail());
                     System.out.println("Pedido " + pedido.getId() + " - ClienteId: " + pedido.getClienteId() + 
                                      " (match: " + porClienteId + "), Email: " + pedido.getClienteEmail() + 
                                      " (match: " + porEmail + ")");
@@ -1097,10 +1105,10 @@ public class PublicoController {
             
             var respuesta = java.util.Map.of(
                 "cliente", java.util.Map.of(
-                    "id", cliente.getId(),
-                    "nombre", cliente.getNombre(),
-                    "apellidos", cliente.getApellidos(),
-                    "email", cliente.getEmail()
+                    "id", clienteId,
+                    "nombre", clienteDTO.getNombre(),
+                    "apellidos", clienteDTO.getApellidos(),
+                    "email", clienteDTO.getEmail()
                 ),
                 "empresa", java.util.Map.of(
                     "id", empresa.get().getId(),
@@ -1112,7 +1120,7 @@ public class PublicoController {
                 "pedidosMetodoOriginal", pedidosMetodoOriginal,
                 "debug", java.util.Map.of(
                     "clienteId", clienteId,
-                    "clienteEmail", cliente.getEmail()
+                    "clienteEmail", clienteDTO.getEmail()
                 )
             );
             
