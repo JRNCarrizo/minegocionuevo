@@ -33,12 +33,10 @@ interface ConfiguracionEmpresa {
   notificacionesPedidos: boolean;
   notificacionesStock: boolean;
   stockMinimo: number;
-  // Configuración del catálogo
   mostrarPrecios: boolean;
   mostrarStock: boolean;
   permitirResenas: boolean;
   mostrarCategorias: boolean;
-  // Métodos de pago
   transferenciaBancariaHabilitada: boolean;
   banco: string;
   tipoCuenta: string;
@@ -46,24 +44,20 @@ interface ConfiguracionEmpresa {
   cbu: string;
   alias: string;
   titular: string;
-  // Redes sociales
   instagramUrl: string;
   facebookUrl: string;
 }
 
-// Componente para el selector de color mejorado
 const ColorPicker = ({ 
   label, 
   value, 
   onChange, 
-  name,
-  preview = false 
+  name
 }: {
   label: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   name: string;
-  preview?: boolean;
 }) => (
   <div className="grupo-campo">
     <label className="etiqueta">{label}</label>
@@ -85,27 +79,24 @@ const ColorPicker = ({
           }}
         />
       </div>
-      {preview && (
-        <div style={{ flex: 1 }}>
-          <div 
-            className="campo"
-            style={{ 
-              backgroundColor: value,
-              color: getContrastColor(value),
-              textAlign: 'center',
-              fontWeight: '600',
-              fontSize: '0.875rem'
-            }}
-          >
-            {value.toUpperCase()}
-          </div>
+      <div style={{ flex: 1 }}>
+        <div 
+          className="campo"
+          style={{ 
+            backgroundColor: value,
+            color: getContrastColor(value),
+            textAlign: 'center',
+            fontWeight: '600',
+            fontSize: '0.875rem'
+          }}
+        >
+          {value.toUpperCase()}
         </div>
-      )}
+      </div>
     </div>
   </div>
 );
 
-// Función para obtener color de contraste
 const getContrastColor = (hexColor: string) => {
   const r = parseInt(hexColor.slice(1, 3), 16);
   const g = parseInt(hexColor.slice(3, 5), 16);
@@ -114,7 +105,6 @@ const getContrastColor = (hexColor: string) => {
   return brightness > 128 ? '#000000' : '#ffffff';
 };
 
-// Componente para campo de entrada con icono
 const InputField = ({ 
   icon, 
   label, 
@@ -124,7 +114,6 @@ const InputField = ({
   onChange, 
   required = false,
   placeholder = "",
-  className = "",
   description = ""
 }: {
   icon: string;
@@ -135,18 +124,12 @@ const InputField = ({
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   required?: boolean;
   placeholder?: string;
-  className?: string;
   description?: string;
 }) => (
-  <div className={`grupo-campo ${className}`}>
+  <div className="grupo-campo">
     <label className="etiqueta">
       {label} {required && <span style={{ color: 'var(--color-error)' }}>*</span>}
     </label>
-    {description && (
-      <p className="texto-pequeno texto-gris" style={{ marginBottom: '0.5rem' }}>
-        {description}
-      </p>
-    )}
     <div className="relative">
       <div className="absolute" style={{ top: '50%', left: '0.75rem', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
         <span style={{ color: 'var(--color-texto-secundario)', fontSize: '1.125rem' }}>{icon}</span>
@@ -157,10 +140,9 @@ const InputField = ({
           value={value}
           onChange={onChange}
           required={required}
-          placeholder={placeholder}
-          rows={3}
           className="campo"
-          style={{ paddingLeft: '2.5rem' }}
+          style={{ paddingLeft: '2.5rem', minHeight: '100px', resize: 'vertical' }}
+          placeholder={placeholder}
         />
       ) : type === 'select' ? (
         <select
@@ -169,30 +151,44 @@ const InputField = ({
           onChange={onChange}
           required={required}
           className="campo"
-          style={{ paddingLeft: '2.5rem', appearance: 'none', backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.8z%22/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', backgroundSize: '0.75rem' }}
+          style={{ paddingLeft: '2.5rem' }}
         >
+          {name === 'pais' && (
+            <>
+              <option value="">Seleccionar país</option>
+              <option value="Argentina">Argentina</option>
+              <option value="Chile">Chile</option>
+              <option value="Uruguay">Uruguay</option>
+              <option value="Paraguay">Paraguay</option>
+              <option value="Bolivia">Bolivia</option>
+              <option value="Perú">Perú</option>
+              <option value="Ecuador">Ecuador</option>
+              <option value="Colombia">Colombia</option>
+              <option value="Venezuela">Venezuela</option>
+              <option value="Brasil">Brasil</option>
+              <option value="México">México</option>
+              <option value="Estados Unidos">Estados Unidos</option>
+              <option value="España">España</option>
+              <option value="Otro">Otro</option>
+            </>
+          )}
           {name === 'moneda' && (
             <>
-              <option value="ARS">Peso Argentino ($)</option>
-              <option value="USD">Dólar ($)</option>
-              <option value="EUR">Euro (€)</option>
-              <option value="GBP">Libra (£)</option>
+              <option value="ARS">Peso Argentino (ARS)</option>
+              <option value="USD">Dólar Estadounidense (USD)</option>
+              <option value="EUR">Euro (EUR)</option>
+              <option value="CLP">Peso Chileno (CLP)</option>
+              <option value="UYU">Peso Uruguayo (UYU)</option>
+              <option value="PYG">Guaraní Paraguayo (PYG)</option>
+              <option value="BOB">Boliviano (BOB)</option>
+              <option value="PEN">Sol Peruano (PEN)</option>
             </>
           )}
           {name === 'idioma' && (
             <>
               <option value="es">Español</option>
-              <option value="en">Inglés</option>
-              <option value="fr">Francés</option>
-            </>
-          )}
-          {name === 'pais' && (
-            <>
-              <option value="Argentina">Argentina</option>
-              <option value="España">España</option>
-              <option value="México">México</option>
-              <option value="Colombia">Colombia</option>
-              <option value="Chile">Chile</option>
+              <option value="en">English</option>
+              <option value="pt">Português</option>
             </>
           )}
         </select>
@@ -203,16 +199,18 @@ const InputField = ({
           value={value}
           onChange={onChange}
           required={required}
-          placeholder={placeholder}
           className="campo"
           style={{ paddingLeft: '2.5rem' }}
+          placeholder={placeholder}
         />
       )}
     </div>
+    {description && (
+      <p className="texto-pequeno texto-gris" style={{ marginTop: '0.25rem' }}>{description}</p>
+    )}
   </div>
 );
 
-// Componente para checkbox con mejor diseño
 const CheckboxField = ({ 
   label, 
   name, 
@@ -226,30 +224,79 @@ const CheckboxField = ({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   description?: string;
 }) => (
-  <div className="flex items-centro" style={{ gap: '0.75rem', marginBottom: '1rem' }}>
-    <input
-      type="checkbox"
-      id={name}
-      name={name}
-      checked={checked}
-      onChange={onChange}
-      style={{ marginTop: '0.25rem' }}
-    />
-    <div style={{ flex: 1 }}>
-      <label htmlFor={name} className="etiqueta" style={{ marginBottom: '0.25rem' }}>
-        {label}
-      </label>
-      {description && (
-        <p className="texto-pequeno texto-gris">{description}</p>
-      )}
-    </div>
+  <div className="grupo-campo">
+    <label className="flex items-centro" style={{ gap: '0.75rem', cursor: 'pointer' }}>
+      <input
+        type="checkbox"
+        name={name}
+        checked={checked}
+        onChange={onChange}
+        style={{
+          width: '1.25rem',
+          height: '1.25rem',
+          accentColor: 'var(--color-primario)',
+          cursor: 'pointer'
+        }}
+      />
+      <div>
+        <div className="etiqueta" style={{ marginBottom: '0.25rem' }}>{label}</div>
+        {description && (
+          <div className="texto-pequeno texto-gris">{description}</div>
+        )}
+      </div>
+    </label>
   </div>
+);
+
+const TabButton = ({ 
+  icon, 
+  label, 
+  isActive, 
+  onClick 
+}: {
+  icon: string;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      padding: '0.75rem 1rem',
+      border: 'none',
+      borderRadius: 'var(--radio-borde)',
+      background: isActive ? 'var(--color-primario)' : 'transparent',
+      color: isActive ? 'white' : 'var(--color-texto)',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+      fontWeight: isActive ? '600' : '500',
+      fontSize: '0.875rem',
+      borderBottom: isActive ? '3px solid var(--color-secundario)' : '3px solid transparent'
+    }}
+    onMouseOver={(e) => {
+      if (!isActive) {
+        e.currentTarget.style.background = 'var(--color-fondo-hover)';
+      }
+    }}
+    onMouseOut={(e) => {
+      if (!isActive) {
+        e.currentTarget.style.background = 'transparent';
+      }
+    }}
+  >
+    <span style={{ fontSize: '1.125rem' }}>{icon}</span>
+    <span>{label}</span>
+  </button>
 );
 
 export default function ConfiguracionEmpresa() {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
   const { datosUsuario, actualizarEmpresaNombre, cerrarSesion } = useUsuario();
+  const [activeTab, setActiveTab] = useState(0);
   const [configuracion, setConfiguracion] = useState<ConfiguracionEmpresa>({
     nombre: '',
     descripcion: '',
@@ -280,7 +327,6 @@ export default function ConfiguracionEmpresa() {
     mostrarStock: true,
     permitirResenas: true,
     mostrarCategorias: true,
-    // Métodos de pago
     transferenciaBancariaHabilitada: false,
     banco: '',
     tipoCuenta: '',
@@ -293,18 +339,34 @@ export default function ConfiguracionEmpresa() {
   });
 
   const [empresaId, setEmpresaId] = useState<number | null>(null);
-  
-  // Estado para el logo actual de la empresa
   const [logoActual, setLogoActual] = useState<string>('');
-  // Estado para la imagen de fondo actual de la empresa
   const [imagenFondoActual, setImagenFondoActual] = useState<string>('');
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [verificandoSubdominio, setVerificandoSubdominio] = useState(false);
   const [subdominioDisponible, setSubdominioDisponible] = useState<boolean | null>(null);
-  
-  // Estado para detectar cambios sin guardar
   const [configuracionOriginal, setConfiguracionOriginal] = useState<ConfiguracionEmpresa | null>(null);
+
+  // Definición de las pestañas
+  const tabs = [
+    { icon: '🏢', label: 'Información Básica', id: 0 },
+    { icon: '🎨', label: 'Apariencia', id: 1 },
+    { icon: '🛍️', label: 'Catálogo', id: 2 },
+    { icon: '💳', label: 'Pagos', id: 3 },
+    { icon: '🔔', label: 'Notificaciones', id: 4 },
+    { icon: '📱', label: 'Redes Sociales', id: 5 }
+  ];
+
+  // Preview del tema de colores
+  const previewTema = useMemo(() => ({
+    primario: configuracion.colorPrimario,
+    secundario: configuracion.colorSecundario,
+    acento: configuracion.colorAcento,
+    fondo: configuracion.colorFondo,
+    texto: configuracion.colorTexto,
+    tituloPrincipal: configuracion.colorTituloPrincipal,
+    cardFiltros: configuracion.colorCardFiltros
+  }), [configuracion]);
 
   const cargarConfiguracion = useCallback(async (mostrarToast = true) => {
     try {
@@ -355,97 +417,83 @@ export default function ConfiguracionEmpresa() {
         colorCardFiltros: empresa.colorCardFiltros || '#ffffff',
         imagenFondoUrl: empresa.imagenFondoUrl || '',
         moneda: empresa.moneda || 'ARS',
-        instagramUrl: empresa.instagramUrl || '',
-        facebookUrl: empresa.facebookUrl || '',
-        // Métodos de pago
-        transferenciaBancariaHabilitada: empresa.transferenciaBancariaHabilitada || false,
+        idioma: empresa.idioma || 'es',
+        notificacionesPedidos: empresa.notificacionesPedidos !== undefined ? empresa.notificacionesPedidos : true,
+        notificacionesStock: empresa.notificacionesStock !== undefined ? empresa.notificacionesStock : true,
+        stockMinimo: empresa.stockMinimo || 5,
+        mostrarPrecios: empresa.mostrarPrecios !== undefined ? empresa.mostrarPrecios : true,
+        mostrarStock: empresa.mostrarStock !== undefined ? empresa.mostrarStock : true,
+        permitirResenas: empresa.permitirResenas !== undefined ? empresa.permitirResenas : true,
+        mostrarCategorias: empresa.mostrarCategorias !== undefined ? empresa.mostrarCategorias : true,
+        transferenciaBancariaHabilitada: empresa.transferenciaBancariaHabilitada !== undefined ? empresa.transferenciaBancariaHabilitada : false,
         banco: empresa.banco || '',
         tipoCuenta: empresa.tipoCuenta || '',
         numeroCuenta: empresa.numeroCuenta || '',
         cbu: empresa.cbu || '',
         alias: empresa.alias || '',
-        titular: empresa.titular || ''
+        titular: empresa.titular || '',
+        instagramUrl: empresa.instagramUrl || '',
+        facebookUrl: empresa.facebookUrl || ''
       };
       
       setConfiguracion(nuevaConfiguracion);
-      // Guardar la configuración original para detectar cambios
-      setConfiguracionOriginal({ ...nuevaConfiguracion });
+      setConfiguracionOriginal(nuevaConfiguracion);
+      setEmpresaId(empresa.id);
       
-      // Cargar el logo actual si existe
       if (empresa.logoUrl) {
         setLogoActual(empresa.logoUrl);
-      } else {
-        setLogoActual('');
       }
       
-      // Cargar la imagen de fondo actual si existe
       if (empresa.imagenFondoUrl) {
         setImagenFondoActual(empresa.imagenFondoUrl);
-      } else {
-        setImagenFondoActual('');
       }
       
       if (mostrarToast) {
-        toast.success('Configuración cargada correctamente');
+        toast.success('Configuración cargada exitosamente');
       }
+      
+      console.log('Configuración actualizada:', nuevaConfiguracion);
+      
     } catch (error) {
-      console.error('Error al cargar la configuración:', error);
-      toast.error('Error al cargar la configuración de la empresa');
+      console.error('Error al cargar configuración:', error);
+      if (mostrarToast) {
+        toast.error('Error al cargar la configuración');
+      }
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [configuracion]);
 
   useEffect(() => {
-    // Obtener datos del usuario logueado
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-
-        setEmpresaId(user.empresaId || null); // Asignar el ID de la empresa
-      } catch (error) {
-        console.error('Error al parsear datos del usuario:', error);
-        // Si hay error, redirigir al login
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/admin/login';
-      }
-    }
-    
-    cargarConfiguracion(false); // No mostrar toast al cargar la página
+    cargarConfiguracion();
   }, [cargarConfiguracion]);
 
-
-
-  const manejarCambio = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const manejarCambio = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     
-    console.log('🔄 Campo cambiado:', name, 'Valor:', value);
-    
-    if (type === 'checkbox') {
-      const checkbox = e.target as HTMLInputElement;
-      setConfiguracion(prev => ({
-        ...prev,
-        [name]: checkbox.checked
-      }));
-    } else {
-      setConfiguracion(prev => ({
-        ...prev,
-        [name]: value
-      }));
-      
-      // Verificar subdominio si se está cambiando
-      if (name === 'subdominio' && value.trim().length >= 3) {
-        verificarDisponibilidadSubdominio(value.trim());
-      } else if (name === 'subdominio') {
-        setSubdominioDisponible(null);
-      }
-    }
-  }, []);
+    setConfiguracion(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
 
-  const verificarDisponibilidadSubdominio = useCallback(async (subdominio: string) => {
-    if (subdominio.length < 3) return;
+  const manejarLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setConfiguracion(prev => ({ ...prev, logo: file }));
+    }
+  };
+
+  const manejarImagenFondo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setConfiguracion(prev => ({ ...prev, imagenFondo: file }));
+    }
+  };
+
+  const verificarSubdominio = useCallback(async (subdominio: string) => {
+    if (!subdominio.trim()) return;
     
     setVerificandoSubdominio(true);
     try {
@@ -459,198 +507,22 @@ export default function ConfiguracionEmpresa() {
     }
   }, []);
 
-  const manejarLogo = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setConfiguracion(prev => ({
-        ...prev,
-        logo: e.target.files![0]
-      }));
-    }
-  }, []);
-
-  const manejarImagenFondo = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      console.log('🖼️ Imagen de fondo seleccionada:', file.name);
-      
-      setConfiguracion(prev => ({
-        ...prev,
-        imagenFondo: file,
-        // Crear URL temporal para vista previa inmediata
-        imagenFondoUrl: URL.createObjectURL(file)
-      }));
-    }
-  }, []);
-
-  // Función para detectar si hay cambios sin guardar
-  const hayCambiosSinGuardar = useCallback(() => {
-    if (!configuracionOriginal) return false;
-    
-    // Comparar campos principales
-    const camposPrincipales = [
-      'nombre', 'descripcion', 'textoBienvenida', 'subdominio', 'email', 'telefono',
-      'colorPrimario', 'colorSecundario', 'colorAcento', 'colorFondo', 'colorTexto',
-      'colorTituloPrincipal', 'colorCardFiltros', 'moneda', 'instagramUrl', 'facebookUrl'
-    ];
-    
-    for (const campo of camposPrincipales) {
-      const valorActual = configuracion[campo as keyof ConfiguracionEmpresa];
-      const valorOriginal = configuracionOriginal[campo as keyof ConfiguracionEmpresa];
-      
-      if (valorActual !== valorOriginal) {
-        console.log('🔍 Cambio detectado en:', campo);
-        console.log('  - Actual:', valorActual);
-        console.log('  - Original:', valorOriginal);
-        return true;
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (configuracion.subdominio) {
+        verificarSubdominio(configuracion.subdominio);
       }
-    }
-    
-    // Verificar si hay un nuevo logo seleccionado
-    if (configuracion.logo) {
-      console.log('🔍 Cambio detectado: nuevo logo seleccionado');
-      return true;
-    }
-    
-    // Verificar si hay una nueva imagen de fondo seleccionada
-    if (configuracion.imagenFondo) {
-      console.log('🔍 Cambio detectado: nueva imagen de fondo seleccionada');
-      return true;
-    }
-    
-    console.log('🔍 No se detectaron cambios');
-    return false;
-  }, [configuracion, configuracionOriginal]);
+    }, 500);
 
-  // Función para manejar el cancelar con confirmación
-  const manejarCancelar = useCallback(() => {
-    if (hayCambiosSinGuardar()) {
-      const confirmar = window.confirm('¿Estás seguro de que quieres cancelar? Los cambios no guardados se perderán.');
-      if (confirmar) {
-        navigate('/admin/dashboard');
-      }
-    } else {
-      navigate('/admin/dashboard');
-    }
-  }, [hayCambiosSinGuardar, navigate]);
-
-  const validarFormulario = useCallback(() => {
-    if (!configuracion.nombre.trim()) {
-      toast.error('El nombre de la empresa es obligatorio');
-      return false;
-    }
-    if (!configuracion.subdominio.trim()) {
-      toast.error('El subdominio es obligatorio');
-      return false;
-    }
-    if (configuracion.subdominio.trim().length < 3) {
-      toast.error('El subdominio debe tener al menos 3 caracteres');
-      return false;
-    }
-    if (!configuracion.subdominio.trim().match(/^[a-z0-9-]+$/)) {
-      toast.error('El subdominio solo puede contener letras minúsculas, números y guiones');
-      return false;
-    }
-    if (subdominioDisponible === false) {
-      toast.error('El subdominio no está disponible');
-      return false;
-    }
-    if (!configuracion.email.trim() || !configuracion.email.includes('@')) {
-      toast.error('El email debe ser válido');
-      return false;
-    }
-    return true;
-  }, [configuracion, subdominioDisponible]);
+    return () => clearTimeout(timeoutId);
+  }, [configuracion.subdominio, verificarSubdominio]);
 
   const guardarConfiguracion = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('=== DEBUG GUARDAR CONFIGURACIÓN ===');
-    console.log('Iniciando guardado de configuración...');
-    
-    if (!validarFormulario()) {
-      console.log('❌ Validación del formulario falló');
-      return;
-    }
-
-    console.log('✅ Validación del formulario exitosa');
     setGuardando(true);
-    
+
     try {
-      // PASO 1: Subir logo si hay uno nuevo
-      let logoUrl = logoActual || '';
-      if (configuracion.logo) {
-        console.log('=== PASO 1: Subiendo logo ===');
-        try {
-          const logoResponse = await ApiService.subirLogoEmpresa(configuracion.logo);
-          logoUrl = logoResponse.data?.logoUrl || '';
-          console.log('✅ Logo subido exitosamente:', logoUrl);
-        } catch (error: unknown) {
-          console.error('❌ Error al subir logo:', error);
-          const apiError = error as ApiError;
-          const errorMessage = apiError.response?.data?.error || 'Error al subir el logo';
-          toast.error(errorMessage);
-          setGuardando(false);
-          return;
-        }
-      }
-
-      // PASO 2: Subir imagen de fondo si hay una nueva
-      let imagenFondoUrl = configuracion.imagenFondoUrl || '';
-      if (configuracion.imagenFondo) {
-        console.log('=== PASO 2: Subiendo imagen de fondo ===');
-        try {
-          const fondoResponse = await ApiService.subirFondoEmpresa(configuracion.imagenFondo);
-          imagenFondoUrl = fondoResponse.data?.fondoUrl || '';
-          console.log('✅ Imagen de fondo subida exitosamente:', imagenFondoUrl);
-          
-          // ACTUALIZAR EL ESTADO CON LA URL REAL
-          setConfiguracion(prev => ({
-            ...prev,
-            imagenFondoUrl: imagenFondoUrl,
-            imagenFondo: null // Limpiar el archivo temporal
-          }));
-          
-          // También actualizar la imagen actual
-          setImagenFondoActual(imagenFondoUrl);
-        } catch (error: unknown) {
-          console.error('❌ Error al subir imagen de fondo:', error);
-          const apiError = error as ApiError;
-          const errorMessage = apiError.response?.data?.error || 'Error al subir la imagen de fondo';
-          toast.error(errorMessage);
-          setGuardando(false);
-          return;
-        }
-      }
-
-      // PASO 3: Preparar datos de personalización
-      const datosPersonalizacion = {
-        logoUrl,
-        descripcion: configuracion.descripcion,
-        colorPrimario: configuracion.colorPrimario,
-        colorSecundario: configuracion.colorSecundario,
-        colorAcento: configuracion.colorAcento,
-        colorFondo: configuracion.colorFondo,
-        colorTexto: configuracion.colorTexto,
-        colorTituloPrincipal: configuracion.colorTituloPrincipal,
-        colorCardFiltros: configuracion.colorCardFiltros,
-        imagenFondoUrl,
-        instagramUrl: configuracion.instagramUrl,
-        facebookUrl: configuracion.facebookUrl
-      };
-      console.log('📋 Datos de personalización a enviar:', datosPersonalizacion);
-      console.log('📝 Descripción a enviar:', configuracion.descripcion);
-
-      if (!empresaId) {
-        toast.error('Error: No se pudo identificar la empresa');
-        setGuardando(false);
-        return;
-      }
-
-      // PASO 4: Guardar configuración completa de la empresa
-      console.log('📋 Enviando configuración completa de la empresa...');
-      console.log('📝 Descripción a enviar:', configuracion.descripcion);
-      
-      const datosEmpresa = {
+      const datosEmpresa: any = {
         nombre: configuracion.nombre,
         descripcion: configuracion.descripcion,
         textoBienvenida: configuracion.textoBienvenida,
@@ -661,7 +533,6 @@ export default function ConfiguracionEmpresa() {
         ciudad: configuracion.ciudad,
         codigoPostal: configuracion.codigoPostal,
         pais: configuracion.pais,
-        logoUrl,
         colorPrimario: configuracion.colorPrimario,
         colorSecundario: configuracion.colorSecundario,
         colorAcento: configuracion.colorAcento,
@@ -669,577 +540,368 @@ export default function ConfiguracionEmpresa() {
         colorTexto: configuracion.colorTexto,
         colorTituloPrincipal: configuracion.colorTituloPrincipal,
         colorCardFiltros: configuracion.colorCardFiltros,
-        imagenFondoUrl,
         moneda: configuracion.moneda,
-        instagramUrl: configuracion.instagramUrl,
-        facebookUrl: configuracion.facebookUrl,
-        // Métodos de pago - Transferencia bancaria
+        idioma: configuracion.idioma,
+        notificacionesPedidos: configuracion.notificacionesPedidos,
+        notificacionesStock: configuracion.notificacionesStock,
+        stockMinimo: configuracion.stockMinimo,
+        mostrarPrecios: configuracion.mostrarPrecios,
+        mostrarStock: configuracion.mostrarStock,
+        permitirResenas: configuracion.permitirResenas,
+        mostrarCategorias: configuracion.mostrarCategorias,
         transferenciaBancariaHabilitada: configuracion.transferenciaBancariaHabilitada,
         banco: configuracion.banco,
         tipoCuenta: configuracion.tipoCuenta,
         numeroCuenta: configuracion.numeroCuenta,
         cbu: configuracion.cbu,
         alias: configuracion.alias,
-        titular: configuracion.titular
+        titular: configuracion.titular,
+        instagramUrl: configuracion.instagramUrl,
+        facebookUrl: configuracion.facebookUrl
       };
-      
-      console.log('📋 Datos completos de la empresa a enviar:', datosEmpresa);
-      console.log('🏦 Datos de transferencia bancaria:', {
-        habilitada: configuracion.transferenciaBancariaHabilitada,
-        banco: configuracion.banco,
-        tipoCuenta: configuracion.tipoCuenta,
-        numeroCuenta: configuracion.numeroCuenta,
-        cbu: configuracion.cbu,
-        alias: configuracion.alias,
-        titular: configuracion.titular
-      });
-      console.log('👋 Texto de bienvenida a enviar:', configuracion.textoBienvenida);
-      console.log('👋 Texto de bienvenida es null?:', configuracion.textoBienvenida === null);
-      console.log('👋 Texto de bienvenida es undefined?:', configuracion.textoBienvenida === undefined);
-      console.log('👋 Texto de bienvenida está vacío?:', configuracion.textoBienvenida === '');
-      console.log('👋 Longitud del texto de bienvenida:', configuracion.textoBienvenida?.length);
-      
-      const response = await ApiService.actualizarEmpresaAdmin(datosEmpresa);
-      console.log('✅ Respuesta del servidor:', response);
-      
-      // Actualizar el nombre de la empresa en el contexto global
-      actualizarEmpresaNombre(configuracion.nombre);
-      
-      toast.success('Configuración guardada correctamente');
-      cargarConfiguracion(false);
-    } catch (error: unknown) {
-      console.error('❌ Error al guardar configuración:', error);
-      const apiError = error as ApiError;
-      const errorMessage = apiError.response?.data?.error || apiError.response?.data?.mensaje || apiError.message || 'Error al guardar la configuración';
-      toast.error(errorMessage);
+
+      if (configuracion.logo) {
+        const logoResponse = await ApiService.subirLogoEmpresa(configuracion.logo);
+        datosEmpresa.logoUrl = logoResponse.data?.logoUrl || '';
+      }
+
+      if (configuracion.imagenFondo) {
+        const fondoResponse = await ApiService.subirFondoEmpresa(configuracion.imagenFondo);
+        datosEmpresa.imagenFondoUrl = fondoResponse.data?.fondoUrl || '';
+      }
+
+      await ApiService.actualizarEmpresaAdmin(datosEmpresa);
+
+      toast.success('Configuración guardada exitosamente');
+      cargarConfiguracion();
+    } catch (error) {
+      console.error('Error al guardar configuración:', error);
+      toast.error('Error al guardar la configuración');
     } finally {
       setGuardando(false);
-      console.log('=== FIN DEBUG GUARDAR CONFIGURACIÓN ===');
     }
   };
 
-  // Preview del tema de colores
-  const previewTema = useMemo(() => ({
-    primario: configuracion.colorPrimario,
-    secundario: configuracion.colorSecundario,
-    acento: configuracion.colorAcento,
-    fondo: configuracion.colorFondo,
-    texto: configuracion.colorTexto,
-    tituloPrincipal: configuracion.colorTituloPrincipal,
-    cardFiltros: configuracion.colorCardFiltros
-  }), [configuracion]);
+  const manejarCancelar = () => {
+    navigate('/admin/dashboard');
+  };
 
-  if (cargando) {
-    return (
-      <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
-        <NavbarAdmin 
-          onCerrarSesion={cerrarSesion}
-          empresaNombre={datosUsuario?.empresaNombre}
-          nombreAdministrador={datosUsuario?.nombre}
-        />
-        <div className="contenedor" style={{ 
-          paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
-          paddingBottom: '2rem',
-          paddingLeft: '1rem',
-          paddingRight: '1rem'
-        }}>
-          <div className="tarjeta text-center py-12">
-            <div className="spinner mx-auto mb-4"></div>
-            <p className="texto-gris">Cargando configuración...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
-      {/* Navegación */}
-      <NavbarAdmin 
-        onCerrarSesion={cerrarSesion}
-        empresaNombre={datosUsuario?.empresaNombre}
-        nombreAdministrador={datosUsuario?.nombre}
-      />
-
-      {/* Contenido principal */}
-      <div className="contenedor" style={{ 
-        paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
-        paddingBottom: '2rem',
-        paddingLeft: '1rem',
-        paddingRight: '1rem'
-      }}>
-        {/* Header */}
-        <div className="mb-8" style={{ textAlign: isMobile ? 'center' : 'left' }}>
-          <h1 className="titulo-2 mb-2" style={{ 
-            fontSize: isMobile ? '1.75rem' : '2rem',
-            marginBottom: isMobile ? '0.5rem' : '0.5rem'
-          }}>
-            Configuración de la Empresa
-          </h1>
-          <p className="texto-gris" style={{ 
-            fontSize: isMobile ? '1rem' : '1.125rem'
-          }}>
-            Personaliza la información y apariencia de tu tienda online.
-          </p>
-        </div>
-
-        <form onSubmit={guardarConfiguracion} className="space-y-8">
-          {/* ============================================
-              1. INFORMACIÓN BÁSICA Y CONTACTO
-          ============================================ */}
-          <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ 
-              borderBottom: '1px solid var(--color-borde)', 
-              backgroundColor: 'var(--color-fondo-hover)',
-              padding: isMobile ? '1rem' : '1.5rem'
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 0: // Información Básica
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-2" style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+              gap: isMobile ? '1rem' : '1.5rem'
             }}>
-              <div className="flex items-centro" style={{ 
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: isMobile ? '0.5rem' : '0.75rem',
-                textAlign: isMobile ? 'center' : 'left'
-              }}>
-                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🏢</span>
-                <div>
-                  <h3 className="titulo-3" style={{ 
-                    marginBottom: '0.25rem',
-                    fontSize: isMobile ? '1.25rem' : '1.5rem'
-                  }}>
-                    Información Básica y Contacto
-                  </h3>
-                  <p className="texto-gris" style={{ fontSize: '0.875rem', margin: 0 }}>
-                    Configura los datos principales de tu empresa e información de contacto
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-              <div className="grid grid-2" style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                gap: isMobile ? '1rem' : '1.5rem'
-              }}>
-                <InputField
-                  icon="🏷️"
-                  label="Nombre de la Empresa"
-                  name="nombre"
-                  value={configuracion.nombre}
-                  onChange={manejarCambio}
-                  required
-                  placeholder="Ingresa el nombre de tu empresa"
-                />
-                <div className="grupo-campo">
-                  <label className="etiqueta">
-                    Subdominio <span style={{ color: 'var(--color-error)' }}>*</span>
-                  </label>
-                  <p className="texto-pequeno texto-gris" style={{ marginBottom: '0.5rem' }}>
-                    Este será la URL de tu tienda online. Por ejemplo: si escribes "miempresa", tu tienda estará disponible en miempresa.negocio360.org
-                  </p>
-                  <div className="flex">
-                    <div className="relative" style={{ flex: 1 }}>
-                      <div className="absolute" style={{ top: '50%', left: '0.75rem', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <span style={{ color: 'var(--color-texto-secundario)', fontSize: '1.125rem' }}>🌐</span>
-                      </div>
-                      <input
-                        type="text"
-                        name="subdominio"
-                        value={configuracion.subdominio}
-                        onChange={manejarCambio}
-                        required
-                        className="campo"
-                        style={{ paddingLeft: '2.5rem', borderTopRightRadius: '0', borderBottomRightRadius: '0' }}
-                        placeholder="tu-empresa"
-                      />
-                    </div>
-                    <span className="px-3 py-2 border border-l-0" style={{ 
-                      borderColor: 'var(--color-borde)', 
-                      borderRadius: '0 var(--radio-borde) var(--radio-borde) 0',
-                      backgroundColor: 'var(--color-fondo-hover)',
-                      color: 'var(--color-texto-secundario)',
-                      fontSize: '0.875rem',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}>
-                      .negocio360.org
-                    </span>
-                  </div>
-                  {verificandoSubdominio && (
-                    <p className="texto-pequeno texto-gris mt-2">Verificando disponibilidad...</p>
-                  )}
-                  {subdominioDisponible !== null && (
-                    <p className={`texto-pequeno ${subdominioDisponible ? 'texto-verde' : 'texto-rojo'} mt-2`}>
-                      {subdominioDisponible ? '✅ Subdominio disponible' : '❌ Subdominio no disponible'}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-2" style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                gap: isMobile ? '1rem' : '1.5rem'
-              }}>
-                <InputField
-                  icon="📧"
-                  label="Email de Contacto"
-                  type="email"
-                  name="email"
-                  value={configuracion.email}
-                  onChange={manejarCambio}
-                  required
-                  placeholder="contacto@tuempresa.com"
-                  description="Este email se usará para recibir notificaciones de pedidos, consultas de clientes y comunicaciones importantes de la plataforma."
-                />
-                <InputField
-                  icon="📱"
-                  label="Teléfono"
-                  type="tel"
-                  name="telefono"
-                  value={configuracion.telefono}
-                  onChange={manejarCambio}
-                  placeholder="+54 11 1234-5678"
-                />
-              </div>
-
               <InputField
-                icon="📍"
-                label="Dirección"
-                name="direccion"
-                value={configuracion.direccion}
+                icon="🏷️"
+                label="Nombre de la Empresa"
+                name="nombre"
+                value={configuracion.nombre}
                 onChange={manejarCambio}
-                placeholder="Av. Corrientes 1234"
+                required
+                placeholder="Ingresa el nombre de tu empresa"
               />
-
-              <div className="grid grid-3">
-                <InputField
-                  icon="🏙️"
-                  label="Ciudad"
-                  name="ciudad"
-                  value={configuracion.ciudad}
-                  onChange={manejarCambio}
-                  placeholder="Buenos Aires"
-                />
-                <InputField
-                  icon="📮"
-                  label="Código Postal"
-                  name="codigoPostal"
-                  value={configuracion.codigoPostal}
-                  onChange={manejarCambio}
-                  placeholder="1001"
-                />
-                <InputField
-                  icon="🌍"
-                  label="País"
-                  type="select"
-                  name="pais"
-                  value={configuracion.pais}
-                  onChange={manejarCambio}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ============================================
-              2. REDES SOCIALES
-          ============================================ */}
-          <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ 
-              borderBottom: '1px solid var(--color-borde)', 
-              backgroundColor: 'var(--color-fondo-hover)',
-              padding: isMobile ? '1rem' : '1.5rem'
-            }}>
-              <div className="flex items-centro" style={{ 
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: isMobile ? '0.5rem' : '0.75rem',
-                textAlign: isMobile ? 'center' : 'left'
-              }}>
-                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>📱</span>
-                <div>
-                  <h3 className="titulo-3" style={{ 
-                    marginBottom: '0.25rem',
-                    fontSize: isMobile ? '1.25rem' : '1.5rem'
-                  }}>
-                    Redes Sociales
-                  </h3>
-                  <p className="texto-gris" style={{ fontSize: '0.875rem', margin: 0 }}>
-                    Conecta con tus clientes a través de tus redes sociales
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-              <p className="texto-gris" style={{ 
-                marginBottom: '1rem',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                textAlign: isMobile ? 'center' : 'left'
-              }}>
-                Agrega los enlaces a tus redes sociales para que aparezcan en el catálogo público de tu tienda.
-              </p>
-              
-              <div className="grid grid-2" style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                gap: isMobile ? '1rem' : '1.5rem'
-              }}>
-                <InputField
-                  icon="📸"
-                  label="Instagram"
-                  type="url"
-                  name="instagramUrl"
-                  value={configuracion.instagramUrl}
-                  onChange={manejarCambio}
-                  placeholder="https://instagram.com/tuempresa"
-                />
-                <InputField
-                  icon="👥"
-                  label="Facebook"
-                  type="url"
-                  name="facebookUrl"
-                  value={configuracion.facebookUrl}
-                  onChange={manejarCambio}
-                  placeholder="https://facebook.com/tuempresa"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ============================================
-              3. CARD DE PRESENTACIÓN
-          ============================================ */}
-          <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ 
-              borderBottom: '1px solid var(--color-borde)', 
-              backgroundColor: 'var(--color-fondo-hover)',
-              padding: isMobile ? '1rem' : '1.5rem'
-            }}>
-              <div className="flex items-centro" style={{ 
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: isMobile ? '0.5rem' : '0.75rem',
-                textAlign: isMobile ? 'center' : 'left'
-              }}>
-                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🎨</span>
-                <div>
-                  <h3 className="titulo-3" style={{ 
-                    marginBottom: '0.25rem',
-                    fontSize: isMobile ? '1.25rem' : '1.5rem'
-                  }}>
-                    Card de Presentación
-                  </h3>
-                  <p className="texto-gris" style={{ fontSize: '0.875rem', margin: 0 }}>
-                    Personaliza el logo, título de bienvenida y descripción que aparecerán en el catálogo público
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-              {/* Logo de la empresa */}
               <div className="grupo-campo">
-                <label className="etiqueta">Logo de la Empresa</label>
-                <div className="flex items-centro" style={{ gap: '1rem', flexWrap: 'wrap' }}>
-                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        name="logo"
-                        onChange={manejarLogo}
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        id="logo-input"
-                      />
-                      <label
-                        htmlFor="logo-input"
-                        className="boton boton-secundario"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        🖼️ Seleccionar Logo
-                      </label>
+                <label className="etiqueta">
+                  Subdominio <span style={{ color: 'var(--color-error)' }}>*</span>
+                </label>
+                <p className="texto-pequeno texto-gris" style={{ marginBottom: '0.5rem' }}>
+                  Este será la URL de tu tienda online. Por ejemplo: si escribes "miempresa", tu tienda estará disponible en miempresa.negocio360.org
+                </p>
+                <div className="flex">
+                  <div className="relative" style={{ flex: 1 }}>
+                    <div className="absolute" style={{ top: '50%', left: '0.75rem', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                      <span style={{ color: 'var(--color-texto-secundario)', fontSize: '1.125rem' }}>🌐</span>
                     </div>
+                    <input
+                      type="text"
+                      name="subdominio"
+                      value={configuracion.subdominio}
+                      onChange={manejarCambio}
+                      required
+                      className="campo"
+                      style={{ paddingLeft: '2.5rem', borderTopRightRadius: '0', borderBottomRightRadius: '0' }}
+                      placeholder="tu-empresa"
+                    />
+                  </div>
+                  <span className="px-3 py-2 border border-l-0" style={{ 
+                    borderColor: 'var(--color-borde)', 
+                    borderRadius: '0 var(--radio-borde) var(--radio-borde) 0',
+                    backgroundColor: 'var(--color-fondo-hover)',
+                    color: 'var(--color-texto-secundario)',
+                    fontSize: '0.875rem',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    .negocio360.org
+                  </span>
+                </div>
+                {verificandoSubdominio && (
+                  <p className="texto-pequeno texto-gris mt-2">Verificando disponibilidad...</p>
+                )}
+                {subdominioDisponible !== null && (
+                  <p className={`texto-pequeno ${subdominioDisponible ? 'texto-verde' : 'texto-rojo'} mt-2`}>
+                    {subdominioDisponible ? '✅ Subdominio disponible' : '❌ Subdominio no disponible'}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-2" style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+              gap: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <InputField
+                icon="📧"
+                label="Email de Contacto"
+                type="email"
+                name="email"
+                value={configuracion.email}
+                onChange={manejarCambio}
+                required
+                placeholder="contacto@tuempresa.com"
+                description="Este email se usará para recibir notificaciones de pedidos, consultas de clientes y comunicaciones importantes de la plataforma."
+              />
+              <InputField
+                icon="📱"
+                label="Teléfono"
+                type="tel"
+                name="telefono"
+                value={configuracion.telefono}
+                onChange={manejarCambio}
+                placeholder="+54 11 1234-5678"
+              />
+            </div>
+
+            <InputField
+              icon="📍"
+              label="Dirección"
+              name="direccion"
+              value={configuracion.direccion}
+              onChange={manejarCambio}
+              placeholder="Av. Corrientes 1234"
+            />
+
+            <div className="grid grid-3" style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+              gap: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <InputField
+                icon="🏙️"
+                label="Ciudad"
+                name="ciudad"
+                value={configuracion.ciudad}
+                onChange={manejarCambio}
+                placeholder="Buenos Aires"
+              />
+              <InputField
+                icon="📮"
+                label="Código Postal"
+                name="codigoPostal"
+                value={configuracion.codigoPostal}
+                onChange={manejarCambio}
+                placeholder="1001"
+              />
+              <InputField
+                icon="🌍"
+                label="País"
+                type="select"
+                name="pais"
+                value={configuracion.pais}
+                onChange={manejarCambio}
+              />
+            </div>
+          </div>
+        );
+
+      case 1: // Apariencia
+        return (
+          <div className="space-y-6">
+            {/* Logo de la empresa */}
+            <div className="grupo-campo">
+              <label className="etiqueta">Logo de la Empresa</label>
+              <div className="flex items-centro" style={{ gap: '1rem', flexWrap: 'wrap' }}>
+                <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      name="logo"
+                      onChange={manejarLogo}
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      id="logo-input"
+                    />
+                    <label
+                      htmlFor="logo-input"
+                      className="boton boton-secundario"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      🖼️ Seleccionar Logo
+                    </label>
+                  </div>
+                  {configuracion.logo && (
+                    <button
+                      type="button"
+                      onClick={() => setConfiguracion(prev => ({ ...prev, logo: null }))}
+                      className="boton boton-outline"
+                      style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                    >
+                      ❌ Limpiar
+                    </button>
+                  )}
+                </div>
+                
+                {/* Vista previa del logo */}
+                <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    border: '2px dashed var(--color-borde)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'var(--color-fondo-hover)',
+                    overflow: 'hidden',
+                    backgroundSize: 'contain',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundImage: configuracion.logo ? 
+                      `url(${URL.createObjectURL(configuracion.logo)})` : 
+                      logoActual ? `url(${logoActual})` : 'none'
+                  }}>
+                    {!configuracion.logo && !logoActual && (
+                      <span style={{ fontSize: '1.5rem', color: 'var(--color-texto-secundario)' }}>
+                        🏢
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col" style={{ gap: '0.25rem' }}>
                     {configuracion.logo && (
-                      <button
-                        type="button"
-                        onClick={() => setConfiguracion(prev => ({ ...prev, logo: null }))}
-                        className="boton boton-outline"
-                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
-                      >
-                        ❌ Limpiar
-                      </button>
+                      <span className="texto-pequeno texto-verde">
+                        ✅ Nueva: {configuracion.logo.name}
+                      </span>
+                    )}
+                    {logoActual && !configuracion.logo && (
+                      <span className="texto-pequeno texto-gris">
+                        📋 Logo guardado
+                      </span>
                     )}
                   </div>
-                  
-                  {/* Vista previa del logo */}
-                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
-                    <div style={{
-                      width: '80px',
-                      height: '80px',
-                      border: '2px dashed var(--color-borde)',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: 'var(--color-fondo-hover)',
-                      overflow: 'hidden',
-                      backgroundSize: 'contain',
-                      backgroundPosition: 'center',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundImage: configuracion.logo ? 
-                        `url(${URL.createObjectURL(configuracion.logo)})` : 
-                        logoActual ? `url(${logoActual})` : 'none'
-                    }}>
-                      {!configuracion.logo && !logoActual && (
-                        <span style={{ fontSize: '1.5rem', color: 'var(--color-texto-secundario)' }}>
-                          🏢
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col" style={{ gap: '0.25rem' }}>
-                      {configuracion.logo && (
-                        <span className="texto-pequeno texto-verde">
-                          ✅ Nueva: {configuracion.logo.name}
-                        </span>
-                      )}
-                      {logoActual && !configuracion.logo && (
-                        <span className="texto-pequeno texto-gris">
-                          📋 Logo guardado
-                        </span>
-                      )}
-                    </div>
-                  </div>
                 </div>
-                <p className="texto-pequeno texto-gris" style={{ marginTop: '0.5rem' }}>
-                  El logo aparecerá en la tarjeta de presentación de la empresa en el catálogo público. 
-                  Formatos recomendados: PNG, JPG. Tamaño máximo: 2MB.
-                </p>
               </div>
-
-              {/* Título de bienvenida */}
-              <InputField
-                icon="👋"
-                label="Título de Bienvenida"
-                name="textoBienvenida"
-                value={configuracion.textoBienvenida}
-                onChange={manejarCambio}
-                placeholder="¡Bienvenidos a [nombre de la empresa]!"
-              />
-              <p className="texto-pequeno texto-gris" style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
-                💡 <strong>Guía:</strong> Este será el título principal que aparecerá en la tarjeta de presentación de tu tienda.
+              <p className="texto-pequeno texto-gris" style={{ marginTop: '0.5rem' }}>
+                El logo aparecerá en la tarjeta de presentación de la empresa en el catálogo público. 
+                Formatos recomendados: PNG, JPG. Tamaño máximo: 2MB.
               </p>
+            </div>
 
-              {/* Texto secundario */}
-              <InputField
-                icon="📝"
-                label="Texto Secundario"
-                type="textarea"
-                name="descripcion"
-                value={configuracion.descripcion}
-                onChange={manejarCambio}
-                placeholder="Eslogan, contenido adicional o descripción breve..."
-              />
-              <p className="texto-pequeno texto-gris" style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
-                💡 <strong>Guía:</strong> Este texto aparecerá debajo del título de bienvenida en la tarjeta de presentación. Puede ser un eslogan, contenido adicional o descripción breve de tu negocio.
-              </p>
+            {/* Título de bienvenida */}
+            <InputField
+              icon="👋"
+              label="Título de Bienvenida"
+              name="textoBienvenida"
+              value={configuracion.textoBienvenida}
+              onChange={manejarCambio}
+              placeholder="¡Bienvenidos a [nombre de la empresa]!"
+            />
 
-              {/* Imagen de fondo para la card de presentación */}
-              <div className="grupo-campo">
-                <label className="etiqueta">Imagen de Fondo de la Card</label>
-                <div className="flex items-centro" style={{ gap: '1rem', flexWrap: 'wrap' }}>
-                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        name="imagenFondo"
-                        onChange={manejarImagenFondo}
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        id="imagen-fondo-input"
-                      />
-                      <label
-                        htmlFor="imagen-fondo-input"
-                        className="boton boton-secundario"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        🖼️ Seleccionar Imagen de Fondo
-                      </label>
-                    </div>
+            {/* Texto secundario */}
+            <InputField
+              icon="📝"
+              label="Texto Secundario"
+              type="textarea"
+              name="descripcion"
+              value={configuracion.descripcion}
+              onChange={manejarCambio}
+              placeholder="Eslogan, contenido adicional o descripción breve..."
+            />
+
+            {/* Imagen de fondo */}
+            <div className="grupo-campo">
+              <label className="etiqueta">Imagen de Fondo de la Card</label>
+              <div className="flex items-centro" style={{ gap: '1rem', flexWrap: 'wrap' }}>
+                <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      name="imagenFondo"
+                      onChange={manejarImagenFondo}
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      id="imagen-fondo-input"
+                    />
+                    <label
+                      htmlFor="imagen-fondo-input"
+                      className="boton boton-secundario"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      🖼️ Seleccionar Imagen de Fondo
+                    </label>
+                  </div>
+                  {configuracion.imagenFondo && (
+                    <button
+                      type="button"
+                      onClick={() => setConfiguracion(prev => ({ ...prev, imagenFondo: null }))}
+                      className="boton boton-outline"
+                      style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                    >
+                      ❌ Limpiar
+                    </button>
+                  )}
+                </div>
+                
+                {/* Vista previa de la imagen de fondo */}
+                <div className="flex items-centro" style={{ gap: '0.5rem' }}>
+                  <div style={{
+                    width: '120px',
+                    height: '80px',
+                    border: '2px dashed var(--color-borde)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'var(--color-fondo-hover)',
+                    overflow: 'hidden',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundImage: configuracion.imagenFondoUrl ? 
+                      `url(${configuracion.imagenFondoUrl})` : 'none'
+                  }}>
+                    {!configuracion.imagenFondoUrl && (
+                      <span style={{ fontSize: '1.5rem', color: 'var(--color-texto-secundario)' }}>
+                        🖼️
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col" style={{ gap: '0.25rem' }}>
                     {configuracion.imagenFondo && (
-                      <button
-                        type="button"
-                        onClick={() => setConfiguracion(prev => ({ ...prev, imagenFondo: null }))}
-                        className="boton boton-outline"
-                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
-                      >
-                        ❌ Limpiar
-                      </button>
+                      <span className="texto-pequeno texto-verde">
+                        ✅ Nueva: {configuracion.imagenFondo.name}
+                      </span>
+                    )}
+                    {configuracion.imagenFondoUrl && !configuracion.imagenFondo && (
+                      <span className="texto-pequeno texto-gris">
+                        📋 Imagen guardada
+                      </span>
                     )}
                   </div>
-                  
-                  {/* Vista previa de la imagen de fondo */}
-                  <div className="flex items-centro" style={{ gap: '0.5rem' }}>
-                    <div style={{
-                      width: '120px',
-                      height: '80px',
-                      border: '2px dashed var(--color-borde)',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: 'var(--color-fondo-hover)',
-                      overflow: 'hidden',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      backgroundImage: configuracion.imagenFondoUrl ? 
-                        `url(${configuracion.imagenFondoUrl})` : 'none'
-                    }}>
-                      {!configuracion.imagenFondoUrl && (
-                        <span style={{ fontSize: '1.5rem', color: 'var(--color-texto-secundario)' }}>
-                          🖼️
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col" style={{ gap: '0.25rem' }}>
-                      {configuracion.imagenFondo && (
-                        <span className="texto-pequeno texto-verde">
-                          ✅ Nueva: {configuracion.imagenFondo.name}
-                        </span>
-                      )}
-                      {configuracion.imagenFondoUrl && !configuracion.imagenFondo && (
-                        <span className="texto-pequeno texto-gris">
-                          📋 Imagen guardada
-                        </span>
-                      )}
-                    </div>
-                  </div>
                 </div>
-                <p className="texto-pequeno texto-gris" style={{ marginTop: '0.5rem' }}>
-                  La imagen aparecerá como fondo en la tarjeta de presentación de la empresa (logo, título y descripción) del catálogo público. 
-                  Formatos recomendados: JPG, PNG. Tamaño máximo: 2MB.
-                </p>
               </div>
+              <p className="texto-pequeno texto-gris" style={{ marginTop: '0.5rem' }}>
+                Esta imagen aparecerá como fondo de la tarjeta de presentación de tu empresa en el catálogo público.
+              </p>
             </div>
-          </div>
 
-          {/* ============================================
-              4. PERSONALIZACIÓN DE COLORES
-          ============================================ */}
-          <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ 
-              borderBottom: '1px solid var(--color-borde)', 
-              backgroundColor: 'var(--color-fondo-hover)',
-              padding: isMobile ? '1rem' : '1.5rem'
-            }}>
-              <div className="flex items-centro" style={{ 
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: isMobile ? '0.5rem' : '0.75rem',
-                textAlign: isMobile ? 'center' : 'left'
-              }}>
-                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🎨</span>
-                <h3 className="titulo-3" style={{ 
-                  marginBottom: '0',
-                  fontSize: isMobile ? '1.25rem' : '1.5rem'
-                }}>
-                  Personalización de Colores
-                </h3>
-              </div>
-            </div>
-            <div className="p-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+            {/* Configuración de colores con vista previa */}
+            <div className="grupo-campo">
+              <label className="etiqueta">Configuración de Colores</label>
               <div className="grid grid-3" style={{ 
                 gap: isMobile ? '1rem' : '2rem',
                 display: 'grid',
@@ -1323,8 +985,8 @@ export default function ConfiguracionEmpresa() {
                         overflow: 'hidden',
                         backgroundImage: configuracion.imagenFondo
                           ? `url(${URL.createObjectURL(configuracion.imagenFondo)})`
-                          : imagenFondoActual
-                            ? `url(${imagenFondoActual})`
+                          : configuracion.imagenFondoUrl
+                            ? `url(${configuracion.imagenFondoUrl})`
                             : 'none',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
@@ -1614,307 +1276,395 @@ export default function ConfiguracionEmpresa() {
               </div>
             </div>
           </div>
+        );
 
-          {/* Configuración de Notificaciones */}
-          <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ 
-              borderBottom: '1px solid var(--color-borde)', 
-              backgroundColor: 'var(--color-fondo-hover)',
-              padding: isMobile ? '1rem' : '1.5rem'
+      case 2: // Catálogo
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-2" style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+              gap: isMobile ? '1rem' : '1.5rem'
             }}>
-              <div className="flex items-centro" style={{ 
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: isMobile ? '0.5rem' : '0.75rem',
+              <InputField
+                icon="💱"
+                label="Moneda"
+                type="select"
+                name="moneda"
+                value={configuracion.moneda}
+                onChange={manejarCambio}
+              />
+              <InputField
+                icon="🌐"
+                label="Idioma"
+                type="select"
+                name="idioma"
+                value={configuracion.idioma}
+                onChange={manejarCambio}
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="etiqueta" style={{ 
+                marginBottom: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
                 textAlign: isMobile ? 'center' : 'left'
               }}>
-                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🔔</span>
-                <h3 className="titulo-3" style={{ 
-                  marginBottom: '0',
-                  fontSize: isMobile ? '1.25rem' : '1.5rem'
-                }}>
-                  Notificaciones
-                </h3>
-              </div>
-            </div>
-            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-              <div className="space-y-4">
+                Opciones de Visualización
+              </h4>
+              <div className="grid grid-2" style={{ 
+                gap: isMobile ? '0.75rem' : '1rem',
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)'
+              }}>
                 <CheckboxField
-                  label="Notificaciones de nuevos pedidos"
-                  name="notificacionesPedidos"
-                  checked={configuracion.notificacionesPedidos}
+                  label="Mostrar precios"
+                  name="mostrarPrecios"
+                  checked={configuracion.mostrarPrecios}
                   onChange={manejarCambio}
-                  description="Recibir alertas cuando se realicen nuevos pedidos"
+                  description="Los clientes podrán ver los precios de los productos"
                 />
                 <CheckboxField
-                  label="Alertas de stock bajo"
-                  name="notificacionesStock"
-                  checked={configuracion.notificacionesStock}
+                  label="Mostrar stock disponible"
+                  name="mostrarStock"
+                  checked={configuracion.mostrarStock}
                   onChange={manejarCambio}
-                  description="Recibir notificaciones cuando el stock esté bajo"
+                  description="Mostrar la cantidad disponible de cada producto"
                 />
-              </div>
-
-              <div className="grupo-campo">
-                <label className="etiqueta">Stock mínimo para alertas</label>
-                <div className="relative" style={{ maxWidth: '200px' }}>
-                  <div className="absolute" style={{ top: '50%', left: '0.75rem', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                    <span style={{ color: 'var(--color-texto-secundario)', fontSize: '1.125rem' }}>📦</span>
-                  </div>
-                  <input
-                    type="number"
-                    name="stockMinimo"
-                    value={configuracion.stockMinimo}
-                    onChange={manejarCambio}
-                    min="0"
-                    className="campo"
-                    style={{ paddingLeft: '2.5rem' }}
-                  />
-                </div>
+                <CheckboxField
+                  label="Permitir reseñas"
+                  name="permitirResenas"
+                  checked={configuracion.permitirResenas}
+                  onChange={manejarCambio}
+                  description="Los clientes podrán dejar reseñas de los productos"
+                />
+                <CheckboxField
+                  label="Mostrar categorías"
+                  name="mostrarCategorias"
+                  checked={configuracion.mostrarCategorias}
+                  onChange={manejarCambio}
+                  description="Organizar productos por categorías"
+                />
               </div>
             </div>
           </div>
+        );
 
-          {/* Configuración del Catálogo */}
-          <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ 
-              borderBottom: '1px solid var(--color-borde)', 
-              backgroundColor: 'var(--color-fondo-hover)',
-              padding: isMobile ? '1rem' : '1.5rem'
-            }}>
-              <div className="flex items-centro" style={{ 
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: isMobile ? '0.5rem' : '0.75rem',
-                textAlign: isMobile ? 'center' : 'left'
-              }}>
-                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>🛍️</span>
-                <h3 className="titulo-3" style={{ 
-                  marginBottom: '0',
-                  fontSize: isMobile ? '1.25rem' : '1.5rem'
-                }}>
-                  Configuración del Catálogo
-                </h3>
-              </div>
+      case 3: // Pagos
+        return (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <CheckboxField
+                label="Habilitar pago por transferencia bancaria"
+                name="transferenciaBancariaHabilitada"
+                checked={configuracion.transferenciaBancariaHabilitada}
+                onChange={manejarCambio}
+                description="Los clientes podrán pagar mediante transferencia bancaria"
+              />
             </div>
-            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-              <div className="grid grid-2" style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                gap: isMobile ? '1rem' : '1.5rem'
-              }}>
-                <InputField
-                  icon="💱"
-                  label="Moneda"
-                  type="select"
-                  name="moneda"
-                  value={configuracion.moneda}
-                  onChange={manejarCambio}
-                />
-                <InputField
-                  icon="🌐"
-                  label="Idioma"
-                  type="select"
-                  name="idioma"
-                  value={configuracion.idioma}
-                  onChange={manejarCambio}
-                />
-              </div>
 
+            {configuracion.transferenciaBancariaHabilitada && (
               <div className="space-y-4">
                 <h4 className="etiqueta" style={{ 
                   marginBottom: '1rem',
                   fontSize: isMobile ? '0.875rem' : '1rem',
                   textAlign: isMobile ? 'center' : 'left'
                 }}>
-                  Opciones de Visualización
+                  Datos Bancarios
                 </h4>
-                <div className="grid grid-2" style={{ 
-                  gap: isMobile ? '0.75rem' : '1rem',
+                
+                <div className="grid grid-2" style={{
                   display: 'grid',
-                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)'
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                  gap: isMobile ? '1rem' : '1.5rem'
                 }}>
-                  <CheckboxField
-                    label="Mostrar precios"
-                    name="mostrarPrecios"
-                    checked={configuracion.mostrarPrecios}
+                  <InputField
+                    icon="🏦"
+                    label="Banco"
+                    name="banco"
+                    value={configuracion.banco}
                     onChange={manejarCambio}
-                    description="Los clientes podrán ver los precios de los productos"
+                    placeholder="Ej: Banco Galicia"
+                    description="Nombre del banco"
                   />
-                  <CheckboxField
-                    label="Mostrar stock disponible"
-                    name="mostrarStock"
-                    checked={configuracion.mostrarStock}
+                  <InputField
+                    icon="📋"
+                    label="Tipo de Cuenta"
+                    name="tipoCuenta"
+                    value={configuracion.tipoCuenta}
                     onChange={manejarCambio}
-                    description="Mostrar la cantidad disponible de cada producto"
-                  />
-                  <CheckboxField
-                    label="Permitir reseñas"
-                    name="permitirResenas"
-                    checked={configuracion.permitirResenas}
-                    onChange={manejarCambio}
-                    description="Los clientes podrán dejar reseñas de los productos"
-                  />
-                  <CheckboxField
-                    label="Mostrar categorías"
-                    name="mostrarCategorias"
-                    checked={configuracion.mostrarCategorias}
-                    onChange={manejarCambio}
-                    description="Organizar productos por categorías"
+                    placeholder="Ej: Cuenta Corriente"
+                    description="Tipo de cuenta bancaria"
                   />
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Configuración de Métodos de Pago */}
-          <div className="tarjeta">
-            <div className="p-6 border-bottom" style={{ 
-              borderBottom: '1px solid var(--color-borde)', 
-              backgroundColor: 'var(--color-fondo-hover)',
-              padding: isMobile ? '1rem' : '1.5rem'
-            }}>
-              <div className="flex items-centro" style={{ 
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: isMobile ? '0.5rem' : '0.75rem',
-                textAlign: isMobile ? 'center' : 'left'
-              }}>
-                <span style={{ fontSize: isMobile ? '2rem' : '1.5rem', marginRight: isMobile ? '0' : '0.75rem' }}>💳</span>
-                <h3 className="titulo-3" style={{ 
-                  marginBottom: '0',
-                  fontSize: isMobile ? '1.25rem' : '1.5rem'
+                <div className="grid grid-2" style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                  gap: isMobile ? '1rem' : '1.5rem'
                 }}>
-                  Métodos de Pago
-                </h3>
-              </div>
-            </div>
-            <div className="p-6 space-y-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-              
-              {/* Habilitar Transferencia Bancaria */}
-              <div className="space-y-4">
-                <CheckboxField
-                  label="Habilitar pago por transferencia bancaria"
-                  name="transferenciaBancariaHabilitada"
-                  checked={configuracion.transferenciaBancariaHabilitada}
-                  onChange={manejarCambio}
-                  description="Los clientes podrán pagar mediante transferencia bancaria"
-                />
-              </div>
+                  <InputField
+                    icon="🔢"
+                    label="Número de Cuenta"
+                    name="numeroCuenta"
+                    value={configuracion.numeroCuenta}
+                    onChange={manejarCambio}
+                    placeholder="Ej: 1234567890"
+                    description="Número de cuenta bancaria"
+                  />
+                  <InputField
+                    icon="🏷️"
+                    label="Titular"
+                    name="titular"
+                    value={configuracion.titular}
+                    onChange={manejarCambio}
+                    placeholder="Ej: Tu Empresa S.A."
+                    description="Nombre del titular de la cuenta"
+                  />
+                </div>
 
-              {/* Datos Bancarios */}
-              {configuracion.transferenciaBancariaHabilitada && (
-                <div className="space-y-4">
-                  <h4 className="etiqueta" style={{ 
-                    marginBottom: '1rem',
-                    fontSize: isMobile ? '0.875rem' : '1rem',
-                    textAlign: isMobile ? 'center' : 'left'
-                  }}>
-                    Datos Bancarios
-                  </h4>
-                  
-                  <div className="grid grid-2" style={{
-                    display: 'grid',
-                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                    gap: isMobile ? '1rem' : '1.5rem'
-                  }}>
-                    <InputField
-                      icon="🏦"
-                      label="Banco"
-                      name="banco"
-                      value={configuracion.banco}
-                      onChange={manejarCambio}
-                      placeholder="Ej: Banco Galicia"
-                      description="Nombre del banco"
-                    />
-                    <InputField
-                      icon="📋"
-                      label="Tipo de Cuenta"
-                      name="tipoCuenta"
-                      value={configuracion.tipoCuenta}
-                      onChange={manejarCambio}
-                      placeholder="Ej: Cuenta Corriente"
-                      description="Tipo de cuenta bancaria"
-                    />
-                  </div>
+                <div className="grid grid-2" style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                  gap: isMobile ? '1rem' : '1.5rem'
+                }}>
+                  <InputField
+                    icon="🔗"
+                    label="CBU"
+                    name="cbu"
+                    value={configuracion.cbu}
+                    onChange={manejarCambio}
+                    placeholder="Ej: 0070123456789012345678"
+                    description="Clave Bancaria Uniforme"
+                  />
+                  <InputField
+                    icon="🏷️"
+                    label="Alias"
+                    name="alias"
+                    value={configuracion.alias}
+                    onChange={manejarCambio}
+                    placeholder="Ej: TU.EMPRESA.GALICIA"
+                    description="Alias de la cuenta bancaria"
+                  />
+                </div>
 
-                  <div className="grid grid-2" style={{
-                    display: 'grid',
-                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                    gap: isMobile ? '1rem' : '1.5rem'
-                  }}>
-                    <InputField
-                      icon="🔢"
-                      label="Número de Cuenta"
-                      name="numeroCuenta"
-                      value={configuracion.numeroCuenta}
-                      onChange={manejarCambio}
-                      placeholder="Ej: 1234567890"
-                      description="Número de cuenta bancaria"
-                    />
-                    <InputField
-                      icon="🏷️"
-                      label="Titular"
-                      name="titular"
-                      value={configuracion.titular}
-                      onChange={manejarCambio}
-                      placeholder="Ej: Tu Empresa S.A."
-                      description="Nombre del titular de la cuenta"
-                    />
-                  </div>
-
-                  <div className="grid grid-2" style={{
-                    display: 'grid',
-                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                    gap: isMobile ? '1rem' : '1.5rem'
-                  }}>
-                    <InputField
-                      icon="🔗"
-                      label="CBU"
-                      name="cbu"
-                      value={configuracion.cbu}
-                      onChange={manejarCambio}
-                      placeholder="Ej: 0070123456789012345678"
-                      description="Clave Bancaria Uniforme"
-                    />
-                    <InputField
-                      icon="🏷️"
-                      label="Alias"
-                      name="alias"
-                      value={configuracion.alias}
-                      onChange={manejarCambio}
-                      placeholder="Ej: TU.EMPRESA.GALICIA"
-                      description="Alias de la cuenta bancaria"
-                    />
-                  </div>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4" style={{
-                    backgroundColor: 'var(--color-fondo-hover)',
-                    border: '1px solid var(--color-borde)',
-                    borderRadius: 'var(--radio-borde)',
-                    padding: '1rem'
-                  }}>
-                    <div className="flex items-start" style={{ gap: '0.75rem' }}>
-                      <span style={{ fontSize: '1.25rem' }}>💡</span>
-                      <div>
-                        <h5 className="font-semibold text-blue-800" style={{ 
-                          fontWeight: '600',
-                          color: 'var(--color-texto)',
-                          marginBottom: '0.5rem'
-                        }}>
-                          Información Importante
-                        </h5>
-                        <p className="text-sm text-blue-700" style={{ 
-                          fontSize: '0.875rem',
-                          color: 'var(--color-texto-secundario)',
-                          lineHeight: '1.5'
-                        }}>
-                          Estos datos bancarios serán mostrados a los clientes cuando seleccionen 
-                          el método de pago por transferencia. Asegúrate de que la información 
-                          sea correcta y esté actualizada.
-                        </p>
-                      </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4" style={{
+                  backgroundColor: 'var(--color-fondo-hover)',
+                  border: '1px solid var(--color-borde)',
+                  borderRadius: 'var(--radio-borde)',
+                  padding: '1rem'
+                }}>
+                  <div className="flex items-start" style={{ gap: '0.75rem' }}>
+                    <span style={{ fontSize: '1.25rem' }}>💡</span>
+                    <div>
+                      <h5 className="font-semibold text-blue-800" style={{ 
+                        fontWeight: '600',
+                        color: 'var(--color-texto)',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Información Importante
+                      </h5>
+                      <p className="text-sm text-blue-700" style={{ 
+                        fontSize: '0.875rem',
+                        color: 'var(--color-texto-secundario)',
+                        lineHeight: '1.5'
+                      }}>
+                        Estos datos bancarios serán mostrados a los clientes cuando seleccionen 
+                        el método de pago por transferencia. Asegúrate de que la información 
+                        sea correcta y esté actualizada.
+                      </p>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
+          </div>
+        );
+
+      case 4: // Notificaciones
+        return (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h4 className="etiqueta" style={{ 
+                marginBottom: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                Configuración de Notificaciones
+              </h4>
+              <div className="grid grid-2" style={{ 
+                gap: isMobile ? '0.75rem' : '1rem',
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)'
+              }}>
+                <CheckboxField
+                  label="Notificaciones de pedidos"
+                  name="notificacionesPedidos"
+                  checked={configuracion.notificacionesPedidos}
+                  onChange={manejarCambio}
+                  description="Recibir notificaciones cuando se realicen nuevos pedidos"
+                />
+                <CheckboxField
+                  label="Notificaciones de stock"
+                  name="notificacionesStock"
+                  checked={configuracion.notificacionesStock}
+                  onChange={manejarCambio}
+                  description="Recibir alertas cuando el stock esté bajo"
+                />
+              </div>
+            </div>
+
+            <div className="grupo-campo">
+              <label className="etiqueta">Stock Mínimo</label>
+              <p className="texto-pequeno texto-gris" style={{ marginBottom: '0.5rem' }}>
+                Cantidad mínima de productos antes de recibir una alerta de stock bajo
+              </p>
+              <input
+                type="number"
+                name="stockMinimo"
+                value={configuracion.stockMinimo}
+                onChange={manejarCambio}
+                min="1"
+                className="campo"
+                style={{ maxWidth: '200px' }}
+              />
+            </div>
+          </div>
+        );
+
+      case 5: // Redes Sociales
+        return (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h4 className="etiqueta" style={{ 
+                marginBottom: '1rem',
+                fontSize: isMobile ? '0.875rem' : '1rem',
+                textAlign: isMobile ? 'center' : 'left'
+              }}>
+                Enlaces de Redes Sociales
+              </h4>
+              <p className="texto-pequeno texto-gris">
+                Estos enlaces aparecerán en el catálogo público para que los clientes puedan seguirte en redes sociales.
+              </p>
+            </div>
+
+            <div className="grid grid-2" style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+              gap: isMobile ? '1rem' : '1.5rem'
+            }}>
+              <InputField
+                icon="📷"
+                label="Instagram"
+                name="instagramUrl"
+                value={configuracion.instagramUrl}
+                onChange={manejarCambio}
+                placeholder="https://instagram.com/tuempresa"
+              />
+              <InputField
+                icon="📘"
+                label="Facebook"
+                name="facebookUrl"
+                value={configuracion.facebookUrl}
+                onChange={manejarCambio}
+                placeholder="https://facebook.com/tuempresa"
+              />
+            </div>
+          </div>
+        );
+
+             default:
+         return null;
+     }
+   };
+
+  if (cargando) {
+    return (
+      <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
+        <NavbarAdmin 
+          onCerrarSesion={cerrarSesion}
+          empresaNombre={datosUsuario?.empresaNombre}
+          nombreAdministrador={datosUsuario?.nombre}
+        />
+        <div className="contenedor" style={{ 
+          paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
+          paddingBottom: '2rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem'
+        }}>
+          <div className="tarjeta text-center py-12">
+            <div className="spinner mx-auto mb-4"></div>
+            <p className="texto-gris">Cargando configuración...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
+      {/* Navegación */}
+      <NavbarAdmin 
+        onCerrarSesion={cerrarSesion}
+        empresaNombre={datosUsuario?.empresaNombre}
+        nombreAdministrador={datosUsuario?.nombre}
+      />
+
+      {/* Contenido principal */}
+      <div className="contenedor" style={{ 
+        paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
+        paddingBottom: '2rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem'
+      }}>
+        {/* Header */}
+        <div className="mb-8" style={{ textAlign: isMobile ? 'center' : 'left' }}>
+          <h1 className="titulo-2 mb-2" style={{ 
+            fontSize: isMobile ? '1.75rem' : '2rem',
+            marginBottom: isMobile ? '0.5rem' : '0.5rem'
+          }}>
+            Configuración de la Empresa
+          </h1>
+          <p className="texto-gris" style={{ 
+            fontSize: isMobile ? '1rem' : '1.125rem'
+          }}>
+            Personaliza la información y apariencia de tu tienda online.
+          </p>
+        </div>
+
+        <form onSubmit={guardarConfiguracion}>
+          {/* Sistema de Pestañas */}
+          <div className="mb-6" style={{ marginBottom: isMobile ? '1.5rem' : '1.5rem' }}>
+            <div className="flex flex-wrap gap-2" style={{ 
+              gap: isMobile ? '0.5rem' : '0.5rem',
+              flexWrap: 'wrap',
+              justifyContent: isMobile ? 'center' : 'flex-start'
+            }}>
+              {tabs.map((tab) => (
+                <TabButton
+                  key={tab.id}
+                  icon={tab.icon}
+                  label={tab.label}
+                  isActive={activeTab === tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    // No mostrar toast al cambiar de pestaña
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Contenido de la Pestaña Activa */}
+          <div className="tarjeta" style={{
+            background: 'white',
+            borderRadius: 'var(--radio-borde)',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            border: '1px solid var(--color-borde)',
+            overflow: 'hidden'
+          }}>
+            <div className="p-6" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+              {renderTabContent()}
             </div>
           </div>
 
@@ -1966,4 +1716,4 @@ export default function ConfiguracionEmpresa() {
       </div>
     </div>
   );
-}
+} 

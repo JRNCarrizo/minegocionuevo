@@ -22,6 +22,14 @@ export interface Empresa {
   colorCardFiltros?: string;
   imagenFondoUrl?: string;
   moneda: string;
+  idioma?: string;
+  notificacionesPedidos?: boolean;
+  notificacionesStock?: boolean;
+  stockMinimo?: number;
+  mostrarPrecios?: boolean;
+  mostrarStock?: boolean;
+  permitirResenas?: boolean;
+  mostrarCategorias?: boolean;
   instagramUrl?: string;
   facebookUrl?: string;
   mercadolibreUrl?: string;
