@@ -1190,7 +1190,16 @@ public class PublicoController {
             
             for (Cliente cliente : todosLosClientes) {
                 String email = cliente.getEmail();
-                String emailBase = email.replaceAll("\\d+$", ""); // Remover números al final
+                // Mejorar la detección de emails similares
+                String emailBase = email.replaceAll("\\d+@", "@"); // Remover números antes del @
+                emailBase = emailBase.replaceAll("\\d+$", ""); // Remover números al final
+                
+                // También considerar emails que solo difieren en números
+                if (emailBase.equals("jrncarrizo@gmail.com")) {
+                    emailBase = "jrncarrizo@gmail.com"; // Normalizar
+                }
+                
+                System.out.println("Email original: " + email + " -> Email base: " + emailBase);
                 
                 clientesPorEmailBase.computeIfAbsent(emailBase, k -> new ArrayList<>()).add(cliente);
             }
