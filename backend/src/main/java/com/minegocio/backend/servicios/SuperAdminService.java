@@ -5,6 +5,9 @@ import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Suscripcion;
 import com.minegocio.backend.entidades.Plan;
 import com.minegocio.backend.repositorios.*;
+import com.minegocio.backend.servicios.PedidoService;
+import com.minegocio.backend.servicios.VentaRapidaService;
+import com.minegocio.backend.servicios.VentaRapidaService.VentaRapidaEstadisticas;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +47,12 @@ public class SuperAdminService {
 
     @Autowired
     private PlanRepository planRepository;
+
+    @Autowired
+    private PedidoService pedidoService;
+
+    @Autowired
+    private VentaRapidaService ventaRapidaService;
 
     /**
      * Obtiene el dashboard principal con todas las estadísticas
@@ -385,8 +394,28 @@ public class SuperAdminService {
         
         // Nuevas estadísticas para superadmin
         Long ventasRapidas = ventaRapidaRepository.countByEmpresaId(empresa.getId());
-        Long pedidos = pedidoRepository.countByEmpresaId(empresa.getId());
-        Long transacciones = ventasRapidas + pedidos; // Total de transacciones = ventas rápidas + pedidos
+        
+        // Obtener estadísticas completas de pedidos (como en AdminController)
+        Integer totalTransaccionesPedidos = 0;
+        try {
+            PedidoService.PedidoEstadisticas estadisticasPedidos = pedidoService.obtenerEstadisticasPedidos(empresa.getId());
+            totalTransaccionesPedidos = estadisticasPedidos.getTotalTransacciones();
+        } catch (Exception e) {
+            System.err.println("❌ Error al obtener transacciones de pedidos para empresa " + empresa.getNombre() + ": " + e.getMessage());
+            totalTransaccionesPedidos = 0;
+        }
+        
+        // Obtener estadísticas completas de ventas rápidas
+        Integer totalTransaccionesVentaRapida = 0;
+        try {
+            VentaRapidaEstadisticas estadisticasVentaRapida = ventaRapidaService.obtenerEstadisticasVentasRapidas(empresa.getId());
+            totalTransaccionesVentaRapida = estadisticasVentaRapida != null ? estadisticasVentaRapida.getTotalTransacciones() : 0;
+        } catch (Exception e) {
+            System.err.println("❌ Error al obtener transacciones de ventas rápidas para empresa " + empresa.getNombre() + ": " + e.getMessage());
+            totalTransaccionesVentaRapida = 0;
+        }
+        
+        Long transacciones = (long) (totalTransaccionesVentaRapida + totalTransaccionesPedidos);
         LocalDateTime ultimaConexion = empresa.getFechaActualizacion() != null ? 
             empresa.getFechaActualizacion() : empresa.getFechaCreacion();
         
