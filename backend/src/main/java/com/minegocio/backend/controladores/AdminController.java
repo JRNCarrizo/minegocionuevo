@@ -186,6 +186,8 @@ public class AdminController {
             System.out.println("Texto de bienvenida recibido: " + empresaDTO.getTextoBienvenida());
             System.out.println("Descripción recibida: " + empresaDTO.getDescripcion());
             System.out.println("Nombre recibido: " + empresaDTO.getNombre());
+            System.out.println("Mostrar Stock recibido: " + empresaDTO.getMostrarStock());
+            System.out.println("Mostrar Categorías recibido: " + empresaDTO.getMostrarCategorias());
             
             String token = request.getHeader("Authorization");
             if (token == null || !token.startsWith("Bearer ")) {

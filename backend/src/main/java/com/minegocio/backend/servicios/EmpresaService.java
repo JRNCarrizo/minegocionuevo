@@ -437,9 +437,11 @@ public class EmpresaService {
         // Configuración del catálogo
         if (empresaDTO.getMostrarStock() != null) {
             empresa.setMostrarStock(empresaDTO.getMostrarStock());
+            System.out.println("📊 Mostrar Stock guardado: " + empresaDTO.getMostrarStock());
         }
         if (empresaDTO.getMostrarCategorias() != null) {
             empresa.setMostrarCategorias(empresaDTO.getMostrarCategorias());
+            System.out.println("🏷️ Mostrar Categorías guardado: " + empresaDTO.getMostrarCategorias());
         }
         
 
@@ -449,6 +451,9 @@ public class EmpresaService {
         System.out.println("  - Descripción: " + empresa.getDescripcion());
         System.out.println("  - Color Título Principal: " + empresa.getColorTituloPrincipal());
         System.out.println("  - Color Card Filtros: " + empresa.getColorCardFiltros());
+        System.out.println("📊 Configuración del catálogo guardada:");
+        System.out.println("  - Mostrar Stock: " + empresa.getMostrarStock());
+        System.out.println("  - Mostrar Categorías: " + empresa.getMostrarCategorias());
         System.out.println("🏦 Datos de transferencia bancaria guardados:");
         System.out.println("  - Habilitada: " + empresa.getTransferenciaBancariaHabilitada());
         System.out.println("  - Banco: " + empresa.getBanco());
