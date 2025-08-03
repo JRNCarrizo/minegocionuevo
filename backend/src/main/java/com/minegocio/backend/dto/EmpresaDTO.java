@@ -108,6 +108,10 @@ public class EmpresaDTO {
         this.activa = empresa.getActiva();
         this.fechaCreacion = empresa.getFechaCreacion();
         this.fechaActualizacion = empresa.getFechaActualizacion();
+        
+        // Los campos totalVentasRapidas, totalTransacciones y ultimaConexion
+        // se establecen en el servicio SuperAdminService.convertirAEmpresaDTO()
+        // no en el constructor básico
     }
 
     // Getters y Setters
