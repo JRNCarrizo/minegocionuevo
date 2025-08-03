@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSubdominio } from "../hooks/useSubdominio";
+import api from "../services/api";
 
 interface ConfirmarCompraProps {
   open: boolean;
@@ -6,6 +8,16 @@ interface ConfirmarCompraProps {
   onConfirm: (datos: { nombre: string; email: string; direccion: string; acordarConVendedor?: boolean }) => void;
   usuario?: { nombre: string; email: string } | null;
   loading?: boolean;
+}
+
+interface DatosBancarios {
+  banco: string;
+  tipoCuenta: string;
+  numeroCuenta: string;
+  cbu: string;
+  alias: string;
+  titular: string;
+  empresaNombre: string;
 }
 
 const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({ 
@@ -20,6 +32,32 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
   const [direccion, setDireccion] = useState("");
   const [acordarConVendedor, setAcordarConVendedor] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [datosBancarios, setDatosBancarios] = useState<DatosBancarios | null>(null);
+  const [cargandoBancarios, setCargandoBancarios] = useState(false);
+  const { subdominio } = useSubdominio();
+
+  useEffect(() => {
+    const fetchDatosBancarios = async () => {
+      if (!subdominio) return;
+      
+      setCargandoBancarios(true);
+      try {
+        const response = await fetch(`/api/publico/${subdominio}/datos-bancarios`);
+        if (response.ok) {
+          const data = await response.json();
+          setDatosBancarios(data.data);
+        }
+      } catch (error) {
+        console.error("Error al cargar datos bancarios:", error);
+      } finally {
+        setCargandoBancarios(false);
+      }
+    };
+
+    if (open && subdominio) {
+      fetchDatosBancarios();
+    }
+  }, [open, subdominio]);
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
@@ -448,6 +486,182 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Datos bancarios para transferencia */}
+            {cargandoBancarios ? (
+              <div style={{
+                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                borderRadius: '20px',
+                padding: '32px',
+                border: '2px solid #f59e0b',
+                width: '100%',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '12px',
+                  fontSize: '18px',
+                  color: '#92400e',
+                  fontWeight: '600'
+                }}>
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    border: '2px solid rgba(146, 64, 14, 0.3)',
+                    borderTop: '2px solid #92400e',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  Cargando datos bancarios...
+                </div>
+              </div>
+            ) : datosBancarios && (
+              <div style={{
+                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                borderRadius: '20px',
+                padding: '32px',
+                border: '2px solid #f59e0b',
+                width: '100%'
+              }}>
+                <h3 style={{ 
+                  margin: '0 0 24px 0', 
+                  fontSize: '20px', 
+                  fontWeight: '700', 
+                  color: '#92400e',
+                  textAlign: 'center'
+                }}>
+                  🏦 Datos Bancarios para Transferencia
+                </h3>
+                
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                  gap: '16px' 
+                }}>
+                  {datosBancarios.banco && (
+                    <div style={{
+                      background: 'white',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '1px solid #f59e0b'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
+                        Banco
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
+                        {datosBancarios.banco}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {datosBancarios.tipoCuenta && (
+                    <div style={{
+                      background: 'white',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '1px solid #f59e0b'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
+                        Tipo de Cuenta
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
+                        {datosBancarios.tipoCuenta}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {datosBancarios.numeroCuenta && (
+                    <div style={{
+                      background: 'white',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '1px solid #f59e0b'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
+                        Número de Cuenta
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
+                        {datosBancarios.numeroCuenta}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {datosBancarios.cbu && (
+                    <div style={{
+                      background: 'white',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '1px solid #f59e0b'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
+                        CBU
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
+                        {datosBancarios.cbu}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {datosBancarios.alias && (
+                    <div style={{
+                      background: 'white',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '1px solid #f59e0b'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
+                        Alias
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
+                        {datosBancarios.alias}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {datosBancarios.titular && (
+                    <div style={{
+                      background: 'white',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '1px solid #f59e0b'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
+                        Titular
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
+                        {datosBancarios.titular}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginTop: '16px',
+                  border: '1px solid #f59e0b'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>💡</span>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#92400e' }}>
+                      Información importante
+                    </span>
+                  </div>
+                  <p style={{
+                    margin: 0,
+                    fontSize: '14px',
+                    color: '#92400e',
+                    lineHeight: '1.5'
+                  }}>
+                    Una vez realizada la transferencia, envía el comprobante al vendedor para confirmar tu pedido. 
+                    El pedido será procesado una vez confirmado el pago.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Información adicional */}
             <div style={{
