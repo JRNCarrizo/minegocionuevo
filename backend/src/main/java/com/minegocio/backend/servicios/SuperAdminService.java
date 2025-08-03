@@ -144,10 +144,18 @@ public class SuperAdminService {
      */
     public Page<EmpresaDTO> obtenerEmpresas(String filtro, String estadoSuscripcion, String plan, 
                                           LocalDateTime fechaDesde, LocalDateTime fechaHasta, Pageable pageable) {
+        System.out.println("🔍 SuperAdminService.obtenerEmpresas - Iniciando...");
+        System.out.println("🔍 Parámetros: filtro=" + filtro + ", estadoSuscripcion=" + estadoSuscripcion + ", plan=" + plan);
+        
         // Implementar lógica de filtrado y paginación
         // Ordenar por fecha de creación descendente (más recientes primero)
         Page<Empresa> empresas = empresaRepository.findAllByOrderByFechaCreacionDesc(pageable);
-        return empresas.map(this::convertirAEmpresaDTO);
+        System.out.println("🔍 Empresas encontradas: " + empresas.getTotalElements());
+        
+        Page<EmpresaDTO> resultado = empresas.map(this::convertirAEmpresaDTO);
+        System.out.println("🔍 DTOs convertidos: " + resultado.getTotalElements());
+        
+        return resultado;
     }
 
     /**
