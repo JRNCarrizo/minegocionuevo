@@ -29,8 +29,8 @@ const GestionEmpresas: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState('TODOS');
-  const [sortBy, setSortBy] = useState('nombre');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortBy, setSortBy] = useState('fechaCreacion');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -360,8 +360,8 @@ const GestionEmpresas: React.FC = () => {
             onChange={(e) => setSortBy(e.target.value)}
             style={selectStyle}
           >
+            <option value="fechaCreacion">Ordenar por Fecha (más recientes)</option>
             <option value="nombre">Ordenar por Nombre</option>
-            <option value="fechaCreacion">Ordenar por Fecha</option>
             <option value="totalClientes">Ordenar por Clientes</option>
             <option value="totalProductos">Ordenar por Productos</option>
           </select>

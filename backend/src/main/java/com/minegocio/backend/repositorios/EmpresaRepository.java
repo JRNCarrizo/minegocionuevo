@@ -1,6 +1,8 @@
 package com.minegocio.backend.repositorios;
 
 import com.minegocio.backend.entidades.Empresa;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -107,4 +109,9 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
      * Cuenta empresas con baja permanente
      */
     long countByBajaPermanenteTrue();
+
+    /**
+     * Busca todas las empresas ordenadas por fecha de creación descendente
+     */
+    Page<Empresa> findAllByOrderByFechaCreacionDesc(Pageable pageable);
 }

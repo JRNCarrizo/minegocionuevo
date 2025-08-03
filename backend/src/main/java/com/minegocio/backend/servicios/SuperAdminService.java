@@ -145,7 +145,8 @@ public class SuperAdminService {
     public Page<EmpresaDTO> obtenerEmpresas(String filtro, String estadoSuscripcion, String plan, 
                                           LocalDateTime fechaDesde, LocalDateTime fechaHasta, Pageable pageable) {
         // Implementar lógica de filtrado y paginación
-        Page<Empresa> empresas = empresaRepository.findAll(pageable);
+        // Ordenar por fecha de creación descendente (más recientes primero)
+        Page<Empresa> empresas = empresaRepository.findAllByOrderByFechaCreacionDesc(pageable);
         return empresas.map(this::convertirAEmpresaDTO);
     }
 
