@@ -367,28 +367,8 @@ public class SuperAdminService {
     // Métodos auxiliares privados
 
     private EmpresaDTO convertirAEmpresaDTO(Empresa empresa) {
-        EmpresaDTO dto = new EmpresaDTO();
-        dto.setId(empresa.getId());
-        dto.setNombre(empresa.getNombre());
-        dto.setSubdominio(empresa.getSubdominio());
-        dto.setEmail(empresa.getEmail());
-        dto.setTelefono(empresa.getTelefono());
-        dto.setDescripcion(empresa.getDescripcion());
-        dto.setLogoUrl(empresa.getLogoUrl());
-        dto.setColorPrimario(empresa.getColorPrimario());
-        dto.setColorSecundario(empresa.getColorSecundario());
-        dto.setColorAcento(empresa.getColorAcento());
-        dto.setColorFondo(empresa.getColorFondo());
-        dto.setColorTexto(empresa.getColorTexto());
-        dto.setColorTituloPrincipal(empresa.getColorTituloPrincipal());
-        dto.setColorCardFiltros(empresa.getColorCardFiltros());
-        dto.setImagenFondoUrl(empresa.getImagenFondoUrl());
-        dto.setMoneda(empresa.getMoneda());
-        dto.setInstagramUrl(empresa.getInstagramUrl());
-        dto.setFacebookUrl(empresa.getFacebookUrl());
-        dto.setEstadoSuscripcion(empresa.getEstadoSuscripcion());
-        dto.setFechaCreacion(empresa.getFechaCreacion());
-        dto.setActiva(empresa.getActiva());
+        System.out.println("🔄 Iniciando conversión de empresa: " + empresa.getNombre());
+        EmpresaDTO dto = new EmpresaDTO(empresa);
         
         // Obtener estadísticas reales de la empresa específica
         dto.setTotalProductos(productoRepository.contarProductosActivosPorEmpresa(empresa));
