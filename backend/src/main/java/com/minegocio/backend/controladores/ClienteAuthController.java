@@ -1295,8 +1295,15 @@ public class ClienteAuthController {
             ClienteDTO clienteExistente = clienteOpt.get();
             
             // Verificar contraseña actual
-            if (!passwordEncoder.matches(passwordDTO.getPasswordActual(), clienteExistente.getPassword())) {
-                return ResponseEntity.status(400).body(Map.of("error", "La contraseña actual es incorrecta"));
+            if (clienteExistente.getPassword() == null || clienteExistente.getPassword().isEmpty()) {
+                // Usuario registrado con Google (sin contraseña)
+                System.out.println("Usuario registrado con Google - sin contraseña");
+                // No verificar contraseña actual, permitir cambio directo
+            } else {
+                // Usuario con contraseña normal, verificar contraseña actual
+                if (!passwordEncoder.matches(passwordDTO.getPasswordActual(), clienteExistente.getPassword())) {
+                    return ResponseEntity.status(400).body(Map.of("error", "La contraseña actual es incorrecta"));
+                }
             }
             
             // Actualizar solo la contraseña preservando todos los demás datos

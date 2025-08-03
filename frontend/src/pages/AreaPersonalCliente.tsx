@@ -855,11 +855,6 @@ export default function AreaPersonalCliente() {
     }
 
     // Validaciones
-    if (!passwordData.passwordActual.trim()) {
-      toast.error('Debes ingresar tu contraseña actual');
-      return;
-    }
-
     if (!passwordData.passwordNueva.trim()) {
       toast.error('Debes ingresar una nueva contraseña');
       return;
@@ -872,6 +867,13 @@ export default function AreaPersonalCliente() {
 
     if (passwordData.passwordNueva !== passwordData.confirmarPassword) {
       toast.error('Las contraseñas no coinciden');
+      return;
+    }
+
+    // Para usuarios que se registraron con Google, no es necesario verificar contraseña actual
+    // pero si la ingresaron, la validamos
+    if (passwordData.passwordActual.trim() && passwordData.passwordActual.length < 6) {
+      toast.error('La contraseña actual debe tener al menos 6 caracteres');
       return;
     }
 
@@ -890,7 +892,7 @@ export default function AreaPersonalCliente() {
       }
 
       const response = await api.cambiarPasswordCliente(subdominio, cliente.id, {
-        passwordActual: passwordData.passwordActual,
+        passwordActual: passwordData.passwordActual || "", // Enviar vacío si no se ingresó
         passwordNueva: passwordData.passwordNueva
       }, token);
 
@@ -2512,24 +2514,33 @@ export default function AreaPersonalCliente() {
                   fontWeight: '600',
                   color: empresa?.colorTexto || '#1e293b'
                 }}>
-                  Contraseña Actual *
+                  Contraseña Actual
                 </label>
                 <input
                   type="password"
                   value={passwordData.passwordActual}
                   onChange={(e) => setPasswordData(prev => ({ ...prev, passwordActual: e.target.value }))}
+                  placeholder="Deja vacío si te registraste con Google"
                   style={{
                     width: '100%',
                     padding: '12px 16px',
-                    borderRadius: '10px',
                     border: '2px solid #e2e8f0',
-                    fontSize: '16px',
-                    transition: 'all 0.2s ease'
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => e.target.style.borderColor = empresa?.colorAcento || '#f59e0b'}
                   onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                  placeholder="Tu contraseña actual"
                 />
+                <p style={{
+                  margin: '4px 0 0 0',
+                  fontSize: '12px',
+                  color: '#64748b',
+                  fontStyle: 'italic'
+                }}>
+                  💡 Si te registraste con Google, deja este campo vacío
+                </p>
               </div>
 
               <div>
