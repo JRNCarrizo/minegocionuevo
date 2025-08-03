@@ -396,8 +396,7 @@ export default function ConfiguracionEmpresa() {
       console.log('  - Imagen Fondo:', empresa.imagenFondoUrl);
       console.log('=== FIN DEBUG ===');
       
-      const nuevaConfiguracion = {
-        ...configuracion,
+      const nuevaConfiguracion: ConfiguracionEmpresa = {
         nombre: empresa.nombre || '',
         descripcion: empresa.descripcion || '',
         textoBienvenida: empresa.textoBienvenida || '',
@@ -408,6 +407,7 @@ export default function ConfiguracionEmpresa() {
         ciudad: empresa.ciudad || '',
         codigoPostal: empresa.codigoPostal || '',
         pais: empresa.pais || '',
+        logo: null,
         colorPrimario: empresa.colorPrimario || '#2563eb',
         colorSecundario: empresa.colorSecundario || '#64748b',
         colorAcento: empresa.colorAcento || '#f59e0b',
@@ -415,6 +415,7 @@ export default function ConfiguracionEmpresa() {
         colorTexto: empresa.colorTexto || '#1f2937',
         colorTituloPrincipal: empresa.colorTituloPrincipal || '#1f2937',
         colorCardFiltros: empresa.colorCardFiltros || '#ffffff',
+        imagenFondo: null,
         imagenFondoUrl: empresa.imagenFondoUrl || '',
         moneda: empresa.moneda || 'ARS',
         idioma: empresa.idioma || 'es',
@@ -462,7 +463,7 @@ export default function ConfiguracionEmpresa() {
     } finally {
       setCargando(false);
     }
-  }, [configuracion]);
+  }, []);
 
   useEffect(() => {
     cargarConfiguracion();
@@ -573,7 +574,7 @@ export default function ConfiguracionEmpresa() {
       await ApiService.actualizarEmpresaAdmin(datosEmpresa);
 
       toast.success('Configuración guardada exitosamente');
-      cargarConfiguracion();
+      // No recargar la configuración automáticamente para evitar bucles
     } catch (error) {
       console.error('Error al guardar configuración:', error);
       toast.error('Error al guardar la configuración');
