@@ -257,9 +257,10 @@ const TabButton = ({
   icon: string;
   label: string;
   isActive: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }) => (
   <button
+    type="button"
     onClick={onClick}
     style={{
       display: 'flex',
@@ -367,10 +368,19 @@ export default function ConfiguracionEmpresa() {
     texto: configuracion.colorTexto,
     tituloPrincipal: configuracion.colorTituloPrincipal,
     cardFiltros: configuracion.colorCardFiltros
-  }), [configuracion]);
+  }), [
+    configuracion.colorPrimario,
+    configuracion.colorSecundario,
+    configuracion.colorAcento,
+    configuracion.colorFondo,
+    configuracion.colorTexto,
+    configuracion.colorTituloPrincipal,
+    configuracion.colorCardFiltros
+  ]);
 
   const cargarConfiguracion = useCallback(async (mostrarToast = false) => {
     try {
+      console.log('🔍 DEBUG: cargarConfiguracion llamado con mostrarToast =', mostrarToast);
       setCargando(true);
       
       console.log('Cargando configuración de la empresa del administrador...');
@@ -471,7 +481,7 @@ export default function ConfiguracionEmpresa() {
 
   useEffect(() => {
     cargarConfiguracion(false); // No mostrar toast al cargar inicialmente
-  }, [cargarConfiguracion]);
+  }, []); // Remove cargarConfiguracion from dependencies to prevent infinite re-renders
 
   const manejarCambio = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -518,19 +528,21 @@ export default function ConfiguracionEmpresa() {
     }
   }, [subdominioOriginal]);
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (configuracion.subdominio) {
-        verificarSubdominio(configuracion.subdominio);
-      }
-    }, 500);
+  // useEffect(() => {
+  //   const timeoutId = setTimeout(() => {
+  //     if (configuracion.subdominio) {
+  //       verificarSubdominio(configuracion.subdominio);
+  //     }
+  //   }, 500);
 
-    return () => clearTimeout(timeoutId);
-  }, [configuracion.subdominio, verificarSubdominio]);
+  //   return () => clearTimeout(timeoutId);
+  // }, [configuracion.subdominio, verificarSubdominio]);
 
   const guardarConfiguracion = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('🔍 DEBUG: guardarConfiguracion llamado');
+    console.log('🔍 DEBUG: Evento que disparó guardarConfiguracion:', e);
+    console.log('🔍 DEBUG: Target del evento:', e.target);
     setGuardando(true);
 
     try {
@@ -1647,29 +1659,33 @@ export default function ConfiguracionEmpresa() {
           </p>
         </div>
 
-        <form onSubmit={guardarConfiguracion}>
-          {/* Sistema de Pestañas */}
-          <div className="mb-6" style={{ marginBottom: isMobile ? '1.5rem' : '1.5rem' }}>
-            <div className="flex flex-wrap gap-2" style={{ 
-              gap: isMobile ? '0.5rem' : '0.5rem',
-              flexWrap: 'wrap',
-              justifyContent: isMobile ? 'center' : 'flex-start'
-            }}>
-              {tabs.map((tab) => (
-                <TabButton
-                  key={tab.id}
-                  icon={tab.icon}
-                  label={tab.label}
-                  isActive={activeTab === tab.id}
-                  onClick={() => {
+        {/* Sistema de Pestañas */}
+        <div className="mb-6" style={{ marginBottom: isMobile ? '1.5rem' : '1.5rem' }}>
+          <div className="flex flex-wrap gap-2" style={{ 
+            gap: isMobile ? '0.5rem' : '0.5rem',
+            flexWrap: 'wrap',
+            justifyContent: isMobile ? 'center' : 'flex-start'
+          }}>
+            {tabs.map((tab) => (
+              <TabButton
+                key={tab.id}
+                icon={tab.icon}
+                label={tab.label}
+                isActive={activeTab === tab.id}
+                                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log('🔍 DEBUG: Cambiando a pestaña', tab.id, tab.label);
+                    console.log('🔍 DEBUG: Evento del TabButton:', e);
                     setActiveTab(tab.id);
+                    console.log('🔍 DEBUG: activeTab actualizado a', tab.id);
                   }}
-                />
-              ))}
-            </div>
+              />
+            ))}
           </div>
+        </div>
 
+        <form onSubmit={guardarConfiguracion}>
           {/* Contenido de la Pestaña Activa */}
           <div className="tarjeta" style={{
             background: 'white',
