@@ -433,6 +433,14 @@ public class EmpresaService {
         if (empresaDTO.getTitular() != null) {
             empresa.setTitular(empresaDTO.getTitular());
         }
+
+        // Configuración del catálogo
+        if (empresaDTO.getMostrarStock() != null) {
+            empresa.setMostrarStock(empresaDTO.getMostrarStock());
+        }
+        if (empresaDTO.getMostrarCategorias() != null) {
+            empresa.setMostrarCategorias(empresaDTO.getMostrarCategorias());
+        }
         
 
         empresa = empresaRepository.save(empresa);

@@ -124,7 +124,12 @@ public class Empresa {
     @Column(name = "titular", length = 100)
     private String titular;
 
+    // Configuración del catálogo
+    @Column(name = "mostrar_stock")
+    private Boolean mostrarStock = true;
 
+    @Column(name = "mostrar_categorias")
+    private Boolean mostrarCategorias = true;
 
     // Estado de la suscripción
     @Enumerated(EnumType.STRING)
@@ -281,7 +286,14 @@ public class Empresa {
 
     public void setTitular(String titular) { this.titular = titular; }
 
+    // Configuración del catálogo
+    public Boolean getMostrarStock() { return mostrarStock; }
 
+    public void setMostrarStock(Boolean mostrarStock) { this.mostrarStock = mostrarStock; }
+
+    public Boolean getMostrarCategorias() { return mostrarCategorias; }
+
+    public void setMostrarCategorias(Boolean mostrarCategorias) { this.mostrarCategorias = mostrarCategorias; }
 
     public EstadoSuscripcion getEstadoSuscripcion() { return estadoSuscripcion; }
     public void setEstadoSuscripcion(EstadoSuscripcion estadoSuscripcion) { this.estadoSuscripcion = estadoSuscripcion; }

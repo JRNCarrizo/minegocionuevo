@@ -44,6 +44,10 @@ public class EmpresaDTO {
     private String alias;
     private String titular;
     
+    // Configuración del catálogo
+    private Boolean mostrarStock;
+    private Boolean mostrarCategorias;
+    
     private Empresa.EstadoSuscripcion estadoSuscripcion;
     private LocalDateTime fechaFinPrueba;
     private Boolean activa;
@@ -90,6 +94,8 @@ public class EmpresaDTO {
         this.cbu = empresa.getCbu();
         this.alias = empresa.getAlias();
         this.titular = empresa.getTitular();
+        this.mostrarStock = empresa.getMostrarStock();
+        this.mostrarCategorias = empresa.getMostrarCategorias();
         this.estadoSuscripcion = empresa.getEstadoSuscripcion();
         this.fechaFinPrueba = empresa.getFechaFinPrueba();
         this.activa = empresa.getActiva();
@@ -219,4 +225,11 @@ public class EmpresaDTO {
 
     public String getTitular() { return titular; }
     public void setTitular(String titular) { this.titular = titular; }
+
+    // Configuración del catálogo
+    public Boolean getMostrarStock() { return mostrarStock; }
+    public void setMostrarStock(Boolean mostrarStock) { this.mostrarStock = mostrarStock; }
+
+    public Boolean getMostrarCategorias() { return mostrarCategorias; }
+    public void setMostrarCategorias(Boolean mostrarCategorias) { this.mostrarCategorias = mostrarCategorias; }
 }
