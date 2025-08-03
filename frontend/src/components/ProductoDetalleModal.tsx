@@ -581,14 +581,17 @@ export default function ProductoDetalleModal({
                 borderRadius: '16px',
                 border: '2px solid #bbf7d0'
               }}>
-                <div style={{
-                  fontSize: '32px',
-                  fontWeight: '800',
-                  color: '#059669',
-                  marginBottom: '8px'
-                }}>
-                  {formatearPrecio(producto.precio, empresa.moneda)}
-                </div>
+                {/* Precio - Solo se muestra si mostrarPrecios está habilitado */}
+                {empresa?.mostrarPrecios && (
+                  <div style={{
+                    fontSize: '32px',
+                    fontWeight: '800',
+                    color: '#059669',
+                    marginBottom: '8px'
+                  }}>
+                    {formatearPrecio(producto.precio, empresa.moneda)}
+                  </div>
+                )}
                 
                 {/* Stock disponible - Solo se muestra si mostrarStock está habilitado */}
                 {empresa?.mostrarStock && producto.stock !== null && (

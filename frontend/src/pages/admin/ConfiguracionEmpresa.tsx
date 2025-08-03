@@ -369,7 +369,8 @@ export default function ConfiguracionEmpresa() {
     tituloPrincipal: configuracion.colorTituloPrincipal,
     cardFiltros: configuracion.colorCardFiltros,
     mostrarStock: configuracion.mostrarStock,
-    mostrarCategorias: configuracion.mostrarCategorias
+    mostrarCategorias: configuracion.mostrarCategorias,
+    mostrarPrecios: configuracion.mostrarPrecios
   }), [
     configuracion.colorPrimario,
     configuracion.colorSecundario,
@@ -379,7 +380,8 @@ export default function ConfiguracionEmpresa() {
     configuracion.colorTituloPrincipal,
     configuracion.colorCardFiltros,
     configuracion.mostrarStock,
-    configuracion.mostrarCategorias
+    configuracion.mostrarCategorias,
+    configuracion.mostrarPrecios
   ]);
 
   const cargarConfiguracion = useCallback(async (mostrarToast = false) => {
@@ -1173,13 +1175,16 @@ export default function ConfiguracionEmpresa() {
                         }}>
                           Producto 1
                         </div>
-                        <div style={{ 
-                          fontSize: '0.6rem', 
-                          opacity: '0.8',
-                          color: previewTema.texto
-                        }}>
-                          $99.99
-                        </div>
+                        {/* Precio - Solo se muestra si mostrarPrecios está habilitado */}
+                        {previewTema.mostrarPrecios && (
+                          <div style={{ 
+                            fontSize: '0.6rem', 
+                            opacity: '0.8',
+                            color: previewTema.texto
+                          }}>
+                            $99.99
+                          </div>
+                        )}
                         {previewTema.mostrarStock && (
                           <div style={{ 
                             fontSize: '0.5rem', 
@@ -1227,13 +1232,16 @@ export default function ConfiguracionEmpresa() {
                         }}>
                           Producto 2
                         </div>
-                        <div style={{ 
-                          fontSize: '0.6rem', 
-                          opacity: '0.8',
-                          color: previewTema.texto
-                        }}>
-                          $149.99
-                        </div>
+                        {/* Precio - Solo se muestra si mostrarPrecios está habilitado */}
+                        {previewTema.mostrarPrecios && (
+                          <div style={{ 
+                            fontSize: '0.6rem', 
+                            opacity: '0.8',
+                            color: previewTema.texto
+                          }}>
+                            $149.99
+                          </div>
+                        )}
                         {previewTema.mostrarStock && (
                           <div style={{ 
                             fontSize: '0.5rem', 
@@ -1313,6 +1321,9 @@ export default function ConfiguracionEmpresa() {
                     <div style={{ marginTop: '1rem', padding: '0.5rem', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '6px' }}>
                       <div style={{ marginBottom: '0.5rem', fontWeight: '600' }}>Funcionalidades del Catálogo:</div>
                       <div style={{ display: 'grid', gap: '0.25rem', gridTemplateColumns: '1fr' }}>
+                        <div style={{ fontSize: '0.7rem' }}>
+                          💰 <strong>Mostrar Precios:</strong> {previewTema.mostrarPrecios ? '✅ Habilitado' : '❌ Deshabilitado'}
+                        </div>
                         <div style={{ fontSize: '0.7rem' }}>
                           📊 <strong>Mostrar Stock:</strong> {previewTema.mostrarStock ? '✅ Habilitado' : '❌ Deshabilitado'}
                         </div>

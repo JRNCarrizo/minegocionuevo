@@ -1261,14 +1261,17 @@ export default function CatalogoPublico() {
                         flexWrap: 'wrap',
                         gap: '8px'
                       }}>
-                        <span style={{
-                          fontSize: vista === 'lista' ? '18px' : vista === 'intermedia' ? (isMobile ? '18px' : '24px') : (isMobile ? '20px' : '28px'),
-                          fontWeight: '800',
-                          color: empresa?.colorTexto || '#1e293b',
-                          textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                        }}>
-                          {formatearPrecio(producto.precio, empresa.moneda)}
-                        </span>
+                        {/* Precio - Solo se muestra si mostrarPrecios está habilitado */}
+                        {empresa?.mostrarPrecios && (
+                          <span style={{
+                            fontSize: vista === 'lista' ? '18px' : vista === 'intermedia' ? (isMobile ? '18px' : '24px') : (isMobile ? '20px' : '28px'),
+                            fontWeight: '800',
+                            color: empresa?.colorTexto || '#1e293b',
+                            textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                          }}>
+                            {formatearPrecio(producto.precio, empresa.moneda)}
+                          </span>
+                        )}
                         
                         {/* Stock disponible en tiempo real - Solo se muestra si mostrarStock está habilitado */}
                         {empresa?.mostrarStock && (

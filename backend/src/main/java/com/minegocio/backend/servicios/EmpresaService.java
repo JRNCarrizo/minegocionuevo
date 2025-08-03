@@ -443,6 +443,10 @@ public class EmpresaService {
             empresa.setMostrarCategorias(empresaDTO.getMostrarCategorias());
             System.out.println("🏷️ Mostrar Categorías guardado: " + empresaDTO.getMostrarCategorias());
         }
+        if (empresaDTO.getMostrarPrecios() != null) {
+            empresa.setMostrarPrecios(empresaDTO.getMostrarPrecios());
+            System.out.println("💰 Mostrar Precios guardado: " + empresaDTO.getMostrarPrecios());
+        }
         
 
         empresa = empresaRepository.save(empresa);
@@ -454,6 +458,7 @@ public class EmpresaService {
         System.out.println("📊 Configuración del catálogo guardada:");
         System.out.println("  - Mostrar Stock: " + empresa.getMostrarStock());
         System.out.println("  - Mostrar Categorías: " + empresa.getMostrarCategorias());
+        System.out.println("  - Mostrar Precios: " + empresa.getMostrarPrecios());
         System.out.println("🏦 Datos de transferencia bancaria guardados:");
         System.out.println("  - Habilitada: " + empresa.getTransferenciaBancariaHabilitada());
         System.out.println("  - Banco: " + empresa.getBanco());

@@ -390,23 +390,26 @@ export default function ProductoPublico() {
                   </div>
                 </div>
 
-                <div style={{
-                  fontSize: '32px',
-                  fontWeight: '700',
-                  color: '#059669',
-                  marginBottom: '16px'
-                }}>
-                  {formatearPrecio(producto.precio, empresa.moneda)}
-                  {producto.unidad && (
-                    <span style={{
-                      fontSize: '16px',
-                      color: '#64748b',
-                      fontWeight: '500'
-                    }}>
-                      / {producto.unidad}
-                    </span>
-                  )}
-                </div>
+                {/* Precio - Solo se muestra si mostrarPrecios está habilitado */}
+                {empresa?.mostrarPrecios && (
+                  <div style={{
+                    fontSize: '32px',
+                    fontWeight: '700',
+                    color: '#059669',
+                    marginBottom: '16px'
+                  }}>
+                    {formatearPrecio(producto.precio, empresa.moneda)}
+                    {producto.unidad && (
+                      <span style={{
+                        fontSize: '16px',
+                        color: '#64748b',
+                        fontWeight: '500'
+                      }}>
+                        / {producto.unidad}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {/* Metadatos */}
                 <div style={{ display: 'grid', gap: '12px', marginBottom: '16px' }}>

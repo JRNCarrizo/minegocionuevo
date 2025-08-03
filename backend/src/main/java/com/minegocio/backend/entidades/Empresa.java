@@ -131,6 +131,9 @@ public class Empresa {
     @Column(name = "mostrar_categorias")
     private Boolean mostrarCategorias = true;
 
+    @Column(name = "mostrar_precios")
+    private Boolean mostrarPrecios = true;
+
     // Estado de la suscripción
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_suscripcion")
@@ -294,6 +297,10 @@ public class Empresa {
     public Boolean getMostrarCategorias() { return mostrarCategorias; }
 
     public void setMostrarCategorias(Boolean mostrarCategorias) { this.mostrarCategorias = mostrarCategorias; }
+
+    public Boolean getMostrarPrecios() { return mostrarPrecios; }
+
+    public void setMostrarPrecios(Boolean mostrarPrecios) { this.mostrarPrecios = mostrarPrecios; }
 
     public EstadoSuscripcion getEstadoSuscripcion() { return estadoSuscripcion; }
     public void setEstadoSuscripcion(EstadoSuscripcion estadoSuscripcion) { this.estadoSuscripcion = estadoSuscripcion; }

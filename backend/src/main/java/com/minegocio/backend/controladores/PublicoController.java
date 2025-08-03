@@ -82,6 +82,7 @@ public class PublicoController {
             System.out.println("  - Color Card Filtros: " + empresa.getColorCardFiltros());
             System.out.println("  - Mostrar Stock: " + empresa.getMostrarStock());
             System.out.println("  - Mostrar Categorías: " + empresa.getMostrarCategorias());
+            System.out.println("  - Mostrar Precios: " + empresa.getMostrarPrecios());
             
             // Crear respuesta manual para evitar problemas de serialización
             Map<String, Object> empresaData = new java.util.HashMap<>();
@@ -112,6 +113,7 @@ public class PublicoController {
             // Configuración del catálogo
             empresaData.put("mostrarStock", empresa.getMostrarStock() != null ? empresa.getMostrarStock() : true);
             empresaData.put("mostrarCategorias", empresa.getMostrarCategorias() != null ? empresa.getMostrarCategorias() : true);
+            empresaData.put("mostrarPrecios", empresa.getMostrarPrecios() != null ? empresa.getMostrarPrecios() : true);
 
             
             Map<String, Object> response = new java.util.HashMap<>();

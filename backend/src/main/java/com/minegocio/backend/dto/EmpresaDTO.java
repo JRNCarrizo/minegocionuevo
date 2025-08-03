@@ -47,6 +47,7 @@ public class EmpresaDTO {
     // Configuración del catálogo
     private Boolean mostrarStock;
     private Boolean mostrarCategorias;
+    private Boolean mostrarPrecios;
     
     private Empresa.EstadoSuscripcion estadoSuscripcion;
     private LocalDateTime fechaFinPrueba;
@@ -96,6 +97,7 @@ public class EmpresaDTO {
         this.titular = empresa.getTitular();
         this.mostrarStock = empresa.getMostrarStock();
         this.mostrarCategorias = empresa.getMostrarCategorias();
+        this.mostrarPrecios = empresa.getMostrarPrecios();
         this.estadoSuscripcion = empresa.getEstadoSuscripcion();
         this.fechaFinPrueba = empresa.getFechaFinPrueba();
         this.activa = empresa.getActiva();
@@ -232,4 +234,7 @@ public class EmpresaDTO {
 
     public Boolean getMostrarCategorias() { return mostrarCategorias; }
     public void setMostrarCategorias(Boolean mostrarCategorias) { this.mostrarCategorias = mostrarCategorias; }
+
+    public Boolean getMostrarPrecios() { return mostrarPrecios; }
+    public void setMostrarPrecios(Boolean mostrarPrecios) { this.mostrarPrecios = mostrarPrecios; }
 }
