@@ -542,7 +542,8 @@ export default function ProductoDetalleModal({
                     </span>
                   )}
                   
-                  {producto.categoria && (
+                  {/* Categoría - Solo se muestra si mostrarCategorias está habilitado */}
+                  {empresa?.mostrarCategorias && producto.categoria && (
                     <span style={{
                       background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
                       color: '#1e40af',
@@ -586,7 +587,8 @@ export default function ProductoDetalleModal({
                   {formatearPrecio(producto.precio, empresa.moneda)}
                 </div>
                 
-                {producto.stock !== null && (
+                {/* Stock disponible - Solo se muestra si mostrarStock está habilitado */}
+                {empresa?.mostrarStock && producto.stock !== null && (
                   <div style={{
                     fontSize: '16px',
                     color: producto.stock > 0 ? '#059669' : '#dc2626',
