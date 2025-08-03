@@ -98,6 +98,8 @@ export default function CatalogoPublico() {
         nombre: empresa.nombre,
         descripcion: empresa.descripcion,
         subdominio: empresa.subdominio,
+        mostrarStock: empresa.mostrarStock,
+        mostrarCategorias: empresa.mostrarCategorias,
         logoUrl: empresa.logoUrl,
         colorPrimario: empresa.colorPrimario,
         colorSecundario: empresa.colorSecundario,
@@ -1204,6 +1206,29 @@ export default function CatalogoPublico() {
                         {producto.nombre}
                       </h3>
                       
+                      {/* Categoría - Solo se muestra si mostrarCategorias está habilitado */}
+                      {empresa?.mostrarCategorias && producto.categoria && (
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: '6px', 
+                          marginBottom: '8px', 
+                          flexWrap: 'wrap',
+                          justifyContent: 'flex-start'
+                        }}>
+                          <span style={{
+                            background: `linear-gradient(135deg, ${empresa?.colorCardFiltros || '#f8fafc'} 0%, ${empresa?.colorCardFiltros ? `${empresa.colorCardFiltros}dd` : '#e2e8f0'} 100%)`,
+                            color: empresa?.colorTexto || '#374151',
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? (isMobile ? '10px' : '12px') : (isMobile ? '12px' : '14px'),
+                            fontWeight: '600',
+                            border: `1px solid ${empresa?.colorCardFiltros ? `${empresa.colorCardFiltros}40` : '#cbd5e1'}`
+                          }}>
+                            🏷️ {producto.categoria}
+                          </span>
+                        </div>
+                      )}
+                      
                       {/* Marca */}
                       {producto.marca && (
                         <div style={{ 
@@ -1245,50 +1270,52 @@ export default function CatalogoPublico() {
                           {formatearPrecio(producto.precio, empresa.moneda)}
                         </span>
                         
-                        {/* Stock disponible en tiempo real */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          background: (() => {
-                            const stockDisponible = producto.stock - cantidadEnCarrito;
-                            if (stockDisponible <= 0) return 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)';
-                            if (stockDisponible <= 2) return 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
-                            return 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
-                          })(),
-                          border: (() => {
-                            const stockDisponible = producto.stock - cantidadEnCarrito;
-                            if (stockDisponible <= 0) return '1px solid #fecaca';
-                            if (stockDisponible <= 2) return '1px solid #fbbf24';
-                            return '1px solid #bbf7d0';
-                          })(),
-                          fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '11px' : '12px',
-                          fontWeight: '600',
-                          color: (() => {
-                            const stockDisponible = producto.stock - cantidadEnCarrito;
-                            if (stockDisponible <= 0) return '#dc2626';
-                            if (stockDisponible <= 2) return '#92400e';
-                            return '#166534';
-                          })()
-                        }}>
-                          <span>
-                            {(() => {
+                        {/* Stock disponible en tiempo real - Solo se muestra si mostrarStock está habilitado */}
+                        {empresa?.mostrarStock && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            background: (() => {
                               const stockDisponible = producto.stock - cantidadEnCarrito;
-                              if (stockDisponible <= 0) return '❌';
-                              if (stockDisponible <= 2) return '⚠️';
-                              return '✓';
-                            })()}
-                          </span>
-                          <span>
-                            {(() => {
+                              if (stockDisponible <= 0) return 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)';
+                              if (stockDisponible <= 2) return 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
+                              return 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
+                            })(),
+                            border: (() => {
                               const stockDisponible = producto.stock - cantidadEnCarrito;
-                              if (stockDisponible <= 0) return 'Agotado';
-                              return `${stockDisponible} disponible${stockDisponible !== 1 ? 's' : ''}`;
-                            })()}
-                          </span>
-                        </div>
+                              if (stockDisponible <= 0) return '1px solid #fecaca';
+                              if (stockDisponible <= 2) return '1px solid #fbbf24';
+                              return '1px solid #bbf7d0';
+                            })(),
+                            fontSize: vista === 'lista' ? '10px' : vista === 'intermedia' ? '11px' : '12px',
+                            fontWeight: '600',
+                            color: (() => {
+                              const stockDisponible = producto.stock - cantidadEnCarrito;
+                              if (stockDisponible <= 0) return '#dc2626';
+                              if (stockDisponible <= 2) return '#92400e';
+                              return '#166534';
+                            })()
+                          }}>
+                            <span>
+                              {(() => {
+                                const stockDisponible = producto.stock - cantidadEnCarrito;
+                                if (stockDisponible <= 0) return '❌';
+                                if (stockDisponible <= 2) return '⚠️';
+                                return '✓';
+                              })()}
+                            </span>
+                            <span>
+                              {(() => {
+                                const stockDisponible = producto.stock - cantidadEnCarrito;
+                                if (stockDisponible <= 0) return 'Agotado';
+                                return `${stockDisponible} disponible${stockDisponible !== 1 ? 's' : ''}`;
+                              })()}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
 

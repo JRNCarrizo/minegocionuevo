@@ -100,6 +100,8 @@ export const useSubdominio = (): UseSubdominioReturn => {
       console.log('Texto de bienvenida:', response.data?.textoBienvenida);
       console.log('Descripción:', response.data?.descripcion);
       console.log('Nombre:', response.data?.nombre);
+      console.log('Mostrar Stock:', response.data?.mostrarStock);
+      console.log('Mostrar Categorías:', response.data?.mostrarCategorias);
       console.log('=== FIN DEBUG ===');
       setEmpresa(response.data || null);
     } catch (err) {
