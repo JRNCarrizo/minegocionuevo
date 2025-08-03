@@ -346,6 +346,7 @@ export default function ConfiguracionEmpresa() {
   const [verificandoSubdominio, setVerificandoSubdominio] = useState(false);
   const [subdominioDisponible, setSubdominioDisponible] = useState<boolean | null>(null);
   const [configuracionOriginal, setConfiguracionOriginal] = useState<ConfiguracionEmpresa | null>(null);
+  const [subdominioOriginal, setSubdominioOriginal] = useState<string>('');
 
   // Definición de las pestañas
   const tabs = [
@@ -439,6 +440,7 @@ export default function ConfiguracionEmpresa() {
       
       setConfiguracion(nuevaConfiguracion);
       setConfiguracionOriginal(nuevaConfiguracion);
+      setSubdominioOriginal(empresa.subdominio || '');
       setEmpresaId(empresa.id);
       
       if (empresa.logoUrl) {
@@ -496,6 +498,12 @@ export default function ConfiguracionEmpresa() {
   const verificarSubdominio = useCallback(async (subdominio: string) => {
     if (!subdominio.trim()) return;
     
+    // Si el subdominio es igual al original, no verificar disponibilidad
+    if (subdominioOriginal && subdominio === subdominioOriginal) {
+      setSubdominioDisponible(true);
+      return;
+    }
+    
     setVerificandoSubdominio(true);
     try {
       const response = await ApiService.verificarSubdominio(subdominio);
@@ -506,7 +514,7 @@ export default function ConfiguracionEmpresa() {
     } finally {
       setVerificandoSubdominio(false);
     }
-  }, []);
+  }, [subdominioOriginal]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -574,7 +582,10 @@ export default function ConfiguracionEmpresa() {
       await ApiService.actualizarEmpresaAdmin(datosEmpresa);
 
       toast.success('Configuración guardada exitosamente');
-      // No recargar la configuración automáticamente para evitar bucles
+      // Navegar automáticamente al dashboard después de guardar exitosamente
+      setTimeout(() => {
+        navigate('/admin/dashboard');
+      }, 1500); // Esperar 1.5 segundos para que el usuario vea el mensaje de éxito
     } catch (error) {
       console.error('Error al guardar configuración:', error);
       toast.error('Error al guardar la configuración');
