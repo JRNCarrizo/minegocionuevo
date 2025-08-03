@@ -631,6 +631,8 @@ export default function AreaPersonalCliente() {
         
         const response = await api.obtenerPerfilCliente(subdominioFinal, token);
         console.log('Respuesta del perfil:', response);
+        console.log('Cliente del perfil - ID:', response.cliente?.id);
+        console.log('Cliente del perfil - Email:', response.cliente?.email);
         
         setCliente(response.cliente);
         console.log('Cliente establecido:', response.cliente);
@@ -939,23 +941,54 @@ export default function AreaPersonalCliente() {
 
   // Función de debug temporal
   const debugPedidos = async () => {
-    if (!cliente?.id || !subdominio) {
-      toast.error('No se puede hacer debug sin cliente o subdominio');
-      return;
-    }
-    
     try {
+      const subdominioDesarrollo = localStorage.getItem('subdominio-desarrollo');
+      const subdominioFinal = subdominio || subdominioDesarrollo;
+      
+      if (!subdominioFinal) {
+        toast.error('No se pudo identificar la tienda');
+        return;
+      }
+
+      if (!cliente) {
+        toast.error('No hay información del cliente');
+        return;
+      }
+
       console.log('=== DEBUG PEDIDOS CLIENTE ===');
       console.log('Cliente ID:', cliente.id);
-      console.log('Subdominio:', subdominio);
-      
-      const debugResp = await api.debugPedidosCliente(subdominio, cliente.id);
-      console.log('Respuesta debug:', debugResp);
+      console.log('Subdominio:', subdominioFinal);
+
+      const response = await api.debugPedidosCliente(subdominioFinal, cliente.id);
+      console.log('Respuesta debug:', response);
       
       toast.success('Debug completado. Revisa la consola.');
     } catch (error) {
       console.error('Error en debug:', error);
-      toast.error('Error en debug');
+      toast.error('Error al hacer debug');
+    }
+  };
+
+  const debugClientesDuplicados = async () => {
+    try {
+      const subdominioDesarrollo = localStorage.getItem('subdominio-desarrollo');
+      const subdominioFinal = subdominio || subdominioDesarrollo;
+      
+      if (!subdominioFinal) {
+        toast.error('No se pudo identificar la tienda');
+        return;
+      }
+
+      console.log('=== DEBUG CLIENTES DUPLICADOS ===');
+      console.log('Subdominio:', subdominioFinal);
+
+      const response = await api.debugClientesDuplicados(subdominioFinal);
+      console.log('Respuesta debug clientes duplicados:', response);
+      
+      toast.success('Debug clientes duplicados completado. Revisa la consola.');
+    } catch (error) {
+      console.error('Error en debug clientes duplicados:', error);
+      toast.error('Error al hacer debug de clientes duplicados');
     }
   };
 
@@ -1438,6 +1471,34 @@ export default function AreaPersonalCliente() {
                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.3)';
                 }}>
                   🐛 Debug Pedidos (Temporal)
+                </button>
+                
+                {/* Botón de debug clientes duplicados */}
+                <button style={{
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '16px',
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
+                  width: '100%',
+                  opacity: 0.9,
+                  marginTop: '8px'
+                }}
+                onClick={debugClientesDuplicados}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(139,92,246,0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(139,92,246,0.3)';
+                }}>
+                  🔍 Debug Clientes Duplicados (Temporal)
                 </button>
                 
                 <p style={{

@@ -679,6 +679,12 @@ class ApiService {
         return response.data;
     }
 
+    // Debug: buscar clientes duplicados
+    async debugClientesDuplicados(subdominio: string): Promise<ApiResponse<any>> {
+        const response = await this.api.get(`/publico/${subdominio}/debug/clientes/duplicados`);
+        return response.data;
+    }
+
     // Cancelar pedido del cliente (endpoint público)
     async cancelarPedidoCliente(subdominio: string, pedidoId: number, clienteId: number): Promise<ApiResponse<Pedido>> {
         const response = await this.api.put(`/publico/${subdominio}/pedidos/${pedidoId}/cancelar?clienteId=${clienteId}`);

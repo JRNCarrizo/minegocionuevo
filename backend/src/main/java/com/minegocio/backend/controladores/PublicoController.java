@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import com.minegocio.backend.entidades.Cliente;
 import com.minegocio.backend.repositorios.ClienteRepository;
+import com.minegocio.backend.repositorios.PedidoRepository;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/publico")
@@ -46,6 +48,9 @@ public class PublicoController {
 
     @Autowired
     private ClienteRepository clienteRepository;
+
+    @Autowired
+    private PedidoRepository pedidoRepository;
 
     /**
      * Obtener información pública de una empresa por subdominio
@@ -1150,6 +1155,86 @@ public class PublicoController {
                 "error", "Error interno del servidor: " + e.getMessage()
             );
             
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Endpoint para buscar cuentas de cliente duplicadas por email
+     */
+    @GetMapping("/{subdominio}/debug/clientes/duplicados")
+    public ResponseEntity<?> debugClientesDuplicados(
+            @PathVariable String subdominio) {
+        try {
+            System.out.println("=== DEBUG CLIENTES DUPLICADOS ===");
+            System.out.println("Subdominio: " + subdominio);
+            
+            Optional<Empresa> empresa = empresaService.obtenerPorSubdominio(subdominio);
+            
+            if (empresa.isEmpty()) {
+                var error = java.util.Map.of(
+                    "error", "Empresa no encontrada"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            Long empresaId = empresa.get().getId();
+            System.out.println("Empresa ID: " + empresaId);
+            
+            // Obtener todos los clientes de la empresa
+            List<Cliente> todosLosClientes = clienteRepository.findByEmpresaAndActivoTrue(empresa.get());
+            System.out.println("Total clientes en la empresa: " + todosLosClientes.size());
+            
+            // Agrupar por email base (sin números al final)
+            Map<String, List<Cliente>> clientesPorEmailBase = new HashMap<>();
+            
+            for (Cliente cliente : todosLosClientes) {
+                String email = cliente.getEmail();
+                String emailBase = email.replaceAll("\\d+$", ""); // Remover números al final
+                
+                clientesPorEmailBase.computeIfAbsent(emailBase, k -> new ArrayList<>()).add(cliente);
+            }
+            
+            // Filtrar solo los que tienen múltiples cuentas
+            Map<String, List<Map<String, Object>>> duplicados = new HashMap<>();
+            
+            for (Map.Entry<String, List<Cliente>> entry : clientesPorEmailBase.entrySet()) {
+                if (entry.getValue().size() > 1) {
+                    List<Map<String, Object>> clientesInfo = new ArrayList<>();
+                    
+                    for (Cliente cliente : entry.getValue()) {
+                        Map<String, Object> clienteInfo = new HashMap<>();
+                        clienteInfo.put("id", cliente.getId());
+                        clienteInfo.put("nombre", cliente.getNombre());
+                        clienteInfo.put("apellidos", cliente.getApellidos());
+                        clienteInfo.put("email", cliente.getEmail());
+                        clienteInfo.put("fechaCreacion", cliente.getFechaCreacion().toString());
+                        clienteInfo.put("totalPedidos", pedidoRepository.contarPedidosPorCliente(cliente, empresa.get()));
+                        clientesInfo.add(clienteInfo);
+                    }
+                    
+                    duplicados.put(entry.getKey(), clientesInfo);
+                }
+            }
+            
+            var respuesta = java.util.Map.of(
+                "empresa", java.util.Map.of(
+                    "id", empresa.get().getId(),
+                    "nombre", empresa.get().getNombre(),
+                    "subdominio", empresa.get().getSubdominio()
+                ),
+                "totalClientes", todosLosClientes.size(),
+                "clientesDuplicados", duplicados
+            );
+            
+            return ResponseEntity.ok(respuesta);
+            
+        } catch (Exception e) {
+            System.err.println("Error en debugClientesDuplicados: " + e.getMessage());
+            e.printStackTrace();
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor: " + e.getMessage()
+            );
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
