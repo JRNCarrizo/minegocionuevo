@@ -3,8 +3,11 @@ package com.minegocio.backend.controladores;
 import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.servicios.EmpresaService;
+import com.minegocio.backend.servicios.SuperAdminService;
 import com.minegocio.backend.servicios.AutenticacionService;
 import com.minegocio.backend.seguridad.JwtUtils;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +25,9 @@ public class SuperAdminController {
 
     @Autowired
     private EmpresaService empresaService;
+    
+    @Autowired
+    private SuperAdminService superAdminService;
     
     @Autowired
     private AutenticacionService autenticacionService;
@@ -121,11 +127,15 @@ public class SuperAdminController {
                 return ResponseEntity.status(403).body(Map.of("error", "Acceso denegado. Se requiere rol SUPER_ADMIN"));
             }
             
-            List<Map<String, Object>> empresas = empresaService.obtenerTodasLasEmpresasConEstadisticas();
+            // Crear Pageable para obtener todas las empresas
+            Pageable pageable = PageRequest.of(0, 100);
+            
+            // Usar SuperAdminService para obtener empresas con estadísticas completas
+            var resultado = superAdminService.obtenerEmpresas(null, null, null, null, null, pageable);
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Empresas obtenidas correctamente",
-                "data", empresas
+                "data", resultado.getContent()
             ));
             
         } catch (Exception e) {
