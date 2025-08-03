@@ -653,10 +653,22 @@ export default function AreaPersonalCliente() {
           setCargandoPedidos(true);
           try {
             const pedidosResp = await api.obtenerPedidosClientePublico(subdominioFinal, response.cliente.id);
+            console.log('=== DEBUG PEDIDOS FRONTEND ===');
+            console.log('Respuesta completa:', pedidosResp);
+            console.log('Tipo de respuesta:', typeof pedidosResp);
+            console.log('Es array?', Array.isArray(pedidosResp));
+            console.log('Tiene propiedad data?', pedidosResp && typeof pedidosResp === 'object' && 'data' in pedidosResp);
+            if (pedidosResp && typeof pedidosResp === 'object' && 'data' in pedidosResp) {
+              console.log('Propiedad data:', pedidosResp.data);
+              console.log('Tipo de data:', typeof pedidosResp.data);
+              console.log('Data es array?', Array.isArray(pedidosResp.data));
+            }
+            
             // Adaptación robusta para diferentes estructuras de respuesta
             let pedidosArray = Array.isArray(pedidosResp) ? pedidosResp : pedidosResp?.data;
             if (!Array.isArray(pedidosArray)) pedidosArray = [];
             console.log('Pedidos obtenidos (adaptado):', pedidosArray);
+            console.log('=== FIN DEBUG PEDIDOS FRONTEND ===');
             setPedidos(pedidosArray);
           } catch (e) {
             console.error('Error al cargar pedidos:', e);
@@ -694,10 +706,22 @@ export default function AreaPersonalCliente() {
     setCargandoPedidos(true);
     api.obtenerPedidosClientePublico(subdominio, cliente.id)
       .then((pedidosResp) => {
+        console.log('=== DEBUG PEDIDOS FRONTEND (useEffect secundario) ===');
+        console.log('Respuesta completa:', pedidosResp);
+        console.log('Tipo de respuesta:', typeof pedidosResp);
+        console.log('Es array?', Array.isArray(pedidosResp));
+        console.log('Tiene propiedad data?', pedidosResp && typeof pedidosResp === 'object' && 'data' in pedidosResp);
+        if (pedidosResp && typeof pedidosResp === 'object' && 'data' in pedidosResp) {
+          console.log('Propiedad data:', pedidosResp.data);
+          console.log('Tipo de data:', typeof pedidosResp.data);
+          console.log('Data es array?', Array.isArray(pedidosResp.data));
+        }
+        
         // Adaptación robusta para diferentes estructuras de respuesta
         let pedidosArray = Array.isArray(pedidosResp) ? pedidosResp : pedidosResp?.data;
         if (!Array.isArray(pedidosArray)) pedidosArray = [];
         console.log('Pedidos obtenidos en useEffect secundario (adaptado):', pedidosArray);
+        console.log('=== FIN DEBUG PEDIDOS FRONTEND (useEffect secundario) ===');
         setPedidos(pedidosArray);
       })
       .catch((error) => {
@@ -1401,7 +1425,8 @@ export default function AreaPersonalCliente() {
                   transition: 'all 0.2s ease',
                   boxShadow: '0 4px 12px rgba(239,68,68,0.3)',
                   width: '100%',
-                  opacity: 0.8
+                  opacity: 0.9,
+                  marginTop: '8px'
                 }}
                 onClick={debugPedidos}
                 onMouseOver={(e) => {
@@ -1412,8 +1437,18 @@ export default function AreaPersonalCliente() {
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.3)';
                 }}>
-                  🐛 Debug Pedidos
+                  🐛 Debug Pedidos (Temporal)
                 </button>
+                
+                <p style={{
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  textAlign: 'center',
+                  margin: '8px 0 0 0',
+                  fontStyle: 'italic'
+                }}>
+                  Botón temporal para diagnosticar problema con pedidos
+                </p>
               </div>
             </div>
             </div>
