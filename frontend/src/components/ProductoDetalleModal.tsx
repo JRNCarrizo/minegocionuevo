@@ -73,7 +73,10 @@ export default function ProductoDetalleModal({
       const response = await apiService.obtenerProductoPublico(subdominio, productoId);
       setProducto(response.data || null);
       setImagenActual(0);
-      setCantidad(1);
+      
+      // Inicializar cantidad basada en lo que ya está en el carrito
+      const cantidadEnCarrito = items.find(i => i.id === productoId)?.cantidad || 0;
+      setCantidad(cantidadEnCarrito > 0 ? cantidadEnCarrito : 1);
     } catch (err) {
       console.error('Error al cargar producto:', err);
       setError('No se pudo cargar el producto');
@@ -688,27 +691,80 @@ export default function ProductoDetalleModal({
                     </span>
                     
                     <button
-                      onClick={() => setCantidad(Math.min(producto.stock || 999, cantidad + 1))}
-                      disabled={cantidad >= (producto.stock || 999) || !clienteLogueado}
+                      onClick={() => {
+                        const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                        const cantidadDisponible = (producto.stock || 0) - cantidadEnCarrito;
+                        const nuevaCantidad = Math.min(cantidadDisponible, cantidad + 1);
+                        setCantidad(nuevaCantidad);
+                      }}
+                      disabled={(() => {
+                        const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                        const cantidadDisponible = (producto.stock || 0) - cantidadEnCarrito;
+                        return cantidad >= cantidadDisponible || !clienteLogueado;
+                      })()}
                       style={{
                         width: '40px',
                         height: '40px',
-                        background: cantidad >= (producto.stock || 999) || !clienteLogueado ? '#e5e7eb' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        background: (() => {
+                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                          const cantidadDisponible = (producto.stock || 0) - cantidadEnCarrito;
+                          return cantidad >= cantidadDisponible || !clienteLogueado ? '#e5e7eb' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                        })(),
                         color: 'white',
                         border: 'none',
                         fontSize: '18px',
                         fontWeight: '700',
-                        cursor: cantidad >= (producto.stock || 999) || !clienteLogueado ? 'not-allowed' : 'pointer',
+                        cursor: (() => {
+                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                          const cantidadDisponible = (producto.stock || 0) - cantidadEnCarrito;
+                          return cantidad >= cantidadDisponible || !clienteLogueado ? 'not-allowed' : 'pointer';
+                        })(),
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        opacity: cantidad >= (producto.stock || 999) || !clienteLogueado ? 0.5 : 1
+                        opacity: (() => {
+                          const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                          const cantidadDisponible = (producto.stock || 0) - cantidadEnCarrito;
+                          return cantidad >= cantidadDisponible || !clienteLogueado ? 0.5 : 1;
+                        })()
                       }}
                     >
                       +
                     </button>
                   </div>
                 </div>
+
+                {/* Información del carrito */}
+                {(() => {
+                  const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
+                  const cantidadDisponible = (producto.stock || 0) - cantidadEnCarrito;
+                  const maximoAlcanzado = cantidadEnCarrito >= producto.stock;
+                  
+                  return (
+                    <div style={{ 
+                      padding: '12px 16px',
+                      background: maximoAlcanzado ? '#fef2f2' : '#f0f9ff',
+                      border: `1px solid ${maximoAlcanzado ? '#fecaca' : '#bae6fd'}`,
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      color: maximoAlcanzado ? '#dc2626' : '#0369a1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '20px'
+                    }}>
+                      {cantidadEnCarrito > 0 ? (
+                        maximoAlcanzado ? (
+                          <span>🛒 Ya tienes el máximo disponible en el carrito ({cantidadEnCarrito}/{producto.stock})</span>
+                        ) : (
+                          <span>🛒 Tienes {cantidadEnCarrito} en el carrito. Puedes agregar {cantidadDisponible} más.</span>
+                        )
+                      ) : (
+                        <span>🛒 Puedes agregar hasta {producto.stock} unidades al carrito</span>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Botones de acción */}
                 <div style={{
