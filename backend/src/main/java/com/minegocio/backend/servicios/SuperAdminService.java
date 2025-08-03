@@ -395,6 +395,11 @@ public class SuperAdminService {
         dto.setTotalClientes(clienteRepository.countByEmpresaAndActivoTrue(empresa));
         dto.setTotalPedidos(pedidoRepository.countByEmpresaId(empresa.getId()));
         
+        // Nuevas estadísticas para superadmin
+        dto.setTotalVentasRapidas(ventaRapidaRepository.countByEmpresaId(empresa.getId()));
+        dto.setTotalTransacciones(pedidoRepository.countByEmpresaId(empresa.getId()));
+        dto.setUltimaConexion(empresa.getFechaActualizacion());
+        
         return dto;
     }
 

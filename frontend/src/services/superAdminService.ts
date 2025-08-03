@@ -38,6 +38,9 @@ export interface Empresa {
   totalProductos: number;
   totalClientes: number;
   totalPedidos: number;
+  totalVentasRapidas: number;
+  totalTransacciones: number;
+  ultimaConexion: string;
   descripcion: string;
   colorPrimario: string;
   moneda: string;

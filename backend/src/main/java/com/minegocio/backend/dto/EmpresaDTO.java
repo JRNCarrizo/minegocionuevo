@@ -60,6 +60,11 @@ public class EmpresaDTO {
     private Long totalProductos;
     private Long totalClientes;
     private Long totalPedidos;
+    
+    // Nuevas estadísticas para superadmin
+    private Long totalVentasRapidas;
+    private Long totalTransacciones;
+    private LocalDateTime ultimaConexion;
 
     // Constructores
     public EmpresaDTO() {}
@@ -203,6 +208,15 @@ public class EmpresaDTO {
 
     public Long getTotalPedidos() { return totalPedidos; }
     public void setTotalPedidos(Long totalPedidos) { this.totalPedidos = totalPedidos; }
+    
+    public Long getTotalVentasRapidas() { return totalVentasRapidas; }
+    public void setTotalVentasRapidas(Long totalVentasRapidas) { this.totalVentasRapidas = totalVentasRapidas; }
+    
+    public Long getTotalTransacciones() { return totalTransacciones; }
+    public void setTotalTransacciones(Long totalTransacciones) { this.totalTransacciones = totalTransacciones; }
+    
+    public LocalDateTime getUltimaConexion() { return ultimaConexion; }
+    public void setUltimaConexion(LocalDateTime ultimaConexion) { this.ultimaConexion = ultimaConexion; }
 
     // Métodos de pago - Transferencia bancaria
     public Boolean getTransferenciaBancariaHabilitada() { return transferenciaBancariaHabilitada; }

@@ -16,6 +16,9 @@ interface Empresa {
   totalProductos: number;
   totalClientes: number;
   totalPedidos: number;
+  totalVentasRapidas: number;
+  totalTransacciones: number;
+  ultimaConexion: string;
   descripcion: string;
   colorPrimario: string;
   moneda: string;
@@ -323,6 +326,16 @@ const GestionEmpresas: React.FC = () => {
           </div>
           <div style={{ color: 'var(--color-texto-secundario)' }}>Total Productos</div>
         </div>
+        
+        <div style={statCardStyle}>
+          <div style={{ marginBottom: '10px' }}>
+            <FaShoppingCart color="#10B981" size={32} />
+          </div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-texto)' }}>
+            {empresas.reduce((total, e) => total + (e.totalVentasRapidas || 0), 0).toLocaleString()}
+          </div>
+          <div style={{ color: 'var(--color-texto-secundario)' }}>Total Ventas Rápidas</div>
+        </div>
       </div>
 
       {/* Controles de Filtrado */}
@@ -492,6 +505,28 @@ const GestionEmpresas: React.FC = () => {
               </div>
             </div>
 
+            {/* Nuevas Estadísticas */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '15px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#10B981' }}>
+                  {(empresa.totalVentasRapidas || 0).toLocaleString()}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-texto-secundario)' }}>Ventas Rápidas</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#8B5CF6' }}>
+                  {(empresa.totalTransacciones || 0).toLocaleString()}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-texto-secundario)' }}>Transacciones</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#F59E0B' }}>
+                  {empresa.ultimaConexion ? new Date(empresa.ultimaConexion).toLocaleDateString() : 'N/A'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-texto-secundario)' }}>Última Conexión</div>
+              </div>
+            </div>
+
             {/* Fecha de Registro */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--color-texto-secundario)' }}>
               <MdCalendarToday color="var(--color-texto-secundario)" />
@@ -564,6 +599,9 @@ const GestionEmpresas: React.FC = () => {
                 <p><strong>Clientes:</strong> {(selectedEmpresa.totalClientes || 0).toLocaleString()}</p>
                 <p><strong>Productos:</strong> {(selectedEmpresa.totalProductos || 0).toLocaleString()}</p>
                 <p><strong>Pedidos:</strong> {(selectedEmpresa.totalPedidos || 0).toLocaleString()}</p>
+                <p><strong>Ventas Rápidas:</strong> {(selectedEmpresa.totalVentasRapidas || 0).toLocaleString()}</p>
+                <p><strong>Transacciones:</strong> {(selectedEmpresa.totalTransacciones || 0).toLocaleString()}</p>
+                <p><strong>Última Conexión:</strong> {selectedEmpresa.ultimaConexion ? new Date(selectedEmpresa.ultimaConexion).toLocaleString() : 'N/A'}</p>
                 <p><strong>Estado:</strong> {selectedEmpresa.estadoSuscripcion}</p>
               </div>
             </div>
