@@ -369,7 +369,7 @@ export default function ConfiguracionEmpresa() {
     cardFiltros: configuracion.colorCardFiltros
   }), [configuracion]);
 
-  const cargarConfiguracion = useCallback(async (mostrarToast = true) => {
+  const cargarConfiguracion = useCallback(async (mostrarToast = false) => {
     try {
       setCargando(true);
       
@@ -378,7 +378,9 @@ export default function ConfiguracionEmpresa() {
       const response = await ApiService.obtenerEmpresaAdmin();
       
       if (!response.data) {
-        toast.error('No se encontraron datos de la empresa');
+        if (mostrarToast) {
+          toast.error('No se encontraron datos de la empresa');
+        }
         return;
       }
       
@@ -468,7 +470,7 @@ export default function ConfiguracionEmpresa() {
   }, []);
 
   useEffect(() => {
-    cargarConfiguracion();
+    cargarConfiguracion(false); // No mostrar toast al cargar inicialmente
   }, [cargarConfiguracion]);
 
   const manejarCambio = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -528,6 +530,7 @@ export default function ConfiguracionEmpresa() {
 
   const guardarConfiguracion = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔍 DEBUG: guardarConfiguracion llamado');
     setGuardando(true);
 
     try {
@@ -1659,8 +1662,8 @@ export default function ConfiguracionEmpresa() {
                   label={tab.label}
                   isActive={activeTab === tab.id}
                   onClick={() => {
+                    console.log('🔍 DEBUG: Cambiando a pestaña', tab.id, tab.label);
                     setActiveTab(tab.id);
-                    // No mostrar toast al cambiar de pestaña
                   }}
                 />
               ))}
