@@ -153,20 +153,10 @@ public class SuperAdminService {
      */
     public Page<EmpresaDTO> obtenerEmpresas(String filtro, String estadoSuscripcion, String plan, 
                                           LocalDateTime fechaDesde, LocalDateTime fechaHasta, Pageable pageable) {
-        System.out.println("🔍 SuperAdminService.obtenerEmpresas - Iniciando...");
-        System.out.println("🔍 Parámetros: filtro=" + filtro + ", estadoSuscripcion=" + estadoSuscripcion + ", plan=" + plan);
-        System.out.println("🔍 Pageable: page=" + pageable.getPageNumber() + ", size=" + pageable.getPageSize());
-        
         // Implementar lógica de filtrado y paginación
         // Ordenar por fecha de creación descendente (más recientes primero)
         Page<Empresa> empresas = empresaRepository.findAllByOrderByFechaCreacionDesc(pageable);
-        System.out.println("🔍 Empresas encontradas: " + empresas.getTotalElements());
-        System.out.println("🔍 Contenido de empresas: " + empresas.getContent().size() + " elementos");
-        
-        System.out.println("🔍 Iniciando conversión de DTOs...");
         Page<EmpresaDTO> resultado = empresas.map(this::convertirAEmpresaDTO);
-        System.out.println("🔍 DTOs convertidos: " + resultado.getTotalElements());
-        System.out.println("🔍 Contenido de DTOs: " + resultado.getContent().size() + " elementos");
         
         return resultado;
     }
@@ -388,7 +378,6 @@ public class SuperAdminService {
     // Métodos auxiliares privados
 
     private EmpresaDTO convertirAEmpresaDTO(Empresa empresa) {
-        System.out.println("🔄 Iniciando conversión de empresa: " + empresa.getNombre());
         EmpresaDTO dto = new EmpresaDTO(empresa);
         
         // Obtener estadísticas reales de la empresa específica
@@ -404,7 +393,6 @@ public class SuperAdminService {
         try {
             PedidoService.PedidoEstadisticas estadisticasPedidos = pedidoService.obtenerEstadisticasPedidos(empresa.getId());
             totalTransaccionesPedidos = estadisticasPedidos.getTotalTransacciones();
-            System.out.println("📊 Empresa " + empresa.getNombre() + " - Transacciones de pedidos: " + totalTransaccionesPedidos);
         } catch (Exception e) {
             System.err.println("❌ Error al obtener transacciones de pedidos para empresa " + empresa.getNombre() + ": " + e.getMessage());
             totalTransaccionesPedidos = 0;
@@ -415,30 +403,18 @@ public class SuperAdminService {
         try {
             VentaRapidaEstadisticas estadisticasVentaRapida = ventaRapidaService.obtenerEstadisticasVentasRapidas(empresa.getId());
             totalTransaccionesVentaRapida = estadisticasVentaRapida != null ? estadisticasVentaRapida.getTotalTransacciones() : 0;
-            System.out.println("📊 Empresa " + empresa.getNombre() + " - Transacciones de ventas rápidas: " + totalTransaccionesVentaRapida);
         } catch (Exception e) {
             System.err.println("❌ Error al obtener transacciones de ventas rápidas para empresa " + empresa.getNombre() + ": " + e.getMessage());
             totalTransaccionesVentaRapida = 0;
         }
         
         Long transacciones = (long) (totalTransaccionesVentaRapida + totalTransaccionesPedidos);
-        System.out.println("📊 Empresa " + empresa.getNombre() + " - Total transacciones (pedidos + ventas rápidas): " + transacciones);
         LocalDateTime ultimaConexion = empresa.getFechaActualizacion() != null ? 
             empresa.getFechaActualizacion() : empresa.getFechaCreacion();
-        
-        System.out.println("🔍 Empresa: " + empresa.getNombre());
-        System.out.println("  - Ventas Rápidas: " + ventasRapidas);
-        System.out.println("  - Transacciones: " + transacciones);
-        System.out.println("  - Última Conexión: " + ultimaConexion);
         
         dto.setTotalVentasRapidas(ventasRapidas);
         dto.setTotalTransacciones(transacciones);
         dto.setUltimaConexion(ultimaConexion);
-        
-        System.out.println("✅ DTO final para " + empresa.getNombre() + ":");
-        System.out.println("  - totalVentasRapidas: " + dto.getTotalVentasRapidas());
-        System.out.println("  - totalTransacciones: " + dto.getTotalTransacciones());
-        System.out.println("  - ultimaConexion: " + dto.getUltimaConexion());
         
         return dto;
     }
