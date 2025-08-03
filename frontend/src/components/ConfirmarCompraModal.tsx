@@ -38,24 +38,38 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
 
   useEffect(() => {
     const fetchDatosBancarios = async () => {
-      if (!subdominio) return;
+      if (!subdominio) {
+        console.log('No hay subdominio disponible');
+        return;
+      }
       
+      console.log('Iniciando fetch de datos bancarios para subdominio:', subdominio);
       setCargandoBancarios(true);
       try {
-        const response = await fetch(`/api/publico/${subdominio}/datos-bancarios`);
+        const response = await fetch(`https://minegocio-backend-production.up.railway.app/api/publico/${subdominio}/datos-bancarios`);
+        console.log('Respuesta del servidor:', response.status, response.statusText);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('Datos bancarios obtenidos:', data);
           setDatosBancarios(data.data);
+          console.log('Estado datosBancarios actualizado:', data.data);
+        } else {
+          console.error('Error al obtener datos bancarios:', response.status, response.statusText);
         }
       } catch (error) {
         console.error("Error al cargar datos bancarios:", error);
       } finally {
         setCargandoBancarios(false);
+        console.log('Carga de datos bancarios finalizada');
       }
     };
 
     if (open && subdominio) {
+      console.log('Modal abierto y subdominio disponible, iniciando fetch');
       fetchDatosBancarios();
+    } else {
+      console.log('Modal no abierto o subdominio no disponible:', { open, subdominio });
     }
   }, [open, subdominio]);
 
@@ -98,6 +112,13 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
   };
 
   if (!open) return null;
+
+  console.log('Renderizando modal - Estado actual:', {
+    cargandoBancarios,
+    datosBancarios,
+    subdominio,
+    open
+  });
 
   return (
     <div 
