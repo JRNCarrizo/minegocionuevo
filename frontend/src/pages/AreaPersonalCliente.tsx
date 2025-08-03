@@ -59,11 +59,12 @@ function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Ped
   const obtenerColorEstado = (estado: Pedido['estado']) => {
     const colores: Record<Pedido['estado'], string> = {
       PENDIENTE: '#f59e0b',
+      PENDIENTE_PAGO: '#dc2626',
       CONFIRMADO: '#3b82f6',
-      PREPARANDO: '#6366f1',
-      ENVIADO: '#8b5cf6',
-      ENTREGADO: '#10b981',
-      CANCELADO: '#ef4444',
+      PREPARANDO: '#8b5cf6',
+      ENVIADO: '#059669',
+      ENTREGADO: '#059669',
+      CANCELADO: '#ef4444'
     };
     return colores[estado] || '#6b7280';
   };
@@ -71,13 +72,14 @@ function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Ped
   const obtenerTextoEstado = (estado: Pedido['estado']) => {
     const textos: Record<Pedido['estado'], string> = {
       PENDIENTE: 'Pendiente',
+      PENDIENTE_PAGO: 'Pendiente de Pago',
       CONFIRMADO: 'Confirmado',
       PREPARANDO: 'Preparando',
       ENVIADO: 'Enviado',
       ENTREGADO: 'Entregado',
-      CANCELADO: 'Cancelado',
+      CANCELADO: 'Cancelado'
     };
-    return textos[estado] || estado;
+    return textos[estado] || 'Desconocido';
   };
 
   const verDetalleProducto = (detalle: DetallePedido) => {
@@ -476,11 +478,8 @@ function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Ped
                   textAlign: 'center'
                 }}>
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: '600', color: '#dc2626' }}>
-                    ⚠️ ¿Necesitas cancelar este pedido?
+                    ⚠️ ¿Necesitas cancelar este pedido? El stock de los productos será restaurado automáticamente.
                   </h4>
-                  <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#7f1d1d', lineHeight: '1.5' }}>
-                    Solo puedes cancelar pedidos pendientes. Al cancelar, el stock de los productos será restaurado automáticamente.
-                  </p>
                   <button 
                     onClick={() => {
                       if (window.confirm('¿Estás seguro de que quieres cancelar este pedido? El stock será restaurado.')) {
@@ -907,13 +906,32 @@ export default function AreaPersonalCliente() {
       let pedidosArray = Array.isArray(pedidosResp) ? pedidosResp : pedidosResp?.data;
       if (!Array.isArray(pedidosArray)) pedidosArray = [];
       setPedidos(pedidosArray);
-      
-      // Cerrar modal si está abierto
-      setDetallePedido(null);
     } catch (error) {
       console.error('Error al cancelar pedido:', error);
       const mensaje = (error as { response?: { data?: { error?: string } } }).response?.data?.error || 'Error al cancelar pedido';
       toast.error(mensaje);
+    }
+  };
+
+  // Función de debug temporal
+  const debugPedidos = async () => {
+    if (!cliente?.id || !subdominio) {
+      toast.error('No se puede hacer debug sin cliente o subdominio');
+      return;
+    }
+    
+    try {
+      console.log('=== DEBUG PEDIDOS CLIENTE ===');
+      console.log('Cliente ID:', cliente.id);
+      console.log('Subdominio:', subdominio);
+      
+      const debugResp = await api.debugPedidosCliente(subdominio, cliente.id);
+      console.log('Respuesta debug:', debugResp);
+      
+      toast.success('Debug completado. Revisa la consola.');
+    } catch (error) {
+      console.error('Error en debug:', error);
+      toast.error('Error en debug');
     }
   };
 
@@ -1368,6 +1386,33 @@ export default function AreaPersonalCliente() {
                     '0 4px 12px rgba(245,158,11,0.3)';
                 }}>
                   🔒 Cambiar Contraseña
+                </button>
+                
+                {/* Botón de debug temporal */}
+                <button style={{
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '16px',
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(239,68,68,0.3)',
+                  width: '100%',
+                  opacity: 0.8
+                }}
+                onClick={debugPedidos}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(239,68,68,0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.3)';
+                }}>
+                  🐛 Debug Pedidos
                 </button>
               </div>
             </div>

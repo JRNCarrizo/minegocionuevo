@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
+import com.minegocio.backend.entidades.Cliente;
 
 @RestController
 @RequestMapping("/api/publico")
@@ -1031,6 +1032,97 @@ public class PublicoController {
             
             var error = java.util.Map.of(
                 "error", "Error al crear pedido: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Endpoint de debug para verificar pedidos de un cliente
+     */
+    @GetMapping("/{subdominio}/debug/pedidos/cliente/{clienteId}")
+    public ResponseEntity<?> debugPedidosCliente(
+            @PathVariable String subdominio,
+            @PathVariable Long clienteId) {
+        try {
+            System.out.println("=== DEBUG PEDIDOS CLIENTE ===");
+            System.out.println("Subdominio: " + subdominio);
+            System.out.println("ClienteId: " + clienteId);
+            
+            Optional<Empresa> empresa = empresaService.obtenerPorSubdominio(subdominio);
+            
+            if (empresa.isEmpty()) {
+                var error = java.util.Map.of(
+                    "error", "Empresa no encontrada"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            Long empresaId = empresa.get().getId();
+            
+            // Buscar cliente
+            Optional<Cliente> clienteOpt = clienteService.obtenerPorId(clienteId);
+            if (clienteOpt.isEmpty()) {
+                var error = java.util.Map.of(
+                    "error", "Cliente no encontrado"
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            Cliente cliente = clienteOpt.get();
+            System.out.println("Cliente encontrado: " + cliente.getNombre() + " " + cliente.getApellidos() + " - Email: " + cliente.getEmail());
+            
+            // Buscar todos los pedidos de la empresa
+            List<com.minegocio.backend.dto.PedidoDTO> todosLosPedidos = pedidoService.obtenerPedidosPorEmpresa(empresaId);
+            System.out.println("Total de pedidos en la empresa: " + todosLosPedidos.size());
+            
+            // Filtrar pedidos del cliente
+            List<com.minegocio.backend.dto.PedidoDTO> pedidosDelCliente = todosLosPedidos.stream()
+                .filter(pedido -> {
+                    boolean porClienteId = clienteId.equals(pedido.getClienteId());
+                    boolean porEmail = cliente.getEmail().equals(pedido.getClienteEmail());
+                    System.out.println("Pedido " + pedido.getId() + " - ClienteId: " + pedido.getClienteId() + 
+                                     " (match: " + porClienteId + "), Email: " + pedido.getClienteEmail() + 
+                                     " (match: " + porEmail + ")");
+                    return porClienteId || porEmail;
+                })
+                .collect(java.util.stream.Collectors.toList());
+            
+            System.out.println("Pedidos del cliente encontrados: " + pedidosDelCliente.size());
+            
+            // Usar el método original para comparar
+            List<com.minegocio.backend.dto.PedidoDTO> pedidosMetodoOriginal = pedidoService.obtenerPedidosPorClienteYEmpresa(clienteId, empresaId);
+            System.out.println("Pedidos usando método original: " + pedidosMetodoOriginal.size());
+            
+            var respuesta = java.util.Map.of(
+                "cliente", java.util.Map.of(
+                    "id", cliente.getId(),
+                    "nombre", cliente.getNombre(),
+                    "apellidos", cliente.getApellidos(),
+                    "email", cliente.getEmail()
+                ),
+                "empresa", java.util.Map.of(
+                    "id", empresa.get().getId(),
+                    "nombre", empresa.get().getNombre(),
+                    "subdominio", empresa.get().getSubdominio()
+                ),
+                "totalPedidosEmpresa", todosLosPedidos.size(),
+                "pedidosDelCliente", pedidosDelCliente,
+                "pedidosMetodoOriginal", pedidosMetodoOriginal,
+                "debug", java.util.Map.of(
+                    "clienteId", clienteId,
+                    "clienteEmail", cliente.getEmail()
+                )
+            );
+            
+            return ResponseEntity.ok(respuesta);
+        } catch (Exception e) {
+            System.err.println("Error en debug de pedidos del cliente: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor: " + e.getMessage()
             );
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);

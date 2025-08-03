@@ -673,6 +673,12 @@ class ApiService {
         return response.data;
     }
 
+    // Debug: obtener información detallada de pedidos de un cliente
+    async debugPedidosCliente(subdominio: string, clienteId: number): Promise<ApiResponse<any>> {
+        const response = await this.api.get(`/publico/${subdominio}/debug/pedidos/cliente/${clienteId}`);
+        return response.data;
+    }
+
     // Cancelar pedido del cliente (endpoint público)
     async cancelarPedidoCliente(subdominio: string, pedidoId: number, clienteId: number): Promise<ApiResponse<Pedido>> {
         const response = await this.api.put(`/publico/${subdominio}/pedidos/${pedidoId}/cancelar?clienteId=${clienteId}`);

@@ -139,13 +139,28 @@ public class PedidoService {
         // Guardar pedido y detalles
         Pedido guardado = pedidoRepository.save(pedido);
         System.out.println("Pedido guardado con ID: " + guardado.getId());
+        System.out.println("Pedido guardado - Cliente ID: " + (guardado.getCliente() != null ? guardado.getCliente().getId() : "null"));
+        System.out.println("Pedido guardado - Cliente Email: " + guardado.getClienteEmail());
+        System.out.println("Pedido guardado - Empresa ID: " + guardado.getEmpresa().getId());
         
         // Verificar que se guardó correctamente
         if (cliente != null) {
             List<Pedido> pedidosVerificacion = pedidoRepository.findByClienteAndEmpresa(cliente, empresa);
             System.out.println("Pedidos del cliente después de guardar: " + pedidosVerificacion.size());
+            for (Pedido p : pedidosVerificacion) {
+                System.out.println("  - Pedido verificación ID: " + p.getId() + ", Cliente ID: " + p.getCliente().getId());
+            }
         } else {
             System.out.println("Pedido público guardado - sin cliente asociado");
+        }
+        
+        // Verificación adicional usando el método que se usa para buscar
+        List<Pedido> pedidosPorClienteOEmail = pedidoRepository.findPedidosPorClienteOEmail(cliente, pedidoDTO.getClienteEmail(), empresa);
+        System.out.println("Pedidos encontrados por cliente o email después de guardar: " + pedidosPorClienteOEmail.size());
+        for (Pedido p : pedidosPorClienteOEmail) {
+            System.out.println("  - Pedido por cliente/email ID: " + p.getId() + 
+                             ", Cliente ID: " + (p.getCliente() != null ? p.getCliente().getId() : "null") +
+                             ", Email: " + p.getClienteEmail());
         }
         
         // Crear notificación de nuevo pedido
@@ -216,6 +231,7 @@ public class PedidoService {
         Cliente cliente = clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
         System.out.println("Cliente encontrado: " + cliente.getNombre() + " " + cliente.getApellidos());
+        System.out.println("Email del cliente: " + cliente.getEmail());
         
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
@@ -224,6 +240,15 @@ public class PedidoService {
         // Buscar pedidos tanto por cliente como por email del cliente
         List<Pedido> pedidos = pedidoRepository.findPedidosPorClienteOEmail(cliente, cliente.getEmail(), empresa);
         System.out.println("Pedidos encontrados en BD: " + pedidos.size());
+        
+        // Debug adicional: mostrar detalles de cada pedido encontrado
+        for (Pedido pedido : pedidos) {
+            System.out.println("  - Pedido ID: " + pedido.getId() + 
+                             ", Cliente ID: " + (pedido.getCliente() != null ? pedido.getCliente().getId() : "null") +
+                             ", Cliente Email: " + pedido.getClienteEmail() +
+                             ", Estado: " + pedido.getEstado() +
+                             ", Total: " + pedido.getTotal());
+        }
         
         List<PedidoDTO> pedidosDTO = pedidos.stream().map(this::convertirADTO).collect(Collectors.toList());
         System.out.println("Pedidos convertidos a DTO: " + pedidosDTO.size());
