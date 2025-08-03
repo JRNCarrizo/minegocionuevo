@@ -1103,6 +1103,22 @@ public class PublicoController {
             List<com.minegocio.backend.dto.PedidoDTO> pedidosMetodoOriginal = pedidoService.obtenerPedidosPorClienteYEmpresa(clienteId, empresaId);
             System.out.println("Pedidos usando método original: " + pedidosMetodoOriginal.size());
             
+            // Mostrar los 5 pedidos más recientes de la empresa para debug
+            List<com.minegocio.backend.dto.PedidoDTO> pedidosRecientes = todosLosPedidos.stream()
+                .sorted((p1, p2) -> p2.getFechaCreacion().compareTo(p1.getFechaCreacion()))
+                .limit(5)
+                .collect(java.util.stream.Collectors.toList());
+            
+            System.out.println("=== PEDIDOS MÁS RECIENTES DE LA EMPRESA ===");
+            for (com.minegocio.backend.dto.PedidoDTO pedido : pedidosRecientes) {
+                System.out.println("Pedido ID: " + pedido.getId() + 
+                                 ", Cliente ID: " + pedido.getClienteId() + 
+                                 ", Email: " + pedido.getClienteEmail() + 
+                                 ", Estado: " + pedido.getEstado() + 
+                                 ", Fecha: " + pedido.getFechaCreacion());
+            }
+            System.out.println("=== FIN PEDIDOS RECIENTES ===");
+            
             var respuesta = java.util.Map.of(
                 "cliente", java.util.Map.of(
                     "id", clienteId,
@@ -1118,6 +1134,7 @@ public class PublicoController {
                 "totalPedidosEmpresa", todosLosPedidos.size(),
                 "pedidosDelCliente", pedidosDelCliente,
                 "pedidosMetodoOriginal", pedidosMetodoOriginal,
+                "pedidosRecientes", pedidosRecientes,
                 "debug", java.util.Map.of(
                     "clienteId", clienteId,
                     "clienteEmail", clienteDTO.getEmail()

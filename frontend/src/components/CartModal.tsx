@@ -14,21 +14,29 @@ interface CartModalProps {
 }
 
 const getClienteInfo = () => {
+  console.log('=== DEBUG GET CLIENTE INFO ===');
+  
   // Buscar en cookies primero (se comparte entre subdominios)
   let cliente = cookies.getCookie("clienteInfo");
+  console.log('Cliente en cookies:', cliente);
   
   // Si no está en cookies, buscar en localStorage
   if (!cliente) {
     cliente = localStorage.getItem("clienteInfo");
+    console.log('Cliente en localStorage:', cliente);
   }
   
   if (cliente) {
     try {
-      return JSON.parse(cliente);
-    } catch {
+      const clienteParsed = JSON.parse(cliente);
+      console.log('Cliente parseado:', clienteParsed);
+      return clienteParsed;
+    } catch (error) {
+      console.error('Error parseando cliente:', error);
       return null;
     }
   }
+  console.log('No se encontró información del cliente');
   return null;
 };
 
@@ -42,6 +50,13 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
   const { isMobile } = useResponsive();
 
   const handleConfirmarCompra = async (datos: { nombre: string; email: string; direccion: string; acordarConVendedor?: boolean }) => {
+    console.log('=== DEBUG CREAR PEDIDO ===');
+    console.log('Usuario completo:', usuario);
+    console.log('Usuario ID:', usuario?.id);
+    console.log('Datos del formulario:', datos);
+    console.log('Subdominio:', subdominio);
+    console.log('Empresa ID:', empresa?.id);
+    
     if (!usuario || !items.length || !empresa?.id) {
       toast.error('Faltan datos del usuario, empresa o carrito vacío.');
       return;
@@ -75,7 +90,7 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
         return;
       }
       
-      await apiService.crearPedidoPublico(subdominio, {
+      const pedidoData = {
         clienteId: usuario?.id,
         clienteNombre: datos.nombre,
         clienteEmail: datos.email,
@@ -87,7 +102,11 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
           precioUnitario: Number(item.precio)
         })),
         total: Number(total)
-      });
+      };
+      
+      console.log('Datos del pedido a enviar:', pedidoData);
+      
+      await apiService.crearPedidoPublico(subdominio, pedidoData);
       
       setCompraRealizada(true);
       clearCart();
