@@ -270,9 +270,9 @@ export default function Estadisticas() {
         {/* Grid de estadísticas */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: isMobile ? '1rem' : '1.5rem',
-          marginBottom: '3rem'
+          gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: isMobile ? '0.75rem' : '1rem',
+          marginBottom: '2rem'
         }}>
           {tarjetasEstadisticas.map((tarjeta, index) => (
             <div 
@@ -280,7 +280,7 @@ export default function Estadisticas() {
               style={{
                 background: 'white',
                 borderRadius: isMobile ? '0.75rem' : '1rem',
-                padding: isMobile ? '1.5rem' : '2rem',
+                padding: isMobile ? '1rem' : '1.5rem',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                 border: '1px solid #e2e8f0',
                 animation: `slideInUp 0.6s ease-out ${index * 0.1}s both`,
@@ -311,24 +311,24 @@ export default function Estadisticas() {
                 }}>
                   {tarjeta.titulo}
                 </h3>
-                <div style={{
-                  width: '3rem',
-                  height: '3rem',
-                  background: tarjeta.gradiente,
-                  borderRadius: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                  flexShrink: 0
-                }}>
+                              <div style={{
+                width: isMobile ? '2.5rem' : '3rem',
+                height: isMobile ? '2.5rem' : '3rem',
+                background: tarjeta.gradiente,
+                borderRadius: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: isMobile ? '1.25rem' : '1.5rem',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                flexShrink: 0
+              }}>
                   {tarjeta.icono}
                 </div>
               </div>
               
               <div style={{
-                fontSize: '2.5rem',
+                fontSize: isMobile ? '1.75rem' : isTablet ? '2rem' : '2.5rem',
                 fontWeight: '800',
                 color: tarjeta.color,
                 margin: '0 0 0.5rem 0',
@@ -364,14 +364,14 @@ export default function Estadisticas() {
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-          gap: isMobile ? '1.5rem' : '2rem',
-          marginBottom: '3rem'
+          gap: isMobile ? '1rem' : '1.5rem',
+          marginBottom: '2rem'
         }}>
           {/* Top 3 Más Vendidos */}
           <div style={{
             background: 'white',
             borderRadius: isMobile ? '0.75rem' : '1rem',
-            padding: isMobile ? '1.5rem' : '2rem',
+            padding: isMobile ? '1rem' : '1.5rem',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
             border: '1px solid #e2e8f0',
             animation: 'slideInUp 0.6s ease-out 0.9s both'
@@ -422,21 +422,21 @@ export default function Estadisticas() {
                   <div key={producto.id} style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '1rem',
-                    padding: '1rem',
+                    gap: isMobile ? '0.75rem' : '1rem',
+                    padding: isMobile ? '0.75rem' : '1rem',
                     background: '#f8fafc',
                     borderRadius: '0.75rem',
                     border: '1px solid #e2e8f0'
                   }}>
                     <div style={{
-                      width: '3rem',
-                      height: '3rem',
+                      width: isMobile ? '2.5rem' : '3rem',
+                      height: isMobile ? '2.5rem' : '3rem',
                       background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                       borderRadius: '0.5rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '1.25rem',
+                      fontSize: isMobile ? '1rem' : '1.25rem',
                       fontWeight: '700',
                       color: 'white',
                       flexShrink: 0
@@ -500,7 +500,7 @@ export default function Estadisticas() {
           <div style={{
             background: 'white',
             borderRadius: isMobile ? '0.75rem' : '1rem',
-            padding: isMobile ? '1.5rem' : '2rem',
+            padding: isMobile ? '1rem' : '1.5rem',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
             border: '1px solid #e2e8f0',
             animation: 'slideInUp 0.6s ease-out 1.0s both'
@@ -551,21 +551,21 @@ export default function Estadisticas() {
                   <div key={producto.id} style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '1rem',
-                    padding: '1rem',
+                    gap: isMobile ? '0.75rem' : '1rem',
+                    padding: isMobile ? '0.75rem' : '1rem',
                     background: '#fef3c7',
                     borderRadius: '0.75rem',
                     border: '1px solid #fbbf24'
                   }}>
                     <div style={{
-                      width: '3rem',
-                      height: '3rem',
+                      width: isMobile ? '2.5rem' : '3rem',
+                      height: isMobile ? '2.5rem' : '3rem',
                       background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                       borderRadius: '0.5rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '1.25rem',
+                      fontSize: isMobile ? '1rem' : '1.25rem',
                       fontWeight: '700',
                       color: 'white',
                       flexShrink: 0

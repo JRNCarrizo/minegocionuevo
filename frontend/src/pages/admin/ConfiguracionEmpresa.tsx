@@ -258,25 +258,30 @@ const TabButton = ({
   label: string;
   isActive: boolean;
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      padding: '0.75rem 1rem',
-      border: 'none',
-      borderRadius: 'var(--radio-borde)',
-      background: isActive ? 'var(--color-primario)' : 'transparent',
-      color: isActive ? 'white' : 'var(--color-texto)',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-      fontWeight: isActive ? '600' : '500',
-      fontSize: '0.875rem',
-      borderBottom: isActive ? '3px solid var(--color-secundario)' : '3px solid transparent'
-    }}
+}) => {
+  const { isMobile } = useResponsive();
+  
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: isMobile ? '0.25rem' : '0.5rem',
+        padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem',
+        border: 'none',
+        borderRadius: 'var(--radio-borde)',
+        background: isActive ? 'var(--color-primario)' : 'transparent',
+        color: isActive ? 'white' : 'var(--color-texto)',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        fontWeight: isActive ? '600' : '500',
+        fontSize: isMobile ? '0.75rem' : '0.875rem',
+        borderBottom: isActive ? '3px solid var(--color-secundario)' : '3px solid transparent',
+        whiteSpace: 'nowrap',
+        minWidth: isMobile ? 'auto' : 'fit-content'
+      }}
     onMouseOver={(e) => {
       if (!isActive) {
         e.currentTarget.style.background = 'var(--color-fondo-hover)';
@@ -288,14 +293,15 @@ const TabButton = ({
       }
     }}
   >
-    <span style={{ fontSize: '1.125rem' }}>{icon}</span>
+    <span style={{ fontSize: isMobile ? '1rem' : '1.125rem' }}>{icon}</span>
     <span>{label}</span>
   </button>
-);
+  );
+};
 
 export default function ConfiguracionEmpresa() {
   const navigate = useNavigate();
-  const { isMobile } = useResponsive();
+  const { isMobile, isTablet } = useResponsive();
   const { datosUsuario, actualizarEmpresaNombre, cerrarSesion } = useUsuario();
   const [activeTab, setActiveTab] = useState(0);
   const [configuracion, setConfiguracion] = useState<ConfiguracionEmpresa>({
@@ -722,8 +728,8 @@ export default function ConfiguracionEmpresa() {
 
             <div className="grid grid-3" style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-              gap: isMobile ? '1rem' : '1.5rem'
+              gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+              gap: isMobile ? '0.75rem' : '1rem'
             }}>
               <InputField
                 icon="🏙️"
@@ -936,9 +942,9 @@ export default function ConfiguracionEmpresa() {
             <div className="grupo-campo">
               <label className="etiqueta">Configuración de Colores</label>
               <div className="grid grid-3" style={{ 
-                gap: isMobile ? '1rem' : '2rem',
+                gap: isMobile ? '0.75rem' : '1.5rem',
                 display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr'
+                gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : '1fr 2fr 1fr'
               }}>
                 {/* Selectores de Color - Lado Izquierdo */}
                 <div className="space-y-6">
@@ -1115,9 +1121,9 @@ export default function ConfiguracionEmpresa() {
                         </div>
                         <div style={{ 
                           display: 'grid', 
-                          gridTemplateColumns: '1fr 1fr', 
-                          gap: '0.25rem',
-                          fontSize: '0.5rem'
+                          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+                          gap: isMobile ? '0.2rem' : '0.25rem',
+                          fontSize: isMobile ? '0.45rem' : '0.5rem'
                         }}>
                           <div style={{ 
                             background: '#fff', 
@@ -1142,7 +1148,11 @@ export default function ConfiguracionEmpresa() {
                     )}
 
                     {/* Mini Cards de Productos */}
-                    <div style={{ display: 'grid', gap: '0.75rem', gridTemplateColumns: '1fr 1fr' }}>
+                    <div style={{ 
+                      display: 'grid', 
+                      gap: isMobile ? '0.5rem' : '0.75rem', 
+                      gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' 
+                    }}>
                       {/* Card Producto 1 */}
                       <div 
                         style={{ 
@@ -1398,7 +1408,7 @@ export default function ConfiguracionEmpresa() {
               <div className="grid grid-2" style={{ 
                 gap: isMobile ? '0.75rem' : '1rem',
                 display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)'
+                gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)'
               }}>
                 <CheckboxField
                   label="Mostrar precios"
@@ -1458,8 +1468,8 @@ export default function ConfiguracionEmpresa() {
                 
                 <div className="grid grid-2" style={{
                   display: 'grid',
-                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                  gap: isMobile ? '1rem' : '1.5rem'
+                  gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',
+                  gap: isMobile ? '0.75rem' : '1rem'
                 }}>
                   <InputField
                     icon="🏦"
