@@ -202,7 +202,7 @@ export default function Estadisticas() {
         nombreAdministrador={datosUsuario?.nombre}
       />
       
-      <div style={{
+      <div className="stats-container" style={{
         maxWidth: '1200px',
         margin: '0 auto',
         padding: isMobile ? '1rem 0.5rem' : isTablet ? '1.5rem 1rem' : '2rem 1rem',
@@ -361,7 +361,7 @@ export default function Estadisticas() {
         </div>
 
         {/* Sección de Top Productos */}
-        <div style={{
+        <div className="stats-grid" style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
           gap: isMobile ? '1rem' : '1.5rem',
@@ -396,7 +396,7 @@ export default function Estadisticas() {
                 🏆
               </div>
               <h2 style={{
-                fontSize: '1.25rem',
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
                 fontWeight: '700',
                 color: '#1f2937',
                 margin: 0
@@ -419,66 +419,89 @@ export default function Estadisticas() {
             ) : estadisticasProductos.topMasVendidos.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {estadisticasProductos.topMasVendidos.map((producto, index) => (
-                  <div key={producto.id} style={{
+                  <div key={producto.id} className="product-card" style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: isMobile ? '0.75rem' : '1rem',
+                    gap: isMobile ? '0.5rem' : '0.75rem',
                     padding: isMobile ? '0.75rem' : '1rem',
                     background: '#f8fafc',
                     borderRadius: '0.75rem',
-                    border: '1px solid #e2e8f0'
+                    border: '1px solid #e2e8f0',
+                    flexWrap: isMobile ? 'wrap' : 'nowrap'
                   }}>
                     <div style={{
-                      width: isMobile ? '2.5rem' : '3rem',
-                      height: isMobile ? '2.5rem' : '3rem',
+                      width: isMobile ? '2rem' : '2.5rem',
+                      height: isMobile ? '2rem' : '2.5rem',
                       background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                       borderRadius: '0.5rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: isMobile ? '1rem' : '1.25rem',
+                      fontSize: isMobile ? '0.75rem' : '1rem',
                       fontWeight: '700',
                       color: 'white',
                       flexShrink: 0
                     }}>
                       #{index + 1}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ 
+                      flex: 1, 
+                      minWidth: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.25rem'
+                    }}>
                       <h3 style={{
-                        fontSize: '1rem',
+                        fontSize: isMobile ? '0.875rem' : '1rem',
                         fontWeight: '600',
                         color: '#1f2937',
-                        margin: '0 0 0.25rem 0',
+                        margin: 0,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        lineHeight: '1.2'
                       }}>
                         {producto.nombre}
                       </h3>
-                      <p style={{
-                        fontSize: '0.875rem',
-                        color: '#6b7280',
-                        margin: 0
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        flexWrap: 'wrap'
                       }}>
-                        {producto.totalVentas} unidades vendidas
-                      </p>
+                        <span className="product-badge" style={{
+                          fontSize: isMobile ? '0.75rem' : '0.875rem',
+                          color: '#6b7280',
+                          background: '#e5e7eb',
+                          padding: '0.125rem 0.375rem',
+                          borderRadius: '0.25rem',
+                          fontWeight: '500'
+                        }}>
+                          {producto.totalVentas} vendidas
+                        </span>
+                        <span className="product-badge" style={{
+                          fontSize: isMobile ? '0.75rem' : '0.875rem',
+                          color: '#6b7280',
+                          background: '#dbeafe',
+                          padding: '0.125rem 0.375rem',
+                          borderRadius: '0.25rem',
+                          fontWeight: '500'
+                        }}>
+                          Stock: {producto.stock}
+                        </span>
+                      </div>
                     </div>
                     <div style={{
                       textAlign: 'right',
-                      flexShrink: 0
+                      flexShrink: 0,
+                      marginLeft: 'auto'
                     }}>
                       <div style={{
-                        fontSize: '1.125rem',
+                        fontSize: isMobile ? '1rem' : '1.125rem',
                         fontWeight: '700',
                         color: '#10b981'
                       }}>
                         ${producto.precio?.toLocaleString() || '0'}
-                      </div>
-                      <div style={{
-                        fontSize: '0.75rem',
-                        color: '#6b7280'
-                      }}>
-                        Stock: {producto.stock}
                       </div>
                     </div>
                   </div>
@@ -525,7 +548,7 @@ export default function Estadisticas() {
                 ⚠️
               </div>
               <h2 style={{
-                fontSize: '1.25rem',
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
                 fontWeight: '700',
                 color: '#1f2937',
                 margin: 0
@@ -551,63 +574,86 @@ export default function Estadisticas() {
                   <div key={producto.id} style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: isMobile ? '0.75rem' : '1rem',
+                    gap: isMobile ? '0.5rem' : '0.75rem',
                     padding: isMobile ? '0.75rem' : '1rem',
                     background: '#fef3c7',
                     borderRadius: '0.75rem',
-                    border: '1px solid #fbbf24'
+                    border: '1px solid #fbbf24',
+                    flexWrap: isMobile ? 'wrap' : 'nowrap'
                   }}>
                     <div style={{
-                      width: isMobile ? '2.5rem' : '3rem',
-                      height: isMobile ? '2.5rem' : '3rem',
+                      width: isMobile ? '2rem' : '2.5rem',
+                      height: isMobile ? '2rem' : '2.5rem',
                       background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                       borderRadius: '0.5rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: isMobile ? '1rem' : '1.25rem',
+                      fontSize: isMobile ? '0.75rem' : '1rem',
                       fontWeight: '700',
                       color: 'white',
                       flexShrink: 0
                     }}>
                       #{index + 1}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="product-info" style={{ 
+                      flex: 1, 
+                      minWidth: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.25rem'
+                    }}>
                       <h3 style={{
-                        fontSize: '1rem',
+                        fontSize: isMobile ? '0.875rem' : '1rem',
                         fontWeight: '600',
                         color: '#1f2937',
-                        margin: '0 0 0.25rem 0',
+                        margin: 0,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        lineHeight: '1.2'
                       }}>
                         {producto.nombre}
                       </h3>
-                      <p style={{
-                        fontSize: '0.875rem',
-                        color: '#6b7280',
-                        margin: 0
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        flexWrap: 'wrap'
                       }}>
-                        {producto.totalVentas} unidades vendidas
-                      </p>
+                        <span className="product-badge" style={{
+                          fontSize: isMobile ? '0.75rem' : '0.875rem',
+                          color: '#6b7280',
+                          background: '#fef3c7',
+                          padding: '0.125rem 0.375rem',
+                          borderRadius: '0.25rem',
+                          fontWeight: '500'
+                        }}>
+                          {producto.totalVentas} vendidas
+                        </span>
+                        <span className="product-badge" style={{
+                          fontSize: isMobile ? '0.75rem' : '0.875rem',
+                          color: '#6b7280',
+                          background: '#fef3c7',
+                          padding: '0.125rem 0.375rem',
+                          borderRadius: '0.25rem',
+                          fontWeight: '500'
+                        }}>
+                          Stock: {producto.stock}
+                        </span>
+                      </div>
                     </div>
-                    <div style={{
+                    <div className="product-price" style={{
                       textAlign: 'right',
-                      flexShrink: 0
+                      flexShrink: 0,
+                      marginLeft: 'auto'
                     }}>
                       <div style={{
-                        fontSize: '1.125rem',
+                        fontSize: isMobile ? '1rem' : '1.125rem',
                         fontWeight: '700',
                         color: '#f59e0b'
                       }}>
                         ${producto.precio?.toLocaleString() || '0'}
-                      </div>
-                      <div style={{
-                        fontSize: '0.75rem',
-                        color: '#6b7280'
-                      }}>
-                        Stock: {producto.stock}
                       </div>
                     </div>
                   </div>
@@ -629,41 +675,66 @@ export default function Estadisticas() {
         {/* Información adicional */}
         <div style={{
           background: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '1rem',
-          padding: '2rem',
+          borderRadius: isMobile ? '0.75rem' : '1rem',
+          padding: isMobile ? '1.5rem' : '2rem',
           backdropFilter: 'blur(10px)',
           border: '1px solid rgba(255, 255, 255, 0.2)',
           animation: 'slideInUp 0.6s ease-out 1.1s both'
         }}>
           <h2 style={{
-            fontSize: '1.5rem',
+            fontSize: isMobile ? '1.25rem' : '1.5rem',
             fontWeight: '600',
             color: 'white',
-            margin: '0 0 1rem 0'
+            margin: '0 0 1rem 0',
+            textAlign: isMobile ? 'center' : 'left'
           }}>
             📊 Información de Métricas
           </h2>
           <div style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1rem'
+            gap: isMobile ? '0.75rem' : '1rem'
           }}>
-            <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            <div style={{ 
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              lineHeight: '1.5'
+            }}>
               <strong>Ganancias Totales:</strong> Representa el monto total generado por todas las ventas realizadas.
             </div>
-            <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            <div style={{ 
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              lineHeight: '1.5'
+            }}>
               <strong>Transacciones:</strong> Número total de operaciones de venta completadas.
             </div>
-            <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            <div style={{ 
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              lineHeight: '1.5'
+            }}>
               <strong>Productos Vendidos:</strong> Cantidad total de unidades vendidas en todas las transacciones.
             </div>
-            <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            <div style={{ 
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              lineHeight: '1.5'
+            }}>
               <strong>Ventas Rápidas:</strong> Número de ventas realizadas a través del sistema de caja rápida.
             </div>
-            <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            <div style={{ 
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              lineHeight: '1.5'
+            }}>
               <strong>Top Más Vendidos:</strong> Los 3 productos con mayor cantidad de unidades vendidas.
             </div>
-            <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            <div style={{ 
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              lineHeight: '1.5'
+            }}>
               <strong>Productos que Necesitan Atención:</strong> Los 3 productos con menor cantidad de ventas.
             </div>
           </div>
@@ -688,6 +759,46 @@ export default function Estadisticas() {
           }
           100% {
             background-position: 200% 0;
+          }
+        }
+        
+        /* Estilos adicionales para mejorar responsividad */
+        @media (max-width: 768px) {
+          .stats-container {
+            overflow-x: hidden;
+            width: 100%;
+          }
+          
+          .product-card {
+            min-width: 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+          }
+          
+          .product-info {
+            flex: 1;
+            min-width: 0;
+          }
+          
+          .product-price {
+            flex-shrink: 0;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .stats-grid {
+            grid-template-columns: 1fr !important;
+            gap: 0.75rem !important;
+          }
+          
+          .product-card {
+            padding: 0.75rem !important;
+            gap: 0.5rem !important;
+          }
+          
+          .product-badge {
+            font-size: 0.75rem !important;
+            padding: 0.125rem 0.25rem !important;
           }
         }
       `}</style>
