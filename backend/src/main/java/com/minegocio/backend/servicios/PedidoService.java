@@ -9,10 +9,13 @@ import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Pedido;
 import com.minegocio.backend.entidades.DetallePedido;
 import com.minegocio.backend.entidades.Producto;
+import com.minegocio.backend.entidades.VentaRapida;
+import com.minegocio.backend.entidades.DetalleVentaRapida;
 import com.minegocio.backend.repositorios.ClienteRepository;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.PedidoRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
+import com.minegocio.backend.repositorios.VentaRapidaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +38,9 @@ public class PedidoService {
     private EmpresaRepository empresaRepository;
     @Autowired
     private ProductoRepository productoRepository;
+    
+    @Autowired
+    private VentaRapidaRepository ventaRapidaRepository;
     
     @Autowired
     private NotificacionService notificacionService;
@@ -598,14 +604,18 @@ public class PedidoService {
                             )
                             .sum();
                     
-                    // Calcular ventas rápidas (necesitamos acceder al VentaRapidaService)
-                    int ventasRapidas = 0;
-                    try {
-                        // Por ahora solo contamos pedidos, después agregaremos ventas rápidas
-                        // TODO: Integrar con VentaRapidaService
-                    } catch (Exception e) {
-                        System.err.println("Error al calcular ventas rápidas para producto " + producto.getId() + ": " + e.getMessage());
-                    }
+                    // Calcular ventas rápidas para este producto
+                    int ventasRapidas = ventaRapidaRepository.findByEmpresaIdOrderByFechaVentaDesc(empresaId).stream()
+                            .flatMapToInt(venta ->
+                                venta.getDetalles() != null ?
+                                venta.getDetalles().stream()
+                                    .filter(detalle -> detalle.getProducto().getId().equals(producto.getId()))
+                                    .mapToInt(DetalleVentaRapida::getCantidad) :
+                                java.util.stream.IntStream.empty()
+                            )
+                            .sum();
+                    
+                    System.out.println("  Producto " + producto.getNombre() + " - Ventas pedidos: " + ventasPedidos + ", Ventas rápidas: " + ventasRapidas + ", Total: " + (ventasPedidos + ventasRapidas));
                     
                     int totalVentas = ventasPedidos + ventasRapidas;
                     
@@ -665,8 +675,18 @@ public class PedidoService {
                             )
                             .sum();
                     
-                    // Calcular ventas rápidas (por ahora 0)
-                    int ventasRapidas = 0;
+                    // Calcular ventas rápidas para este producto
+                    int ventasRapidas = ventaRapidaRepository.findByEmpresaIdOrderByFechaVentaDesc(empresaId).stream()
+                            .flatMapToInt(venta ->
+                                venta.getDetalles() != null ?
+                                venta.getDetalles().stream()
+                                    .filter(detalle -> detalle.getProducto().getId().equals(producto.getId()))
+                                    .mapToInt(DetalleVentaRapida::getCantidad) :
+                                java.util.stream.IntStream.empty()
+                            )
+                            .sum();
+                    
+                    System.out.println("  Producto " + producto.getNombre() + " - Ventas pedidos: " + ventasPedidos + ", Ventas rápidas: " + ventasRapidas + ", Total: " + (ventasPedidos + ventasRapidas));
                     
                     int totalVentas = ventasPedidos + ventasRapidas;
                     
