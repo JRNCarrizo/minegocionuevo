@@ -17,6 +17,22 @@ interface Estadisticas {
   totalUnidadesVendidas: number;
 }
 
+interface ProductoEstadisticas {
+  id: number;
+  nombre: string;
+  precio: number;
+  stock: number;
+  imagenUrl: string;
+  ventasPedidos: number;
+  ventasRapidas: number;
+  totalVentas: number;
+}
+
+interface EstadisticasProductos {
+  topMasVendidos: ProductoEstadisticas[];
+  topMenosVendidos: ProductoEstadisticas[];
+}
+
 export default function Estadisticas() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile, isTablet } = useResponsive();
@@ -29,6 +45,10 @@ export default function Estadisticas() {
     totalClientes: 0,
     totalProductosCatalogo: 0,
     totalUnidadesVendidas: 0
+  });
+  const [estadisticasProductos, setEstadisticasProductos] = useState<EstadisticasProductos>({
+    topMasVendidos: [],
+    topMenosVendidos: []
   });
   const [cargando, setCargando] = useState(true);
 
@@ -65,6 +85,10 @@ export default function Estadisticas() {
         const responseProductos = await ApiService.obtenerTodosLosProductos(empresaId);
         const totalProductosCatalogo = Array.isArray(responseProductos) ? responseProductos.length : 0;
 
+        // Cargar estadísticas de top productos
+        const responseEstadisticasProductos = await ApiService.obtenerEstadisticasProductos();
+        const statsProductos = responseEstadisticasProductos.data || {};
+
         setEstadisticas({
           totalVentas: statsVentas.totalVentas || 0,
           totalTransacciones: statsVentas.totalTransacciones || 0,
@@ -74,6 +98,11 @@ export default function Estadisticas() {
           totalClientes: totalClientes,
           totalProductosCatalogo: totalProductosCatalogo,
           totalUnidadesVendidas: statsVentas.totalUnidadesVendidas || 0
+        });
+
+        setEstadisticasProductos({
+          topMasVendidos: statsProductos.topMasVendidos || [],
+          topMenosVendidos: statsProductos.topMenosVendidos || []
         });
       } catch (error: any) {
         console.error('Error al cargar estadísticas:', error);
@@ -331,6 +360,272 @@ export default function Estadisticas() {
           ))}
         </div>
 
+        {/* Sección de Top Productos */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+          gap: isMobile ? '1.5rem' : '2rem',
+          marginBottom: '3rem'
+        }}>
+          {/* Top 3 Más Vendidos */}
+          <div style={{
+            background: 'white',
+            borderRadius: isMobile ? '0.75rem' : '1rem',
+            padding: isMobile ? '1.5rem' : '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            border: '1px solid #e2e8f0',
+            animation: 'slideInUp 0.6s ease-out 0.9s both'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                width: '2.5rem',
+                height: '2.5rem',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                borderRadius: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.25rem',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+              }}>
+                🏆
+              </div>
+              <h2 style={{
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                color: '#1f2937',
+                margin: 0
+              }}>
+                Top 3 Más Vendidos
+              </h2>
+            </div>
+            
+            {cargando ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <div style={{
+                  width: '100%',
+                  height: '200px',
+                  background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'loading 1.5s infinite',
+                  borderRadius: '0.5rem'
+                }} />
+              </div>
+            ) : estadisticasProductos.topMasVendidos.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {estadisticasProductos.topMasVendidos.map((producto, index) => (
+                  <div key={producto.id} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    padding: '1rem',
+                    background: '#f8fafc',
+                    borderRadius: '0.75rem',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <div style={{
+                      width: '3rem',
+                      height: '3rem',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      borderRadius: '0.5rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.25rem',
+                      fontWeight: '700',
+                      color: 'white',
+                      flexShrink: 0
+                    }}>
+                      #{index + 1}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h3 style={{
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: '#1f2937',
+                        margin: '0 0 0.25rem 0',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {producto.nombre}
+                      </h3>
+                      <p style={{
+                        fontSize: '0.875rem',
+                        color: '#6b7280',
+                        margin: 0
+                      }}>
+                        {producto.totalVentas} unidades vendidas
+                      </p>
+                    </div>
+                    <div style={{
+                      textAlign: 'right',
+                      flexShrink: 0
+                    }}>
+                      <div style={{
+                        fontSize: '1.125rem',
+                        fontWeight: '700',
+                        color: '#10b981'
+                      }}>
+                        ${producto.precio?.toLocaleString() || '0'}
+                      </div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280'
+                      }}>
+                        Stock: {producto.stock}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                textAlign: 'center',
+                padding: '2rem',
+                color: '#6b7280'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
+                <p>No hay productos vendidos aún</p>
+              </div>
+            )}
+          </div>
+
+          {/* Top 3 Menos Vendidos */}
+          <div style={{
+            background: 'white',
+            borderRadius: isMobile ? '0.75rem' : '1rem',
+            padding: isMobile ? '1.5rem' : '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            border: '1px solid #e2e8f0',
+            animation: 'slideInUp 0.6s ease-out 1.0s both'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                width: '2.5rem',
+                height: '2.5rem',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                borderRadius: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.25rem',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+              }}>
+                ⚠️
+              </div>
+              <h2 style={{
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                color: '#1f2937',
+                margin: 0
+              }}>
+                Productos que Necesitan Atención
+              </h2>
+            </div>
+            
+            {cargando ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <div style={{
+                  width: '100%',
+                  height: '200px',
+                  background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'loading 1.5s infinite',
+                  borderRadius: '0.5rem'
+                }} />
+              </div>
+            ) : estadisticasProductos.topMenosVendidos.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {estadisticasProductos.topMenosVendidos.map((producto, index) => (
+                  <div key={producto.id} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    padding: '1rem',
+                    background: '#fef3c7',
+                    borderRadius: '0.75rem',
+                    border: '1px solid #fbbf24'
+                  }}>
+                    <div style={{
+                      width: '3rem',
+                      height: '3rem',
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                      borderRadius: '0.5rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.25rem',
+                      fontWeight: '700',
+                      color: 'white',
+                      flexShrink: 0
+                    }}>
+                      #{index + 1}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h3 style={{
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: '#1f2937',
+                        margin: '0 0 0.25rem 0',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {producto.nombre}
+                      </h3>
+                      <p style={{
+                        fontSize: '0.875rem',
+                        color: '#6b7280',
+                        margin: 0
+                      }}>
+                        {producto.totalVentas} unidades vendidas
+                      </p>
+                    </div>
+                    <div style={{
+                      textAlign: 'right',
+                      flexShrink: 0
+                    }}>
+                      <div style={{
+                        fontSize: '1.125rem',
+                        fontWeight: '700',
+                        color: '#f59e0b'
+                      }}>
+                        ${producto.precio?.toLocaleString() || '0'}
+                      </div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280'
+                      }}>
+                        Stock: {producto.stock}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                textAlign: 'center',
+                padding: '2rem',
+                color: '#6b7280'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
+                <p>Todos los productos tienen ventas</p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Información adicional */}
         <div style={{
           background: 'rgba(255, 255, 255, 0.1)',
@@ -338,7 +633,7 @@ export default function Estadisticas() {
           padding: '2rem',
           backdropFilter: 'blur(10px)',
           border: '1px solid rgba(255, 255, 255, 0.2)',
-          animation: 'slideInUp 0.6s ease-out 0.8s both'
+          animation: 'slideInUp 0.6s ease-out 1.1s both'
         }}>
           <h2 style={{
             fontSize: '1.5rem',
@@ -354,7 +649,7 @@ export default function Estadisticas() {
             gap: '1rem'
           }}>
             <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-              <strong>Ganancias Totales:</strong> Representa el monto total generado por todas las ventas rápidas realizadas.
+              <strong>Ganancias Totales:</strong> Representa el monto total generado por todas las ventas realizadas.
             </div>
             <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
               <strong>Transacciones:</strong> Número total de operaciones de venta completadas.
@@ -364,6 +659,12 @@ export default function Estadisticas() {
             </div>
             <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
               <strong>Ventas Rápidas:</strong> Número de ventas realizadas a través del sistema de caja rápida.
+            </div>
+            <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+              <strong>Top Más Vendidos:</strong> Los 3 productos con mayor cantidad de unidades vendidas.
+            </div>
+            <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+              <strong>Productos que Necesitan Atención:</strong> Los 3 productos con menor cantidad de ventas.
             </div>
           </div>
         </div>

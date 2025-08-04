@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 import java.util.Optional;
+import java.util.List;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
@@ -338,6 +339,66 @@ public class AdminController {
             
         } catch (Exception e) {
             System.err.println("=== ERROR CRÍTICO EN ESTADISTICAS VENTAS ===");
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Error interno del servidor: " + e.getMessage(),
+                "timestamp", java.time.LocalDateTime.now().toString()
+            ));
+        }
+    }
+
+    /**
+     * Obtener top productos más y menos vendidos
+     */
+    @GetMapping("/estadisticas-productos")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> obtenerEstadisticasProductos(HttpServletRequest request) {
+        try {
+            System.out.println("=== DEBUG ESTADISTICAS PRODUCTOS ===");
+            
+            String token = request.getHeader("Authorization");
+            if (token == null || !token.startsWith("Bearer ")) {
+                System.out.println("❌ Token no válido o ausente");
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido"));
+            }
+            
+            token = token.substring(7);
+            String email = jwtUtils.extractUsername(token);
+            System.out.println("📧 Email extraído del token: " + email);
+            
+            Optional<Usuario> usuario = autenticacionService.obtenerPorEmail(email);
+            if (usuario.isEmpty()) {
+                System.out.println("❌ Usuario no encontrado para email: " + email);
+                return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            }
+            
+            Empresa empresa = usuario.get().getEmpresa();
+            if (empresa == null) {
+                System.out.println("❌ Empresa no encontrada para usuario: " + email);
+                return ResponseEntity.status(404).body(Map.of("error", "Empresa no encontrada"));
+            }
+            
+            System.out.println("🏢 Empresa encontrada: " + empresa.getNombre() + " (ID: " + empresa.getId() + ")");
+            
+            // Obtener top 3 productos más vendidos
+            List<Map<String, Object>> topMasVendidos = pedidoService.obtenerTopProductosMasVendidos(empresa.getId(), 3);
+            System.out.println("🏆 Top 3 más vendidos obtenidos: " + topMasVendidos.size());
+            
+            // Obtener top 3 productos menos vendidos
+            List<Map<String, Object>> topMenosVendidos = pedidoService.obtenerTopProductosMenosVendidos(empresa.getId(), 3);
+            System.out.println("⚠️ Top 3 menos vendidos obtenidos: " + topMenosVendidos.size());
+            
+            Map<String, Object> estadisticas = Map.of(
+                "topMasVendidos", topMasVendidos,
+                "topMenosVendidos", topMenosVendidos
+            );
+            
+            System.out.println("=== FIN DEBUG ESTADISTICAS PRODUCTOS ===");
+            return ResponseEntity.ok(new ApiResponse<>(true, "Estadísticas de productos obtenidas correctamente", estadisticas));
+            
+        } catch (Exception e) {
+            System.err.println("=== ERROR CRÍTICO EN ESTADISTICAS PRODUCTOS ===");
             System.err.println("Error: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(

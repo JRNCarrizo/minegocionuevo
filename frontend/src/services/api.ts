@@ -753,6 +753,11 @@ class ApiService {
     return response.data;
   }
 
+  async obtenerEstadisticasProductos() {
+    const response = await this.api.get('/admin/estadisticas-productos');
+    return response.data;
+  }
+
   // Métodos para venta rápida
   async procesarVentaRapida(ventaData: {
     clienteNombre: string;

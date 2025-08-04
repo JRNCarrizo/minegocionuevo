@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -565,5 +566,132 @@ public class PedidoService {
         LocalDateTime inicio = LocalDateTime.of(año, 1, 1, 0, 0, 0);
         LocalDateTime fin = LocalDateTime.of(año, 12, 31, 23, 59, 59);
         return obtenerEstadisticasPedidosPorFecha(empresaId, inicio, fin);
+    }
+
+    /**
+     * Obtiene los productos más vendidos de una empresa
+     */
+    @Transactional
+    public List<Map<String, Object>> obtenerTopProductosMasVendidos(Long empresaId, int limite) {
+        System.out.println("=== DEBUG TOP PRODUCTOS MÁS VENDIDOS ===");
+        System.out.println("EmpresaId: " + empresaId + ", Límite: " + limite);
+        
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        
+        // Obtener todos los productos de la empresa
+        List<Producto> productos = productoRepository.findByEmpresaId(empresaId);
+        System.out.println("Total productos encontrados: " + productos.size());
+        
+        // Calcular ventas por producto (pedidos + ventas rápidas)
+        List<Map<String, Object>> productosConVentas = productos.stream()
+                .map(producto -> {
+                    // Calcular ventas de pedidos
+                    int ventasPedidos = pedidoRepository.findByEmpresaOrderByFechaCreacionDesc(empresa).stream()
+                            .filter(pedido -> pedido.getEstado() != Pedido.EstadoPedido.CANCELADO)
+                            .flatMapToInt(pedido -> 
+                                pedido.getDetalles() != null ? 
+                                pedido.getDetalles().stream()
+                                    .filter(detalle -> detalle.getProducto().getId().equals(producto.getId()))
+                                    .mapToInt(DetallePedido::getCantidad) : 
+                                java.util.stream.IntStream.empty()
+                            )
+                            .sum();
+                    
+                    // Calcular ventas rápidas (necesitamos acceder al VentaRapidaService)
+                    int ventasRapidas = 0;
+                    try {
+                        // Por ahora solo contamos pedidos, después agregaremos ventas rápidas
+                        // TODO: Integrar con VentaRapidaService
+                    } catch (Exception e) {
+                        System.err.println("Error al calcular ventas rápidas para producto " + producto.getId() + ": " + e.getMessage());
+                    }
+                    
+                    int totalVentas = ventasPedidos + ventasRapidas;
+                    
+                    Map<String, Object> productoData = new HashMap<>();
+                    productoData.put("id", producto.getId());
+                    productoData.put("nombre", producto.getNombre());
+                    productoData.put("precio", producto.getPrecio());
+                    productoData.put("stock", producto.getStock());
+                    productoData.put("imagenUrl", producto.getImagenPrincipal());
+                    productoData.put("ventasPedidos", ventasPedidos);
+                    productoData.put("ventasRapidas", ventasRapidas);
+                    productoData.put("totalVentas", totalVentas);
+                    
+                    return productoData;
+                })
+                .filter(producto -> (Integer) producto.get("totalVentas") > 0) // Solo productos con ventas
+                .sorted((p1, p2) -> Integer.compare((Integer) p2.get("totalVentas"), (Integer) p1.get("totalVentas"))) // Ordenar por ventas descendente
+                .limit(limite)
+                .collect(Collectors.toList());
+        
+        System.out.println("Top " + limite + " productos más vendidos encontrados: " + productosConVentas.size());
+        productosConVentas.forEach(producto -> {
+            System.out.println("  - " + producto.get("nombre") + ": " + producto.get("totalVentas") + " unidades");
+        });
+        System.out.println("=== FIN DEBUG TOP PRODUCTOS MÁS VENDIDOS ===");
+        
+        return productosConVentas;
+    }
+
+    /**
+     * Obtiene los productos menos vendidos de una empresa
+     */
+    @Transactional
+    public List<Map<String, Object>> obtenerTopProductosMenosVendidos(Long empresaId, int limite) {
+        System.out.println("=== DEBUG TOP PRODUCTOS MENOS VENDIDOS ===");
+        System.out.println("EmpresaId: " + empresaId + ", Límite: " + limite);
+        
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        
+        // Obtener todos los productos de la empresa
+        List<Producto> productos = productoRepository.findByEmpresaId(empresaId);
+        System.out.println("Total productos encontrados: " + productos.size());
+        
+        // Calcular ventas por producto
+        List<Map<String, Object>> productosConVentas = productos.stream()
+                .map(producto -> {
+                    // Calcular ventas de pedidos
+                    int ventasPedidos = pedidoRepository.findByEmpresaOrderByFechaCreacionDesc(empresa).stream()
+                            .filter(pedido -> pedido.getEstado() != Pedido.EstadoPedido.CANCELADO)
+                            .flatMapToInt(pedido -> 
+                                pedido.getDetalles() != null ? 
+                                pedido.getDetalles().stream()
+                                    .filter(detalle -> detalle.getProducto().getId().equals(producto.getId()))
+                                    .mapToInt(DetallePedido::getCantidad) : 
+                                java.util.stream.IntStream.empty()
+                            )
+                            .sum();
+                    
+                    // Calcular ventas rápidas (por ahora 0)
+                    int ventasRapidas = 0;
+                    
+                    int totalVentas = ventasPedidos + ventasRapidas;
+                    
+                    Map<String, Object> productoData = new HashMap<>();
+                    productoData.put("id", producto.getId());
+                    productoData.put("nombre", producto.getNombre());
+                    productoData.put("precio", producto.getPrecio());
+                    productoData.put("stock", producto.getStock());
+                    productoData.put("imagenUrl", producto.getImagenPrincipal());
+                    productoData.put("ventasPedidos", ventasPedidos);
+                    productoData.put("ventasRapidas", ventasRapidas);
+                    productoData.put("totalVentas", totalVentas);
+                    
+                    return productoData;
+                })
+                .sorted((p1, p2) -> Integer.compare((Integer) p1.get("totalVentas"), (Integer) p2.get("totalVentas"))) // Ordenar por ventas ascendente
+                .limit(limite)
+                .collect(Collectors.toList());
+        
+        System.out.println("Top " + limite + " productos menos vendidos encontrados: " + productosConVentas.size());
+        productosConVentas.forEach(producto -> {
+            System.out.println("  - " + producto.get("nombre") + ": " + producto.get("totalVentas") + " unidades");
+        });
+        System.out.println("=== FIN DEBUG TOP PRODUCTOS MENOS VENDIDOS ===");
+        
+        return productosConVentas;
     }
 }
