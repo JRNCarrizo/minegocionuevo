@@ -404,13 +404,13 @@ public class SuscripcionService {
         long productosActuales = productoRepository.countByEmpresaAndActivoTrue(empresa);
         System.out.println("🔍 DEBUG: Productos activos: " + productosActuales);
         
-        // Contar clientes
-        long clientesActuales = clienteRepository.countByEmpresa(empresa);
-        System.out.println("🔍 DEBUG: Clientes: " + clientesActuales);
+        // Contar clientes activos
+        long clientesActuales = clienteRepository.countByEmpresaAndActivoTrue(empresa);
+        System.out.println("🔍 DEBUG: Clientes activos: " + clientesActuales);
         
-        // Contar usuarios de la empresa
-        long usuariosActuales = usuarioRepository.countByEmpresa(empresa);
-        System.out.println("🔍 DEBUG: Usuarios: " + usuariosActuales);
+        // Contar usuarios activos de la empresa
+        long usuariosActuales = usuarioRepository.contarUsuariosActivosPorEmpresa(empresa);
+        System.out.println("🔍 DEBUG: Usuarios activos: " + usuariosActuales);
         
         // Obtener almacenamiento total (archivos + base de datos)
         long almacenamientoActualBytes = almacenamientoService.obtenerAlmacenamientoTotalBytes(empresaId);

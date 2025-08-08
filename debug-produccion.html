@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Producción - MiNegocio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .config-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            background: #f8f9fa;
+        }
+        .tab.active {
+            background: white;
+            border-color: #ddd;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-ok { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug Producción - MiNegocio</h1>
+    <p>Herramienta para diagnosticar problemas en producción</p>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('config')">Configuración</div>
+        <div class="tab" onclick="showTab('test')">Pruebas</div>
+        <div class="tab" onclick="showTab('logs')">Logs</div>
+        <div class="tab" onclick="showTab('database')">Base de Datos</div>
+    </div>
+
+    <!-- Tab de Configuración -->
+    <div id="config" class="tab-content active">
+        <div class="container">
+            <h2>⚙️ Configuración</h2>
+            
+            <div class="config-section">
+                <h3>URL del Backend</h3>
+                <input type="text" id="backendUrl" placeholder="https://minegocio-backend-production.up.railway.app" value="https://minegocio-backend-production.up.railway.app">
+            </div>
+
+            <div class="config-section">
+                <h3>Token JWT (opcional)</h3>
+                <input type="password" id="jwtToken" placeholder="Bearer token...">
+                <small>Si no tienes token, las pruebas se harán sin autenticación</small>
+            </div>
+
+            <div class="config-section">
+                <h3>Email de Usuario (para pruebas específicas)</h3>
+                <input type="text" id="userEmail" placeholder="usuario@ejemplo.com">
+            </div>
+
+            <button onclick="testConnection()">🔗 Probar Conexión</button>
+            <button onclick="getEnvironmentInfo()">🌍 Información del Entorno</button>
+        </div>
+    </div>
+
+    <!-- Tab de Pruebas -->
+    <div id="test" class="tab-content">
+        <div class="container">
+            <h2>🧪 Pruebas de Endpoints</h2>
+            
+            <div class="config-section">
+                <h3>Pruebas Básicas</h3>
+                <button onclick="testHealthEndpoint()">🏥 Health Check</button>
+                <button onclick="testInfoEndpoint()">ℹ️ Info Endpoint</button>
+                <button onclick="testCors()">🌐 Test CORS</button>
+            </div>
+
+            <div class="config-section">
+                <h3>Pruebas de Autenticación</h3>
+                <button onclick="testJwtValidation()">🔐 Validar JWT</button>
+                <button onclick="testUserInfo()">👤 Información de Usuario</button>
+            </div>
+
+            <div class="config-section">
+                <h3>Pruebas de Suscripciones</h3>
+                <button onclick="testSubscriptionEndpoint()">📋 Mi Suscripción</button>
+                <button onclick="testConsumptionEndpoint()">📊 Mi Consumo</button>
+                <button onclick="testDebugEndpoint()">🔧 Debug Endpoint</button>
+                <button onclick="createSubscription()">➕ Crear Suscripción</button>
+            </div>
+
+            <div class="config-section">
+                <h3>Pruebas de Base de Datos</h3>
+                <button onclick="testDatabaseConnection()">🗄️ Conexión BD</button>
+                <button onclick="testDatabaseQueries()">🔍 Consultas BD</button>
+            </div>
+
+            <div id="testResults" class="result"></div>
+        </div>
+    </div>
+
+    <!-- Tab de Logs -->
+    <div id="logs" class="tab-content">
+        <div class="container">
+            <h2>📋 Logs y Errores</h2>
+            
+            <div class="config-section">
+                <h3>Logs del Sistema</h3>
+                <button onclick="getSystemLogs()">📄 Obtener Logs</button>
+                <button onclick="clearLogs()">🗑️ Limpiar Logs</button>
+            </div>
+
+            <div id="logsResults" class="result"></div>
+        </div>
+    </div>
+
+    <!-- Tab de Base de Datos -->
+    <div id="database" class="tab-content">
+        <div class="container">
+            <h2>🗄️ Base de Datos</h2>
+            
+            <div class="config-section">
+                <h3>Información de la Base de Datos</h3>
+                <button onclick="getDatabaseInfo()">ℹ️ Info BD</button>
+                <button onclick="testDatabaseTables()">📋 Tablas</button>
+                <button onclick="testDatabaseData()">📊 Datos</button>
+            </div>
+
+            <div id="databaseResults" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let logs = [];
+
+        function showTab(tabName) {
+            // Ocultar todos los tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Mostrar el tab seleccionado
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push(logEntry);
+            
+            const resultsDiv = document.getElementById('logsResults');
+            if (resultsDiv) {
+                resultsDiv.innerHTML += `<div class="${type}">${logEntry}</div>`;
+                resultsDiv.scrollTop = resultsDiv.scrollHeight;
+            }
+        }
+
+        function showResult(message, type = 'info', targetId = 'testResults') {
+            const resultsDiv = document.getElementById(targetId);
+            if (resultsDiv) {
+                resultsDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            }
+        }
+
+        function getBackendUrl() {
+            return document.getElementById('backendUrl').value.trim();
+        }
+
+        function getAuthHeaders() {
+            const token = document.getElementById('jwtToken').value.trim();
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            if (token) {
+                headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+            }
+            return headers;
+        }
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        ...getAuthHeaders(),
+                        ...options.headers
+                    }
+                });
+
+                const contentType = response.headers.get('content-type');
+                let data;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+
+                return {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries()),
+                    data: data
+                };
+            } catch (error) {
+                return {
+                    error: error.message,
+                    status: 'ERROR',
+                    data: null
+                };
+            }
+        }
+
+        async function testConnection() {
+            log('🔗 Probando conexión al backend...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/actuator/health`);
+            
+            if (result.status === 200) {
+                log('✅ Conexión exitosa', 'success');
+                showResult(`✅ Conexión exitosa\nStatus: ${result.status}\nData: ${JSON.stringify(result.data, null, 2)}`, 'success');
+            } else {
+                log(`❌ Error de conexión: ${result.status} ${result.statusText}`, 'error');
+                showResult(`❌ Error de conexión\nStatus: ${result.status}\nError: ${JSON.stringify(result, null, 2)}`, 'error');
+            }
+        }
+
+        async function getEnvironmentInfo() {
+            log('🌍 Obteniendo información del entorno...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/actuator/info`);
+            
+            if (result.status === 200) {
+                log('✅ Información del entorno obtenida', 'success');
+                showResult(`✅ Información del entorno\n${JSON.stringify(result.data, null, 2)}`, 'success');
+            } else {
+                log(`❌ Error obteniendo información: ${result.status}`, 'error');
+                showResult(`❌ Error obteniendo información\n${JSON.stringify(result, null, 2)}`, 'error');
+            }
+        }
+
+        async function testHealthEndpoint() {
+            log('🏥 Probando health endpoint...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/actuator/health`);
+            showResult(`Health Check:\n${JSON.stringify(result, null, 2)}`, result.status === 200 ? 'success' : 'error');
+        }
+
+        async function testInfoEndpoint() {
+            log('ℹ️ Probando info endpoint...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/actuator/info`);
+            showResult(`Info Endpoint:\n${JSON.stringify(result, null, 2)}`, result.status === 200 ? 'success' : 'error');
+        }
+
+        async function testCors() {
+            log('🌐 Probando CORS...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/api/suscripciones/debug/test`, {
+                method: 'OPTIONS'
+            });
+            showResult(`CORS Test:\n${JSON.stringify(result, null, 2)}`, 'info');
+        }
+
+        async function testJwtValidation() {
+            log('🔐 Probando validación JWT...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/api/suscripciones/debug/test`);
+            
+            if (result.status === 401) {
+                showResult(`✅ JWT requerido (esperado)\n${JSON.stringify(result, null, 2)}`, 'warning');
+            } else if (result.status === 200) {
+                showResult(`✅ JWT válido\n${JSON.stringify(result, null, 2)}`, 'success');
+            } else {
+                showResult(`❌ Error inesperado\n${JSON.stringify(result, null, 2)}`, 'error');
+            }
+        }
+
+        async function testUserInfo() {
+            log('👤 Probando información de usuario...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/api/suscripciones/debug/test`);
+            showResult(`User Info:\n${JSON.stringify(result, null, 2)}`, result.status === 200 ? 'success' : 'error');
+        }
+
+        async function testSubscriptionEndpoint() {
+            log('📋 Probando endpoint de suscripción...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/api/suscripciones/mi-suscripcion`);
+            showResult(`Subscription Endpoint:\n${JSON.stringify(result, null, 2)}`, result.status === 200 ? 'success' : 'error');
+        }
+
+        async function testConsumptionEndpoint() {
+            log('📊 Probando endpoint de consumo...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/api/suscripciones/mi-consumo`);
+            showResult(`Consumption Endpoint:\n${JSON.stringify(result, null, 2)}`, result.status === 200 ? 'success' : 'error');
+        }
+
+        async function testDebugEndpoint() {
+            log('🔧 Probando endpoint de debug...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/api/suscripciones/debug/test`);
+            showResult(`Debug Endpoint:\n${JSON.stringify(result, null, 2)}`, result.status === 200 ? 'success' : 'error');
+        }
+
+        async function createSubscription() {
+            log('➕ Creando suscripción...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/api/suscripciones/debug/crear-suscripcion-usuario`, {
+                method: 'POST'
+            });
+            showResult(`Create Subscription:\n${JSON.stringify(result, null, 2)}`, result.status === 200 ? 'success' : 'error');
+        }
+
+        async function testDatabaseConnection() {
+            log('🗄️ Probando conexión a base de datos...', 'info');
+            const url = getBackendUrl();
+            
+            // Intentar obtener información que requiere BD
+            const result = await makeRequest(`${url}/api/suscripciones/debug/test`);
+            
+            if (result.status === 200) {
+                showResult(`✅ Conexión a BD exitosa\n${JSON.stringify(result, null, 2)}`, 'success');
+            } else {
+                showResult(`❌ Error de conexión a BD\n${JSON.stringify(result, null, 2)}`, 'error');
+            }
+        }
+
+        async function testDatabaseQueries() {
+            log('🔍 Probando consultas de base de datos...', 'info');
+            const url = getBackendUrl();
+            
+            // Probar múltiples endpoints que usan BD
+            const endpoints = [
+                '/api/suscripciones/debug/test',
+                '/api/suscripciones/mi-suscripcion',
+                '/api/suscripciones/mi-consumo'
+            ];
+
+            let results = [];
+            for (const endpoint of endpoints) {
+                const result = await makeRequest(`${url}${endpoint}`);
+                results.push({ endpoint, result });
+            }
+
+            showResult(`Database Queries Test:\n${JSON.stringify(results, null, 2)}`, 'info');
+        }
+
+        function getSystemLogs() {
+            const logsText = logs.join('\n');
+            showResult(`System Logs:\n${logsText}`, 'info', 'logsResults');
+        }
+
+        function clearLogs() {
+            logs = [];
+            document.getElementById('logsResults').innerHTML = '';
+            log('🗑️ Logs limpiados', 'info');
+        }
+
+        async function getDatabaseInfo() {
+            log('ℹ️ Obteniendo información de base de datos...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/actuator/health`);
+            showResult(`Database Info:\n${JSON.stringify(result, null, 2)}`, 'info', 'databaseResults');
+        }
+
+        async function testDatabaseTables() {
+            log('📋 Probando tablas de base de datos...', 'info');
+            const url = getBackendUrl();
+            
+            // Probar endpoints que acceden a diferentes tablas
+            const endpoints = [
+                '/api/suscripciones/debug/test',
+                '/actuator/health'
+            ];
+
+            let results = [];
+            for (const endpoint of endpoints) {
+                const result = await makeRequest(`${url}${endpoint}`);
+                results.push({ endpoint, result });
+            }
+
+            showResult(`Database Tables Test:\n${JSON.stringify(results, null, 2)}`, 'info', 'databaseResults');
+        }
+
+        async function testDatabaseData() {
+            log('📊 Probando datos de base de datos...', 'info');
+            const url = getBackendUrl();
+            
+            const result = await makeRequest(`${url}/api/suscripciones/debug/test`);
+            showResult(`Database Data Test:\n${JSON.stringify(result, null, 2)}`, 'info', 'databaseResults');
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Debug tool iniciado', 'success');
+            log('💡 Usa las pestañas para navegar entre las diferentes pruebas', 'info');
+        });
+    </script>
+</body>
+</html>
