@@ -21,6 +21,11 @@ import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.minegocio.backend.entidades.Plan;
+import com.minegocio.backend.repositorios.PlanRepository;
+import com.minegocio.backend.servicios.SuscripcionAutomaticaService;
+
+import java.math.BigDecimal;
 
 /**
  * Controlador REST para la autenticación de usuarios
@@ -44,6 +49,12 @@ public class AutenticacionController {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private SuscripcionAutomaticaService suscripcionAutomaticaService;
+
+    @Autowired
+    private PlanRepository planRepository;
 
     /**
      * Autentica un usuario y devuelve un token JWT
@@ -244,6 +255,60 @@ public class AutenticacionController {
     }
 
     /**
+     * Debug endpoint para verificar email sin token (solo desarrollo)
+     */
+    @PostMapping("/debug-verificar-email")
+    public ResponseEntity<?> debugVerificarEmail(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            System.out.println("=== DEBUG VERIFICACIÓN EMAIL ===");
+            System.out.println("Email a verificar: " + email);
+            
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email requerido"));
+            }
+            
+            // Buscar usuario por email
+            var usuarioOpt = usuarioRepository.findByEmail(email);
+            if (usuarioOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Usuario no encontrado"));
+            }
+            
+            Usuario usuario = usuarioOpt.get();
+            System.out.println("Usuario encontrado: " + usuario.getEmail());
+            
+            // Verificar que el usuario no esté ya verificado
+            if (usuario.getEmailVerificado()) {
+                return ResponseEntity.ok(Map.of(
+                    "mensaje", "Email ya verificado",
+                    "emailVerificado", true,
+                    "email", usuario.getEmail()
+                ));
+            }
+            
+            // Marcar email como verificado
+            usuario.setEmailVerificado(true);
+            usuario.setTokenVerificacion(null); // Limpiar token usado
+            usuarioRepository.save(usuario);
+            
+            System.out.println("✅ Email verificado para: " + usuario.getEmail());
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Email verificado exitosamente",
+                "emailVerificado", true,
+                "email", usuario.getEmail()
+            ));
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error verificando email: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+
+    /**
      * Endpoint de prueba para verificar la autenticación
      */
     @PostMapping("/test-login")
@@ -367,11 +432,31 @@ public class AutenticacionController {
             nuevoUsuario.setTokenVerificacion(tokenVerificacion);
             nuevoUsuario.setFechaCreacion(LocalDateTime.now());
             
+            System.out.println("🔍 Guardando usuario en base de datos...");
             nuevoUsuario = usuarioRepository.save(nuevoUsuario);
+            System.out.println("✅ Usuario guardado con ID: " + nuevoUsuario.getId());
+            
+            // Verificar que el usuario se guardó correctamente
+            Optional<Usuario> usuarioVerificado = usuarioRepository.findByEmail(nuevoUsuario.getEmail());
+            if (usuarioVerificado.isPresent()) {
+                System.out.println("✅ Usuario verificado en base de datos: " + usuarioVerificado.get().getEmail());
+            } else {
+                System.err.println("❌ ERROR: Usuario no encontrado en base de datos después de guardar!");
+            }
             
             System.out.println("✅ Usuario administrador creado: " + nuevoUsuario.getEmail());
             System.out.println("✅ Empresa temporal creada: " + empresaTemporal.getId());
             System.out.println("Token de verificación: " + tokenVerificacion);
+            
+            // Crear plan por defecto si no existe y asignar suscripción automática
+            try {
+                crearPlanPorDefectoSiNoExiste();
+                suscripcionAutomaticaService.crearSuscripcionGratuita(empresaTemporal);
+                System.out.println("🎯 Plan por defecto y suscripción automática asignados a empresa temporal: " + empresaTemporal.getNombre());
+            } catch (Exception e) {
+                System.err.println("❌ Error asignando plan por defecto: " + e.getMessage());
+                // No fallar el registro si hay error en la suscripción
+            }
             
             // Enviar email de verificación
             try {
@@ -537,6 +622,18 @@ public class AutenticacionController {
             System.out.println("Subdominio: " + empresaTemporal.getSubdominio());
             System.out.println("Email: " + empresaTemporal.getEmail());
             
+            // Crear plan por defecto si no existe
+            crearPlanPorDefectoSiNoExiste();
+            
+            // Crear suscripción gratuita automática
+            try {
+                suscripcionAutomaticaService.crearSuscripcionGratuita(empresaTemporal);
+                System.out.println("🎯 Suscripción gratuita creada para empresa: " + empresaTemporal.getNombre());
+            } catch (Exception e) {
+                System.err.println("❌ Error creando suscripción gratuita: " + e.getMessage());
+                // No lanzar excepción para no fallar la creación de empresa
+            }
+            
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Empresa configurada exitosamente",
                 "empresa", Map.of(
@@ -552,6 +649,52 @@ public class AutenticacionController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Crea un plan por defecto si no existe
+     */
+    private void crearPlanPorDefectoSiNoExiste() {
+        try {
+            // Verificar si ya existe un plan por defecto
+            Optional<Plan> planExistente = planRepository.findByPlanPorDefectoTrue();
+            if (planExistente.isPresent()) {
+                System.out.println("✅ Plan por defecto ya existe: " + planExistente.get().getNombre());
+                return;
+            }
+
+            System.out.println("📋 Creando plan por defecto...");
+            
+            // Crear plan gratuito por defecto
+            Plan planGratuito = new Plan();
+            planGratuito.setNombre("Plan Gratuito");
+            planGratuito.setDescripcion("Plan gratuito con funcionalidades básicas");
+            planGratuito.setPrecio(BigDecimal.ZERO);
+            planGratuito.setPeriodo(Plan.PeriodoPlan.MENSUAL);
+            planGratuito.setMaxProductos(50);
+            planGratuito.setMaxUsuarios(2);
+            planGratuito.setMaxClientes(500);
+            planGratuito.setMaxAlmacenamientoGB(5);
+            planGratuito.setActivo(true);
+            planGratuito.setPlanPorDefecto(true);
+            planGratuito.setDestacado(false);
+            planGratuito.setOrden(1);
+
+            // Características del plan gratuito
+            planGratuito.setPersonalizacionCompleta(false);
+            planGratuito.setEstadisticasAvanzadas(false);
+            planGratuito.setSoportePrioritario(false);
+            planGratuito.setIntegracionesAvanzadas(false);
+            planGratuito.setBackupAutomatico(false);
+            planGratuito.setDominioPersonalizado(false);
+
+            planRepository.save(planGratuito);
+            System.out.println("✅ Plan por defecto creado: " + planGratuito.getNombre());
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error creando plan por defecto: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

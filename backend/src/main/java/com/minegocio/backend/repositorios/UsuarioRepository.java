@@ -83,4 +83,15 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * Busca usuarios por ID de empresa
      */
     List<Usuario> findByEmpresaId(Long empresaId);
+
+    /**
+     * Cuenta usuarios por empresa excluyendo un rol específico
+     */
+    @Query("SELECT COUNT(u) FROM Usuario u WHERE u.empresa = :empresa AND u.rol != :rol")
+    Long countByEmpresaAndRolNot(@Param("empresa") Empresa empresa, @Param("rol") Usuario.RolUsuario rol);
+
+    /**
+     * Cuenta usuarios por empresa
+     */
+    Long countByEmpresa(Empresa empresa);
 }

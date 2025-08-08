@@ -1,22 +1,20 @@
 package com.minegocio.backend.dto;
 
 import com.minegocio.backend.entidades.Suscripcion;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * DTO para mostrar información de suscripciones
+ * DTO para la gestión de suscripciones
  */
 public class SuscripcionDTO {
-
     private Long id;
     private Long empresaId;
     private String empresaNombre;
     private String empresaSubdominio;
     private Long planId;
     private String planNombre;
-    private Suscripcion.EstadoSuscripcion estado;
+    private String estado;
     private LocalDateTime fechaInicio;
     private LocalDateTime fechaFin;
     private LocalDateTime fechaCancelacion;
@@ -34,7 +32,7 @@ public class SuscripcionDTO {
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
     
-    // Información calculada
+    // Campos calculados
     private Long diasRestantes;
     private Boolean estaActiva;
     private Boolean estaExpirada;
@@ -50,7 +48,7 @@ public class SuscripcionDTO {
         this.empresaSubdominio = suscripcion.getEmpresa().getSubdominio();
         this.planId = suscripcion.getPlan().getId();
         this.planNombre = suscripcion.getPlan().getNombre();
-        this.estado = suscripcion.getEstado();
+        this.estado = suscripcion.getEstado().name();
         this.fechaInicio = suscripcion.getFechaInicio();
         this.fechaFin = suscripcion.getFechaFin();
         this.fechaCancelacion = suscripcion.getFechaCancelacion();
@@ -68,7 +66,7 @@ public class SuscripcionDTO {
         this.fechaCreacion = suscripcion.getFechaCreacion();
         this.fechaActualizacion = suscripcion.getFechaActualizacion();
         
-        // Calcular información adicional
+        // Campos calculados
         this.diasRestantes = suscripcion.getDiasRestantes();
         this.estaActiva = suscripcion.estaActiva();
         this.estaExpirada = suscripcion.estaExpirada();
@@ -94,8 +92,8 @@ public class SuscripcionDTO {
     public String getPlanNombre() { return planNombre; }
     public void setPlanNombre(String planNombre) { this.planNombre = planNombre; }
 
-    public Suscripcion.EstadoSuscripcion getEstado() { return estado; }
-    public void setEstado(Suscripcion.EstadoSuscripcion estado) { this.estado = estado; }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 
     public LocalDateTime getFechaInicio() { return fechaInicio; }
     public void setFechaInicio(LocalDateTime fechaInicio) { this.fechaInicio = fechaInicio; }

@@ -1,21 +1,18 @@
 package com.minegocio.backend.dto;
 
 import com.minegocio.backend.entidades.Plan;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
- * DTO para mostrar información de planes
+ * DTO para la gestión de planes de suscripción
  */
 public class PlanDTO {
-
     private Long id;
     private String nombre;
     private String descripcion;
     private BigDecimal precio;
-    private Plan.PeriodoPlan periodo;
+    private String periodo;
     private String periodoTexto;
     private BigDecimal precioAnual;
     private Boolean activo;
@@ -35,10 +32,11 @@ public class PlanDTO {
     private Boolean integracionesAvanzadas;
     private Boolean backupAutomatico;
     private Boolean dominioPersonalizado;
+    private Boolean planPorDefecto;
     
     // Estadísticas
-    private Long totalSuscripciones;
-    private Long suscripcionesActivas;
+    private Integer totalSuscripciones;
+    private Integer suscripcionesActivas;
     private BigDecimal ingresosTotales;
     
     // Timestamps
@@ -53,7 +51,7 @@ public class PlanDTO {
         this.nombre = plan.getNombre();
         this.descripcion = plan.getDescripcion();
         this.precio = plan.getPrecio();
-        this.periodo = plan.getPeriodo();
+        this.periodo = plan.getPeriodo().name();
         this.periodoTexto = plan.getPeriodoTexto();
         this.precioAnual = plan.getPrecioAnual();
         this.activo = plan.getActivo();
@@ -69,6 +67,7 @@ public class PlanDTO {
         this.integracionesAvanzadas = plan.getIntegracionesAvanzadas();
         this.backupAutomatico = plan.getBackupAutomatico();
         this.dominioPersonalizado = plan.getDominioPersonalizado();
+        this.planPorDefecto = plan.getPlanPorDefecto();
         this.fechaCreacion = plan.getFechaCreacion();
         this.fechaActualizacion = plan.getFechaActualizacion();
     }
@@ -86,8 +85,8 @@ public class PlanDTO {
     public BigDecimal getPrecio() { return precio; }
     public void setPrecio(BigDecimal precio) { this.precio = precio; }
 
-    public Plan.PeriodoPlan getPeriodo() { return periodo; }
-    public void setPeriodo(Plan.PeriodoPlan periodo) { this.periodo = periodo; }
+    public String getPeriodo() { return periodo; }
+    public void setPeriodo(String periodo) { this.periodo = periodo; }
 
     public String getPeriodoTexto() { return periodoTexto; }
     public void setPeriodoTexto(String periodoTexto) { this.periodoTexto = periodoTexto; }
@@ -134,11 +133,14 @@ public class PlanDTO {
     public Boolean getDominioPersonalizado() { return dominioPersonalizado; }
     public void setDominioPersonalizado(Boolean dominioPersonalizado) { this.dominioPersonalizado = dominioPersonalizado; }
 
-    public Long getTotalSuscripciones() { return totalSuscripciones; }
-    public void setTotalSuscripciones(Long totalSuscripciones) { this.totalSuscripciones = totalSuscripciones; }
+    public Boolean getPlanPorDefecto() { return planPorDefecto; }
+    public void setPlanPorDefecto(Boolean planPorDefecto) { this.planPorDefecto = planPorDefecto; }
 
-    public Long getSuscripcionesActivas() { return suscripcionesActivas; }
-    public void setSuscripcionesActivas(Long suscripcionesActivas) { this.suscripcionesActivas = suscripcionesActivas; }
+    public Integer getTotalSuscripciones() { return totalSuscripciones; }
+    public void setTotalSuscripciones(Integer totalSuscripciones) { this.totalSuscripciones = totalSuscripciones; }
+
+    public Integer getSuscripcionesActivas() { return suscripcionesActivas; }
+    public void setSuscripcionesActivas(Integer suscripcionesActivas) { this.suscripcionesActivas = suscripcionesActivas; }
 
     public BigDecimal getIngresosTotales() { return ingresosTotales; }
     public void setIngresosTotales(BigDecimal ingresosTotales) { this.ingresosTotales = ingresosTotales; }

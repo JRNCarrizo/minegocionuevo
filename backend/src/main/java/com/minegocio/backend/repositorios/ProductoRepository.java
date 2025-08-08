@@ -220,4 +220,9 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      * Cuenta productos creados entre dos fechas
      */
     long countByFechaCreacionBetween(java.time.LocalDateTime fechaInicio, java.time.LocalDateTime fechaFin);
+
+    /**
+     * Cuenta productos activos por empresa
+     */
+    Long countByEmpresaAndActivoTrue(Empresa empresa);
 }

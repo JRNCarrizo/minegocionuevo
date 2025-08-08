@@ -2,6 +2,7 @@ package com.minegocio.backend.controladores;
 
 import com.minegocio.backend.dto.ClienteDTO;
 import com.minegocio.backend.servicios.ClienteService;
+import com.minegocio.backend.servicios.LimiteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,9 @@ public class ClienteController {
 
     @Autowired
     private ClienteService clienteService;
+
+    @Autowired
+    private LimiteService limiteService;
 
     /**
      * Obtiene todos los clientes de una empresa
@@ -138,19 +142,46 @@ public class ClienteController {
      * Crea un nuevo cliente
      */
     @PostMapping
-    public ResponseEntity<ClienteDTO> crearCliente(
+    public ResponseEntity<?> crearCliente(
             @PathVariable Long empresaId,
             @Valid @RequestBody ClienteDTO clienteDTO) {
         try {
+            // Verificar límites de suscripción antes de crear el cliente
+            if (!limiteService.puedeCrearCliente(empresaId)) {
+                var error = java.util.Map.of(
+                    "error", "Límite de clientes alcanzado",
+                    "mensaje", "Has alcanzado el límite de clientes permitidos en tu plan de suscripción. Actualiza tu plan para crear más clientes."
+                );
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+            }
+            
             ClienteDTO nuevoCliente = clienteService.crearCliente(empresaId, clienteDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoCliente);
+            
+            var respuesta = java.util.Map.of(
+                "data", nuevoCliente,
+                "mensaje", "Cliente creado exitosamente"
+            );
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
         } catch (RuntimeException e) {
             if (e.getMessage().contains("email")) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+                var error = java.util.Map.of(
+                    "error", "Email ya existe",
+                    "mensaje", "Ya existe un cliente con ese email"
+                );
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
             }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            var error = java.util.Map.of(
+                "error", "Error de validación",
+                "mensaje", e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor",
+                "mensaje", e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 

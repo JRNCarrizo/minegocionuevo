@@ -45,6 +45,12 @@ export default function NavbarAdminPages({
       description: 'Historial de carga de productos'
     },
     {
+      path: '/admin/suscripcion',
+      label: 'Mi Suscripción',
+      icon: '💳',
+      description: 'Información de tu plan'
+    },
+    {
       path: '/admin/configuracion',
       label: 'Configuración',
       icon: '⚙️',

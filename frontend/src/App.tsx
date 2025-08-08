@@ -24,6 +24,8 @@ import Estadisticas from './pages/admin/Estadisticas.tsx';
 import DashboardSuperAdmin from './pages/DashboardSuperAdmin.tsx';
 import GestionEmpresas from './pages/admin/GestionEmpresas.tsx';
 import GestionSuscripciones from './pages/admin/GestionSuscripciones.tsx';
+import DashboardSuscripcion from './pages/admin/DashboardSuscripcion.tsx';
+import ConsumoYSuscripciones from './pages/admin/ConsumoYSuscripciones.tsx';
 import CatalogoPublico from './pages/CatalogoPublico.tsx';
 import ProductoPublico from './pages/ProductoPublico.tsx';
 import LoginCliente from './pages/LoginCliente.tsx';
@@ -83,6 +85,8 @@ function AppContent() {
           <Route path="/admin/control-inventario" element={<ControlInventario />} />
           <Route path="/admin/historial-carga-productos" element={<HistorialCargaProductos />} />
           <Route path="/admin/estadisticas" element={<Estadisticas />} />
+          <Route path="/admin/suscripcion" element={<DashboardSuscripcion />} />
+          <Route path="/admin/consumo-suscripciones" element={<ConsumoYSuscripciones />} />
           <Route path="/dashboard-super-admin" element={<DashboardSuperAdmin />} />
           <Route path="/super-admin/empresas" element={<GestionEmpresas />} />
           <Route path="/super-admin/suscripciones" element={<GestionSuscripciones />} />

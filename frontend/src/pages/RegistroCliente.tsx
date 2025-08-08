@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useSubdominio } from '../hooks/useSubdominio';
 import NavbarCliente from '../components/NavbarCliente';
 import api from '../services/api';
+import LimitService from '../services/limitService';
 
 // Esquema de validación con Yup
 const esquemaValidacion = yup.object({
@@ -52,6 +53,18 @@ const RegistroCliente: React.FC = () => {
         toast.error('Error: No se pudo determinar la tienda');
         return;
       }
+
+      // Verificar límites antes de crear el cliente
+      console.log('🔍 Verificando límites antes de crear cliente...');
+      const canProceed = await LimitService.checkLimitsBeforeAction('addClient');
+      
+      if (!canProceed) {
+        console.log('❌ Límite de clientes alcanzado');
+        setCargando(false);
+        return;
+      }
+
+      console.log('✅ Límites verificados, procediendo a crear cliente...');
 
       // Crear el cliente usando el método del servicio
       const datosCliente = {

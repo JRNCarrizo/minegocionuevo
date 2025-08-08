@@ -123,4 +123,9 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
      * Cuenta clientes por empresa ID
      */
     long countByEmpresaId(Long empresaId);
+
+    /**
+     * Cuenta clientes por empresa
+     */
+    Long countByEmpresa(Empresa empresa);
 }

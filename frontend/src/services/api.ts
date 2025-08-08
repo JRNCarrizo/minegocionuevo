@@ -1113,7 +1113,9 @@ class ApiService {
   }
 
   async createSuperAdminPlan(plan: any) {
+    console.log('🔍 ApiService - Enviando plan al backend:', plan);
     const response = await this.api.post('/super-admin/suscripciones/planes', plan);
+    console.log('✅ ApiService - Respuesta del backend:', response.data);
     return response.data;
   }
 
@@ -1344,6 +1346,17 @@ class ApiService {
   }): Promise<{ mensaje: string; empresa: any }> {
     const response = await this.api.post('/auth/crear-empresa', data);
     return response.data;
+  }
+
+  // Método para obtener la suscripción actual de la empresa
+  async getMiSuscripcion(): Promise<any> {
+    try {
+      const response = await this.api.get('/super-admin/suscripciones/mi-suscripcion');
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo mi suscripción:', error);
+      throw error;
+    }
   }
 }
 

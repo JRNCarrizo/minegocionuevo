@@ -3,6 +3,7 @@ package com.minegocio.backend.controladores;
 import com.minegocio.backend.dto.ProductoDTO;
 import com.minegocio.backend.servicios.ProductoService;
 import com.minegocio.backend.servicios.CloudinaryService;
+import com.minegocio.backend.servicios.LimiteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,6 +32,9 @@ public class ProductoController {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private LimiteService limiteService;
 
     /**
      * Obtiene todos los productos de una empresa
@@ -175,6 +179,15 @@ public class ProductoController {
             System.out.println("=== DEBUG CREAR PRODUCTO ===");
             System.out.println("EmpresaId: " + empresaId);
             System.out.println("ProductoDTO recibido: " + productoDTO);
+            
+            // Verificar límites de suscripción antes de crear el producto
+            if (!limiteService.puedeCrearProducto(empresaId)) {
+                var error = java.util.Map.of(
+                    "error", "Límite de productos alcanzado",
+                    "mensaje", "Has alcanzado el límite de productos permitidos en tu plan de suscripción. Actualiza tu plan para crear más productos."
+                );
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+            }
             
             ProductoDTO nuevoProducto = productoService.crearProducto(empresaId, productoDTO);
             
@@ -725,6 +738,11 @@ public class ProductoController {
             @PathVariable Long empresaId,
             @RequestParam("imagen") MultipartFile archivo) {
         try {
+            System.out.println("🔍 DEBUG: Endpoint subir-imagen llamado");
+            System.out.println("🔍 DEBUG: empresaId=" + empresaId);
+            System.out.println("🔍 DEBUG: archivo=" + archivo.getOriginalFilename());
+            System.out.println("🔍 DEBUG: archivo.size=" + archivo.getSize());
+            System.out.println("🔍 DEBUG: archivo.contentType=" + archivo.getContentType());
             // Validar que el archivo no esté vacío
             if (archivo.isEmpty()) {
                 return ResponseEntity.badRequest()
@@ -745,7 +763,9 @@ public class ProductoController {
             }
 
             // Subir imagen a Cloudinary
+            System.out.println("🔍 DEBUG: Llamando a cloudinaryService.subirImagen...");
             String urlImagen = cloudinaryService.subirImagen(archivo, empresaId);
+            System.out.println("✅ DEBUG: Imagen subida a Cloudinary: " + urlImagen);
 
             return ResponseEntity.ok(Map.of(
                 "data", Map.of("url", urlImagen),

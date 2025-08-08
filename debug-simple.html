@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Simple</title>
+</head>
+<body>
+    <h1>Debug Suscripciones</h1>
+    <button onclick="test1()">1. Plan por Defecto</button>
+    <button onclick="test2()">2. Suscripciones</button>
+    <button onclick="test3()">3. Consumo Empresa</button>
+    <div id="output"></div>
+
+    <script>
+        function log(msg) {
+            document.getElementById('output').innerHTML += '<p>' + msg + '</p>';
+        }
+
+        function test1() {
+            log('Probando Plan por Defecto...');
+            fetch('http://localhost:8080/api/suscripciones/planes/por-defecto')
+                .then(r => r.json())
+                .then(d => log('Plan: ' + JSON.stringify(d)))
+                .catch(e => log('Error: ' + e));
+        }
+
+        function test2() {
+            log('Probando Suscripciones...');
+            fetch('http://localhost:8080/api/suscripciones/debug/suscripciones')
+                .then(r => r.json())
+                .then(d => log('Suscripciones: ' + JSON.stringify(d)))
+                .catch(e => log('Error: ' + e));
+        }
+
+        function test3() {
+            const id = prompt('ID de empresa:');
+            if (!id) return;
+            log('Probando Consumo Empresa ' + id + '...');
+            fetch('http://localhost:8080/api/suscripciones/consumo/empresa/' + id)
+                .then(r => r.json())
+                .then(d => log('Consumo: ' + JSON.stringify(d)))
+                .catch(e => log('Error: ' + e));
+        }
+    </script>
+</body>
+</html> 

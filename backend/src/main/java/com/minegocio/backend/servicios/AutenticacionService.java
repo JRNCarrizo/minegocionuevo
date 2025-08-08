@@ -92,25 +92,42 @@ public class AutenticacionService {
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        System.out.println("🎯 Authentication establecida en SecurityContext");
 
         // Generar JWT
+        System.out.println("🎯 Generando JWT token...");
         String jwt = jwtUtils.generarJwtToken(authentication);
+        System.out.println("🎯 JWT token generado exitosamente");
 
         // Obtener detalles del usuario autenticado
         // UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
 
         // Crear respuesta
-        return new JwtRespuestaDTO(
-                jwt,
-                usuarioEntity.getEmail(), // Usar email como nombreUsuario
-                usuarioEntity.getEmail(),
-                usuarioEntity.getNombre(),
-                usuarioEntity.getApellidos(),
-                List.of(usuarioEntity.getRol().name()),
-                usuarioEntity.getEmpresa().getId(),
-                usuarioEntity.getEmpresa().getNombre(),
-                usuarioEntity.getEmpresa().getSubdominio()
-        );
+        try {
+            System.out.println("🎯 Creando respuesta JWT para usuario: " + usuarioEntity.getEmail());
+            System.out.println("🎯 Rol del usuario: " + usuarioEntity.getRol().name());
+            System.out.println("🎯 Empresa del usuario: " + (usuarioEntity.getEmpresa() != null ? usuarioEntity.getEmpresa().getNombre() : "SIN EMPRESA"));
+            
+            JwtRespuestaDTO respuesta = new JwtRespuestaDTO(
+                    jwt,
+                    usuarioEntity.getEmail(), // Usar email como nombreUsuario
+                    usuarioEntity.getEmail(),
+                    usuarioEntity.getNombre(),
+                    usuarioEntity.getApellidos(),
+                    List.of(usuarioEntity.getRol().name()),
+                    usuarioEntity.getEmpresa() != null ? usuarioEntity.getEmpresa().getId() : null,
+                    usuarioEntity.getEmpresa() != null ? usuarioEntity.getEmpresa().getNombre() : null,
+                    usuarioEntity.getEmpresa() != null ? usuarioEntity.getEmpresa().getSubdominio() : null
+            );
+            
+            System.out.println("🎯 Respuesta creada con roles: " + respuesta.getRoles());
+            System.out.println("🎯 Retornando respuesta exitosamente");
+            return respuesta;
+        } catch (Exception e) {
+            System.out.println("❌ ERROR al crear respuesta JWT: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**

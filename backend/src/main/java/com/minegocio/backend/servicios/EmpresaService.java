@@ -10,6 +10,10 @@ import com.minegocio.backend.repositorios.ClienteRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.PedidoRepository;
 import com.minegocio.backend.repositorios.VentaRapidaRepository;
+import com.minegocio.backend.repositorios.PlanRepository;
+import com.minegocio.backend.entidades.Plan;
+import com.minegocio.backend.entidades.Suscripcion;
+import com.minegocio.backend.repositorios.SuscripcionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 /**
  * Servicio para la gestión de empresas
@@ -53,6 +58,15 @@ public class EmpresaService {
     
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private SuscripcionAutomaticaService suscripcionAutomaticaService;
+
+    @Autowired
+    private PlanRepository planRepository;
+
+    @Autowired
+    private SuscripcionRepository suscripcionRepository;
 
     /**
      * Registra una nueva empresa con su administrador
@@ -108,6 +122,31 @@ public class EmpresaService {
 
         administrador = usuarioRepository.save(administrador);
 
+        System.out.println("🎯 === ASIGNACIÓN AUTOMÁTICA DE PLAN POR DEFECTO ===");
+        System.out.println("🎯 Empresa creada: " + empresa.getNombre() + " (ID: " + empresa.getId() + ")");
+        
+        // Crear plan por defecto si no existe
+        System.out.println("🎯 Verificando/creando plan por defecto...");
+        crearPlanPorDefectoSiNoExiste();
+
+        // Crear suscripción gratuita automática
+        try {
+            System.out.println("🎯 Creando suscripción gratuita automática...");
+            suscripcionAutomaticaService.crearSuscripcionGratuita(empresa);
+            System.out.println("✅ Suscripción gratuita creada exitosamente para empresa: " + empresa.getNombre());
+            
+            // Verificar que la suscripción se creó
+            List<Suscripcion> suscripciones = suscripcionRepository.findByEmpresaOrderByFechaCreacionDesc(empresa);
+            System.out.println("✅ Verificación: Empresa tiene " + suscripciones.size() + " suscripciones");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error creando suscripción gratuita: " + e.getMessage());
+            e.printStackTrace();
+            // No lanzar excepción para no fallar el registro
+        }
+        
+        System.out.println("🎯 === FIN ASIGNACIÓN AUTOMÁTICA ===");
+
         // Enviar email de verificación
         try {
             emailService.enviarEmailVerificacion(
@@ -121,6 +160,52 @@ public class EmpresaService {
         }
 
         return new EmpresaDTO(empresa);
+    }
+
+    /**
+     * Crea un plan por defecto si no existe
+     */
+    private void crearPlanPorDefectoSiNoExiste() {
+        try {
+            // Verificar si ya existe un plan por defecto
+            Optional<Plan> planExistente = planRepository.findByPlanPorDefectoTrue();
+            if (planExistente.isPresent()) {
+                System.out.println("✅ Plan por defecto ya existe: " + planExistente.get().getNombre());
+                return;
+            }
+
+            System.out.println("📋 Creando plan por defecto...");
+            
+            // Crear plan gratuito por defecto
+            Plan planGratuito = new Plan();
+            planGratuito.setNombre("Plan Gratuito");
+            planGratuito.setDescripcion("Plan gratuito con funcionalidades básicas");
+            planGratuito.setPrecio(BigDecimal.ZERO);
+            planGratuito.setPeriodo(Plan.PeriodoPlan.MENSUAL);
+            planGratuito.setMaxProductos(50);
+            planGratuito.setMaxUsuarios(2);
+            planGratuito.setMaxClientes(500);
+            planGratuito.setMaxAlmacenamientoGB(5);
+            planGratuito.setActivo(true);
+            planGratuito.setPlanPorDefecto(true);
+            planGratuito.setDestacado(false);
+            planGratuito.setOrden(1);
+
+            // Características del plan gratuito
+            planGratuito.setPersonalizacionCompleta(false);
+            planGratuito.setEstadisticasAvanzadas(false);
+            planGratuito.setSoportePrioritario(false);
+            planGratuito.setIntegracionesAvanzadas(false);
+            planGratuito.setBackupAutomatico(false);
+            planGratuito.setDominioPersonalizado(false);
+
+            planRepository.save(planGratuito);
+            System.out.println("✅ Plan por defecto creado: " + planGratuito.getNombre());
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error creando plan por defecto: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**

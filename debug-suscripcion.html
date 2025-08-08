@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Suscripción</title>
+</head>
+<body>
+    <h1>Debug Endpoint de Mi Suscripción</h1>
+    <button onclick="probarSuscripcion()">Probar Mi Suscripción</button>
+    <div id="resultado"></div>
+
+    <script>
+        async function probarSuscripcion() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = 'Probando...';
+            
+            try {
+                const token = localStorage.getItem('token');
+                console.log('Token:', token);
+                
+                const response = await fetch('http://localhost:8080/api/super-admin/suscripciones/mi-suscripcion', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Data recibida:', data);
+                
+                resultado.innerHTML = `
+                    <h3>Respuesta del servidor:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultado.innerHTML = `
+                    <h3>Error:</h3>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html> 

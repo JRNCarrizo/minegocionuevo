@@ -1,0 +1,6 @@
+-- Insertar datos de planes de suscripción
+INSERT INTO planes (nombre, descripcion, precio, periodo, activo, destacado, orden, max_productos, max_usuarios, max_clientes, max_almacenamiento_gb, personalizacion_completa, estadisticas_avanzadas, soporte_prioritario, integraciones_avanzadas, backup_automatico, dominio_personalizado, fecha_creacion, fecha_actualizacion) VALUES
+('Plan Gratuito', 'Prueba gratuita de 45 días con funcionalidades básicas', 0.00, 'MENSUAL', true, false, 0, 30, 1, 10, 1, false, false, false, false, false, false, NOW(), NOW()),
+('Plan Básico', 'Ideal para pequeñas empresas que están comenzando', 19.99, 'MENSUAL', true, false, 1, 500, 3, 1000, 10, true, false, false, false, false, false, NOW(), NOW()),
+('Plan Profesional', 'Perfecto para empresas en crecimiento', 49.99, 'MENSUAL', true, true, 2, 5000, 10, 10000, 50, true, true, true, false, true, false, NOW(), NOW()),
+('Plan Empresarial', 'Para grandes empresas con necesidades avanzadas', 199.99, 'MENSUAL', true, false, 3, -1, -1, -1, 500, true, true, true, true, true, true, NOW(), NOW()); 

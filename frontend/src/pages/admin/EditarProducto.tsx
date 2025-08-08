@@ -97,7 +97,7 @@ const EditarProducto: React.FC = () => {
           descripcion: producto.descripcion || '',
           precio: producto.precio,
           stock: producto.stock,
-          stockMinimo: producto.stockMinimo,
+          stockMinimo: producto.stockMinimo || 0,
           categoria: producto.categoria || '',
           marca: producto.marca || '',
           unidad: producto.unidad || '',
@@ -105,7 +105,7 @@ const EditarProducto: React.FC = () => {
           codigoPersonalizado: producto.codigoPersonalizado || '',
           codigoBarras: producto.codigoBarras || '',
           activo: producto.activo,
-          destacado: producto.destacado,
+          destacado: producto.destacado || false,
           imagenes: producto.imagenes || []
         });
       } else {
@@ -313,42 +313,147 @@ const EditarProducto: React.FC = () => {
   };
 
   const descargarCodigoBarras = (elementId: string) => {
-    const svg = document.getElementById(elementId)?.querySelector('svg');
-    if (!svg) return;
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const img = new window.Image();
-    img.onload = function () {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(img, 0, 0);
-        const png = canvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = png;
-        a.download = 'codigo_barras.png';
-        a.click();
-      }
-    };
-    img.src = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgString)));
+    console.log('🔍 Descargando código de barras...', elementId);
+    
+    const element = document.getElementById(elementId);
+    if (!element) {
+      console.error('❌ Elemento no encontrado:', elementId);
+      alert('No se pudo encontrar el código de barras');
+      return;
+    }
+    
+    const svg = element.querySelector('svg');
+    if (!svg) {
+      console.error('❌ SVG no encontrado en el elemento');
+      alert('No se pudo generar el código de barras');
+      return;
+    }
+    
+    try {
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svg);
+      console.log('✅ SVG serializado correctamente');
+      
+      const canvas = document.createElement('canvas');
+      const img = new window.Image();
+      
+      img.onload = function () {
+        try {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            const png = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = png;
+            a.download = `codigo_barras_${formulario.codigoBarras || 'producto'}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            console.log('✅ Código de barras descargado exitosamente');
+          }
+        } catch (error) {
+          console.error('❌ Error al generar PNG:', error);
+          alert('Error al generar la imagen del código de barras');
+        }
+      };
+      
+      img.onerror = function() {
+        console.error('❌ Error al cargar la imagen SVG');
+        alert('Error al procesar el código de barras');
+      };
+      
+      img.src = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgString)));
+    } catch (error) {
+      console.error('❌ Error al serializar SVG:', error);
+      alert('Error al procesar el código de barras');
+    }
   };
 
   const imprimirCodigoBarras = (elementId: string) => {
-    const svg = document.getElementById(elementId)?.querySelector('svg');
-    if (!svg) return;
-    const w = window.open('', 'Imprimir código de barras');
-    if (w) {
-      w.document.write('<html><head><title>Imprimir código de barras</title></head><body>');
-      w.document.write(svg.outerHTML);
-      w.document.write('</body></html>');
-      w.document.close();
-      w.focus();
-      setTimeout(() => {
-        w.print();
-        w.close();
-      }, 500);
+    console.log('🔍 Imprimiendo código de barras...', elementId);
+    
+    const element = document.getElementById(elementId);
+    if (!element) {
+      console.error('❌ Elemento no encontrado:', elementId);
+      alert('No se pudo encontrar el código de barras');
+      return;
+    }
+    
+    const svg = element.querySelector('svg');
+    if (!svg) {
+      console.error('❌ SVG no encontrado en el elemento');
+      alert('No se pudo generar el código de barras');
+      return;
+    }
+    
+    try {
+      const w = window.open('', 'Imprimir código de barras');
+      if (w) {
+        w.document.write(`
+          <html>
+            <head>
+              <title>Imprimir código de barras</title>
+              <style>
+                body {
+                  margin: 0;
+                  padding: 20px;
+                  font-family: Arial, sans-serif;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  min-height: 100vh;
+                }
+                .barcode-container {
+                  text-align: center;
+                  border: 1px solid #ccc;
+                  padding: 20px;
+                  border-radius: 8px;
+                  background: white;
+                }
+                .barcode-title {
+                  font-size: 18px;
+                  font-weight: bold;
+                  margin-bottom: 10px;
+                  color: #333;
+                }
+                .barcode-code {
+                  font-size: 14px;
+                  color: #666;
+                  margin-top: 10px;
+                }
+                svg {
+                  max-width: 100%;
+                  height: auto;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="barcode-container">
+                <div class="barcode-title">Código de Barras del Producto</div>
+                ${svg.outerHTML}
+                <div class="barcode-code">Código: ${formulario.codigoBarras || 'N/A'}</div>
+              </div>
+            </body>
+          </html>
+        `);
+        w.document.close();
+        w.focus();
+        
+        setTimeout(() => {
+          w.print();
+          w.close();
+          console.log('✅ Código de barras enviado a impresión');
+        }, 500);
+      } else {
+        console.error('❌ No se pudo abrir la ventana de impresión');
+        alert('No se pudo abrir la ventana de impresión. Verifica que el bloqueador de ventanas emergentes esté desactivado.');
+      }
+    } catch (error) {
+      console.error('❌ Error al imprimir:', error);
+      alert('Error al imprimir el código de barras');
     }
   };
 
@@ -922,19 +1027,21 @@ const EditarProducto: React.FC = () => {
                         alignItems: 'center',
                         padding: isMobile ? '0 10px' : '0'
                       }}>
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          width: '100%',
-                          maxWidth: isMobile ? 280 : 350,
-                          margin: '0 auto'
-                        }}>
+                        <div 
+                          id="barcode-preview-editar"
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: '100%',
+                            maxWidth: isMobile ? 280 : 350,
+                            margin: '0 auto'
+                          }}
+                        >
                           <Barcode
                             value={formulario.codigoBarras}
                             width={isMobile ? 1 : 2}
                             height={isMobile ? 50 : 80}
                             displayValue
-                            id="barcode-preview-editar"
                           />
                         </div>
                         <div style={{

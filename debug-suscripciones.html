@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Suscripciones</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { margin: 10px; padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Suscripciones</h1>
+    
+    <button onclick="verificarPlanPorDefecto()">1. Verificar Plan por Defecto</button>
+    <button onclick="verificarSuscripciones()">2. Verificar Suscripciones</button>
+    <button onclick="verificarConsumoEmpresa()">3. Verificar Consumo Empresa</button>
+    <button onclick="verificarMiConsumo()">4. Verificar Mi Consumo</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        function mostrarResultado(titulo, data, esError = false) {
+            const div = document.createElement('div');
+            div.className = `result ${esError ? 'error' : 'success'}`;
+            div.innerHTML = `
+                <h3>${titulo}</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            document.getElementById('results').appendChild(div);
+        }
+
+        async function verificarPlanPorDefecto() {
+            try {
+                const response = await fetch(`${API_BASE}/suscripciones/planes/por-defecto`);
+                const data = await response.json();
+                mostrarResultado('✅ Plan por Defecto', data);
+            } catch (error) {
+                mostrarResultado('❌ Error Plan por Defecto', error.message, true);
+            }
+        }
+
+        async function verificarSuscripciones() {
+            try {
+                const response = await fetch(`${API_BASE}/suscripciones/debug/suscripciones`);
+                const data = await response.json();
+                mostrarResultado('✅ Suscripciones', data);
+            } catch (error) {
+                mostrarResultado('❌ Error Suscripciones', error.message, true);
+            }
+        }
+
+        async function verificarConsumoEmpresa() {
+            const empresaId = prompt('Ingresa el ID de la empresa:');
+            if (!empresaId) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/suscripciones/consumo/empresa/${empresaId}`);
+                const data = await response.json();
+                mostrarResultado(`✅ Consumo Empresa ${empresaId}`, data);
+            } catch (error) {
+                mostrarResultado('❌ Error Consumo Empresa', error.message, true);
+            }
+        }
+
+        async function verificarMiConsumo() {
+            const token = prompt('Ingresa el token JWT (o deja vacío para usar localStorage):');
+            let authToken = token;
+            
+            if (!authToken) {
+                authToken = localStorage.getItem('token');
+                if (!authToken) {
+                    mostrarResultado('❌ Error', 'No se encontró token de autenticación', true);
+                    return;
+                }
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/suscripciones/mi-consumo`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                const data = await response.json();
+                mostrarResultado('✅ Mi Consumo', data);
+            } catch (error) {
+                mostrarResultado('❌ Error Mi Consumo', error.message, true);
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import ApiService from '../services/api';
+import LimitService from '../services/limitService';
 
 interface GestorImagenesProps {
   empresaId: number;
@@ -55,6 +56,22 @@ export default function GestorImagenes({
       toast.error('La imagen no puede ser mayor a 5MB');
       return;
     }
+
+    // Verificar límites de almacenamiento antes de subir
+    const fileSizeMB = archivo.size / (1024 * 1024);
+    console.log('🔍 Verificando límites antes de subir archivo...');
+    const canProceed = await LimitService.checkLimitsBeforeAction('uploadFile', fileSizeMB);
+    
+    if (!canProceed) {
+      console.log('❌ Límite de almacenamiento alcanzado');
+      // Limpiar el input
+      if (inputFileRef.current) {
+        inputFileRef.current.value = '';
+      }
+      return;
+    }
+
+    console.log('✅ Límites verificados, procediendo a subir archivo...');
 
     setSubiendoImagen(true);
 

@@ -37,17 +37,45 @@ public class JwtUtils {
      * Genera un token JWT a partir de la autenticación
      */
     public String generarJwtToken(Authentication authentication) {
-        UsuarioPrincipal userPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
-        
-        return Jwts.builder()
-                .subject(userPrincipal.getUsername())
-                .claim("userId", userPrincipal.getId())
-                .claim("empresaId", userPrincipal.getEmpresaId())
-                .claim("nombreCompleto", userPrincipal.getNombreCompleto())
-                .issuedAt(Date.from(Instant.now()))
-                .expiration(Date.from(Instant.now().plusMillis(jwtExpirationMs)))
-                .signWith(getSigningKey(), Jwts.SIG.HS256)
-                .compact();
+        try {
+            System.out.println("🎯 JWT - Authentication principal type: " + authentication.getPrincipal().getClass().getName());
+            System.out.println("🎯 JWT - Authentication principal: " + authentication.getPrincipal());
+            
+            // Intentar obtener UsuarioPrincipal primero
+            if (authentication.getPrincipal() instanceof UsuarioPrincipal) {
+                UsuarioPrincipal userPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+                System.out.println("🎯 JWT - UsuarioPrincipal obtenido: " + userPrincipal.getUsername());
+                System.out.println("🎯 JWT - UsuarioPrincipal ID: " + userPrincipal.getId());
+                
+                return Jwts.builder()
+                        .subject(userPrincipal.getUsername())
+                        .claim("userId", userPrincipal.getId())
+                        .claim("empresaId", userPrincipal.getEmpresaId())
+                        .claim("nombreCompleto", userPrincipal.getNombreCompleto())
+                        .issuedAt(Date.from(Instant.now()))
+                        .expiration(Date.from(Instant.now().plusMillis(jwtExpirationMs)))
+                        .signWith(getSigningKey(), Jwts.SIG.HS256)
+                        .compact();
+            } else {
+                // Fallback para User por defecto de Spring Security
+                System.out.println("🎯 JWT - Usando User por defecto de Spring Security");
+                String username = authentication.getName();
+                
+                return Jwts.builder()
+                        .subject(username)
+                        .claim("userId", 1L) // Valor por defecto
+                        .claim("empresaId", null)
+                        .claim("nombreCompleto", username)
+                        .issuedAt(Date.from(Instant.now()))
+                        .expiration(Date.from(Instant.now().plusMillis(jwtExpirationMs)))
+                        .signWith(getSigningKey(), Jwts.SIG.HS256)
+                        .compact();
+            }
+        } catch (Exception e) {
+            System.out.println("❌ ERROR en generarJwtToken: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**

@@ -76,7 +76,7 @@ public class UsuarioPrincipal implements UserDetails {
     }
 
     public Long getEmpresaId() {
-        return usuario.getEmpresa().getId();
+        return usuario.getEmpresa() != null ? usuario.getEmpresa().getId() : null;
     }
 
     public String getNombreCompleto() {

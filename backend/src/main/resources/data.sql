@@ -1,0 +1,3 @@
+-- Script de datos iniciales
+-- Este archivo está vacío intencionalmente para evitar errores de ejecución
+-- Los datos se cargan a través de data-h2.sql para desarrollo y data-postgres.sql para producción

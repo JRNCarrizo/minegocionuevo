@@ -10,15 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repositorio para la gestión de planes
+ * Repositorio para la gestión de planes de suscripción
  */
 @Repository
 public interface PlanRepository extends JpaRepository<Plan, Long> {
-
-    /**
-     * Busca planes activos
-     */
-    List<Plan> findByActivoTrue();
 
     /**
      * Busca planes activos ordenados por orden
@@ -28,50 +23,51 @@ public interface PlanRepository extends JpaRepository<Plan, Long> {
     /**
      * Busca planes destacados
      */
-    List<Plan> findByActivoTrueAndDestacadoTrue();
+    List<Plan> findByDestacadoTrueAndActivoTrue();
 
     /**
-     * Busca planes por período
+     * Verifica si existe un plan con el nombre dado
      */
-    List<Plan> findByActivoTrueAndPeriodo(Plan.PeriodoPlan periodo);
+    boolean existsByNombre(String nombre);
 
     /**
-     * Cuenta planes activos
+     * Busca un plan por nombre
      */
-    Long countByActivoTrue();
+    Optional<Plan> findByNombre(String nombre);
 
     /**
-     * Busca el plan más popular (con más suscripciones activas)
+     * Busca el plan por defecto
      */
-    @Query("SELECT p FROM Plan p WHERE p.activo = true ORDER BY SIZE(p.suscripciones) DESC")
-    List<Plan> findPlanesMasPopulares();
+    Optional<Plan> findByPlanPorDefectoTrue();
 
     /**
-     * Busca planes por rango de precio
+     * Cuenta el total de suscripciones por plan
      */
-    @Query("SELECT p FROM Plan p WHERE p.activo = true AND p.precio BETWEEN :precioMin AND :precioMax ORDER BY p.precio ASC")
-    List<Plan> findByPrecioBetween(@Param("precioMin") Double precioMin, @Param("precioMax") Double precioMax);
+    @Query("SELECT p.id, COUNT(s) FROM Plan p LEFT JOIN p.suscripciones s GROUP BY p.id")
+    List<Object[]> contarSuscripcionesPorPlan();
 
     /**
-     * Busca planes que incluyen una característica específica
+     * Cuenta las suscripciones activas por plan
      */
-    @Query("SELECT p FROM Plan p WHERE p.activo = true AND " +
-           "(:personalizacionCompleta IS NULL OR p.personalizacionCompleta = :personalizacionCompleta) AND " +
-           "(:estadisticasAvanzadas IS NULL OR p.estadisticasAvanzadas = :estadisticasAvanzadas) AND " +
-           "(:soportePrioritario IS NULL OR p.soportePrioritario = :soportePrioritario) AND " +
-           "(:integracionesAvanzadas IS NULL OR p.integracionesAvanzadas = :integracionesAvanzadas) AND " +
-           "(:backupAutomatico IS NULL OR p.backupAutomatico = :backupAutomatico) AND " +
-           "(:dominioPersonalizado IS NULL OR p.dominioPersonalizado = :dominioPersonalizado)")
-    List<Plan> findByCaracteristicas(@Param("personalizacionCompleta") Boolean personalizacionCompleta,
-                                    @Param("estadisticasAvanzadas") Boolean estadisticasAvanzadas,
-                                    @Param("soportePrioritario") Boolean soportePrioritario,
-                                    @Param("integracionesAvanzadas") Boolean integracionesAvanzadas,
-                                    @Param("backupAutomatico") Boolean backupAutomatico,
-                                    @Param("dominioPersonalizado") Boolean dominioPersonalizado);
+    @Query("SELECT p.id, COUNT(s) FROM Plan p LEFT JOIN p.suscripciones s WHERE s.estado = 'ACTIVA' GROUP BY p.id")
+    List<Object[]> contarSuscripcionesActivasPorPlan();
 
     /**
-     * Busca el siguiente orden disponible
+     * Calcula los ingresos totales por plan
      */
-    @Query("SELECT COALESCE(MAX(p.orden), 0) + 1 FROM Plan p")
-    Integer findNextOrden();
+    @Query("SELECT p.id, SUM(s.precio) FROM Plan p LEFT JOIN p.suscripciones s WHERE s.estado = 'ACTIVA' GROUP BY p.id")
+    List<Object[]> calcularIngresosPorPlan();
+
+    /**
+     * Busca planes con estadísticas completas
+     */
+    @Query("SELECT p, " +
+           "COUNT(s) as totalSuscripciones, " +
+           "COUNT(CASE WHEN s.estado = 'ACTIVA' THEN 1 END) as suscripcionesActivas, " +
+           "SUM(CASE WHEN s.estado = 'ACTIVA' THEN s.precio ELSE 0 END) as ingresosTotales " +
+           "FROM Plan p LEFT JOIN p.suscripciones s " +
+           "WHERE p.activo = true " +
+           "GROUP BY p.id " +
+           "ORDER BY p.orden ASC")
+    List<Object[]> findPlanesConEstadisticas();
 } 

@@ -34,7 +34,6 @@ public class Plan {
     private String descripcion;
 
     @NotNull(message = "El precio es obligatorio")
-    @Positive(message = "El precio debe ser positivo")
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal precio;
 
@@ -82,6 +81,9 @@ public class Plan {
 
     @Column(name = "dominio_personalizado")
     private Boolean dominioPersonalizado = false;
+
+    @Column(name = "plan_por_defecto")
+    private Boolean planPorDefecto = false;
 
     // Relaciones
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL)
@@ -196,6 +198,9 @@ public class Plan {
 
     public Boolean getDominioPersonalizado() { return dominioPersonalizado; }
     public void setDominioPersonalizado(Boolean dominioPersonalizado) { this.dominioPersonalizado = dominioPersonalizado; }
+
+    public Boolean getPlanPorDefecto() { return planPorDefecto; }
+    public void setPlanPorDefecto(Boolean planPorDefecto) { this.planPorDefecto = planPorDefecto; }
 
     public Set<Suscripcion> getSuscripciones() { return suscripciones; }
     public void setSuscripciones(Set<Suscripcion> suscripciones) { this.suscripciones = suscripciones; }

@@ -33,6 +33,10 @@ export default function DashboardAdministrador() {
   // Estados para contadores de elementos nuevos
   const [clientesNuevos, setClientesNuevos] = useState(0);
   const [pedidosNuevos, setPedidosNuevos] = useState(0);
+  
+  // Estado para información de suscripción
+  const [suscripcion, setSuscripcion] = useState<any>(null);
+  const [cargandoSuscripcion, setCargandoSuscripcion] = useState(true);
 
   useEffect(() => {
     const cargarEstadisticas = async () => {
@@ -93,6 +97,27 @@ export default function DashboardAdministrador() {
     };
 
     cargarEstadisticas();
+  }, [datosUsuario?.empresaId]);
+
+  // Cargar información de suscripción
+  useEffect(() => {
+    const cargarSuscripcion = async () => {
+      try {
+        setCargandoSuscripcion(true);
+        const data = await ApiService.getMiSuscripcion();
+        setSuscripcion(data);
+        console.log('✅ Suscripción cargada:', data);
+      } catch (error) {
+        console.error('❌ Error cargando suscripción:', error);
+        setSuscripcion(null);
+      } finally {
+        setCargandoSuscripcion(false);
+      }
+    };
+
+    if (datosUsuario?.empresaId) {
+      cargarSuscripcion();
+    }
   }, [datosUsuario?.empresaId]);
 
   // Manejar cuando el responsive está listo
@@ -203,8 +228,9 @@ export default function DashboardAdministrador() {
       color: '#059669'
     },
     {
+      // aca hice cambios
       titulo: 'Historial de Ventas',
-      descripcion: 'Consulta el historial de caja rápida',
+      descripcion: 'Consulta el historial de ventas rápidas, Caja Mostrador',
       icono: '📊',
       enlace: '/admin/historial-ventas',
       color: '#8b5cf6'
@@ -215,6 +241,13 @@ export default function DashboardAdministrador() {
       icono: '🔍',
       enlace: '/admin/control-inventario',
       color: '#dc2626'
+    },
+    {
+      titulo: 'Consumo y Suscripciones',
+      descripcion: 'Monitorea uso de recursos y gestiona tu suscripción',
+      icono: '📊',
+      enlace: '/admin/consumo-suscripciones',
+      color: '#3b82f6'
     },
     {
       titulo: 'Configuración',
@@ -909,10 +942,12 @@ export default function DashboardAdministrador() {
           </Link>
         </div>
 
+
+
         {/* Funciones Avanzadas */}
         <div style={{
           marginBottom: '3rem',
-          animation: 'slideInUp 0.6s ease-out 0.4s both'
+          animation: 'slideInUp 0.6s ease-out 0.3s both'
         }}>
           <h2 style={{
             fontSize: '1.875rem',
@@ -1007,6 +1042,8 @@ export default function DashboardAdministrador() {
           </div>
         </div>
 
+
+
         {/* Actividad reciente */}
         <div style={{
           background: 'white',
@@ -1014,7 +1051,7 @@ export default function DashboardAdministrador() {
           padding: '2rem',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
           border: '1px solid #e2e8f0',
-          animation: 'slideInUp 0.6s ease-out 0.6s both'
+          animation: 'slideInUp 0.6s ease-out 0.5s both'
         }}>
           <div style={{
             display: 'flex',

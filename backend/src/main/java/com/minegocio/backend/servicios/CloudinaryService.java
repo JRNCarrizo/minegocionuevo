@@ -2,6 +2,7 @@ package com.minegocio.backend.servicios;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,6 +16,9 @@ import java.util.Map;
 public class CloudinaryService {
 
     private final Cloudinary cloudinary;
+
+    @Autowired
+    private AlmacenamientoService almacenamientoService;
 
     public CloudinaryService(Cloudinary cloudinary) {
         this.cloudinary = cloudinary;
@@ -96,8 +100,29 @@ public class CloudinaryService {
         @SuppressWarnings("unchecked")
         Map<String, Object> resultado = cloudinary.uploader().upload(archivo.getBytes(), opciones);
         
+        // Obtener URL y public_id
+        String urlImagen = (String) resultado.get("secure_url");
+        String publicId = (String) resultado.get("public_id");
+        
+        // Registrar archivo en el sistema de tracking
+        try {
+            System.out.println("🔍 DEBUG: Intentando registrar archivo en tracking...");
+            System.out.println("🔍 DEBUG: empresaId=" + empresaId);
+            System.out.println("🔍 DEBUG: urlImagen=" + urlImagen);
+            System.out.println("🔍 DEBUG: publicId=" + publicId);
+            System.out.println("🔍 DEBUG: tipo=" + tipo);
+            System.out.println("🔍 DEBUG: archivo.size=" + archivo.getSize());
+            
+            almacenamientoService.registrarArchivo(empresaId, urlImagen, publicId, tipo, archivo);
+            System.out.println("✅ DEBUG: Archivo registrado exitosamente en tracking");
+        } catch (Exception e) {
+            System.err.println("⚠️ Error registrando archivo en tracking: " + e.getMessage());
+            e.printStackTrace();
+            // No fallar la subida si el tracking falla
+        }
+        
         // Retornar URL segura
-        return (String) resultado.get("secure_url");
+        return urlImagen;
     }
 
     /**
@@ -112,7 +137,18 @@ public class CloudinaryService {
             if (publicId != null) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> resultado = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-                return "ok".equals(resultado.get("result"));
+                boolean eliminado = "ok".equals(resultado.get("result"));
+                
+                // Si se eliminó de Cloudinary, marcar como eliminado en tracking
+                if (eliminado) {
+                    try {
+                        almacenamientoService.eliminarArchivoPorPublicId(publicId);
+                    } catch (Exception e) {
+                        System.err.println("⚠️ Error marcando archivo como eliminado en tracking: " + e.getMessage());
+                    }
+                }
+                
+                return eliminado;
             }
             return false;
         } catch (Exception e) {

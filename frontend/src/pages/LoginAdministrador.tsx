@@ -32,6 +32,9 @@ export default function LoginAdministrador() {
       });
       
       console.log('Respuesta del backend:', response);
+      console.log('🎯 Roles en la respuesta:', response.roles);
+      console.log('🎯 Tipo de roles:', typeof response.roles);
+      console.log('🎯 Primer rol:', response.roles?.[0]);
       
       // Extraer información del usuario de la respuesta
       const user = {
@@ -39,7 +42,7 @@ export default function LoginAdministrador() {
         nombre: response.nombre || 'Usuario',
         apellidos: response.apellidos || '',
         email: response.email,
-        rol: response.roles[0],
+        rol: response.roles?.[0] || 'ADMIN',
         empresaId: response.empresaId,
         empresaNombre: response.empresaNombre,
         empresaSubdominio: response.empresaSubdominio
@@ -52,6 +55,8 @@ export default function LoginAdministrador() {
       console.log('Usuario guardado en localStorage:', user);
       console.log('Token guardado en localStorage:', response.token);
       console.log('Token verificado:', localStorage.getItem('token'));
+      console.log('🎯 Rol del usuario:', user.rol);
+      console.log('🎯 Comparación user.rol === SUPER_ADMIN:', user.rol === 'SUPER_ADMIN');
       
       // Verificar si es super admin y redirigir al panel correspondiente
       if (user.rol === 'SUPER_ADMIN') {
@@ -60,6 +65,7 @@ export default function LoginAdministrador() {
         navigate('/dashboard-super-admin');
       } else {
         console.log('🔵 Redirigiendo a Admin Dashboard');
+        console.log('🔵 Rol actual:', user.rol);
         toast.success('¡Bienvenido de vuelta!');
         navigate('/admin/dashboard');
       }

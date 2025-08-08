@@ -8,17 +8,16 @@ import com.minegocio.backend.entidades.Suscripcion;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.PlanRepository;
 import com.minegocio.backend.repositorios.SuscripcionRepository;
+import com.minegocio.backend.repositorios.ProductoRepository;
+import com.minegocio.backend.repositorios.ClienteRepository;
+import com.minegocio.backend.repositorios.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -37,22 +36,61 @@ public class SuscripcionService {
     @Autowired
     private EmpresaRepository empresaRepository;
 
+    @Autowired
+    private ProductoRepository productoRepository;
+
+    @Autowired
+    private ClienteRepository clienteRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private AlmacenamientoService almacenamientoService;
+
+    @Autowired
+    private EmailService emailService;
+
+    /**
+     * Obtiene todos los planes con estadísticas
+     */
+    public List<PlanDTO> obtenerPlanesConEstadisticas() {
+        List<Object[]> resultados = planRepository.findPlanesConEstadisticas();
+        List<PlanDTO> planes = new ArrayList<>();
+
+        for (Object[] resultado : resultados) {
+            Plan plan = (Plan) resultado[0];
+            Long totalSuscripciones = (Long) resultado[1];
+            Long suscripcionesActivas = (Long) resultado[2];
+            BigDecimal ingresosTotales = (BigDecimal) resultado[3];
+
+            PlanDTO planDTO = new PlanDTO(plan);
+            planDTO.setTotalSuscripciones(totalSuscripciones.intValue());
+            planDTO.setSuscripcionesActivas(suscripcionesActivas.intValue());
+            planDTO.setIngresosTotales(ingresosTotales != null ? ingresosTotales : BigDecimal.ZERO);
+
+            planes.add(planDTO);
+        }
+
+        return planes;
+    }
+
     /**
      * Obtiene todos los planes activos
      */
     public List<PlanDTO> obtenerPlanesActivos() {
         return planRepository.findByActivoTrueOrderByOrdenAsc()
                 .stream()
-                .map(this::convertirAPlanDTO)
+                .map(PlanDTO::new)
                 .collect(Collectors.toList());
     }
 
     /**
      * Obtiene un plan por ID
      */
-    public Optional<PlanDTO> obtenerPlan(Long id) {
-        return planRepository.findById(id)
-                .map(this::convertirAPlanDTO);
+    public Optional<PlanDTO> obtenerPlanPorId(Long planId) {
+        return planRepository.findById(planId)
+                .map(PlanDTO::new);
     }
 
     /**
@@ -61,264 +99,349 @@ public class SuscripcionService {
     public PlanDTO crearPlan(PlanDTO planDTO) {
         Plan plan = new Plan();
         actualizarPlanDesdeDTO(plan, planDTO);
-        plan.setOrden(planRepository.findNextOrden());
         plan = planRepository.save(plan);
-        return convertirAPlanDTO(plan);
+        return new PlanDTO(plan);
     }
 
     /**
      * Actualiza un plan existente
      */
-    public PlanDTO actualizarPlan(Long id, PlanDTO planDTO) {
-        Plan plan = planRepository.findById(id)
+    public PlanDTO actualizarPlan(Long planId, PlanDTO planDTO) {
+        Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
         
         actualizarPlanDesdeDTO(plan, planDTO);
         plan = planRepository.save(plan);
-        return convertirAPlanDTO(plan);
+        return new PlanDTO(plan);
     }
 
     /**
-     * Elimina un plan (desactiva)
+     * Elimina un plan
      */
-    public void eliminarPlan(Long id) {
-        Plan plan = planRepository.findById(id)
+    public void eliminarPlan(Long planId) {
+        Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
         
-        plan.setActivo(false);
-        planRepository.save(plan);
-    }
-
-    /**
-     * Obtiene suscripciones con filtros
-     */
-    public Page<SuscripcionDTO> obtenerSuscripciones(Long empresaId, Long planId, 
-                                                    Suscripcion.EstadoSuscripcion estado,
-                                                    LocalDateTime fechaInicio, LocalDateTime fechaFin,
-                                                    Pageable pageable) {
-        Page<Suscripcion> suscripciones = suscripcionRepository.findSuscripcionesConFiltros(
-                empresaId, planId, estado, fechaInicio, fechaFin, pageable);
+        // Verificar que no tenga suscripciones activas
+        if (!plan.getSuscripciones().isEmpty()) {
+            throw new RuntimeException("No se puede eliminar un plan que tiene suscripciones activas");
+        }
         
-        return suscripciones.map(this::convertirASuscripcionDTO);
+        planRepository.delete(plan);
     }
 
     /**
-     * Obtiene una suscripción por ID
+     * Obtiene todas las suscripciones con detalles
      */
-    public Optional<SuscripcionDTO> obtenerSuscripcion(Long id) {
-        return suscripcionRepository.findById(id)
-                .map(this::convertirASuscripcionDTO);
+    public List<SuscripcionDTO> obtenerSuscripcionesConDetalles() {
+        List<Object[]> resultados = suscripcionRepository.findSuscripcionesConDetalles();
+        List<SuscripcionDTO> suscripciones = new ArrayList<>();
+
+        for (Object[] resultado : resultados) {
+            Suscripcion suscripcion = (Suscripcion) resultado[0];
+            String empresaNombre = (String) resultado[1];
+            String empresaSubdominio = (String) resultado[2];
+            String planNombre = (String) resultado[3];
+
+            SuscripcionDTO suscripcionDTO = new SuscripcionDTO(suscripcion);
+            suscripcionDTO.setEmpresaNombre(empresaNombre);
+            suscripcionDTO.setEmpresaSubdominio(empresaSubdominio);
+            suscripcionDTO.setPlanNombre(planNombre);
+
+            suscripciones.add(suscripcionDTO);
+        }
+
+        return suscripciones;
     }
 
     /**
-     * Obtiene la suscripción activa de una empresa
+     * Obtiene suscripciones por empresa
      */
-    public Optional<SuscripcionDTO> obtenerSuscripcionActiva(Long empresaId) {
+    public List<SuscripcionDTO> obtenerSuscripcionesPorEmpresa(Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
-        
-        return suscripcionRepository.findByEmpresaAndEstado(empresa, Suscripcion.EstadoSuscripcion.ACTIVA)
-                .map(this::convertirASuscripcionDTO);
+
+        List<Object[]> resultados = suscripcionRepository.findSuscripcionesPorEmpresaConDetalles(empresa);
+        List<SuscripcionDTO> suscripciones = new ArrayList<>();
+
+        for (Object[] resultado : resultados) {
+            Suscripcion suscripcion = (Suscripcion) resultado[0];
+            String planNombre = (String) resultado[1];
+
+            SuscripcionDTO suscripcionDTO = new SuscripcionDTO(suscripcion);
+            suscripcionDTO.setPlanNombre(planNombre);
+
+            suscripciones.add(suscripcionDTO);
+        }
+
+        return suscripciones;
     }
 
     /**
      * Crea una nueva suscripción
      */
-    public SuscripcionDTO crearSuscripcion(Long empresaId, Long planId, String metodoPago, String referenciaPago) {
+    public SuscripcionDTO crearSuscripcion(Long empresaId, Long planId, LocalDateTime fechaInicio) {
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
-        
+
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
 
-        // Cancelar suscripción activa anterior si existe
-        Optional<Suscripcion> suscripcionAnterior = suscripcionRepository.findByEmpresaAndEstado(
-                empresa, Suscripcion.EstadoSuscripcion.ACTIVA);
-        
-        if (suscripcionAnterior.isPresent()) {
-            Suscripcion anterior = suscripcionAnterior.get();
-            anterior.cancelar("Nueva suscripción creada");
-            suscripcionRepository.save(anterior);
+        // Verificar que la empresa no tenga una suscripción activa
+        if (suscripcionRepository.existsByEmpresaAndEstado(empresa, Suscripcion.EstadoSuscripcion.ACTIVA)) {
+            throw new RuntimeException("La empresa ya tiene una suscripción activa");
         }
 
-        // Crear nueva suscripción
-        Suscripcion suscripcion = new Suscripcion(empresa, plan, LocalDateTime.now());
-        suscripcion.setFechaFin(calcularFechaFin(plan.getPeriodo()));
-        suscripcion.setMetodoPago(metodoPago);
-        suscripcion.setReferenciaPago(referenciaPago);
-        suscripcion.setFacturado(true);
-
+        Suscripcion suscripcion = new Suscripcion(empresa, plan, fechaInicio);
         suscripcion = suscripcionRepository.save(suscripcion);
-        return convertirASuscripcionDTO(suscripcion);
-    }
 
-    /**
-     * Cancela una suscripción
-     */
-    public SuscripcionDTO cancelarSuscripcion(Long id, String motivo) {
-        Suscripcion suscripcion = suscripcionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Suscripción no encontrada"));
-        
-        suscripcion.cancelar(motivo);
-        suscripcion = suscripcionRepository.save(suscripcion);
-        return convertirASuscripcionDTO(suscripcion);
+        return new SuscripcionDTO(suscripcion);
     }
 
     /**
      * Suspende una suscripción
      */
-    public SuscripcionDTO suspenderSuscripcion(Long id) {
-        Suscripcion suscripcion = suscripcionRepository.findById(id)
+    public SuscripcionDTO suspenderSuscripcion(Long suscripcionId) {
+        Suscripcion suscripcion = suscripcionRepository.findById(suscripcionId)
                 .orElseThrow(() -> new RuntimeException("Suscripción no encontrada"));
-        
+
         suscripcion.suspender();
         suscripcion = suscripcionRepository.save(suscripcion);
-        return convertirASuscripcionDTO(suscripcion);
+
+        return new SuscripcionDTO(suscripcion);
     }
 
     /**
      * Reactiva una suscripción
      */
-    public SuscripcionDTO reactivarSuscripcion(Long id) {
-        Suscripcion suscripcion = suscripcionRepository.findById(id)
+    public SuscripcionDTO reactivarSuscripcion(Long suscripcionId) {
+        Suscripcion suscripcion = suscripcionRepository.findById(suscripcionId)
                 .orElseThrow(() -> new RuntimeException("Suscripción no encontrada"));
-        
+
         suscripcion.reactivar();
         suscripcion = suscripcionRepository.save(suscripcion);
-        return convertirASuscripcionDTO(suscripcion);
+
+        return new SuscripcionDTO(suscripcion);
+    }
+
+    /**
+     * Cancela una suscripción
+     */
+    public SuscripcionDTO cancelarSuscripcion(Long suscripcionId, String motivo) {
+        Suscripcion suscripcion = suscripcionRepository.findById(suscripcionId)
+                .orElseThrow(() -> new RuntimeException("Suscripción no encontrada"));
+
+        suscripcion.cancelar(motivo);
+        suscripcion = suscripcionRepository.save(suscripcion);
+
+        return new SuscripcionDTO(suscripcion);
     }
 
     /**
      * Renueva una suscripción
      */
-    public SuscripcionDTO renovarSuscripcion(Long id) {
-        Suscripcion suscripcion = suscripcionRepository.findById(id)
+    public SuscripcionDTO renovarSuscripcion(Long suscripcionId) {
+        Suscripcion suscripcion = suscripcionRepository.findById(suscripcionId)
                 .orElseThrow(() -> new RuntimeException("Suscripción no encontrada"));
-        
+
         suscripcion.renovar();
         suscripcion = suscripcionRepository.save(suscripcion);
-        return convertirASuscripcionDTO(suscripcion);
+
+        return new SuscripcionDTO(suscripcion);
     }
 
     /**
      * Obtiene estadísticas de suscripciones
      */
     public Map<String, Object> obtenerEstadisticas() {
-        BigDecimal ingresosMensuales = suscripcionRepository.calcularIngresosPorPeriodo(
-            LocalDateTime.now().withDayOfMonth(1), LocalDateTime.now());
-        BigDecimal ingresosAnuales = suscripcionRepository.calcularIngresosPorPeriodo(
-            LocalDateTime.now().withDayOfYear(1), LocalDateTime.now());
-        
-        Map<String, Object> estadisticas = Map.of(
-            "totalSuscripciones", suscripcionRepository.count(),
-            "suscripcionesActivas", suscripcionRepository.countByEstado(Suscripcion.EstadoSuscripcion.ACTIVA),
-            "suscripcionesSuspendidas", suscripcionRepository.countByEstado(Suscripcion.EstadoSuscripcion.SUSPENDIDA),
-            "suscripcionesCanceladas", suscripcionRepository.countByEstado(Suscripcion.EstadoSuscripcion.CANCELADA),
-            "suscripcionesPorExpirar", suscripcionRepository.findSuscripcionesPorExpirar(
-                LocalDateTime.now(), LocalDateTime.now().plusDays(7)).size(),
-            "ingresosMensuales", ingresosMensuales != null ? ingresosMensuales : BigDecimal.ZERO,
-            "ingresosAnuales", ingresosAnuales != null ? ingresosAnuales : BigDecimal.ZERO
-        );
-        
+        Map<String, Object> estadisticas = new HashMap<>();
+
+        // Contar suscripciones por estado
+        List<Object[]> conteoPorEstado = suscripcionRepository.contarSuscripcionesPorEstado();
+        Map<String, Long> conteoEstados = new HashMap<>();
+        for (Object[] resultado : conteoPorEstado) {
+            String estado = resultado[0].toString();
+            Long cantidad = (Long) resultado[1];
+            conteoEstados.put(estado, cantidad);
+        }
+
+        estadisticas.put("totalSuscripciones", conteoEstados.values().stream().mapToLong(Long::longValue).sum());
+        estadisticas.put("suscripcionesActivas", conteoEstados.getOrDefault("ACTIVA", 0L));
+        estadisticas.put("suscripcionesSuspendidas", conteoEstados.getOrDefault("SUSPENDIDA", 0L));
+        estadisticas.put("suscripcionesCanceladas", conteoEstados.getOrDefault("CANCELADA", 0L));
+
+        // Calcular suscripciones por expirar
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime fechaLimite = ahora.plusDays(30);
+        List<Suscripcion> porExpirar = suscripcionRepository.findSuscripcionesPorExpirar(ahora, fechaLimite);
+        estadisticas.put("suscripcionesPorExpirar", porExpirar.size());
+
+        // Calcular ingresos
+        LocalDateTime inicioMes = ahora.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        LocalDateTime finMes = inicioMes.plusMonths(1).minusSeconds(1);
+        Double ingresosMensuales = suscripcionRepository.calcularIngresosPorPeriodo(inicioMes, finMes);
+        estadisticas.put("ingresosMensuales", ingresosMensuales != null ? ingresosMensuales : 0.0);
+
+        LocalDateTime inicioAno = ahora.withDayOfYear(1).withHour(0).withMinute(0).withSecond(0);
+        LocalDateTime finAno = inicioAno.plusYears(1).minusSeconds(1);
+        Double ingresosAnuales = suscripcionRepository.calcularIngresosPorPeriodo(inicioAno, finAno);
+        estadisticas.put("ingresosAnuales", ingresosAnuales != null ? ingresosAnuales : 0.0);
+
         return estadisticas;
     }
 
     /**
-     * Obtiene suscripciones por expirar
+     * Actualiza un plan desde DTO
      */
-    public List<SuscripcionDTO> obtenerSuscripcionesPorExpirar() {
-        return suscripcionRepository.findSuscripcionesPorExpirar(
-                LocalDateTime.now(), LocalDateTime.now().plusDays(7))
-                .stream()
-                .map(this::convertirASuscripcionDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Obtiene suscripciones expiradas
-     */
-    public List<SuscripcionDTO> obtenerSuscripcionesExpiradas() {
-        return suscripcionRepository.findSuscripcionesExpiradas(LocalDateTime.now())
-                .stream()
-                .map(this::convertirASuscripcionDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Procesa renovaciones automáticas
-     */
-    public void procesarRenovacionesAutomaticas() {
-        List<Suscripcion> suscripcionesParaRenovar = suscripcionRepository.findSuscripcionesParaRenovar(
-                LocalDateTime.now(), LocalDateTime.now().plusDays(1));
+    private void actualizarPlanDesdeDTO(Plan plan, PlanDTO planDTO) {
+        // Validar que el precio no sea negativo
+        if (planDTO.getPrecio() != null && planDTO.getPrecio().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("El precio no puede ser negativo");
+        }
         
-        for (Suscripcion suscripcion : suscripcionesParaRenovar) {
-            try {
-                suscripcion.renovar();
-                suscripcionRepository.save(suscripcion);
-                // Aquí se podría agregar lógica de facturación automática
-            } catch (Exception e) {
-                // Log del error y posible notificación
-                System.err.println("Error al renovar suscripción " + suscripcion.getId() + ": " + e.getMessage());
+        // Si se está marcando como plan por defecto, desmarcar otros planes
+        if (Boolean.TRUE.equals(planDTO.getPlanPorDefecto())) {
+            desmarcarOtrosPlanesPorDefecto(plan.getId());
+        }
+        
+        plan.setNombre(planDTO.getNombre());
+        plan.setDescripcion(planDTO.getDescripcion());
+        plan.setPrecio(planDTO.getPrecio());
+        plan.setPeriodo(Plan.PeriodoPlan.valueOf(planDTO.getPeriodo()));
+        plan.setActivo(planDTO.getActivo());
+        plan.setDestacado(planDTO.getDestacado());
+        plan.setOrden(planDTO.getOrden());
+        plan.setMaxProductos(planDTO.getMaxProductos());
+        plan.setMaxUsuarios(planDTO.getMaxUsuarios());
+        plan.setMaxClientes(planDTO.getMaxClientes());
+        plan.setMaxAlmacenamientoGB(planDTO.getMaxAlmacenamientoGB());
+        plan.setPersonalizacionCompleta(planDTO.getPersonalizacionCompleta());
+        plan.setEstadisticasAvanzadas(planDTO.getEstadisticasAvanzadas());
+        plan.setSoportePrioritario(planDTO.getSoportePrioritario());
+        plan.setIntegracionesAvanzadas(planDTO.getIntegracionesAvanzadas());
+        plan.setBackupAutomatico(planDTO.getBackupAutomatico());
+        plan.setDominioPersonalizado(planDTO.getDominioPersonalizado());
+        plan.setPlanPorDefecto(planDTO.getPlanPorDefecto());
+    }
+
+    /**
+     * Desmarca otros planes como plan por defecto
+     */
+    private void desmarcarOtrosPlanesPorDefecto(Long planIdExcluir) {
+        Optional<Plan> planPorDefecto = planRepository.findByPlanPorDefectoTrue();
+        if (planPorDefecto.isPresent()) {
+            Plan plan = planPorDefecto.get();
+            if (!plan.getId().equals(planIdExcluir)) {
+                plan.setPlanPorDefecto(false);
+                planRepository.save(plan);
             }
         }
     }
 
-    // Métodos auxiliares privados
-
-    private PlanDTO convertirAPlanDTO(Plan plan) {
-        PlanDTO dto = new PlanDTO(plan);
-        
-        // Agregar estadísticas
-        dto.setTotalSuscripciones(suscripcionRepository.countByPlanIdAndEstado(plan.getId(), null));
-        dto.setSuscripcionesActivas(suscripcionRepository.countByPlanIdAndEstado(plan.getId(), Suscripcion.EstadoSuscripcion.ACTIVA));
-        
-        // Calcular ingresos totales del plan
-        BigDecimal ingresos = suscripcionRepository.findByPlan(plan)
-                .stream()
-                .filter(s -> Suscripcion.EstadoSuscripcion.ACTIVA.equals(s.getEstado()))
-                .map(Suscripcion::getPrecio)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        dto.setIngresosTotales(ingresos);
-        
-        return dto;
+    /**
+     * Obtiene el plan por defecto
+     */
+    public Optional<PlanDTO> obtenerPlanPorDefecto() {
+        return planRepository.findByPlanPorDefectoTrue()
+                .map(PlanDTO::new);
     }
 
-    private SuscripcionDTO convertirASuscripcionDTO(Suscripcion suscripcion) {
-        return new SuscripcionDTO(suscripcion);
+    /**
+     * Marca un plan como plan por defecto
+     */
+    public PlanDTO marcarPlanPorDefecto(Long planId) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        
+        // Desmarcar otros planes
+        desmarcarOtrosPlanesPorDefecto(planId);
+        
+        // Marcar este plan como por defecto
+        plan.setPlanPorDefecto(true);
+        plan = planRepository.save(plan);
+        
+        return new PlanDTO(plan);
     }
 
-    private void actualizarPlanDesdeDTO(Plan plan, PlanDTO dto) {
-        plan.setNombre(dto.getNombre());
-        plan.setDescripcion(dto.getDescripcion());
-        plan.setPrecio(dto.getPrecio());
-        plan.setPeriodo(dto.getPeriodo());
-        plan.setActivo(dto.getActivo());
-        plan.setDestacado(dto.getDestacado());
-        plan.setMaxProductos(dto.getMaxProductos());
-        plan.setMaxUsuarios(dto.getMaxUsuarios());
-        plan.setMaxClientes(dto.getMaxClientes());
-        plan.setMaxAlmacenamientoGB(dto.getMaxAlmacenamientoGB());
-        plan.setPersonalizacionCompleta(dto.getPersonalizacionCompleta());
-        plan.setEstadisticasAvanzadas(dto.getEstadisticasAvanzadas());
-        plan.setSoportePrioritario(dto.getSoportePrioritario());
-        plan.setIntegracionesAvanzadas(dto.getIntegracionesAvanzadas());
-        plan.setBackupAutomatico(dto.getBackupAutomatico());
-        plan.setDominioPersonalizado(dto.getDominioPersonalizado());
-    }
-
-    private LocalDateTime calcularFechaFin(Plan.PeriodoPlan periodo) {
+    /**
+     * Obtiene suscripciones que expiran en los próximos días
+     */
+    public List<SuscripcionDTO> obtenerSuscripcionesPorExpirar(int dias) {
         LocalDateTime ahora = LocalDateTime.now();
-        switch (periodo) {
-            case MENSUAL:
-                return ahora.plusMonths(1);
-            case TRIMESTRAL:
-                return ahora.plusMonths(3);
-            case SEMESTRAL:
-                return ahora.plusMonths(6);
-            case ANUAL:
-                return ahora.plusYears(1);
-            default:
-                return ahora.plusMonths(1);
+        LocalDateTime fechaLimite = ahora.plusDays(dias);
+        
+        List<Suscripcion> suscripciones = suscripcionRepository.findSuscripcionesPorExpirar(ahora, fechaLimite);
+        
+        return suscripciones.stream()
+                .map(SuscripcionDTO::new)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene estadísticas de consumo para una empresa
+     */
+    public Map<String, Object> obtenerEstadisticasConsumo(Long empresaId) {
+        System.out.println("🔍 DEBUG: Obteniendo estadísticas de consumo para empresa ID: " + empresaId);
+        
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        
+        System.out.println("🔍 DEBUG: Empresa encontrada: " + empresa.getNombre());
+        
+        Suscripcion suscripcion = suscripcionRepository.findFirstByEmpresaAndEstado(empresa, Suscripcion.EstadoSuscripcion.ACTIVA)
+                .orElse(null);
+        
+        if (suscripcion == null) {
+            System.out.println("❌ DEBUG: No se encontró suscripción activa para empresa: " + empresaId);
+            return Map.of("error", "No se encontró suscripción activa");
         }
+        
+        System.out.println("✅ DEBUG: Suscripción activa encontrada para empresa: " + empresaId);
+        
+        Plan plan = suscripcion.getPlan();
+        
+        // Contar productos activos
+        long productosActuales = productoRepository.countByEmpresaAndActivoTrue(empresa);
+        System.out.println("🔍 DEBUG: Productos activos: " + productosActuales);
+        
+        // Contar clientes
+        long clientesActuales = clienteRepository.countByEmpresa(empresa);
+        System.out.println("🔍 DEBUG: Clientes: " + clientesActuales);
+        
+        // Contar usuarios de la empresa
+        long usuariosActuales = usuarioRepository.countByEmpresa(empresa);
+        System.out.println("🔍 DEBUG: Usuarios: " + usuariosActuales);
+        
+        // Obtener almacenamiento total (archivos + base de datos)
+        long almacenamientoActualBytes = almacenamientoService.obtenerAlmacenamientoTotalBytes(empresaId);
+        long almacenamientoActualGB = almacenamientoActualBytes / (1024 * 1024 * 1024);
+        System.out.println("🔍 DEBUG: Almacenamiento Total: " + almacenamientoActualGB + " GB (" + almacenamientoActualBytes + " bytes)");
+        
+        Map<String, Object> estadisticas = new HashMap<>();
+        estadisticas.put("plan", Map.of(
+            "id", plan.getId(),
+            "nombre", plan.getNombre(),
+            "maxProductos", plan.getMaxProductos(),
+            "maxClientes", plan.getMaxClientes(),
+            "maxUsuarios", plan.getMaxUsuarios(),
+            "maxAlmacenamientoGB", plan.getMaxAlmacenamientoGB()
+        ));
+        
+        Map<String, Object> consumo = new HashMap<>();
+        consumo.put("productos", productosActuales);
+        consumo.put("clientes", clientesActuales);
+        consumo.put("usuarios", usuariosActuales);
+        consumo.put("almacenamientoGB", almacenamientoActualGB);
+        
+        estadisticas.put("consumo", consumo);
+        
+        estadisticas.put("suscripcion", Map.of(
+            "diasRestantes", suscripcion.getDiasRestantes(),
+            "estaPorExpirar", suscripcion.estaPorExpirar(),
+            "fechaFin", suscripcion.getFechaFin()
+        ));
+        
+        System.out.println("✅ DEBUG: Estadísticas generadas: " + estadisticas);
+        return estadisticas;
     }
 } 

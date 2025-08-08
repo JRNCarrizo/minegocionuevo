@@ -3,70 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaPlus, FaEdit, FaTrash, FaEye, FaPause, FaPlay, FaSync, FaChartLine, FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaCreditCard, FaUsers, FaBox, FaMoneyBillWave } from 'react-icons/fa';
 import { useResponsive } from '../../hooks/useResponsive';
 import toast from 'react-hot-toast';
-
-interface Plan {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  precio: number;
-  periodo: string;
-  periodoTexto: string;
-  precioAnual: number;
-  activo: boolean;
-  destacado: boolean;
-  orden: number;
-  maxProductos: number;
-  maxUsuarios: number;
-  maxClientes: number;
-  maxAlmacenamientoGB: number;
-  personalizacionCompleta: boolean;
-  estadisticasAvanzadas: boolean;
-  soportePrioritario: boolean;
-  integracionesAvanzadas: boolean;
-  backupAutomatico: boolean;
-  dominioPersonalizado: boolean;
-  totalSuscripciones: number;
-  suscripcionesActivas: number;
-  ingresosTotales: number;
-}
-
-interface Suscripcion {
-  id: number;
-  empresaId: number;
-  empresaNombre: string;
-  empresaSubdominio: string;
-  planId: number;
-  planNombre: string;
-  estado: string;
-  fechaInicio: string;
-  fechaFin: string;
-  fechaCancelacion?: string;
-  fechaRenovacion?: string;
-  precio: number;
-  moneda: string;
-  metodoPago?: string;
-  referenciaPago?: string;
-  facturado: boolean;
-  renovacionAutomatica: boolean;
-  notificarAntesRenovacion: boolean;
-  diasNotificacionRenovacion: number;
-  notas?: string;
-  motivoCancelacion?: string;
-  diasRestantes: number;
-  estaActiva: boolean;
-  estaExpirada: boolean;
-  estaPorExpirar: boolean;
-}
-
-interface Estadisticas {
-  totalSuscripciones: number;
-  suscripcionesActivas: number;
-  suscripcionesSuspendidas: number;
-  suscripcionesCanceladas: number;
-  suscripcionesPorExpirar: number;
-  ingresosMensuales: number;
-  ingresosAnuales: number;
-}
+import { 
+  obtenerPlanes, 
+  obtenerSuscripciones, 
+  obtenerEstadisticasSuscripciones,
+  suspenderSuscripcion,
+  reactivarSuscripcion,
+  cancelarSuscripcion,
+  renovarSuscripcion,
+  eliminarPlan,
+  crearSuscripcion,
+  obtenerEmpresas,
+  crearPlan,
+  actualizarPlan
+} from '../../services/superAdminService';
+import type { 
+  Plan,
+  Suscripcion,
+  EstadisticasSuscripciones as Estadisticas,
+  Empresa
+} from '../../services/superAdminService';
 
 const GestionSuscripciones: React.FC = () => {
   console.log('🔍 GestionSuscripciones - Componente iniciado');
@@ -79,6 +35,7 @@ const GestionSuscripciones: React.FC = () => {
   const [planes, setPlanes] = useState<Plan[]>([]);
   const [suscripciones, setSuscripciones] = useState<Suscripcion[]>([]);
   const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showSuscripcionModal, setShowSuscripcionModal] = useState(false);
@@ -86,6 +43,49 @@ const GestionSuscripciones: React.FC = () => {
   const [selectedSuscripcion, setSelectedSuscripcion] = useState<Suscripcion | null>(null);
   const [filterEstado, setFilterEstado] = useState<string>('');
   const [filterPlan, setFilterPlan] = useState<string>('');
+  const [formData, setFormData] = useState<{empresaId: number | null, planId: number | null, fechaInicio: string}>({
+    empresaId: null,
+    planId: null,
+    fechaInicio: ''
+  });
+
+  const [planFormData, setPlanFormData] = useState<{
+    nombre: string;
+    descripcion: string;
+    precio: number;
+    periodo: string;
+    maxProductos: number;
+    maxUsuarios: number;
+    maxClientes: number;
+    maxAlmacenamientoGB: number;
+    personalizacionCompleta: boolean;
+    estadisticasAvanzadas: boolean;
+    soportePrioritario: boolean;
+    integracionesAvanzadas: boolean;
+    backupAutomatico: boolean;
+    dominioPersonalizado: boolean;
+    destacado: boolean;
+    activo: boolean;
+    planPorDefecto: boolean;
+  }>({
+    nombre: '',
+    descripcion: '',
+    precio: 0,
+    periodo: 'MENSUAL',
+    maxProductos: 100,
+    maxUsuarios: 5,
+    maxClientes: 1000,
+    maxAlmacenamientoGB: 10,
+    personalizacionCompleta: false,
+    estadisticasAvanzadas: false,
+    soportePrioritario: false,
+    integracionesAvanzadas: false,
+    backupAutomatico: false,
+    dominioPersonalizado: false,
+    destacado: false,
+    activo: true,
+    planPorDefecto: false
+  });
 
   // Función para hacer peticiones autenticadas
   const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
@@ -122,151 +122,37 @@ const GestionSuscripciones: React.FC = () => {
     console.log('🔍 GestionSuscripciones - Iniciando carga de datos...');
     setLoading(true);
     try {
-      // Cargar planes (usando datos mock por ahora)
-      const planesMock: Plan[] = [
-        {
-          id: 1,
-          nombre: 'Plan Básico',
-          descripcion: 'Ideal para pequeñas empresas que están comenzando',
-          precio: 29.99,
-          periodo: 'MONTHLY',
-          periodoTexto: 'mes',
-          precioAnual: 299.99,
-          activo: true,
-          destacado: false,
-          orden: 1,
-          maxProductos: 100,
-          maxUsuarios: 2,
-          maxClientes: 500,
-          maxAlmacenamientoGB: 5,
-          personalizacionCompleta: false,
-          estadisticasAvanzadas: false,
-          soportePrioritario: false,
-          integracionesAvanzadas: false,
-          backupAutomatico: false,
-          dominioPersonalizado: false,
-          totalSuscripciones: 15,
-          suscripcionesActivas: 12,
-          ingresosTotales: 359.88
-        },
-        {
-          id: 2,
-          nombre: 'Plan Profesional',
-          descripcion: 'Perfecto para empresas en crecimiento',
-          precio: 79.99,
-          periodo: 'MONTHLY',
-          periodoTexto: 'mes',
-          precioAnual: 799.99,
-          activo: true,
-          destacado: true,
-          orden: 2,
-          maxProductos: 1000,
-          maxUsuarios: 10,
-          maxClientes: 5000,
-          maxAlmacenamientoGB: 50,
-          personalizacionCompleta: true,
-          estadisticasAvanzadas: true,
-          soportePrioritario: true,
-          integracionesAvanzadas: false,
-          backupAutomatico: true,
-          dominioPersonalizado: false,
-          totalSuscripciones: 8,
-          suscripcionesActivas: 7,
-          ingresosTotales: 559.93
-        },
-        {
-          id: 3,
-          nombre: 'Plan Empresarial',
-          descripcion: 'Para grandes empresas con necesidades avanzadas',
-          precio: 199.99,
-          periodo: 'MONTHLY',
-          periodoTexto: 'mes',
-          precioAnual: 1999.99,
-          activo: true,
-          destacado: false,
-          orden: 3,
-          maxProductos: -1,
-          maxUsuarios: -1,
-          maxClientes: -1,
-          maxAlmacenamientoGB: 500,
-          personalizacionCompleta: true,
-          estadisticasAvanzadas: true,
-          soportePrioritario: true,
-          integracionesAvanzadas: true,
-          backupAutomatico: true,
-          dominioPersonalizado: true,
-          totalSuscripciones: 3,
-          suscripcionesActivas: 3,
-          ingresosTotales: 599.97
-        }
-      ];
-      console.log('🔍 GestionSuscripciones - Planes mock cargados:', planesMock.length);
-      setPlanes(planesMock);
+      console.log('🔍 GestionSuscripciones - Token en localStorage:', localStorage.getItem('token'));
+      
+      // Cargar planes desde el backend
+      console.log('🔍 GestionSuscripciones - Intentando cargar planes...');
+      const planesData = await obtenerPlanes();
+      console.log('🔍 GestionSuscripciones - Planes cargados:', planesData.length);
+      setPlanes(planesData);
 
-      // Cargar suscripciones (datos mock)
-      const suscripcionesMock: Suscripcion[] = [
-        {
-          id: 1,
-          empresaId: 1,
-          empresaNombre: 'Tienda Demo',
-          empresaSubdominio: 'demo',
-          planId: 2,
-          planNombre: 'Plan Profesional',
-          estado: 'ACTIVA',
-          fechaInicio: '2024-01-01',
-          fechaFin: '2024-12-31',
-          precio: 79.99,
-          moneda: 'USD',
-          facturado: true,
-          renovacionAutomatica: true,
-          notificarAntesRenovacion: true,
-          diasNotificacionRenovacion: 30,
-          diasRestantes: 45,
-          estaActiva: true,
-          estaExpirada: false,
-          estaPorExpirar: false
-        },
-        {
-          id: 2,
-          empresaId: 2,
-          empresaNombre: 'Empresa Test',
-          empresaSubdominio: 'test',
-          planId: 1,
-          planNombre: 'Plan Básico',
-          estado: 'SUSPENDIDA',
-          fechaInicio: '2024-02-01',
-          fechaFin: '2024-07-31',
-          precio: 29.99,
-          moneda: 'USD',
-          facturado: false,
-          renovacionAutomatica: false,
-          notificarAntesRenovacion: true,
-          diasNotificacionRenovacion: 15,
-          diasRestantes: -15,
-          estaActiva: false,
-          estaExpirada: true,
-          estaPorExpirar: false
-        }
-      ];
-      setSuscripciones(suscripcionesMock);
+      // Cargar suscripciones desde el backend
+      console.log('🔍 GestionSuscripciones - Intentando cargar suscripciones...');
+      const suscripcionesData = await obtenerSuscripciones();
+      console.log('🔍 GestionSuscripciones - Suscripciones cargadas:', suscripcionesData.length);
+      setSuscripciones(suscripcionesData);
 
-      // Cargar estadísticas (datos mock)
-      const estadisticasMock: Estadisticas = {
-        totalSuscripciones: 26,
-        suscripcionesActivas: 22,
-        suscripcionesSuspendidas: 2,
-        suscripcionesCanceladas: 2,
-        suscripcionesPorExpirar: 5,
-        ingresosMensuales: 1599.78,
-        ingresosAnuales: 19197.36
-      };
-      console.log('🔍 GestionSuscripciones - Estadísticas mock cargadas');
-      setEstadisticas(estadisticasMock);
+      // Cargar estadísticas desde el backend
+      console.log('🔍 GestionSuscripciones - Intentando cargar estadísticas...');
+      const estadisticasData = await obtenerEstadisticasSuscripciones();
+      console.log('🔍 GestionSuscripciones - Estadísticas cargadas');
+      setEstadisticas(estadisticasData);
+
+      // Cargar empresas desde el backend
+      console.log('🔍 GestionSuscripciones - Intentando cargar empresas...');
+      const empresasData = await obtenerEmpresas();
+      console.log('🔍 GestionSuscripciones - Empresas cargadas:', empresasData.length);
+      setEmpresas(empresasData);
 
     } catch (error) {
       console.error('🔍 GestionSuscripciones - Error cargando datos:', error);
       console.error('🔍 GestionSuscripciones - Tipo de error:', typeof error);
       console.error('🔍 GestionSuscripciones - Mensaje de error:', error instanceof Error ? error.message : 'Error desconocido');
+      console.error('🔍 GestionSuscripciones - Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       toast.error('Error al cargar los datos de suscripciones');
     } finally {
       console.log('🔍 GestionSuscripciones - Carga de datos completada');
@@ -276,25 +162,63 @@ const GestionSuscripciones: React.FC = () => {
 
   const handleCrearPlan = () => {
     setSelectedPlan(null);
+    // Limpiar el formulario para crear un nuevo plan
+    setPlanFormData({
+      nombre: '',
+      descripcion: '',
+      precio: 0,
+      periodo: 'MENSUAL',
+      maxProductos: 100,
+      maxUsuarios: 5,
+      maxClientes: 1000,
+      maxAlmacenamientoGB: 10,
+      personalizacionCompleta: false,
+      estadisticasAvanzadas: false,
+      soportePrioritario: false,
+      integracionesAvanzadas: false,
+      backupAutomatico: false,
+      dominioPersonalizado: false,
+      destacado: false,
+      activo: true,
+      planPorDefecto: false
+    });
     setShowPlanModal(true);
   };
 
   const handleEditarPlan = (plan: Plan) => {
     setSelectedPlan(plan);
+    // Cargar los datos del plan en el formulario
+    setPlanFormData({
+      nombre: plan.nombre,
+      descripcion: plan.descripcion,
+      precio: plan.precio,
+      periodo: plan.periodo,
+      maxProductos: plan.maxProductos,
+      maxUsuarios: plan.maxUsuarios,
+      maxClientes: plan.maxClientes,
+      maxAlmacenamientoGB: plan.maxAlmacenamientoGB,
+      personalizacionCompleta: plan.personalizacionCompleta,
+      estadisticasAvanzadas: plan.estadisticasAvanzadas,
+      soportePrioritario: plan.soportePrioritario,
+      integracionesAvanzadas: plan.integracionesAvanzadas,
+      backupAutomatico: plan.backupAutomatico,
+      dominioPersonalizado: plan.dominioPersonalizado,
+      destacado: plan.destacado,
+      activo: plan.activo,
+      planPorDefecto: plan.planPorDefecto || false
+    });
     setShowPlanModal(true);
   };
 
   const handleEliminarPlan = async (planId: number) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este plan?')) {
       try {
-        const response = await fetch(`/api/super-admin/suscripciones/planes/${planId}`, {
-          method: 'DELETE'
-        });
-        if (response.ok) {
+        await eliminarPlan(planId);
+        toast.success('Plan eliminado correctamente');
           cargarDatos();
-        }
       } catch (error) {
         console.error('Error eliminando plan:', error);
+        toast.error('Error al eliminar el plan');
       }
     }
   };
@@ -306,27 +230,33 @@ const GestionSuscripciones: React.FC = () => {
 
   const handleAccionSuscripcion = async (suscripcionId: number, accion: string, motivo?: string) => {
     try {
-      let url = `/api/super-admin/suscripciones/${suscripcionId}/${accion}`;
-      let method = 'POST';
-      let body = null;
-
-      if (accion === 'cancelar' && motivo) {
-        body = JSON.stringify({ motivo });
+      switch (accion) {
+        case 'suspender':
+          await suspenderSuscripcion(suscripcionId);
+          toast.success('Suscripción suspendida correctamente');
+          break;
+        case 'reactivar':
+          await reactivarSuscripcion(suscripcionId);
+          toast.success('Suscripción reactivada correctamente');
+          break;
+        case 'cancelar':
+          if (motivo) {
+            await cancelarSuscripcion(suscripcionId, motivo);
+            toast.success('Suscripción cancelada correctamente');
+          }
+          break;
+        case 'renovar':
+          await renovarSuscripcion(suscripcionId);
+          toast.success('Suscripción renovada correctamente');
+          break;
+        default:
+          console.error('Acción no reconocida:', accion);
+          return;
       }
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body
-      });
-
-      if (response.ok) {
-        cargarDatos();
-      }
+      cargarDatos();
     } catch (error) {
       console.error(`Error en acción ${accion}:`, error);
+      toast.error(`Error al ${accion} la suscripción`);
     }
   };
 
@@ -580,19 +510,35 @@ const GestionSuscripciones: React.FC = () => {
                         {plan.descripcion}
                       </p>
                     </div>
-                    {plan.destacado && (
-                      <span style={{
-                        background: 'var(--color-acento)',
-                        color: 'white',
-                        padding: '4px 12px',
-                        borderRadius: '20px',
-                        fontSize: '0.75rem',
-                        fontWeight: '600',
-                        textTransform: 'uppercase'
-                      }}>
-                        Destacado
-                      </span>
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
+                      {plan.destacado && (
+                        <span style={{
+                          background: 'var(--color-acento)',
+                          color: 'white',
+                          padding: '4px 12px',
+                          borderRadius: '20px',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          textTransform: 'uppercase'
+                        }}>
+                          Destacado
+                        </span>
+                      )}
+                      {plan.planPorDefecto && (
+                        <span style={{
+                          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                          color: 'white',
+                          padding: '4px 12px',
+                          borderRadius: '20px',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          textTransform: 'uppercase',
+                          boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)'
+                        }}>
+                          Plan por Defecto
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div style={{ marginBottom: '20px' }}>
@@ -689,6 +635,85 @@ const GestionSuscripciones: React.FC = () => {
               <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--color-texto)', margin: 0 }}>
                 Suscripciones
               </h2>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('http://localhost:8080/api/super-admin/suscripciones/crear-datos-prueba', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                      });
+                      const data = await response.json();
+                      if (response.ok) {
+                        toast.success('Datos de prueba creados exitosamente');
+                        cargarDatos();
+                      } else {
+                        toast.error(data.error || 'Error creando datos de prueba');
+                      }
+                    } catch (error) {
+                      console.error('Error creando datos de prueba:', error);
+                      toast.error('Error creando datos de prueba');
+                    }
+                  }}
+                  style={{
+                    padding: '12px 20px',
+                    background: '#16a34a',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 'var(--border-radius)',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <FaPlus size={16} />
+                  Crear Datos Prueba
+                </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('http://localhost:8080/api/super-admin/suscripciones/debug/crear-suscripcion-gratuita/1', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                      }
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                      toast.success('Suscripción gratuita creada exitosamente');
+                      cargarDatos();
+                    } else {
+                      toast.error(data.error || 'Error creando suscripción gratuita');
+                    }
+                  } catch (error) {
+                    console.error('Error creando suscripción gratuita:', error);
+                    toast.error('Error creando suscripción gratuita');
+                  }
+                }}
+                style={{
+                  padding: '12px 20px',
+                  background: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 'var(--border-radius)',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <FaPlus size={16} />
+                Crear Suscripción Gratuita
+              </button>
               <button
                 onClick={handleCrearSuscripcion}
                 style={buttonStyle}
@@ -698,6 +723,7 @@ const GestionSuscripciones: React.FC = () => {
                 <FaPlus />
                 Nueva Suscripción
               </button>
+              </div>
             </div>
 
             {/* Filtros */}
@@ -1103,18 +1129,344 @@ const GestionSuscripciones: React.FC = () => {
             borderRadius: 'var(--border-radius)',
             padding: '30px',
             width: '90%',
-            maxWidth: '500px',
+            maxWidth: '600px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
             boxShadow: 'var(--sombra-hover)'
           }}>
             <h3 style={{ fontSize: '1.5rem', fontWeight: '600', margin: '0 0 20px 0', color: 'var(--color-texto)' }}>
               {selectedPlan ? 'Editar Plan' : 'Nuevo Plan'}
             </h3>
-            <p style={{ color: 'var(--color-texto-secundario)', marginBottom: '25px' }}>
-              Funcionalidad de modal en desarrollo...
-            </p>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--color-texto)' }}>
+                Nombre del Plan
+              </label>
+              <input 
+                type="text"
+                value={planFormData.nombre}
+                onChange={(e) => setPlanFormData(prev => ({ ...prev, nombre: e.target.value }))}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid var(--color-borde)',
+                  borderRadius: 'var(--border-radius)',
+                  fontSize: '0.9rem'
+                }}
+                placeholder="Ej: Plan Básico"
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--color-texto)' }}>
+                Descripción
+              </label>
+              <textarea 
+                value={planFormData.descripcion}
+                onChange={(e) => setPlanFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid var(--color-borde)',
+                  borderRadius: 'var(--border-radius)',
+                  fontSize: '0.9rem',
+                  minHeight: '80px',
+                  resize: 'vertical'
+                }}
+                placeholder="Descripción del plan..."
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  Precio
+                </label>
+                <input 
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={planFormData.precio}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const numValue = value === '' ? 0 : parseFloat(value);
+                    setPlanFormData(prev => ({ ...prev, precio: isNaN(numValue) ? 0 : numValue }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid var(--color-borde)',
+                    borderRadius: 'var(--border-radius)',
+                    fontSize: '0.9rem'
+                  }}
+                  placeholder="0.00 (0 para plan gratuito)"
+                />
+                <small style={{ color: 'var(--color-texto-secundario)', fontSize: '0.8rem' }}>
+                  Usa 0 para planes gratuitos
+                </small>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  Período
+                </label>
+                <select 
+                  value={planFormData.periodo}
+                  onChange={(e) => setPlanFormData(prev => ({ ...prev, periodo: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid var(--color-borde)',
+                    borderRadius: 'var(--border-radius)',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  <option value="MENSUAL">Mensual</option>
+                  <option value="ANUAL">Anual</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  Máx. Productos
+                </label>
+                <input 
+                  type="number"
+                  value={planFormData.maxProductos === -1 ? '' : planFormData.maxProductos}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPlanFormData(prev => ({ 
+                      ...prev, 
+                      maxProductos: value === '' ? -1 : parseInt(value) || 0 
+                    }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid var(--color-borde)',
+                    borderRadius: 'var(--border-radius)',
+                    fontSize: '0.9rem'
+                  }}
+                  placeholder={planFormData.maxProductos === -1 ? 'Ilimitado' : '0'}
+                />
+                <small style={{ color: 'var(--color-texto-secundario)', fontSize: '0.8rem' }}>
+                  Dejar vacío para ilimitado
+                </small>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  Máx. Usuarios
+                </label>
+                <input 
+                  type="number"
+                  value={planFormData.maxUsuarios === -1 ? '' : planFormData.maxUsuarios}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPlanFormData(prev => ({ 
+                      ...prev, 
+                      maxUsuarios: value === '' ? -1 : parseInt(value) || 0 
+                    }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid var(--color-borde)',
+                    borderRadius: 'var(--border-radius)',
+                    fontSize: '0.9rem'
+                  }}
+                  placeholder={planFormData.maxUsuarios === -1 ? 'Ilimitado' : '0'}
+                />
+                <small style={{ color: 'var(--color-texto-secundario)', fontSize: '0.8rem' }}>
+                  Dejar vacío para ilimitado
+                </small>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  Máx. Clientes
+                </label>
+                <input 
+                  type="number"
+                  value={planFormData.maxClientes === -1 ? '' : planFormData.maxClientes}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPlanFormData(prev => ({ 
+                      ...prev, 
+                      maxClientes: value === '' ? -1 : parseInt(value) || 0 
+                    }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid var(--color-borde)',
+                    borderRadius: 'var(--border-radius)',
+                    fontSize: '0.9rem'
+                  }}
+                  placeholder={planFormData.maxClientes === -1 ? 'Ilimitado' : '0'}
+                />
+                <small style={{ color: 'var(--color-texto-secundario)', fontSize: '0.8rem' }}>
+                  Dejar vacío para ilimitado
+                </small>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  Almacenamiento (GB)
+                </label>
+                <input 
+                  type="number"
+                  value={planFormData.maxAlmacenamientoGB === -1 ? '' : planFormData.maxAlmacenamientoGB}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPlanFormData(prev => ({ 
+                      ...prev, 
+                      maxAlmacenamientoGB: value === '' ? -1 : parseInt(value) || 0 
+                    }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid var(--color-borde)',
+                    borderRadius: 'var(--border-radius)',
+                    fontSize: '0.9rem'
+                  }}
+                  placeholder={planFormData.maxAlmacenamientoGB === -1 ? 'Ilimitado' : '0'}
+                />
+                <small style={{ color: 'var(--color-texto-secundario)', fontSize: '0.8rem' }}>
+                  Dejar vacío para ilimitado
+                </small>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '600', margin: '0 0 15px 0', color: 'var(--color-texto)' }}>
+                Características del Plan
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  <input 
+                    type="checkbox"
+                    checked={planFormData.activo}
+                    onChange={(e) => setPlanFormData(prev => ({ ...prev, activo: e.target.checked }))}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Plan Activo
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  <input 
+                    type="checkbox"
+                    checked={planFormData.destacado}
+                    onChange={(e) => setPlanFormData(prev => ({ ...prev, destacado: e.target.checked }))}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Plan Destacado
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  <input 
+                    type="checkbox"
+                    checked={planFormData.personalizacionCompleta}
+                    onChange={(e) => setPlanFormData(prev => ({ ...prev, personalizacionCompleta: e.target.checked }))}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Personalización Completa
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  <input 
+                    type="checkbox"
+                    checked={planFormData.estadisticasAvanzadas}
+                    onChange={(e) => setPlanFormData(prev => ({ ...prev, estadisticasAvanzadas: e.target.checked }))}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Estadísticas Avanzadas
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  <input 
+                    type="checkbox"
+                    checked={planFormData.soportePrioritario}
+                    onChange={(e) => setPlanFormData(prev => ({ ...prev, soportePrioritario: e.target.checked }))}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Soporte Prioritario
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  <input 
+                    type="checkbox"
+                    checked={planFormData.integracionesAvanzadas}
+                    onChange={(e) => setPlanFormData(prev => ({ ...prev, integracionesAvanzadas: e.target.checked }))}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Integraciones Avanzadas
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  <input 
+                    type="checkbox"
+                    checked={planFormData.backupAutomatico}
+                    onChange={(e) => setPlanFormData(prev => ({ ...prev, backupAutomatico: e.target.checked }))}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Backup Automático
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: '500', color: 'var(--color-texto)' }}>
+                  <input 
+                    type="checkbox"
+                    checked={planFormData.dominioPersonalizado}
+                    onChange={(e) => setPlanFormData(prev => ({ ...prev, dominioPersonalizado: e.target.checked }))}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Dominio Personalizado
+                </label>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', 
+                  border: '1px solid #f59e0b', 
+                  borderRadius: '8px', 
+                  padding: '12px', 
+                  marginTop: '8px' 
+                }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', fontWeight: '500', color: '#92400e' }}>
+                    <input 
+                      type="checkbox"
+                      checked={planFormData.planPorDefecto}
+                      onChange={(e) => setPlanFormData(prev => ({ ...prev, planPorDefecto: e.target.checked }))}
+                      style={{ marginRight: '8px', marginTop: '2px' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: '600', marginBottom: '4px' }}>Plan por Defecto</div>
+                      <div style={{ fontSize: '0.85rem', color: '#92400e', opacity: 0.8 }}>
+                        Este plan será asignado automáticamente a las nuevas empresas con 45 días de validez.
+                        Solo puede haber un plan por defecto activo.
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button
-                onClick={() => setShowPlanModal(false)}
+                onClick={() => {
+                  setShowPlanModal(false);
+                  setPlanFormData({
+                    nombre: '',
+                    descripcion: '',
+                    precio: 0,
+                    periodo: 'MENSUAL',
+                    maxProductos: 100,
+                    maxUsuarios: 5,
+                    maxClientes: 1000,
+                    maxAlmacenamientoGB: 10,
+                    personalizacionCompleta: false,
+                    estadisticasAvanzadas: false,
+                    soportePrioritario: false,
+                    integracionesAvanzadas: false,
+                    backupAutomatico: false,
+                    dominioPersonalizado: false,
+                    destacado: false,
+                    activo: true,
+                    planPorDefecto: false
+                  });
+                }}
                 style={{
                   padding: '10px 20px',
                   background: 'var(--color-fondo)',
@@ -1128,7 +1480,47 @@ const GestionSuscripciones: React.FC = () => {
                 Cancelar
               </button>
               <button
-                onClick={() => setShowPlanModal(false)}
+                onClick={async () => {
+                  try {
+                    console.log('🔍 Datos del formulario:', planFormData);
+                    console.log('🔍 Precio:', planFormData.precio, 'Tipo:', typeof planFormData.precio);
+                    if (planFormData.nombre && planFormData.precio >= 0) {
+                      if (selectedPlan) {
+                        await actualizarPlan(selectedPlan.id, planFormData as any);
+                        toast.success('Plan actualizado exitosamente');
+                      } else {
+                        await crearPlan(planFormData as any);
+                        toast.success('Plan creado exitosamente');
+                      }
+                      setShowPlanModal(false);
+                      setPlanFormData({
+                        nombre: '',
+                        descripcion: '',
+                        precio: 0,
+                        periodo: 'MENSUAL',
+                        maxProductos: 100,
+                        maxUsuarios: 5,
+                        maxClientes: 1000,
+                        maxAlmacenamientoGB: 10,
+                        personalizacionCompleta: false,
+                        estadisticasAvanzadas: false,
+                        soportePrioritario: false,
+                        integracionesAvanzadas: false,
+                        backupAutomatico: false,
+                        dominioPersonalizado: false,
+                        destacado: false,
+                        activo: true,
+                        planPorDefecto: false
+                      });
+                      cargarDatos();
+                    } else {
+                      toast.error('Por favor completa los campos obligatorios');
+                    }
+                  } catch (error) {
+                    console.error('Error guardando plan:', error);
+                    toast.error('Error al guardar el plan');
+                  }
+                }}
                 style={{
                   padding: '10px 20px',
                   background: 'var(--gradiente-primario)',
@@ -1140,7 +1532,7 @@ const GestionSuscripciones: React.FC = () => {
                   fontWeight: '500'
                 }}
               >
-                Guardar
+                {selectedPlan ? 'Actualizar' : 'Crear'} Plan
               </button>
             </div>
           </div>
@@ -1165,18 +1557,110 @@ const GestionSuscripciones: React.FC = () => {
             borderRadius: 'var(--border-radius)',
             padding: '30px',
             width: '90%',
-            maxWidth: '500px',
-            boxShadow: 'var(--sombra-hover)'
+            maxWidth: '600px',
+            boxShadow: 'var(--sombra-hover)',
+            maxHeight: '80vh',
+            overflowY: 'auto'
           }}>
             <h3 style={{ fontSize: '1.5rem', fontWeight: '600', margin: '0 0 20px 0', color: 'var(--color-texto)' }}>
-              {selectedSuscripcion ? 'Ver Suscripción' : 'Nueva Suscripción'}
+              Nueva Suscripción
             </h3>
-            <p style={{ color: 'var(--color-texto-secundario)', marginBottom: '25px' }}>
-              Funcionalidad de modal en desarrollo...
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--color-texto)' }}>
+                Empresa
+              </label>
+                             <select 
+                 style={{
+                   width: '100%',
+                   padding: '12px',
+                   border: '1px solid var(--color-borde)',
+                   borderRadius: 'var(--border-radius)',
+                   fontSize: '0.9rem'
+                 }}
+                 onChange={(e) => setFormData(prev => ({ ...prev, empresaId: parseInt(e.target.value) || null }))}
+               >
+                 <option value="">Seleccionar empresa...</option>
+                 {empresas.map(empresa => (
+                   <option key={empresa.id} value={empresa.id}>
+                     {empresa.nombre} ({empresa.subdominio})
+                   </option>
+                 ))}
+               </select>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--color-texto)' }}>
+                Plan
+              </label>
+              <select 
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid var(--color-borde)',
+                  borderRadius: 'var(--border-radius)',
+                  fontSize: '0.9rem'
+                }}
+                onChange={(e) => setFormData(prev => ({ ...prev, planId: parseInt(e.target.value) || null }))}
+              >
+                <option value="">Seleccionar plan...</option>
+                {planes.map(plan => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.nombre} - ${plan.precio}/{plan.periodo}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--color-texto)' }}>
+                Fecha de Inicio
+              </label>
+              <input 
+                type="date"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid var(--color-borde)',
+                  borderRadius: 'var(--border-radius)',
+                  fontSize: '0.9rem'
+                }}
+                onChange={(e) => setFormData(prev => ({ ...prev, fechaInicio: e.target.value }))}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '30px' }}>
               <button
                 onClick={() => setShowSuscripcionModal(false)}
+                style={{
+                  padding: '10px 20px',
+                  background: 'var(--color-fondo)',
+                  color: 'var(--color-texto)',
+                  border: '1px solid var(--color-borde)',
+                  borderRadius: 'var(--border-radius)',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    if (formData.empresaId && formData.planId) {
+                      await crearSuscripcion(formData.empresaId, formData.planId);
+                      toast.success('Suscripción creada exitosamente');
+                      setShowSuscripcionModal(false);
+                      setFormData({ empresaId: null, planId: null, fechaInicio: '' });
+                      cargarDatos(); // Recargar datos
+                    } else {
+                      toast.error('Por favor completa todos los campos');
+                    }
+                  } catch (error) {
+                    console.error('Error creando suscripción:', error);
+                    toast.error('Error al crear la suscripción');
+                  }
+                }}
                 style={{
                   padding: '10px 20px',
                   background: 'var(--gradiente-primario)',
@@ -1188,7 +1672,7 @@ const GestionSuscripciones: React.FC = () => {
                   fontWeight: '500'
                 }}
               >
-                Cerrar
+                Crear Suscripción
               </button>
             </div>
           </div>

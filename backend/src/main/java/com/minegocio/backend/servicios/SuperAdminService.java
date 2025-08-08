@@ -5,9 +5,6 @@ import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Suscripcion;
 import com.minegocio.backend.entidades.Plan;
 import com.minegocio.backend.repositorios.*;
-import com.minegocio.backend.servicios.PedidoService;
-import com.minegocio.backend.servicios.VentaRapidaService;
-import com.minegocio.backend.servicios.VentaRapidaService.VentaRapidaEstadisticas;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -85,9 +82,15 @@ public class SuperAdminService {
         Map<String, BigDecimal> ingresosPorPlan = new HashMap<>();
         
         // Obtener estadísticas reales de planes
-        List<com.minegocio.backend.entidades.Plan> planes = planRepository.findByActivoTrue();
-        for (com.minegocio.backend.entidades.Plan plan : planes) {
-            long cantidadEmpresas = suscripcionRepository.countByPlanIdAndEstado(plan.getId(), Suscripcion.EstadoSuscripcion.ACTIVA);
+        List<Plan> planes = planRepository.findByActivoTrueOrderByOrdenAsc();
+        for (Plan plan : planes) {
+            // Contar suscripciones activas por plan
+            List<Suscripcion> suscripcionesActivas = suscripcionRepository.findByPlanOrderByFechaCreacionDesc(plan)
+                .stream()
+                .filter(s -> s.getEstado() == Suscripcion.EstadoSuscripcion.ACTIVA)
+                .collect(Collectors.toList());
+            
+            long cantidadEmpresas = suscripcionesActivas.size();
             empresasPorPlan.put(plan.getNombre(), cantidadEmpresas);
             
             BigDecimal ingresos = plan.getPrecio().multiply(new BigDecimal(cantidadEmpresas));
@@ -190,7 +193,7 @@ public class SuperAdminService {
         Map<String, Object> estadisticas = new HashMap<>();
         
         estadisticas.put("totalSuscripciones", suscripcionRepository.count());
-        estadisticas.put("suscripcionesActivas", suscripcionRepository.countByEstado(Suscripcion.EstadoSuscripcion.ACTIVA));
+        estadisticas.put("suscripcionesActivas", (long) suscripcionRepository.findByEstado(Suscripcion.EstadoSuscripcion.ACTIVA).size());
         estadisticas.put("suscripcionesPorExpirar", (long) suscripcionRepository.findSuscripcionesPorExpirar(
             LocalDateTime.now(), LocalDateTime.now().plusDays(7)).size());
         
@@ -331,7 +334,7 @@ public class SuperAdminService {
         reporte.put("fechaDesde", fechaDesde);
         reporte.put("fechaHasta", fechaHasta);
         reporte.put("ingresos", new BigDecimal("50000"));
-        reporte.put("empresasActivas", suscripcionRepository.countByEstado(Suscripcion.EstadoSuscripcion.ACTIVA));
+        reporte.put("empresasActivas", (long) suscripcionRepository.findByEstado(Suscripcion.EstadoSuscripcion.ACTIVA).size());
         
         return reporte;
     }
@@ -401,7 +404,7 @@ public class SuperAdminService {
         // Obtener estadísticas completas de ventas rápidas
         Integer totalTransaccionesVentaRapida = 0;
         try {
-            VentaRapidaEstadisticas estadisticasVentaRapida = ventaRapidaService.obtenerEstadisticasVentasRapidas(empresa.getId());
+            VentaRapidaService.VentaRapidaEstadisticas estadisticasVentaRapida = ventaRapidaService.obtenerEstadisticasVentasRapidas(empresa.getId());
             totalTransaccionesVentaRapida = estadisticasVentaRapida != null ? estadisticasVentaRapida.getTotalTransacciones() : 0;
         } catch (Exception e) {
             System.err.println("❌ Error al obtener transacciones de ventas rápidas para empresa " + empresa.getNombre() + ": " + e.getMessage());
