@@ -24,4 +24,36 @@ export default defineConfig({
       '127.0.0.1'
     ]
   },
+  build: {
+    // Optimizaciones para producción
+    target: 'es2015', // Compatibilidad con navegadores más antiguos
+    minify: 'esbuild', // Minificación rápida y eficiente
+    rollupOptions: {
+      output: {
+        // Separación de chunks para mejor caching
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          utils: ['react-hot-toast', 'react-toastify'],
+          ui: ['react-barcode'],
+        },
+        // Optimización de nombres de archivos
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
+      },
+    },
+    // Optimización de assets
+    assetsInlineLimit: 4096, // Inline de assets pequeños
+    chunkSizeWarningLimit: 1000, // Límite de advertencia de tamaño
+    sourcemap: false, // Deshabilitar sourcemaps en producción
+  },
+  // Optimización de dependencias
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom'],
+    exclude: ['@vite/client', '@vite/env'],
+  },
+  // Configuración de CSS
+  css: {
+    devSourcemap: false, // Deshabilitar sourcemaps de CSS en desarrollo
+  },
 })
