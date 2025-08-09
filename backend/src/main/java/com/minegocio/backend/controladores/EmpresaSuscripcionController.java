@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.List;
 
 /**
  * Controlador para manejar suscripciones de empresas desde el frontend
@@ -182,6 +183,27 @@ public class EmpresaSuscripcionController {
             System.out.println("❌ Error obteniendo consumo: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+
+    /**
+     * Endpoint de debug SIN AUTENTICACIÓN para verificar configuración
+     */
+    @GetMapping("/debug/info")
+    public ResponseEntity<?> debugInfo() {
+        try {
+            Map<String, Object> info = new HashMap<>();
+            info.put("mensaje", "Controlador EmpresaSuscripcionController funcionando");
+            info.put("timestamp", LocalDateTime.now());
+            info.put("endpoints", List.of(
+                "/api/suscripciones/mi-suscripcion",
+                "/api/suscripciones/mi-consumo", 
+                "/api/suscripciones/debug/test",
+                "/api/suscripciones/debug/crear-suscripcion-usuario"
+            ));
+            return ResponseEntity.ok(info);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }
 

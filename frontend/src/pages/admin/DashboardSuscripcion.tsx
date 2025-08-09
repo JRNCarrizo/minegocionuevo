@@ -49,24 +49,9 @@ const DashboardSuscripcion: React.FC = () => {
         throw new Error('No hay token de autenticación');
       }
 
-      console.log('🔍 DashboardSuscripcion - Haciendo petición a /api/super-admin/suscripciones/mi-suscripcion');
+      console.log('🔍 DashboardSuscripcion - Obteniendo suscripción a través de ApiService');
       
-      const response = await fetch('http://localhost:8080/api/super-admin/suscripciones/mi-suscripcion', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('🔍 DashboardSuscripcion - Respuesta del servidor:', response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('🔍 DashboardSuscripcion - Error response:', errorText);
-        throw new Error(`Error al cargar la suscripción: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await ApiService.getMiSuscripcion();
       console.log('🔍 DashboardSuscripcion - Datos recibidos:', data);
       setSuscripcion(data);
     } catch (err) {
