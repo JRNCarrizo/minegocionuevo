@@ -67,7 +67,7 @@ public class EmpresaSuscripcionController {
             }
 
             // Extraer email del token
-            String email = jwtUtils.getUserNameFromJwtToken(token);
+            String email = jwtUtils.getEmailFromJwtToken(token);
             System.out.println("🔥 Email extraído del token: " + email);
 
             // Buscar usuario
@@ -113,7 +113,7 @@ public class EmpresaSuscripcionController {
                 "fechaInicio", suscripcionActiva.getFechaInicio(),
                 "fechaFin", suscripcionActiva.getFechaFin(),
                 "diasRestantes", Math.max(0, diasRestantes),
-                "estaActiva", suscripcionActiva.isEstaActiva(),
+                "estaActiva", suscripcionActiva.estaActiva(),
                 "estaPorExpirar", diasRestantes <= 7 && diasRestantes > 0
             ));
 
@@ -127,12 +127,12 @@ public class EmpresaSuscripcionController {
                 "maxUsuarios", plan.getMaxUsuarios(),
                 "maxClientes", plan.getMaxClientes(),
                 "maxAlmacenamientoGB", plan.getMaxAlmacenamientoGB(),
-                "personalizacionCompleta", plan.isPersonalizacionCompleta(),
-                "estadisticasAvanzadas", plan.isEstadisticasAvanzadas(),
-                "soportePrioritario", plan.isSoportePrioritario(),
-                "integracionesAvanzadas", plan.isIntegracionesAvanzadas(),
-                "backupAutomatico", plan.isBackupAutomatico(),
-                "dominioPersonalizado", plan.isDominioPersonalizado()
+                "personalizacionCompleta", plan.getPersonalizacionCompleta(),
+                "estadisticasAvanzadas", plan.getEstadisticasAvanzadas(),
+                "soportePrioritario", plan.getSoportePrioritario(),
+                "integracionesAvanzadas", plan.getIntegracionesAvanzadas(),
+                "backupAutomatico", plan.getBackupAutomatico(),
+                "dominioPersonalizado", plan.getDominioPersonalizado()
             ));
 
             respuesta.put("empresa", Map.of(
@@ -177,7 +177,7 @@ public class EmpresaSuscripcionController {
                 return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
             }
 
-            String email = jwtUtils.getUserNameFromJwtToken(token);
+            String email = jwtUtils.getEmailFromJwtToken(token);
             Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
             if (!usuarioOpt.isPresent()) {
                 System.out.println("🔥 ❌ Usuario no encontrado: " + email);
