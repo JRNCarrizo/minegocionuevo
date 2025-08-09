@@ -1,4 +1,5 @@
 import ApiService from './api';
+import { API_CONFIG } from '../config/api';
 
 // Interfaces locales para evitar problemas de exportación
 type PlanLimits = {
@@ -80,7 +81,7 @@ class LimitService {
       const token = localStorage.getItem('token');
       console.log('🔍 LimitService: Token encontrado:', token ? 'Sí' : 'No');
       
-      const response = await fetch(`http://localhost:8080/api/empresas/${empresaId}/consumo`, {
+      const response = await fetch(`${API_CONFIG.getBaseUrl()}/api/suscripciones/mi-consumo`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

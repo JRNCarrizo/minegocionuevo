@@ -1351,7 +1351,7 @@ class ApiService {
   // Método para obtener la suscripción actual de la empresa
   async getMiSuscripcion(): Promise<any> {
     try {
-      const response = await this.api.get('/super-admin/suscripciones/mi-suscripcion');
+      const response = await this.api.get('/suscripciones/mi-suscripcion');
       return response.data;
     } catch (error) {
       console.error('Error obteniendo mi suscripción:', error);
