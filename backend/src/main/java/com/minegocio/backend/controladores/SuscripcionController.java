@@ -563,7 +563,10 @@ public class SuscripcionController {
             Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
             
+            System.out.println("🔍 Usuario encontrado: " + usuario.getEmail() + " (ID: " + usuario.getId() + ")");
+            
             if (usuario.getEmpresa() == null) {
+                System.out.println("❌ Usuario no tiene empresa asociada");
                 return ResponseEntity.status(404).body(Map.of("error", "Usuario no tiene empresa asociada"));
             }
             
@@ -571,35 +574,47 @@ public class SuscripcionController {
             System.out.println("🔍 Empresa encontrada: " + empresa.getNombre() + " (ID: " + empresa.getId() + ")");
             
             // Buscar suscripción activa
+            System.out.println("🔍 Buscando suscripción activa para empresa: " + empresa.getId());
             Suscripcion suscripcion = suscripcionRepository.findFirstByEmpresaAndEstado(empresa, Suscripcion.EstadoSuscripcion.ACTIVA)
                 .orElse(null);
             
             if (suscripcion == null) {
+                System.out.println("❌ No se encontró suscripción activa para empresa: " + empresa.getId());
                 return ResponseEntity.status(404).body(Map.of("error", "No se encontró suscripción activa"));
             }
             
+            System.out.println("✅ Suscripción activa encontrada: " + suscripcion.getId());
+            
             // Crear respuesta con información detallada
+            System.out.println("🔍 Creando respuesta para suscripción...");
             Map<String, Object> respuesta = new HashMap<>();
             respuesta.put("id", suscripcion.getId());
             
             // Crear mapa del plan con todas las características
-            Map<String, Object> planInfo = new HashMap<>();
-            planInfo.put("id", suscripcion.getPlan().getId());
-            planInfo.put("nombre", suscripcion.getPlan().getNombre());
-            planInfo.put("descripcion", suscripcion.getPlan().getDescripcion());
-            planInfo.put("precio", suscripcion.getPlan().getPrecio());
-            planInfo.put("periodo", suscripcion.getPlan().getPeriodo());
-            planInfo.put("maxProductos", suscripcion.getPlan().getMaxProductos());
-            planInfo.put("maxUsuarios", suscripcion.getPlan().getMaxUsuarios());
-            planInfo.put("maxClientes", suscripcion.getPlan().getMaxClientes());
-            planInfo.put("maxAlmacenamientoGB", suscripcion.getPlan().getMaxAlmacenamientoGB());
-            planInfo.put("personalizacionCompleta", suscripcion.getPlan().getPersonalizacionCompleta());
-            planInfo.put("estadisticasAvanzadas", suscripcion.getPlan().getEstadisticasAvanzadas());
-            planInfo.put("soportePrioritario", suscripcion.getPlan().getSoportePrioritario());
-            planInfo.put("integracionesAvanzadas", suscripcion.getPlan().getIntegracionesAvanzadas());
-            planInfo.put("backupAutomatico", suscripcion.getPlan().getBackupAutomatico());
-            planInfo.put("dominioPersonalizado", suscripcion.getPlan().getDominioPersonalizado());
+            System.out.println("🔍 Obteniendo información del plan...");
+            Plan plan = suscripcion.getPlan();
+            if (plan == null) {
+                throw new RuntimeException("Suscripción sin plan asociado");
+            }
             
+            Map<String, Object> planInfo = new HashMap<>();
+            planInfo.put("id", plan.getId());
+            planInfo.put("nombre", plan.getNombre());
+            planInfo.put("descripcion", plan.getDescripcion());
+            planInfo.put("precio", plan.getPrecio());
+            planInfo.put("periodo", plan.getPeriodo());
+            planInfo.put("maxProductos", plan.getMaxProductos());
+            planInfo.put("maxUsuarios", plan.getMaxUsuarios());
+            planInfo.put("maxClientes", plan.getMaxClientes());
+            planInfo.put("maxAlmacenamientoGB", plan.getMaxAlmacenamientoGB());
+            planInfo.put("personalizacionCompleta", plan.getPersonalizacionCompleta());
+            planInfo.put("estadisticasAvanzadas", plan.getEstadisticasAvanzadas());
+            planInfo.put("soportePrioritario", plan.getSoportePrioritario());
+            planInfo.put("integracionesAvanzadas", plan.getIntegracionesAvanzadas());
+            planInfo.put("backupAutomatico", plan.getBackupAutomatico());
+            planInfo.put("dominioPersonalizado", plan.getDominioPersonalizado());
+            
+            System.out.println("🔍 Agregando información de suscripción...");
             respuesta.put("plan", planInfo);
             respuesta.put("estado", suscripcion.getEstado());
             respuesta.put("fechaInicio", suscripcion.getFechaInicio());
@@ -697,7 +712,8 @@ public class SuscripcionController {
             String token = authHeader.substring(7);
             
             // Extraer email del JWT
-            String email = jwtUtils.getEmailFromJwtToken(token);
+            String email = jwtUtils.extractUsername(token);
+            System.out.println("🔍 Email extraído del token: " + email);
             
             // Buscar usuario por email
             Usuario usuario = usuarioRepository.findByEmail(email)

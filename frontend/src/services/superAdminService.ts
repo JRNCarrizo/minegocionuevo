@@ -1,71 +1,4 @@
-import apiService from './api';
-
-// ===== TIPOS PARA SUSCRIPCIONES =====
-
-export interface Plan {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  precio: number;
-  periodo: string;
-  periodoTexto: string;
-  precioAnual: number;
-  activo: boolean;
-  destacado: boolean;
-  orden: number;
-  maxProductos: number;
-  maxUsuarios: number;
-  maxClientes: number;
-  maxAlmacenamientoGB: number;
-  personalizacionCompleta: boolean;
-  estadisticasAvanzadas: boolean;
-  soportePrioritario: boolean;
-  integracionesAvanzadas: boolean;
-  backupAutomatico: boolean;
-  dominioPersonalizado: boolean;
-  planPorDefecto: boolean;
-  totalSuscripciones: number;
-  suscripcionesActivas: number;
-  ingresosTotales: number;
-}
-
-export interface Suscripcion {
-  id: number;
-  empresaId: number;
-  empresaNombre: string;
-  empresaSubdominio: string;
-  planId: number;
-  planNombre: string;
-  estado: string;
-  fechaInicio: string;
-  fechaFin: string;
-  fechaCancelacion?: string;
-  fechaRenovacion?: string;
-  precio: number;
-  moneda: string;
-  metodoPago?: string;
-  referenciaPago?: string;
-  facturado: boolean;
-  renovacionAutomatica: boolean;
-  notificarAntesRenovacion: boolean;
-  diasNotificacionRenovacion: number;
-  notas?: string;
-  motivoCancelacion?: string;
-  diasRestantes: number;
-  estaActiva: boolean;
-  estaExpirada: boolean;
-  estaPorExpirar: boolean;
-}
-
-export interface EstadisticasSuscripciones {
-  totalSuscripciones: number;
-  suscripcionesActivas: number;
-  suscripcionesSuspendidas: number;
-  suscripcionesCanceladas: number;
-  suscripcionesPorExpirar: number;
-  ingresosMensuales: number;
-  ingresosAnuales: number;
-}
+import ApiService from './api';
 
 export interface DashboardStats {
   totalEmpresas: number;
@@ -93,251 +26,247 @@ export interface DashboardStats {
   empresasNuevasEstaSemana: number;
 }
 
-// ===== CONFIGURACIÓN DE API =====
-
-// ===== MÉTODOS PARA PLANES =====
-
-export const obtenerPlanes = async (): Promise<Plan[]> => {
-  try {
-    return await apiService.getSuperAdminPlanes();
-  } catch (error) {
-    console.error('Error obteniendo planes:', error);
-    throw error;
-  }
-};
-
-export const obtenerPlan = async (planId: number): Promise<Plan> => {
-  try {
-    return await apiService.getSuperAdminPlan(planId);
-  } catch (error) {
-    console.error('Error obteniendo plan:', error);
-    throw error;
-  }
-};
-
-export const crearPlan = async (plan: Omit<Plan, 'id'>): Promise<Plan> => {
-  try {
-    console.log('🔍 Enviando plan al backend:', plan);
-    const result = await apiService.createSuperAdminPlan(plan);
-    console.log('✅ Plan creado exitosamente:', result);
-    return result;
-  } catch (error) {
-    console.error('❌ Error creando plan:', error);
-    throw error;
-  }
-};
-
-export const actualizarPlan = async (planId: number, plan: Partial<Plan>): Promise<Plan> => {
-  try {
-    return await apiService.updateSuperAdminPlan(planId, plan);
-  } catch (error) {
-    console.error('Error actualizando plan:', error);
-    throw error;
-  }
-};
-
-export const eliminarPlan = async (planId: number): Promise<void> => {
-  try {
-    await apiService.deleteSuperAdminPlan(planId);
-  } catch (error) {
-    console.error('Error eliminando plan:', error);
-    throw error;
-  }
-};
-
-// ===== MÉTODOS PARA SUSCRIPCIONES =====
-
-export const obtenerSuscripciones = async (): Promise<Suscripcion[]> => {
-  try {
-    return await apiService.getSuperAdminSuscripciones();
-  } catch (error) {
-    console.error('Error obteniendo suscripciones:', error);
-    throw error;
-  }
-};
-
-export const obtenerSuscripcionesPorEmpresa = async (empresaId: number): Promise<Suscripcion[]> => {
-  try {
-    const response = await apiService.getSuperAdminSuscripciones({ empresaId });
-    return response;
-  } catch (error) {
-    console.error('Error obteniendo suscripciones por empresa:', error);
-    throw error;
-  }
-};
-
-export const crearSuscripcion = async (empresaId: number, planId: number): Promise<Suscripcion> => {
-  try {
-    return await apiService.createSuperAdminSuscripcion({ empresaId, planId });
-  } catch (error) {
-    console.error('Error creando suscripción:', error);
-    throw error;
-  }
-};
-
-export const suspenderSuscripcion = async (suscripcionId: number): Promise<Suscripcion> => {
-  try {
-    return await apiService.suspenderSuperAdminSuscripcion(suscripcionId);
-  } catch (error) {
-    console.error('Error suspendiendo suscripción:', error);
-    throw error;
-  }
-};
-
-export const reactivarSuscripcion = async (suscripcionId: number): Promise<Suscripcion> => {
-  try {
-    return await apiService.reactivarSuperAdminSuscripcion(suscripcionId);
-  } catch (error) {
-    console.error('Error reactivando suscripción:', error);
-    throw error;
-  }
-};
-
-export const cancelarSuscripcion = async (suscripcionId: number, motivo: string): Promise<Suscripcion> => {
-  try {
-    return await apiService.cancelarSuperAdminSuscripcion(suscripcionId, motivo);
-  } catch (error) {
-    console.error('Error cancelando suscripción:', error);
-    throw error;
-  }
-};
-
-export const renovarSuscripcion = async (suscripcionId: number): Promise<Suscripcion> => {
-  try {
-    return await apiService.renovarSuperAdminSuscripcion(suscripcionId);
-  } catch (error) {
-    console.error('Error renovando suscripción:', error);
-    throw error;
-  }
-};
-
-// ===== MÉTODOS PARA ESTADÍSTICAS =====
-
-export const obtenerEstadisticasSuscripciones = async (): Promise<EstadisticasSuscripciones> => {
-  try {
-    return await apiService.getSuperAdminEstadisticasSuscripciones();
-  } catch (error) {
-    console.error('Error obteniendo estadísticas:', error);
-    throw error;
-  }
-};
-
-export const obtenerSuscripcionesPorExpirar = async (dias: number = 30): Promise<Suscripcion[]> => {
-  try {
-    return await apiService.getSuperAdminSuscripcionesPorExpirar();
-  } catch (error) {
-    console.error('Error obteniendo suscripciones por expirar:', error);
-    throw error;
-  }
-};
-
-// ===== MÉTODOS EXISTENTES PARA EMPRESAS =====
-
 export interface Empresa {
   id: number;
   nombre: string;
   subdominio: string;
   email: string;
   telefono: string;
-  direccion: string;
-  ciudad: string;
-  codigoPostal: string;
-  pais: string;
-  descripcion: string;
-  activa: boolean;
-  fechaCreacion: string;
-  fechaActualizacion: string;
+  logoUrl: string;
   estadoSuscripcion: string;
-  fechaFinPrueba: string;
+  fechaCreacion: string;
   totalProductos: number;
   totalClientes: number;
   totalPedidos: number;
-  ingresosTotales: number;
+  totalVentasRapidas: number;
+  totalTransacciones: number;
+  ultimaConexion: string;
+  descripcion: string;
+  colorPrimario: string;
+  moneda: string;
+  activa: boolean;
 }
 
-export const obtenerEmpresas = async (): Promise<Empresa[]> => {
-  try {
-    return await apiService.getSuperAdminEmpresas();
-  } catch (error) {
-    console.error('Error obteniendo empresas:', error);
-    throw error;
-  }
-};
+export interface EmpresasResponse {
+  data: Empresa[];
+  mensaje: string;
+}
 
-export const obtenerEmpresa = async (empresaId: number): Promise<Empresa> => {
-  try {
-    return await apiService.getSuperAdminEmpresa(empresaId);
-  } catch (error) {
-    console.error('Error obteniendo empresa:', error);
-    throw error;
-  }
-};
-
-export const actualizarEmpresa = async (empresaId: number, empresa: Partial<Empresa>): Promise<Empresa> => {
-  try {
-    return await apiService.updateSuperAdminEmpresaEstado(empresaId, empresa.activa ? 'ACTIVA' : 'INACTIVA');
-  } catch (error) {
-    console.error('Error actualizando empresa:', error);
-    throw error;
-  }
-};
-
-export const eliminarEmpresa = async (empresaId: number): Promise<void> => {
-  try {
-    // Nota: El ApiService no tiene método para eliminar empresas, solo para cambiar estado
-    await apiService.updateSuperAdminEmpresaEstado(empresaId, 'ELIMINADA');
-  } catch (error) {
-    console.error('Error eliminando empresa:', error);
-    throw error;
-  }
-};
-
-export const obtenerEstadisticasEmpresas = async (): Promise<any> => {
-  try {
-    return await apiService.getSuperAdminDashboard();
-  } catch (error) {
-    console.error('Error obteniendo estadísticas de empresas:', error);
-    throw error;
-  }
-};
-
-// ===== EXPORTACIÓN DEL OBJETO SERVICIO =====
-
-export const superAdminService = {
-  // Métodos para planes
-  obtenerPlanes,
-  obtenerPlan,
-  crearPlan,
-  actualizarPlan,
-  eliminarPlan,
-  
-  // Métodos para suscripciones
-  obtenerSuscripciones,
-  obtenerSuscripcionesPorEmpresa,
-  crearSuscripcion,
-  suspenderSuscripcion,
-  reactivarSuscripcion,
-  cancelarSuscripcion,
-  renovarSuscripcion,
-  
-  // Métodos para estadísticas
-  obtenerEstadisticasSuscripciones,
-  obtenerSuscripcionesPorExpirar,
-  
-  // Métodos para empresas
-  obtenerEmpresas,
-  obtenerEmpresa,
-  actualizarEmpresa,
-  eliminarEmpresa,
-  obtenerEstadisticasEmpresas,
-  
-  // Método para dashboard
-  obtenerDashboard: async (): Promise<DashboardStats> => {
+class SuperAdminService {
+  async obtenerDashboard(): Promise<DashboardStats> {
     try {
-      return await apiService.getSuperAdminDashboard();
+      const response = await ApiService.getSuperAdminDashboard();
+      return response.data;
     } catch (error) {
-      console.error('Error obteniendo dashboard:', error);
+      console.error('Error al obtener dashboard:', error);
       throw error;
     }
   }
-}; 
+
+  async obtenerEmpresas(page = 0, size = 10): Promise<EmpresasResponse> {
+    try {
+      console.log('🔍 SuperAdminService - Iniciando llamada a API...');
+      const response = await ApiService.getSuperAdminEmpresas({ page, size });
+      console.log('🔍 SuperAdminService - Respuesta recibida:', response);
+      return response;
+    } catch (error) {
+      console.error('Error al obtener empresas:', error);
+      throw error;
+    }
+  }
+
+  async obtenerEstadisticasSuscripciones() {
+    try {
+      const response = await ApiService.getSuperAdminEstadisticasSuscripciones();
+      return response;
+    } catch (error) {
+      console.error('Error al obtener estadísticas de suscripciones:', error);
+      throw error;
+    }
+  }
+
+  // Métodos para gestión de planes
+  async obtenerPlanes() {
+    try {
+      const response = await ApiService.getSuperAdminPlanes();
+      return response;
+    } catch (error) {
+      console.error('Error al obtener planes:', error);
+      throw error;
+    }
+  }
+
+  async obtenerPlan(id: number) {
+    try {
+      const response = await ApiService.getSuperAdminPlan(id);
+      return response;
+    } catch (error) {
+      console.error('Error al obtener plan:', error);
+      throw error;
+    }
+  }
+
+  async crearPlan(plan: any) {
+    try {
+      const response = await ApiService.createSuperAdminPlan(plan);
+      return response;
+    } catch (error) {
+      console.error('Error al crear plan:', error);
+      throw error;
+    }
+  }
+
+  async actualizarPlan(id: number, plan: any) {
+    try {
+      const response = await ApiService.updateSuperAdminPlan(id, plan);
+      return response;
+    } catch (error) {
+      console.error('Error al actualizar plan:', error);
+      throw error;
+    }
+  }
+
+  async eliminarPlan(id: number) {
+    try {
+      const response = await ApiService.deleteSuperAdminPlan(id);
+      return response;
+    } catch (error) {
+      console.error('Error al eliminar plan:', error);
+      throw error;
+    }
+  }
+
+  // Métodos para gestión de suscripciones
+  async obtenerSuscripciones(params: any = {}) {
+    try {
+      const response = await ApiService.getSuperAdminSuscripciones(params);
+      return response;
+    } catch (error) {
+      console.error('Error al obtener suscripciones:', error);
+      throw error;
+    }
+  }
+
+  async obtenerSuscripcion(id: number) {
+    try {
+      const response = await ApiService.getSuperAdminSuscripcion(id);
+      return response;
+    } catch (error) {
+      console.error('Error al obtener suscripción:', error);
+      throw error;
+    }
+  }
+
+  async crearSuscripcion(suscripcion: any) {
+    try {
+      const response = await ApiService.createSuperAdminSuscripcion(suscripcion);
+      return response;
+    } catch (error) {
+      console.error('Error al crear suscripción:', error);
+      throw error;
+    }
+  }
+
+  async cancelarSuscripcion(id: number, motivo: string) {
+    try {
+      const response = await ApiService.cancelarSuperAdminSuscripcion(id, motivo);
+      return response;
+    } catch (error) {
+      console.error('Error al cancelar suscripción:', error);
+      throw error;
+    }
+  }
+
+  async suspenderSuscripcion(id: number) {
+    try {
+      const response = await ApiService.suspenderSuperAdminSuscripcion(id);
+      return response;
+    } catch (error) {
+      console.error('Error al suspender suscripción:', error);
+      throw error;
+    }
+  }
+
+  async reactivarSuscripcion(id: number) {
+    try {
+      const response = await ApiService.reactivarSuperAdminSuscripcion(id);
+      return response;
+    } catch (error) {
+      console.error('Error al reactivar suscripción:', error);
+      throw error;
+    }
+  }
+
+  async renovarSuscripcion(id: number) {
+    try {
+      const response = await ApiService.renovarSuperAdminSuscripcion(id);
+      return response;
+    } catch (error) {
+      console.error('Error al renovar suscripción:', error);
+      throw error;
+    }
+  }
+
+  async obtenerSuscripcionesPorExpirar() {
+    try {
+      const response = await ApiService.getSuperAdminSuscripcionesPorExpirar();
+      return response;
+    } catch (error) {
+      console.error('Error al obtener suscripciones por expirar:', error);
+      throw error;
+    }
+  }
+
+  async obtenerSuscripcionesExpiradas() {
+    try {
+      const response = await ApiService.getSuperAdminSuscripcionesExpiradas();
+      return response;
+    } catch (error) {
+      console.error('Error al obtener suscripciones expiradas:', error);
+      throw error;
+    }
+  }
+
+  async procesarRenovacionesAutomaticas() {
+    try {
+      const response = await ApiService.procesarRenovacionesAutomaticas();
+      return response;
+    } catch (error) {
+      console.error('Error al procesar renovaciones automáticas:', error);
+      throw error;
+    }
+  }
+
+  async obtenerEmpresasPorExpirar() {
+    try {
+      const response = await ApiService.getSuperAdminEmpresasPorExpirar();
+      return response;
+    } catch (error) {
+      console.error('Error al obtener empresas por expirar:', error);
+      throw error;
+    }
+  }
+
+  async obtenerTopEmpresas(limite = 5) {
+    try {
+      const response = await ApiService.getSuperAdminTopEmpresasPorIngresos(limite);
+      return response;
+    } catch (error) {
+      console.error('Error al obtener top empresas:', error);
+      throw error;
+    }
+  }
+
+  async testPing() {
+    try {
+      // Nota: Este endpoint específico no existe en ApiService, usar uno similar
+      const response = await ApiService.getSuperAdminDashboard();
+      return response;
+    } catch (error) {
+      console.error('Error al hacer ping:', error);
+      throw error;
+    }
+  }
+}
+
+export const superAdminService = new SuperAdminService(); 

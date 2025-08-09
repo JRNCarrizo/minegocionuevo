@@ -53,6 +53,9 @@ export default function LoginAdministrador() {
       localStorage.setItem('user', JSON.stringify(user));
       
       console.log('Usuario guardado en localStorage:', user);
+      
+      // 🔍 DEBUG PARA PRODUCCIÓN - Verificar datos después del login
+      await verificarDatosUsuarioProduccion(response.token, user);
       console.log('Token guardado en localStorage:', response.token);
       console.log('Token verificado:', localStorage.getItem('token'));
       console.log('🎯 Rol del usuario:', user.rol);
@@ -146,6 +149,9 @@ export default function LoginAdministrador() {
       localStorage.setItem('user', JSON.stringify(user));
       
       console.log('Usuario guardado en localStorage (Google):', user);
+      
+      // 🔍 DEBUG PARA PRODUCCIÓN - Verificar datos después del login con Google
+      await verificarDatosUsuarioProduccion(response.token, user);
       
       // Verificar si es super admin y redirigir al panel correspondiente
       if (user.rol === 'SUPER_ADMIN') {
@@ -535,4 +541,133 @@ export default function LoginAdministrador() {
       `}</style>
     </div>
   );
+}
+
+// 🔍 FUNCIÓN DEBUG PARA PRODUCCIÓN
+async function verificarDatosUsuarioProduccion(token: string, user: any) {
+  console.log('🔥🔥🔥 ===== DEBUG DATOS USUARIO PRODUCCIÓN ===== 🔥🔥🔥');
+  console.log('🔍 Token recibido:', token);
+  console.log('🔍 Usuario recibido:', user);
+  
+  // Decodificar token JWT
+  try {
+    const tokenParts = token.split('.');
+    if (tokenParts.length === 3) {
+      const payload = JSON.parse(atob(tokenParts[1]));
+      console.log('🔑 TOKEN JWT DECODIFICADO:');
+      console.log('  - Email (sub):', payload.sub);
+      console.log('  - User ID:', payload.userId);
+      console.log('  - Empresa ID:', payload.empresaId);
+      console.log('  - Nombre completo:', payload.nombreCompleto);
+      console.log('  - Expiración:', new Date(payload.exp * 1000).toLocaleString());
+      console.log('  - Payload completo:', payload);
+    }
+  } catch (error) {
+    console.error('❌ Error decodificando token:', error);
+  }
+  
+  // Determinar URL base según el entorno
+  const isProduction = window.location.hostname.includes('railway.app') || 
+                      window.location.hostname.includes('vercel.app') ||
+                      window.location.hostname.includes('netlify.app') ||
+                      !window.location.hostname.includes('localhost');
+  
+  const baseUrl = isProduction 
+    ? 'https://minegocio-backend-production.up.railway.app/api'
+    : 'http://localhost:8080/api';
+    
+  console.log('🌐 Entorno detectado:', isProduction ? 'PRODUCCIÓN' : 'DESARROLLO');
+  console.log('🌐 URL base:', baseUrl);
+  
+  // Verificar información de la empresa del usuario
+  try {
+    console.log('🔍 Verificando empresa del usuario...');
+    const responseEmpresa = await fetch(`${baseUrl}/super-admin/suscripciones/debug/mi-empresa`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const dataEmpresa = await responseEmpresa.json();
+    console.log('🏢 INFORMACIÓN DE EMPRESA:');
+    console.log('  - Status HTTP:', responseEmpresa.status);
+    console.log('  - Datos:', dataEmpresa);
+    
+    if (responseEmpresa.ok && dataEmpresa.empresa) {
+      console.log('✅ EMPRESA ENCONTRADA:');
+      console.log('  - ID:', dataEmpresa.empresa.id);
+      console.log('  - Nombre:', dataEmpresa.empresa.nombre);
+      console.log('  - Subdominio:', dataEmpresa.empresa.subdominio);
+      console.log('  - Email:', dataEmpresa.empresa.email);
+    } else {
+      console.log('❌ NO SE ENCONTRÓ EMPRESA O ERROR');
+    }
+  } catch (error) {
+    console.error('❌ Error verificando empresa:', error);
+  }
+  
+  // Verificar suscripción del usuario
+  try {
+    console.log('🔍 Verificando suscripción del usuario...');
+    const responseSuscripcion = await fetch(`${baseUrl}/super-admin/suscripciones/mi-suscripcion`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const dataSuscripcion = await responseSuscripcion.json();
+    console.log('📋 INFORMACIÓN DE SUSCRIPCIÓN:');
+    console.log('  - Status HTTP:', responseSuscripcion.status);
+    console.log('  - Datos:', dataSuscripcion);
+    
+    if (responseSuscripcion.ok && dataSuscripcion.plan) {
+      console.log('✅ SUSCRIPCIÓN ENCONTRADA:');
+      console.log('  - ID Suscripción:', dataSuscripcion.id);
+      console.log('  - Plan:', dataSuscripcion.plan.nombre);
+      console.log('  - Estado:', dataSuscripcion.estado);
+      console.log('  - Días restantes:', dataSuscripcion.diasRestantes);
+      console.log('  - Está activa:', dataSuscripcion.estaActiva);
+      console.log('  - Límites del plan:');
+      console.log('    - Productos:', dataSuscripcion.plan.maxProductos);
+      console.log('    - Clientes:', dataSuscripcion.plan.maxClientes);
+      console.log('    - Usuarios:', dataSuscripcion.plan.maxUsuarios);
+      console.log('    - Almacenamiento:', dataSuscripcion.plan.maxAlmacenamientoGB, 'GB');
+    } else {
+      console.log('❌ NO SE ENCONTRÓ SUSCRIPCIÓN O ERROR:', dataSuscripcion);
+    }
+  } catch (error) {
+    console.error('❌ Error verificando suscripción:', error);
+  }
+  
+  // Verificar consumo de recursos
+  try {
+    console.log('🔍 Verificando consumo de recursos...');
+    const responseConsumo = await fetch(`${baseUrl}/super-admin/suscripciones/mi-consumo`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const dataConsumo = await responseConsumo.json();
+    console.log('📊 INFORMACIÓN DE CONSUMO:');
+    console.log('  - Status HTTP:', responseConsumo.status);
+    console.log('  - Datos:', dataConsumo);
+    
+    if (responseConsumo.ok && dataConsumo.consumo) {
+      console.log('✅ CONSUMO OBTENIDO:');
+      console.log('  - Productos usados:', dataConsumo.consumo.productos);
+      console.log('  - Clientes usados:', dataConsumo.consumo.clientes);
+      console.log('  - Usuarios usados:', dataConsumo.consumo.usuarios);
+      console.log('  - Almacenamiento usado:', dataConsumo.consumo.almacenamientoGB, 'GB');
+    } else {
+      console.log('❌ NO SE PUDO OBTENER CONSUMO:', dataConsumo);
+    }
+  } catch (error) {
+    console.error('❌ Error verificando consumo:', error);
+  }
+  
+  console.log('🔥🔥🔥 ===== FIN DEBUG PRODUCCIÓN ===== 🔥🔥🔥');
 }
