@@ -4,25 +4,65 @@ import { FaArrowLeft, FaPlus, FaEdit, FaTrash, FaEye, FaPause, FaPlay, FaSync, F
 import { useResponsive } from '../../hooks/useResponsive';
 import toast from 'react-hot-toast';
 import { 
-  obtenerPlanes, 
-  obtenerSuscripciones, 
-  obtenerEstadisticasSuscripciones,
-  suspenderSuscripcion,
-  reactivarSuscripcion,
-  cancelarSuscripcion,
-  renovarSuscripcion,
-  eliminarPlan,
-  crearSuscripcion,
-  obtenerEmpresas,
-  crearPlan,
-  actualizarPlan
+  superAdminService,
+  type Empresa
 } from '../../services/superAdminService';
-import type { 
-  Plan,
-  Suscripcion,
-  EstadisticasSuscripciones as Estadisticas,
-  Empresa
-} from '../../services/superAdminService';
+
+// Tipos locales para Planes y Suscripciones
+interface Plan {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  periodo: string;
+  periodoTexto: string;
+  precioAnual: number;
+  activo: boolean;
+  destacado: boolean;
+  orden: number;
+  maxProductos: number;
+  maxUsuarios: number;
+  maxClientes: number;
+  maxAlmacenamientoGB: number;
+  personalizacionCompleta: boolean;
+  estadisticasAvanzadas: boolean;
+  soportePrioritario: boolean;
+  integracionesAvanzadas: boolean;
+  backupAutomatico: boolean;
+  dominioPersonalizado: boolean;
+  planPorDefecto: boolean;
+  totalSuscripciones: number;
+  suscripcionesActivas: number;
+  ingresosTotales: number;
+}
+
+interface Suscripcion {
+  id: number;
+  empresaId: number;
+  empresaNombre: string;
+  empresaSubdominio: string;
+  planId: number;
+  planNombre: string;
+  estado: string;
+  fechaInicio: string;
+  fechaFin: string;
+  precio: number;
+  moneda: string;
+  diasRestantes: number;
+  estaActiva: boolean;
+  estaExpirada: boolean;
+  estaPorExpirar: boolean;
+}
+
+interface Estadisticas {
+  totalSuscripciones: number;
+  suscripcionesActivas: number;
+  suscripcionesSuspendidas: number;
+  suscripcionesCanceladas: number;
+  suscripcionesPorExpirar: number;
+  ingresosMensuales: number;
+  ingresosAnuales: number;
+}
 
 const GestionSuscripciones: React.FC = () => {
   console.log('🔍 GestionSuscripciones - Componente iniciado');
@@ -126,25 +166,25 @@ const GestionSuscripciones: React.FC = () => {
       
       // Cargar planes desde el backend
       console.log('🔍 GestionSuscripciones - Intentando cargar planes...');
-      const planesData = await obtenerPlanes();
+      const planesData = await superAdminService.obtenerPlanes();
       console.log('🔍 GestionSuscripciones - Planes cargados:', planesData.length);
       setPlanes(planesData);
 
       // Cargar suscripciones desde el backend
       console.log('🔍 GestionSuscripciones - Intentando cargar suscripciones...');
-      const suscripcionesData = await obtenerSuscripciones();
+      const suscripcionesData = await superAdminService.obtenerSuscripciones();
       console.log('🔍 GestionSuscripciones - Suscripciones cargadas:', suscripcionesData.length);
       setSuscripciones(suscripcionesData);
 
       // Cargar estadísticas desde el backend
       console.log('🔍 GestionSuscripciones - Intentando cargar estadísticas...');
-      const estadisticasData = await obtenerEstadisticasSuscripciones();
+      const estadisticasData = await superAdminService.obtenerEstadisticasSuscripciones();
       console.log('🔍 GestionSuscripciones - Estadísticas cargadas');
       setEstadisticas(estadisticasData);
 
       // Cargar empresas desde el backend
       console.log('🔍 GestionSuscripciones - Intentando cargar empresas...');
-      const empresasData = await obtenerEmpresas();
+      const empresasData = await superAdminService.obtenerEmpresas();
       console.log('🔍 GestionSuscripciones - Empresas cargadas:', empresasData.length);
       setEmpresas(empresasData);
 
@@ -213,7 +253,7 @@ const GestionSuscripciones: React.FC = () => {
   const handleEliminarPlan = async (planId: number) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este plan?')) {
       try {
-        await eliminarPlan(planId);
+        await superAdminService.eliminarPlan(planId);
         toast.success('Plan eliminado correctamente');
           cargarDatos();
       } catch (error) {
@@ -232,21 +272,21 @@ const GestionSuscripciones: React.FC = () => {
     try {
       switch (accion) {
         case 'suspender':
-          await suspenderSuscripcion(suscripcionId);
+          await superAdminService.suspenderSuscripcion(suscripcionId);
           toast.success('Suscripción suspendida correctamente');
           break;
         case 'reactivar':
-          await reactivarSuscripcion(suscripcionId);
+          await superAdminService.reactivarSuscripcion(suscripcionId);
           toast.success('Suscripción reactivada correctamente');
           break;
         case 'cancelar':
           if (motivo) {
-            await cancelarSuscripcion(suscripcionId, motivo);
+            await superAdminService.cancelarSuscripcion(suscripcionId, motivo);
             toast.success('Suscripción cancelada correctamente');
           }
           break;
         case 'renovar':
-          await renovarSuscripcion(suscripcionId);
+          await superAdminService.renovarSuscripcion(suscripcionId);
           toast.success('Suscripción renovada correctamente');
           break;
         default:
@@ -1486,10 +1526,10 @@ const GestionSuscripciones: React.FC = () => {
                     console.log('🔍 Precio:', planFormData.precio, 'Tipo:', typeof planFormData.precio);
                     if (planFormData.nombre && planFormData.precio >= 0) {
                       if (selectedPlan) {
-                        await actualizarPlan(selectedPlan.id, planFormData as any);
+                        await superAdminService.actualizarPlan(selectedPlan.id, planFormData as any);
                         toast.success('Plan actualizado exitosamente');
                       } else {
-                        await crearPlan(planFormData as any);
+                        await superAdminService.crearPlan(planFormData as any);
                         toast.success('Plan creado exitosamente');
                       }
                       setShowPlanModal(false);
@@ -1648,7 +1688,10 @@ const GestionSuscripciones: React.FC = () => {
                 onClick={async () => {
                   try {
                     if (formData.empresaId && formData.planId) {
-                      await crearSuscripcion(formData.empresaId, formData.planId);
+                      await superAdminService.crearSuscripcion({ 
+                        empresaId: formData.empresaId, 
+                        planId: formData.planId 
+                      });
                       toast.success('Suscripción creada exitosamente');
                       setShowSuscripcionModal(false);
                       setFormData({ empresaId: null, planId: null, fechaInicio: '' });

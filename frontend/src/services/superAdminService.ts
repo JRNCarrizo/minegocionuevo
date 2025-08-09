@@ -63,7 +63,7 @@ class SuperAdminService {
     }
   }
 
-  async obtenerEmpresas(page = 0, size = 10): Promise<EmpresasResponse> {
+  async obtenerEmpresasPaginadas(page = 0, size = 10): Promise<EmpresasResponse> {
     try {
       console.log('🔍 SuperAdminService - Iniciando llamada a API...');
       const response = await ApiService.getSuperAdminEmpresas({ page, size });
@@ -264,6 +264,31 @@ class SuperAdminService {
       return response;
     } catch (error) {
       console.error('Error al hacer ping:', error);
+      throw error;
+    }
+  }
+
+  async obtenerEmpresas(): Promise<Empresa[]> {
+    try {
+      const response = await ApiService.getSuperAdminEmpresas();
+      // Si la respuesta es un objeto con empresas, extraer el array
+      if (response && typeof response === 'object') {
+        if ('empresas' in response) {
+          return response.empresas as Empresa[];
+        }
+        if ('data' in response) {
+          return response.data as Empresa[];
+        }
+      }
+      // Si ya es un array, devolverlo directamente
+      if (Array.isArray(response)) {
+        return response;
+      }
+      // Si no es ninguno de los anteriores, devolver array vacío
+      console.warn('Respuesta inesperada de empresas:', response);
+      return [];
+    } catch (error) {
+      console.error('Error obteniendo empresas:', error);
       throw error;
     }
   }
