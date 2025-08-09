@@ -548,6 +548,10 @@ public class SuscripcionController {
     @GetMapping("/mi-suscripcion")
     public ResponseEntity<?> obtenerMiSuscripcion(HttpServletRequest request) {
         try {
+            System.out.println("🔥 === INICIO DEBUG MI-SUSCRIPCION ===");
+            System.out.println("🔥 Request URI: " + request.getRequestURI());
+            System.out.println("🔥 Request Method: " + request.getMethod());
+            System.out.println("🔥 Authorization Header: " + request.getHeader("Authorization"));
             // Extraer token del header Authorization
             String authHeader = request.getHeader("Authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -632,9 +636,35 @@ public class SuscripcionController {
             return ResponseEntity.ok(respuesta);
             
         } catch (Exception e) {
-            System.out.println("❌ Error obteniendo suscripción: " + e.getMessage());
+            System.out.println("🔥 ❌ ERROR COMPLETO EN MI-SUSCRIPCION:");
+            System.out.println("🔥 Clase de error: " + e.getClass().getName());
+            System.out.println("🔥 Mensaje: " + e.getMessage());
+            System.out.println("🔥 Stack trace:");
             e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor"));
+            System.out.println("🔥 === FIN ERROR MI-SUSCRIPCION ===");
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor", "detalle", e.getMessage()));
+        }
+    }
+
+    /**
+     * Debug simple para verificar que el endpoint funciona sin autenticación
+     */
+    @GetMapping("/debug/test-simple")
+    public ResponseEntity<?> debugTestSimple() {
+        try {
+            System.out.println("🔥 TEST SIMPLE - Endpoint funcionando");
+            
+            Map<String, Object> respuesta = new HashMap<>();
+            respuesta.put("mensaje", "Endpoint funcionando correctamente");
+            respuesta.put("timestamp", LocalDateTime.now());
+            respuesta.put("servidor", "Producción Railway");
+            
+            return ResponseEntity.ok(respuesta);
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR en test simple: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error en test simple: " + e.getMessage()));
         }
     }
 
