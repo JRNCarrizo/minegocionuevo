@@ -117,23 +117,23 @@ public class EmpresaSuscripcionController {
                 "estaPorExpirar", diasRestantes <= 7 && diasRestantes > 0
             ));
 
-            respuesta.put("plan", Map.of(
-                "id", plan.getId(),
-                "nombre", plan.getNombre(),
-                "descripcion", plan.getDescripcion() != null ? plan.getDescripcion() : "",
-                "precio", plan.getPrecio(),
-                "periodo", plan.getPeriodo() != null ? plan.getPeriodo() : "MENSUAL",
-                "maxProductos", plan.getMaxProductos(),
-                "maxUsuarios", plan.getMaxUsuarios(),
-                "maxClientes", plan.getMaxClientes(),
-                "maxAlmacenamientoGB", plan.getMaxAlmacenamientoGB(),
-                "personalizacionCompleta", plan.getPersonalizacionCompleta(),
-                "estadisticasAvanzadas", plan.getEstadisticasAvanzadas(),
-                "soportePrioritario", plan.getSoportePrioritario(),
-                "integracionesAvanzadas", plan.getIntegracionesAvanzadas(),
-                "backupAutomatico", plan.getBackupAutomatico(),
-                "dominioPersonalizado", plan.getDominioPersonalizado()
-            ));
+            Map<String, Object> planData = new HashMap<>();
+            planData.put("id", plan.getId());
+            planData.put("nombre", plan.getNombre());
+            planData.put("descripcion", plan.getDescripcion() != null ? plan.getDescripcion() : "");
+            planData.put("precio", plan.getPrecio());
+            planData.put("periodo", plan.getPeriodo() != null ? plan.getPeriodo() : "MENSUAL");
+            planData.put("maxProductos", plan.getMaxProductos());
+            planData.put("maxUsuarios", plan.getMaxUsuarios());
+            planData.put("maxClientes", plan.getMaxClientes());
+            planData.put("maxAlmacenamientoGB", plan.getMaxAlmacenamientoGB());
+            planData.put("personalizacionCompleta", plan.getPersonalizacionCompleta());
+            planData.put("estadisticasAvanzadas", plan.getEstadisticasAvanzadas());
+            planData.put("soportePrioritario", plan.getSoportePrioritario());
+            planData.put("integracionesAvanzadas", plan.getIntegracionesAvanzadas());
+            planData.put("backupAutomatico", plan.getBackupAutomatico());
+            planData.put("dominioPersonalizado", plan.getDominioPersonalizado());
+            respuesta.put("plan", planData);
 
             respuesta.put("empresa", Map.of(
                 "id", empresa.getId(),
