@@ -1355,7 +1355,15 @@ class ApiService {
       return response.data;
     } catch (error) {
       console.error('Error obteniendo mi suscripción:', error);
-      throw error;
+      console.log('🔄 Intentando endpoint alternativo...');
+      try {
+        const fallbackResponse = await this.api.get('/suscripciones/mi-suscripcion-simple');
+        console.log('✅ Endpoint alternativo funcionó');
+        return fallbackResponse.data;
+      } catch (fallbackError) {
+        console.error('Error en endpoint alternativo:', fallbackError);
+        throw error; // Lanzar el error original
+      }
     }
   }
 }

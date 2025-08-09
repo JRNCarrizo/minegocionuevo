@@ -96,6 +96,7 @@ public class ConfiguracionSeguridad {
                     // Endpoints del nuevo controlador de suscripciones para empresas
                     .requestMatchers("/api/suscripciones/debug/**").permitAll() // Debug público para diagnóstico
                     .requestMatchers("/api/suscripciones/mi-suscripcion").authenticated()
+                    .requestMatchers("/api/suscripciones/mi-suscripcion-simple").authenticated()
                     .requestMatchers("/api/suscripciones/mi-consumo").authenticated()
                     .requestMatchers("/api/super-admin/**").hasAnyRole("SUPER_ADMIN", "ADMINISTRADOR")
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
