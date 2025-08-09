@@ -12,11 +12,11 @@ interface SuscripcionData {
   estaPorExpirar: boolean;
   estaActiva: boolean;
   fechaInicio: string;
-  precio: number;
   plan: {
     nombre: string;
     descripcion: string;
     periodo: string;
+    precio: number;
     maxProductos: number;
     maxClientes: number;
     maxUsuarios: number;
@@ -74,15 +74,26 @@ export default function ConsumoYSuscripciones() {
         // Cargar información de suscripción
         const suscripcionResponse = await ApiService.getMiSuscripcion();
         console.log('✅ ConsumoYSuscripciones - Suscripción cargada:', suscripcionResponse);
+        console.log('🔍 Estructura de la respuesta:');
+        console.log('  - suscripcion:', suscripcionResponse.suscripcion);
+        console.log('  - plan:', suscripcionResponse.plan);
+        console.log('  - empresa:', suscripcionResponse.empresa);
+        console.log('  - consumo:', suscripcionResponse.consumo);
         
         if (suscripcionResponse) {
           setSuscripcion(suscripcionResponse);
           // Los datos del plan y consumo están dentro de la suscripción
           if (suscripcionResponse.plan) {
             setPlan(suscripcionResponse.plan);
+            console.log('✅ Plan asignado:', suscripcionResponse.plan);
+          } else {
+            console.log('❌ No hay datos de plan en la respuesta');
           }
           if (suscripcionResponse.consumo) {
             setConsumo(suscripcionResponse.consumo);
+            console.log('✅ Consumo asignado:', suscripcionResponse.consumo);
+          } else {
+            console.log('❌ No hay datos de consumo en la respuesta');
           }
         }
 
@@ -405,7 +416,7 @@ export default function ConsumoYSuscripciones() {
                 alignItems: 'center'
               }}>
                 <span style={{ fontSize: '1.5rem', fontWeight: '700' }}>
-                  ${suscripcion.precio}
+                  ${suscripcion.plan.precio}
                 </span>
                 <span style={{ fontSize: '0.875rem', opacity: 0.9 }}>
                   {suscripcion.plan.periodo}

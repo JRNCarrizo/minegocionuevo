@@ -7,6 +7,7 @@ import com.minegocio.backend.entidades.Suscripcion;
 import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
+import com.minegocio.backend.repositorios.PlanRepository;
 import com.minegocio.backend.seguridad.JwtUtils;
 import com.minegocio.backend.servicios.SuscripcionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ public class EmpresaSuscripcionController {
 
     @Autowired
     private SuscripcionService suscripcionService;
+    
+    @Autowired
+    private PlanRepository planRepository;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -119,40 +123,71 @@ public class EmpresaSuscripcionController {
             long diasRestantes = ChronoUnit.DAYS.between(LocalDateTime.now(), suscripcionActivaDTO.getFechaFin());
             System.out.println("🔥 Días restantes calculados: " + diasRestantes);
 
-            // Preparar respuesta
-            Map<String, Object> respuesta = new HashMap<>();
-            respuesta.put("suscripcion", Map.of(
-                "id", suscripcionActivaDTO.getId(),
-                "estado", suscripcionActivaDTO.getEstado(),
-                "fechaInicio", suscripcionActivaDTO.getFechaInicio(),
-                "fechaFin", suscripcionActivaDTO.getFechaFin(),
-                "diasRestantes", Math.max(0, diasRestantes),
-                "estaActiva", suscripcionActivaDTO.getEstaActiva(),
-                "estaPorExpirar", diasRestantes <= 7 && diasRestantes > 0
-            ));
+            // Obtener estadísticas de consumo
+            Map<String, Object> consumoData = suscripcionService.obtenerEstadisticasConsumo(empresa.getId());
+            System.out.println("🔥 Consumo obtenido: " + consumoData);
 
+            // Preparar respuesta simplificada (formato esperado por el frontend)
+            Map<String, Object> respuesta = new HashMap<>();
+            
+            // Datos básicos de suscripción
+            respuesta.put("id", suscripcionActivaDTO.getId());
+            respuesta.put("estado", suscripcionActivaDTO.getEstado());
+            respuesta.put("fechaInicio", suscripcionActivaDTO.getFechaInicio());
+            respuesta.put("fechaFin", suscripcionActivaDTO.getFechaFin());
+            respuesta.put("diasRestantes", Math.max(0, diasRestantes));
+            respuesta.put("estaActiva", suscripcionActivaDTO.getEstaActiva());
+            respuesta.put("estaPorExpirar", diasRestantes <= 7 && diasRestantes > 0);
+
+            // Obtener datos reales del plan desde la base de datos
+            System.out.println("🔥 Buscando plan con ID: " + suscripcionActivaDTO.getPlanId());
+            Plan planReal = planRepository.findById(suscripcionActivaDTO.getPlanId()).orElse(null);
+            
             Map<String, Object> planData = new HashMap<>();
             planData.put("id", suscripcionActivaDTO.getPlanId());
             planData.put("nombre", suscripcionActivaDTO.getPlanNombre());
-            planData.put("descripcion", "");  // No disponible en DTO
-            planData.put("precio", suscripcionActivaDTO.getPrecio());
-            planData.put("periodo", "MENSUAL");  // Valor por defecto
-            planData.put("maxProductos", 100);  // Valores por defecto temporales
-            planData.put("maxUsuarios", 5);
-            planData.put("maxClientes", 1000);
-            planData.put("maxAlmacenamientoGB", 10);
-            planData.put("personalizacionCompleta", true);
-            planData.put("estadisticasAvanzadas", true);
-            planData.put("soportePrioritario", false);
-            planData.put("integracionesAvanzadas", false);
-            planData.put("backupAutomatico", false);
-            planData.put("dominioPersonalizado", false);
+            
+            if (planReal != null) {
+                System.out.println("🔥 Plan encontrado: " + planReal.getNombre());
+                planData.put("descripcion", planReal.getDescripcion() != null ? planReal.getDescripcion() : "Plan de suscripción");
+                planData.put("precio", planReal.getPrecio());
+                planData.put("periodo", planReal.getPeriodo() != null ? planReal.getPeriodo().toString() : "MENSUAL");
+                planData.put("maxProductos", planReal.getMaxProductos());
+                planData.put("maxUsuarios", planReal.getMaxUsuarios());
+                planData.put("maxClientes", planReal.getMaxClientes());
+                planData.put("maxAlmacenamientoGB", planReal.getMaxAlmacenamientoGB());
+                planData.put("personalizacionCompleta", planReal.getPersonalizacionCompleta());
+                planData.put("estadisticasAvanzadas", planReal.getEstadisticasAvanzadas());
+                planData.put("soportePrioritario", planReal.getSoportePrioritario());
+                planData.put("integracionesAvanzadas", planReal.getIntegracionesAvanzadas());
+                planData.put("backupAutomatico", planReal.getBackupAutomatico());
+                planData.put("dominioPersonalizado", planReal.getDominioPersonalizado());
+            } else {
+                System.out.println("🔥 ❌ Plan no encontrado, usando valores por defecto");
+                planData.put("descripcion", "Plan de suscripción");
+                planData.put("precio", suscripcionActivaDTO.getPrecio());
+                planData.put("periodo", "MENSUAL");
+                planData.put("maxProductos", 100);
+                planData.put("maxUsuarios", 5);
+                planData.put("maxClientes", 1000);
+                planData.put("maxAlmacenamientoGB", 10);
+                planData.put("personalizacionCompleta", true);
+                planData.put("estadisticasAvanzadas", true);
+                planData.put("soportePrioritario", false);
+                planData.put("integracionesAvanzadas", false);
+                planData.put("backupAutomatico", false);
+                planData.put("dominioPersonalizado", false);
+            }
             respuesta.put("plan", planData);
 
+            // Datos de la empresa
             respuesta.put("empresa", Map.of(
                 "id", empresa.getId(),
                 "nombre", empresa.getNombre()
             ));
+
+            // Datos de consumo
+            respuesta.put("consumo", consumoData.get("consumo"));
 
             System.out.println("🔥 ✅ Respuesta preparada exitosamente");
             System.out.println("🔥 === FIN DEBUG MI-SUSCRIPCION EMPRESA ===");
