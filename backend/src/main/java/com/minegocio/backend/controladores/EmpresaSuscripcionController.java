@@ -127,7 +127,7 @@ public class EmpresaSuscripcionController {
                 "fechaInicio", suscripcionActivaDTO.getFechaInicio(),
                 "fechaFin", suscripcionActivaDTO.getFechaFin(),
                 "diasRestantes", Math.max(0, diasRestantes),
-                "estaActiva", suscripcionActivaDTO.isEstaActiva(),
+                "estaActiva", suscripcionActivaDTO.getEstaActiva(),
                 "estaPorExpirar", diasRestantes <= 7 && diasRestantes > 0
             ));
 
