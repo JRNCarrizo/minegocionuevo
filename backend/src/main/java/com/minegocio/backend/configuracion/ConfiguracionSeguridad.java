@@ -79,6 +79,10 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/archivos/**").permitAll()
                     .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                    // Endpoints de actuator para monitoreo
+                    .requestMatchers("/actuator/health").permitAll()
+                    .requestMatchers("/actuator/info").permitAll()
+                    .requestMatchers("/actuator/**").hasAnyRole("SUPER_ADMIN")
                     // Endpoints de autenticación de clientes (Google login, recuperación de contraseña, etc.)
                     .requestMatchers("/api/publico/*/auth/**").permitAll()
                     // Reglas específicas de empresas (DEBEN ir ANTES de la regla general)
@@ -89,7 +93,10 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/super-admin/crear-super-admin").permitAll()
                     .requestMatchers("/api/super-admin/suscripciones/crear-datos-prueba").permitAll()
                     .requestMatchers("/api/super-admin/suscripciones/debug/**").permitAll()
-                .requestMatchers("/api/suscripciones/mi-suscripcion").authenticated()
+                    // Endpoints del nuevo controlador de suscripciones para empresas
+                    .requestMatchers("/api/suscripciones/debug/**").permitAll() // Debug público para diagnóstico
+                    .requestMatchers("/api/suscripciones/mi-suscripcion").authenticated()
+                    .requestMatchers("/api/suscripciones/mi-consumo").authenticated()
                     .requestMatchers("/api/super-admin/**").hasAnyRole("SUPER_ADMIN", "ADMINISTRADOR")
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")

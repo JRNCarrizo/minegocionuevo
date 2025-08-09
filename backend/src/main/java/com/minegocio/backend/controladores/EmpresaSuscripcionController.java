@@ -84,8 +84,22 @@ public class EmpresaSuscripcionController {
                 return ResponseEntity.status(404).body(Map.of("error", "No se encontró suscripción activa"));
             }
             
-            // Obtener estadísticas de consumo
-            Map<String, Object> consumo = suscripcionService.obtenerEstadisticasConsumo(empresa.getId());
+            // Obtener estadísticas de consumo con manejo de errores
+            Map<String, Object> consumo;
+            try {
+                System.out.println("🔍 Obteniendo estadísticas de consumo para empresa: " + empresa.getId());
+                consumo = suscripcionService.obtenerEstadisticasConsumo(empresa.getId());
+                System.out.println("✅ Estadísticas de consumo obtenidas correctamente");
+            } catch (Exception e) {
+                System.out.println("❌ Error obteniendo estadísticas de consumo: " + e.getMessage());
+                e.printStackTrace();
+                // Crear consumo vacío para evitar error completo
+                consumo = Map.of(
+                    "plan", Map.of("nombre", "Error"),
+                    "consumo", Map.of("productos", 0, "clientes", 0, "usuarios", 0, "almacenamientoGB", 0),
+                    "suscripcion", Map.of("diasRestantes", 0, "estaPorExpirar", false)
+                );
+            }
             
             // Crear respuesta con información detallada
             Map<String, Object> respuesta = new HashMap<>();
