@@ -23,6 +23,9 @@ public class UsuarioDTO {
     @Size(max = 100, message = "El apellido no puede exceder 100 caracteres")
     private String apellido;
     
+    @Size(max = 20, message = "El número de documento no puede exceder 20 caracteres")
+    private String numeroDocumento;
+    
     private String rol;
     
     private Boolean activo;
@@ -31,16 +34,19 @@ public class UsuarioDTO {
     
     private String empresaNombre;
     
+    private Boolean esPrincipal;
+    
     // Constructores
     public UsuarioDTO() {}
     
     public UsuarioDTO(Long id, String nombreUsuario, String email, String nombre, 
-                     String apellido, String rol, Boolean activo, Long empresaId, String empresaNombre) {
+                     String apellido, String numeroDocumento, String rol, Boolean activo, Long empresaId, String empresaNombre) {
         this.id = id;
         this.nombreUsuario = nombreUsuario;
         this.email = email;
         this.nombre = nombre;
         this.apellido = apellido;
+        this.numeroDocumento = numeroDocumento;
         this.rol = rol;
         this.activo = activo;
         this.empresaId = empresaId;
@@ -88,6 +94,14 @@ public class UsuarioDTO {
         this.apellido = apellido;
     }
     
+    public String getNumeroDocumento() {
+        return numeroDocumento;
+    }
+    
+    public void setNumeroDocumento(String numeroDocumento) {
+        this.numeroDocumento = numeroDocumento;
+    }
+    
     public String getRol() {
         return rol;
     }
@@ -118,5 +132,13 @@ public class UsuarioDTO {
     
     public void setEmpresaNombre(String empresaNombre) {
         this.empresaNombre = empresaNombre;
+    }
+    
+    public Boolean getEsPrincipal() {
+        return esPrincipal;
+    }
+    
+    public void setEsPrincipal(Boolean esPrincipal) {
+        this.esPrincipal = esPrincipal;
     }
 }

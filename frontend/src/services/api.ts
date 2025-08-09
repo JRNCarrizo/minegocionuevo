@@ -1366,6 +1366,76 @@ class ApiService {
       }
     }
   }
+
+  // Métodos para gestión de administradores
+
+  async obtenerAdministradoresMiEmpresa(): Promise<any> {
+    try {
+      const response = await this.api.get('/administradores/mi-empresa');
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo administradores:', error);
+      throw error;
+    }
+  }
+
+  async asignarAdministrador(adminData: {
+    nombre: string;
+    apellidos: string;
+    numeroDocumento: string;
+    telefono?: string;
+  }): Promise<any> {
+    try {
+      const response = await this.api.post('/administradores/asignar', adminData);
+      return response.data;
+    } catch (error) {
+      console.error('Error asignando administrador:', error);
+      throw error;
+    }
+  }
+
+  async desactivarAdministrador(adminId: number): Promise<any> {
+    try {
+      const response = await this.api.put(`/administradores/${adminId}/desactivar`);
+      return response.data;
+    } catch (error) {
+      console.error('Error desactivando administrador:', error);
+      throw error;
+    }
+  }
+
+  async reactivarAdministrador(adminId: number): Promise<any> {
+    try {
+      const response = await this.api.put(`/administradores/${adminId}/reactivar`);
+      return response.data;
+    } catch (error) {
+      console.error('Error reactivando administrador:', error);
+      throw error;
+    }
+  }
+
+  async eliminarAdministrador(adminId: number): Promise<any> {
+    try {
+      const response = await this.api.delete(`/administradores/${adminId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error eliminando administrador:', error);
+      throw error;
+    }
+  }
+
+  async loginConDocumento(emailEmpresa: string, numeroDocumento: string): Promise<any> {
+    try {
+      const response = await this.api.post('/auth/login-documento', {
+        emailEmpresa,
+        numeroDocumento
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error en login con documento:', error);
+      throw error;
+    }
+  }
 }
 
 export default new ApiService();

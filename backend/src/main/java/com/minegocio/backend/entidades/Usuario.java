@@ -45,6 +45,10 @@ public class Usuario {
     @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
     private String telefono;
 
+    @Size(max = 20, message = "El número de documento no puede exceder 20 caracteres")
+    @Column(name = "numero_documento")
+    private String numeroDocumento;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RolUsuario rol = RolUsuario.ADMINISTRADOR;
@@ -122,6 +126,9 @@ public class Usuario {
 
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
+
+    public String getNumeroDocumento() { return numeroDocumento; }
+    public void setNumeroDocumento(String numeroDocumento) { this.numeroDocumento = numeroDocumento; }
 
     public RolUsuario getRol() { return rol; }
     public void setRol(RolUsuario rol) { this.rol = rol; }

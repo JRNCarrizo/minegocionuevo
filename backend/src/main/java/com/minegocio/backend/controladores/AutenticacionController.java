@@ -2,6 +2,7 @@ package com.minegocio.backend.controladores;
 
 import com.minegocio.backend.dto.JwtRespuestaDTO;
 import com.minegocio.backend.dto.LoginDTO;
+import com.minegocio.backend.dto.LoginDocumentoDTO;
 import com.minegocio.backend.servicios.AutenticacionService;
 import com.minegocio.backend.servicios.EmailService;
 import jakarta.validation.Valid;
@@ -79,6 +80,72 @@ public class AutenticacionController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+
+    /**
+     * Autentica un administrador usando email de empresa + número de documento
+     */
+    @PostMapping("/login-documento")
+    public ResponseEntity<?> autenticarConDocumento(@Valid @RequestBody LoginDocumentoDTO loginDocumentoDTO) {
+        try {
+            System.out.println("🔍 === LOGIN CON DOCUMENTO ===");
+            System.out.println("🔍 Email Empresa: " + loginDocumentoDTO.getEmailEmpresa());
+            System.out.println("🔍 Documento: " + loginDocumentoDTO.getNumeroDocumento());
+
+            // Buscar empresa por email
+            Optional<Empresa> empresaOpt = empresaRepository.findByEmail(loginDocumentoDTO.getEmailEmpresa());
+            if (empresaOpt.isEmpty()) {
+                System.out.println("❌ Empresa no encontrada con email: " + loginDocumentoDTO.getEmailEmpresa());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Credenciales inválidas"));
+            }
+
+            Empresa empresa = empresaOpt.get();
+            System.out.println("✅ Empresa encontrada: " + empresa.getNombre());
+
+            // Buscar usuario por empresa y número de documento
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByEmpresaAndNumeroDocumento(empresa, loginDocumentoDTO.getNumeroDocumento());
+            if (usuarioOpt.isEmpty()) {
+                System.out.println("❌ Usuario no encontrado con documento: " + loginDocumentoDTO.getNumeroDocumento());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Credenciales inválidas"));
+            }
+
+            Usuario usuario = usuarioOpt.get();
+            System.out.println("✅ Usuario encontrado: " + usuario.getNombreCompleto());
+
+            // Verificar que el usuario esté activo
+            if (!usuario.getActivo()) {
+                System.out.println("❌ Usuario desactivado");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Usuario desactivado"));
+            }
+
+            // Verificar contraseña (que debe ser el número de documento)
+            if (!passwordEncoder.matches(loginDocumentoDTO.getNumeroDocumento(), usuario.getPassword())) {
+                System.out.println("❌ Contraseña incorrecta");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Credenciales inválidas"));
+            }
+
+            // Actualizar último acceso
+            usuario.setUltimoAcceso(LocalDateTime.now());
+            usuarioRepository.save(usuario);
+
+            // Generar token JWT usando el servicio de autenticación
+            LoginDTO loginDTO = new LoginDTO(usuario.getEmail(), loginDocumentoDTO.getNumeroDocumento());
+            JwtRespuestaDTO jwtRespuesta = autenticacionService.autenticarUsuario(loginDTO);
+
+            System.out.println("✅ Login con documento exitoso para: " + usuario.getNombreCompleto());
+
+            return ResponseEntity.ok(jwtRespuesta);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error en login con documento: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Error de autenticación"));
         }
     }
 

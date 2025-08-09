@@ -64,9 +64,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     List<Usuario> findAdministradoresPorEmpresa(@Param("empresa") Empresa empresa);
 
     /**
-     * Busca el usuario administrador principal de una empresa (el primero creado)
+     * Busca el usuario administrador principal de una empresa (el primero creado por ID)
      */
-    @Query("SELECT u FROM Usuario u WHERE u.empresa = :empresa AND u.rol = 'ADMINISTRADOR' ORDER BY u.fechaCreacion ASC")
+    @Query(value = "SELECT * FROM usuarios u WHERE u.empresa_id = :#{#empresa.id} AND u.rol = 'ADMINISTRADOR' ORDER BY u.id ASC LIMIT 1", nativeQuery = true)
     Optional<Usuario> findAdministradorPrincipal(@Param("empresa") Empresa empresa);
 
     /**
@@ -94,4 +94,30 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * Cuenta usuarios por empresa
      */
     Long countByEmpresa(Empresa empresa);
+
+    /**
+     * Busca usuarios activos por empresa ordenados por fecha de creación
+     */
+    List<Usuario> findByEmpresaAndActivoTrueOrderByFechaCreacionAsc(Empresa empresa);
+
+    /**
+     * Busca todos los usuarios por empresa ordenados por fecha de creación
+     */
+    List<Usuario> findByEmpresaOrderByFechaCreacionAsc(Empresa empresa);
+
+    /**
+     * Busca todos los administradores de una empresa (sin filtro de activo)
+     */
+    @Query("SELECT u FROM Usuario u WHERE u.empresa = :empresa AND u.rol = 'ADMINISTRADOR' ORDER BY u.fechaCreacion ASC")
+    List<Usuario> findAllAdministradoresByEmpresa(@Param("empresa") Empresa empresa);
+
+    /**
+     * Busca usuario por empresa y número de documento
+     */
+    Optional<Usuario> findByEmpresaAndNumeroDocumento(Empresa empresa, String numeroDocumento);
+
+    /**
+     * Cuenta usuarios activos por empresa
+     */
+    Long countByEmpresaAndActivoTrue(Empresa empresa);
 }

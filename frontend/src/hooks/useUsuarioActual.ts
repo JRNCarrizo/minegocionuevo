@@ -32,8 +32,13 @@ export function useUsuarioActual() {
       console.log('Apellidos:', user.apellidos);
       console.log('EmpresaNombre:', user.empresaNombre);
       
+      // Formatear el nombre para mostrar en el navbar
+      const nombreCompleto = user.nombre && user.apellidos 
+        ? `${user.nombre} ${user.apellidos}`
+        : user.nombre || 'Usuario';
+      
       setDatosUsuario({
-        nombre: user.nombre || '',
+        nombre: nombreCompleto,
         apellidos: user.apellidos || '',
         email: user.email || '',
         empresaId: user.empresaId || 0,

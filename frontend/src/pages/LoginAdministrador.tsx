@@ -473,6 +473,32 @@ export default function LoginAdministrador() {
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
+            
+            <div style={{ 
+              textAlign: 'center', 
+              marginTop: '0.75rem',
+              padding: '12px',
+              background: 'linear-gradient(to right, #f0f9ff, #e0f2fe)',
+              borderRadius: '12px',
+              border: '1px solid #e0f2fe'
+            }}>
+              <Link to="/admin/login-documento" style={{
+                color: '#059669',
+                textDecoration: 'none',
+                fontWeight: '600',
+                transition: 'color 0.2s ease',
+                fontSize: '0.95rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#047857'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#059669'}>
+                <span style={{ fontSize: '1.1rem' }}>👥</span>
+                ¿Eres administrador asignado? Accede
+              </Link>
+            </div>
 
             <div style={{ textAlign: 'center', marginTop: '1rem' }}>
               <span style={{

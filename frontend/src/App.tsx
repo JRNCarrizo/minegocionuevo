@@ -41,6 +41,8 @@ import ConfirmacionRegistroAdmin from './pages/ConfirmacionRegistroAdmin.tsx';
 import RegistroEmpresaEtapa1 from './pages/RegistroEmpresaEtapa1.tsx';
 import ConfigurarEmpresa from './pages/ConfigurarEmpresa.tsx';
 import VerificarEmailAdmin from './pages/VerificarEmailAdmin.tsx';
+import GestionAdministradores from './pages/admin/GestionAdministradores.tsx';
+import LoginDocumento from './pages/LoginDocumento.tsx';
 
 function AppContent() {
   const { esSubdominioPrincipal, cargando } = useSubdominio();
@@ -72,6 +74,7 @@ function AppContent() {
           <Route path="/verificar-email-admin" element={<VerificarEmailAdmin />} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/login" element={<LoginAdministrador />} />
+          <Route path="/admin/login-documento" element={<LoginDocumento />} />
           <Route path="/admin/dashboard" element={<DashboardAdministrador />} />
           <Route path="/admin/productos" element={<GestionProductos />} />
           <Route path="/admin/productos/nuevo" element={<NuevoProducto />} />
@@ -87,6 +90,7 @@ function AppContent() {
           <Route path="/admin/estadisticas" element={<Estadisticas />} />
           <Route path="/admin/suscripcion" element={<DashboardSuscripcion />} />
           <Route path="/admin/consumo-suscripciones" element={<ConsumoYSuscripciones />} />
+          <Route path="/admin/administradores" element={<GestionAdministradores />} />
           <Route path="/dashboard-super-admin" element={<DashboardSuperAdmin />} />
           <Route path="/super-admin/empresas" element={<GestionEmpresas />} />
           <Route path="/super-admin/suscripciones" element={<GestionSuscripciones />} />

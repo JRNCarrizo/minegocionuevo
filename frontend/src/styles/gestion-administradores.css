@@ -1,0 +1,822 @@
+/* Estilos para Gestión de Administradores */
+
+/* ====== CONTENEDOR PRINCIPAL ====== */
+.gestion-administradores {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding-top: 5rem; /* Espacio para navbar fijo */
+}
+
+.gestion-administradores .contenedor-principal {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* ====== TARJETA PRINCIPAL ====== */
+.gestion-administradores .card-principal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+/* ====== HEADER DE LA CARD ====== */
+.gestion-administradores .header-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  position: relative;
+}
+
+.gestion-administradores .header-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.gestion-administradores .header-contenido {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.gestion-administradores .header-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gestion-administradores .icono-header {
+  width: 3rem;
+  height: 3rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.gestion-administradores .titulo-principal {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gestion-administradores .descripcion-header {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.gestion-administradores .boton-asignar {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.gestion-administradores .boton-asignar:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ====== FORMULARIO DE ASIGNACIÓN ====== */
+.gestion-administradores .formulario-asignacion {
+  background: linear-gradient(to right, #f8fafc, #f1f5f9);
+  border-bottom: 1px solid #e2e8f0;
+  padding: 2rem;
+}
+
+.gestion-administradores .formulario-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.gestion-administradores .icono-formulario {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.25rem;
+}
+
+.gestion-administradores .titulo-formulario {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.gestion-administradores .grid-formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.gestion-administradores .campo-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gestion-administradores .label-campo {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.gestion-administradores .input-campo {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.gestion-administradores .input-campo:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.gestion-administradores .info-card {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  border: 1px solid #93c5fd;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.gestion-administradores .info-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.gestion-administradores .icono-info {
+  color: #2563eb;
+  font-size: 1.25rem;
+}
+
+.gestion-administradores .titulo-info {
+  font-weight: 600;
+  color: #1e40af;
+  font-size: 0.875rem;
+}
+
+.gestion-administradores .lista-instrucciones {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.gestion-administradores .item-instruccion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #1e40af;
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.gestion-administradores .punto-instruccion {
+  width: 4px;
+  height: 4px;
+  background: #2563eb;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.gestion-administradores .botones-formulario {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.gestion-administradores .boton-enviar {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gestion-administradores .boton-enviar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.gestion-administradores .boton-enviar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.gestion-administradores .boton-cancelar {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gestion-administradores .boton-cancelar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+/* ====== LISTA DE ADMINISTRADORES ====== */
+.gestion-administradores .contenido-lista {
+  padding: 2rem;
+}
+
+.gestion-administradores .estado-carga {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 0;
+}
+
+.gestion-administradores .carga-contenido {
+  text-align: center;
+  color: #6b7280;
+}
+
+.gestion-administradores .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.gestion-administradores .estado-vacio {
+  text-align: center;
+  padding: 3rem 0;
+  color: #6b7280;
+}
+
+.gestion-administradores .icono-vacio {
+  width: 4rem;
+  height: 4rem;
+  background: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  font-size: 1.5rem;
+  color: #9ca3af;
+}
+
+/* ====== TABLA DE ADMINISTRADORES ====== */
+.gestion-administradores .contenedor-tabla {
+  margin-top: 1.5rem;
+}
+
+.gestion-administradores .tabla-scroll {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.gestion-administradores .tabla-contenedor {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: white;
+}
+
+.gestion-administradores .tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.gestion-administradores .tabla-header {
+  background: linear-gradient(to right, #f8fafc, #f1f5f9);
+}
+
+.gestion-administradores .th {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.gestion-administradores .fila-admin {
+  border-bottom: 1px solid #f3f4f6;
+  transition: all 0.2s ease;
+}
+
+.gestion-administradores .fila-admin:hover {
+  background: #f8fafc;
+}
+
+.gestion-administradores .fila-admin.inactiva {
+  background: #fafafa;
+  opacity: 0.7;
+}
+
+.gestion-administradores .td {
+  padding: 1.25rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f3f4f6;
+  text-align: center;
+}
+
+.gestion-administradores .td:first-child {
+  text-align: left;
+}
+
+.gestion-administradores .td:last-child {
+  text-align: center;
+}
+
+/* ====== CELDA DE ADMINISTRADOR ====== */
+.gestion-administradores .admin-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gestion-administradores .avatar-contenedor {
+  position: relative;
+}
+
+.gestion-administradores .avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  font-size: 0.875rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.gestion-administradores .avatar.inactivo {
+  opacity: 0.6;
+  filter: grayscale(50%);
+}
+
+.gestion-administradores .estado-indicador {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.gestion-administradores .estado-indicador.activo {
+  background: #10b981;
+}
+
+.gestion-administradores .estado-indicador.inactivo {
+  background: #ef4444;
+}
+
+.gestion-administradores .admin-detalles {
+  flex: 1;
+}
+
+.gestion-administradores .admin-nombre {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gestion-administradores .badge-principal {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.375rem;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #78350f;
+  border-radius: 12px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 1px 2px rgba(245, 158, 11, 0.2);
+}
+
+.gestion-administradores .admin-rol {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* ====== CELDA DE EMAIL ====== */
+.gestion-administradores .email-contenedor {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  color: #4b5563;
+  background: #f9fafb;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+/* ====== CELDA DE DOCUMENTO ====== */
+.gestion-administradores .documento-badge {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  background: #f3f4f6;
+  padding: 0.5rem 0.75rem;
+  border-radius: 20px;
+  display: inline-block;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+/* ====== CELDA DE ESTADO ====== */
+.gestion-administradores .estado-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 20px;
+  border: 1px solid;
+  gap: 0.5rem;
+}
+
+.gestion-administradores .estado-badge.activo {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.gestion-administradores .estado-badge.inactivo {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.gestion-administradores .estado-punto {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.gestion-administradores .estado-punto.activo {
+  background: #10b981;
+}
+
+.gestion-administradores .estado-punto.inactivo {
+  background: #ef4444;
+}
+
+/* ====== BOTONES DE ACCIÓN ====== */
+.gestion-administradores .acciones-contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  min-width: 140px;
+  padding: 0.5rem;
+}
+
+.gestion-administradores .boton-accion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+  min-height: 38px;
+  width: 100%;
+  max-width: 120px;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.gestion-administradores .boton-accion.desactivar {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.gestion-administradores .boton-accion.desactivar:hover {
+  background: #fee2e2;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+.gestion-administradores .boton-accion.activar {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+
+.gestion-administradores .boton-accion.activar:hover {
+  background: #dcfce7;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
+}
+
+.gestion-administradores .boton-accion.eliminar {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.gestion-administradores .boton-accion.eliminar:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+.gestion-administradores .boton-accion:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f3f4f6 !important;
+  color: #9ca3af !important;
+  border-color: #d1d5db !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ====== BADGE DE ADMINISTRADOR PRINCIPAL PROTEGIDO ====== */
+.gestion-administradores .admin-principal-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  color: #6b7280;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 0.875rem;
+  font-weight: 600;
+  width: 100%;
+  max-width: 120px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.gestion-administradores .icono-protegido {
+  font-size: 1rem;
+}
+
+.gestion-administradores .texto-protegido {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ====== RESPONSIVE DESIGN ====== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .gestion-administradores .contenedor-principal {
+    padding: 1.5rem 1rem;
+  }
+  
+  .gestion-administradores .header-contenido {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.5rem;
+  }
+  
+  .gestion-administradores .grid-formulario {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  
+  .gestion-administradores .botones-formulario {
+    flex-direction: column;
+  }
+}
+
+/* Móvil */
+@media (max-width: 768px) {
+  .gestion-administradores .contenedor-principal {
+    padding: 1rem 0.5rem;
+  }
+  
+  .gestion-administradores .header-card,
+  .gestion-administradores .formulario-asignacion,
+  .gestion-administradores .contenido-lista {
+    padding: 1.5rem;
+  }
+  
+  .gestion-administradores .titulo-principal {
+    font-size: 1.5rem;
+  }
+  
+  .gestion-administradores .header-info {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .gestion-administradores .grid-formulario {
+    grid-template-columns: 1fr;
+  }
+  
+  .gestion-administradores .tabla-contenedor {
+    border-radius: 8px;
+  }
+  
+  .gestion-administradores .th,
+  .gestion-administradores .td {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .gestion-administradores .admin-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .gestion-administradores .avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .gestion-administradores .acciones-contenedor {
+    min-width: 100px;
+    padding: 0.25rem;
+  }
+  
+  .gestion-administradores .boton-accion {
+    font-size: 0.7rem;
+    padding: 0.4rem 0.6rem;
+    max-width: 100px;
+    min-height: 32px;
+  }
+  
+  .gestion-administradores .admin-principal-badge {
+    max-width: 100px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .gestion-administradores .email-contenedor {
+    font-size: 0.75rem;
+    padding: 0.5rem;
+  }
+}
+
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .gestion-administradores .card-principal {
+    border-radius: 12px;
+    margin: 0.5rem;
+  }
+  
+  .gestion-administradores .header-card,
+  .gestion-administradores .formulario-asignacion,
+  .gestion-administradores .contenido-lista {
+    padding: 1rem;
+  }
+  
+  .gestion-administradores .titulo-principal {
+    font-size: 1.25rem;
+  }
+  
+  .gestion-administradores .icono-header {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.25rem;
+  }
+  
+  .gestion-administradores .tabla-contenedor {
+    font-size: 0.875rem;
+  }
+  
+  .gestion-administradores .th,
+  .gestion-administradores .td {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  /* Ocultar algunas columnas en móviles muy pequeños */
+  .gestion-administradores .th:nth-child(3),
+  .gestion-administradores .td:nth-child(3) {
+    display: none;
+  }
+  
+  .gestion-administradores .admin-principal-badge {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    max-width: 90px;
+  }
+  
+  .gestion-administradores .texto-protegido {
+    font-size: 0.7rem;
+  }
+  
+  .gestion-administradores .acciones-contenedor {
+    min-width: 90px;
+    padding: 0.2rem;
+  }
+  
+  .gestion-administradores .boton-accion {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.5rem;
+    max-width: 85px;
+    min-height: 30px;
+  }
+}
+
+/* Animaciones adicionales */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gestion-administradores .card-principal {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.gestion-administradores .fila-admin {
+  animation: fadeIn 0.4s ease-out;
+}

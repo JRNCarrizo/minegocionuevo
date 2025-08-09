@@ -250,6 +250,13 @@ export default function DashboardAdministrador() {
       color: '#3b82f6'
     },
     {
+      titulo: 'Gestión de Administradores',
+      descripcion: 'Asigna y gestiona administradores de la empresa',
+      icono: '👥',
+      enlace: '/admin/administradores',
+      color: '#059669'
+    },
+    {
       titulo: 'Configuración',
       descripcion: 'Personaliza tu tienda',
       icono: '⚙️',

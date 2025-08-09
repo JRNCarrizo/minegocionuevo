@@ -67,6 +67,7 @@ public class ConfiguracionSeguridad {
                 auth.requestMatchers("/actuator/**").permitAll(); // Health checks para Railway
                 auth.requestMatchers("/api/publico/**").permitAll()
                     .requestMatchers("/api/auth/login").permitAll()
+                    .requestMatchers("/api/auth/login-documento").permitAll()
                     .requestMatchers("/api/auth/registrar-administrador").permitAll()
                     .requestMatchers("/api/auth/verificar-token-admin").permitAll()
                     .requestMatchers("/api/auth/recuperar-password").permitAll()
@@ -98,6 +99,11 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/suscripciones/mi-suscripcion").authenticated()
                     .requestMatchers("/api/suscripciones/mi-suscripcion-simple").authenticated()
                     .requestMatchers("/api/suscripciones/mi-consumo").authenticated()
+                    // Endpoints de gestión de administradores
+                    .requestMatchers(HttpMethod.GET, "/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
+                    .requestMatchers(HttpMethod.PUT, "/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
+                    .requestMatchers(HttpMethod.DELETE, "/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/super-admin/**").hasAnyRole("SUPER_ADMIN", "ADMINISTRADOR")
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")

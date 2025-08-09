@@ -45,6 +45,12 @@ export default function NavbarAdminPages({
       description: 'Historial de carga de productos'
     },
     {
+      path: '/admin/administradores',
+      label: 'Administradores',
+      icon: '👤',
+      description: 'Gestionar administradores'
+    },
+    {
       path: '/admin/configuracion',
       label: 'Configuración',
       icon: '⚙️',
