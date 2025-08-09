@@ -8,6 +8,7 @@ import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
 import com.minegocio.backend.repositorios.PlanRepository;
+import com.minegocio.backend.repositorios.SuscripcionRepository;
 import com.minegocio.backend.seguridad.JwtUtils;
 import com.minegocio.backend.servicios.SuscripcionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,9 @@ public class EmpresaSuscripcionController {
 
     @Autowired
     private EmpresaRepository empresaRepository;
+    
+    @Autowired
+    private SuscripcionRepository suscripcionRepository;
 
     /**
      * Obtener mi suscripción (para empresas normales)
@@ -97,9 +101,57 @@ public class EmpresaSuscripcionController {
 
             // Obtener suscripciones de la empresa
             List<SuscripcionDTO> suscripciones = suscripcionService.obtenerSuscripcionesPorEmpresa(empresa.getId());
+            
+            // Si no hay suscripciones, crear una suscripción gratuita automáticamente
             if (suscripciones.isEmpty()) {
-                System.out.println("🔥 ❌ No hay suscripciones para la empresa");
-                return ResponseEntity.status(404).body(Map.of("error", "No hay suscripciones para la empresa"));
+                System.out.println("🔥 ⚠️ No hay suscripciones para la empresa " + empresa.getId() + ". Creando suscripción gratuita automáticamente...");
+                try {
+                    // Buscar plan gratuito por defecto
+                    Optional<Plan> planGratuitoOpt = planRepository.findByPlanPorDefectoTrue();
+                    if (planGratuitoOpt.isEmpty()) {
+                        System.out.println("🔥 ❌ No existe plan por defecto. Creando respuesta de error controlada.");
+                        return ResponseEntity.status(500).body(Map.of(
+                            "error", "Configuración de sistema incompleta", 
+                            "detalle", "No existe plan por defecto configurado"
+                        ));
+                    }
+                    
+                    Plan planGratuito = planGratuitoOpt.get();
+                    
+                    // Crear suscripción directamente
+                    Suscripcion nuevaSuscripcion = new Suscripcion();
+                    nuevaSuscripcion.setEmpresa(empresa);
+                    nuevaSuscripcion.setPlan(planGratuito);
+                    nuevaSuscripcion.setFechaInicio(LocalDateTime.now());
+                    nuevaSuscripcion.setFechaFin(LocalDateTime.now().plusDays(45)); // 45 días de prueba
+                    nuevaSuscripcion.setEstado(Suscripcion.EstadoSuscripcion.ACTIVA);
+                    nuevaSuscripcion.setPrecio(java.math.BigDecimal.ZERO);
+                    nuevaSuscripcion.setMoneda("USD");
+                    nuevaSuscripcion.setRenovacionAutomatica(false);
+                    nuevaSuscripcion.setNotificarAntesRenovacion(true);
+                    nuevaSuscripcion.setDiasNotificacionRenovacion(7);
+                    
+                    // Guardar la suscripción usando el repositorio directamente para evitar dependencias circulares
+                    nuevaSuscripcion = suscripcionRepository.save(nuevaSuscripcion);
+                    
+                    System.out.println("🔥 ✅ Suscripción gratuita creada automáticamente con ID: " + nuevaSuscripcion.getId());
+                    
+                    // Recargar suscripciones
+                    suscripciones = suscripcionService.obtenerSuscripcionesPorEmpresa(empresa.getId());
+                    
+                } catch (Exception autoCreateError) {
+                    System.out.println("🔥 ❌ Error creando suscripción automáticamente: " + autoCreateError.getMessage());
+                    autoCreateError.printStackTrace();
+                    return ResponseEntity.status(500).body(Map.of(
+                        "error", "Error del sistema al configurar suscripción", 
+                        "detalle", autoCreateError.getMessage()
+                    ));
+                }
+            }
+            
+            if (suscripciones.isEmpty()) {
+                System.out.println("🔥 ❌ Aún no hay suscripciones después del intento de creación automática");
+                return ResponseEntity.status(500).body(Map.of("error", "Error interno del sistema de suscripciones"));
             }
             
             // Buscar suscripción activa
@@ -277,6 +329,45 @@ public class EmpresaSuscripcionController {
             System.err.println("❌ ERROR en test simple empresa: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Error en test simple empresa: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint de debug para verificar configuración de planes
+     */
+    @GetMapping("/debug/verificar-plan-defecto")
+    public ResponseEntity<?> debugVerificarPlanDefecto() {
+        try {
+            System.out.println("🔥 DEBUG: Verificando plan por defecto desde EmpresaSuscripcionController");
+            
+            Optional<Plan> planPorDefecto = planRepository.findByPlanPorDefectoTrue();
+            
+            if (planPorDefecto.isPresent()) {
+                Plan plan = planPorDefecto.get();
+                Map<String, Object> planInfo = new HashMap<>();
+                planInfo.put("id", plan.getId());
+                planInfo.put("nombre", plan.getNombre());
+                planInfo.put("descripcion", plan.getDescripcion());
+                planInfo.put("precio", plan.getPrecio());
+                planInfo.put("planPorDefecto", plan.getPlanPorDefecto());
+                planInfo.put("maxProductos", plan.getMaxProductos());
+                
+                System.out.println("🔥 DEBUG: Plan por defecto encontrado: " + plan.getNombre());
+                return ResponseEntity.ok(Map.of(
+                    "mensaje", "Plan por defecto encontrado",
+                    "plan", planInfo
+                ));
+            } else {
+                System.out.println("🔥 DEBUG: No hay plan por defecto configurado");
+                return ResponseEntity.status(404).body(Map.of(
+                    "error", "No hay plan por defecto configurado",
+                    "solucion", "Ejecutar endpoint /api/super-admin/suscripciones/debug/crear-plan-por-defecto"
+                ));
+            }
+        } catch (Exception e) {
+            System.err.println("❌ ERROR en debugVerificarPlanDefecto: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }
 }
