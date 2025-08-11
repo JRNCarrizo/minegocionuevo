@@ -403,7 +403,7 @@ public class EmpresaSuscripcionController {
             System.out.println("🔥 DEBUG: Migrando archivos para empresa ID: " + empresaId);
 
             // Obtener todos los productos con imágenes
-            List<Producto> productos = productoRepository.findByEmpresa(empresa).stream()
+            List<Producto> productos = productoRepository.findByEmpresaId(empresaId).stream()
                 .filter(p -> p.getActivo() != null && p.getActivo())
                 .collect(Collectors.toList());
             int archivosRegistrados = 0;
