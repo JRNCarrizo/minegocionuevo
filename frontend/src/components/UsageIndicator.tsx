@@ -119,7 +119,7 @@ export default function UsageIndicator({ showDetails = false, className = '' }: 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '1rem' }}>💾</span>
           <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
-            {usage.almacenamientoGB.toFixed(1)}/{limits.maxAlmacenamientoGB}GB
+            {usage.almacenamientoGB.toFixed(2)}/{limits.maxAlmacenamientoGB}GB
           </span>
         </div>
       </div>
@@ -245,7 +245,7 @@ export default function UsageIndicator({ showDetails = false, className = '' }: 
           }}>
             <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>💾 Almacenamiento</span>
             <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
-              {usage.almacenamientoGB.toFixed(1)} / {limits.maxAlmacenamientoGB} GB
+              {usage.almacenamientoGB.toFixed(2)} / {limits.maxAlmacenamientoGB} GB
             </span>
           </div>
           <div style={{
