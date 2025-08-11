@@ -414,7 +414,7 @@ public class SuscripcionService {
         
         // Obtener almacenamiento total (archivos + base de datos)
         long almacenamientoActualBytes = almacenamientoService.obtenerAlmacenamientoTotalBytes(empresaId);
-        long almacenamientoActualGB = almacenamientoActualBytes / (1024 * 1024 * 1024);
+        double almacenamientoActualGB = almacenamientoActualBytes / (1024.0 * 1024.0 * 1024.0);
         System.out.println("🔍 DEBUG: Almacenamiento Total: " + almacenamientoActualGB + " GB (" + almacenamientoActualBytes + " bytes)");
         
         Map<String, Object> estadisticas = new HashMap<>();
@@ -431,7 +431,7 @@ public class SuscripcionService {
         consumo.put("productos", productosActuales);
         consumo.put("clientes", clientesActuales);
         consumo.put("usuarios", usuariosActuales);
-        consumo.put("almacenamientoGB", almacenamientoActualGB);
+        consumo.put("almacenamientoGB", Math.round(almacenamientoActualGB * 100.0) / 100.0); // Redondear a 2 decimales
         
         estadisticas.put("consumo", consumo);
         
