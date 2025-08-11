@@ -372,6 +372,7 @@ public class EmpresaSuscripcionController {
      * Endpoint para migrar archivos existentes a la tabla de almacenamiento
      */
     @PostMapping("/debug/migrar-archivos-existentes")
+    @Transactional
     public ResponseEntity<?> migrarArchivosExistentes(HttpServletRequest request) {
         try {
             System.out.println("🔥 DEBUG: Migrando archivos existentes");
@@ -402,14 +403,16 @@ public class EmpresaSuscripcionController {
             Long empresaId = empresa.getId();
             System.out.println("🔥 DEBUG: Migrando archivos para empresa ID: " + empresaId);
 
-            // Obtener todos los productos con imágenes
-            List<Producto> productos = productoRepository.findByEmpresaId(empresaId).stream()
-                .filter(p -> p.getActivo() != null && p.getActivo())
-                .collect(Collectors.toList());
+            // Obtener todos los productos activos con imágenes cargadas
+            List<Producto> productos = productoRepository.findByEmpresaIdAndActivoTrue(empresaId);
+            System.out.println("🔥 DEBUG: Productos encontrados: " + productos.size());
             int archivosRegistrados = 0;
             long totalBytes = 0;
 
             for (Producto producto : productos) {
+                System.out.println("🔥 DEBUG: Procesando producto ID: " + producto.getId() + " - " + producto.getNombre());
+                System.out.println("🔥 DEBUG: Imágenes del producto: " + (producto.getImagenes() != null ? producto.getImagenes().size() : "null"));
+                
                 if (producto.getImagenes() != null && !producto.getImagenes().isEmpty()) {
                     for (String urlImagen : producto.getImagenes()) {
                         if (urlImagen != null && !urlImagen.trim().isEmpty()) {
