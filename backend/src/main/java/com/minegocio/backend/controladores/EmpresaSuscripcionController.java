@@ -11,6 +11,7 @@ import com.minegocio.backend.repositorios.PlanRepository;
 import com.minegocio.backend.repositorios.SuscripcionRepository;
 import com.minegocio.backend.seguridad.JwtUtils;
 import com.minegocio.backend.servicios.SuscripcionService;
+import com.minegocio.backend.servicios.AlmacenamientoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -49,6 +50,9 @@ public class EmpresaSuscripcionController {
     
     @Autowired
     private SuscripcionRepository suscripcionRepository;
+    
+    @Autowired
+    private AlmacenamientoService almacenamientoService;
 
     /**
      * Obtener mi suscripción (para empresas normales)
@@ -354,6 +358,58 @@ public class EmpresaSuscripcionController {
             System.err.println("❌ ERROR en test simple empresa: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Error en test simple empresa: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint de debug para verificar almacenamiento
+     */
+    @GetMapping("/debug/verificar-almacenamiento")
+    public ResponseEntity<?> debugVerificarAlmacenamiento(HttpServletRequest request) {
+        try {
+            System.out.println("🔥 DEBUG: Verificando almacenamiento desde EmpresaSuscripcionController");
+            
+            // Extraer token y validar
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token requerido"));
+            }
+
+            String token = authHeader.substring(7);
+            if (!jwtUtils.validateJwtToken(token)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+            }
+
+            String email = jwtUtils.getEmailFromJwtToken(token);
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+            if (!usuarioOpt.isPresent()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            }
+
+            Usuario usuario = usuarioOpt.get();
+            Empresa empresa = usuario.getEmpresa();
+            if (empresa == null) {
+                return ResponseEntity.status(400).body(Map.of("error", "Usuario sin empresa asociada"));
+            }
+
+            Long empresaId = empresa.getId();
+            System.out.println("🔥 DEBUG: Verificando almacenamiento para empresa ID: " + empresaId);
+
+            // Obtener estadísticas detalladas de almacenamiento
+            Map<String, Object> estadisticasAlmacenamiento = almacenamientoService.obtenerEstadisticasAlmacenamientoTotal(empresaId);
+            
+            Map<String, Object> respuesta = new HashMap<>();
+            respuesta.put("empresaId", empresaId);
+            respuesta.put("empresaNombre", empresa.getNombre());
+            respuesta.put("estadisticasAlmacenamiento", estadisticasAlmacenamiento);
+            respuesta.put("timestamp", LocalDateTime.now());
+            
+            return ResponseEntity.ok(respuesta);
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR en debug almacenamiento: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error en debug almacenamiento: " + e.getMessage()));
         }
     }
 
