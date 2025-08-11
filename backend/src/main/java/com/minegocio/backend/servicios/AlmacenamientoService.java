@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -121,7 +122,26 @@ public class AlmacenamientoService {
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
         
-        return archivoEmpresaRepository.sumTamañoBytesByEmpresaAndActivoTrue(empresa);
+        System.out.println("🔍 DEBUG ALMACENAMIENTO: Verificando archivos para empresa ID: " + empresaId);
+        
+        // Verificar si hay archivos registrados
+        Long totalArchivos = archivoEmpresaRepository.countByEmpresaAndActivoTrue(empresa);
+        System.out.println("🔍 DEBUG ALMACENAMIENTO: Total archivos activos: " + totalArchivos);
+        
+        // Obtener algunos archivos para debug
+        List<ArchivoEmpresa> archivos = archivoEmpresaRepository.findByEmpresaAndActivoTrue(empresa);
+        System.out.println("🔍 DEBUG ALMACENAMIENTO: Archivos encontrados: " + archivos.size());
+        
+        for (ArchivoEmpresa archivo : archivos) {
+            System.out.println("🔍 DEBUG ALMACENAMIENTO: Archivo - ID: " + archivo.getId() + 
+                             ", Tipo: " + archivo.getTipoArchivo() + 
+                             ", Tamaño: " + archivo.getTamañoBytes() + " bytes");
+        }
+        
+        Long totalBytes = archivoEmpresaRepository.sumTamañoBytesByEmpresaAndActivoTrue(empresa);
+        System.out.println("🔍 DEBUG ALMACENAMIENTO: Total bytes calculado: " + totalBytes);
+        
+        return totalBytes;
     }
 
     /**
@@ -298,9 +318,18 @@ public class AlmacenamientoService {
      * Obtiene el almacenamiento total (archivos + base de datos) en bytes
      */
     public long obtenerAlmacenamientoTotalBytes(Long empresaId) {
+        System.out.println("🔍 DEBUG ALMACENAMIENTO TOTAL: Calculando para empresa ID: " + empresaId);
+        
         long archivosBytes = obtenerAlmacenamientoBytes(empresaId);
+        System.out.println("🔍 DEBUG ALMACENAMIENTO TOTAL: Archivos bytes: " + archivosBytes);
+        
         long baseDatosBytes = calcularTamañoBaseDatos(empresaId);
-        return archivosBytes + baseDatosBytes;
+        System.out.println("🔍 DEBUG ALMACENAMIENTO TOTAL: Base de datos bytes: " + baseDatosBytes);
+        
+        long total = archivosBytes + baseDatosBytes;
+        System.out.println("🔍 DEBUG ALMACENAMIENTO TOTAL: Total bytes: " + total);
+        
+        return total;
     }
 
     /**
