@@ -1,13 +1,16 @@
 package com.minegocio.backend.controladores;
 
 import com.minegocio.backend.dto.SuscripcionDTO;
+import com.minegocio.backend.entidades.ArchivoEmpresa;
 import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Plan;
+import com.minegocio.backend.entidades.Producto;
 import com.minegocio.backend.entidades.Suscripcion;
 import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
 import com.minegocio.backend.repositorios.PlanRepository;
+import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.SuscripcionRepository;
 import com.minegocio.backend.seguridad.JwtUtils;
 import com.minegocio.backend.servicios.SuscripcionService;
@@ -24,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Controlador para que las empresas normales accedan a su información de suscripción
@@ -53,6 +57,9 @@ public class EmpresaSuscripcionController {
     
     @Autowired
     private AlmacenamientoService almacenamientoService;
+    
+    @Autowired
+    private ProductoRepository productoRepository;
 
     /**
      * Obtener mi suscripción (para empresas normales)
@@ -359,6 +366,127 @@ public class EmpresaSuscripcionController {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Error en test simple empresa: " + e.getMessage()));
         }
+    }
+
+    /**
+     * Endpoint para migrar archivos existentes a la tabla de almacenamiento
+     */
+    @PostMapping("/debug/migrar-archivos-existentes")
+    public ResponseEntity<?> migrarArchivosExistentes(HttpServletRequest request) {
+        try {
+            System.out.println("🔥 DEBUG: Migrando archivos existentes");
+            
+            // Extraer token y validar
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token requerido"));
+            }
+
+            String token = authHeader.substring(7);
+            if (!jwtUtils.validateJwtToken(token)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+            }
+
+            String email = jwtUtils.getEmailFromJwtToken(token);
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+            if (!usuarioOpt.isPresent()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            }
+
+            Usuario usuario = usuarioOpt.get();
+            Empresa empresa = usuario.getEmpresa();
+            if (empresa == null) {
+                return ResponseEntity.status(400).body(Map.of("error", "Usuario sin empresa asociada"));
+            }
+
+            Long empresaId = empresa.getId();
+            System.out.println("🔥 DEBUG: Migrando archivos para empresa ID: " + empresaId);
+
+            // Obtener todos los productos con imágenes
+            List<Producto> productos = productoRepository.findByEmpresa(empresa).stream()
+                .filter(p -> p.getActivo() != null && p.getActivo())
+                .collect(Collectors.toList());
+            int archivosRegistrados = 0;
+            long totalBytes = 0;
+
+            for (Producto producto : productos) {
+                if (producto.getImagenes() != null && !producto.getImagenes().isEmpty()) {
+                    for (String urlImagen : producto.getImagenes()) {
+                        if (urlImagen != null && !urlImagen.trim().isEmpty()) {
+                            try {
+                                // Extraer public_id de la URL de Cloudinary
+                                String publicId = extraerPublicIdDeUrl(urlImagen);
+                                
+                                // Estimar tamaño (promedio de imagen de producto: 500KB)
+                                Long tamañoEstimado = 500L * 1024L; // 500KB en bytes
+                                
+                                // Registrar archivo
+                                ArchivoEmpresa archivo = almacenamientoService.registrarArchivo(
+                                    empresaId,
+                                    urlImagen,
+                                    publicId,
+                                    "producto",
+                                    tamañoEstimado,
+                                    "imagen_producto_" + producto.getId(),
+                                    "image/jpeg"
+                                );
+                                
+                                archivosRegistrados++;
+                                totalBytes += tamañoEstimado;
+                                
+                                System.out.println("✅ Registrado archivo: " + urlImagen + " - " + tamañoEstimado + " bytes");
+                                
+                            } catch (Exception e) {
+                                System.err.println("❌ Error registrando archivo: " + urlImagen + " - " + e.getMessage());
+                            }
+                        }
+                    }
+                }
+            }
+
+            Map<String, Object> respuesta = new HashMap<>();
+            respuesta.put("empresaId", empresaId);
+            respuesta.put("empresaNombre", empresa.getNombre());
+            respuesta.put("archivosRegistrados", archivosRegistrados);
+            respuesta.put("totalBytes", totalBytes);
+            respuesta.put("totalMB", totalBytes / (1024.0 * 1024.0));
+            respuesta.put("mensaje", "Migración completada");
+            respuesta.put("timestamp", LocalDateTime.now());
+            
+            return ResponseEntity.ok(respuesta);
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR en migración de archivos: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error en migración: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Extrae el public_id de una URL de Cloudinary
+     */
+    private String extraerPublicIdDeUrl(String url) {
+        try {
+            // Ejemplo: https://res.cloudinary.com/demo/image/upload/v1234567890/minegocio/productos/abc123.jpg
+            // Extraer: minegocio/productos/abc123
+            String[] partes = url.split("/upload/");
+            if (partes.length > 1) {
+                String ruta = partes[1];
+                // Remover versión si existe
+                if (ruta.contains("/v")) {
+                    ruta = ruta.substring(ruta.indexOf("/v") + 2);
+                    ruta = ruta.substring(ruta.indexOf("/") + 1);
+                }
+                // Remover extensión
+                if (ruta.contains(".")) {
+                    ruta = ruta.substring(0, ruta.lastIndexOf("."));
+                }
+                return ruta;
+            }
+        } catch (Exception e) {
+            System.err.println("Error extrayendo public_id de: " + url);
+        }
+        return "archivo_" + System.currentTimeMillis();
     }
 
     /**
