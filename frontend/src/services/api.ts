@@ -1436,6 +1436,31 @@ class ApiService {
       throw error;
     }
   }
+
+  // Métodos para importación de productos
+  async descargarPlantillaImportacion(empresaId: number): Promise<Blob> {
+    const response = await this.api.get(`/empresas/${empresaId}/productos/plantilla-importacion`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  }
+
+  async validarArchivoImportacion(empresaId: number, archivo: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    
+    const response = await this.api.post(`/empresas/${empresaId}/productos/validar-importacion`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  }
+
+  async importarProductos(empresaId: number, productos: any[]): Promise<any> {
+    const response = await this.api.post(`/empresas/${empresaId}/productos/importar-productos`, productos);
+    return response.data;
+  }
 }
 
 export default new ApiService();

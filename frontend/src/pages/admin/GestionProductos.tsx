@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import BarcodeScanner from '../../components/BarcodeScanner';
+import ImportacionProductos from '../../components/ImportacionProductos';
 import { useResponsive } from '../../hooks/useResponsive';
 import type { Producto } from '../../types';
 import '../../styles/gestion-productos.css';
@@ -99,6 +100,9 @@ const GestionProductos: React.FC = () => {
   const [productoEscaneado, setProductoEscaneado] = useState<Producto | null>(null);
   const [stockOriginal, setStockOriginal] = useState<number>(0);
   const [cantidadStock, setCantidadStock] = useState<number>(1);
+  
+  // Estados para importación masiva
+  const [mostrarImportacion, setMostrarImportacion] = useState(false);
   const [productosAgregados, setProductosAgregados] = useState<Array<{producto: Producto, cantidad: number, stockOriginal: number}>>([]);
   const [mostrarResumen, setMostrarResumen] = useState(false);
   const [guardandoStock, setGuardandoStock] = useState(false);
@@ -291,7 +295,7 @@ const GestionProductos: React.FC = () => {
     }
 
     // Filtro por stock bajo
-    if (filtros.stockBajo && producto.stock > producto.stockMinimo) {
+    if (filtros.stockBajo && producto.stock > (producto.stockMinimo || 0)) {
       return false;
     }
 
@@ -513,6 +517,21 @@ const GestionProductos: React.FC = () => {
 
   const irAHistorialCarga = () => {
     navigate('/admin/historial-carga-productos');
+  };
+  
+  // Funciones para importación masiva
+  const abrirImportacion = () => {
+    setMostrarImportacion(true);
+  };
+  
+  const cerrarImportacion = () => {
+    setMostrarImportacion(false);
+  };
+  
+  const onImportacionCompletada = () => {
+    setMostrarImportacion(false);
+    // Recargar productos después de la importación
+    cargarProductos();
   };
 
   const manejarEscaneoStock = async (codigoBarras: string) => {
@@ -919,6 +938,79 @@ const GestionProductos: React.FC = () => {
                 fontWeight: '600'
               }}>
                 Ver historial →
+              </div>
+            </div>
+
+            {/* Tarjeta Importación Masiva */}
+            <div 
+              onClick={abrirImportacion}
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                animation: 'slideInUp 0.6s ease-out 0.7s both'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = '#10b981';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.25rem',
+                  marginRight: '0.75rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}>
+                  📥
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Importación Masiva
+                  </h3>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Carga múltiples productos desde un archivo Excel
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: '#10b981',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                Importar productos →
               </div>
             </div>
           </div>
@@ -1828,7 +1920,7 @@ const GestionProductos: React.FC = () => {
                           fontWeight: '700',
                           color: '#059669'
                         }}>
-                          ${producto.precio.toFixed(2)}
+                          {producto.precio ? `$${producto.precio.toFixed(2)}` : 'No especificado'}
                         </div>
                       </div>
                       
@@ -1860,7 +1952,7 @@ const GestionProductos: React.FC = () => {
                           <span className="stock" style={{
                             fontSize: '16px',
                             fontWeight: '600',
-                            color: producto.stock <= producto.stockMinimo ? '#ef4444' : '#059669',
+                            color: producto.stock <= ((producto.stockMinimo || 0) || 0) ? '#ef4444' : '#059669',
                             minWidth: '30px',
                             textAlign: 'center'
                           }}>
@@ -1891,7 +1983,7 @@ const GestionProductos: React.FC = () => {
                           </button>
                         </div>
                         
-                        {producto.stock <= producto.stockMinimo && (
+                        {producto.stock <= ((producto.stockMinimo || 0) || 0) && (
                           <div style={{
                             fontSize: '12px',
                             color: '#ef4444',
@@ -2216,7 +2308,7 @@ const GestionProductos: React.FC = () => {
                               fontWeight: '700',
                               color: '#059669'
                             }}>
-                              ${producto.precio.toFixed(2)}
+                              {producto.precio ? `${producto.precio.toFixed(2)}` : 'No especificado'}
                             </div>
                             <div style={{
                               fontSize: '11px',
@@ -2230,11 +2322,11 @@ const GestionProductos: React.FC = () => {
                             <div style={{
                               fontSize: '14px',
                               fontWeight: '600',
-                              color: producto.stock <= producto.stockMinimo ? '#ef4444' : '#059669'
+                              color: producto.stock <= (producto.stockMinimo || 0) ? '#ef4444' : '#059669'
                             }}>
                               Stock: {producto.stock}
                             </div>
-                            {producto.stock <= producto.stockMinimo && (
+                            {producto.stock <= (producto.stockMinimo || 0) && (
                               <div style={{
                                 fontSize: '9px',
                                 color: '#ef4444',
@@ -2286,7 +2378,7 @@ const GestionProductos: React.FC = () => {
                             <span style={{
                               fontSize: '14px',
                               fontWeight: '600',
-                              color: producto.stock <= producto.stockMinimo ? '#ef4444' : '#059669',
+                              color: producto.stock <= (producto.stockMinimo || 0) ? '#ef4444' : '#059669',
                               minWidth: '25px',
                               textAlign: 'center'
                             }}>
@@ -2550,7 +2642,7 @@ const GestionProductos: React.FC = () => {
                               fontWeight: '700',
                               color: '#059669'
                             }}>
-                              ${producto.precio.toFixed(2)}
+                              {producto.precio ? `${producto.precio.toFixed(2)}` : 'No especificado'}
                             </div>
                             <div style={{
                               fontSize: '11px',
@@ -2564,11 +2656,11 @@ const GestionProductos: React.FC = () => {
                             <div style={{
                               fontSize: '14px',
                               fontWeight: '600',
-                              color: producto.stock <= producto.stockMinimo ? '#ef4444' : '#059669'
+                              color: producto.stock <= (producto.stockMinimo || 0) ? '#ef4444' : '#059669'
                             }}>
                               Stock: {producto.stock}
                             </div>
-                            {producto.stock <= producto.stockMinimo && (
+                            {producto.stock <= (producto.stockMinimo || 0) && (
                               <div style={{
                                 fontSize: '9px',
                                 color: '#ef4444',
@@ -3248,7 +3340,7 @@ const GestionProductos: React.FC = () => {
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0'
                       }}>
-                        {new Date(productoSeleccionado.fechaCreacion).toLocaleDateString('es-CL')}
+                        {new Date(productoSeleccionado.fechaCreacion || "").toLocaleDateString('es-CL')}
                       </div>
                     </div>
 
@@ -3273,7 +3365,7 @@ const GestionProductos: React.FC = () => {
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0'
                       }}>
-                        {new Date(productoSeleccionado.fechaActualizacion).toLocaleDateString('es-CL')}
+                        {new Date(productoSeleccionado.fechaActualizacion || "").toLocaleDateString('es-CL')}
                       </div>
                     </div>
                   </div>
@@ -4230,6 +4322,15 @@ const GestionProductos: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Importación Masiva */}
+      {mostrarImportacion && empresaId && (
+        <ImportacionProductos
+          empresaId={empresaId}
+          onCerrar={cerrarImportacion}
+          onImportacionCompletada={onImportacionCompletada}
+        />
       )}
     </div>
   );

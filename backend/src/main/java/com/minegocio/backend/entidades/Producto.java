@@ -33,8 +33,8 @@ public class Producto {
     @Column(length = 1000)
     private String descripcion;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "El precio debe ser mayor a 0")
-    @Column(nullable = false, precision = 10, scale = 2)
+    @DecimalMin(value = "0.0", inclusive = true, message = "El precio debe ser mayor o igual a 0")
+    @Column(nullable = true, precision = 10, scale = 2)
     private BigDecimal precio;
 
     @Min(value = 0, message = "El stock no puede ser negativo")

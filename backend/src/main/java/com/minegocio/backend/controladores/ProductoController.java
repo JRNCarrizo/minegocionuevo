@@ -1,9 +1,12 @@
 package com.minegocio.backend.controladores;
 
 import com.minegocio.backend.dto.ProductoDTO;
+import com.minegocio.backend.dto.ImportacionProductoDTO;
+import com.minegocio.backend.dto.ResultadoImportacionDTO;
 import com.minegocio.backend.servicios.ProductoService;
 import com.minegocio.backend.servicios.CloudinaryService;
 import com.minegocio.backend.servicios.LimiteService;
+import com.minegocio.backend.servicios.ImportacionProductoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,6 +38,9 @@ public class ProductoController {
 
     @Autowired
     private LimiteService limiteService;
+
+    @Autowired
+    private ImportacionProductoService importacionProductoService;
 
     /**
      * Obtiene todos los productos de una empresa
@@ -852,6 +858,79 @@ public class ProductoController {
             );
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Descarga la plantilla Excel para importación de productos
+     */
+    @GetMapping("/plantilla-importacion")
+    public ResponseEntity<?> descargarPlantillaImportacion(@PathVariable Long empresaId) {
+        try {
+            byte[] plantilla = importacionProductoService.generarPlantillaExcel();
+            
+            return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"plantilla_productos.xlsx\"")
+                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .body(plantilla);
+                
+        } catch (Exception e) {
+            System.err.println("Error al generar plantilla: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al generar la plantilla: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Valida un archivo Excel para importación de productos
+     */
+    @PostMapping("/validar-importacion")
+    public ResponseEntity<?> validarArchivoImportacion(
+            @PathVariable Long empresaId,
+            @RequestParam("archivo") MultipartFile archivo) {
+        try {
+            // Validar tipo de archivo
+            if (!archivo.getOriginalFilename().toLowerCase().endsWith(".xlsx")) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Solo se permiten archivos Excel (.xlsx)"));
+            }
+
+            // Validar tamaño del archivo (máximo 10MB)
+            if (archivo.getSize() > 10 * 1024 * 1024) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "El archivo no puede ser mayor a 10MB"));
+            }
+
+            ResultadoImportacionDTO resultado = importacionProductoService.validarArchivoExcel(archivo, empresaId);
+            
+            return ResponseEntity.ok(resultado);
+            
+        } catch (Exception e) {
+            System.err.println("Error al validar archivo: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al validar el archivo: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Importa productos desde un archivo Excel validado
+     */
+    @PostMapping("/importar-productos")
+    public ResponseEntity<?> importarProductos(
+            @PathVariable Long empresaId,
+            @RequestBody List<ImportacionProductoDTO> productos) {
+        try {
+            ResultadoImportacionDTO resultado = importacionProductoService.importarProductos(productos, empresaId);
+            
+            return ResponseEntity.ok(resultado);
+            
+        } catch (Exception e) {
+            System.err.println("Error al importar productos: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al importar productos: " + e.getMessage()));
         }
     }
 }
