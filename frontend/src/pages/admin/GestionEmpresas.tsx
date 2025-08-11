@@ -46,15 +46,14 @@ const GestionEmpresas: React.FC = () => {
       setLoading(true);
       setError(null);
       console.log('🔍 Iniciando carga de empresas...');
-      const response = await superAdminService.obtenerEmpresas(0, 100);
-      console.log('🔍 Respuesta del backend:', response);
-      console.log('🔍 Datos de empresas:', response.data);
-      console.log('🔍 Cantidad de empresas:', response.data?.length || 0);
+      const empresas = await superAdminService.obtenerEmpresas();
+      console.log('🔍 Respuesta del backend:', empresas);
+      console.log('🔍 Cantidad de empresas:', empresas?.length || 0);
       
       // Debug de las nuevas estadísticas
-      if (response.data && response.data.length > 0) {
+      if (empresas && empresas.length > 0) {
         console.log('🔍 Debug nuevas estadísticas:');
-        response.data.forEach((empresa: any, index: number) => {
+        empresas.forEach((empresa: any, index: number) => {
           console.log(`  Empresa ${index + 1}: ${empresa.nombre}`);
           console.log(`    - Ventas Rápidas: ${empresa.totalVentasRapidas}`);
           console.log(`    - Transacciones: ${empresa.totalTransacciones}`);
@@ -62,7 +61,7 @@ const GestionEmpresas: React.FC = () => {
         });
       }
       
-      setEmpresas(response.data || []);
+      setEmpresas(empresas || []);
     } catch (err) {
       console.error('Error al cargar empresas:', err);
       setError('Error al cargar las empresas');
