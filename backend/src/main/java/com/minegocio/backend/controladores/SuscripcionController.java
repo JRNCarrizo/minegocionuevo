@@ -34,6 +34,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.math.BigDecimal;
 import com.minegocio.backend.servicios.SuscripcionAutomaticaService;
+import com.minegocio.backend.servicios.AutenticacionService;
 
 /**
  * Controlador para la gestión de suscripciones (Super Admin)
@@ -64,14 +65,52 @@ public class SuscripcionController {
     @Autowired
     private SuscripcionAutomaticaService suscripcionAutomaticaService;
 
+    @Autowired
+    private AutenticacionService autenticacionService;
+
+    /**
+     * Método helper para verificar autenticación de SUPER_ADMIN
+     */
+    private ResponseEntity<?> verificarAutenticacionSuperAdmin(HttpServletRequest request) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token no válido"));
+            }
+            
+            token = token.substring(7);
+            String email = jwtUtils.extractUsername(token);
+            
+            Optional<Usuario> usuario = autenticacionService.obtenerPorEmail(email);
+            if (usuario.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            }
+            
+            // Verificar que sea super admin
+            if (!usuario.get().getRol().name().equals("SUPER_ADMIN")) {
+                return ResponseEntity.status(403).body(Map.of("error", "Acceso denegado. Se requiere rol SUPER_ADMIN"));
+            }
+            
+            return null; // Autenticación exitosa
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(Map.of("error", "Error de autenticación"));
+        }
+    }
+
     // ===== ENDPOINTS PARA PLANES =====
 
     /**
      * Obtiene todos los planes con estadísticas
      */
     @GetMapping("/planes")
-    public ResponseEntity<List<PlanDTO>> obtenerPlanes() {
+    public ResponseEntity<List<PlanDTO>> obtenerPlanes(HttpServletRequest request) {
         try {
+            // Verificar autenticación de SUPER_ADMIN
+            ResponseEntity<?> authResponse = verificarAutenticacionSuperAdmin(request);
+            if (authResponse != null) {
+                return (ResponseEntity<List<PlanDTO>>) authResponse;
+            }
+            
             List<PlanDTO> planes = suscripcionService.obtenerPlanesConEstadisticas();
             return ResponseEntity.ok(planes);
         } catch (Exception e) {
@@ -142,8 +181,14 @@ public class SuscripcionController {
      * Obtiene todas las suscripciones con detalles
      */
     @GetMapping("")
-    public ResponseEntity<List<SuscripcionDTO>> obtenerSuscripciones() {
+    public ResponseEntity<List<SuscripcionDTO>> obtenerSuscripciones(HttpServletRequest request) {
         try {
+            // Verificar autenticación de SUPER_ADMIN
+            ResponseEntity<?> authResponse = verificarAutenticacionSuperAdmin(request);
+            if (authResponse != null) {
+                return (ResponseEntity<List<SuscripcionDTO>>) authResponse;
+            }
+            
             System.out.println("🎯 SuscripcionController - Iniciando obtenerSuscripciones");
             List<SuscripcionDTO> suscripciones = suscripcionService.obtenerSuscripcionesConDetalles();
             System.out.println("🎯 SuscripcionController - Suscripciones obtenidas: " + suscripciones.size());

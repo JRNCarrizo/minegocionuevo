@@ -261,29 +261,47 @@ public class SuperAdminController {
     @GetMapping("/empresas")
     public ResponseEntity<?> obtenerTodasLasEmpresas(HttpServletRequest request) {
         try {
+            System.out.println("🔍 === INICIO OBTENER EMPRESAS SUPER ADMIN ===");
+            
             String token = request.getHeader("Authorization");
+            System.out.println("🔍 Token recibido: " + (token != null ? "SÍ" : "NO"));
+            
             if (token == null || !token.startsWith("Bearer ")) {
+                System.out.println("❌ Token no válido o ausente");
                 return ResponseEntity.status(401).body(Map.of("error", "Token no válido"));
             }
             
             token = token.substring(7);
             String email = jwtUtils.extractUsername(token);
+            System.out.println("🔍 Email extraído del token: " + email);
             
             Optional<Usuario> usuario = autenticacionService.obtenerPorEmail(email);
+            System.out.println("🔍 Usuario encontrado: " + (usuario.isPresent() ? "SÍ" : "NO"));
+            
             if (usuario.isEmpty()) {
+                System.out.println("❌ Usuario no encontrado");
                 return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
             }
             
+            System.out.println("🔍 Rol del usuario: " + usuario.get().getRol().name());
+            
             // Verificar que sea super admin
             if (!usuario.get().getRol().name().equals("SUPER_ADMIN")) {
+                System.out.println("❌ Acceso denegado. Rol requerido: SUPER_ADMIN, Rol actual: " + usuario.get().getRol().name());
                 return ResponseEntity.status(403).body(Map.of("error", "Acceso denegado. Se requiere rol SUPER_ADMIN"));
             }
             
+            System.out.println("✅ Usuario autenticado como SUPER_ADMIN");
+            
             // Crear Pageable para obtener todas las empresas
             Pageable pageable = PageRequest.of(0, 100);
+            System.out.println("🔍 Pageable creado: page=0, size=100");
             
             // Usar SuperAdminService para obtener empresas con estadísticas completas
+            System.out.println("🔍 Llamando a superAdminService.obtenerEmpresas...");
             var resultado = superAdminService.obtenerEmpresas(null, null, null, null, null, pageable);
+            System.out.println("🔍 Resultado obtenido. Total empresas: " + resultado.getTotalElements());
+            System.out.println("🔍 Contenido del resultado: " + resultado.getContent().size() + " empresas");
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Empresas obtenidas correctamente",
@@ -291,9 +309,11 @@ public class SuperAdminController {
             ));
             
         } catch (Exception e) {
-            System.err.println("Error al obtener empresas: " + e.getMessage());
+            System.err.println("❌ Error al obtener empresas: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("error", "Error interno del servidor"));
+        } finally {
+            System.out.println("🔍 === FIN OBTENER EMPRESAS SUPER ADMIN ===");
         }
     }
 } 
