@@ -64,6 +64,7 @@ const ControlInventario: React.FC = () => {
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoInventario | null>(null);
   const [cantidadEscaneada, setCantidadEscaneada] = useState<number>(1);
   const [mostrarModalProducto, setMostrarModalProducto] = useState(false);
+  const [productoVieneDelBuscador, setProductoVieneDelBuscador] = useState<boolean>(false);
   
   // Estados para el modal de detalle de inventario
   const [inventarioDetalle, setInventarioDetalle] = useState<Inventario | null>(null);
@@ -93,12 +94,137 @@ const ControlInventario: React.FC = () => {
   // Estados para secciones expandibles
   const [seccionExpandida, setSeccionExpandida] = useState<string | null>(null);
 
+  // Estados para búsqueda manual de productos
+  const [filtroProductos, setFiltroProductos] = useState('');
+  const [productosFiltrados, setProductosFiltrados] = useState<Producto[]>([]);
+  const [mostrarProductos, setMostrarProductos] = useState(false);
+  const [productoSeleccionadoBusqueda, setProductoSeleccionadoBusqueda] = useState(-1);
+  const [todosLosProductos, setTodosLosProductos] = useState<Producto[]>([]);
+
+  // Función para agregar producto manualmente al inventario
+  const agregarProductoManual = (producto: Producto) => {
+    // Si no estamos en modo escaneo, iniciar automáticamente sin abrir cámara
+    if (modoEscaneo === 'INICIAR') {
+      const nuevoInventario: Inventario = {
+        id: Date.now(), // Temporal, debería venir del backend
+        fechaInventario: new Date().toISOString(),
+        totalProductos: 0,
+        productosConDiferencias: 0,
+        valorTotalDiferencias: 0,
+        porcentajePrecision: 0,
+        estado: 'EN_PROGRESO',
+        detalles: []
+      };
+      
+      setInventarioActual(nuevoInventario);
+      setProductosEscaneados(new Map());
+      setModoEscaneo('ESCANEANDO');
+      // NO activar la cámara
+    }
+    
+    // Crear el producto inventario para el modal
+    const codigoProducto = producto.codigoBarras || producto.codigoPersonalizado || producto.id.toString();
+    const productoExistente = productosEscaneados.get(codigoProducto);
+    
+    let productoInventario: ProductoInventario;
+    
+    if (productoExistente) {
+      // Si ya existe, usar el existente
+      productoInventario = productoExistente;
+    } else {
+      // Si no existe, crear uno nuevo
+      productoInventario = {
+        id: producto.id,
+        codigoProducto: codigoProducto,
+        nombreProducto: producto.nombre,
+        stockReal: producto.stock,
+        stockEscaneado: 0,
+        diferencia: 0 - producto.stock,
+        precioUnitario: producto.precio || 0,
+        categoria: producto.categoria || '',
+        marca: producto.marca || ''
+      };
+    }
+    
+    // Abrir el modal con el producto seleccionado
+    setProductoSeleccionado(productoInventario);
+    setCantidadEscaneada(productoInventario.stockEscaneado || 0);
+    setProductoVieneDelBuscador(true); // Marcar que viene del buscador
+    setMostrarModalProducto(true);
+    
+    // Limpiar búsqueda
+    setFiltroProductos('');
+    setMostrarProductos(false);
+    setProductoSeleccionadoBusqueda(-1);
+  };
+
+  // Función para manejar teclas en la búsqueda
+  const manejarTeclasBusqueda = (e: React.KeyboardEvent) => {
+    if (!mostrarProductos || productosFiltrados.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setProductoSeleccionadoBusqueda(prev => 
+          prev < productosFiltrados.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setProductoSeleccionadoBusqueda(prev => 
+          prev > 0 ? prev - 1 : productosFiltrados.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (productoSeleccionadoBusqueda >= 0 && productoSeleccionadoBusqueda < productosFiltrados.length) {
+          agregarProductoManual(productosFiltrados[productoSeleccionadoBusqueda]);
+        }
+        break;
+      case 'Escape':
+        setMostrarProductos(false);
+        setProductoSeleccionadoBusqueda(-1);
+        break;
+    }
+  };
+
   useEffect(() => {
     if (datosUsuario?.empresaId) {
       cargarHistorialInventarios();
       cargarEstadisticasOperaciones();
+      cargarTodosLosProductos();
     }
   }, [datosUsuario?.empresaId]);
+
+  // Cargar todos los productos para búsqueda manual
+  const cargarTodosLosProductos = async () => {
+    if (!datosUsuario?.empresaId) return;
+    
+    try {
+      const response = await ApiService.obtenerTodosLosProductosIncluirInactivos(datosUsuario.empresaId);
+      if (response && response.data) {
+        setTodosLosProductos(response.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar productos para búsqueda:', error);
+    }
+  };
+
+  // Filtrar productos cuando cambie el filtro
+  useEffect(() => {
+    if (filtroProductos.trim()) {
+      const filtrados = todosLosProductos.filter(producto =>
+        producto.nombre.toLowerCase().includes(filtroProductos.toLowerCase()) ||
+        (producto.codigoPersonalizado && producto.codigoPersonalizado.toLowerCase().includes(filtroProductos.toLowerCase())) ||
+        (producto.codigoBarras && producto.codigoBarras.includes(filtroProductos))
+      );
+      setProductosFiltrados(filtrados);
+      setMostrarProductos(filtrados.length > 0);
+    } else {
+      setProductosFiltrados([]);
+      setMostrarProductos(false);
+    }
+  }, [filtroProductos, todosLosProductos]);
 
   // Función para cargar historial de inventarios físicos
   const cargarHistorialInventarios = useCallback(async () => {
@@ -245,6 +371,7 @@ const ControlInventario: React.FC = () => {
       // Mostrar modal para editar cantidad
       setProductoSeleccionado(productoInventario);
       setCantidadEscaneada(productoInventario.stockEscaneado);
+      setProductoVieneDelBuscador(false); // Marcar que NO viene del buscador
       setMostrarModalProducto(true);
       // NO cerrar el escáner aquí, solo ocultarlo temporalmente
       // setMostrarScanner(false);
@@ -353,6 +480,7 @@ const ControlInventario: React.FC = () => {
     // Cerrar modal y volver al escáner correspondiente
     setMostrarModalProducto(false);
     setProductoSeleccionado(null);
+    setProductoVieneDelBuscador(false);
     
     // Establecer el modo ESCANEANDO para mostrar la sección de progreso
     setModoEscaneo('ESCANEANDO');
@@ -365,6 +493,40 @@ const ControlInventario: React.FC = () => {
     }
     
     toast.success(`Producto ${productoSeleccionado.nombreProducto} registrado con cantidad: ${cantidadEscaneada}`);
+  };
+
+  const seguirInventariando = () => {
+    if (!productoSeleccionado) return;
+
+    const diferencia = cantidadEscaneada - productoSeleccionado.stockReal;
+    
+    console.log('🔍 DEBUG - seguirInventariando:');
+    console.log('🔍 Producto:', productoSeleccionado.nombreProducto);
+    console.log('🔍 Stock Real (sistema):', productoSeleccionado.stockReal);
+    console.log('🔍 Cantidad Escaneada:', cantidadEscaneada);
+    console.log('🔍 Diferencia calculada:', diferencia);
+
+    const productoActualizado: ProductoInventario = {
+      ...productoSeleccionado,
+      stockEscaneado: cantidadEscaneada,
+      diferencia: diferencia
+    };
+
+    // Actualizar el mapa de productos escaneados
+    const nuevosProductosEscaneados = new Map(productosEscaneados);
+    nuevosProductosEscaneados.set(productoSeleccionado.codigoProducto, productoActualizado);
+    setProductosEscaneados(nuevosProductosEscaneados);
+
+    // Cerrar modal y mantener en modo ESCANEANDO
+    setMostrarModalProducto(false);
+    setProductoSeleccionado(null);
+    setProductoVieneDelBuscador(false);
+    
+    // Mantener el modo ESCANEANDO para mostrar la sección de progreso
+    // NO cerrar los escáneres para mantener las opciones disponibles
+    setModoEscaneo('ESCANEANDO');
+    
+    toast.success(`Producto ${productoSeleccionado.nombreProducto} registrado con cantidad: ${cantidadEscaneada}. Puedes continuar con búsqueda manual o usar los escáneres.`);
   };
 
   const cancelarCantidad = () => {
@@ -1123,6 +1285,134 @@ const ControlInventario: React.FC = () => {
           </div>
         )}
 
+        {/* Campo de búsqueda manual - Solo en pantalla inicial */}
+        {modoEscaneo === 'INICIAR' && (
+          <div className="tarjeta mb-6" style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: isMobile ? '16px' : '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <h3 className="titulo-3 mb-4" style={{
+              fontSize: isMobile ? '18px' : '20px',
+              fontWeight: '600',
+              color: '#1e293b',
+              marginBottom: '16px',
+              textAlign: 'center'
+            }}>
+              🔍 Búsqueda Rápida de Productos
+            </h3>
+            <p style={{
+              fontSize: isMobile ? '12px' : '14px',
+              color: '#64748b',
+              marginBottom: '16px',
+              textAlign: 'center'
+            }}>
+              Busca productos por nombre o código personalizado para agregarlos manualmente al inventario
+            </p>
+            
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="Escribe el nombre o código del producto..."
+                value={filtroProductos}
+                onChange={(e) => setFiltroProductos(e.target.value)}
+                onKeyDown={manejarTeclasBusqueda}
+                style={{
+                  width: '100%',
+                  height: isMobile ? '44px' : '48px',
+                  padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem',
+                  border: '2px solid #e2e8f0',
+                  borderRadius: '0.5rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
+                  outline: 'none',
+                  background: 'white'
+                }}
+              />
+              
+              {mostrarProductos && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  background: 'white',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '0.5rem',
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                  zIndex: 1000,
+                  maxHeight: '250px',
+                  overflowY: 'auto'
+                }}>
+                  {productosFiltrados.length === 0 ? (
+                    <div style={{
+                      padding: '1rem',
+                      textAlign: 'center',
+                      color: '#64748b',
+                      fontSize: '0.875rem'
+                    }}>
+                      No se encontraron productos
+                    </div>
+                  ) : (
+                    productosFiltrados.map((producto, index) => (
+                      <div
+                        key={producto.id}
+                        onClick={() => agregarProductoManual(producto)}
+                        style={{
+                          padding: '0.75rem 1rem',
+                          borderBottom: '1px solid #f1f5f9',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          background: productoSeleccionadoBusqueda === index ? '#3b82f6' : 'white',
+                          color: productoSeleccionadoBusqueda === index ? 'white' : '#1e293b'
+                        }}
+                        onMouseOver={(e) => {
+                          if (productoSeleccionadoBusqueda !== index) {
+                            e.currentTarget.style.background = '#f8fafc';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (productoSeleccionadoBusqueda !== index) {
+                            e.currentTarget.style.background = 'white';
+                          }
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{ 
+                            fontWeight: '600', 
+                            color: productoSeleccionadoBusqueda === index ? 'white' : '#1e293b' 
+                          }}>
+                            {producto.nombre}
+                          </div>
+                          <div style={{ 
+                            fontSize: '0.875rem', 
+                            color: productoSeleccionadoBusqueda === index ? '#e2e8f0' : '#64748b' 
+                          }}>
+                            Stock: {producto.stock} | {producto.codigoPersonalizado ? `Código: ${producto.codigoPersonalizado}` : ''}
+                          </div>
+                        </div>
+                        <div style={{ 
+                          fontSize: '0.875rem', 
+                          color: productoSeleccionadoBusqueda === index ? '#1e293b' : '#3b82f6',
+                          fontWeight: '600',
+                          padding: '0.25rem 0.5rem',
+                          background: productoSeleccionadoBusqueda === index ? 'white' : '#eff6ff',
+                          borderRadius: '0.25rem'
+                        }}>
+                          Agregar
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Estadísticas de Operaciones */}
         {estadisticasOperaciones && (
           <div className="tarjeta mb-6" style={{
@@ -1344,6 +1634,224 @@ const ControlInventario: React.FC = () => {
               </div>
             </div>
             
+            {/* Opciones de escaneo */}
+            <div style={{
+              background: 'white',
+              padding: isMobile ? '16px' : '20px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              marginBottom: '16px'
+            }}>
+              <h4 style={{
+                fontSize: isMobile ? '16px' : '18px',
+                fontWeight: '600',
+                color: '#1e293b',
+                marginBottom: '12px',
+                textAlign: 'center'
+              }}>
+                📱 Opciones de Escaneo
+              </h4>
+              <p style={{
+                fontSize: isMobile ? '12px' : '14px',
+                color: '#64748b',
+                marginBottom: '16px',
+                textAlign: 'center'
+              }}>
+                Elige cómo quieres continuar agregando productos al inventario
+              </p>
+              
+              <div style={{ 
+                display: 'flex', 
+                gap: isMobile ? '8px' : '12px',
+                flexDirection: isMobile ? 'column' : 'row'
+              }}>
+                <button
+                  onClick={() => setMostrarScanner(true)}
+                  className="boton boton-primario"
+                  style={{
+                    background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: isMobile ? '10px 20px' : '12px 24px',
+                    borderRadius: '12px',
+                    fontSize: isMobile ? '14px' : '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)',
+                    width: isMobile ? '100%' : 'auto',
+                    flex: 1
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(220, 38, 38, 0.4)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.3)';
+                  }}
+                >
+                  📱 Escáner Cámara
+                </button>
+                
+                <button
+                  onClick={() => setMostrarScannerUSB(true)}
+                  className="boton boton-secundario"
+                  style={{
+                    background: 'white',
+                    color: '#dc2626',
+                    border: '2px solid #dc2626',
+                    padding: isMobile ? '10px 20px' : '12px 24px',
+                    borderRadius: '12px',
+                    fontSize: isMobile ? '14px' : '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    width: isMobile ? '100%' : 'auto',
+                    flex: 1
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#dc2626';
+                    e.currentTarget.style.color = 'white';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.color = '#dc2626';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  ⌨️ Escáner USB
+                </button>
+              </div>
+            </div>
+
+            {/* Campo de búsqueda manual */}
+            <div style={{
+              background: 'white',
+              padding: isMobile ? '16px' : '20px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              marginBottom: '16px'
+            }}>
+              <h4 style={{
+                fontSize: isMobile ? '16px' : '18px',
+                fontWeight: '600',
+                color: '#1e293b',
+                marginBottom: '12px'
+              }}>
+                🔍 Búsqueda Manual de Productos
+              </h4>
+              <p style={{
+                fontSize: isMobile ? '12px' : '14px',
+                color: '#64748b',
+                marginBottom: '16px'
+              }}>
+                Busca productos por nombre o código personalizado para agregarlos manualmente al inventario
+              </p>
+              
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  placeholder="Escribe el nombre o código del producto..."
+                  value={filtroProductos}
+                  onChange={(e) => setFiltroProductos(e.target.value)}
+                  onKeyDown={manejarTeclasBusqueda}
+                  style={{
+                    width: '100%',
+                    height: isMobile ? '44px' : '48px',
+                    padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    outline: 'none',
+                    background: 'white'
+                  }}
+                />
+                
+                {mostrarProductos && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                    zIndex: 1000,
+                    maxHeight: '250px',
+                    overflowY: 'auto'
+                  }}>
+                    {productosFiltrados.length === 0 ? (
+                      <div style={{
+                        padding: '1rem',
+                        textAlign: 'center',
+                        color: '#64748b',
+                        fontSize: '0.875rem'
+                      }}>
+                        No se encontraron productos
+                      </div>
+                    ) : (
+                      productosFiltrados.map((producto, index) => (
+                        <div
+                          key={producto.id}
+                          onClick={() => agregarProductoManual(producto)}
+                          style={{
+                            padding: '0.75rem 1rem',
+                            borderBottom: '1px solid #f1f5f9',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: productoSeleccionadoBusqueda === index ? '#3b82f6' : 'white',
+                            color: productoSeleccionadoBusqueda === index ? 'white' : '#1e293b'
+                          }}
+                          onMouseOver={(e) => {
+                            if (productoSeleccionadoBusqueda !== index) {
+                              e.currentTarget.style.background = '#f8fafc';
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (productoSeleccionadoBusqueda !== index) {
+                              e.currentTarget.style.background = 'white';
+                            }
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <div style={{ 
+                              fontWeight: '600', 
+                              color: productoSeleccionadoBusqueda === index ? 'white' : '#1e293b' 
+                            }}>
+                              {producto.nombre}
+                            </div>
+                            <div style={{ 
+                              fontSize: '0.875rem', 
+                              color: productoSeleccionadoBusqueda === index ? '#e2e8f0' : '#64748b' 
+                            }}>
+                              Stock: {producto.stock} | {producto.codigoPersonalizado ? `Código: ${producto.codigoPersonalizado}` : ''}
+                            </div>
+                          </div>
+                          <div style={{ 
+                            fontSize: '0.875rem', 
+                            color: productoSeleccionadoBusqueda === index ? '#1e293b' : '#3b82f6',
+                            fontWeight: '600',
+                            padding: '0.25rem 0.5rem',
+                            background: productoSeleccionadoBusqueda === index ? 'white' : '#eff6ff',
+                            borderRadius: '0.25rem'
+                          }}>
+                            Agregar
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Lista de productos escaneados */}
             {productosEscaneados.size > 0 && (
               <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
@@ -2181,7 +2689,7 @@ const ControlInventario: React.FC = () => {
               
               {/* Botón central llamativo */}
               <button
-                onClick={seguirEscaneando}
+                onClick={productoVieneDelBuscador ? seguirInventariando : seguirEscaneando}
                 className="boton boton-primario"
                 style={{
                   background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
@@ -2205,7 +2713,7 @@ const ControlInventario: React.FC = () => {
                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
                 }}
               >
-                🔄 Seguir Escaneando
+                {productoVieneDelBuscador ? '🔄 Seguir Inventariando' : '🔄 Seguir Escaneando'}
               </button>
               
               {/* Información adicional */}
@@ -2218,7 +2726,9 @@ const ControlInventario: React.FC = () => {
                 color: '#0369a1',
                 textAlign: 'center'
               }}>
-                💡 <strong>Opciones:</strong> Puedes finalizar el inventario ahora o continuar escaneando más productos
+                💡 <strong>Opciones:</strong> {productoVieneDelBuscador 
+                  ? 'Puedes finalizar el inventario ahora o continuar agregando más productos manualmente' 
+                  : 'Puedes finalizar el inventario ahora o continuar escaneando más productos'}
               </div>
             </div>
           </div>
