@@ -1457,10 +1457,18 @@ class ApiService {
     return response.data;
   }
 
-  async importarProductos(empresaId: number, productos: any[]): Promise<any> {
-    const response = await this.api.post(`/empresas/${empresaId}/productos/importar-productos`, productos);
-    return response.data;
-  }
+                async importarProductos(empresaId: number, productos: any[]): Promise<any> {
+                const response = await this.api.post(`/empresas/${empresaId}/productos/importar-productos`, productos);
+                return response.data;
+              }
+
+              // Método para descargar reporte de stock
+              async descargarReporteStock(empresaId: number): Promise<Blob> {
+                const response = await this.api.get(`/empresas/${empresaId}/productos/reporte-stock`, {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
 }
 
 export default new ApiService();

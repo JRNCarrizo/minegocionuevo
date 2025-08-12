@@ -534,6 +534,35 @@ const GestionProductos: React.FC = () => {
     cargarProductos();
   };
 
+  // Función para descargar reporte de stock
+  const descargarReporteStock = async () => {
+    if (!empresaId) {
+      alert('Error: No se pudo identificar la empresa');
+      return;
+    }
+
+    try {
+      setCargando(true);
+      const blob = await ApiService.descargarReporteStock(empresaId);
+      
+      // Crear un enlace para descargar el archivo
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `reporte_stock_${empresaId}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error al descargar reporte de stock:', error);
+      alert('Error al descargar el reporte de stock. Por favor, intenta nuevamente.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
   const manejarEscaneoStock = async (codigoBarras: string) => {
     console.log("📦 Código escaneado para agregar stock:", codigoBarras);
     
@@ -1011,6 +1040,79 @@ const GestionProductos: React.FC = () => {
                 fontWeight: '600'
               }}>
                 Importar productos →
+              </div>
+            </div>
+
+            {/* Tarjeta Reporte de Stock */}
+            <div 
+              onClick={descargarReporteStock}
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                animation: 'slideInUp 0.6s ease-out 0.8s both'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = '#3b82f6';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.25rem',
+                  marginRight: '0.75rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}>
+                  📊
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Reporte de Stock
+                  </h3>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Descarga un reporte completo del inventario en Excel
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: '#3b82f6',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                Descargar reporte →
               </div>
             </div>
           </div>

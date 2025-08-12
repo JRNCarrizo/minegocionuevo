@@ -7,6 +7,7 @@ import com.minegocio.backend.servicios.ProductoService;
 import com.minegocio.backend.servicios.CloudinaryService;
 import com.minegocio.backend.servicios.LimiteService;
 import com.minegocio.backend.servicios.ImportacionProductoService;
+import com.minegocio.backend.servicios.ReporteStockService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -41,6 +42,9 @@ public class ProductoController {
 
     @Autowired
     private ImportacionProductoService importacionProductoService;
+
+    @Autowired
+    private ReporteStockService reporteStockService;
 
     /**
      * Obtiene todos los productos de una empresa
@@ -931,6 +935,30 @@ public class ProductoController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error al importar productos: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Descarga el reporte de stock en Excel
+     */
+    @GetMapping("/reporte-stock")
+    public ResponseEntity<?> descargarReporteStock(@PathVariable Long empresaId) {
+        try {
+            byte[] reporte = reporteStockService.generarReporteStock(empresaId);
+            
+            String nombreArchivo = "reporte_stock_" + empresaId + "_" + 
+                java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")) + ".xlsx";
+            
+            return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"" + nombreArchivo + "\"")
+                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .body(reporte);
+                
+        } catch (Exception e) {
+            System.err.println("Error al generar reporte de stock: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al generar el reporte de stock: " + e.getMessage()));
         }
     }
 }
