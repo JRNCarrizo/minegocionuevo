@@ -1462,6 +1462,30 @@ class ApiService {
                 return response.data;
               }
 
+
+
+              // Método para descargar reporte de inventario del día
+              async descargarReporteInventarioDia(empresaId: number, fecha?: string): Promise<Blob> {
+                const url = fecha ? 
+                  `/empresas/${empresaId}/productos/reporte-inventario-dia?fecha=${fecha}` :
+                  `/empresas/${empresaId}/productos/reporte-inventario-dia`;
+                const response = await this.api.get(url, {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
+
+              // Método para descargar reporte de diferencias del día
+              async descargarReporteDiferenciasDia(empresaId: number, fecha?: string): Promise<Blob> {
+                const url = fecha ? 
+                  `/empresas/${empresaId}/productos/reporte-diferencias-dia?fecha=${fecha}` :
+                  `/empresas/${empresaId}/productos/reporte-diferencias-dia`;
+                const response = await this.api.get(url, {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
+
               // Método para descargar reporte de stock
               async descargarReporteStock(empresaId: number): Promise<Blob> {
                 const response = await this.api.get(`/empresas/${empresaId}/productos/reporte-stock`, {

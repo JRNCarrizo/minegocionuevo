@@ -98,6 +98,12 @@ const ControlInventario: React.FC = () => {
   const [filtroProductos, setFiltroProductos] = useState('');
   const [productosFiltrados, setProductosFiltrados] = useState<Producto[]>([]);
   const [mostrarProductos, setMostrarProductos] = useState(false);
+  
+  // Estados para el modal de escáner
+  const [mostrarModalEscanner, setMostrarModalEscanner] = useState(false);
+  
+  // Estados para secciones activas
+  const [seccionActiva, setSeccionActiva] = useState<string | null>(null);
   const [productoSeleccionadoBusqueda, setProductoSeleccionadoBusqueda] = useState(-1);
   const [todosLosProductos, setTodosLosProductos] = useState<Producto[]>([]);
 
@@ -156,6 +162,80 @@ const ControlInventario: React.FC = () => {
     setFiltroProductos('');
     setMostrarProductos(false);
     setProductoSeleccionadoBusqueda(-1);
+  };
+
+  // Función para descargar reporte de inventario del día
+  const descargarReporteInventarioDia = async () => {
+    if (!datosUsuario?.empresaId) {
+      toast.error('Error: No se pudo identificar la empresa');
+      return;
+    }
+
+    // Debug: Verificar token
+    const token = localStorage.getItem('token');
+    console.log('🔍 DEBUG - Token presente:', !!token);
+    console.log('🔍 DEBUG - Empresa ID:', datosUsuario.empresaId);
+
+    try {
+      setCargando(true);
+      const blob = await ApiService.descargarReporteInventarioDia(datosUsuario.empresaId);
+
+      // Crear un enlace para descargar el archivo
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `reporte_inventario_${datosUsuario.empresaId}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Reporte de inventario descargado exitosamente');
+
+    } catch (error) {
+      console.error('Error al descargar reporte de inventario:', error);
+      toast.error('Error al descargar el reporte de inventario. Por favor, intenta nuevamente.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+
+
+  // Función para descargar reporte de diferencias del día
+  const descargarReporteDiferenciasDia = async () => {
+    if (!datosUsuario?.empresaId) {
+      toast.error('Error: No se pudo identificar la empresa');
+      return;
+    }
+
+    // Debug: Verificar token
+    const token = localStorage.getItem('token');
+    console.log('🔍 DEBUG - Token presente:', !!token);
+    console.log('🔍 DEBUG - Empresa ID:', datosUsuario.empresaId);
+
+    try {
+      setCargando(true);
+      const blob = await ApiService.descargarReporteDiferenciasDia(datosUsuario.empresaId);
+
+      // Crear un enlace para descargar el archivo
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `reporte_diferencias_${datosUsuario.empresaId}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Reporte de diferencias descargado exitosamente');
+
+    } catch (error) {
+      console.error('Error al descargar reporte de diferencias:', error);
+      toast.error('Error al descargar el reporte de diferencias. Por favor, intenta nuevamente.');
+    } finally {
+      setCargando(false);
+    }
   };
 
   // Función para manejar teclas en la búsqueda
@@ -1183,238 +1263,340 @@ const ControlInventario: React.FC = () => {
           }}></div>
         </div>
 
-        {/* Estado del inventario */}
-        {modoEscaneo === 'INICIAR' && (
-          <div className="tarjeta mb-6" style={{
+        {/* Cards principales */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))',
+          gap: isMobile ? '16px' : '24px',
+          marginBottom: '32px'
+        }}>
+          
+          {/* Card 1: Reportes de Inventario */}
+          <div className="tarjeta" style={{
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
             borderRadius: '16px',
-            padding: isMobile ? '16px' : '24px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-          }}>
-            <div className="text-center">
-              <div style={{ fontSize: isMobile ? '3rem' : '4rem', marginBottom: '1rem' }}>🔍</div>
-              <h3 className="titulo-3 mb-4" style={{
-                fontSize: isMobile ? '20px' : '24px',
-                fontWeight: '600',
-                color: '#1e293b',
-                marginBottom: '16px'
-              }}>
-                Iniciar Control de Inventario
-              </h3>
-              <p className="texto-gris mb-6" style={{ 
-                fontSize: isMobile ? '14px' : '16px', 
-                color: '#64748b',
-                marginBottom: '24px',
-                maxWidth: '600px',
-                margin: '0 auto 24px'
-              }}>
-                Escanea todos los productos de tu inventario para realizar un conteo físico 
-                y comparar con el stock registrado en el sistema.
-              </p>
-              
-              <div className="flex gap-4 justify-center" style={{ 
-                gap: isMobile ? '0.5rem' : '1rem', 
+            padding: isMobile ? '20px' : '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onClick={() => setSeccionActiva('reportes')}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+          }}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <div style={{
+                width: '3rem',
+                height: '3rem',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
-                flexDirection: isMobile ? 'column' : 'row'
+                fontSize: '1.5rem',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
               }}>
-                <button
-                  onClick={() => {
-                    setMostrarScanner(true);
-                    iniciarInventario();
-                  }}
-                  className="boton boton-primario"
-                  style={{
-                    background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-                    color: 'white',
-                    border: 'none',
-                    padding: isMobile ? '10px 20px' : '12px 24px',
-                    borderRadius: '12px',
-                    fontSize: isMobile ? '14px' : '16px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)',
-                    width: isMobile ? '100%' : 'auto'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(220, 38, 38, 0.4)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.3)';
-                  }}
-                >
-                  📱 Iniciar con Cámara
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setMostrarScannerUSB(true);
-                    iniciarInventarioUSB();
-                  }}
-                  className="boton boton-secundario"
-                  style={{
-                    background: 'white',
-                    color: '#dc2626',
-                    border: '2px solid #dc2626',
-                    padding: isMobile ? '10px 20px' : '12px 24px',
-                    borderRadius: '12px',
-                    fontSize: isMobile ? '14px' : '16px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    width: isMobile ? '100%' : 'auto'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#dc2626';
-                    e.currentTarget.style.color = 'white';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.color = '#dc2626';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  ⌨️ Escáner USB
-                </button>
+                📊
+              </div>
+              <div>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: '#1e293b',
+                  margin: 0
+                }}>
+                  Reportes de Inventario
+                </h3>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#64748b',
+                  margin: 0
+                }}>
+                  Descarga reportes detallados del inventario
+                </p>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Campo de búsqueda manual - Solo en pantalla inicial */}
-        {modoEscaneo === 'INICIAR' && (
+          {/* Card 2: Historial de Inventarios */}
+          <div className="tarjeta" style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: isMobile ? '20px' : '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onClick={() => setSeccionActiva('historial')}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+          }}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <div style={{
+                width: '3rem',
+                height: '3rem',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.5rem',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+              }}>
+                📋
+              </div>
+              <div>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: '#1e293b',
+                  margin: 0
+                }}>
+                  Historial de Inventarios
+                </h3>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#64748b',
+                  margin: 0
+                }}>
+                  Consulta inventarios físicos y operaciones
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sección de Iniciar Control de Inventario - Solo se muestra cuando no hay sección activa */}
+        {!seccionActiva && (
           <div className="tarjeta mb-6" style={{
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
             borderRadius: '16px',
-            padding: isMobile ? '16px' : '24px',
+            padding: isMobile ? '20px' : '24px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
           }}>
             <h3 className="titulo-3 mb-4" style={{
               fontSize: isMobile ? '18px' : '20px',
               fontWeight: '600',
               color: '#1e293b',
-              marginBottom: '16px',
-              textAlign: 'center'
+              marginBottom: '20px',
+              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
             }}>
-              🔍 Búsqueda Rápida de Productos
+              🚀 Iniciar Control de Inventario
             </h3>
-            <p style={{
-              fontSize: isMobile ? '12px' : '14px',
-              color: '#64748b',
-              marginBottom: '16px',
-              textAlign: 'center'
-            }}>
-              Busca productos por nombre o código personalizado para agregarlos manualmente al inventario
-            </p>
-            
-            <div style={{ position: 'relative' }}>
-              <input
-                type="text"
-                placeholder="Escribe el nombre o código del producto..."
-                value={filtroProductos}
-                onChange={(e) => setFiltroProductos(e.target.value)}
-                onKeyDown={manejarTeclasBusqueda}
-                style={{
-                  width: '100%',
-                  height: isMobile ? '44px' : '48px',
-                  padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  fontSize: isMobile ? '0.875rem' : '1rem',
-                  outline: 'none',
-                  background: 'white'
-                }}
-              />
-              
-              {mostrarProductos && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  background: 'white',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                  zIndex: 1000,
-                  maxHeight: '250px',
-                  overflowY: 'auto'
-                }}>
-                  {productosFiltrados.length === 0 ? (
-                    <div style={{
-                      padding: '1rem',
-                      textAlign: 'center',
-                      color: '#64748b',
-                      fontSize: '0.875rem'
-                    }}>
-                      No se encontraron productos
-                    </div>
-                  ) : (
-                    productosFiltrados.map((producto, index) => (
-                      <div
-                        key={producto.id}
-                        onClick={() => agregarProductoManual(producto)}
-                        style={{
-                          padding: '0.75rem 1rem',
-                          borderBottom: '1px solid #f1f5f9',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          background: productoSeleccionadoBusqueda === index ? '#3b82f6' : 'white',
-                          color: productoSeleccionadoBusqueda === index ? 'white' : '#1e293b'
-                        }}
-                        onMouseOver={(e) => {
-                          if (productoSeleccionadoBusqueda !== index) {
-                            e.currentTarget.style.background = '#f8fafc';
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          if (productoSeleccionadoBusqueda !== index) {
-                            e.currentTarget.style.background = 'white';
-                          }
-                        }}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <div style={{ 
-                            fontWeight: '600', 
-                            color: productoSeleccionadoBusqueda === index ? 'white' : '#1e293b' 
-                          }}>
-                            {producto.nombre}
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr auto',
+            gap: '16px',
+            alignItems: 'end'
+          }}>
+            {/* Campo de búsqueda */}
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                🔍 Búsqueda Rápida de Productos
+              </label>
+              <p style={{
+                fontSize: '12px',
+                color: '#6b7280',
+                marginBottom: '12px'
+              }}>
+                Busca productos por nombre o código personalizado para agregarlos manualmente
+              </p>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  placeholder="Escribe el nombre o código del producto..."
+                  value={filtroProductos}
+                  onChange={(e) => setFiltroProductos(e.target.value)}
+                  onKeyDown={manejarTeclasBusqueda}
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    padding: '0.75rem 1rem',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    background: 'white',
+                    transition: 'border-color 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#3b82f6';
+                    setMostrarProductos(true);
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e2e8f0';
+                    // Pequeño delay para permitir hacer clic en los resultados
+                    setTimeout(() => setMostrarProductos(false), 200);
+                  }}
+                />
+                
+                {mostrarProductos && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                    zIndex: 1000,
+                    maxHeight: '250px',
+                    overflowY: 'auto'
+                  }}>
+                    {productosFiltrados.length === 0 ? (
+                      <div style={{
+                        padding: '1rem',
+                        textAlign: 'center',
+                        color: '#64748b',
+                        fontSize: '0.875rem'
+                      }}>
+                        No se encontraron productos
+                      </div>
+                    ) : (
+                      productosFiltrados.map((producto, index) => (
+                        <div
+                          key={producto.id}
+                          onClick={() => agregarProductoManual(producto)}
+                          style={{
+                            padding: '0.75rem 1rem',
+                            borderBottom: '1px solid #f1f5f9',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: productoSeleccionadoBusqueda === index ? '#3b82f6' : 'white',
+                            color: productoSeleccionadoBusqueda === index ? 'white' : '#1e293b'
+                          }}
+                          onMouseOver={(e) => {
+                            if (productoSeleccionadoBusqueda !== index) {
+                              e.currentTarget.style.background = '#f8fafc';
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (productoSeleccionadoBusqueda !== index) {
+                              e.currentTarget.style.background = 'white';
+                            }
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <div style={{ 
+                              fontWeight: '600', 
+                              color: productoSeleccionadoBusqueda === index ? 'white' : '#1e293b' 
+                            }}>
+                              {producto.nombre}
+                            </div>
+                            <div style={{ 
+                              fontSize: '0.875rem', 
+                              color: productoSeleccionadoBusqueda === index ? '#e2e8f0' : '#64748b' 
+                            }}>
+                              Stock: {producto.stock} | {producto.codigoPersonalizado ? `Código: ${producto.codigoPersonalizado}` : ''}
+                            </div>
                           </div>
                           <div style={{ 
                             fontSize: '0.875rem', 
-                            color: productoSeleccionadoBusqueda === index ? '#e2e8f0' : '#64748b' 
+                            color: productoSeleccionadoBusqueda === index ? '#1e293b' : '#3b82f6',
+                            fontWeight: '600',
+                            padding: '0.25rem 0.5rem',
+                            background: productoSeleccionadoBusqueda === index ? 'white' : '#eff6ff',
+                            borderRadius: '0.25rem'
                           }}>
-                            Stock: {producto.stock} | {producto.codigoPersonalizado ? `Código: ${producto.codigoPersonalizado}` : ''}
+                            Agregar
                           </div>
                         </div>
-                        <div style={{ 
-                          fontSize: '0.875rem', 
-                          color: productoSeleccionadoBusqueda === index ? '#1e293b' : '#3b82f6',
-                          fontWeight: '600',
-                          padding: '0.25rem 0.5rem',
-                          background: productoSeleccionadoBusqueda === index ? 'white' : '#eff6ff',
-                          borderRadius: '0.25rem'
-                        }}>
-                          Agregar
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Botón Escanear */}
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                📱 Escanear Códigos
+              </label>
+              <p style={{
+                fontSize: '12px',
+                color: '#6b7280',
+                marginBottom: '12px'
+              }}>
+                Usa cámara o escáner USB para leer códigos de barras
+              </p>
+              <button
+                onClick={() => setMostrarModalEscanner(true)}
+                style={{
+                  height: '48px',
+                  padding: '0 24px',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                }}
+              >
+                📱 Escanear
+              </button>
             </div>
           </div>
+        </div>
         )}
 
-        {/* Estadísticas de Operaciones */}
-        {estadisticasOperaciones && (
+        {/* Estadísticas de Operaciones - Solo se muestra cuando no hay sección activa y no está escaneando */}
+        {estadisticasOperaciones && !seccionActiva && modoEscaneo === 'INICIAR' && (
           <div className="tarjeta mb-6" style={{
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
@@ -1490,8 +1672,8 @@ const ControlInventario: React.FC = () => {
           </div>
         )}
 
-        {/* Progreso del escaneo */}
-        {modoEscaneo === 'ESCANEANDO' && (
+        {/* Progreso del escaneo - Solo se muestra cuando no hay sección activa */}
+        {modoEscaneo === 'ESCANEANDO' && !seccionActiva && (
           <div className="tarjeta mb-6" style={{
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
@@ -1634,223 +1816,9 @@ const ControlInventario: React.FC = () => {
               </div>
             </div>
             
-            {/* Opciones de escaneo */}
-            <div style={{
-              background: 'white',
-              padding: isMobile ? '16px' : '20px',
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-              marginBottom: '16px'
-            }}>
-              <h4 style={{
-                fontSize: isMobile ? '16px' : '18px',
-                fontWeight: '600',
-                color: '#1e293b',
-                marginBottom: '12px',
-                textAlign: 'center'
-              }}>
-                📱 Opciones de Escaneo
-              </h4>
-              <p style={{
-                fontSize: isMobile ? '12px' : '14px',
-                color: '#64748b',
-                marginBottom: '16px',
-                textAlign: 'center'
-              }}>
-                Elige cómo quieres continuar agregando productos al inventario
-              </p>
-              
-              <div style={{ 
-                display: 'flex', 
-                gap: isMobile ? '8px' : '12px',
-                flexDirection: isMobile ? 'column' : 'row'
-              }}>
-                <button
-                  onClick={() => setMostrarScanner(true)}
-                  className="boton boton-primario"
-                  style={{
-                    background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-                    color: 'white',
-                    border: 'none',
-                    padding: isMobile ? '10px 20px' : '12px 24px',
-                    borderRadius: '12px',
-                    fontSize: isMobile ? '14px' : '16px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)',
-                    width: isMobile ? '100%' : 'auto',
-                    flex: 1
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(220, 38, 38, 0.4)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.3)';
-                  }}
-                >
-                  📱 Escáner Cámara
-                </button>
-                
-                <button
-                  onClick={() => setMostrarScannerUSB(true)}
-                  className="boton boton-secundario"
-                  style={{
-                    background: 'white',
-                    color: '#dc2626',
-                    border: '2px solid #dc2626',
-                    padding: isMobile ? '10px 20px' : '12px 24px',
-                    borderRadius: '12px',
-                    fontSize: isMobile ? '14px' : '16px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    width: isMobile ? '100%' : 'auto',
-                    flex: 1
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#dc2626';
-                    e.currentTarget.style.color = 'white';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.color = '#dc2626';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  ⌨️ Escáner USB
-                </button>
-              </div>
-            </div>
 
-            {/* Campo de búsqueda manual */}
-            <div style={{
-              background: 'white',
-              padding: isMobile ? '16px' : '20px',
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-              marginBottom: '16px'
-            }}>
-              <h4 style={{
-                fontSize: isMobile ? '16px' : '18px',
-                fontWeight: '600',
-                color: '#1e293b',
-                marginBottom: '12px'
-              }}>
-                🔍 Búsqueda Manual de Productos
-              </h4>
-              <p style={{
-                fontSize: isMobile ? '12px' : '14px',
-                color: '#64748b',
-                marginBottom: '16px'
-              }}>
-                Busca productos por nombre o código personalizado para agregarlos manualmente al inventario
-              </p>
-              
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  placeholder="Escribe el nombre o código del producto..."
-                  value={filtroProductos}
-                  onChange={(e) => setFiltroProductos(e.target.value)}
-                  onKeyDown={manejarTeclasBusqueda}
-                  style={{
-                    width: '100%',
-                    height: isMobile ? '44px' : '48px',
-                    padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    fontSize: isMobile ? '0.875rem' : '1rem',
-                    outline: 'none',
-                    background: 'white'
-                  }}
-                />
-                
-                {mostrarProductos && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    background: 'white',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                    zIndex: 1000,
-                    maxHeight: '250px',
-                    overflowY: 'auto'
-                  }}>
-                    {productosFiltrados.length === 0 ? (
-                      <div style={{
-                        padding: '1rem',
-                        textAlign: 'center',
-                        color: '#64748b',
-                        fontSize: '0.875rem'
-                      }}>
-                        No se encontraron productos
-                      </div>
-                    ) : (
-                      productosFiltrados.map((producto, index) => (
-                        <div
-                          key={producto.id}
-                          onClick={() => agregarProductoManual(producto)}
-                          style={{
-                            padding: '0.75rem 1rem',
-                            borderBottom: '1px solid #f1f5f9',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            background: productoSeleccionadoBusqueda === index ? '#3b82f6' : 'white',
-                            color: productoSeleccionadoBusqueda === index ? 'white' : '#1e293b'
-                          }}
-                          onMouseOver={(e) => {
-                            if (productoSeleccionadoBusqueda !== index) {
-                              e.currentTarget.style.background = '#f8fafc';
-                            }
-                          }}
-                          onMouseOut={(e) => {
-                            if (productoSeleccionadoBusqueda !== index) {
-                              e.currentTarget.style.background = 'white';
-                            }
-                          }}
-                        >
-                          <div style={{ flex: 1 }}>
-                            <div style={{ 
-                              fontWeight: '600', 
-                              color: productoSeleccionadoBusqueda === index ? 'white' : '#1e293b' 
-                            }}>
-                              {producto.nombre}
-                            </div>
-                            <div style={{ 
-                              fontSize: '0.875rem', 
-                              color: productoSeleccionadoBusqueda === index ? '#e2e8f0' : '#64748b' 
-                            }}>
-                              Stock: {producto.stock} | {producto.codigoPersonalizado ? `Código: ${producto.codigoPersonalizado}` : ''}
-                            </div>
-                          </div>
-                          <div style={{ 
-                            fontSize: '0.875rem', 
-                            color: productoSeleccionadoBusqueda === index ? '#1e293b' : '#3b82f6',
-                            fontWeight: '600',
-                            padding: '0.25rem 0.5rem',
-                            background: productoSeleccionadoBusqueda === index ? 'white' : '#eff6ff',
-                            borderRadius: '0.25rem'
-                          }}>
-                            Agregar
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+
+
 
             {/* Lista de productos escaneados */}
             {productosEscaneados.size > 0 && (
@@ -1890,8 +1858,8 @@ const ControlInventario: React.FC = () => {
           </div>
         )}
 
-        {/* Resumen del inventario */}
-        {mostrarResumen && estadisticas && (
+        {/* Resumen del inventario - Solo se muestra cuando no hay sección activa */}
+        {mostrarResumen && estadisticas && !seccionActiva && (
           <div className="tarjeta mb-6" style={{
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
             border: '1px solid #e2e8f0',
@@ -2147,292 +2115,6 @@ const ControlInventario: React.FC = () => {
             </div>
           </div>
         )}
-
-        {/* Sección de Historiales */}
-        <div className="tarjeta mb-6" style={{
-          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-          border: '1px solid #e2e8f0',
-          borderRadius: '16px',
-          padding: isMobile ? '16px' : '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-        }}>
-          <h3 className="titulo-3 mb-4" style={{
-              fontSize: isMobile ? '18px' : '20px',
-              fontWeight: '600',
-              color: '#1e293b',
-            marginBottom: '16px',
-              textAlign: 'center'
-            }}>
-            📚 Historiales
-            </h3>
-
-          {/* Botones de historiales en línea */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '12px', 
-            justifyContent: 'center',
-            flexDirection: isMobile ? 'column' : 'row',
-            marginBottom: '20px'
-          }}>
-              <button
-              onClick={() => toggleSeccion('inventarios')}
-                className="boton boton-secundario"
-                style={{
-                background: seccionExpandida === 'inventarios' ? '#10b981' : 'white',
-                color: seccionExpandida === 'inventarios' ? 'white' : '#10b981',
-                  border: '2px solid #10b981',
-                padding: '12px 20px',
-                borderRadius: '12px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                flex: isMobile ? '1' : 'auto',
-                minWidth: isMobile ? 'auto' : '180px'
-              }}
-              onMouseOver={(e) => {
-                if (seccionExpandida !== 'inventarios') {
-                  e.currentTarget.style.background = '#10b981';
-                  e.currentTarget.style.color = 'white';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (seccionExpandida !== 'inventarios') {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.color = '#10b981';
-                }
-              }}
-            >
-              📋 Inventarios Físicos
-            </button>
-            
-            <button
-              onClick={() => {
-                toggleSeccion('operaciones');
-                if (seccionExpandida !== 'operaciones') {
-                  cargarHistorialOperaciones();
-                }
-              }}
-              className="boton boton-secundario"
-              style={{
-                background: seccionExpandida === 'operaciones' ? '#3b82f6' : 'white',
-                color: seccionExpandida === 'operaciones' ? 'white' : '#3b82f6',
-                border: '2px solid #3b82f6',
-                padding: '12px 20px',
-                borderRadius: '12px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                flex: isMobile ? '1' : 'auto',
-                minWidth: isMobile ? 'auto' : '180px'
-              }}
-              onMouseOver={(e) => {
-                if (seccionExpandida !== 'operaciones') {
-                  e.currentTarget.style.background = '#3b82f6';
-                  e.currentTarget.style.color = 'white';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (seccionExpandida !== 'operaciones') {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.color = '#3b82f6';
-                }
-              }}
-            >
-              📊 Operaciones
-              </button>
-
-
-
-          </div>
-
-          {/* Contenido expandible - Inventarios Físicos */}
-          {seccionExpandida === 'inventarios' && (
-            <div style={{ 
-              borderTop: '1px solid #e2e8f0', 
-              paddingTop: '20px',
-              animation: 'slideDown 0.3s ease-out'
-            }}>
-              {historialInventarios.length > 0 ? (
-                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                  {historialInventarios.map((inventario) => (
-                    <div key={inventario.id} style={{
-                      background: 'white',
-                      padding: '16px',
-                      borderRadius: '12px',
-                      border: '1px solid #e2e8f0',
-                      marginBottom: '12px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                      e.currentTarget.style.borderColor = '#10b981';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                      e.currentTarget.style.borderColor = '#e2e8f0';
-                    }}
-                    onClick={() => verDetalleInventario(inventario)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                            Inventario del {inventarioService.formatearFechaDesdeAPI(inventario.fechaInventario)}
-                          </div>
-                          <div style={{ fontSize: '14px', color: '#64748b' }}>
-                            {inventario.totalProductos} productos | 
-                            {inventario.productosConDiferencias} con diferencias | 
-                            Precisión: {inventario.porcentajePrecision.toFixed(1)}%
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: '600', color: inventario.valorTotalDiferencias < 0 ? '#dc2626' : inventario.valorTotalDiferencias > 0 ? '#059669' : '#64748b' }}>
-                            {formatearMoneda(inventario.valorTotalDiferencias)}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#64748b' }}>
-                            Valor diferencias
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ 
-                        marginTop: '8px', 
-                        fontSize: '12px', 
-                        color: '#10b981',
-                        fontWeight: '500'
-                      }}>
-                        👆 Haz clic para ver detalles
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '40px 20px',
-                  color: '#64748b'
-                }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
-                  <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
-                    No hay inventarios físicos
-                  </h4>
-                  <p style={{ margin: 0, fontSize: '14px' }}>
-                    Realiza tu primer inventario físico para ver el historial aquí.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Contenido expandible - Operaciones */}
-          {seccionExpandida === 'operaciones' && (
-              <div style={{
-              borderTop: '1px solid #e2e8f0', 
-              paddingTop: '20px',
-              animation: 'slideDown 0.3s ease-out'
-            }}>
-              {cargandoHistorial ? (
-                <div className="text-center py-8">
-                  <div className="spinner mx-auto mb-4"></div>
-                  <p className="texto-gris">Cargando historial...</p>
-                </div>
-              ) : historialOperaciones.length > 0 ? (
-                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                  {historialOperaciones.map((operacion) => (
-                    <div 
-                      key={operacion.id} 
-                      onClick={() => verDetalleOperacion(operacion)}
-                      style={{
-                        background: 'white',
-                        padding: '16px',
-                        borderRadius: '12px',
-                        border: '1px solid #e2e8f0',
-                        marginBottom: '12px',
-                        transition: 'all 0.2s ease',
-                        cursor: 'pointer'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                        e.currentTarget.style.borderColor = '#3b82f6';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = 'none';
-                        e.currentTarget.style.borderColor = '#e2e8f0';
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div style={{ flex: 1 }}>
-                          <div className="flex items-center gap-2 mb-2">
-                            <span style={{ fontSize: '1.2rem' }}>
-                              {inventarioService.getIconoTipoOperacion(operacion.tipoOperacion)}
-                            </span>
-                            <span style={{ 
-                              fontWeight: '600', 
-                              color: inventarioService.getColorTipoOperacion(operacion.tipoOperacion)
-                            }}>
-                              {inventarioService.getDescripcionCortaTipoOperacion(operacion.tipoOperacion)}
-                            </span>
-                            <span style={{ 
-                              fontSize: '12px', 
-                              color: '#64748b',
-                              background: '#f1f5f9',
-                              padding: '2px 8px',
-                              borderRadius: '12px'
-                            }}>
-                              {operacion.cantidad} unidades
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                            {operacion.productoNombre}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#64748b' }}>
-                            {operacion.usuarioNombre} • {inventarioService.formatearFechaDesdeAPI(operacion.fechaOperacion)}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                              {formatearMoneda(operacion.valorTotal)}
-                            </div>
-                          <div style={{ fontSize: '12px', color: '#64748b' }}>
-                            Valor total
-                        </div>
-                        </div>
-                      </div>
-                      <div style={{ 
-                        marginTop: '8px', 
-                        fontSize: '12px', 
-                        color: '#3b82f6',
-                        fontWeight: '500'
-                      }}>
-                        👆 Haz clic para ver detalles
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '40px 20px',
-                  color: '#64748b'
-                }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
-                  <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
-                    No hay operaciones de inventario
-                  </h4>
-                  <p style={{ margin: 0, fontSize: '14px' }}>
-                    Realiza operaciones de inventario para ver el historial aquí.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Scanner de Códigos */}
       <BarcodeScanner
@@ -3552,6 +3234,191 @@ const ControlInventario: React.FC = () => {
         </div>
       )}
 
+      {/* Modal de escáner */}
+      {mostrarModalEscanner && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '24px'
+            }}>
+              <h3 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#1e293b',
+                margin: 0
+              }}>
+                📱 Seleccionar Método de Escaneo
+              </h3>
+              <button
+                onClick={() => setMostrarModalEscanner(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  padding: '4px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+              gap: '16px'
+            }}>
+              {/* Opción Cámara */}
+              <div
+                onClick={() => {
+                  setMostrarModalEscanner(false);
+                  setMostrarScanner(true);
+                  setModoEscaneo('ESCANEANDO');
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  color: 'white',
+                  padding: '24px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(59, 130, 246, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                }}
+              >
+                <div style={{
+                  fontSize: '48px',
+                  marginBottom: '16px'
+                }}>
+                  📷
+                </div>
+                <h4 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  marginBottom: '8px'
+                }}>
+                  Cámara del Celular
+                </h4>
+                <p style={{
+                  fontSize: '14px',
+                  opacity: 0.9,
+                  margin: 0
+                }}>
+                  Usa la cámara de tu dispositivo para escanear códigos de barras
+                </p>
+              </div>
+
+              {/* Opción Escáner USB */}
+              <div
+                onClick={() => {
+                  setMostrarModalEscanner(false);
+                  setMostrarScannerUSB(true);
+                  setModoEscaneo('ESCANEANDO');
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: 'white',
+                  padding: '24px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(16, 185, 129, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                }}
+              >
+                <div style={{
+                  fontSize: '48px',
+                  marginBottom: '16px'
+                }}>
+                  🔌
+                </div>
+                <h4 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  marginBottom: '8px'
+                }}>
+                  Escáner USB
+                </h4>
+                <p style={{
+                  fontSize: '14px',
+                  opacity: 0.9,
+                  margin: 0
+                }}>
+                  Conecta un escáner USB y escanea códigos de barras
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              marginTop: '24px',
+              textAlign: 'center'
+            }}>
+              <button
+                onClick={() => setMostrarModalEscanner(false)}
+                style={{
+                  background: '#f1f5f9',
+                  color: '#64748b',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#e2e8f0';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = '#f1f5f9';
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Productos No Escaneados */}
       {mostrarModalProductosNoEscaneados && (
         <div className="modal-overlay" style={{
@@ -3688,6 +3555,596 @@ const ControlInventario: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Sección de Reportes */}
+      {seccionActiva === 'reportes' && (
+        <div className="contenedor" style={{ 
+          paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
+          paddingBottom: '2rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem'
+        }}>
+          <div className="mb-8" style={{ textAlign: isMobile ? 'center' : 'left' }}>
+            <button
+              onClick={() => setSeccionActiva(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#64748b',
+                marginBottom: '16px'
+              }}
+            >
+              ← Volver
+            </button>
+            <h1 className="titulo-2 mb-4" style={{ 
+              fontSize: isMobile ? '1.75rem' : '32px', 
+              fontWeight: '700', 
+              color: '#1e293b',
+              letterSpacing: '-0.025em',
+              lineHeight: '1.2'
+            }}>
+              📊 Reportes de Inventario
+            </h1>
+            <p className="texto-gris" style={{ 
+              fontSize: isMobile ? '1rem' : '16px', 
+              color: '#64748b',
+              marginBottom: '8px'
+            }}>
+              Selecciona el tipo de reporte que deseas descargar
+            </p>
+          </div>
+
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))',
+            gap: isMobile ? '16px' : '24px'
+          }}>
+            {/* Reporte del día */}
+            <div style={{
+              background: 'white',
+              padding: '24px',
+              borderRadius: '16px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '16px'
+              }}>
+                <div style={{
+                  width: '3rem',
+                  height: '3rem',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.5rem',
+                  marginRight: '12px',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                }}>
+                  📋
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    margin: 0
+                  }}>
+                    Reporte del Día
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#64748b',
+                    margin: 0
+                  }}>
+                    Inventario completo del día actual
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={descargarReporteInventarioDia}
+                disabled={cargando}
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 20px',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: cargando ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                  opacity: cargando ? 0.7 : 1
+                }}
+                onMouseOver={(e) => {
+                  if (!cargando) {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                }}
+              >
+                {cargando ? '⏳ Descargando...' : '📥 Descargar Reporte'}
+              </button>
+            </div>
+
+            {/* Reporte de diferencias */}
+            <div style={{
+              background: 'white',
+              padding: '24px',
+              borderRadius: '16px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '16px'
+              }}>
+                <div style={{
+                  width: '3rem',
+                  height: '3rem',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.5rem',
+                  marginRight: '12px',
+                  boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+                }}>
+                  📊
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    margin: 0
+                  }}>
+                    Reporte de Diferencias
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#64748b',
+                    margin: 0
+                  }}>
+                    Entradas, salidas y balance del día
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={descargarReporteDiferenciasDia}
+                disabled={cargando}
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 20px',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: cargando ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                  opacity: cargando ? 0.7 : 1
+                }}
+                onMouseOver={(e) => {
+                  if (!cargando) {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(245, 158, 11, 0.4)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.3)';
+                }}
+              >
+                {cargando ? '⏳ Descargando...' : '📥 Descargar Reporte'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sección de Historial */}
+      {seccionActiva === 'historial' && (
+        <div className="contenedor" style={{ 
+          paddingTop: (isMobile || window.innerWidth < 768) ? '10.5rem' : '5rem', 
+          paddingBottom: '2rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem'
+        }}>
+          <div className="mb-8" style={{ textAlign: isMobile ? 'center' : 'left' }}>
+            <button
+              onClick={() => setSeccionActiva(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#64748b',
+                marginBottom: '16px'
+              }}
+            >
+              ← Volver
+            </button>
+            <h1 className="titulo-2 mb-4" style={{ 
+              fontSize: isMobile ? '1.75rem' : '32px', 
+              fontWeight: '700', 
+              color: '#1e293b',
+              letterSpacing: '-0.025em',
+              lineHeight: '1.2'
+            }}>
+              📋 Historial de Inventarios
+            </h1>
+            <p className="texto-gris" style={{ 
+              fontSize: isMobile ? '1rem' : '16px', 
+              color: '#64748b',
+              marginBottom: '8px'
+            }}>
+              Consulta el historial de inventarios físicos y operaciones de stock
+            </p>
+          </div>
+
+          {/* Estadísticas de Operaciones */}
+          {estadisticasOperaciones && (
+            <div className="tarjeta mb-6" style={{
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+              border: '1px solid #e2e8f0',
+              borderRadius: '16px',
+              padding: isMobile ? '16px' : '24px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            }}>
+              <h3 className="titulo-3 mb-4" style={{
+                fontSize: isMobile ? '20px' : '24px',
+                fontWeight: '600',
+                color: '#1e293b',
+                marginBottom: '16px'
+              }}>
+                📊 Estadísticas de Operaciones
+              </h3>
+              
+              <div className="grid grid-4 mb-6" style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+                gap: isMobile ? '12px' : '16px',
+                marginBottom: '24px'
+              }}>
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: isMobile ? '12px' : '16px',
+                  border: '1px solid #e2e8f0',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: isMobile ? '20px' : '24px', marginBottom: '8px' }}>📦</div>
+                  <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#3b82f6' }}>
+                    {estadisticasOperaciones?.totalOperaciones || 0}
+                  </div>
+                  <div style={{ fontSize: isMobile ? '10px' : '12px', color: '#64748b' }}>Total Operaciones</div>
+                </div>
+                
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: isMobile ? '12px' : '16px',
+                  border: '1px solid #e2e8f0',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: isMobile ? '20px' : '24px', marginBottom: '8px' }}>📈</div>
+                  <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#10b981' }}>
+                    {estadisticasOperaciones?.totalIncrementos || 0}
+                  </div>
+                  <div style={{ fontSize: isMobile ? '10px' : '12px', color: '#64748b' }}>Incrementos</div>
+                </div>
+                
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: isMobile ? '12px' : '16px',
+                  border: '1px solid #e2e8f0',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: isMobile ? '20px' : '24px', marginBottom: '8px' }}>📉</div>
+                  <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#dc2626' }}>
+                    {estadisticasOperaciones?.totalDecrementos || 0}
+                  </div>
+                  <div style={{ fontSize: isMobile ? '10px' : '12px', color: '#64748b' }}>Decrementos</div>
+                </div>
+                
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: isMobile ? '12px' : '16px',
+                  border: '1px solid #e2e8f0',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: isMobile ? '20px' : '24px', marginBottom: '8px' }}>⚖️</div>
+                  <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#f59e0b' }}>
+                    {estadisticasOperaciones?.totalAjustes || 0}
+                  </div>
+                  <div style={{ fontSize: isMobile ? '10px' : '12px', color: '#64748b' }}>Ajustes</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Pestañas de Historial */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '12px', 
+            justifyContent: 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+            marginBottom: '20px'
+          }}>
+            <button
+              onClick={() => setSeccionExpandida('inventarios')}
+              className="boton boton-secundario"
+              style={{
+                background: seccionExpandida === 'inventarios' ? '#10b981' : 'white',
+                color: seccionExpandida === 'inventarios' ? 'white' : '#10b981',
+                border: '2px solid #10b981',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: isMobile ? '1' : 'auto',
+                minWidth: isMobile ? 'auto' : '180px'
+              }}
+              onMouseOver={(e) => {
+                if (seccionExpandida !== 'inventarios') {
+                  e.currentTarget.style.background = '#10b981';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (seccionExpandida !== 'inventarios') {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#10b981';
+                }
+              }}
+            >
+              📋 Inventarios Físicos
+            </button>
+            
+            <button
+              onClick={() => {
+                setSeccionExpandida('operaciones');
+                if (seccionExpandida !== 'operaciones') {
+                  cargarHistorialOperaciones();
+                }
+              }}
+              className="boton boton-secundario"
+              style={{
+                background: seccionExpandida === 'operaciones' ? '#3b82f6' : 'white',
+                color: seccionExpandida === 'operaciones' ? 'white' : '#3b82f6',
+                border: '2px solid #3b82f6',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: isMobile ? '1' : 'auto',
+                minWidth: isMobile ? 'auto' : '180px'
+              }}
+              onMouseOver={(e) => {
+                if (seccionExpandida !== 'operaciones') {
+                  e.currentTarget.style.background = '#3b82f6';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (seccionExpandida !== 'operaciones') {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#3b82f6';
+                }
+              }}
+            >
+              📊 Operaciones
+            </button>
+          </div>
+
+          {/* Contenido de las pestañas */}
+          {seccionExpandida === 'inventarios' && (
+            <div style={{ 
+              borderTop: '1px solid #e2e8f0', 
+              paddingTop: '20px',
+              animation: 'slideDown 0.3s ease-out'
+            }}>
+              {historialInventarios.length > 0 ? (
+                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                  {historialInventarios.map((inventario) => (
+                    <div key={inventario.id} style={{
+                      background: 'white',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      marginBottom: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                      e.currentTarget.style.borderColor = '#10b981';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                    }}
+                    onClick={() => verDetalleInventario(inventario)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div style={{ fontWeight: '600', color: '#1e293b' }}>
+                            Inventario del {inventarioService.formatearFechaDesdeAPI(inventario.fechaInventario)}
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#64748b' }}>
+                            {inventario.totalProductos} productos | 
+                            {inventario.productosConDiferencias} con diferencias | 
+                            Precisión: {inventario.porcentajePrecision.toFixed(1)}%
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontWeight: '600', color: inventario.valorTotalDiferencias < 0 ? '#dc2626' : inventario.valorTotalDiferencias > 0 ? '#059669' : '#64748b' }}>
+                            {formatearMoneda(inventario.valorTotalDiferencias)}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>
+                            Valor diferencias
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ 
+                        marginTop: '8px', 
+                        fontSize: '12px', 
+                        color: '#10b981',
+                        fontWeight: '500'
+                      }}>
+                        👆 Haz clic para ver detalles
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: '#64748b'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
+                    No hay inventarios físicos
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '14px' }}>
+                    Realiza tu primer inventario físico para ver el historial aquí.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {seccionExpandida === 'operaciones' && (
+            <div style={{
+              borderTop: '1px solid #e2e8f0', 
+              paddingTop: '20px',
+              animation: 'slideDown 0.3s ease-out'
+            }}>
+              {cargandoHistorial ? (
+                <div className="text-center py-8">
+                  <div className="spinner mx-auto mb-4"></div>
+                  <p className="texto-gris">Cargando historial...</p>
+                </div>
+              ) : historialOperaciones.length > 0 ? (
+                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                  {historialOperaciones.map((operacion) => (
+                    <div 
+                      key={operacion.id} 
+                      onClick={() => verDetalleOperacion(operacion)}
+                      style={{
+                        background: 'white',
+                        padding: '16px',
+                        borderRadius: '12px',
+                        border: '1px solid #e2e8f0',
+                        marginBottom: '12px',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                        e.currentTarget.style.borderColor = '#3b82f6';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                        e.currentTarget.style.borderColor = '#e2e8f0';
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div style={{ flex: 1 }}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span style={{ fontSize: '1.2rem' }}>
+                              {inventarioService.getIconoTipoOperacion(operacion.tipoOperacion)}
+                            </span>
+                            <span style={{ 
+                              fontWeight: '600', 
+                              color: inventarioService.getColorTipoOperacion(operacion.tipoOperacion)
+                            }}>
+                              {inventarioService.getDescripcionCortaTipoOperacion(operacion.tipoOperacion)}
+                            </span>
+                            <span style={{ 
+                              fontSize: '12px', 
+                              color: '#64748b',
+                              background: '#f1f5f9',
+                              padding: '2px 8px',
+                              borderRadius: '12px'
+                            }}>
+                              {operacion.cantidad} unidades
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                            {operacion.productoNombre}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>
+                            {operacion.usuarioNombre} • {inventarioService.formatearFechaDesdeAPI(operacion.fechaOperacion)}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontWeight: '600', color: '#1e293b' }}>
+                              {formatearMoneda(operacion.valorTotal)}
+                            </div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>
+                            Valor total
+                        </div>
+                        </div>
+                      </div>
+                      <div style={{ 
+                        marginTop: '8px', 
+                        fontSize: '12px', 
+                        color: '#3b82f6',
+                        fontWeight: '500'
+                      }}>
+                        👆 Haz clic para ver detalles
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: '#64748b'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
+                    No hay operaciones de inventario
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '14px' }}>
+                    Realiza operaciones de inventario para ver el historial aquí.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      </div>
     </div>
   );
 };

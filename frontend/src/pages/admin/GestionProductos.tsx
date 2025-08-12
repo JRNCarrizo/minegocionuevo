@@ -543,6 +543,8 @@ const GestionProductos: React.FC = () => {
 
     try {
       setCargando(true);
+      console.log('📊 Descargando reporte de stock para empresa:', empresaId);
+      
       const blob = await ApiService.descargarReporteStock(empresaId);
       
       // Crear un enlace para descargar el archivo
@@ -555,9 +557,12 @@ const GestionProductos: React.FC = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
       
+      console.log('✅ Reporte de stock descargado exitosamente');
+      alert('✅ Reporte de stock descargado exitosamente');
+      
     } catch (error) {
-      console.error('Error al descargar reporte de stock:', error);
-      alert('Error al descargar el reporte de stock. Por favor, intenta nuevamente.');
+      console.error('❌ Error al descargar reporte de stock:', error);
+      alert('❌ Error al descargar el reporte de stock. Por favor, intenta nuevamente.');
     } finally {
       setCargando(false);
     }
@@ -1045,21 +1050,24 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Reporte de Stock */}
             <div 
-              onClick={descargarReporteStock}
+              onClick={cargando ? undefined : descargarReporteStock}
               style={{
                 background: 'white',
                 borderRadius: '1rem',
                 padding: '1.5rem',
-                cursor: 'pointer',
+                cursor: cargando ? 'not-allowed' : 'pointer',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                 border: '1px solid #e2e8f0',
                 transition: 'all 0.3s ease',
-                animation: 'slideInUp 0.6s ease-out 0.8s both'
+                animation: 'slideInUp 0.6s ease-out 0.8s both',
+                opacity: cargando ? 0.7 : 1
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                e.currentTarget.style.borderColor = '#3b82f6';
+                if (!cargando) {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.borderColor = '#3b82f6';
+                }
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
@@ -1108,11 +1116,11 @@ const GestionProductos: React.FC = () => {
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                color: '#3b82f6',
+                color: cargando ? '#64748b' : '#3b82f6',
                 fontSize: '0.875rem',
                 fontWeight: '600'
               }}>
-                Descargar reporte →
+                {cargando ? '⏳ Descargando...' : 'Descargar reporte →'}
               </div>
             </div>
           </div>

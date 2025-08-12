@@ -7,6 +7,8 @@ import com.minegocio.backend.servicios.ProductoService;
 import com.minegocio.backend.servicios.CloudinaryService;
 import com.minegocio.backend.servicios.LimiteService;
 import com.minegocio.backend.servicios.ImportacionProductoService;
+import com.minegocio.backend.servicios.ReporteInventarioService;
+import com.minegocio.backend.servicios.ReporteDiferenciasInventarioService;
 import com.minegocio.backend.servicios.ReporteStockService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.time.LocalDate;
 
 /**
  * Controlador REST para la gestión de productos
@@ -42,6 +45,12 @@ public class ProductoController {
 
     @Autowired
     private ImportacionProductoService importacionProductoService;
+
+        @Autowired
+    private ReporteInventarioService reporteInventarioService;
+
+    @Autowired
+    private ReporteDiferenciasInventarioService reporteDiferenciasInventarioService;
 
     @Autowired
     private ReporteStockService reporteStockService;
@@ -938,6 +947,68 @@ public class ProductoController {
         }
     }
 
+
+
+    /**
+     * Descarga el reporte de inventario del día en Excel
+     */
+    @GetMapping("/reporte-inventario-dia")
+    public ResponseEntity<?> descargarReporteInventarioDia(
+            @PathVariable Long empresaId,
+            @RequestParam(required = false) String fecha) {
+        try {
+            // Si no se proporciona fecha, usar la fecha actual
+            LocalDate fechaReporte = fecha != null ? 
+                LocalDate.parse(fecha) : LocalDate.now();
+            
+            byte[] reporte = reporteInventarioService.generarReporteInventarioDia(empresaId, fechaReporte);
+
+            String nombreArchivo = "reporte_inventario_" + empresaId + "_" +
+                fechaReporte.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")) + ".xlsx";
+
+            return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"" + nombreArchivo + "\"")
+                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .body(reporte);
+
+        } catch (Exception e) {
+            System.err.println("Error al generar reporte de inventario: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al generar el reporte de inventario: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Descarga el reporte de diferencias de inventario del día en Excel
+     */
+    @GetMapping("/reporte-diferencias-dia")
+    public ResponseEntity<?> descargarReporteDiferenciasDia(
+            @PathVariable Long empresaId,
+            @RequestParam(required = false) String fecha) {
+        try {
+            // Si no se proporciona fecha, usar la fecha actual
+            LocalDate fechaReporte = fecha != null ? 
+                LocalDate.parse(fecha) : LocalDate.now();
+            
+            byte[] reporte = reporteDiferenciasInventarioService.generarReporteDiferenciasDia(empresaId, fechaReporte);
+
+            String nombreArchivo = "reporte_diferencias_" + empresaId + "_" +
+                fechaReporte.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")) + ".xlsx";
+
+            return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"" + nombreArchivo + "\"")
+                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .body(reporte);
+
+        } catch (Exception e) {
+            System.err.println("Error al generar reporte de diferencias: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al generar el reporte de diferencias: " + e.getMessage()));
+        }
+    }
+
     /**
      * Descarga el reporte de stock en Excel
      */
@@ -945,15 +1016,15 @@ public class ProductoController {
     public ResponseEntity<?> descargarReporteStock(@PathVariable Long empresaId) {
         try {
             byte[] reporte = reporteStockService.generarReporteStock(empresaId);
-            
-            String nombreArchivo = "reporte_stock_" + empresaId + "_" + 
-                java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")) + ".xlsx";
-            
+
+            String nombreArchivo = "reporte_stock_" + empresaId + "_" +
+                LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")) + ".xlsx";
+
             return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=\"" + nombreArchivo + "\"")
                 .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                 .body(reporte);
-                
+
         } catch (Exception e) {
             System.err.println("Error al generar reporte de stock: " + e.getMessage());
             e.printStackTrace();
