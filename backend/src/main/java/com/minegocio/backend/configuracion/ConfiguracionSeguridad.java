@@ -108,6 +108,7 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/empresas/*/productos/plantilla-importacion").permitAll() // Permitir descarga de plantilla sin autenticación (DEBE ir DESPUÉS de la regla general)
+                    .requestMatchers("/api/empresas/*/productos/test-plantilla").permitAll() // Endpoint de prueba público
                     .requestMatchers("/api/notificaciones/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/historial-carga-productos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .anyRequest().authenticated();

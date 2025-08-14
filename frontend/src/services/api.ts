@@ -48,6 +48,7 @@ class ApiService {
            /\/empresas\/registro/.test(config.url) ||
            /\/empresas\/verificar-subdominio/.test(config.url) ||
            /\/empresas\/\d+\/productos\/plantilla-importacion/.test(config.url) || // Plantilla de importación pública
+           /\/empresas\/\d+\/productos\/test-plantilla/.test(config.url) || // Endpoint de prueba público
            /\/verificacion\/verificar-email/.test(config.url) ||
            /\/verificacion\/reenviar-email/.test(config.url) ||
            /\/verificacion-cliente\/verificar-email/.test(config.url) ||
@@ -1436,6 +1437,19 @@ class ApiService {
   }
 
   // Métodos para importación de productos
+  async testPlantilla(empresaId: number): Promise<any> {
+    console.log('🧪 Probando endpoint de prueba para empresa:', empresaId);
+    
+    try {
+      const response = await this.api.get(`/empresas/${empresaId}/productos/test-plantilla`);
+      console.log('✅ Test exitoso:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error en test:', error);
+      throw error;
+    }
+  }
+
   async descargarPlantillaImportacion(empresaId: number): Promise<Blob> {
     console.log('📥 Iniciando descarga de plantilla para empresa:', empresaId);
     

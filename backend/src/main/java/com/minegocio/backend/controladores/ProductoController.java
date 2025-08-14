@@ -882,6 +882,27 @@ public class ProductoController {
     }
 
     /**
+     * Endpoint de prueba para verificar si el problema es de autenticación
+     */
+    @GetMapping("/test-plantilla")
+    public ResponseEntity<?> testPlantilla(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🧪 TEST: Endpoint de prueba para empresa: " + empresaId);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Endpoint de prueba funcionando",
+                "empresaId", empresaId,
+                "timestamp", System.currentTimeMillis()
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error en test: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error en test: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Descarga la plantilla Excel para importación de productos
      */
     @GetMapping("/plantilla-importacion")

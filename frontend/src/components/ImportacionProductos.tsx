@@ -48,6 +48,29 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
   const [resultadoImportacion, setResultadoImportacion] = useState<ResultadoImportacion | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const probarEndpoint = async () => {
+    try {
+      setCargando(true);
+      
+      console.log('🧪 Probando endpoint de prueba...');
+      const resultado = await ApiService.testPlantilla(empresaId);
+      console.log('✅ Test exitoso:', resultado);
+      alert('✅ Endpoint de prueba funcionando correctamente');
+      
+    } catch (error: any) {
+      console.error('❌ Error en test:', error);
+      
+      if (error.response) {
+        const status = error.response.status;
+        alert(`❌ Error ${status}: ${error.response.data?.error || 'Error desconocido'}`);
+      } else {
+        alert('❌ Error de conexión: ' + (error.message || 'Error desconocido'));
+      }
+    } finally {
+      setCargando(false);
+    }
+  };
+
   const descargarPlantilla = async () => {
     try {
       setCargando(true);
@@ -201,13 +224,24 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
           <div className="paso-importacion">
             <h3>Paso 1: Descargar Plantilla</h3>
             <p>Descargue la plantilla Excel con el formato correcto para cargar sus productos.</p>
-            <button 
-              className="btn-descargar-plantilla"
-              onClick={descargarPlantilla}
-              disabled={cargando}
-            >
-              {cargando ? 'Descargando...' : 'Descargar Plantilla Excel'}
-            </button>
+            <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={probarEndpoint}
+                  disabled={cargando}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {cargando ? 'Probando...' : '🧪 Probar Endpoint'}
+                </button>
+                <button
+                  type="button"
+                  onClick={descargarPlantilla}
+                  disabled={cargando}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+                >
+                  {cargando ? 'Descargando...' : '📥 Descargar Plantilla'}
+                </button>
+              </div>
           </div>
 
           {/* Paso 2: Seleccionar archivo */}
