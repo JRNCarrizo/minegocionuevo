@@ -47,15 +47,16 @@ class ApiService {
            /\/auth\/cambiar-password/.test(config.url) ||
            /\/empresas\/registro/.test(config.url) ||
            /\/empresas\/verificar-subdominio/.test(config.url) ||
-           /\/empresas\/\d+\/productos\/plantilla-importacion/.test(config.url) || // Plantilla de importación pública
-           /\/empresas\/\d+\/productos\/test-plantilla/.test(config.url) || // Endpoint de prueba público
-           /\/plantilla-publica/.test(config.url) || // Plantilla completamente pública
-           /\/plantilla-simple/.test(config.url) || // Plantilla simple con CORS explícito
+           /\/empresas\/\d+\/productos\/plantilla-importacion/.test(config.url) ||
+           /\/empresas\/\d+\/productos\/test-plantilla/.test(config.url) ||
+           /\/plantilla-publica/.test(config.url) ||
+           /\/plantilla-simple/.test(config.url) ||
+           /\/plantilla-final/.test(config.url) ||
            /\/verificacion\/verificar-email/.test(config.url) ||
            /\/verificacion\/reenviar-email/.test(config.url) ||
            /\/verificacion-cliente\/verificar-email/.test(config.url) ||
            /\/verificacion-cliente\/reenviar-email/.test(config.url) ||
-           /\/super-admin\/crear-super-admin/.test(config.url)
+           /\/super-admin\/crear-super-admin/.test(config.url))
         ) {
           console.log('🔓 Endpoint público - sin token');
           delete config.headers.Authorization;
@@ -95,8 +96,6 @@ class ApiService {
           return config;
         }
         
-
-        
         // Endpoints de cliente (requieren token de cliente)
         if (
           config.url &&
@@ -104,7 +103,7 @@ class ApiService {
            /\/pedidos\/cliente/.test(config.url) ||
            /\/publico\/.*\/perfil/.test(config.url) ||
            /\/publico\/.*\/favoritos/.test(config.url)) &&
-          !/\/auth\//.test(config.url) // Excluir endpoints de autenticación
+          !/\/auth\//.test(config.url)
         ) {
           // Buscar token en cookies primero (se comparte entre subdominios)
           let tokenCliente = getCookie('clienteToken');
