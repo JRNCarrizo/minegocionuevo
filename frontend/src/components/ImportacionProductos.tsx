@@ -51,6 +51,31 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
   const descargarPlantilla = async () => {
     try {
       setCargando(true);
+      
+      // Verificar si hay token de autenticación
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('❌ No hay token de autenticación');
+        alert('Error: No hay sesión activa. Por favor, inicie sesión nuevamente.');
+        return;
+      }
+      
+      console.log('🔑 Token encontrado:', token.substring(0, 20) + '...');
+      console.log('🏢 Empresa ID:', empresaId);
+      
+      // Probar autenticación primero
+      try {
+        console.log('🔍 Probando autenticación...');
+        const authResult = await ApiService.debugAuth(empresaId);
+        console.log('✅ Autenticación exitosa:', authResult);
+      } catch (authError: any) {
+        console.error('❌ Error de autenticación:', authError);
+        if (authError.response?.status === 403) {
+          alert('Error 403: No tiene permisos para acceder a este recurso. Verifique su sesión.');
+          return;
+        }
+      }
+      
       const blob = await ApiService.descargarPlantillaImportacion(empresaId);
       
       // Crear un enlace para descargar el archivo
@@ -63,9 +88,33 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
       link.remove();
       window.URL.revokeObjectURL(url);
       
-    } catch (error) {
-      console.error('Error al descargar plantilla:', error);
-      alert('Error al descargar la plantilla');
+      console.log('✅ Plantilla descargada exitosamente');
+      
+    } catch (error: any) {
+      console.error('❌ Error al descargar plantilla:', error);
+      
+      // Manejar diferentes tipos de errores
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        console.error('📊 Status:', status);
+        console.error('📊 Data:', data);
+        
+        if (status === 403) {
+          alert('Error 403: No tiene permisos para acceder a este recurso. Verifique su sesión.');
+        } else if (status === 401) {
+          alert('Error 401: Sesión expirada. Por favor, inicie sesión nuevamente.');
+        } else if (status === 404) {
+          alert('Error 404: Recurso no encontrado.');
+        } else {
+          alert(`Error ${status}: ${data?.error || 'Error desconocido al descargar la plantilla'}`);
+        }
+      } else if (error.request) {
+        alert('Error de conexión: No se pudo conectar con el servidor.');
+      } else {
+        alert('Error al descargar la plantilla: ' + (error.message || 'Error desconocido'));
+      }
     } finally {
       setCargando(false);
     }

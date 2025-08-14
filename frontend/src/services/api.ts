@@ -738,10 +738,7 @@ class ApiService {
     return response.data;
   }
   
-  async debugAuth(empresaId: number) {
-    const response = await this.api.get(`/empresas/${empresaId}/clientes/debug/auth`);
-    return response.data;
-  }
+
   
   async debugPublic(empresaId: number) {
     const response = await this.api.get(`/empresas/${empresaId}/clientes/debug/public`);
@@ -1438,11 +1435,51 @@ class ApiService {
   }
 
   // Métodos para importación de productos
+  async debugAuth(empresaId: number): Promise<any> {
+    console.log('🔍 Probando autenticación para empresa:', empresaId);
+    
+    try {
+      const response = await this.api.get(`/empresas/${empresaId}/productos/debug-auth`);
+      console.log('✅ Debug auth exitoso:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error en debug auth:', error);
+      throw error;
+    }
+  }
+
   async descargarPlantillaImportacion(empresaId: number): Promise<Blob> {
-    const response = await this.api.get(`/empresas/${empresaId}/productos/plantilla-importacion`, {
-      responseType: 'blob'
-    });
-    return response.data;
+    console.log('📥 Iniciando descarga de plantilla para empresa:', empresaId);
+    
+    try {
+      const response = await this.api.get(`/empresas/${empresaId}/productos/plantilla-importacion`, {
+        responseType: 'blob'
+      });
+      
+      console.log('✅ Plantilla descargada exitosamente');
+      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error en descargarPlantillaImportacion:', error);
+      
+      if (error.response) {
+        console.error('📊 Status:', error.response.status);
+        console.error('📊 Headers:', error.response.headers);
+        
+        // Si es un error 403, intentar leer el mensaje de error
+        if (error.response.status === 403) {
+          try {
+            const errorText = await error.response.data.text();
+            console.error('📊 Error response body:', errorText);
+          } catch (e) {
+            console.error('📊 No se pudo leer el body del error');
+          }
+        }
+      }
+      
+      throw error;
+    }
   }
 
   async validarArchivoImportacion(empresaId: number, archivo: File): Promise<any> {
@@ -1457,10 +1494,10 @@ class ApiService {
     return response.data;
   }
 
-                async importarProductos(empresaId: number, productos: any[]): Promise<any> {
-                const response = await this.api.post(`/empresas/${empresaId}/productos/importar-productos`, productos);
-                return response.data;
-              }
+  async importarProductos(empresaId: number, productos: any[]): Promise<any> {
+    const response = await this.api.post(`/empresas/${empresaId}/productos/importar-productos`, productos);
+    return response.data;
+  }
 
 
 

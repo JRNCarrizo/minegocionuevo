@@ -27,6 +27,8 @@ import java.util.Optional;
 import java.time.LocalDate;
 import com.minegocio.backend.servicios.EmpresaService;
 import java.io.IOException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.minegocio.backend.seguridad.UsuarioPrincipal;
 
 /**
  * Controlador REST para la gestión de productos
@@ -880,24 +882,79 @@ public class ProductoController {
     }
 
     /**
+     * Endpoint de debug para verificar autenticación
+     */
+    @GetMapping("/debug-auth")
+    public ResponseEntity<?> debugAuth(@PathVariable Long empresaId) {
+        try {
+            System.out.println("=== DEBUG AUTH ===");
+            System.out.println("Empresa ID: " + empresaId);
+            
+            // Obtener información de autenticación
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            System.out.println("Authentication: " + (auth != null ? auth.getName() : "null"));
+            System.out.println("Authorities: " + (auth != null ? auth.getAuthorities() : "null"));
+            System.out.println("Principal: " + (auth != null ? auth.getPrincipal() : "null"));
+            
+            if (auth != null && auth.getPrincipal() instanceof UsuarioPrincipal) {
+                UsuarioPrincipal principal = (UsuarioPrincipal) auth.getPrincipal();
+                System.out.println("Usuario ID: " + principal.getUsuario().getId());
+                System.out.println("Usuario Email: " + principal.getUsuario().getEmail());
+                System.out.println("Usuario Rol: " + principal.getUsuario().getRol());
+                System.out.println("Empresa ID del usuario: " + principal.getEmpresaId());
+            }
+            
+            // Verificar empresa
+            boolean empresaValida = empresaService.verificarEstadoEmpresa(empresaId);
+            System.out.println("Empresa válida: " + empresaValida);
+            
+            return ResponseEntity.ok(Map.of(
+                "authenticated", auth != null && auth.isAuthenticated(),
+                "user", auth != null ? auth.getName() : "null",
+                "authorities", auth != null ? auth.getAuthorities().toString() : "null",
+                "empresaValida", empresaValida,
+                "empresaId", empresaId
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("Error en debug auth: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error en debug: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Descarga la plantilla Excel para importación de productos
      */
     @GetMapping("/plantilla-importacion")
     public ResponseEntity<?> descargarPlantillaImportacion(@PathVariable Long empresaId) {
         try {
+            System.out.println("=== DEBUG DESCARGAR PLANTILLA ===");
+            System.out.println("Empresa ID solicitada: " + empresaId);
+            
             // Verificar que la empresa existe y está activa
-            if (!empresaService.verificarEstadoEmpresa(empresaId)) {
+            boolean empresaValida = empresaService.verificarEstadoEmpresa(empresaId);
+            System.out.println("Empresa válida: " + empresaValida);
+            
+            if (!empresaValida) {
+                System.err.println("❌ Empresa no encontrada o inactiva: " + empresaId);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Empresa no encontrada o inactiva"));
             }
+            
+            System.out.println("✅ Empresa validada, generando plantilla...");
             
             // Generar la plantilla
             byte[] plantilla = importacionProductoService.generarPlantillaExcel();
             
             if (plantilla == null || plantilla.length == 0) {
+                System.err.println("❌ Error: Plantilla generada está vacía");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error al generar la plantilla: archivo vacío"));
             }
+            
+            System.out.println("✅ Plantilla generada exitosamente, tamaño: " + plantilla.length + " bytes");
             
             // Configurar headers para descarga
             return ResponseEntity.ok()
@@ -908,11 +965,12 @@ public class ProductoController {
                 .body(plantilla);
                 
         } catch (IOException e) {
-            System.err.println("Error de I/O al generar plantilla: " + e.getMessage());
+            System.err.println("❌ Error de I/O al generar plantilla: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error al generar la plantilla: " + e.getMessage()));
         } catch (Exception e) {
-            System.err.println("Error inesperado al generar plantilla: " + e.getMessage());
+            System.err.println("❌ Error inesperado al generar plantilla: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error interno del servidor al generar la plantilla"));
