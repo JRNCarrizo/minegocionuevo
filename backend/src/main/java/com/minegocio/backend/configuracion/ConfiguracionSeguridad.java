@@ -91,7 +91,6 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/empresas/verificar-subdominio/**").permitAll()
                     .requestMatchers("/api/empresas/crear-empresa").permitAll()
                     .requestMatchers("/api/empresas/publico/**").permitAll()
-                    .requestMatchers("/api/empresas/*/productos/plantilla-importacion").permitAll() // Permitir descarga de plantilla sin autenticación
                     .requestMatchers("/api/super-admin/crear-super-admin").permitAll()
                     .requestMatchers("/api/super-admin/suscripciones/crear-datos-prueba").permitAll()
                     .requestMatchers("/api/super-admin/suscripciones/debug/**").permitAll()
@@ -108,6 +107,7 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/super-admin/**").hasAnyRole("SUPER_ADMIN", "ADMINISTRADOR")
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
+                    .requestMatchers("/api/empresas/*/productos/plantilla-importacion").permitAll() // Permitir descarga de plantilla sin autenticación (DEBE ir DESPUÉS de la regla general)
                     .requestMatchers("/api/notificaciones/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/historial-carga-productos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .anyRequest().authenticated();
