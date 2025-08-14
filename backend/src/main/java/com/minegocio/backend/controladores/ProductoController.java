@@ -887,11 +887,7 @@ public class ProductoController {
     @GetMapping("/plantilla-importacion")
     public ResponseEntity<?> descargarPlantillaImportacion(@PathVariable Long empresaId) {
         try {
-            System.out.println("=== DEBUG DESCARGAR PLANTILLA ===");
-            System.out.println("Empresa ID solicitada: " + empresaId);
-            
-            // Como ahora es un endpoint público, no necesitamos verificar la empresa
-            System.out.println("✅ Endpoint público - generando plantilla...");
+            System.out.println("📥 Descargando plantilla para empresa: " + empresaId);
             
             // Generar la plantilla
             byte[] plantilla = importacionProductoService.generarPlantillaExcel();
@@ -914,12 +910,10 @@ public class ProductoController {
                 
         } catch (IOException e) {
             System.err.println("❌ Error de I/O al generar plantilla: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error al generar la plantilla: " + e.getMessage()));
         } catch (Exception e) {
             System.err.println("❌ Error inesperado al generar plantilla: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error interno del servidor al generar la plantilla"));
         }

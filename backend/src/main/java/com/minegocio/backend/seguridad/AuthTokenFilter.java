@@ -31,52 +31,38 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
-                                  FilterChain filterChain) throws ServletException, IOException {
+                                   FilterChain filterChain) throws ServletException, IOException {
         try {
             String requestPath = request.getRequestURI();
             String method = request.getMethod();
             
-            // Log general para todas las peticiones
-            System.out.println("🌐 REQUEST RECIBIDA: " + method + " " + requestPath);
-            
-            System.out.println("=== AuthTokenFilter Debug ===");
-            System.out.println("Request: " + method + " " + requestPath);
-            
-            // Log específico para endpoints de archivos
-            if (requestPath.contains("/archivos")) {
-                System.out.println("📁 Endpoint de archivos detectado: " + requestPath);
+            // Solo log para endpoints importantes, no para todos
+            if (requestPath.contains("/plantilla-importacion") || requestPath.contains("/auth/")) {
+                System.out.println("🌐 REQUEST RECIBIDA: " + method + " " + requestPath);
             }
             
             // Skip authentication for public endpoints
             if (isPublicEndpoint(requestPath)) {
-                System.out.println("✅ Skipping auth for public endpoint: " + requestPath);
+                if (requestPath.contains("/plantilla-importacion")) {
+                    System.out.println("✅ Skipping auth for public endpoint: " + requestPath);
+                }
                 filterChain.doFilter(request, response);
                 return;
             }
             
-            // Log específico para endpoints de estadísticas
-            if (requestPath.contains("/estadisticas")) {
-                System.out.println("📊 Endpoint de estadísticas detectado: " + requestPath);
-            }
-            
             // Skip authentication for OPTIONS requests (CORS preflight)
             if ("OPTIONS".equalsIgnoreCase(method)) {
-                System.out.println("✅ Skipping auth for OPTIONS request");
                 filterChain.doFilter(request, response);
                 return;
             }
             
             String jwt = parseJwt(request);
-            System.out.println("JWT extraído: " + (jwt != null ? "Presente (longitud: " + jwt.length() + ")" : "Ausente"));
             
             if (jwt != null && jwtUtils != null && jwtUtils.validateJwtToken(jwt)) {
                 String email = jwtUtils.extractUsername(jwt);
-                System.out.println("Email extraído del JWT: " + email);
-
+                
                 try {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                    System.out.println("UserDetails cargado para: " + email);
-                    System.out.println("Authorities: " + userDetails.getAuthorities());
                     
                     // Verificar si es UsuarioPrincipal para obtener más info
                     if (userDetails instanceof UsuarioPrincipal) {
@@ -96,25 +82,14 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                     logger.error("No se puede establecer la autenticación del usuario: {}", e.getMessage());
                     // Limpiar el contexto de seguridad si hay error
                     SecurityContextHolder.clearContext();
-                    System.out.println("🧹 SecurityContext limpiado debido a error de usuario");
                 }
-            } else {
-                System.out.println("JWT inválido o ausente - no se estableció autenticación");
-                if (jwt != null) {
-                    System.out.println("Token presente pero inválido");
-                } else {
-                    System.out.println("No se encontró token en la petición");
-                }
-                // No establecer autenticación, pero continuar con el filtro
             }
         } catch (Exception e) {
             System.err.println("❌ Error general en AuthTokenFilter: " + e.getMessage());
-            e.printStackTrace();
             logger.error("Error general en AuthTokenFilter: {}", e.getMessage());
             // Continuar con el filtro incluso si hay error
         }
 
-        System.out.println("=== Fin AuthTokenFilter ===");
         filterChain.doFilter(request, response);
     }
 
@@ -123,15 +98,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
      */
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
-        System.out.println("Authorization header: " + (headerAuth != null ? headerAuth.substring(0, Math.min(headerAuth.length(), 20)) + "..." : "null"));
 
         if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
-            String token = headerAuth.substring(7);
-            System.out.println("Token extraído correctamente, longitud: " + token.length());
-            return token;
+            return headerAuth.substring(7);
         }
 
-        System.out.println("No se encontró token válido en Authorization header");
         return null;
     }
 
@@ -164,7 +135,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                           // Endpoints de autenticación de clientes (Google login, recuperación de contraseña, etc.)
                           (requestPath.contains("/publico/") && requestPath.contains("/auth/"));
         
-        System.out.println("🔍 Checking if endpoint is public: " + requestPath + " -> " + isPublic);
         return isPublic;
     }
 }
