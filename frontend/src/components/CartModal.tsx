@@ -72,7 +72,7 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
       return;
     }
     
-    if (items.some(item => typeof item.precio !== 'number' || isNaN(item.precio) || item.precio <= 0)) {
+    if (items.some(item => typeof item.precio !== 'number' || isNaN(item.precio) || item.precio < 0)) {
       toast.error('Hay productos en el carrito con precio inválido.');
       return;
     }

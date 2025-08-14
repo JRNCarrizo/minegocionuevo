@@ -105,7 +105,9 @@ public class PedidoService {
                     precioFinal = detalleDTO.getPrecioUnitario();
                     System.out.println("ATENCIÓN: Usando precio del DTO porque el producto en la base no tiene precio válido.");
                 } else {
-                    throw new RuntimeException("El producto '" + producto.getNombre() + "' no tiene precio asignado ni en la base ni en el pedido.");
+                    // Permitir productos sin precio (para gestión de inventario)
+                    precioFinal = BigDecimal.ZERO;
+                    System.out.println("INFO: Producto '" + producto.getNombre() + "' sin precio - permitido para gestión de inventario.");
                 }
             }
 

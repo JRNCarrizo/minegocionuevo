@@ -20,8 +20,7 @@ public class ProductoDTO {
     @Size(max = 1000, message = "La descripción no puede exceder 1000 caracteres")
     private String descripcion;
     
-    @NotNull(message = "El precio es requerido")
-    @DecimalMin(value = "0.0", inclusive = false, message = "El precio debe ser mayor a 0")
+    @DecimalMin(value = "0.0", inclusive = true, message = "El precio debe ser mayor o igual a 0")
     private BigDecimal precio;
     
     @NotNull(message = "El stock es requerido")

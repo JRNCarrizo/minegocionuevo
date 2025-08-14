@@ -309,54 +309,7 @@ const GestionProductos: React.FC = () => {
     setBusqueda('');
   };
 
-  const cambiarStock = async (producto: Producto, cambio: number) => {
-    if (!empresaId) {
-      console.error('No hay empresaId para cambiar stock');
-      return;
-    }
-    
-    const nuevoStock = Math.max(0, producto.stock + cambio);
-    
-    console.log('=== DEBUG CAMBIAR STOCK ===');
-    console.log('Producto ID:', producto.id);
-    console.log('Stock actual:', producto.stock);
-    console.log('Cambio:', cambio);
-    console.log('Nuevo stock:', nuevoStock);
-    console.log('EmpresaId:', empresaId);
-    
-    try {
-      // Usar el endpoint específico de stock
-      const response = await ApiService.actualizarStock(
-        empresaId,
-        producto.id,
-        nuevoStock
-      );
 
-      console.log('Respuesta de actualización de stock:', response);
-
-      if (response && response.data) {
-        // Actualizar el estado local
-        setProductos(productos.map(p => 
-          p.id === producto.id 
-            ? { ...p, stock: nuevoStock }
-            : p
-        ));
-        
-        console.log(`Stock actualizado exitosamente para producto ${producto.id}: ${producto.stock} -> ${nuevoStock}`);
-      } else {
-        console.error('Respuesta inesperada al actualizar stock:', response);
-      }
-    } catch (error) {
-      console.error('Error detallado al actualizar stock:', error);
-      
-      // Mostrar información del error para debug
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number; data?: unknown } };
-        console.error('Status del error:', axiosError.response?.status);
-        console.error('Data del error:', axiosError.response?.data);
-      }
-    }
-  };
 
   const irADetalle = (producto: Producto) => {
     setProductoSeleccionado(producto);
@@ -2035,63 +1988,15 @@ const GestionProductos: React.FC = () => {
                       </div>
                       
                       <div className="columna-stock">
-                        <div className="control-stock" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              cambiarStock(producto, -1);
-                            }}
-                            className="boton-stock"
-                            style={{
-                              background: '#ef4444',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              width: '24px',
-                              height: '24px',
-                              fontSize: '14px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >
-                            -
-                          </button>
-                          
-                          <span className="stock" style={{
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            color: producto.stock <= ((producto.stockMinimo || 0) || 0) ? '#ef4444' : '#059669',
-                            minWidth: '30px',
-                            textAlign: 'center'
-                          }}>
-                            {producto.stock}
-                          </span>
-                          
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              cambiarStock(producto, 1);
-                            }}
-                            className="boton-stock"
-                            style={{
-                              background: '#10b981',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              width: '24px',
-                              height: '24px',
-                              fontSize: '14px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >
-                            +
-                          </button>
-                        </div>
+                        <span className="stock" style={{
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          color: producto.stock <= ((producto.stockMinimo || 0) || 0) ? '#ef4444' : '#059669',
+                          minWidth: '30px',
+                          textAlign: 'center'
+                        }}>
+                          {producto.stock}
+                        </span>
                         
                         {producto.stock <= ((producto.stockMinimo || 0) || 0) && (
                           <div style={{
@@ -2462,61 +2367,15 @@ const GestionProductos: React.FC = () => {
                             📂 {producto.categoria}
                           </span>
                           
-                          <div className="control-stock-mini" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                cambiarStock(producto, -1);
-                              }}
-                              style={{
-                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                width: '20px',
-                                height: '20px',
-                                fontSize: '12px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                            >
-                              -
-                            </button>
-                            
-                            <span style={{
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              color: producto.stock <= (producto.stockMinimo || 0) ? '#ef4444' : '#059669',
-                              minWidth: '25px',
-                              textAlign: 'center'
-                            }}>
-                              {producto.stock}
-                            </span>
-                            
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                cambiarStock(producto, 1);
-                              }}
-                              style={{
-                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                width: '20px',
-                                height: '20px',
-                                fontSize: '12px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                            >
-                              +
-                            </button>
-                          </div>
+                          <span style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: producto.stock <= (producto.stockMinimo || 0) ? '#ef4444' : '#059669',
+                            minWidth: '25px',
+                            textAlign: 'center'
+                          }}>
+                            Stock: {producto.stock}
+                          </span>
                         </div>
 
                         {/* Botones de acción */}
@@ -2796,85 +2655,19 @@ const GestionProductos: React.FC = () => {
                             📂 {producto.categoria}
                           </span>
                           
-                          <div className="control-stock-mini" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                cambiarStock(producto, -1);
-                              }}
-                              style={{
-                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                width: '28px',
-                                height: '28px',
-                                fontSize: '14px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.2s ease',
-                                boxShadow: '0 2px 4px rgba(239,68,68,0.2)'
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.transform = 'scale(1.05)';
-                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(239,68,68,0.3)';
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.transform = 'scale(1)';
-                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(239,68,68,0.2)';
-                              }}
-                            >
-                              -
-                            </button>
-                            
-                            <span style={{
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              color: '#374151',
-                              minWidth: '20px',
-                              textAlign: 'center',
-                              background: '#f8fafc',
-                              padding: '4px 8px',
-                              borderRadius: '6px',
-                              border: '1px solid #e2e8f0'
-                            }}>
-                              {producto.stock}
-                            </span>
-                            
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                cambiarStock(producto, 1);
-                              }}
-                              style={{
-                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                width: '28px',
-                                height: '28px',
-                                fontSize: '14px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.2s ease',
-                                boxShadow: '0 2px 4px rgba(16,185,129,0.2)'
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.transform = 'scale(1.05)';
-                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(16,185,129,0.3)';
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.transform = 'scale(1)';
-                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(16,185,129,0.2)';
-                              }}
-                            >
-                              +
-                            </button>
-                          </div>
+                          <span style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#374151',
+                            minWidth: '20px',
+                            textAlign: 'center',
+                            background: '#f8fafc',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            border: '1px solid #e2e8f0'
+                          }}>
+                            Stock: {producto.stock}
+                          </span>
                         </div>
 
                         {/* Botones de acción */}

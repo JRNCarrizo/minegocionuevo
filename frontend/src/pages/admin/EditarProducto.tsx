@@ -232,8 +232,8 @@ const EditarProducto: React.FC = () => {
       return;
     }
 
-    if (formulario.precio <= 0) {
-      setError('El precio debe ser mayor a cero');
+    if (formulario.precio < 0) {
+      setError('El precio debe ser mayor o igual a cero');
       return;
     }
 
@@ -248,7 +248,7 @@ const EditarProducto: React.FC = () => {
       
       const datosProducto = {
         ...formulario,
-        precio: Number(formulario.precio),
+        precio: formulario.precio ? Number(formulario.precio) : undefined,
         stock: Number(formulario.stock),
         stockMinimo: Number(formulario.stockMinimo)
       };
@@ -780,7 +780,7 @@ const EditarProducto: React.FC = () => {
                     color: '#374151',
                     marginBottom: '8px'
                   }}>
-                    Precio ($) *
+                    Precio ($) (opcional)
                   </label>
                   <input
                     type="number"

@@ -451,8 +451,8 @@ export default function NuevoProducto() {
       if (!formulario.nombre.trim()) {
         nuevosErrores.nombre = 'El nombre del producto es obligatorio';
       }
-      if (!formulario.precio || isNaN(Number(formulario.precio)) || Number(formulario.precio) <= 0) {
-        nuevosErrores.precio = 'El precio debe ser un número válido mayor a 0';
+      if (formulario.precio && (isNaN(Number(formulario.precio)) || Number(formulario.precio) < 0)) {
+        nuevosErrores.precio = 'El precio debe ser un número válido mayor o igual a 0';
       }
       if (!formulario.categoria) {
         nuevosErrores.categoria = 'Selecciona una categoría';
@@ -517,7 +517,7 @@ export default function NuevoProducto() {
       const datosProducto = {
         nombre: formulario.nombre.trim(),
         descripcion: formulario.descripcion.trim() || undefined,
-        precio: Number(formulario.precio),
+        precio: formulario.precio ? Number(formulario.precio) : undefined,
         stock: Number(formulario.stock),
         stockMinimo: Number(formulario.stockMinimo),
         categoria: formulario.categoria || undefined,
@@ -1017,13 +1017,12 @@ export default function NuevoProducto() {
 
                     <div className="campos-fila">
                       <CampoFormulario
-                        label="Precio"
+                        label="Precio (opcional)"
                         name="precio"
                         type="number"
                         placeholder="0.00"
                         min="0"
                         step="0.01"
-                        required
                         error={errores.precio}
                         value={formulario.precio}
                         onChange={manejarCambio}
@@ -1056,7 +1055,7 @@ export default function NuevoProducto() {
                       type="button"
                       onClick={siguientePaso}
                       className="boton-siguiente"
-                      disabled={!formulario.nombre || !formulario.precio || !formulario.categoria}
+                      disabled={!formulario.nombre || !formulario.categoria}
                     >
                       Siguiente Paso
                       <span className="icono-boton">→</span>

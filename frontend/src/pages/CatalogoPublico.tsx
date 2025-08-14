@@ -1499,8 +1499,8 @@ export default function CatalogoPublico() {
                             }
                             
                             if (typeof producto.precio !== 'number' || isNaN(producto.precio)) {
-                              alert('Este producto no tiene un precio válido y no puede ser agregado al carrito.');
-                              return;
+                              // Permitir productos sin precio para gestión de inventario
+                              console.log('Producto sin precio - permitido para gestión de inventario');
                             }
                             
                             // Si no hay cantidad en carrito, agregar 1
@@ -1508,7 +1508,7 @@ export default function CatalogoPublico() {
                               const agregado = await addToCart({
                                 id: producto.id,
                                 nombre: producto.nombre,
-                                precio: producto.precio,
+                                precio: producto.precio || 0, // Usar 0 si no hay precio
                                 cantidad: 1,
                                 imagen: producto.imagenes && producto.imagenes[0]
                               }, undefined, subdominio || undefined);

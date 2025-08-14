@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.time.LocalDate;
+import com.minegocio.backend.servicios.EmpresaService;
+import java.io.IOException;
 
 /**
  * Controlador REST para la gestión de productos
@@ -54,6 +56,9 @@ public class ProductoController {
 
     @Autowired
     private ReporteStockService reporteStockService;
+
+    @Autowired
+    private EmpresaService empresaService;
 
     /**
      * Obtiene todos los productos de una empresa
@@ -880,18 +885,37 @@ public class ProductoController {
     @GetMapping("/plantilla-importacion")
     public ResponseEntity<?> descargarPlantillaImportacion(@PathVariable Long empresaId) {
         try {
+            // Verificar que la empresa existe y está activa
+            if (!empresaService.verificarEstadoEmpresa(empresaId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Empresa no encontrada o inactiva"));
+            }
+            
+            // Generar la plantilla
             byte[] plantilla = importacionProductoService.generarPlantillaExcel();
             
+            if (plantilla == null || plantilla.length == 0) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al generar la plantilla: archivo vacío"));
+            }
+            
+            // Configurar headers para descarga
             return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=\"plantilla_productos.xlsx\"")
                 .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .header("Content-Length", String.valueOf(plantilla.length))
+                .header("Cache-Control", "no-cache")
                 .body(plantilla);
                 
-        } catch (Exception e) {
-            System.err.println("Error al generar plantilla: " + e.getMessage());
-            e.printStackTrace();
+        } catch (IOException e) {
+            System.err.println("Error de I/O al generar plantilla: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error al generar la plantilla: " + e.getMessage()));
+        } catch (Exception e) {
+            System.err.println("Error inesperado al generar plantilla: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error interno del servidor al generar la plantilla"));
         }
     }
 

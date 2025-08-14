@@ -100,23 +100,23 @@ const GestionProductos: React.FC = () => {
           activo: true,
           destacado: false,
           imagenes: ['/api/placeholder/200/200'],
-          fechaCreacion: new Date('2024-02-01').toISOString(),
+          fechaCreacion: new Date('2024-01-10').toISOString(),
           fechaActualizacion: new Date().toISOString()
         },
         {
           id: 3,
           nombre: 'Teclado Mecánico RGB',
-          descripcion: 'Teclado mecánico con retroiluminación RGB personalizable.',
-          precio: 79.99,
-          stock: 25,
-          stockMinimo: 5,
+          descripcion: 'Teclado mecánico con switches Cherry MX Blue y retroiluminación RGB.',
+          precio: 129.99,
+          stock: 15,
+          stockMinimo: 8,
           categoria: 'Electrónicos',
           marca: 'Corsair',
           unidad: 'unidad',
           activo: true,
           destacado: true,
           imagenes: ['/api/placeholder/200/200'],
-          fechaCreacion: new Date('2024-01-20').toISOString(),
+          fechaCreacion: new Date('2024-01-05').toISOString(),
           fechaActualizacion: new Date().toISOString()
         },
         {
@@ -124,59 +124,83 @@ const GestionProductos: React.FC = () => {
           nombre: 'Monitor 24" Full HD',
           descripcion: 'Monitor LED de 24 pulgadas con resolución Full HD 1920x1080.',
           precio: 199.99,
-          stock: 12,
-          stockMinimo: 3,
+          stock: 8,
+          stockMinimo: 5,
           categoria: 'Electrónicos',
           marca: 'Samsung',
           unidad: 'unidad',
           activo: true,
           destacado: false,
           imagenes: ['/api/placeholder/200/200'],
-          fechaCreacion: new Date('2024-02-10').toISOString(),
+          fechaCreacion: new Date('2024-01-12').toISOString(),
           fechaActualizacion: new Date().toISOString()
         },
         {
           id: 5,
-          nombre: 'Silla Ergonómica de Oficina',
-          descripcion: 'Silla ergonómica con soporte lumbar y reposabrazos ajustables.',
-          precio: 299.99,
-          stock: 3,
-          stockMinimo: 5,
-          categoria: 'Mobiliario',
-          marca: 'Herman Miller',
+          nombre: 'Auriculares Bluetooth',
+          descripcion: 'Auriculares inalámbricos con cancelación de ruido activa.',
+          precio: 89.99,
+          stock: 25,
+          stockMinimo: 12,
+          categoria: 'Electrónicos',
+          marca: 'Sony',
           unidad: 'unidad',
           activo: true,
           destacado: true,
           imagenes: ['/api/placeholder/200/200'],
-          fechaCreacion: new Date('2024-01-25').toISOString(),
+          fechaCreacion: new Date('2024-01-08').toISOString(),
           fechaActualizacion: new Date().toISOString()
         }
       ];
 
-      setProductos(mockProductos);
-      setTotalElementos(mockProductos.length);
+      // Simular filtros
+      let productosFiltrados = mockProductos;
       
-      // TODO: Implementar paginación real cuando sea necesario
-      // setTotalPaginas(1);
+      if (filtros.nombre) {
+        productosFiltrados = productosFiltrados.filter(p => 
+          p.nombre.toLowerCase().includes(filtros.nombre!.toLowerCase())
+        );
+      }
       
-      // También cargamos categorías y marcas
-      const categoriasUnicas = [...new Set(mockProductos.map(p => p.categoria).filter(Boolean))] as string[];
-      const marcasUnicas = [...new Set(mockProductos.map(p => p.marca).filter(Boolean))] as string[];
+      if (filtros.categoria) {
+        productosFiltrados = productosFiltrados.filter(p => 
+          p.categoria === filtros.categoria
+        );
+      }
+      
+      if (filtros.marca) {
+        productosFiltrados = productosFiltrados.filter(p => 
+          p.marca === filtros.marca
+        );
+      }
+      
+      if (busqueda) {
+        productosFiltrados = productosFiltrados.filter(p => 
+          p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+          p.descripcion.toLowerCase().includes(busqueda.toLowerCase())
+        );
+      }
+
+      setProductos(productosFiltrados);
+      setTotalElementos(productosFiltrados.length);
+      
+      // Extraer categorías y marcas únicas
+      const categoriasUnicas = [...new Set(mockProductos.map(p => p.categoria).filter(Boolean))];
+      const marcasUnicas = [...new Set(mockProductos.map(p => p.marca).filter(Boolean))];
+      
       setCategorias(categoriasUnicas);
       setMarcas(marcasUnicas);
       
     } catch (error) {
+      console.error('Error al cargar productos:', error);
       setError('Error al cargar productos');
-      console.error('Error:', error);
     } finally {
       setCargando(false);
     }
-  }, [empresaId]);
+  }, [empresaId, filtros, busqueda]);
 
   useEffect(() => {
-    if (empresaId) {
-      cargarProductos();
-    }
+    cargarProductos();
   }, [cargarProductos, empresaId]);
 
   const buscarProductos = () => {
@@ -186,22 +210,6 @@ const GestionProductos: React.FC = () => {
   const limpiarFiltros = () => {
     setFiltros({});
     setBusqueda('');
-  };
-
-  const cambiarStock = async (producto: Producto, cambio: number) => {
-    const nuevoStock = Math.max(0, producto.stock + cambio);
-    
-    try {
-      // Actualizar el producto en la lista local (simulando actualización)
-      setProductos(productos.map(p => 
-        p.id === producto.id 
-          ? { ...p, stock: nuevoStock }
-          : p
-      ));
-    } catch (error) {
-      setError('Error al actualizar stock');
-      console.error('Error:', error);
-    }
   };
 
   const irADetalle = (producto: Producto) => {
@@ -278,17 +286,19 @@ const GestionProductos: React.FC = () => {
           <div className="filtros-avanzados">
             <select
               value={filtros.categoria || ''}
-              onChange={(e) => setFiltros({ ...filtros, categoria: e.target.value || undefined })}
+              onChange={(e) => setFiltros({...filtros, categoria: e.target.value || undefined})}
+              className="campo-filtro"
             >
               <option value="">Todas las categorías</option>
-              {categorias.map(categoria => (
-                <option key={categoria} value={categoria}>{categoria}</option>
+              {categorias.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
 
             <select
               value={filtros.marca || ''}
-              onChange={(e) => setFiltros({ ...filtros, marca: e.target.value || undefined })}
+              onChange={(e) => setFiltros({...filtros, marca: e.target.value || undefined})}
+              className="campo-filtro"
             >
               <option value="">Todas las marcas</option>
               {marcas.map(marca => (
@@ -297,48 +307,32 @@ const GestionProductos: React.FC = () => {
             </select>
 
             <button onClick={limpiarFiltros} className="boton-secundario">
-              Limpiar filtros
+              Limpiar Filtros
             </button>
           </div>
-
-          <div className="opciones-vista">
-            <div className="toggle-vista">
-              <button
-                className={`boton-vista ${vista === 'lista' ? 'activo' : ''}`}
-                onClick={() => setVista('lista')}
-              >
-                ☰ Lista
-              </button>
-              <button
-                className={`boton-vista ${vista === 'cuadricula' ? 'activo' : ''}`}
-                onClick={() => setVista('cuadricula')}
-              >
-                ⊞ Cuadrícula
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Información de resultados */}
-        <div className="info-resultados">
-          <p>
-            Mostrando {productos.length} de {totalElementos} productos
-            {Object.keys(filtros).length > 0 && ' (filtrados)'}
-          </p>
+        {/* Selector de vista */}
+        <div className="selector-vista">
+          <button 
+            className={`boton-vista ${vista === 'lista' ? 'activo' : ''}`}
+            onClick={() => setVista('lista')}
+          >
+            📋 Lista
+          </button>
+          <button 
+            className={`boton-vista ${vista === 'cuadricula' ? 'activo' : ''}`}
+            onClick={() => setVista('cuadricula')}
+          >
+            🖼️ Cuadrícula
+          </button>
         </div>
 
-        {error && (
-          <div className="mensaje-error">
-            {error}
-          </div>
-        )}
-
-        {/* Lista de productos */}
+        {/* Contenido de productos */}
         {vista === 'lista' ? (
           <div className="vista-lista">
             <div className="tabla-productos">
               <div className="encabezado-tabla">
-                <div className="columna-imagen">Imagen</div>
                 <div className="columna-nombre">Producto</div>
                 <div className="columna-precio">Precio</div>
                 <div className="columna-stock">Stock</div>
@@ -349,14 +343,6 @@ const GestionProductos: React.FC = () => {
               
               {productos.map(producto => (
                 <div key={producto.id} className="fila-producto">
-                  <div className="columna-imagen">
-                    <img 
-                      src={producto.imagenes?.[0] || '/api/placeholder/60/60'} 
-                      alt={producto.nombre}
-                      className="imagen-producto-mini"
-                    />
-                  </div>
-                  
                   <div className="columna-nombre">
                     <div className="info-producto">
                       <h3 onClick={() => irADetalle(producto)}>{producto.nombre}</h3>
@@ -371,24 +357,9 @@ const GestionProductos: React.FC = () => {
                   </div>
                   
                   <div className="columna-stock">
-                    <div className="control-stock">
-                      <button 
-                        onClick={() => cambiarStock(producto, -1)}
-                        className="boton-stock"
-                        disabled={producto.stock <= 0}
-                      >
-                        -
-                      </button>
-                      <span className={`stock ${producto.stock <= producto.stockMinimo ? 'stock-bajo' : ''}`}>
-                        {producto.stock}
-                      </span>
-                      <button 
-                        onClick={() => cambiarStock(producto, 1)}
-                        className="boton-stock"
-                      >
-                        +
-                      </button>
-                    </div>
+                    <span className={`stock ${producto.stock <= producto.stockMinimo ? 'stock-bajo' : ''}`}>
+                      {producto.stock}
+                    </span>
                     {producto.stock <= producto.stockMinimo && (
                       <span className="alerta-stock">¡Stock bajo!</span>
                     )}
@@ -473,24 +444,9 @@ const GestionProductos: React.FC = () => {
                     <div className="detalles-producto">
                       <div className="precio-stock">
                         <span className="precio">${producto.precio.toLocaleString()}</span>
-                        <div className="control-stock-mini">
-                          <button 
-                            onClick={() => cambiarStock(producto, -1)}
-                            className="boton-stock-mini"
-                            disabled={producto.stock <= 0}
-                          >
-                            -
-                          </button>
-                          <span className={`stock ${producto.stock <= producto.stockMinimo ? 'stock-bajo' : ''}`}>
-                            {producto.stock}
-                          </span>
-                          <button 
-                            onClick={() => cambiarStock(producto, 1)}
-                            className="boton-stock-mini"
-                          >
-                            +
-                          </button>
-                        </div>
+                        <span className={`stock ${producto.stock <= producto.stockMinimo ? 'stock-bajo' : ''}`}>
+                          Stock: {producto.stock}
+                        </span>
                       </div>
                       
                       <div className="metadata">

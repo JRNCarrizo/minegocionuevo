@@ -20,7 +20,13 @@ export default function GestorImagenes({
 }: GestorImagenesProps) {
   const [imagenes, setImagenes] = useState<string[]>(imagenesIniciales);
   const [subiendoImagen, setSubiendoImagen] = useState(false);
+  const [mostrarModalCamara, setMostrarModalCamara] = useState(false);
+  const [streamCamara, setStreamCamara] = useState<MediaStream | null>(null);
+  const [capturandoFoto, setCapturandoFoto] = useState(false);
+  const [inicializandoCamara, setInicializandoCamara] = useState(false);
   const inputFileRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Sincronizar las imágenes cuando cambien las imagenesIniciales
   useEffect(() => {
@@ -30,15 +36,104 @@ export default function GestorImagenes({
     setImagenes(imagenesIniciales);
   }, [imagenesIniciales, empresaId]);
 
+  // Asignar stream al video cuando esté disponible
+  useEffect(() => {
+    if (streamCamara && videoRef.current) {
+      videoRef.current.srcObject = streamCamara;
+      videoRef.current.play().catch(error => {
+        console.error('Error al reproducir video:', error);
+        toast.error('Error al iniciar la cámara');
+      });
+    }
+  }, [streamCamara]);
+
+  // Limpiar stream de cámara cuando se cierre el modal
+  useEffect(() => {
+    if (!mostrarModalCamara && streamCamara) {
+      streamCamara.getTracks().forEach(track => track.stop());
+      setStreamCamara(null);
+      setInicializandoCamara(false);
+    }
+  }, [mostrarModalCamara, streamCamara]);
+
   const handleSeleccionarArchivo = () => {
     if (disabled) return;
     inputFileRef.current?.click();
   };
 
-  const handleArchivoSeleccionado = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const archivo = event.target.files?.[0];
-    if (!archivo) return;
+  const abrirModalCamara = async () => {
+    if (disabled) return;
+    
+    setInicializandoCamara(true);
+    setMostrarModalCamara(true);
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment', // Preferir cámara trasera en móviles
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
+      setStreamCamara(stream);
+    } catch (error) {
+      console.error('Error al acceder a la cámara:', error);
+      toast.error('No se pudo acceder a la cámara. Verifica los permisos.');
+      setMostrarModalCamara(false);
+    } finally {
+      setInicializandoCamara(false);
+    }
+  };
 
+  const cerrarModalCamara = () => {
+    setMostrarModalCamara(false);
+    setCapturandoFoto(false);
+  };
+
+  const capturarFoto = () => {
+    if (!videoRef.current || !canvasRef.current || !streamCamara) return;
+    
+    setCapturandoFoto(true);
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    
+    if (!context) {
+      setCapturandoFoto(false);
+      return;
+    }
+    
+    // Configurar canvas con las dimensiones del video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Dibujar el frame actual del video en el canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convertir canvas a blob
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        setCapturandoFoto(false);
+        toast.error('Error al capturar la foto');
+        return;
+      }
+      
+      // Crear un archivo File desde el blob
+      const archivo = new File([blob], `foto_${Date.now()}.jpg`, { 
+        type: 'image/jpeg' 
+      });
+      
+      // Procesar la imagen capturada
+      await procesarImagen(archivo);
+      
+      // Cerrar modal después de procesar
+      cerrarModalCamara();
+    }, 'image/jpeg', 0.8);
+  };
+
+  const procesarImagen = async (archivo: File) => {
     // Validar que no se excedan las imágenes máximas
     if (imagenes.length >= maxImagenes) {
       toast.error(`Solo puedes subir hasta ${maxImagenes} imágenes`);
@@ -64,10 +159,6 @@ export default function GestorImagenes({
     
     if (!canProceed) {
       console.log('❌ Límite de almacenamiento alcanzado');
-      // Limpiar el input
-      if (inputFileRef.current) {
-        inputFileRef.current.value = '';
-      }
       return;
     }
 
@@ -96,10 +187,18 @@ export default function GestorImagenes({
       toast.error(mensaje);
     } finally {
       setSubiendoImagen(false);
-      // Limpiar el input
-      if (inputFileRef.current) {
-        inputFileRef.current.value = '';
-      }
+    }
+  };
+
+  const handleArchivoSeleccionado = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const archivo = event.target.files?.[0];
+    if (!archivo) return;
+
+    await procesarImagen(archivo);
+    
+    // Limpiar el input
+    if (inputFileRef.current) {
+      inputFileRef.current.value = '';
     }
   };
 
@@ -162,28 +261,42 @@ export default function GestorImagenes({
           </div>
         ))}
 
-        {/* Botón para agregar nueva imagen */}
+        {/* Botones para agregar nueva imagen */}
         {!disabled && imagenes.length < maxImagenes && (
-          <div className="imagen-item agregar">
-            <button
-              type="button"
-              className="btn-agregar-imagen"
-              onClick={handleSeleccionarArchivo}
-              disabled={subiendoImagen}
-            >
-              {subiendoImagen ? (
-                <div className="loading-spinner">
-                  <div className="spinner"></div>
-                  <span>Subiendo...</span>
-                </div>
-              ) : (
-                <>
-                  <span className="icono-mas">+</span>
-                  <span>Agregar Imagen</span>
-                </>
-              )}
-            </button>
-          </div>
+          <>
+            <div className="imagen-item agregar">
+              <button
+                type="button"
+                className="btn-agregar-imagen"
+                onClick={handleSeleccionarArchivo}
+                disabled={subiendoImagen}
+              >
+                {subiendoImagen ? (
+                  <div className="loading-spinner">
+                    <div className="spinner"></div>
+                    <span>Subiendo...</span>
+                  </div>
+                ) : (
+                  <>
+                    <span className="icono-galeria">📁</span>
+                    <span>Galería</span>
+                  </>
+                )}
+              </button>
+            </div>
+            
+            <div className="imagen-item agregar">
+              <button
+                type="button"
+                className="btn-agregar-imagen btn-camara"
+                onClick={abrirModalCamara}
+                disabled={subiendoImagen}
+              >
+                <span className="icono-camara">📷</span>
+                <span>Cámara</span>
+              </button>
+            </div>
+          </>
         )}
       </div>
 
@@ -196,6 +309,65 @@ export default function GestorImagenes({
           • Se redimensionarán automáticamente a 500x500px
         </small>
       </div>
+
+      {/* Modal de cámara */}
+      {mostrarModalCamara && (
+        <div className="modal-camara-overlay">
+          <div className="modal-camara">
+            <div className="modal-camara-header">
+              <h3>Tomar Foto</h3>
+              <button 
+                type="button" 
+                className="btn-cerrar-modal"
+                onClick={cerrarModalCamara}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-camara-content">
+              {inicializandoCamara ? (
+                <div className="cargando-camara">
+                  <div className="spinner"></div>
+                  <p>Inicializando cámara...</p>
+                </div>
+              ) : (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="video-camara"
+                />
+              )}
+              
+              <canvas
+                ref={canvasRef}
+                style={{ display: 'none' }}
+              />
+            </div>
+            
+            <div className="modal-camara-footer">
+              <button
+                type="button"
+                className="btn-capturar"
+                onClick={capturarFoto}
+                disabled={capturandoFoto || inicializandoCamara || !streamCamara}
+              >
+                {capturandoFoto ? 'Capturando...' : '📸 Capturar Foto'}
+              </button>
+              
+              <button
+                type="button"
+                className="btn-cancelar"
+                onClick={cerrarModalCamara}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

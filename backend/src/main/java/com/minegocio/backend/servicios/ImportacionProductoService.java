@@ -182,11 +182,22 @@ public class ImportacionProductoService {
                 sheet.autoSizeColumn(i);
             }
 
-            // Convertir a bytes
+            // Convertir a bytes con manejo de errores
             try (java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream()) {
                 workbook.write(outputStream);
-                return outputStream.toByteArray();
+                outputStream.flush();
+                byte[] result = outputStream.toByteArray();
+                
+                if (result == null || result.length == 0) {
+                    throw new IOException("Error: El archivo generado está vacío");
+                }
+                
+                return result;
+            } catch (Exception e) {
+                throw new IOException("Error al generar el archivo Excel: " + e.getMessage(), e);
             }
+        } catch (Exception e) {
+            throw new IOException("Error al crear el workbook Excel: " + e.getMessage(), e);
         }
     }
 
