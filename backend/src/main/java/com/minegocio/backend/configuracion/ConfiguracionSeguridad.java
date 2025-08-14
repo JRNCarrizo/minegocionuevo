@@ -91,6 +91,7 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/empresas/verificar-subdominio/**").permitAll()
                     .requestMatchers("/api/empresas/crear-empresa").permitAll()
                     .requestMatchers("/api/empresas/publico/**").permitAll()
+                    .requestMatchers("/api/empresas/*/productos/plantilla-importacion").permitAll() // Permitir descarga de plantilla sin autenticación
                     .requestMatchers("/api/super-admin/crear-super-admin").permitAll()
                     .requestMatchers("/api/super-admin/suscripciones/crear-datos-prueba").permitAll()
                     .requestMatchers("/api/super-admin/suscripciones/debug/**").permitAll()

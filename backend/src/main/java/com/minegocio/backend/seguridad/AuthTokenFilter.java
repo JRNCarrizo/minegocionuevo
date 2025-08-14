@@ -154,6 +154,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                           requestPath.startsWith("/api/debug/") ||
                           requestPath.startsWith("/api/empresas/registro") ||
                           requestPath.startsWith("/api/empresas/verificar-subdominio/") ||
+                          requestPath.matches("/api/empresas/\\d+/productos/plantilla-importacion") || // Plantilla de importación pública
                           requestPath.startsWith("/api/archivos/test") || // Solo el endpoint de prueba es público
                           requestPath.startsWith("/h2-console/") ||
                           requestPath.startsWith("/swagger-ui/") ||

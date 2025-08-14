@@ -52,29 +52,8 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
     try {
       setCargando(true);
       
-      // Verificar si hay token de autenticación
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('❌ No hay token de autenticación');
-        alert('Error: No hay sesión activa. Por favor, inicie sesión nuevamente.');
-        return;
-      }
-      
-      console.log('🔑 Token encontrado:', token.substring(0, 20) + '...');
       console.log('🏢 Empresa ID:', empresaId);
-      
-      // Probar autenticación primero
-      try {
-        console.log('🔍 Probando autenticación...');
-        const authResult = await ApiService.debugAuth(empresaId);
-        console.log('✅ Autenticación exitosa:', authResult);
-      } catch (authError: any) {
-        console.error('❌ Error de autenticación:', authError);
-        if (authError.response?.status === 403) {
-          alert('Error 403: No tiene permisos para acceder a este recurso. Verifique su sesión.');
-          return;
-        }
-      }
+      console.log('📥 Iniciando descarga de plantilla...');
       
       const blob = await ApiService.descargarPlantillaImportacion(empresaId);
       

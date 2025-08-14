@@ -882,49 +882,6 @@ public class ProductoController {
     }
 
     /**
-     * Endpoint de debug para verificar autenticación
-     */
-    @GetMapping("/debug-auth")
-    public ResponseEntity<?> debugAuth(@PathVariable Long empresaId) {
-        try {
-            System.out.println("=== DEBUG AUTH ===");
-            System.out.println("Empresa ID: " + empresaId);
-            
-            // Obtener información de autenticación
-            var auth = SecurityContextHolder.getContext().getAuthentication();
-            System.out.println("Authentication: " + (auth != null ? auth.getName() : "null"));
-            System.out.println("Authorities: " + (auth != null ? auth.getAuthorities() : "null"));
-            System.out.println("Principal: " + (auth != null ? auth.getPrincipal() : "null"));
-            
-            if (auth != null && auth.getPrincipal() instanceof UsuarioPrincipal) {
-                UsuarioPrincipal principal = (UsuarioPrincipal) auth.getPrincipal();
-                System.out.println("Usuario ID: " + principal.getUsuario().getId());
-                System.out.println("Usuario Email: " + principal.getUsuario().getEmail());
-                System.out.println("Usuario Rol: " + principal.getUsuario().getRol());
-                System.out.println("Empresa ID del usuario: " + principal.getEmpresaId());
-            }
-            
-            // Verificar empresa
-            boolean empresaValida = empresaService.verificarEstadoEmpresa(empresaId);
-            System.out.println("Empresa válida: " + empresaValida);
-            
-            return ResponseEntity.ok(Map.of(
-                "authenticated", auth != null && auth.isAuthenticated(),
-                "user", auth != null ? auth.getName() : "null",
-                "authorities", auth != null ? auth.getAuthorities().toString() : "null",
-                "empresaValida", empresaValida,
-                "empresaId", empresaId
-            ));
-            
-        } catch (Exception e) {
-            System.err.println("Error en debug auth: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Error en debug: " + e.getMessage()));
-        }
-    }
-
-    /**
      * Descarga la plantilla Excel para importación de productos
      */
     @GetMapping("/plantilla-importacion")
@@ -933,17 +890,8 @@ public class ProductoController {
             System.out.println("=== DEBUG DESCARGAR PLANTILLA ===");
             System.out.println("Empresa ID solicitada: " + empresaId);
             
-            // Verificar que la empresa existe y está activa
-            boolean empresaValida = empresaService.verificarEstadoEmpresa(empresaId);
-            System.out.println("Empresa válida: " + empresaValida);
-            
-            if (!empresaValida) {
-                System.err.println("❌ Empresa no encontrada o inactiva: " + empresaId);
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Empresa no encontrada o inactiva"));
-            }
-            
-            System.out.println("✅ Empresa validada, generando plantilla...");
+            // Como ahora es un endpoint público, no necesitamos verificar la empresa
+            System.out.println("✅ Endpoint público - generando plantilla...");
             
             // Generar la plantilla
             byte[] plantilla = importacionProductoService.generarPlantillaExcel();
