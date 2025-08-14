@@ -72,94 +72,117 @@ public class EmpresaService {
      * Registra una nueva empresa con su administrador
      */
     public EmpresaDTO registrarEmpresa(RegistroEmpresaDTO registroDTO) {
+        System.out.println("=== DEBUG EMPRESA SERVICE ===");
+        System.out.println("Iniciando registro de empresa: " + registroDTO.getNombreEmpresa());
+        
         // Validar que no exista el subdominio
         if (empresaRepository.existsBySubdominio(registroDTO.getSubdominio())) {
+            System.err.println("❌ Subdominio ya existe: " + registroDTO.getSubdominio());
             throw new RuntimeException("El subdominio ya está en uso");
         }
+        System.out.println("✅ Subdominio disponible: " + registroDTO.getSubdominio());
 
         // Validar que no exista el email de la empresa
         if (empresaRepository.existsByEmail(registroDTO.getEmailEmpresa())) {
+            System.err.println("❌ Email de empresa ya existe: " + registroDTO.getEmailEmpresa());
             throw new RuntimeException("El email de la empresa ya está registrado");
         }
+        System.out.println("✅ Email de empresa disponible: " + registroDTO.getEmailEmpresa());
 
         // Validar que no exista el email del administrador
         if (usuarioRepository.existsByEmail(registroDTO.getEmailAdministrador())) {
+            System.err.println("❌ Email de administrador ya existe: " + registroDTO.getEmailAdministrador());
             throw new RuntimeException("El email del administrador ya está registrado");
         }
+        System.out.println("✅ Email de administrador disponible: " + registroDTO.getEmailAdministrador());
 
         // Validar que las contraseñas coincidan
         if (!registroDTO.getPasswordAdministrador().equals(registroDTO.getConfirmarPasswordAdministrador())) {
+            System.err.println("❌ Las contraseñas no coinciden");
             throw new RuntimeException("Las contraseñas no coinciden");
         }
+        System.out.println("✅ Contraseñas coinciden");
 
-        // Crear la empresa
-        Empresa empresa = new Empresa();
-        empresa.setNombre(registroDTO.getNombreEmpresa());
-        empresa.setSubdominio(registroDTO.getSubdominio().toLowerCase());
-        empresa.setEmail(registroDTO.getEmailEmpresa());
-        empresa.setTelefono(registroDTO.getTelefonoEmpresa());
-        empresa.setDireccion(registroDTO.getDireccionEmpresa());
-        empresa.setCiudad(registroDTO.getCiudadEmpresa());
-        empresa.setCodigoPostal(registroDTO.getCodigoPostalEmpresa());
-        empresa.setPais(registroDTO.getPaisEmpresa());
-        empresa.setDescripcion(registroDTO.getDescripcionEmpresa());
-        empresa.setFechaFinPrueba(LocalDateTime.now().plusMonths(1)); // 1 mes de prueba
-
-        empresa = empresaRepository.save(empresa);
-
-        // Crear el usuario administrador (inicialmente inactivo hasta verificar email)
-        Usuario administrador = new Usuario();
-        administrador.setNombre(registroDTO.getNombreAdministrador());
-        administrador.setApellidos(registroDTO.getApellidosAdministrador());
-        administrador.setEmail(registroDTO.getEmailAdministrador());
-        administrador.setPassword(passwordEncoder.encode(registroDTO.getPasswordAdministrador()));
-        administrador.setTelefono(registroDTO.getTelefonoAdministrador());
-        administrador.setRol(Usuario.RolUsuario.ADMINISTRADOR);
-        administrador.setEmpresa(empresa);
-        administrador.setActivo(false); // Inactivo hasta verificar email
-        administrador.setEmailVerificado(false);
-        administrador.setTokenVerificacion(UUID.randomUUID().toString());
-
-        administrador = usuarioRepository.save(administrador);
-
-        System.out.println("🎯 === ASIGNACIÓN AUTOMÁTICA DE PLAN POR DEFECTO ===");
-        System.out.println("🎯 Empresa creada: " + empresa.getNombre() + " (ID: " + empresa.getId() + ")");
-        
-        // Crear plan por defecto si no existe
-        System.out.println("🎯 Verificando/creando plan por defecto...");
-        crearPlanPorDefectoSiNoExiste();
-
-        // Crear suscripción gratuita automática
         try {
-            System.out.println("🎯 Creando suscripción gratuita automática...");
-            suscripcionAutomaticaService.crearSuscripcionGratuita(empresa);
-            System.out.println("✅ Suscripción gratuita creada exitosamente para empresa: " + empresa.getNombre());
+            // Crear la empresa
+            Empresa empresa = new Empresa();
+            empresa.setNombre(registroDTO.getNombreEmpresa());
+            empresa.setSubdominio(registroDTO.getSubdominio().toLowerCase());
+            empresa.setEmail(registroDTO.getEmailEmpresa());
+            empresa.setTelefono(registroDTO.getTelefonoEmpresa());
+            empresa.setDireccion(registroDTO.getDireccionEmpresa());
+            empresa.setCiudad(registroDTO.getCiudadEmpresa());
+            empresa.setCodigoPostal(registroDTO.getCodigoPostalEmpresa());
+            empresa.setPais(registroDTO.getPaisEmpresa());
+            empresa.setDescripcion(registroDTO.getDescripcionEmpresa());
+            empresa.setFechaFinPrueba(LocalDateTime.now().plusMonths(1)); // 1 mes de prueba
+
+            empresa = empresaRepository.save(empresa);
+            System.out.println("✅ Empresa guardada con ID: " + empresa.getId());
+
+            // Crear el usuario administrador (inicialmente inactivo hasta verificar email)
+            Usuario administrador = new Usuario();
+            administrador.setNombre(registroDTO.getNombreAdministrador());
+            administrador.setApellidos(registroDTO.getApellidosAdministrador());
+            administrador.setEmail(registroDTO.getEmailAdministrador());
+            administrador.setPassword(passwordEncoder.encode(registroDTO.getPasswordAdministrador()));
+            administrador.setTelefono(registroDTO.getTelefonoAdministrador());
+            administrador.setRol(Usuario.RolUsuario.ADMINISTRADOR);
+            administrador.setEmpresa(empresa);
+            administrador.setActivo(false); // Inactivo hasta verificar email
+            administrador.setEmailVerificado(false);
+            administrador.setTokenVerificacion(UUID.randomUUID().toString());
+
+            administrador = usuarioRepository.save(administrador);
+            System.out.println("✅ Administrador guardado con ID: " + administrador.getId());
+
+            System.out.println("🎯 === ASIGNACIÓN AUTOMÁTICA DE PLAN POR DEFECTO ===");
+            System.out.println("🎯 Empresa creada: " + empresa.getNombre() + " (ID: " + empresa.getId() + ")");
             
-            // Verificar que la suscripción se creó
-            List<Suscripcion> suscripciones = suscripcionRepository.findByEmpresaOrderByFechaCreacionDesc(empresa);
-            System.out.println("✅ Verificación: Empresa tiene " + suscripciones.size() + " suscripciones");
+            // Crear plan por defecto si no existe
+            System.out.println("🎯 Verificando/creando plan por defecto...");
+            crearPlanPorDefectoSiNoExiste();
+
+            // Crear suscripción gratuita automática
+            try {
+                System.out.println("🎯 Creando suscripción gratuita automática...");
+                suscripcionAutomaticaService.crearSuscripcionGratuita(empresa);
+                System.out.println("✅ Suscripción gratuita creada exitosamente para empresa: " + empresa.getNombre());
+                
+                // Verificar que la suscripción se creó
+                List<Suscripcion> suscripciones = suscripcionRepository.findByEmpresaOrderByFechaCreacionDesc(empresa);
+                System.out.println("✅ Verificación: Empresa tiene " + suscripciones.size() + " suscripciones");
+                
+            } catch (Exception e) {
+                System.err.println("❌ Error creando suscripción gratuita: " + e.getMessage());
+                e.printStackTrace();
+                // No lanzar excepción para no fallar el registro
+            }
+            
+            System.out.println("🎯 === FIN ASIGNACIÓN AUTOMÁTICA ===");
+
+            // Enviar email de verificación
+            try {
+                System.out.println("📧 Enviando email de verificación...");
+                emailService.enviarEmailVerificacion(
+                    administrador.getEmail(),
+                    administrador.getNombre(),
+                    administrador.getTokenVerificacion()
+                );
+                System.out.println("✅ Email de verificación enviado");
+            } catch (Exception e) {
+                System.err.println("❌ Error enviando email de verificación: " + e.getMessage());
+                // No lanzar excepción para no fallar el registro
+            }
+
+            System.out.println("✅ Registro completado exitosamente");
+            return new EmpresaDTO(empresa);
             
         } catch (Exception e) {
-            System.err.println("❌ Error creando suscripción gratuita: " + e.getMessage());
+            System.err.println("❌ Error durante el registro: " + e.getMessage());
             e.printStackTrace();
-            // No lanzar excepción para no fallar el registro
+            throw new RuntimeException("Error interno durante el registro: " + e.getMessage());
         }
-        
-        System.out.println("🎯 === FIN ASIGNACIÓN AUTOMÁTICA ===");
-
-        // Enviar email de verificación
-        try {
-            emailService.enviarEmailVerificacion(
-                administrador.getEmail(),
-                administrador.getNombre(),
-                administrador.getTokenVerificacion()
-            );
-        } catch (Exception e) {
-            System.err.println("Error enviando email de verificación: " + e.getMessage());
-            // No lanzar excepción para no fallar el registro
-        }
-
-        return new EmpresaDTO(empresa);
     }
 
     /**

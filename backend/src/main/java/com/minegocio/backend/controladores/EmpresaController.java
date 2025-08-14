@@ -42,13 +42,21 @@ public class EmpresaController {
     @PostMapping("/registro")
     public ResponseEntity<?> registrarEmpresa(@Valid @RequestBody RegistroEmpresaDTO registroDTO) {
         try {
+            System.out.println("=== DEBUG REGISTRO EMPRESA ===");
+            System.out.println("Datos recibidos: " + registroDTO);
+            System.out.println("Acepta términos: " + registroDTO.getAceptaTerminos());
+            System.out.println("Acepta marketing: " + registroDTO.getAceptaMarketing());
+            
             // Validar términos y condiciones
             if (!registroDTO.getAceptaTerminos()) {
+                System.out.println("❌ Error: No acepta términos y condiciones");
                 return ResponseEntity.badRequest()
                     .body(Map.of("mensaje", "Debe aceptar los términos y condiciones"));
             }
 
+            System.out.println("✅ Términos aceptados, procediendo con registro...");
             EmpresaDTO empresaDTO = empresaService.registrarEmpresa(registroDTO);
+            System.out.println("✅ Empresa registrada exitosamente: " + empresaDTO.getNombre());
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Registro exitoso. Revise su email para verificar la cuenta.",
@@ -58,11 +66,14 @@ public class EmpresaController {
             ));
             
         } catch (RuntimeException e) {
+            System.err.println("❌ Error de validación: " + e.getMessage());
             return ResponseEntity.badRequest()
                 .body(Map.of("mensaje", e.getMessage()));
         } catch (Exception e) {
+            System.err.println("❌ Error interno: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError()
-                .body(Map.of("mensaje", "Error interno del servidor"));
+                .body(Map.of("mensaje", "Error interno del servidor: " + e.getMessage()));
         }
     }
 

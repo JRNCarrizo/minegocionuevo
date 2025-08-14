@@ -5,6 +5,7 @@ import com.minegocio.backend.dto.LoginDTO;
 import com.minegocio.backend.dto.LoginDocumentoDTO;
 import com.minegocio.backend.servicios.AutenticacionService;
 import com.minegocio.backend.servicios.EmailService;
+import com.minegocio.backend.seguridad.JwtUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -56,6 +57,9 @@ public class AutenticacionController {
 
     @Autowired
     private PlanRepository planRepository;
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     /**
      * Autentica un usuario y devuelve un token JWT
@@ -269,11 +273,23 @@ public class AutenticacionController {
             
             System.out.println("✅ Email verificado para: " + usuario.getEmail());
             
+            // Generar token JWT para autenticar al usuario automáticamente
+            String jwtToken = jwtUtils.generarJwtToken(
+                usuario.getEmail(),
+                usuario.getId(),
+                usuario.getEmpresa() != null ? usuario.getEmpresa().getId() : null,
+                usuario.getNombre() + " " + usuario.getApellidos()
+            );
+            
+            System.out.println("🎯 Token JWT generado para: " + usuario.getEmail());
+            
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Email verificado exitosamente",
                 "emailVerificado", true,
                 "redirectTo", "/configurar-empresa",
-                "email", usuario.getEmail()
+                "email", usuario.getEmail(),
+                "token", jwtToken,
+                "tipoToken", "Bearer"
             ));
             
         } catch (Exception e) {

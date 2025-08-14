@@ -152,19 +152,48 @@ export default function PaginaRegistro() {
   };
 
   const enviarFormulario = async (datos: RegistroEmpresaDTO) => {
+    console.log('=== DEBUG REGISTRO EMPRESA ===');
+    console.log('Datos del formulario:', datos);
+    console.log('Subdominio verificado:', subdominioVerificado);
+    console.log('Acepta términos:', datos.aceptaTerminos);
+    console.log('Acepta marketing:', datos.aceptaMarketing);
+    
     if (subdominioVerificado === false) {
       toast.error('El subdominio no está disponible');
       return;
     }
 
+    if (!datos.aceptaTerminos) {
+      toast.error('Debe aceptar los términos y condiciones');
+      return;
+    }
+
     setCargando(true);
     try {
+      console.log('Enviando petición al backend...');
       const respuesta = await apiService.registrarEmpresa(datos);
+      console.log('Respuesta del backend:', respuesta);
       setRegistroExitoso(true);
       toast.success(respuesta.mensaje || '¡Registro exitoso!');
     } catch (error: any) {
-      console.error('Error en el registro:', error);
-      const mensajeError = error.response?.data?.mensaje || 'Error al registrar la empresa. Por favor, inténtelo de nuevo.';
+      console.error('=== ERROR EN REGISTRO ===');
+      console.error('Error completo:', error);
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      console.error('Response headers:', error.response?.headers);
+      
+      let mensajeError = 'Error al registrar la empresa. Por favor, inténtelo de nuevo.';
+      
+      if (error.response?.data?.mensaje) {
+        mensajeError = error.response.data.mensaje;
+      } else if (error.response?.status === 400) {
+        mensajeError = 'Datos inválidos. Verifique la información ingresada.';
+      } else if (error.response?.status === 409) {
+        mensajeError = 'El email o subdominio ya está en uso.';
+      } else if (error.response?.status === 500) {
+        mensajeError = 'Error interno del servidor. Inténtelo más tarde.';
+      }
+      
       toast.error(mensajeError);
     } finally {
       setCargando(false);

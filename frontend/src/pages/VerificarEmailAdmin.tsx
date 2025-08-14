@@ -28,6 +28,12 @@ const VerificarEmailAdmin: React.FC = () => {
         
         console.log('Respuesta:', response);
         
+        // Guardar el token JWT si está presente en la respuesta
+        if (response.token) {
+          localStorage.setItem('token', response.token);
+          console.log('✅ Token JWT guardado en localStorage');
+        }
+        
         setEstado('exitoso');
         setMensaje('¡Email verificado exitosamente! Redirigiendo a configuración de empresa...');
         
@@ -69,9 +75,8 @@ const VerificarEmailAdmin: React.FC = () => {
             }}>
               <FaSpinner style={{ 
                 fontSize: '2rem', 
-                color: 'white',
-                animation: 'spin 1s linear infinite'
-              }} />
+                color: 'white'
+              }} className="animate-spin" />
             </div>
             <h2 style={{
               fontSize: '1.5rem',
@@ -269,13 +274,6 @@ const VerificarEmailAdmin: React.FC = () => {
 
         {renderContenido()}
       </div>
-
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };
