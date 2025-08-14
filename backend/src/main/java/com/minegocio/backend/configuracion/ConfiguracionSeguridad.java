@@ -66,6 +66,9 @@ public class ConfiguracionSeguridad {
                 auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                 auth.requestMatchers("/actuator/**").permitAll(); // Health checks para Railway
                 auth.requestMatchers("/api/publico/**").permitAll()
+                    .requestMatchers("/api/plantilla-publica").permitAll() // Plantilla completamente pública
+                    .requestMatchers("/api/plantilla-simple").permitAll() // Plantilla simple con CORS explícito
+                    .requestMatchers("/api/plantilla-final").permitAll() // Plantilla final sin Spring Security
                     .requestMatchers("/api/auth/login").permitAll()
                     .requestMatchers("/api/auth/login-documento").permitAll()
                     .requestMatchers("/api/auth/registrar-administrador").permitAll()
@@ -106,9 +109,11 @@ public class ConfiguracionSeguridad {
                     .requestMatchers(HttpMethod.DELETE, "/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/super-admin/**").hasAnyRole("SUPER_ADMIN", "ADMINISTRADOR")
                     .requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
-                    .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
-                    .requestMatchers("/api/empresas/*/productos/plantilla-importacion").permitAll() // Permitir descarga de plantilla sin autenticación (DEBE ir DESPUÉS de la regla general)
+                    // Reglas específicas de plantilla (DEBEN ir ANTES de la regla general de empresas)
+                    .requestMatchers("/api/empresas/*/productos/plantilla-importacion").permitAll() // Permitir descarga de plantilla sin autenticación
                     .requestMatchers("/api/empresas/*/productos/test-plantilla").permitAll() // Endpoint de prueba público
+                    // Regla general de empresas (DEBE ir DESPUÉS de las reglas específicas)
+                    .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/notificaciones/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/historial-carga-productos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .anyRequest().authenticated();

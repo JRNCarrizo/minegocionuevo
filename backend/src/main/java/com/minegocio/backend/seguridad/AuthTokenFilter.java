@@ -119,6 +119,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                               requestPath.equals("/api/auth/cambiar-password");
         
         boolean isPublic = requestPath.startsWith("/api/publico/") ||
+                          requestPath.equals("/api/plantilla-publica") || // Plantilla completamente pública
+                          requestPath.equals("/api/plantilla-simple") || // Plantilla simple con CORS explícito
+                          requestPath.equals("/api/plantilla-final") || // Plantilla final sin Spring Security
                           isPublicAuth ||
                           requestPath.startsWith("/api/verificacion/") ||
                           requestPath.startsWith("/api/verificacion-cliente/") ||

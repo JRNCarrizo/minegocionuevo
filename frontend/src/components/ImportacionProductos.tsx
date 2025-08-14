@@ -78,7 +78,8 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
       console.log('🏢 Empresa ID:', empresaId);
       console.log('📥 Iniciando descarga de plantilla...');
       
-      const blob = await ApiService.descargarPlantillaImportacion(empresaId);
+      // Usar el nuevo endpoint de plantilla final
+      const blob = await ApiService.descargarPlantillaFinal();
       
       // Crear un enlace para descargar el archivo
       const url = window.URL.createObjectURL(blob);

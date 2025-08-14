@@ -49,10 +49,13 @@ class ApiService {
            /\/empresas\/verificar-subdominio/.test(config.url) ||
            /\/empresas\/\d+\/productos\/plantilla-importacion/.test(config.url) || // Plantilla de importación pública
            /\/empresas\/\d+\/productos\/test-plantilla/.test(config.url) || // Endpoint de prueba público
+           /\/plantilla-publica/.test(config.url) || // Plantilla completamente pública
+           /\/plantilla-simple/.test(config.url) || // Plantilla simple con CORS explícito
            /\/verificacion\/verificar-email/.test(config.url) ||
            /\/verificacion\/reenviar-email/.test(config.url) ||
            /\/verificacion-cliente\/verificar-email/.test(config.url) ||
-           /\/verificacion-cliente\/reenviar-email/.test(config.url))
+           /\/verificacion-cliente\/reenviar-email/.test(config.url) ||
+           /\/super-admin\/crear-super-admin/.test(config.url)
         ) {
           console.log('🔓 Endpoint público - sin token');
           delete config.headers.Authorization;
@@ -1437,6 +1440,60 @@ class ApiService {
   }
 
   // Métodos para importación de productos
+  async descargarPlantillaPublica(): Promise<Blob> {
+    console.log('📥 Iniciando descarga de plantilla pública');
+    
+    try {
+      const response = await this.api.get('/plantilla-publica', {
+        responseType: 'blob'
+      });
+      
+      console.log('✅ Plantilla pública descargada exitosamente');
+      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error en descargarPlantillaPublica:', error);
+      throw error;
+    }
+  }
+
+  async descargarPlantillaSimple(): Promise<Blob> {
+    console.log('📥 Iniciando descarga de plantilla simple');
+    
+    try {
+      const response = await this.api.get('/plantilla-simple', {
+        responseType: 'blob'
+      });
+      
+      console.log('✅ Plantilla simple descargada exitosamente');
+      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error en descargarPlantillaSimple:', error);
+      throw error;
+    }
+  }
+
+  async descargarPlantillaFinal(): Promise<Blob> {
+    console.log('📥 Iniciando descarga de plantilla final');
+    
+    try {
+      const response = await this.api.get('/plantilla-final', {
+        responseType: 'blob'
+      });
+      
+      console.log('✅ Plantilla final descargada exitosamente');
+      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error en descargarPlantillaFinal:', error);
+      throw error;
+    }
+  }
+
   async testPlantilla(empresaId: number): Promise<any> {
     console.log('🧪 Probando endpoint de prueba para empresa:', empresaId);
     

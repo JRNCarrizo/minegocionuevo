@@ -882,6 +882,128 @@ public class ProductoController {
     }
 
     /**
+     * Endpoint de plantilla completamente público sin Spring Security
+     */
+    @RequestMapping(value = "/plantilla-final", method = RequestMethod.GET, produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public ResponseEntity<byte[]> descargarPlantillaFinal() {
+        try {
+            System.out.println("📥 Descargando plantilla final");
+            
+            // Generar la plantilla
+            byte[] plantilla = importacionProductoService.generarPlantillaExcel();
+            
+            if (plantilla == null || plantilla.length == 0) {
+                System.err.println("❌ Error: Plantilla generada está vacía");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new byte[0]);
+            }
+            
+            System.out.println("✅ Plantilla final generada exitosamente, tamaño: " + plantilla.length + " bytes");
+            
+            // Configurar headers para descarga
+            return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"plantilla_productos.xlsx\"")
+                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+                .header("Access-Control-Allow-Headers", "*")
+                .body(plantilla);
+                
+        } catch (Exception e) {
+            System.err.println("❌ Error al generar plantilla final: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new byte[0]);
+        }
+    }
+
+    /**
+     * Endpoint de plantilla completamente público con CORS explícito
+     */
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @GetMapping("/plantilla-simple")
+    public ResponseEntity<?> descargarPlantillaSimple() {
+        try {
+            System.out.println("📥 Descargando plantilla simple");
+            
+            // Generar la plantilla
+            byte[] plantilla = importacionProductoService.generarPlantillaExcel();
+            
+            if (plantilla == null || plantilla.length == 0) {
+                System.err.println("❌ Error: Plantilla generada está vacía");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al generar la plantilla: archivo vacío"));
+            }
+            
+            System.out.println("✅ Plantilla simple generada exitosamente, tamaño: " + plantilla.length + " bytes");
+            
+            // Configurar headers para descarga
+            return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"plantilla_productos.xlsx\"")
+                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+                .header("Access-Control-Allow-Headers", "*")
+                .body(plantilla);
+                
+        } catch (Exception e) {
+            System.err.println("❌ Error al generar plantilla simple: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error interno del servidor al generar la plantilla"));
+        }
+    }
+
+    /**
+     * Endpoint de plantilla completamente público (sin empresaId)
+     */
+    @GetMapping("/plantilla-publica")
+    public ResponseEntity<?> descargarPlantillaPublica() {
+        try {
+            System.out.println("📥 Descargando plantilla pública");
+            
+            // Generar la plantilla
+            byte[] plantilla = importacionProductoService.generarPlantillaExcel();
+            
+            if (plantilla == null || plantilla.length == 0) {
+                System.err.println("❌ Error: Plantilla generada está vacía");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al generar la plantilla: archivo vacío"));
+            }
+            
+            System.out.println("✅ Plantilla pública generada exitosamente, tamaño: " + plantilla.length + " bytes");
+            
+            // Configurar headers para descarga
+            return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"plantilla_productos.xlsx\"")
+                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .body(plantilla);
+                
+        } catch (Exception e) {
+            System.err.println("❌ Error al generar plantilla pública: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error interno del servidor al generar la plantilla"));
+        }
+    }
+
+    /**
+     * Endpoint completamente público para probar configuración
+     */
+    @GetMapping("/publico/test")
+    public ResponseEntity<?> testPublico() {
+        try {
+            System.out.println("🌍 TEST PÚBLICO: Endpoint completamente público");
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Endpoint público funcionando",
+                "timestamp", System.currentTimeMillis(),
+                "status", "success"
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error en test público: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error en test público: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Endpoint de prueba para verificar si el problema es de autenticación
      */
     @GetMapping("/test-plantilla")
