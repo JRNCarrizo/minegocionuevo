@@ -35,4 +35,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        value: https://minegocio-backend.onrender.com/api 
+        value: https://minegocio-backend-production.up.railway.app/api 
