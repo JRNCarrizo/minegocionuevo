@@ -1691,6 +1691,28 @@ class ApiService {
                 });
                 return response.data;
               }
+
+              // Método para descargar reporte de stock usando endpoint independiente
+              async descargarReporteStockIndependienteNuevo(empresaId: number): Promise<Blob> {
+                const response = await this.api.get(`/api/reporte-stock/${empresaId}`, {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
+
+              // Método para descargar reporte de stock usando endpoint directo independiente
+              async descargarReporteStockDirectoIndependiente(empresaId: number): Promise<Blob> {
+                const response = await this.api.get(`/api/reporte-stock-directo/${empresaId}`, {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
+
+              // Método para testear reporte de stock
+              async testReporteStock(empresaId: number): Promise<any> {
+                const response = await this.api.get(`/api/reporte-stock-test/${empresaId}`);
+                return response.data;
+              }
 }
 
 export default new ApiService();

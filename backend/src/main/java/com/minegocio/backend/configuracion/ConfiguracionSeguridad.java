@@ -76,6 +76,9 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/plantilla-final").permitAll() // Plantilla final sin Spring Security
                     .requestMatchers("/api/plantilla-directa").permitAll() // Plantilla directa sin Spring Security
                     .requestMatchers("/api/plantilla-independiente/**").permitAll() // Controlador independiente para plantillas
+                    .requestMatchers("/api/reporte-stock/**").permitAll() // Controlador independiente para reporte de stock
+                    .requestMatchers("/api/reporte-stock-directo/**").permitAll() // Controlador independiente para reporte de stock directo
+                    .requestMatchers("/api/reporte-stock-test/**").permitAll() // Test de reporte de stock
                     .requestMatchers("/api/reportes/**").permitAll() // Controlador de reportes completamente público
                     .requestMatchers("/public/reportes/**").permitAll() // Controlador independiente de reportes
                     .requestMatchers("/public/plantilla/**").permitAll() // Controlador independiente de plantilla
