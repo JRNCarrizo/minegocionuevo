@@ -75,19 +75,17 @@
     <div id="status"></div>
     
     <div class="endpoint-group">
-        <h3>🆕 Nuevos Endpoints Públicos</h3>
-        <button class="test-button" onclick="testEndpoint('/api/files/stock/' + getEmpresaId())">Test /api/files/stock/{empresaId}</button>
-        <button class="test-button" onclick="testEndpoint('/api/direct/stock/' + getEmpresaId())">Test /api/direct/stock/{empresaId}</button>
-        <button class="test-button" onclick="testEndpoint('/api/public/reportes/stock/' + getEmpresaId())">Test /api/public/reportes/stock/{empresaId}</button>
+        <h3>🆕 Endpoints Públicos Disponibles</h3>
         <button class="test-button" onclick="testEndpoint('/api/reportes/stock/' + getEmpresaId())">Test /api/reportes/stock/{empresaId}</button>
+        <button class="test-button" onclick="testEndpoint('/api/plantilla-publica')">Test /api/plantilla-publica</button>
+        <button class="test-button" onclick="testEndpoint('/api/plantilla-simple')">Test /api/plantilla-simple</button>
     </div>
     
     <div class="endpoint-group">
         <h3>📥 Descargar Reportes</h3>
-        <button class="test-button" onclick="downloadReporte('/api/files/stock/' + getEmpresaId(), 'reporte_stock_files.xlsx')">Descargar /api/files/stock</button>
-        <button class="test-button" onclick="downloadReporte('/api/direct/stock/' + getEmpresaId(), 'reporte_stock_direct.xlsx')">Descargar /api/direct/stock</button>
-        <button class="test-button" onclick="downloadReporte('/api/public/reportes/stock/' + getEmpresaId(), 'reporte_stock_public.xlsx')">Descargar /api/public/reportes/stock</button>
-        <button class="test-button" onclick="downloadReporte('/api/reportes/stock/' + getEmpresaId(), 'reporte_stock_simple.xlsx')">Descargar /api/reportes/stock</button>
+        <button class="test-button" onclick="downloadReporte('/api/reportes/stock/' + getEmpresaId(), 'reporte_stock.xlsx')">Descargar Reporte de Stock</button>
+        <button class="test-button" onclick="downloadReporte('/api/plantilla-publica', 'plantilla_publica.xlsx')">Descargar Plantilla Pública</button>
+        <button class="test-button" onclick="downloadReporte('/api/plantilla-simple', 'plantilla_simple.xlsx')">Descargar Plantilla Simple</button>
     </div>
 
     <script>
@@ -165,11 +163,10 @@
         
         // Auto-test al cargar la página
         window.onload = function() {
-            addStatus('🚀 Iniciando tests automáticos de reporte de stock en producción...');
-            setTimeout(() => testEndpoint('/api/files/stock/' + getEmpresaId()), 1000);
-            setTimeout(() => testEndpoint('/api/direct/stock/' + getEmpresaId()), 2000);
-            setTimeout(() => testEndpoint('/api/public/reportes/stock/' + getEmpresaId()), 3000);
-            setTimeout(() => testEndpoint('/api/reportes/stock/' + getEmpresaId()), 4000);
+            addStatus('🚀 Iniciando tests automáticos en producción...');
+            setTimeout(() => testEndpoint('/api/reportes/stock/' + getEmpresaId()), 1000);
+            setTimeout(() => testEndpoint('/api/plantilla-publica'), 2000);
+            setTimeout(() => testEndpoint('/api/plantilla-simple'), 3000);
         };
     </script>
 </body>

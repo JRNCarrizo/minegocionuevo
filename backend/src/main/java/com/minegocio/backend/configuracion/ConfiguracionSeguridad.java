@@ -75,9 +75,6 @@ public class ConfiguracionSeguridad {
                 // Endpoints de plantillas y reportes públicos
                 auth.requestMatchers("/api/plantilla-**").permitAll();
                 auth.requestMatchers("/api/reporte-**").permitAll();
-                auth.requestMatchers("/api/files/**").permitAll();
-                auth.requestMatchers("/api/direct/**").permitAll();
-                auth.requestMatchers("/api/public/**").permitAll();
                 auth.requestMatchers("/api/reportes/**").permitAll();
                 auth.requestMatchers("/download/**").permitAll();
                 auth.requestMatchers("/excel/**").permitAll();
