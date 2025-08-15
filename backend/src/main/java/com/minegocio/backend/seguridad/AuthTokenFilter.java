@@ -38,14 +38,16 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             
             // Solo log para endpoints importantes, no para todos
             if (requestPath.contains("/plantilla-importacion") || requestPath.contains("/auth/") || 
-                requestPath.contains("/reporte-stock") || requestPath.contains("/reportes/")) {
+                requestPath.contains("/reporte-stock") || requestPath.contains("/reportes/") ||
+                requestPath.contains("/direct/") || requestPath.contains("/public/")) {
                 System.out.println("🌐 REQUEST RECIBIDA: " + method + " " + requestPath);
             }
             
             // Skip authentication for public endpoints
             if (isPublicEndpoint(requestPath)) {
                 if (requestPath.contains("/plantilla-importacion") || requestPath.contains("/reporte-stock") || 
-                    requestPath.contains("/reportes/")) {
+                    requestPath.contains("/reportes/") || requestPath.contains("/direct/") || 
+                    requestPath.contains("/public/")) {
                     System.out.println("✅ Skipping auth for public endpoint: " + requestPath);
                 }
                 filterChain.doFilter(request, response);
@@ -133,6 +135,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                           requestPath.startsWith("/api/reportes/") || // Controlador de reportes completamente público
                           requestPath.startsWith("/public/reportes/") || // Controlador independiente de reportes
                           requestPath.startsWith("/public/plantilla/") || // Controlador independiente de plantilla
+                          requestPath.startsWith("/direct/") || // Controlador directo completamente independiente
                           requestPath.startsWith("/api/publico/") ||
                           isPublicAuth ||
                           requestPath.startsWith("/api/verificacion/") ||
@@ -158,7 +161,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         // Log solo para endpoints importantes
         if (requestPath.contains("/download/") || requestPath.contains("/plantilla-importacion") || 
             requestPath.contains("/test-plantilla") || requestPath.contains("/reporte-stock") || 
-            requestPath.contains("/reportes/")) {
+            requestPath.contains("/reportes/") || requestPath.contains("/direct/") || 
+            requestPath.contains("/public/")) {
             System.out.println("🔍 Verificando endpoint: " + requestPath + " - isPublic: " + isPublic);
         }
         

@@ -1627,6 +1627,22 @@ class ApiService {
                 });
                 return response.data;
               }
+
+              // Método para descargar reporte de stock usando endpoint directo
+              async descargarReporteStockDirectoNuevo(empresaId: number): Promise<Blob> {
+                const response = await this.api.get(`/direct/stock/${empresaId}`, {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
+
+              // Método para descargar plantilla usando endpoint directo
+              async descargarPlantillaDirectaNueva(): Promise<Blob> {
+                const response = await this.api.get('/direct/plantilla', {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
 }
 
 export default new ApiService();

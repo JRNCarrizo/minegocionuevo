@@ -55,25 +55,31 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
       console.log('🏢 Empresa ID:', empresaId);
       console.log('📥 Iniciando descarga de plantilla...');
       
-      // Intentar primero con el endpoint independiente
+      // Intentar primero con el endpoint directo nuevo
       let blob;
       try {
-        blob = await ApiService.descargarPlantillaIndependiente();
-        console.log('✅ Plantilla descargada usando endpoint independiente');
+        blob = await ApiService.descargarPlantillaDirectaNueva();
+        console.log('✅ Plantilla descargada usando endpoint directo nuevo');
       } catch (error) {
-        console.log('⚠️ Endpoint independiente falló, intentando endpoint Download...');
+        console.log('⚠️ Endpoint directo nuevo falló, intentando endpoint independiente...');
         try {
-          blob = await ApiService.descargarPlantillaDownload();
-          console.log('✅ Plantilla descargada usando endpoint Download');
+          blob = await ApiService.descargarPlantillaIndependiente();
+          console.log('✅ Plantilla descargada usando endpoint independiente');
         } catch (error2) {
-          console.log('⚠️ Endpoint Download falló, intentando endpoint público...');
+          console.log('⚠️ Endpoint independiente falló, intentando endpoint Download...');
           try {
-            blob = await ApiService.descargarPlantillaPublica();
-            console.log('✅ Plantilla descargada usando endpoint público');
+            blob = await ApiService.descargarPlantillaDownload();
+            console.log('✅ Plantilla descargada usando endpoint Download');
           } catch (error3) {
-            console.log('⚠️ Endpoint público falló, intentando endpoint simple...');
-            blob = await ApiService.descargarPlantillaSimple();
-            console.log('✅ Plantilla descargada usando endpoint simple');
+            console.log('⚠️ Endpoint Download falló, intentando endpoint público...');
+            try {
+              blob = await ApiService.descargarPlantillaPublica();
+              console.log('✅ Plantilla descargada usando endpoint público');
+            } catch (error4) {
+              console.log('⚠️ Endpoint público falló, intentando endpoint simple...');
+              blob = await ApiService.descargarPlantillaSimple();
+              console.log('✅ Plantilla descargada usando endpoint simple');
+            }
           }
         }
       }
