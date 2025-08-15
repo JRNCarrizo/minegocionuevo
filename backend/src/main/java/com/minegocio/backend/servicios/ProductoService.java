@@ -97,8 +97,8 @@ public class ProductoService {
         producto.setNombre(productoDTO.getNombre());
         producto.setDescripcion(productoDTO.getDescripcion());
         producto.setPrecio(productoDTO.getPrecio());
-        producto.setStock(productoDTO.getStock());
-        producto.setStockMinimo(productoDTO.getStockMinimo());
+        producto.setStock(productoDTO.getStock() != null ? productoDTO.getStock() : 0);
+        producto.setStockMinimo(productoDTO.getStockMinimo() != null ? productoDTO.getStockMinimo() : 0);
         
         System.out.println("🔍 Configurando imágenes...");
         // Manejar imágenes
