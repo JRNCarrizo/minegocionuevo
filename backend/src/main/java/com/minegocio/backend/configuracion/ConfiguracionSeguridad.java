@@ -119,6 +119,7 @@ public class ConfiguracionSeguridad {
                     // Reglas específicas de plantilla (DEBEN ir ANTES de la regla general de empresas)
                     .requestMatchers("/api/empresas/*/productos/plantilla-importacion").permitAll() // Permitir descarga de plantilla sin autenticación
                     .requestMatchers("/api/empresas/*/productos/test-plantilla").permitAll() // Endpoint de prueba público
+                    .requestMatchers("/api/empresas/*/productos/reporte-stock").permitAll() // Permitir descarga de reporte de stock sin autenticación
                     // Regla general de empresas (DEBE ir DESPUÉS de las reglas específicas)
                     .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/notificaciones/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")

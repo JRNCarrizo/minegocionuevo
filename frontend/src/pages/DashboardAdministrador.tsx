@@ -257,6 +257,13 @@ export default function DashboardAdministrador() {
       color: '#059669'
     },
     {
+      titulo: 'Gestión de Empresa',
+      descripcion: 'Administra la información y configuración de tu empresa',
+      icono: '🏢',
+      enlace: '/admin/gestion-empresa',
+      color: '#f59e0b'
+    },
+    {
       titulo: 'Configuración',
       descripcion: 'Personaliza tu tienda',
       icono: '⚙️',

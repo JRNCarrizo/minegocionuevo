@@ -51,6 +51,12 @@ export default function NavbarAdminPages({
       description: 'Gestionar administradores'
     },
     {
+      path: '/admin/gestion-empresa',
+      label: 'Gestión Empresa',
+      icon: '🏢',
+      description: 'Gestión de empresa'
+    },
+    {
       path: '/admin/configuracion',
       label: 'Configuración',
       icon: '⚙️',

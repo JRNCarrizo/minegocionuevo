@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import './estilos/principal.css';
 import { useSubdominio } from './hooks/useSubdominio';
 import { CartProvider } from './hooks/useCart';
 import { UsuarioProvider } from './contexts/UsuarioContext';
@@ -42,6 +43,7 @@ import RegistroEmpresaEtapa1 from './pages/RegistroEmpresaEtapa1.tsx';
 import ConfigurarEmpresa from './pages/ConfigurarEmpresa.tsx';
 import VerificarEmailAdmin from './pages/VerificarEmailAdmin.tsx';
 import GestionAdministradores from './pages/admin/GestionAdministradores.tsx';
+import GestionEmpresa from './pages/admin/GestionEmpresa.tsx';
 import LoginDocumento from './pages/LoginDocumento.tsx';
 
 function AppContent() {
@@ -91,6 +93,7 @@ function AppContent() {
           <Route path="/admin/suscripcion" element={<DashboardSuscripcion />} />
           <Route path="/admin/consumo-suscripciones" element={<ConsumoYSuscripciones />} />
           <Route path="/admin/administradores" element={<GestionAdministradores />} />
+          <Route path="/admin/gestion-empresa" element={<GestionEmpresa />} />
           <Route path="/dashboard-super-admin" element={<DashboardSuperAdmin />} />
           <Route path="/super-admin/empresas" element={<GestionEmpresas />} />
           <Route path="/super-admin/suscripciones" element={<GestionSuscripciones />} />

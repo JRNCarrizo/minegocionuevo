@@ -85,10 +85,11 @@ class ApiService {
         ) {
           const tokenAdmin = localStorage.getItem('token');
           if (tokenAdmin) {
-            console.log('👨‍💼 Token admin agregado');
+            console.log('👨‍💼 Token admin agregado para:', config.url);
+            console.log('🔑 Token (primeros 20 chars):', tokenAdmin.substring(0, 20) + '...');
             config.headers.Authorization = `Bearer ${tokenAdmin}`;
           } else {
-            console.log('❌ Token admin requerido pero no encontrado');
+            console.log('❌ Token admin requerido pero no encontrado para:', config.url);
           }
           return config;
         }
@@ -138,8 +139,9 @@ class ApiService {
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
+        console.log('🔍 Interceptor de respuesta - Error detectado:', error.response?.status, error.response?.data);
 
-
+        /*
         if (error.response?.status === 401) {
           // Token expirado o inválido
           localStorage.removeItem('token');
@@ -154,6 +156,7 @@ class ApiService {
             window.location.href = '/login';
           }
         }
+        */
         return Promise.reject(error);
       }
     );
@@ -178,6 +181,16 @@ class ApiService {
   // Métodos de administrador
   async obtenerEmpresaAdmin(): Promise<ApiResponse<Empresa>> {
     const response = await this.api.get('/admin/empresa');
+    return response.data;
+  }
+
+  async obtenerEmpresa(empresaId: number): Promise<Empresa> {
+    const response = await this.api.get(`/empresas/${empresaId}`);
+    return response.data;
+  }
+
+  async actualizarEmpresa(empresaId: number, data: Partial<Empresa>): Promise<Empresa> {
+    const response = await this.api.put(`/empresas/${empresaId}`, data);
     return response.data;
   }
 
