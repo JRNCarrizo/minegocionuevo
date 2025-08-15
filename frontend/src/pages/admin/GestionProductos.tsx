@@ -498,30 +498,36 @@ const GestionProductos: React.FC = () => {
       setCargando(true);
       console.log('📊 Descargando reporte de stock para empresa:', empresaId);
       
-      // Intentar primero con el endpoint directo nuevo
+      // Intentar primero con el endpoint final
       let blob;
       try {
-        blob = await ApiService.descargarReporteStockDirectoNuevo(empresaId);
-        console.log('✅ Reporte de stock descargado usando endpoint directo nuevo');
+        blob = await ApiService.descargarReporteStockFinal(empresaId);
+        console.log('✅ Reporte de stock descargado usando endpoint final');
       } catch (error) {
-        console.log('⚠️ Endpoint directo nuevo falló, intentando endpoint independiente...');
+        console.log('⚠️ Endpoint final falló, intentando endpoint directo nuevo...');
         try {
-          blob = await ApiService.descargarReporteStockIndependiente(empresaId);
-          console.log('✅ Reporte de stock descargado usando endpoint independiente');
+          blob = await ApiService.descargarReporteStockDirectoNuevo(empresaId);
+          console.log('✅ Reporte de stock descargado usando endpoint directo nuevo');
         } catch (error2) {
-          console.log('⚠️ Endpoint independiente falló, intentando endpoint público...');
+          console.log('⚠️ Endpoint directo nuevo falló, intentando endpoint independiente...');
           try {
-            blob = await ApiService.descargarReporteStockPublico(empresaId);
-            console.log('✅ Reporte de stock descargado usando endpoint público');
+            blob = await ApiService.descargarReporteStockIndependiente(empresaId);
+            console.log('✅ Reporte de stock descargado usando endpoint independiente');
           } catch (error3) {
-            console.log('⚠️ Endpoint público falló, intentando endpoint directo...');
+            console.log('⚠️ Endpoint independiente falló, intentando endpoint público...');
             try {
-              blob = await ApiService.descargarReporteStockDirecto(empresaId);
-              console.log('✅ Reporte de stock descargado usando endpoint directo');
+              blob = await ApiService.descargarReporteStockPublico(empresaId);
+              console.log('✅ Reporte de stock descargado usando endpoint público');
             } catch (error4) {
-              console.log('⚠️ Endpoint directo falló, intentando endpoint original...');
-              blob = await ApiService.descargarReporteStock(empresaId);
-              console.log('✅ Reporte de stock descargado usando endpoint original');
+              console.log('⚠️ Endpoint público falló, intentando endpoint directo...');
+              try {
+                blob = await ApiService.descargarReporteStockDirecto(empresaId);
+                console.log('✅ Reporte de stock descargado usando endpoint directo');
+              } catch (error5) {
+                console.log('⚠️ Endpoint directo falló, intentando endpoint original...');
+                blob = await ApiService.descargarReporteStock(empresaId);
+                console.log('✅ Reporte de stock descargado usando endpoint original');
+              }
             }
           }
         }

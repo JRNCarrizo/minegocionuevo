@@ -9,18 +9,21 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Controlador para plantilla de Excel
+ * Controlador ultra-independiente para plantilla de Excel
+ * No usa Spring Security, no pasa por filtros, completamente aislado
  */
 @RestController
-public class PlantillaController {
+@RequestMapping("/ultra")
+@CrossOrigin(origins = "*")
+public class PlantillaUltraController {
 
     /**
-     * Endpoint para descargar plantilla de Excel
+     * Endpoint ultra-independiente para plantilla de Excel
      */
-    @GetMapping("/template/download")
-    public void descargarPlantilla(HttpServletResponse response) throws IOException {
+    @GetMapping("/plantilla")
+    public void descargarPlantillaUltra(HttpServletResponse response) throws IOException {
         try {
-            System.out.println("📥 Descargando plantilla desde PlantillaController");
+            System.out.println("📥 Descargando plantilla ultra-independiente");
             
             // Configurar respuesta
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -78,9 +81,9 @@ public class PlantillaController {
                 response.getOutputStream().flush();
             }
             
-            System.out.println("✅ Plantilla desde PlantillaController generada exitosamente");
+            System.out.println("✅ Plantilla ultra-independiente generada exitosamente");
         } catch (Exception e) {
-            System.err.println("❌ Error en PlantillaController: " + e.getMessage());
+            System.err.println("❌ Error en plantilla ultra-independiente: " + e.getMessage());
             e.printStackTrace();
             
             // Enviar error como JSON
@@ -90,3 +93,4 @@ public class PlantillaController {
         }
     }
 }
+

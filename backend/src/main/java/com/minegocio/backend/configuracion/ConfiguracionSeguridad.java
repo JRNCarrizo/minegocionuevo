@@ -70,14 +70,18 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/excel/**").permitAll() // Controlador Excel para plantilla
                     .requestMatchers("/plantilla/**").permitAll() // Controlador separado para plantilla
                     .requestMatchers("/plantilla-final").permitAll() // Plantilla final desde controlador separado
+                    .requestMatchers("/template/download").permitAll() // Plantilla desde controlador separado
                     .requestMatchers("/api/plantilla-publica").permitAll() // Plantilla completamente pública
                     .requestMatchers("/api/plantilla-simple").permitAll() // Plantilla simple con CORS explícito
                     .requestMatchers("/api/plantilla-final").permitAll() // Plantilla final sin Spring Security
                     .requestMatchers("/api/plantilla-directa").permitAll() // Plantilla directa sin Spring Security
+                    .requestMatchers("/api/plantilla-independiente/**").permitAll() // Controlador independiente para plantillas
                     .requestMatchers("/api/reportes/**").permitAll() // Controlador de reportes completamente público
                     .requestMatchers("/public/reportes/**").permitAll() // Controlador independiente de reportes
                     .requestMatchers("/public/plantilla/**").permitAll() // Controlador independiente de plantilla
                     .requestMatchers("/direct/**").permitAll() // Controlador directo completamente independiente
+                    .requestMatchers("/files/**").permitAll() // Controlador final para descargas
+                    .requestMatchers("/ultra/**").permitAll() // Controlador ultra-independiente
                     .requestMatchers("/api/publico/**").permitAll()
                     .requestMatchers("/api/auth/login").permitAll()
                     .requestMatchers("/api/auth/login-documento").permitAll()

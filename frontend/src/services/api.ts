@@ -1643,6 +1643,54 @@ class ApiService {
                 });
                 return response.data;
               }
+
+              // Método para descargar reporte de stock usando endpoint final
+              async descargarReporteStockFinal(empresaId: number): Promise<Blob> {
+                const response = await this.api.get(`/files/stock/${empresaId}`, {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
+
+              // Método para descargar plantilla usando endpoint final
+              async descargarPlantillaFinal(): Promise<Blob> {
+                const response = await this.api.get('/plantilla-final', {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
+
+              // Método para descargar plantilla usando endpoint de Excel
+              async descargarPlantillaExcel(): Promise<Blob> {
+                const response = await this.api.get('/excel/plantilla', {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
+
+              // Método para descargar plantilla usando endpoint del ReporteController (que sabemos que funciona)
+              async descargarPlantillaReporteController(): Promise<Blob> {
+                const response = await this.api.get('/api/reportes/template', {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
+
+              // Método para descargar plantilla usando endpoint ultra-independiente
+              async descargarPlantillaUltra(): Promise<Blob> {
+                const response = await this.api.get('/ultra/plantilla', {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
+
+              // Método para descargar plantilla usando endpoint de template/download
+              async descargarPlantillaTemplate(): Promise<Blob> {
+                const response = await this.api.get('/template/download', {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
 }
 
 export default new ApiService();

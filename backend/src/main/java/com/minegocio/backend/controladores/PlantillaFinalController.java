@@ -9,18 +9,18 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Controlador para plantilla de Excel
+ * Controlador final para plantilla de Excel
  */
 @RestController
-public class PlantillaController {
+public class PlantillaFinalController {
 
     /**
-     * Endpoint para descargar plantilla de Excel
+     * Endpoint final para plantilla de Excel
      */
-    @GetMapping("/template/download")
+    @GetMapping("/plantilla-final")
     public void descargarPlantilla(HttpServletResponse response) throws IOException {
         try {
-            System.out.println("📥 Descargando plantilla desde PlantillaController");
+            System.out.println("📥 Descargando plantilla final");
             
             // Configurar respuesta
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -78,9 +78,9 @@ public class PlantillaController {
                 response.getOutputStream().flush();
             }
             
-            System.out.println("✅ Plantilla desde PlantillaController generada exitosamente");
+            System.out.println("✅ Plantilla final generada exitosamente");
         } catch (Exception e) {
-            System.err.println("❌ Error en PlantillaController: " + e.getMessage());
+            System.err.println("❌ Error en plantilla final: " + e.getMessage());
             e.printStackTrace();
             
             // Enviar error como JSON
@@ -90,3 +90,4 @@ public class PlantillaController {
         }
     }
 }
+
