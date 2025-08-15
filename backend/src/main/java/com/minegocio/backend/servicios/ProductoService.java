@@ -129,6 +129,7 @@ public class ProductoService {
         System.out.println("✅ Producto guardado con ID: " + productoGuardado.getId());
         
         // Registrar la creación en el historial de inventario
+        /*
         try {
             System.out.println("🔍 Registrando en historial de inventario...");
             InventarioRequestDTO request = new InventarioRequestDTO();
@@ -148,8 +149,11 @@ public class ProductoService {
             // Log del error pero no fallar la operación principal
             System.err.println("❌ Error al registrar historial de inventario en creación de producto: " + e.getMessage());
         }
+        */
+        System.out.println("ℹ️ Historial de inventario temporalmente deshabilitado");
         
         // Registrar la carga inicial en el historial de carga de productos
+        /*
         try {
             System.out.println("🔍 Registrando en historial de carga de productos...");
             historialCargaProductosService.registrarCargaInicial(productoGuardado, empresa, null);
@@ -158,8 +162,11 @@ public class ProductoService {
             // Log del error pero no fallar la operación principal
             System.err.println("❌ Error al registrar historial de carga de productos en creación de producto: " + e.getMessage());
         }
+        */
+        System.out.println("ℹ️ Historial de carga de productos temporalmente deshabilitado");
         
         // Crear notificación de producto creado
+        /*
         try {
             System.out.println("🔍 Creando notificación...");
             notificacionService.crearNotificacionProductoActualizado(empresaId, productoDTO.getNombre(), "Producto creado");
@@ -167,6 +174,8 @@ public class ProductoService {
         } catch (Exception e) {
             System.err.println("❌ Error al crear notificación: " + e.getMessage());
         }
+        */
+        System.out.println("ℹ️ Notificaciones temporalmente deshabilitadas");
         
         System.out.println("🔍 Convirtiendo a DTO...");
         ProductoDTO resultado = convertirADTO(productoGuardado);
