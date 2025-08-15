@@ -1483,7 +1483,7 @@ class ApiService {
     console.log('📥 Iniciando descarga de plantilla final');
     
     try {
-      const response = await this.api.get('/plantilla-final', {
+      const response = await this.api.get('/api/plantilla-final', {
         responseType: 'blob'
       });
       
