@@ -34,10 +34,8 @@ public class ConfiguracionSeguridad {
     @Autowired
     private UsuarioDetallesService userDetailsService;
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
@@ -48,7 +46,7 @@ public class ConfiguracionSeguridad {
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
+        authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
 
