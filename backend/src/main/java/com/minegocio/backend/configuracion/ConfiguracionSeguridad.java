@@ -34,8 +34,10 @@ public class ConfiguracionSeguridad {
     @Autowired
     private UsuarioDetallesService userDetailsService;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
@@ -46,7 +48,7 @@ public class ConfiguracionSeguridad {
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder);
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
@@ -61,85 +63,63 @@ public class ConfiguracionSeguridad {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> {
+                // Endpoints completamente públicos
                 auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
-                auth.requestMatchers("/actuator/**").permitAll(); // Health checks para Railway
+                auth.requestMatchers("/actuator/**").permitAll();
+                auth.requestMatchers("/h2-console/**").permitAll();
                 
-                // Endpoints completamente públicos (DEBEN ir PRIMERO)
-                auth.requestMatchers("/download/**").permitAll() // Controlador Download para plantilla
-                    .requestMatchers("/api/download/**").permitAll() // Controlador Download para plantilla con /api
-                    .requestMatchers("/excel/**").permitAll() // Controlador Excel para plantilla
-                    .requestMatchers("/plantilla/**").permitAll() // Controlador separado para plantilla
-                    .requestMatchers("/plantilla-final").permitAll() // Plantilla final desde controlador separado
-                    .requestMatchers("/template/download").permitAll() // Plantilla desde controlador separado
-                    .requestMatchers("/api/plantilla-publica").permitAll() // Plantilla completamente pública
-                    .requestMatchers("/api/plantilla-simple").permitAll() // Plantilla simple con CORS explícito
-                    .requestMatchers("/api/plantilla-final").permitAll() // Plantilla final sin Spring Security
-                    .requestMatchers("/api/plantilla-directa").permitAll() // Plantilla directa sin Spring Security
-                    .requestMatchers("/api/plantilla-independiente/**").permitAll() // Controlador independiente para plantillas
-                    .requestMatchers("/api/reporte-stock/**").permitAll() // Controlador independiente para reporte de stock
-                    .requestMatchers("/api/reporte-stock-directo/**").permitAll() // Controlador independiente para reporte de stock directo
-                    .requestMatchers("/api/reporte-stock-test/**").permitAll() // Test de reporte de stock
-                    .requestMatchers("/api/files/stock/**").permitAll() // Controlador público para reporte de stock
-                    .requestMatchers("/api/direct/stock/**").permitAll() // Controlador público directo para reporte de stock
-                    .requestMatchers("/api/public/reportes/**").permitAll() // Controlador público para reportes
-                    .requestMatchers("/api/reportes/**").permitAll() // Controlador de reportes completamente público
-                    .requestMatchers("/public/reportes/**").permitAll() // Controlador independiente de reportes
-                    .requestMatchers("/public/plantilla/**").permitAll() // Controlador independiente de plantilla
-                    .requestMatchers("/direct/**").permitAll() // Controlador directo completamente independiente
-                    .requestMatchers("/files/**").permitAll() // Controlador final para descargas
-                    .requestMatchers("/ultra/**").permitAll() // Controlador ultra-independiente
-                    .requestMatchers("/api/publico/**").permitAll()
-                    .requestMatchers("/api/auth/login").permitAll()
-                    .requestMatchers("/api/auth/login-documento").permitAll()
-                    .requestMatchers("/api/auth/registrar-administrador").permitAll()
-                    .requestMatchers("/api/auth/verificar-token-admin").permitAll()
-                    .requestMatchers("/api/auth/recuperar-password").permitAll()
-                    .requestMatchers("/api/auth/validar-token/**").permitAll()
-                    .requestMatchers("/api/auth/cambiar-password").permitAll()
-                    .requestMatchers("/api/verificacion/**").permitAll()
-                    .requestMatchers("/api/verificacion-cliente/**").permitAll()
-                    .requestMatchers("/api/debug/**").permitAll()
-                    .requestMatchers("/api/archivos/**").permitAll()
-                    .requestMatchers("/h2-console/**").permitAll()
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                    // Endpoints de actuator para monitoreo
-                    .requestMatchers("/actuator/health").permitAll()
-                    .requestMatchers("/actuator/info").permitAll()
-                    .requestMatchers("/actuator/**").hasAnyRole("SUPER_ADMIN")
-                    // Endpoints de autenticación de clientes (Google login, recuperación de contraseña, etc.)
-                    .requestMatchers("/api/publico/*/auth/**").permitAll()
-                    // Reglas específicas de empresas (DEBEN ir ANTES de la regla general)
-                    .requestMatchers("/api/empresas/registro").permitAll()
-                    .requestMatchers("/api/empresas/verificar-subdominio/**").permitAll()
-                    .requestMatchers("/api/empresas/crear-empresa").permitAll()
-                    .requestMatchers("/api/empresas/publico/**").permitAll()
-                    .requestMatchers("/api/super-admin/crear-super-admin").permitAll()
-                    .requestMatchers("/api/super-admin/suscripciones/crear-datos-prueba").permitAll()
-                    .requestMatchers("/api/super-admin/suscripciones/debug/**").permitAll()
-                    // Endpoints del nuevo controlador de suscripciones para empresas
-                    .requestMatchers("/api/suscripciones/debug/**").permitAll() // Debug público para diagnóstico
-                    .requestMatchers("/api/suscripciones/mi-suscripcion").authenticated()
-                    .requestMatchers("/api/suscripciones/mi-suscripcion-simple").authenticated()
-                    .requestMatchers("/api/suscripciones/mi-consumo").authenticated()
-                    // Endpoints de gestión de administradores
-                    .requestMatchers(HttpMethod.GET, "/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
-                    .requestMatchers(HttpMethod.PUT, "/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
-                    .requestMatchers("/api/super-admin/**").hasAnyRole("SUPER_ADMIN", "ADMINISTRADOR")
-                    .requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
-                    // Reglas específicas de plantilla (DEBEN ir ANTES de la regla general de empresas)
-                    .requestMatchers("/api/empresas/*/productos/plantilla-importacion").permitAll() // Permitir descarga de plantilla sin autenticación
-                    .requestMatchers("/api/empresas/*/productos/test-plantilla").permitAll() // Endpoint de prueba público
-                    .requestMatchers("/api/empresas/*/productos/reporte-stock").permitAll() // Permitir descarga de reporte de stock sin autenticación
-                    .requestMatchers("/api/empresas/*/productos/reporte-stock-directo").permitAll() // Endpoint directo para reporte de stock sin autenticación
-                    .requestMatchers("/api/empresas/*/productos/reporte-inventario-dia").permitAll() // Permitir descarga de reporte de inventario sin autenticación
-                    .requestMatchers("/api/empresas/*/productos/reporte-diferencias-dia").permitAll() // Permitir descarga de reporte de diferencias sin autenticación
-                    // Regla general de empresas (DEBE ir DESPUÉS de las reglas específicas)
-                    .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
-                    .requestMatchers("/api/notificaciones/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
-                    .requestMatchers("/api/historial-carga-productos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
-                    .anyRequest().authenticated();
+                // Endpoints de autenticación
+                auth.requestMatchers("/api/auth/**").permitAll();
+                auth.requestMatchers("/api/verificacion/**").permitAll();
+                auth.requestMatchers("/api/verificacion-cliente/**").permitAll();
+                auth.requestMatchers("/api/debug/**").permitAll();
+                
+                // Endpoints de plantillas y reportes públicos
+                auth.requestMatchers("/api/plantilla-**").permitAll();
+                auth.requestMatchers("/api/reporte-**").permitAll();
+                auth.requestMatchers("/api/files/**").permitAll();
+                auth.requestMatchers("/api/direct/**").permitAll();
+                auth.requestMatchers("/api/public/**").permitAll();
+                auth.requestMatchers("/api/reportes/**").permitAll();
+                auth.requestMatchers("/download/**").permitAll();
+                auth.requestMatchers("/excel/**").permitAll();
+                auth.requestMatchers("/plantilla/**").permitAll();
+                auth.requestMatchers("/template/**").permitAll();
+                auth.requestMatchers("/public/**").permitAll();
+                auth.requestMatchers("/direct/**").permitAll();
+                auth.requestMatchers("/files/**").permitAll();
+                auth.requestMatchers("/ultra/**").permitAll();
+                
+                // Endpoints de empresas públicos
+                auth.requestMatchers("/api/empresas/registro").permitAll();
+                auth.requestMatchers("/api/empresas/verificar-subdominio/**").permitAll();
+                auth.requestMatchers("/api/empresas/crear-empresa").permitAll();
+                auth.requestMatchers("/api/empresas/publico/**").permitAll();
+                auth.requestMatchers("/api/empresas/*/productos/plantilla-**").permitAll();
+                auth.requestMatchers("/api/empresas/*/productos/reporte-**").permitAll();
+                auth.requestMatchers("/api/empresas/*/productos/test-**").permitAll();
+                
+                // Endpoints de super admin públicos
+                auth.requestMatchers("/api/super-admin/crear-super-admin").permitAll();
+                auth.requestMatchers("/api/super-admin/suscripciones/crear-datos-prueba").permitAll();
+                auth.requestMatchers("/api/super-admin/suscripciones/debug/**").permitAll();
+                
+                // Endpoints de suscripciones
+                auth.requestMatchers("/api/suscripciones/debug/**").permitAll();
+                auth.requestMatchers("/api/suscripciones/mi-suscripcion").authenticated();
+                auth.requestMatchers("/api/suscripciones/mi-suscripcion-simple").authenticated();
+                auth.requestMatchers("/api/suscripciones/mi-consumo").authenticated();
+                
+                // Endpoints que requieren autenticación
+                auth.requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
+                auth.requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
+                auth.requestMatchers("/api/super-admin/**").hasAnyRole("SUPER_ADMIN", "ADMINISTRADOR");
+                auth.requestMatchers("/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
+                auth.requestMatchers("/api/notificaciones/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
+                auth.requestMatchers("/api/historial-carga-productos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
+                
+                // Cualquier otra solicitud requiere autenticación
+                auth.anyRequest().authenticated();
             });
 
         // Deshabilitar frame options para H2 Console
@@ -152,14 +132,14 @@ public class ConfiguracionSeguridad {
 
         return http.build();
     }
-// nuevo
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*")); // Permitir todos los orígenes temporalmente
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(false); // Cambiar a false para evitar problemas con CORS
+        configuration.setAllowCredentials(false);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
