@@ -79,6 +79,9 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/reporte-stock/**").permitAll() // Controlador independiente para reporte de stock
                     .requestMatchers("/api/reporte-stock-directo/**").permitAll() // Controlador independiente para reporte de stock directo
                     .requestMatchers("/api/reporte-stock-test/**").permitAll() // Test de reporte de stock
+                    .requestMatchers("/api/files/stock/**").permitAll() // Controlador público para reporte de stock
+                    .requestMatchers("/api/direct/stock/**").permitAll() // Controlador público directo para reporte de stock
+                    .requestMatchers("/api/public/reportes/**").permitAll() // Controlador público para reportes
                     .requestMatchers("/api/reportes/**").permitAll() // Controlador de reportes completamente público
                     .requestMatchers("/public/reportes/**").permitAll() // Controlador independiente de reportes
                     .requestMatchers("/public/plantilla/**").permitAll() // Controlador independiente de plantilla
