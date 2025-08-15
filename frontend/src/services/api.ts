@@ -48,13 +48,6 @@ class ApiService {
            /\/empresas\/registro/.test(config.url) ||
            /\/empresas\/verificar-subdominio/.test(config.url) ||
            /\/empresas\/\d+\/productos\/plantilla-importacion/.test(config.url) || // Plantilla de importación pública
-           /\/empresas\/\d+\/productos\/test-plantilla/.test(config.url) || // Endpoint de prueba público
-           /\/plantilla-publica/.test(config.url) || // Plantilla completamente pública
-           /\/plantilla-simple/.test(config.url) || // Plantilla simple con CORS explícito
-           /\/plantilla-final/.test(config.url) || // Plantilla final sin Spring Security
-           /\/plantilla-directa/.test(config.url) || // Plantilla directa sin Spring Security
-           /\/plantilla\/descargar/.test(config.url) || // Controlador separado para plantilla
-           /\/excel\/template/.test(config.url) || // Controlador Excel para plantilla
            /\/download\/template/.test(config.url) || // Controlador Download para plantilla
            /\/verificacion\/verificar-email/.test(config.url) ||
            /\/verificacion\/reenviar-email/.test(config.url) ||
@@ -1479,78 +1472,6 @@ class ApiService {
     }
   }
 
-  async descargarPlantillaFinal(): Promise<Blob> {
-    console.log('📥 Iniciando descarga de plantilla final');
-    
-    try {
-      const response = await this.api.get('/api/plantilla-final', {
-        responseType: 'blob'
-      });
-      
-      console.log('✅ Plantilla final descargada exitosamente');
-      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
-      
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Error en descargarPlantillaFinal:', error);
-      throw error;
-    }
-  }
-
-  async descargarPlantillaDirecta(): Promise<Blob> {
-    console.log('📥 Iniciando descarga de plantilla directa');
-    
-    try {
-      const response = await this.api.get('/plantilla-directa', {
-        responseType: 'blob'
-      });
-      
-      console.log('✅ Plantilla directa descargada exitosamente');
-      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
-      
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Error en descargarPlantillaDirecta:', error);
-      throw error;
-    }
-  }
-
-  async descargarPlantillaSeparada(): Promise<Blob> {
-    console.log('📥 Iniciando descarga de plantilla separada');
-    
-    try {
-      const response = await this.api.get('/plantilla/descargar', {
-        responseType: 'blob'
-      });
-      
-      console.log('✅ Plantilla separada descargada exitosamente');
-      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
-      
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Error en descargarPlantillaSeparada:', error);
-      throw error;
-    }
-  }
-
-  async descargarPlantillaExcel(): Promise<Blob> {
-    console.log('📥 Iniciando descarga de plantilla Excel');
-    
-    try {
-      const response = await this.api.get('/excel/template', {
-        responseType: 'blob'
-      });
-      
-      console.log('✅ Plantilla Excel descargada exitosamente');
-      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
-      
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Error en descargarPlantillaExcel:', error);
-      throw error;
-    }
-  }
-
   async descargarPlantillaDownload(): Promise<Blob> {
     console.log('📥 Iniciando descarga de plantilla Download');
     
@@ -1565,19 +1486,6 @@ class ApiService {
       return response.data;
     } catch (error: any) {
       console.error('❌ Error en descargarPlantillaDownload:', error);
-      throw error;
-    }
-  }
-
-  async testPlantilla(empresaId: number): Promise<any> {
-    console.log('🧪 Probando endpoint de prueba para empresa:', empresaId);
-    
-    try {
-      const response = await this.api.get(`/empresas/${empresaId}/productos/test-plantilla`);
-      console.log('✅ Test exitoso:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Error en test:', error);
       throw error;
     }
   }
