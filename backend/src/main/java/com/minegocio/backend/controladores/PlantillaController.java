@@ -5,12 +5,20 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.minegocio.backend.servicios.ImportacionProductoService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/download")
 @CrossOrigin(origins = "*")
 public class PlantillaController {
 
+    @Autowired
+    private ImportacionProductoService importacionProductoService;
+
+    @RequestMapping("/download")
     @GetMapping("/template")
     public void descargarPlantilla(HttpServletResponse response) throws IOException {
         try {
@@ -66,8 +74,41 @@ public class PlantillaController {
         }
     }
 
+    @RequestMapping("/download")
     @GetMapping("/test")
     public String test() {
         return "Controlador Download funcionando correctamente";
+    }
+
+    @RequestMapping("/plantilla-final")
+    @GetMapping
+    public ResponseEntity<byte[]> descargarPlantillaFinal() {
+        try {
+            System.out.println("📥 Descargando plantilla final desde controlador separado");
+            
+            // Generar la plantilla
+            byte[] plantilla = importacionProductoService.generarPlantillaExcel();
+            
+            if (plantilla == null || plantilla.length == 0) {
+                System.err.println("❌ Error: Plantilla generada está vacía");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new byte[0]);
+            }
+            
+            System.out.println("✅ Plantilla final generada exitosamente, tamaño: " + plantilla.length + " bytes");
+            
+            // Configurar headers para descarga
+            return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"plantilla_productos.xlsx\"")
+                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+                .header("Access-Control-Allow-Headers", "*")
+                .body(plantilla);
+                
+        } catch (Exception e) {
+            System.err.println("❌ Error al generar plantilla final: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new byte[0]);
+        }
     }
 }

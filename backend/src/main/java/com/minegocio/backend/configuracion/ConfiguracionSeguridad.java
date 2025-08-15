@@ -70,6 +70,7 @@ public class ConfiguracionSeguridad {
                 auth.requestMatchers("/download/**").permitAll() // Controlador Download para plantilla
                     .requestMatchers("/excel/**").permitAll() // Controlador Excel para plantilla
                     .requestMatchers("/plantilla/**").permitAll() // Controlador separado para plantilla
+                    .requestMatchers("/plantilla-final").permitAll() // Plantilla final desde controlador separado
                     .requestMatchers("/api/plantilla-publica").permitAll() // Plantilla completamente pública
                     .requestMatchers("/api/plantilla-simple").permitAll() // Plantilla simple con CORS explícito
                     .requestMatchers("/api/plantilla-final").permitAll() // Plantilla final sin Spring Security

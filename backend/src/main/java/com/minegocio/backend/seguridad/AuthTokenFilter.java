@@ -122,6 +122,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         boolean isPublic = requestPath.startsWith("/download/") || // Controlador Download para plantilla
                           requestPath.startsWith("/excel/") || // Controlador Excel para plantilla
                           requestPath.startsWith("/plantilla/") || // Controlador separado para plantilla
+                          requestPath.equals("/plantilla-final") || // Plantilla final desde controlador separado
                           requestPath.equals("/api/plantilla-publica") || // Plantilla completamente pública
                           requestPath.equals("/api/plantilla-simple") || // Plantilla simple con CORS explícito
                           requestPath.equals("/api/plantilla-final") || // Plantilla final sin Spring Security
