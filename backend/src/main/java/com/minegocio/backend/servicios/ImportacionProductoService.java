@@ -141,63 +141,129 @@ public class ImportacionProductoService {
     }
 
     /**
-     * Genera una plantilla Excel para descargar
+     * Genera una plantilla Excel para importación de productos
      */
     public byte[] generarPlantillaExcel() throws IOException {
-        try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("Productos");
+        System.out.println("📥 Iniciando generación de plantilla Excel");
+        
+        try {
+            // Crear workbook con manejo de errores
+            Workbook workbook = null;
+            try {
+                workbook = new XSSFWorkbook();
+                System.out.println("✅ Workbook creado exitosamente");
+            } catch (Exception e) {
+                System.err.println("❌ Error al crear workbook: " + e.getMessage());
+                throw new IOException("Error al crear el workbook Excel: " + e.getMessage(), e);
+            }
+
+            // Crear hoja
+            Sheet sheet = null;
+            try {
+                sheet = workbook.createSheet("Productos");
+                System.out.println("✅ Hoja creada exitosamente");
+            } catch (Exception e) {
+                System.err.println("❌ Error al crear hoja: " + e.getMessage());
+                throw new IOException("Error al crear la hoja Excel: " + e.getMessage(), e);
+            }
 
             // Crear estilo para encabezados
-            CellStyle headerStyle = workbook.createCellStyle();
-            Font headerFont = workbook.createFont();
-            headerFont.setBold(true);
-            headerStyle.setFont(headerFont);
-            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            CellStyle headerStyle = null;
+            Font headerFont = null;
+            try {
+                headerStyle = workbook.createCellStyle();
+                headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerStyle.setFont(headerFont);
+                headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+                headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                System.out.println("✅ Estilos creados exitosamente");
+            } catch (Exception e) {
+                System.err.println("❌ Error al crear estilos: " + e.getMessage());
+                // Continuar sin estilos si fallan
+            }
 
             // Crear encabezados
-            Row headerRow = sheet.createRow(0);
-            String[] headers = {"Nombre*", "Marca", "Descripción", "Precio", "Stock*", "Categoría", "Sector_Almacenamiento", "Código_Barras", "Código_Personalizado"};
-            
-            for (int i = 0; i < headers.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(headers[i]);
-                cell.setCellStyle(headerStyle);
+            Row headerRow = null;
+            try {
+                headerRow = sheet.createRow(0);
+                String[] headers = {"Nombre*", "Marca", "Descripción", "Precio", "Stock*", "Categoría", "Sector_Almacenamiento", "Código_Barras", "Código_Personalizado"};
+                
+                for (int i = 0; i < headers.length; i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headers[i]);
+                    if (headerStyle != null) {
+                        cell.setCellStyle(headerStyle);
+                    }
+                }
+                System.out.println("✅ Encabezados creados exitosamente");
+            } catch (Exception e) {
+                System.err.println("❌ Error al crear encabezados: " + e.getMessage());
+                throw new IOException("Error al crear los encabezados: " + e.getMessage(), e);
             }
 
             // Crear fila de ejemplo
-            Row exampleRow = sheet.createRow(1);
-            exampleRow.createCell(0).setCellValue("Producto Ejemplo");
-            exampleRow.createCell(1).setCellValue("Samsung");
-            exampleRow.createCell(2).setCellValue("Descripción del producto");
-            exampleRow.createCell(3).setCellValue(100.50);
-            exampleRow.createCell(4).setCellValue(50);
-            exampleRow.createCell(5).setCellValue("Electrónicos");
-            exampleRow.createCell(6).setCellValue("Depósito A");
-            exampleRow.createCell(7).setCellValue("1234567890123");
-            exampleRow.createCell(8).setCellValue("PROD-001");
-
-            // Ajustar ancho de columnas
-            for (int i = 0; i < headers.length; i++) {
-                sheet.autoSizeColumn(i);
+            try {
+                Row exampleRow = sheet.createRow(1);
+                exampleRow.createCell(0).setCellValue("Producto Ejemplo");
+                exampleRow.createCell(1).setCellValue("Samsung");
+                exampleRow.createCell(2).setCellValue("Descripción del producto");
+                exampleRow.createCell(3).setCellValue(100.50);
+                exampleRow.createCell(4).setCellValue(50);
+                exampleRow.createCell(5).setCellValue("Electrónicos");
+                exampleRow.createCell(6).setCellValue("Depósito A");
+                exampleRow.createCell(7).setCellValue("1234567890123");
+                exampleRow.createCell(8).setCellValue("PROD-001");
+                System.out.println("✅ Fila de ejemplo creada exitosamente");
+            } catch (Exception e) {
+                System.err.println("❌ Error al crear fila de ejemplo: " + e.getMessage());
+                // Continuar sin fila de ejemplo si falla
             }
 
-            // Convertir a bytes con manejo de errores
+            // Ajustar ancho de columnas (opcional)
+            try {
+                for (int i = 0; i < 9; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+                System.out.println("✅ Ancho de columnas ajustado");
+            } catch (Exception e) {
+                System.err.println("⚠️ Error al ajustar ancho de columnas: " + e.getMessage());
+                // Continuar sin ajustar ancho si falla
+            }
+
+            // Convertir a bytes
+            byte[] result = null;
             try (java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream()) {
                 workbook.write(outputStream);
                 outputStream.flush();
-                byte[] result = outputStream.toByteArray();
+                result = outputStream.toByteArray();
                 
                 if (result == null || result.length == 0) {
                     throw new IOException("Error: El archivo generado está vacío");
                 }
                 
+                System.out.println("✅ Archivo Excel generado exitosamente. Tamaño: " + result.length + " bytes");
                 return result;
+                
             } catch (Exception e) {
+                System.err.println("❌ Error al convertir a bytes: " + e.getMessage());
                 throw new IOException("Error al generar el archivo Excel: " + e.getMessage(), e);
+            } finally {
+                // Cerrar workbook
+                try {
+                    if (workbook != null) {
+                        workbook.close();
+                        System.out.println("✅ Workbook cerrado exitosamente");
+                    }
+                } catch (Exception e) {
+                    System.err.println("⚠️ Error al cerrar workbook: " + e.getMessage());
+                }
             }
+            
         } catch (Exception e) {
-            throw new IOException("Error al crear el workbook Excel: " + e.getMessage(), e);
+            System.err.println("❌ Error general en generarPlantillaExcel: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException("Error general al generar la plantilla Excel: " + e.getMessage(), e);
         }
     }
 

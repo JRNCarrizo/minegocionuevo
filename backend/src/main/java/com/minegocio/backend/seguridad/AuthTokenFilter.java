@@ -118,10 +118,15 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                               requestPath.startsWith("/api/auth/validar-token/") ||
                               requestPath.equals("/api/auth/cambiar-password");
         
-        boolean isPublic = requestPath.startsWith("/api/publico/") ||
+        // Verificar si es un endpoint público
+        boolean isPublic = requestPath.startsWith("/download/") || // Controlador Download para plantilla
+                          requestPath.startsWith("/excel/") || // Controlador Excel para plantilla
+                          requestPath.startsWith("/plantilla/") || // Controlador separado para plantilla
                           requestPath.equals("/api/plantilla-publica") || // Plantilla completamente pública
                           requestPath.equals("/api/plantilla-simple") || // Plantilla simple con CORS explícito
                           requestPath.equals("/api/plantilla-final") || // Plantilla final sin Spring Security
+                          requestPath.equals("/api/plantilla-directa") || // Plantilla directa sin Spring Security
+                          requestPath.startsWith("/api/publico/") ||
                           isPublicAuth ||
                           requestPath.startsWith("/api/verificacion/") ||
                           requestPath.startsWith("/api/verificacion-cliente/") ||
@@ -138,6 +143,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                           requestPath.startsWith("/error") ||
                           // Endpoints de autenticación de clientes (Google login, recuperación de contraseña, etc.)
                           (requestPath.contains("/publico/") && requestPath.contains("/auth/"));
+        
+        // Log solo para endpoints importantes
+        if (requestPath.contains("/download/") || requestPath.contains("/plantilla-importacion") || requestPath.contains("/test-plantilla")) {
+            System.out.println("🔍 Verificando endpoint: " + requestPath + " - isPublic: " + isPublic);
+        }
         
         return isPublic;
     }

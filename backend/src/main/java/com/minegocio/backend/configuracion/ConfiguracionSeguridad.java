@@ -65,10 +65,16 @@ public class ConfiguracionSeguridad {
             .authorizeHttpRequests(auth -> {
                 auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                 auth.requestMatchers("/actuator/**").permitAll(); // Health checks para Railway
-                auth.requestMatchers("/api/publico/**").permitAll()
+                
+                // Endpoints completamente públicos (DEBEN ir PRIMERO)
+                auth.requestMatchers("/download/**").permitAll() // Controlador Download para plantilla
+                    .requestMatchers("/excel/**").permitAll() // Controlador Excel para plantilla
+                    .requestMatchers("/plantilla/**").permitAll() // Controlador separado para plantilla
                     .requestMatchers("/api/plantilla-publica").permitAll() // Plantilla completamente pública
                     .requestMatchers("/api/plantilla-simple").permitAll() // Plantilla simple con CORS explícito
                     .requestMatchers("/api/plantilla-final").permitAll() // Plantilla final sin Spring Security
+                    .requestMatchers("/api/plantilla-directa").permitAll() // Plantilla directa sin Spring Security
+                    .requestMatchers("/api/publico/**").permitAll()
                     .requestMatchers("/api/auth/login").permitAll()
                     .requestMatchers("/api/auth/login-documento").permitAll()
                     .requestMatchers("/api/auth/registrar-administrador").permitAll()
@@ -76,7 +82,6 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/auth/recuperar-password").permitAll()
                     .requestMatchers("/api/auth/validar-token/**").permitAll()
                     .requestMatchers("/api/auth/cambiar-password").permitAll()
-                    .requestMatchers("/api/auth/crear-empresa").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN")
                     .requestMatchers("/api/verificacion/**").permitAll()
                     .requestMatchers("/api/verificacion-cliente/**").permitAll()
                     .requestMatchers("/api/debug/**").permitAll()

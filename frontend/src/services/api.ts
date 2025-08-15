@@ -47,11 +47,15 @@ class ApiService {
            /\/auth\/cambiar-password/.test(config.url) ||
            /\/empresas\/registro/.test(config.url) ||
            /\/empresas\/verificar-subdominio/.test(config.url) ||
-           /\/empresas\/\d+\/productos\/plantilla-importacion/.test(config.url) ||
-           /\/empresas\/\d+\/productos\/test-plantilla/.test(config.url) ||
-           /\/plantilla-publica/.test(config.url) ||
-           /\/plantilla-simple/.test(config.url) ||
-           /\/plantilla-final/.test(config.url) ||
+           /\/empresas\/\d+\/productos\/plantilla-importacion/.test(config.url) || // Plantilla de importación pública
+           /\/empresas\/\d+\/productos\/test-plantilla/.test(config.url) || // Endpoint de prueba público
+           /\/plantilla-publica/.test(config.url) || // Plantilla completamente pública
+           /\/plantilla-simple/.test(config.url) || // Plantilla simple con CORS explícito
+           /\/plantilla-final/.test(config.url) || // Plantilla final sin Spring Security
+           /\/plantilla-directa/.test(config.url) || // Plantilla directa sin Spring Security
+           /\/plantilla\/descargar/.test(config.url) || // Controlador separado para plantilla
+           /\/excel\/template/.test(config.url) || // Controlador Excel para plantilla
+           /\/download\/template/.test(config.url) || // Controlador Download para plantilla
            /\/verificacion\/verificar-email/.test(config.url) ||
            /\/verificacion\/reenviar-email/.test(config.url) ||
            /\/verificacion-cliente\/verificar-email/.test(config.url) ||
@@ -1489,6 +1493,78 @@ class ApiService {
       return response.data;
     } catch (error: any) {
       console.error('❌ Error en descargarPlantillaFinal:', error);
+      throw error;
+    }
+  }
+
+  async descargarPlantillaDirecta(): Promise<Blob> {
+    console.log('📥 Iniciando descarga de plantilla directa');
+    
+    try {
+      const response = await this.api.get('/plantilla-directa', {
+        responseType: 'blob'
+      });
+      
+      console.log('✅ Plantilla directa descargada exitosamente');
+      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error en descargarPlantillaDirecta:', error);
+      throw error;
+    }
+  }
+
+  async descargarPlantillaSeparada(): Promise<Blob> {
+    console.log('📥 Iniciando descarga de plantilla separada');
+    
+    try {
+      const response = await this.api.get('/plantilla/descargar', {
+        responseType: 'blob'
+      });
+      
+      console.log('✅ Plantilla separada descargada exitosamente');
+      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error en descargarPlantillaSeparada:', error);
+      throw error;
+    }
+  }
+
+  async descargarPlantillaExcel(): Promise<Blob> {
+    console.log('📥 Iniciando descarga de plantilla Excel');
+    
+    try {
+      const response = await this.api.get('/excel/template', {
+        responseType: 'blob'
+      });
+      
+      console.log('✅ Plantilla Excel descargada exitosamente');
+      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error en descargarPlantillaExcel:', error);
+      throw error;
+    }
+  }
+
+  async descargarPlantillaDownload(): Promise<Blob> {
+    console.log('📥 Iniciando descarga de plantilla Download');
+    
+    try {
+      const response = await this.api.get('/download/template', {
+        responseType: 'blob'
+      });
+      
+      console.log('✅ Plantilla Download descargada exitosamente');
+      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error en descargarPlantillaDownload:', error);
       throw error;
     }
   }

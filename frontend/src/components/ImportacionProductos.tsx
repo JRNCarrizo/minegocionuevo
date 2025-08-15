@@ -78,8 +78,8 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
       console.log('🏢 Empresa ID:', empresaId);
       console.log('📥 Iniciando descarga de plantilla...');
       
-      // Usar el nuevo endpoint de plantilla final
-      const blob = await ApiService.descargarPlantillaFinal();
+      // Usar el nuevo endpoint del controlador Download
+      const blob = await ApiService.descargarPlantillaDownload();
       
       // Crear un enlace para descargar el archivo
       const url = window.URL.createObjectURL(blob);
@@ -96,27 +96,12 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
     } catch (error: any) {
       console.error('❌ Error al descargar plantilla:', error);
       
-      // Manejar diferentes tipos de errores
       if (error.response) {
         const status = error.response.status;
-        const data = error.response.data;
-        
-        console.error('📊 Status:', status);
-        console.error('📊 Data:', data);
-        
-        if (status === 403) {
-          alert('Error 403: No tiene permisos para acceder a este recurso. Verifique su sesión.');
-        } else if (status === 401) {
-          alert('Error 401: Sesión expirada. Por favor, inicie sesión nuevamente.');
-        } else if (status === 404) {
-          alert('Error 404: Recurso no encontrado.');
-        } else {
-          alert(`Error ${status}: ${data?.error || 'Error desconocido al descargar la plantilla'}`);
-        }
-      } else if (error.request) {
-        alert('Error de conexión: No se pudo conectar con el servidor.');
+        const errorMessage = error.response.data?.error || 'Error desconocido';
+        alert(`❌ Error ${status}: ${errorMessage}`);
       } else {
-        alert('Error al descargar la plantilla: ' + (error.message || 'Error desconocido'));
+        alert('❌ Error de conexión: ' + (error.message || 'Error desconocido'));
       }
     } finally {
       setCargando(false);
