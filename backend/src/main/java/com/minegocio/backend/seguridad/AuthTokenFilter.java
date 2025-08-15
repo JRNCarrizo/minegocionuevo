@@ -46,12 +46,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             
             // Skip authentication for public endpoints
             if (isPublicEndpoint(requestPath)) {
-                if (requestPath.contains("/plantilla-importacion") || requestPath.contains("/reporte-stock") || 
-                    requestPath.contains("/reportes/") || requestPath.contains("/direct/") || 
-                    requestPath.contains("/public/") || requestPath.contains("/files/") ||
-                    requestPath.contains("/ultra/")) {
-                    System.out.println("✅ Skipping auth for public endpoint: " + requestPath);
-                }
+                System.out.println("✅ SKIPPING AUTH for public endpoint: " + requestPath);
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -151,9 +146,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                           // Endpoints de autenticación de clientes (Google login, recuperación de contraseña, etc.)
                           (requestPath.contains("/publico/") && requestPath.contains("/auth/"));
         
-        // Log solo para endpoints importantes
-        if (requestPath.contains("/plantilla-") || requestPath.contains("/reportes/")) {
-            System.out.println("🔍 Verificando endpoint: " + requestPath + " - isPublic: " + isPublic);
+        // Log para debug de reportes
+        if (requestPath.contains("/reportes/")) {
+            System.out.println("🔍 DEBUG REPORTES - Path: " + requestPath);
+            System.out.println("🔍 DEBUG REPORTES - startsWith /api/reportes/: " + requestPath.startsWith("/api/reportes/"));
+            System.out.println("🔍 DEBUG REPORTES - isPublic: " + isPublic);
         }
         
         return isPublic;
