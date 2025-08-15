@@ -106,10 +106,18 @@ public class ReporteStockService {
             // Agregar resumen al final
             agregarResumen(sheet, productos, rowNum + 2);
 
-            // Ajustar ancho de columnas
-            for (int i = 0; i < headers.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
+            // Ajustar ancho de columnas (sin autoSize para evitar problemas de fuentes)
+            sheet.setColumnWidth(0, 30 * 256);  // Nombre
+            sheet.setColumnWidth(1, 15 * 256);  // Categoría
+            sheet.setColumnWidth(2, 15 * 256);  // Stock
+            sheet.setColumnWidth(3, 15 * 256);  // Stock Mínimo
+            sheet.setColumnWidth(4, 15 * 256);  // Precio
+            sheet.setColumnWidth(5, 15 * 256);  // Valor Total
+            sheet.setColumnWidth(6, 20 * 256);  // Fecha Creación
+            sheet.setColumnWidth(7, 20 * 256);  // Fecha Modificación
+            sheet.setColumnWidth(8, 20 * 256);  // Código de Barras
+            sheet.setColumnWidth(9, 20 * 256);  // Código Personalizado
+            sheet.setColumnWidth(10, 15 * 256); // Estado
 
             // Convertir a bytes
             try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
@@ -238,8 +246,8 @@ public class ReporteStockService {
         row6.createCell(0).setCellValue("Productos con stock bajo:");
         row6.createCell(1).setCellValue(productosStockBajo);
 
-        // Ajustar ancho de las columnas del resumen
-        sheet.autoSizeColumn(0);
-        sheet.autoSizeColumn(1);
+        // Ajustar ancho de las columnas del resumen (sin autoSize para evitar problemas de fuentes)
+        sheet.setColumnWidth(0, 25 * 256); // Ancho fijo para la primera columna
+        sheet.setColumnWidth(1, 15 * 256); // Ancho fijo para la segunda columna
     }
 }
