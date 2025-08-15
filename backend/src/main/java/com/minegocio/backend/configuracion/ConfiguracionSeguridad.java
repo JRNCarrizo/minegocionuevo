@@ -74,6 +74,8 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/plantilla-simple").permitAll() // Plantilla simple con CORS explícito
                     .requestMatchers("/api/plantilla-final").permitAll() // Plantilla final sin Spring Security
                     .requestMatchers("/api/plantilla-directa").permitAll() // Plantilla directa sin Spring Security
+                    .requestMatchers("/api/reportes/**").permitAll() // Controlador de reportes completamente público
+                    .requestMatchers("/public/reportes/**").permitAll() // Controlador independiente de reportes
                     .requestMatchers("/api/publico/**").permitAll()
                     .requestMatchers("/api/auth/login").permitAll()
                     .requestMatchers("/api/auth/login-documento").permitAll()

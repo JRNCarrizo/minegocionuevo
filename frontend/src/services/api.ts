@@ -1593,6 +1593,22 @@ class ApiService {
                 });
                 return response.data;
               }
+
+              // Método para descargar reporte de stock usando endpoint público
+              async descargarReporteStockPublico(empresaId: number): Promise<Blob> {
+                const response = await this.api.get(`/reportes/stock/${empresaId}`, {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
+
+              // Método para descargar reporte de stock usando endpoint independiente
+              async descargarReporteStockIndependiente(empresaId: number): Promise<Blob> {
+                const response = await this.api.get(`/public/reportes/stock/${empresaId}`, {
+                  responseType: 'blob'
+                });
+                return response.data;
+              }
 }
 
 export default new ApiService();
