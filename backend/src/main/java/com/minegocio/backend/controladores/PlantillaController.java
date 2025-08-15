@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.Map;
 
 @RestController
+@RequestMapping("/api")
 @CrossOrigin(origins = "*")
 public class PlantillaController {
 

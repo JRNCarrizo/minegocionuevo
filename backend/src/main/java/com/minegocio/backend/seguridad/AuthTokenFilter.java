@@ -120,6 +120,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         
         // Verificar si es un endpoint público
         boolean isPublic = requestPath.startsWith("/download/") || // Controlador Download para plantilla
+                          requestPath.startsWith("/api/download/") || // Controlador Download para plantilla con /api
                           requestPath.startsWith("/excel/") || // Controlador Excel para plantilla
                           requestPath.startsWith("/plantilla/") || // Controlador separado para plantilla
                           requestPath.equals("/plantilla-final") || // Plantilla final desde controlador separado

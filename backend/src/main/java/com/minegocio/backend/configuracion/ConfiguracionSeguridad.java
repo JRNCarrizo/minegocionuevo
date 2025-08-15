@@ -68,6 +68,7 @@ public class ConfiguracionSeguridad {
                 
                 // Endpoints completamente públicos (DEBEN ir PRIMERO)
                 auth.requestMatchers("/download/**").permitAll() // Controlador Download para plantilla
+                    .requestMatchers("/api/download/**").permitAll() // Controlador Download para plantilla con /api
                     .requestMatchers("/excel/**").permitAll() // Controlador Excel para plantilla
                     .requestMatchers("/plantilla/**").permitAll() // Controlador separado para plantilla
                     .requestMatchers("/plantilla-final").permitAll() // Plantilla final desde controlador separado
