@@ -19,10 +19,10 @@ public class PlantillaController {
     @Autowired
     private ImportacionProductoService importacionProductoService;
 
-    @GetMapping("/download/template")
+    @GetMapping("/plantilla")
     public void descargarPlantilla(HttpServletResponse response) throws IOException {
         try {
-            System.out.println("📥 Descargando plantilla desde controlador Download");
+            System.out.println("📥 Descargando plantilla desde PlantillaController");
             
             // Configurar respuesta
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
