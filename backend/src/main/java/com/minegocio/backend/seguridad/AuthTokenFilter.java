@@ -128,6 +128,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         boolean isPublic = requestPath.equals("/api/plantilla-publica") || // Plantilla completamente pública
                           requestPath.equals("/api/plantilla-simple") || // Plantilla simple con CORS explícito
                           requestPath.startsWith("/api/reportes/") || // Controlador de reportes completamente público
+                          requestPath.startsWith("/api/api/reportes/") || // Temporal: manejar URL duplicada
                           requestPath.startsWith("/api/publico/") ||
                           isPublicAuth ||
                           requestPath.startsWith("/api/verificacion/") ||

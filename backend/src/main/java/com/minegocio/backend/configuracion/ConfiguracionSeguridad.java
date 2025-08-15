@@ -76,6 +76,7 @@ public class ConfiguracionSeguridad {
                 // Endpoints de plantillas y reportes públicos
                 auth.requestMatchers("/api/plantilla-**").permitAll();
                 auth.requestMatchers("/api/reportes/**").permitAll();
+                auth.requestMatchers("/api/api/reportes/**").permitAll(); // Temporal: manejar URL duplicada
                 
                 // Endpoints de empresas públicos
                 auth.requestMatchers("/api/empresas/registro").permitAll();
