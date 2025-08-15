@@ -211,16 +211,22 @@ public class ProductoController {
             System.out.println("=== DEBUG CREAR PRODUCTO ===");
             System.out.println("EmpresaId: " + empresaId);
             System.out.println("ProductoDTO recibido: " + productoDTO);
+            System.out.println("Imágenes recibidas: " + productoDTO.getImagenes());
+            System.out.println("Imagen URL recibida: " + productoDTO.getImagenUrl());
             
             // Verificar límites de suscripción antes de crear el producto
+            System.out.println("Verificando límites de suscripción...");
             if (!limiteService.puedeCrearProducto(empresaId)) {
+                System.out.println("❌ Límite de productos alcanzado");
                 var error = java.util.Map.of(
                     "error", "Límite de productos alcanzado",
                     "mensaje", "Has alcanzado el límite de productos permitidos en tu plan de suscripción. Actualiza tu plan para crear más productos."
                 );
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
             }
+            System.out.println("✅ Límites verificados correctamente");
             
+            System.out.println("Creando producto...");
             ProductoDTO nuevoProducto = productoService.crearProducto(empresaId, productoDTO);
             
             System.out.println("Producto creado exitosamente con ID: " + nuevoProducto.getId());
@@ -234,7 +240,8 @@ public class ProductoController {
             
             return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
         } catch (Exception e) {
-            System.err.println("Error al crear producto: " + e.getMessage());
+            System.err.println("❌ Error al crear producto: " + e.getMessage());
+            System.err.println("❌ Stack trace completo:");
             e.printStackTrace();
             
             var error = java.util.Map.of(
@@ -259,7 +266,16 @@ public class ProductoController {
             System.out.println("ProductoId: " + id);
             System.out.println("ProductoDTO recibido: " + productoDTO);
             
-            ProductoDTO productoActualizado = productoService.actualizarProducto(empresaId, id, productoDTO);
+            // Obtener el usuario del contexto de seguridad
+            Long usuarioId = null;
+            try {
+                UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                usuarioId = usuarioPrincipal.getId();
+            } catch (Exception e) {
+                System.out.println("No se pudo obtener el usuario del contexto de seguridad: " + e.getMessage());
+            }
+            
+            ProductoDTO productoActualizado = productoService.actualizarProducto(empresaId, id, productoDTO, usuarioId);
             
             System.out.println("Producto actualizado exitosamente: " + productoActualizado);
             

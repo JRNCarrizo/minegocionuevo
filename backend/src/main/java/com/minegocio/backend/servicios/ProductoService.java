@@ -87,8 +87,11 @@ public class ProductoService {
     }
 
     public ProductoDTO crearProducto(Long empresaId, ProductoDTO productoDTO) {
+        System.out.println("🔍 ProductoService.crearProducto - Iniciando...");
+        
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        System.out.println("✅ Empresa encontrada: " + empresa.getNombre());
 
         Producto producto = new Producto();
         producto.setNombre(productoDTO.getNombre());
@@ -97,12 +100,19 @@ public class ProductoService {
         producto.setStock(productoDTO.getStock());
         producto.setStockMinimo(productoDTO.getStockMinimo());
         
+        System.out.println("🔍 Configurando imágenes...");
         // Manejar imágenes
         if (productoDTO.getImagenes() != null && !productoDTO.getImagenes().isEmpty()) {
+            System.out.println("✅ Usando lista de imágenes: " + productoDTO.getImagenes());
             producto.setImagenes(new ArrayList<>(productoDTO.getImagenes()));
         } else if (productoDTO.getImagenUrl() != null && !productoDTO.getImagenUrl().isEmpty()) {
+            System.out.println("✅ Usando imagen URL: " + productoDTO.getImagenUrl());
             // Compatibilidad hacia atrás
-            producto.getImagenes().add(productoDTO.getImagenUrl());
+            List<String> imagenes = new ArrayList<>();
+            imagenes.add(productoDTO.getImagenUrl());
+            producto.setImagenes(imagenes);
+        } else {
+            System.out.println("ℹ️ No se proporcionaron imágenes");
         }
         
         producto.setCategoria(productoDTO.getCategoria());
@@ -114,10 +124,13 @@ public class ProductoService {
         producto.setActivo(true);
         producto.setEmpresa(empresa);
 
+        System.out.println("🔍 Guardando producto en base de datos...");
         Producto productoGuardado = productoRepository.save(producto);
+        System.out.println("✅ Producto guardado con ID: " + productoGuardado.getId());
         
         // Registrar la creación en el historial de inventario
         try {
+            System.out.println("🔍 Registrando en historial de inventario...");
             InventarioRequestDTO request = new InventarioRequestDTO();
             request.setProductoId(productoGuardado.getId());
             request.setTipoOperacion("CARGA_INICIAL");
@@ -130,23 +143,36 @@ public class ProductoService {
             request.setMetodoEntrada("MANUAL");
             
             historialInventarioService.registrarOperacionInventario(request, null, empresaId);
+            System.out.println("✅ Historial de inventario registrado");
         } catch (Exception e) {
             // Log del error pero no fallar la operación principal
-            System.err.println("Error al registrar historial de inventario en creación de producto: " + e.getMessage());
+            System.err.println("❌ Error al registrar historial de inventario en creación de producto: " + e.getMessage());
         }
         
         // Registrar la carga inicial en el historial de carga de productos
         try {
+            System.out.println("🔍 Registrando en historial de carga de productos...");
             historialCargaProductosService.registrarCargaInicial(productoGuardado, empresa, null);
+            System.out.println("✅ Historial de carga de productos registrado");
         } catch (Exception e) {
             // Log del error pero no fallar la operación principal
-            System.err.println("Error al registrar historial de carga de productos en creación de producto: " + e.getMessage());
+            System.err.println("❌ Error al registrar historial de carga de productos en creación de producto: " + e.getMessage());
         }
         
         // Crear notificación de producto creado
-        notificacionService.crearNotificacionProductoActualizado(empresaId, productoDTO.getNombre(), "Producto creado");
+        try {
+            System.out.println("🔍 Creando notificación...");
+            notificacionService.crearNotificacionProductoActualizado(empresaId, productoDTO.getNombre(), "Producto creado");
+            System.out.println("✅ Notificación creada");
+        } catch (Exception e) {
+            System.err.println("❌ Error al crear notificación: " + e.getMessage());
+        }
         
-        return convertirADTO(productoGuardado);
+        System.out.println("🔍 Convirtiendo a DTO...");
+        ProductoDTO resultado = convertirADTO(productoGuardado);
+        System.out.println("✅ Producto creado exitosamente: " + resultado.getId());
+        
+        return resultado;
     }
 
     public ProductoDTO actualizarProducto(Long empresaId, Long id, ProductoDTO productoDTO, Long usuarioId) {
@@ -217,10 +243,13 @@ public class ProductoService {
         
         // Actualizar imagen principal si se proporciona (para compatibilidad)
         if (productoDTO.getImagenUrl() != null && !productoDTO.getImagenUrl().isEmpty()) {
-            if (producto.getImagenes().isEmpty()) {
-                producto.getImagenes().add(productoDTO.getImagenUrl());
-            } else if (!producto.getImagenes().contains(productoDTO.getImagenUrl())) {
-                producto.getImagenes().set(0, productoDTO.getImagenUrl());
+            List<String> imagenes = producto.getImagenes();
+            if (imagenes == null || imagenes.isEmpty()) {
+                imagenes = new ArrayList<>();
+                imagenes.add(productoDTO.getImagenUrl());
+                producto.setImagenes(imagenes);
+            } else if (!imagenes.contains(productoDTO.getImagenUrl())) {
+                imagenes.set(0, productoDTO.getImagenUrl());
             }
         }
 
@@ -306,13 +335,6 @@ public class ProductoService {
         return convertirADTO(productoActualizado);
     }
     
-    /**
-     * Método sobrecargado para compatibilidad hacia atrás
-     */
-    public ProductoDTO actualizarProducto(Long empresaId, Long id, ProductoDTO productoDTO) {
-        return actualizarProducto(empresaId, id, productoDTO, null);
-    }
-
     public void eliminarProducto(Long empresaId, Long id) {
         Producto producto = productoRepository.findByIdAndEmpresaIdAndActivoTrue(id, empresaId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
