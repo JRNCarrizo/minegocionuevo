@@ -125,24 +125,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                               requestPath.equals("/api/auth/cambiar-password");
         
         // Verificar si es un endpoint público
-        boolean isPublic = requestPath.startsWith("/download/") || // Controlador Download para plantilla
-                          requestPath.startsWith("/api/download/") || // Controlador Download para plantilla con /api
-                          requestPath.startsWith("/excel/") || // Controlador Excel para plantilla
-                          requestPath.startsWith("/plantilla/") || // Controlador separado para plantilla
-                          requestPath.equals("/plantilla-final") || // Plantilla final desde controlador separado
-                          requestPath.equals("/template/download") || // Plantilla desde controlador separado
-                          requestPath.equals("/api/plantilla-publica") || // Plantilla completamente pública
+        boolean isPublic = requestPath.equals("/api/plantilla-publica") || // Plantilla completamente pública
                           requestPath.equals("/api/plantilla-simple") || // Plantilla simple con CORS explícito
-                          requestPath.equals("/api/plantilla-final") || // Plantilla final sin Spring Security
-                          requestPath.equals("/api/plantilla-directa") || // Plantilla directa sin Spring Security
-                          requestPath.startsWith("/api/plantilla-independiente/") || // Controlador independiente para plantillas
-                          requestPath.startsWith("/api/reporte-stock/") || // Controlador independiente para reporte de stock
                           requestPath.startsWith("/api/reportes/") || // Controlador de reportes completamente público
-                          requestPath.startsWith("/public/reportes/") || // Controlador independiente de reportes
-                          requestPath.startsWith("/public/plantilla/") || // Controlador independiente de plantilla
-                          requestPath.startsWith("/direct/") || // Controlador directo completamente independiente
-                          requestPath.startsWith("/files/") || // Controlador final para descargas
-                          requestPath.startsWith("/ultra/") || // Controlador ultra-independiente
                           requestPath.startsWith("/api/publico/") ||
                           isPublicAuth ||
                           requestPath.startsWith("/api/verificacion/") ||
@@ -166,11 +151,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                           (requestPath.contains("/publico/") && requestPath.contains("/auth/"));
         
         // Log solo para endpoints importantes
-        if (requestPath.contains("/download/") || requestPath.contains("/plantilla-importacion") || 
-            requestPath.contains("/test-plantilla") || requestPath.contains("/reporte-stock") || 
-            requestPath.contains("/reportes/") || requestPath.contains("/direct/") || 
-            requestPath.contains("/public/") || requestPath.contains("/files/") ||
-            requestPath.contains("/ultra/")) {
+        if (requestPath.contains("/plantilla-") || requestPath.contains("/reportes/")) {
             System.out.println("🔍 Verificando endpoint: " + requestPath + " - isPublic: " + isPublic);
         }
         

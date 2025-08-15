@@ -1596,117 +1596,11 @@ class ApiService {
                 return response.data;
               }
 
-              // Método para descargar reporte de stock
-              async descargarReporteStock(empresaId: number): Promise<Blob> {
-                const response = await this.api.get(`/empresas/${empresaId}/productos/reporte-stock`, {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
-
-
-
-
-              // Método para descargar reporte de stock usando endpoint independiente
-              async descargarReporteStockIndependiente(empresaId: number): Promise<Blob> {
-                const response = await this.api.get(`/public/reportes/stock/${empresaId}`, {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
-              // Método para descargar reporte de stock usando endpoint directo
-              async descargarReporteStockDirectoNuevo(empresaId: number): Promise<Blob> {
-                const response = await this.api.get(`/direct/stock/${empresaId}`, {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
-              // Método para descargar plantilla usando endpoint directo
-              async descargarPlantillaDirectaNueva(): Promise<Blob> {
-                const response = await this.api.get('/direct/plantilla', {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
-              // Método para descargar reporte de stock usando endpoint final
-              async descargarReporteStockFinal(empresaId: number): Promise<Blob> {
-                const response = await this.api.get(`/files/stock/${empresaId}`, {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
-              // Método para descargar plantilla usando endpoint final
-              async descargarPlantillaFinal(): Promise<Blob> {
-                const response = await this.api.get('/plantilla-final', {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
-              // Método para descargar plantilla usando endpoint de Excel
-              async descargarPlantillaExcel(): Promise<Blob> {
-                const response = await this.api.get('/excel/plantilla', {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
-              // Método para descargar plantilla usando endpoint del ReporteController (que sabemos que funciona)
-              async descargarPlantillaReporteController(): Promise<Blob> {
-                const response = await this.api.get('/api/reportes/template', {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
-              // Método para descargar plantilla usando endpoint ultra-independiente
-              async descargarPlantillaUltra(): Promise<Blob> {
-                const response = await this.api.get('/ultra/plantilla', {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
-              // Método para descargar plantilla usando endpoint de template/download
-              async descargarPlantillaTemplate(): Promise<Blob> {
-                const response = await this.api.get('/template/download', {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
-              // Método para descargar reporte de stock usando endpoint independiente
-              async descargarReporteStockIndependienteNuevo(empresaId: number): Promise<Blob> {
-                const response = await this.api.get(`/api/reporte-stock/${empresaId}`, {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
               // Método para descargar reporte de stock usando endpoint de reportes
               async descargarReporteStockPublico(empresaId: number): Promise<Blob> {
                 const response = await this.api.get(`/api/reportes/stock/${empresaId}`, {
                   responseType: 'blob'
                 });
-                return response.data;
-              }
-
-              // Método para descargar reporte de stock usando endpoint directo independiente
-              async descargarReporteStockDirectoIndependiente(empresaId: number): Promise<Blob> {
-                const response = await this.api.get(`/api/reporte-stock-directo/${empresaId}`, {
-                  responseType: 'blob'
-                });
-                return response.data;
-              }
-
-              // Método para testear reporte de stock
-              async testReporteStock(empresaId: number): Promise<any> {
-                const response = await this.api.get(`/api/reporte-stock-test/${empresaId}`);
                 return response.data;
               }
 }
