@@ -1467,6 +1467,24 @@ class ApiService {
     }
   }
 
+  async descargarPlantillaIndependiente(): Promise<Blob> {
+    console.log('📥 Iniciando descarga de plantilla independiente');
+    
+    try {
+      const response = await this.api.get('/public/plantilla/excel', {
+        responseType: 'blob'
+      });
+      
+      console.log('✅ Plantilla independiente descargada exitosamente');
+      console.log('📊 Tamaño del archivo:', response.data.size, 'bytes');
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error en descargarPlantillaIndependiente:', error);
+      throw error;
+    }
+  }
+
   async descargarPlantillaSimple(): Promise<Blob> {
     console.log('📥 Iniciando descarga de plantilla simple');
     

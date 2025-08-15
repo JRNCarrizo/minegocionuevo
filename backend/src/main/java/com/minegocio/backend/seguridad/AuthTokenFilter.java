@@ -132,6 +132,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                           requestPath.equals("/api/plantilla-directa") || // Plantilla directa sin Spring Security
                           requestPath.startsWith("/api/reportes/") || // Controlador de reportes completamente público
                           requestPath.startsWith("/public/reportes/") || // Controlador independiente de reportes
+                          requestPath.startsWith("/public/plantilla/") || // Controlador independiente de plantilla
                           requestPath.startsWith("/api/publico/") ||
                           isPublicAuth ||
                           requestPath.startsWith("/api/verificacion/") ||

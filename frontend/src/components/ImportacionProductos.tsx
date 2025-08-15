@@ -55,8 +55,28 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
       console.log('🏢 Empresa ID:', empresaId);
       console.log('📥 Iniciando descarga de plantilla...');
       
-      // Usar el nuevo endpoint del controlador Download
-      const blob = await ApiService.descargarPlantillaDownload();
+      // Intentar primero con el endpoint independiente
+      let blob;
+      try {
+        blob = await ApiService.descargarPlantillaIndependiente();
+        console.log('✅ Plantilla descargada usando endpoint independiente');
+      } catch (error) {
+        console.log('⚠️ Endpoint independiente falló, intentando endpoint Download...');
+        try {
+          blob = await ApiService.descargarPlantillaDownload();
+          console.log('✅ Plantilla descargada usando endpoint Download');
+        } catch (error2) {
+          console.log('⚠️ Endpoint Download falló, intentando endpoint público...');
+          try {
+            blob = await ApiService.descargarPlantillaPublica();
+            console.log('✅ Plantilla descargada usando endpoint público');
+          } catch (error3) {
+            console.log('⚠️ Endpoint público falló, intentando endpoint simple...');
+            blob = await ApiService.descargarPlantillaSimple();
+            console.log('✅ Plantilla descargada usando endpoint simple');
+          }
+        }
+      }
       
       // Crear un enlace para descargar el archivo
       const url = window.URL.createObjectURL(blob);

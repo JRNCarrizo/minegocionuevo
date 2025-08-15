@@ -76,6 +76,7 @@ public class ConfiguracionSeguridad {
                     .requestMatchers("/api/plantilla-directa").permitAll() // Plantilla directa sin Spring Security
                     .requestMatchers("/api/reportes/**").permitAll() // Controlador de reportes completamente público
                     .requestMatchers("/public/reportes/**").permitAll() // Controlador independiente de reportes
+                    .requestMatchers("/public/plantilla/**").permitAll() // Controlador independiente de plantilla
                     .requestMatchers("/api/publico/**").permitAll()
                     .requestMatchers("/api/auth/login").permitAll()
                     .requestMatchers("/api/auth/login-documento").permitAll()
