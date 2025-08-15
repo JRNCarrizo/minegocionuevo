@@ -1598,7 +1598,7 @@ class ApiService {
 
               // Método para descargar reporte de stock usando endpoint de reportes
               async descargarReporteStockPublico(empresaId: number): Promise<Blob> {
-                const response = await this.api.get(`/api/reportes/stock/${empresaId}`, {
+                const response = await this.api.get(`/reportes/stock/${empresaId}`, {
                   responseType: 'blob'
                 });
                 return response.data;
