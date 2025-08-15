@@ -71,6 +71,7 @@ public class ConfiguracionSeguridad {
                 auth.requestMatchers("/api/verificacion/**").permitAll();
                 auth.requestMatchers("/api/verificacion-cliente/**").permitAll();
                 auth.requestMatchers("/api/debug/**").permitAll();
+                auth.requestMatchers("/api/publico/**").permitAll();
                 
                 // Endpoints de plantillas y reportes públicos
                 auth.requestMatchers("/api/plantilla-**").permitAll();
