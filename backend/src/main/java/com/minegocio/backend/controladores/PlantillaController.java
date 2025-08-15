@@ -18,8 +18,7 @@ public class PlantillaController {
     @Autowired
     private ImportacionProductoService importacionProductoService;
 
-    @RequestMapping("/download")
-    @GetMapping("/template")
+    @GetMapping("/download/template")
     public void descargarPlantilla(HttpServletResponse response) throws IOException {
         try {
             System.out.println("📥 Descargando plantilla desde controlador Download");
@@ -74,14 +73,12 @@ public class PlantillaController {
         }
     }
 
-    @RequestMapping("/download")
-    @GetMapping("/test")
+    @GetMapping("/download/test")
     public String test() {
         return "Controlador Download funcionando correctamente";
     }
 
-    @RequestMapping("/plantilla-final")
-    @GetMapping
+    @GetMapping("/plantilla-final")
     public ResponseEntity<byte[]> descargarPlantillaFinal() {
         try {
             System.out.println("📥 Descargando plantilla final desde controlador separado");
