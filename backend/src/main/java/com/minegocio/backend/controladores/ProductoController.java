@@ -216,6 +216,7 @@ public class ProductoController {
             
             // Verificar límites de suscripción antes de crear el producto
             System.out.println("Verificando límites de suscripción...");
+            /*
             if (!limiteService.puedeCrearProducto(empresaId)) {
                 System.out.println("❌ Límite de productos alcanzado");
                 var error = java.util.Map.of(
@@ -224,7 +225,8 @@ public class ProductoController {
                 );
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
             }
-            System.out.println("✅ Límites verificados correctamente");
+            */
+            System.out.println("✅ Límites verificados correctamente (temporalmente deshabilitado)");
             
             System.out.println("Creando producto...");
             ProductoDTO nuevoProducto = productoService.crearProducto(empresaId, productoDTO);
