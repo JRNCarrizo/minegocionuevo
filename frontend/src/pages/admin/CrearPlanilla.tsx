@@ -175,7 +175,10 @@ export default function CrearPlanilla() {
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setCantidadTemporal(prev => Math.min(prev + 1, productoParaCantidad?.stock || 999));
+        if (productoParaCantidad) {
+          const stockDisponible = obtenerStockDisponible(productoParaCantidad);
+          setCantidadTemporal(prev => Math.min(prev + 1, stockDisponible));
+        }
         break;
       case 'ArrowDown':
         e.preventDefault();
@@ -198,15 +201,28 @@ export default function CrearPlanilla() {
   const confirmarCantidad = () => {
     if (!productoParaCantidad) return;
 
-         const detalle: DetallePlanillaPedido = {
-       id: Date.now(),
-       productoId: productoParaCantidad.id,
-       numeroPersonalizado: productoParaCantidad.codigoPersonalizado || undefined,
-       descripcion: productoParaCantidad.nombre,
-       cantidad: cantidadTemporal,
-       observaciones: undefined,
-       fechaCreacion: new Date().toISOString()
-     };
+    // Validar stock disponible
+    const stockDisponible = obtenerStockDisponible(productoParaCantidad);
+    
+    if (cantidadTemporal > stockDisponible) {
+      toast.error(`Stock insuficiente. Disponible: ${stockDisponible} unidades`);
+      return;
+    }
+
+    if (cantidadTemporal <= 0) {
+      toast.error('La cantidad debe ser mayor a 0');
+      return;
+    }
+
+    const detalle: DetallePlanillaPedido = {
+      id: Date.now(),
+      productoId: productoParaCantidad.id,
+      numeroPersonalizado: productoParaCantidad.codigoPersonalizado || undefined,
+      descripcion: productoParaCantidad.nombre,
+      cantidad: cantidadTemporal,
+      observaciones: undefined,
+      fechaCreacion: new Date().toISOString()
+    };
 
     setNuevaPlanilla(prev => ({
       ...prev,
@@ -318,6 +334,15 @@ export default function CrearPlanilla() {
 
   // Calcular total de unidades
   const totalUnidades = nuevaPlanilla.detalles.reduce((total, detalle) => total + detalle.cantidad, 0);
+
+  // Función para calcular stock disponible de un producto (considerando lo ya agregado a la planilla)
+  const obtenerStockDisponible = (producto: Producto): number => {
+    const cantidadEnPlanilla = nuevaPlanilla.detalles
+      .filter(detalle => detalle.productoId === producto.id)
+      .reduce((total, detalle) => total + detalle.cantidad, 0);
+    
+    return producto.stock - cantidadEnPlanilla;
+  };
 
   if (cargando || !datosUsuario) {
     return (
@@ -636,23 +661,26 @@ export default function CrearPlanilla() {
                         overflow: 'auto'
                       }}
                     >
-                      {productosFiltrados.map((producto, index) => (
+                      {productosFiltrados.map((producto, index) => {
+                        const stockDisponible = obtenerStockDisponible(producto);
+                        return (
                         <div
                           key={producto.id}
-                          onClick={() => seleccionarProducto(producto)}
+                          onClick={() => stockDisponible > 0 ? seleccionarProducto(producto) : null}
                           style={{
                             padding: '0.75rem',
-                            cursor: 'pointer',
+                            cursor: stockDisponible > 0 ? 'pointer' : 'not-allowed',
                             borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
-                            background: index === productoSeleccionado ? '#3b82f6' : 'white',
-                            color: index === productoSeleccionado ? 'white' : '#1e293b',
+                            background: index === productoSeleccionado ? '#3b82f6' : stockDisponible > 0 ? 'white' : '#f3f4f6',
+                            color: index === productoSeleccionado ? 'white' : stockDisponible > 0 ? '#1e293b' : '#9ca3af',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '1rem',
                             borderRadius: index === productoSeleccionado ? '0.375rem' : '0',
-                            boxShadow: index === productoSeleccionado ? '0 2px 4px rgba(59, 130, 246, 0.3)' : 'none'
+                            boxShadow: index === productoSeleccionado ? '0 2px 4px rgba(59, 130, 246, 0.3)' : 'none',
+                            opacity: stockDisponible > 0 ? 1 : 0.6
                           }}
-                          onMouseEnter={() => setProductoSeleccionado(index)}
+                          onMouseEnter={() => stockDisponible > 0 ? setProductoSeleccionado(index) : null}
                         >
                           <div style={{ flex: 1 }}>
                             <div style={{
@@ -679,11 +707,12 @@ export default function CrearPlanilla() {
                               color: index === productoSeleccionado ? '#e2e8f0' : '#64748b',
                               fontSize: '0.75rem'
                             }}>
-                              Stock: {producto.stock}
+                              Stock disponible: {obtenerStockDisponible(producto)}
                             </div>
                           </div>
                         </div>
-                      ))}
+                      );
+                      })}
                     </div>
                   )}
                 </div>
@@ -695,7 +724,7 @@ export default function CrearPlanilla() {
                       ref={inputCantidadRef}
                       type="number"
                       min="1"
-                      max={productoParaCantidad?.stock || 999}
+                      max={productoParaCantidad ? obtenerStockDisponible(productoParaCantidad) : 999}
                       value={cantidadTemporal}
                       onChange={(e) => setCantidadTemporal(Math.max(1, parseInt(e.target.value) || 1))}
                       onKeyDown={manejarTeclasCantidad}
@@ -728,7 +757,7 @@ export default function CrearPlanilla() {
                     <strong>Producto:</strong> {productoParaCantidad.nombre}
                   </div>
                   <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
-                    <strong>Stock:</strong> {productoParaCantidad.stock}
+                    <strong>Stock disponible:</strong> {obtenerStockDisponible(productoParaCantidad)}
                   </div>
                   <div style={{ color: '#3b82f6', fontWeight: '600' }}>
                     💡 Enter para agregar • Escape para cancelar • ↑↓ para cambiar cantidad
@@ -767,7 +796,7 @@ export default function CrearPlanilla() {
                     <strong>Nombre:</strong> {ultimoProductoSeleccionado.nombre}
                   </div>
                   <div style={{ marginBottom: '0.25rem' }}>
-                    <strong>Stock:</strong> {ultimoProductoSeleccionado.stock}
+                    <strong>Stock disponible:</strong> {obtenerStockDisponible(ultimoProductoSeleccionado)}
                   </div>
                   <div style={{
                     color: '#3b82f6',
