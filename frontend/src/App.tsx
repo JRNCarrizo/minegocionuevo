@@ -44,6 +44,8 @@ import ConfigurarEmpresa from './pages/ConfigurarEmpresa.tsx';
 import VerificarEmailAdmin from './pages/VerificarEmailAdmin.tsx';
 import GestionAdministradores from './pages/admin/GestionAdministradores.tsx';
 import GestionEmpresa from './pages/admin/GestionEmpresa.tsx';
+import CargaPedidos from './pages/admin/CargaPedidos.tsx';
+import CrearPlanilla from './pages/admin/CrearPlanilla.tsx';
 import LoginDocumento from './pages/LoginDocumento.tsx';
 
 function AppContent() {
@@ -94,6 +96,8 @@ function AppContent() {
           <Route path="/admin/consumo-suscripciones" element={<ConsumoYSuscripciones />} />
           <Route path="/admin/administradores" element={<GestionAdministradores />} />
           <Route path="/admin/gestion-empresa" element={<GestionEmpresa />} />
+          <Route path="/admin/carga-pedidos" element={<CargaPedidos />} />
+          <Route path="/admin/crear-planilla" element={<CrearPlanilla />} />
           <Route path="/dashboard-super-admin" element={<DashboardSuperAdmin />} />
           <Route path="/super-admin/empresas" element={<GestionEmpresas />} />
           <Route path="/super-admin/suscripciones" element={<GestionSuscripciones />} />

@@ -5,6 +5,7 @@ import NavbarAdmin from '../../components/NavbarAdmin';
 import ApiService from '../../services/api';
 import UsageIndicator from '../../components/UsageIndicator';
 import { useResponsive } from '../../hooks/useResponsive';
+import { crearFechaLocal } from '../../utils/dateUtils';
 
 interface SuscripcionData {
   fechaFin: string;
@@ -43,6 +44,69 @@ interface ConsumoData {
 export default function ConsumoYSuscripciones() {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
+  
+  // Función helper para formatear fechas de manera segura
+  const formatearFechaSegura = (fecha: any): string => {
+    console.log('🔍 Formateando fecha en ConsumoYSuscripciones:', fecha, 'tipo:', typeof fecha);
+    
+    if (!fecha) return 'Fecha no disponible';
+    
+    try {
+      let fechaObj: Date;
+      
+      // Si es un string
+      if (typeof fecha === 'string') {
+        if (fecha.trim() === '') return 'Fecha no disponible';
+        fechaObj = new Date(fecha);
+      } 
+      // Si es un número (timestamp)
+      else if (typeof fecha === 'number') {
+        fechaObj = new Date(fecha);
+      }
+      // Si es un objeto Date
+      else if (fecha instanceof Date) {
+        fechaObj = fecha;
+      }
+      // Si es un array (formato [año, mes, día, hora, minuto, segundo, nanosegundos])
+      else if (Array.isArray(fecha)) {
+        const [year, month, day, hour, minute, second, nanosecond] = fecha;
+        fechaObj = new Date(year, month - 1, day, hour, minute, second);
+      }
+      // Si es un objeto con propiedades de fecha
+      else if (typeof fecha === 'object' && fecha !== null) {
+        if (fecha.timestamp) {
+          fechaObj = new Date(fecha.timestamp);
+        } else if (fecha.date) {
+          fechaObj = new Date(fecha.date);
+        } else if (fecha.fechaInicio || fecha.fechaFin) {
+          fechaObj = new Date(fecha.fechaInicio || fecha.fechaFin);
+        } else {
+          fechaObj = new Date(fecha);
+        }
+      }
+      // Otros casos
+      else {
+        fechaObj = new Date(fecha);
+      }
+      
+      // Verificar si la fecha es válida
+      if (isNaN(fechaObj.getTime())) {
+        console.error('❌ Fecha inválida después del parsing:', fecha, 'fechaObj:', fechaObj);
+        return 'Fecha inválida';
+      }
+      
+      console.log('✅ Fecha parseada correctamente:', fechaObj);
+      
+      return fechaObj.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('❌ Error formateando fecha:', fecha, error);
+      return 'Fecha inválida';
+    }
+  };
   
   // Estados
   const [tabActiva, setTabActiva] = useState('suscripcion');
@@ -546,11 +610,7 @@ export default function ConsumoYSuscripciones() {
               <div>
                 <span style={{ fontSize: '0.875rem', color: '#64748b' }}>Inicio:</span>
                 <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                  {new Date(suscripcion.fechaInicio).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  {formatearFechaSegura(suscripcion.fechaInicio)}
                 </div>
               </div>
               <div>
@@ -559,11 +619,7 @@ export default function ConsumoYSuscripciones() {
                   fontWeight: '600', 
                   color: suscripcion.diasRestantes <= 7 ? '#ef4444' : '#1e293b'
                 }}>
-                  {new Date(suscripcion.fechaFin).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  {formatearFechaSegura(suscripcion.fechaFin)}
                 </div>
               </div>
             </div>

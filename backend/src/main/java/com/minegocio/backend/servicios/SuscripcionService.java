@@ -134,14 +134,27 @@ public class SuscripcionService {
      * Obtiene todas las suscripciones con detalles
      */
     public List<SuscripcionDTO> obtenerSuscripcionesConDetalles() {
+        System.out.println("🔍 SuscripcionService - Iniciando obtenerSuscripcionesConDetalles");
+        
         List<Object[]> resultados = suscripcionRepository.findSuscripcionesConDetalles();
+        System.out.println("🔍 SuscripcionService - Resultados obtenidos: " + resultados.size());
+        
         List<SuscripcionDTO> suscripciones = new ArrayList<>();
 
-        for (Object[] resultado : resultados) {
+        for (int i = 0; i < resultados.size(); i++) {
+            Object[] resultado = resultados.get(i);
             Suscripcion suscripcion = (Suscripcion) resultado[0];
             String empresaNombre = (String) resultado[1];
             String empresaSubdominio = (String) resultado[2];
             String planNombre = (String) resultado[3];
+
+            System.out.println("🔍 SuscripcionService - Procesando suscripción " + (i+1) + ":");
+            System.out.println("   - ID Suscripción: " + suscripcion.getId());
+            System.out.println("   - ID Empresa: " + suscripcion.getEmpresa().getId());
+            System.out.println("   - Nombre Empresa: " + empresaNombre);
+            System.out.println("   - Subdominio: " + empresaSubdominio);
+            System.out.println("   - Plan: " + planNombre);
+            System.out.println("   - Estado: " + suscripcion.getEstado());
 
             SuscripcionDTO suscripcionDTO = new SuscripcionDTO(suscripcion);
             suscripcionDTO.setEmpresaNombre(empresaNombre);
@@ -151,6 +164,7 @@ public class SuscripcionService {
             suscripciones.add(suscripcionDTO);
         }
 
+        System.out.println("🔍 SuscripcionService - Total suscripciones procesadas: " + suscripciones.size());
         return suscripciones;
     }
 

@@ -46,11 +46,11 @@ public class PlantillaIndependienteController {
                 headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
                 headerStyle.setAlignment(HorizontalAlignment.CENTER);
                 
-                // Crear headers
+                // Crear headers (formato unificado)
                 String[] headers = {
-                    "Nombre*", "Descripción", "Precio", "Stock", "Stock Mínimo", 
-                    "Categoría", "Marca", "Unidad", "Sector Almacenamiento", 
-                    "Código Personalizado", "Código de Barras"
+                    "Nombre*", "Marca", "Descripción", "Categoría", 
+                    "Sector Almacenamiento", "Stock Actual*", "Stock Mínimo", 
+                    "Precio", "Código de Barras", "Código Personalizado", "Estado"
                 };
                 
                 Row headerRow = sheet.createRow(0);
@@ -61,19 +61,19 @@ public class PlantillaIndependienteController {
                     sheet.setColumnWidth(i, 4000);
                 }
                 
-                // Crear fila de ejemplo
+                // Crear fila de ejemplo (formato unificado)
                 Row exampleRow = sheet.createRow(1);
                 exampleRow.createCell(0).setCellValue("Ejemplo Producto");
-                exampleRow.createCell(1).setCellValue("Descripción del producto");
-                exampleRow.createCell(2).setCellValue(1000.00);
-                exampleRow.createCell(3).setCellValue(50);
-                exampleRow.createCell(4).setCellValue(10);
-                exampleRow.createCell(5).setCellValue("Categoría Ejemplo");
-                exampleRow.createCell(6).setCellValue("Marca Ejemplo");
-                exampleRow.createCell(7).setCellValue("Unidad");
-                exampleRow.createCell(8).setCellValue("Sector A");
+                exampleRow.createCell(1).setCellValue("Marca Ejemplo");
+                exampleRow.createCell(2).setCellValue("Descripción del producto");
+                exampleRow.createCell(3).setCellValue("Categoría Ejemplo");
+                exampleRow.createCell(4).setCellValue("Sector A");
+                exampleRow.createCell(5).setCellValue(50);
+                exampleRow.createCell(6).setCellValue(10);
+                exampleRow.createCell(7).setCellValue(1000.00);
+                exampleRow.createCell(8).setCellValue("1234567890123");
                 exampleRow.createCell(9).setCellValue("COD001");
-                exampleRow.createCell(10).setCellValue("1234567890123");
+                exampleRow.createCell(10).setCellValue("Activo");
                 
                 // Escribir directamente a la respuesta
                 workbook.write(response.getOutputStream());
@@ -190,11 +190,11 @@ public class PlantillaIndependienteController {
                 headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
                 headerStyle.setAlignment(HorizontalAlignment.CENTER);
                 
-                // Crear headers completos
+                // Crear headers completos (formato unificado)
                 String[] headers = {
-                    "Nombre*", "Descripción", "Precio", "Stock", "Stock Mínimo", 
-                    "Categoría", "Marca", "Unidad", "Sector Almacenamiento", 
-                    "Código Personalizado", "Código de Barras", "Activo"
+                    "Nombre*", "Marca", "Descripción", "Categoría", 
+                    "Sector Almacenamiento", "Stock Actual*", "Stock Mínimo", 
+                    "Precio", "Código de Barras", "Código Personalizado", "Estado"
                 };
                 
                 Row headerRow = sheet.createRow(0);
@@ -205,20 +205,19 @@ public class PlantillaIndependienteController {
                     sheet.setColumnWidth(i, 4000);
                 }
                 
-                // Crear fila de ejemplo
+                // Crear fila de ejemplo (formato unificado)
                 Row exampleRow = sheet.createRow(1);
                 exampleRow.createCell(0).setCellValue("Producto Final");
-                exampleRow.createCell(1).setCellValue("Descripción completa del producto");
-                exampleRow.createCell(2).setCellValue(1500.00);
-                exampleRow.createCell(3).setCellValue(100);
-                exampleRow.createCell(4).setCellValue(20);
-                exampleRow.createCell(5).setCellValue("Categoría Final");
-                exampleRow.createCell(6).setCellValue("Marca Final");
-                exampleRow.createCell(7).setCellValue("Unidad");
-                exampleRow.createCell(8).setCellValue("Sector Final");
+                exampleRow.createCell(1).setCellValue("Marca Final");
+                exampleRow.createCell(2).setCellValue("Descripción completa del producto");
+                exampleRow.createCell(3).setCellValue("Categoría Final");
+                exampleRow.createCell(4).setCellValue("Sector Final");
+                exampleRow.createCell(5).setCellValue(100);
+                exampleRow.createCell(6).setCellValue(20);
+                exampleRow.createCell(7).setCellValue(1500.00);
+                exampleRow.createCell(8).setCellValue("9876543210987");
                 exampleRow.createCell(9).setCellValue("COD_FINAL");
-                exampleRow.createCell(10).setCellValue("9876543210987");
-                exampleRow.createCell(11).setCellValue("SI");
+                exampleRow.createCell(10).setCellValue("Activo");
                 
                 // Escribir directamente a la respuesta
                 workbook.write(response.getOutputStream());

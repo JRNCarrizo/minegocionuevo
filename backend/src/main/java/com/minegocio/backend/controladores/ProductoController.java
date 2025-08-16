@@ -10,6 +10,7 @@ import com.minegocio.backend.servicios.ImportacionProductoService;
 import com.minegocio.backend.servicios.ReporteInventarioService;
 import com.minegocio.backend.servicios.ReporteDiferenciasInventarioService;
 import com.minegocio.backend.servicios.ReporteStockService;
+import com.minegocio.backend.servicios.PlantillaCargaMasivaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -66,18 +67,34 @@ public class ProductoController {
     private ReporteStockService reporteStockService;
 
     @Autowired
+    private PlantillaCargaMasivaService plantillaCargaMasivaService;
+
+    @Autowired
     private EmpresaService empresaService;
 
     /**
      * Obtiene todos los productos de una empresa
      */
     @GetMapping
-    public ResponseEntity<List<ProductoDTO>> obtenerProductos(@PathVariable Long empresaId) {
+    public ResponseEntity<?> obtenerProductos(@PathVariable Long empresaId) {
         try {
             List<ProductoDTO> productos = productoService.obtenerTodosLosProductos(empresaId);
-            return ResponseEntity.ok(productos);
+            
+            // Devolver en el formato esperado por el frontend
+            var respuesta = java.util.Map.of(
+                "data", productos
+            );
+            
+            return ResponseEntity.ok(respuesta);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            System.err.println("Error al obtener productos: " + e.getMessage());
+            e.printStackTrace();
+            
+            var error = java.util.Map.of(
+                "error", "Error al obtener productos: " + e.getMessage()
+            );
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
@@ -913,8 +930,8 @@ public class ProductoController {
         try {
             System.out.println("📥 Descargando plantilla final");
             
-            // Generar la plantilla
-            byte[] plantilla = importacionProductoService.generarPlantillaExcel();
+            // Generar la plantilla usando el nuevo servicio con formato unificado
+            byte[] plantilla = plantillaCargaMasivaService.generarPlantillaCargaMasiva();
             
             if (plantilla == null || plantilla.length == 0) {
                 System.err.println("❌ Error: Plantilla generada está vacía");
@@ -947,8 +964,8 @@ public class ProductoController {
         try {
             System.out.println("📥 Descargando plantilla simple");
             
-            // Generar la plantilla
-            byte[] plantilla = importacionProductoService.generarPlantillaExcel();
+            // Generar la plantilla usando el nuevo servicio con formato unificado
+            byte[] plantilla = plantillaCargaMasivaService.generarPlantillaCargaMasiva();
             
             if (plantilla == null || plantilla.length == 0) {
                 System.err.println("❌ Error: Plantilla generada está vacía");
@@ -982,8 +999,8 @@ public class ProductoController {
         try {
             System.out.println("📥 Descargando plantilla pública");
             
-            // Generar la plantilla
-            byte[] plantilla = importacionProductoService.generarPlantillaExcel();
+            // Generar la plantilla usando el nuevo servicio con formato unificado
+            byte[] plantilla = plantillaCargaMasivaService.generarPlantillaCargaMasiva();
             
             if (plantilla == null || plantilla.length == 0) {
                 System.err.println("❌ Error: Plantilla generada está vacía");
@@ -1056,8 +1073,8 @@ public class ProductoController {
         try {
             System.out.println("📥 Descargando plantilla para empresa: " + empresaId);
             
-            // Generar la plantilla
-            byte[] plantilla = importacionProductoService.generarPlantillaExcel();
+            // Generar la plantilla usando el nuevo servicio con formato de reporte de stock
+            byte[] plantilla = plantillaCargaMasivaService.generarPlantillaCargaMasiva();
             
             if (plantilla == null || plantilla.length == 0) {
                 System.err.println("❌ Error: Plantilla generada está vacía");
@@ -1225,6 +1242,28 @@ public class ProductoController {
     }
 
     /**
+     * Descarga la plantilla de carga masiva con formato de reporte de stock
+     */
+    @GetMapping("/plantilla-carga-masiva")
+    public ResponseEntity<?> descargarPlantillaCargaMasiva(@PathVariable Long empresaId) {
+        try {
+            byte[] plantilla = plantillaCargaMasivaService.generarPlantillaCargaMasiva();
+            String nombreArchivo = "plantilla_carga_masiva_" + empresaId + "_" +
+                    LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")) + ".xlsx";
+            
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + nombreArchivo + "\"")
+                    .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    .body(plantilla);
+        } catch (Exception e) {
+            System.err.println("Error al generar plantilla de carga masiva: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al generar la plantilla de carga masiva: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Endpoint completamente público sin Spring Security
      */
     @RequestMapping(value = "/plantilla-directa", method = RequestMethod.GET)
@@ -1239,13 +1278,17 @@ public class ProductoController {
             response.setHeader("Access-Control-Allow-Methods", "GET");
             response.setHeader("Access-Control-Allow-Headers", "*");
             
-            // Generar plantilla directamente sin usar el servicio
+            // Generar plantilla directamente sin usar el servicio (formato unificado)
             try (Workbook workbook = new XSSFWorkbook()) {
                 Sheet sheet = workbook.createSheet("Productos");
                 
-                // Crear encabezados
+                // Crear encabezados (formato unificado con 11 columnas)
                 Row headerRow = sheet.createRow(0);
-                String[] headers = {"Nombre*", "Marca", "Descripción", "Precio", "Stock*", "Categoría", "Sector_Almacenamiento", "Código_Barras", "Código_Personalizado"};
+                String[] headers = {
+                    "Nombre*", "Marca", "Descripción", "Categoría", 
+                    "Sector Almacenamiento", "Stock Actual*", "Stock Mínimo", 
+                    "Precio", "Código de Barras", "Código Personalizado", "Estado"
+                };
                 
                 for (int i = 0; i < headers.length; i++) {
                     Cell cell = headerRow.createCell(i);
@@ -1257,12 +1300,14 @@ public class ProductoController {
                 exampleRow.createCell(0).setCellValue("Producto Ejemplo");
                 exampleRow.createCell(1).setCellValue("Samsung");
                 exampleRow.createCell(2).setCellValue("Descripción del producto");
-                exampleRow.createCell(3).setCellValue(100.50);
-                exampleRow.createCell(4).setCellValue(50);
-                exampleRow.createCell(5).setCellValue("Electrónicos");
-                exampleRow.createCell(6).setCellValue("Depósito A");
-                exampleRow.createCell(7).setCellValue("1234567890123");
-                exampleRow.createCell(8).setCellValue("PROD-001");
+                exampleRow.createCell(3).setCellValue("Electrónicos");
+                exampleRow.createCell(4).setCellValue("Depósito A");
+                exampleRow.createCell(5).setCellValue(50);
+                exampleRow.createCell(6).setCellValue(10);
+                exampleRow.createCell(7).setCellValue(299.99);
+                exampleRow.createCell(8).setCellValue("1234567890123");
+                exampleRow.createCell(9).setCellValue("PROD-001");
+                exampleRow.createCell(10).setCellValue("Activo");
                 
                 // Escribir directamente a la respuesta
                 workbook.write(response.getOutputStream());

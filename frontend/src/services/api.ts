@@ -141,7 +141,6 @@ class ApiService {
       (error) => {
         console.log('🔍 Interceptor de respuesta - Error detectado:', error.response?.status, error.response?.data);
 
-        /*
         if (error.response?.status === 401) {
           // Token expirado o inválido
           localStorage.removeItem('token');
@@ -156,7 +155,6 @@ class ApiService {
             window.location.href = '/login';
           }
         }
-        */
         return Promise.reject(error);
       }
     );
@@ -1148,7 +1146,10 @@ class ApiService {
         queryParams.append(key, value.toString());
       }
     });
-    const response = await this.api.get(`/super-admin/suscripciones?${queryParams}`);
+    const url = `/super-admin/suscripciones?${queryParams}`;
+    console.log('🔍 ApiService - Llamando a:', url);
+    const response = await this.api.get(url);
+    console.log('🔍 ApiService - Respuesta recibida:', response);
     return response.data;
   }
 
@@ -1603,6 +1604,175 @@ class ApiService {
                 });
                 return response.data;
               }
+
+  // ===== MÉTODOS PARA PLANILLAS DE PEDIDOS =====
+
+  // Obtener todas las planillas de pedidos
+  async obtenerPlanillasPedidos(): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await this.api.get('/planillas-pedidos');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener planillas de pedidos:', error);
+      throw error;
+    }
+  }
+
+  // Crear nueva planilla de pedidos
+  async crearPlanillaPedido(planillaData: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.post('/planillas-pedidos', planillaData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al crear planilla de pedidos:', error);
+      throw error;
+    }
+  }
+
+  // Obtener planilla por ID
+  async obtenerPlanillaPedidoPorId(id: number): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.get(`/planillas-pedidos/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener planilla por ID:', error);
+      throw error;
+    }
+  }
+
+  // Obtener planilla por número
+  async obtenerPlanillaPedidoPorNumero(numeroPlanilla: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.get(`/planillas-pedidos/numero/${numeroPlanilla}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener planilla por número:', error);
+      throw error;
+    }
+  }
+
+  // Obtener planillas por fecha
+  async obtenerPlanillasPedidosPorFecha(fecha: string): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await this.api.get(`/planillas-pedidos/fecha/${fecha}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener planillas por fecha:', error);
+      throw error;
+    }
+  }
+
+  // Obtener planillas por rango de fechas
+  async obtenerPlanillasPedidosPorRangoFechas(fechaInicio: string, fechaFin: string): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await this.api.get(`/planillas-pedidos/rango-fechas?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener planillas por rango de fechas:', error);
+      throw error;
+    }
+  }
+
+  // Actualizar planilla de pedidos
+  async actualizarPlanillaPedido(id: number, planillaData: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.put(`/planillas-pedidos/${id}`, planillaData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al actualizar planilla de pedidos:', error);
+      throw error;
+    }
+  }
+
+  // Eliminar planilla de pedidos
+  async eliminarPlanillaPedido(id: number): Promise<ApiResponse<string>> {
+    try {
+      const response = await this.api.delete(`/planillas-pedidos/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al eliminar planilla de pedidos:', error);
+      throw error;
+    }
+  }
+
+  // Agregar detalle a una planilla
+  async agregarDetallePlanilla(planillaId: number, detalleData: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.post(`/planillas-pedidos/${planillaId}/detalles`, detalleData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al agregar detalle a planilla:', error);
+      throw error;
+    }
+  }
+
+  // Obtener detalles de una planilla
+  async obtenerDetallesPlanilla(planillaId: number): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await this.api.get(`/planillas-pedidos/${planillaId}/detalles`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener detalles de planilla:', error);
+      throw error;
+    }
+  }
+
+  // Exportar planilla de pedidos
+  async exportarPlanillaPedido(id: number): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/planillas-pedidos/${id}/exportar`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar planilla de pedidos:', error);
+      throw error;
+    }
+  }
+
+  // Eliminar detalle de una planilla
+  async eliminarDetallePlanilla(detalleId: number): Promise<ApiResponse<string>> {
+    try {
+      const response = await this.api.delete(`/planillas-pedidos/detalles/${detalleId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al eliminar detalle de planilla:', error);
+      throw error;
+    }
+  }
+
+  // Obtener estadísticas de planillas
+  async obtenerEstadisticasPlanillas(): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.get('/planillas-pedidos/estadisticas');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener estadísticas de planillas:', error);
+      throw error;
+    }
+  }
+
+  // Descargar plantilla de carga masiva
+  async descargarPlantillaCargaMasiva(empresaId: number): Promise<void> {
+    try {
+      const response = await this.api.get(`/empresas/${empresaId}/productos/plantilla-carga-masiva`, {
+        responseType: 'blob'
+      });
+
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `plantilla_carga_masiva_${empresaId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error al descargar plantilla de carga masiva:', error);
+      throw error;
+    }
+  }
 }
 
 export default new ApiService();

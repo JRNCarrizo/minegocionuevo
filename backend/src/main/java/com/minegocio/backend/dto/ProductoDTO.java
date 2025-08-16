@@ -1,5 +1,6 @@
 package com.minegocio.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -63,8 +64,10 @@ public class ProductoDTO {
     private String empresaNombre;
     
     // Nuevos campos para las fechas
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime fechaCreacion;
     
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime fechaActualizacion;
     
     // Constructores

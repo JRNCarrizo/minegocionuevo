@@ -89,6 +89,7 @@ public class PedidoService {
         pedido.setNumeroPedido(pedido.generarNumeroPedido());
         
         System.out.println("Pedido creado con número: " + pedido.getNumeroPedido());
+        System.out.println("🔍 Fecha actual antes de guardar: " + LocalDateTime.now());
         
         // Detalles
         List<DetallePedido> detalles = pedidoDTO.getDetalles().stream().map(detalleDTO -> {
@@ -148,6 +149,8 @@ public class PedidoService {
         // Guardar pedido y detalles
         Pedido guardado = pedidoRepository.save(pedido);
         System.out.println("Pedido guardado con ID: " + guardado.getId());
+        System.out.println("🔍 Fecha de creación guardada: " + guardado.getFechaCreacion());
+        System.out.println("🔍 Fecha actual después de guardar: " + LocalDateTime.now());
         System.out.println("Pedido guardado - Cliente ID: " + (guardado.getCliente() != null ? guardado.getCliente().getId() : "null"));
         System.out.println("Pedido guardado - Cliente Email: " + guardado.getClienteEmail());
         System.out.println("Pedido guardado - Empresa ID: " + guardado.getEmpresa().getId());
@@ -391,6 +394,7 @@ public class PedidoService {
             dto.setCliente(clienteDTO);
         }
         
+        System.out.println("🔍 convertirADTO - Fecha de creación del pedido: " + pedido.getFechaCreacion());
         dto.setFechaCreacion(pedido.getFechaCreacion());
         dto.setEstado(pedido.getEstado());
         dto.setTotal(pedido.getTotal());

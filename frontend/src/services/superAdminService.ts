@@ -138,8 +138,11 @@ class SuperAdminService {
 
   // Métodos para gestión de suscripciones
   async obtenerSuscripciones(params: any = {}) {
+    console.log('🔍 SuperAdminService - MÉTODO obtenerSuscripciones EJECUTÁNDOSE');
     try {
+      console.log('🔍 SuperAdminService - Llamando a obtenerSuscripciones con params:', params);
       const response = await ApiService.getSuperAdminSuscripciones(params);
+      console.log('🔍 SuperAdminService - Respuesta de suscripciones:', response);
       return response;
     } catch (error) {
       console.error('Error al obtener suscripciones:', error);

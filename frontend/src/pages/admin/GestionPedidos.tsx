@@ -5,6 +5,7 @@ import NavbarAdmin from '../../components/NavbarAdmin';
 import { useResponsive } from '../../hooks/useResponsive';
 import type { Pedido } from '../../types';
 import type { DetallePedido } from '../../types';
+import { formatearFechaConHora } from '../../utils/dateUtils';
 
 // Tipo para las estadísticas de pedidos
 interface EstadisticasPedidos {
@@ -31,6 +32,7 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
   const obtenerColorEstado = (estado: Pedido['estado']) => {
     const colores: Record<Pedido['estado'], string> = {
       PENDIENTE: '#f59e0b',
+      PENDIENTE_PAGO: '#f59e0b',
       CONFIRMADO: '#3b82f6',
       PREPARANDO: '#6366f1',
       ENVIADO: '#8b5cf6',
@@ -43,6 +45,7 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
   const obtenerTextoEstado = (estado: Pedido['estado']) => {
     const textos: Record<Pedido['estado'], string> = {
       PENDIENTE: 'Pendiente',
+      PENDIENTE_PAGO: 'Pendiente de Pago',
       CONFIRMADO: 'Confirmado',
       PREPARANDO: 'Preparando',
       ENVIADO: 'Enviado',
@@ -99,7 +102,7 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
                 Pedido #{pedido.numeroPedido || pedido.id}
               </h2>
               <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
-                {(() => { const fecha = pedido.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
+                {formatearFechaConHora(pedido.fechaCreacion)}
               </p>
             </div>
             <button 
@@ -1062,6 +1065,7 @@ export default function GestionPedidos() {
   const obtenerColorEstado = (estado: Pedido['estado']) => {
     const colores: Record<Pedido['estado'], string> = {
       PENDIENTE: '#f59e0b',
+      PENDIENTE_PAGO: '#f59e0b',
       CONFIRMADO: '#3b82f6',
       PREPARANDO: '#6366f1',
       ENVIADO: '#8b5cf6',
@@ -1074,6 +1078,7 @@ export default function GestionPedidos() {
   const obtenerTextoEstado = (estado: Pedido['estado']) => {
     const textos: Record<Pedido['estado'], string> = {
       PENDIENTE: 'Pendiente',
+      PENDIENTE_PAGO: 'Pendiente de Pago',
       CONFIRMADO: 'Confirmado',
       PREPARANDO: 'Preparando',
       ENVIADO: 'Enviado',
@@ -1510,7 +1515,7 @@ export default function GestionPedidos() {
                         </span>
                         {!isMobile && <span style={{ color: '#cbd5e1' }}>•</span>}
                         <span style={{ wordBreak: 'break-word' }}>
-                          📅 {(() => { const fecha = pedido.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: isMobile ? 'short' : '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
+                          📅 {formatearFechaConHora(pedido.fechaCreacion)}
                         </span>
                       </p>
                     </div>

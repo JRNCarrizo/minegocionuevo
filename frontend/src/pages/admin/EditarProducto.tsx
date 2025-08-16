@@ -798,7 +798,6 @@ const EditarProducto: React.FC = () => {
                     placeholder="0.00"
                     min="0"
                     step="0.01"
-                    required
                     onFocus={(e) => {
                       e.target.style.borderColor = '#3b82f6';
                       e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaUsers, FaStore, FaBox, FaShoppingCart, FaEye, FaEdit, FaTrash, FaSearch, FaFilter, FaSort, FaBuilding } from 'react-icons/fa';
 import { MdBusiness, MdEmail, MdPhone, MdCalendarToday, MdWarning, MdCheckCircle, MdBlock } from 'react-icons/md';
 import { superAdminService } from '../../services/superAdminService';
+import { formatearFechaConHora } from '../../utils/dateUtils';
 
 interface Empresa {
   id: number;
@@ -532,7 +533,7 @@ const GestionEmpresas: React.FC = () => {
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#F59E0B' }}>
-                  {empresa.ultimaConexion ? new Date(empresa.ultimaConexion).toLocaleDateString() : 'N/A'}
+                  {empresa.ultimaConexion ? formatearFechaConHora(empresa.ultimaConexion) : 'N/A'}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-texto-secundario)' }}>Última Conexión</div>
               </div>
@@ -541,7 +542,7 @@ const GestionEmpresas: React.FC = () => {
             {/* Fecha de Registro */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--color-texto-secundario)' }}>
               <MdCalendarToday color="var(--color-texto-secundario)" />
-              <span>Registrada: {new Date(empresa.fechaCreacion).toLocaleDateString()}</span>
+              <span>Registrada: {formatearFechaConHora(empresa.fechaCreacion)}</span>
             </div>
           </div>
         ))}
@@ -612,7 +613,7 @@ const GestionEmpresas: React.FC = () => {
                 <p><strong>Pedidos:</strong> {(selectedEmpresa.totalPedidos || 0).toLocaleString()}</p>
                 <p><strong>Ventas Rápidas:</strong> {(selectedEmpresa.totalVentasRapidas || 0).toLocaleString()}</p>
                 <p><strong>Transacciones:</strong> {(selectedEmpresa.totalTransacciones || 0).toLocaleString()}</p>
-                <p><strong>Última Conexión:</strong> {selectedEmpresa.ultimaConexion ? new Date(selectedEmpresa.ultimaConexion).toLocaleString() : 'N/A'}</p>
+                <p><strong>Última Conexión:</strong> {selectedEmpresa.ultimaConexion ? formatearFechaConHora(selectedEmpresa.ultimaConexion) : 'N/A'}</p>
                 <p><strong>Estado:</strong> {selectedEmpresa.estadoSuscripcion}</p>
               </div>
             </div>

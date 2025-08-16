@@ -279,23 +279,76 @@ export default function DashboardAdministrador() {
     });
   };
 
-  const formatearTiempoTranscurrido = (fecha: string) => {
-    const ahora = new Date();
-    const fechaNotificacion = new Date(fecha);
-    const diferenciaMs = ahora.getTime() - fechaNotificacion.getTime();
-    const segundos = Math.floor(diferenciaMs / 1000);
+  const formatearTiempoTranscurrido = (fecha: any) => {
+    console.log('🔍 Formateando tiempo transcurrido:', fecha, 'tipo:', typeof fecha);
     
-    if (segundos < 60) {
-      return "Hace un momento";
-    } else if (segundos < 3600) {
-      const minutos = Math.floor(segundos / 60);
-      return `Hace ${minutos} min${minutos > 1 ? 's' : ''}`;
-    } else if (segundos < 86400) {
-      const horas = Math.floor(segundos / 3600);
-      return `Hace ${horas} hora${horas > 1 ? 's' : ''}`;
-    } else {
-      const dias = Math.floor(segundos / 86400);
-      return `Hace ${dias} día${dias > 1 ? 's' : ''}`;
+    if (!fecha) return 'Fecha no disponible';
+    
+    try {
+      let fechaNotificacion: Date;
+      
+      // Si es un string
+      if (typeof fecha === 'string') {
+        if (fecha.trim() === '') return 'Fecha no disponible';
+        fechaNotificacion = new Date(fecha);
+      } 
+      // Si es un número (timestamp)
+      else if (typeof fecha === 'number') {
+        fechaNotificacion = new Date(fecha);
+      }
+      // Si es un objeto Date
+      else if (fecha instanceof Date) {
+        fechaNotificacion = fecha;
+      }
+      // Si es un array (formato [año, mes, día, hora, minuto, segundo, nanosegundos])
+      else if (Array.isArray(fecha)) {
+        const [year, month, day, hour, minute, second, nanosecond] = fecha;
+        fechaNotificacion = new Date(year, month - 1, day, hour, minute, second);
+      }
+      // Si es un objeto con propiedades de fecha
+      else if (typeof fecha === 'object' && fecha !== null) {
+        if (fecha.timestamp) {
+          fechaNotificacion = new Date(fecha.timestamp);
+        } else if (fecha.date) {
+          fechaNotificacion = new Date(fecha.date);
+        } else if (fecha.fechaCreacion) {
+          fechaNotificacion = new Date(fecha.fechaCreacion);
+        } else {
+          fechaNotificacion = new Date(fecha);
+        }
+      }
+      // Otros casos
+      else {
+        fechaNotificacion = new Date(fecha);
+      }
+      
+      // Verificar si la fecha es válida
+      if (isNaN(fechaNotificacion.getTime())) {
+        console.error('❌ Fecha inválida para tiempo transcurrido:', fecha, 'fechaNotificacion:', fechaNotificacion);
+        return 'Fecha inválida';
+      }
+      
+      console.log('✅ Fecha parseada para tiempo transcurrido:', fechaNotificacion);
+      
+      const ahora = new Date();
+      const diferenciaMs = ahora.getTime() - fechaNotificacion.getTime();
+      const segundos = Math.floor(diferenciaMs / 1000);
+      
+      if (segundos < 60) {
+        return "Hace un momento";
+      } else if (segundos < 3600) {
+        const minutos = Math.floor(segundos / 60);
+        return `Hace ${minutos} min${minutos > 1 ? 's' : ''}`;
+      } else if (segundos < 86400) {
+        const horas = Math.floor(segundos / 3600);
+        return `Hace ${horas} hora${horas > 1 ? 's' : ''}`;
+      } else {
+        const dias = Math.floor(segundos / 86400);
+        return `Hace ${dias} día${dias > 1 ? 's' : ''}`;
+      }
+    } catch (error) {
+      console.error('❌ Error formateando tiempo transcurrido:', fecha, error);
+      return 'Fecha inválida';
     }
   };
 

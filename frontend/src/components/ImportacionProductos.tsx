@@ -67,7 +67,7 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
           console.log('✅ Plantilla descargada usando endpoint simple');
         } catch (error2) {
           console.log('⚠️ Endpoint simple falló, intentando endpoint final...');
-          blob = await ApiService.descargarPlantillaFinal();
+          blob = await ApiService.descargarPlantillaSimple();
           console.log('✅ Plantilla descargada usando endpoint final');
         }
       }
@@ -150,6 +150,9 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
       return;
     }
 
+    console.log('Debug - Intentando importar productos para empresaId:', empresaId);
+    console.log('Debug - Productos a importar:', productosAImportar);
+
     try {
       setImportando(true);
       const resultado = await ApiService.importarProductos(empresaId, productosAImportar);
@@ -165,7 +168,18 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
 
     } catch (error: any) {
       console.error('Error al importar productos:', error);
-      const mensaje = error.response?.data?.error || 'Error al importar productos';
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
+      
+      let mensaje = 'Error al importar productos';
+      if (error.response?.data?.error) {
+        mensaje = error.response.data.error;
+      } else if (error.response?.status === 500) {
+        mensaje = 'Error interno del servidor. Verifique que la empresa existe y tiene permisos.';
+      } else if (error.response?.status === 404) {
+        mensaje = 'Empresa no encontrada. Verifique su sesión.';
+      }
+      
       alert(mensaje);
     } finally {
       setImportando(false);

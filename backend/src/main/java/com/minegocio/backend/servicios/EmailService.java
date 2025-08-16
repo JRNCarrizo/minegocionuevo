@@ -34,7 +34,7 @@ public class EmailService {
     private boolean isDevelopmentMode() {
         String[] activeProfiles = environment.getActiveProfiles();
         for (String profile : activeProfiles) {
-            if ("dev".equals(profile)) {
+            if ("dev".equals(profile) || "h2".equals(profile)) {
                 return true;
             }
         }
@@ -48,6 +48,7 @@ public class EmailService {
         System.out.println("From Email: " + fromEmail);
         System.out.println("JavaMailSender: " + (mailSender != null ? "Configurado" : "NO CONFIGURADO"));
         System.out.println("Modo desarrollo: " + (isDevelopmentMode() ? "SÍ" : "NO"));
+        System.out.println("Perfiles activos: " + String.join(", ", environment.getActiveProfiles()));
         System.out.println("==========================");
     }
 
@@ -274,6 +275,10 @@ public class EmailService {
             System.out.println("🚀 MODO DESARROLLO: Simulando envío de email de verificación");
             System.out.println("📧 Email simulado enviado a: " + emailDestinatario);
             System.out.println("🔗 Enlace para desarrollo: http://localhost:5173/verificar-email-admin?token=" + tokenVerificacion);
+            System.out.println("📋 Para probar, copia y pega el enlace en tu navegador");
+            System.out.println("==================================================");
+            System.out.println("🎯 ¡COPIA ESTE ENLACE AHORA!: http://localhost:5173/verificar-email-admin?token=" + tokenVerificacion);
+            System.out.println("==================================================");
             return;
         }
         
@@ -312,11 +317,17 @@ public class EmailService {
         System.out.println("🏪 Subdominio: " + subdominio);
         System.out.println("🏢 Empresa: " + nombreEmpresa);
         System.out.println("🔑 Token: " + tokenVerificacion);
+        System.out.println("🔍 Modo desarrollo detectado: " + (isDevelopmentMode() ? "SÍ" : "NO"));
         
         if (isDevelopmentMode()) {
             System.out.println("🚀 MODO DESARROLLO: Simulando envío de email de verificación de cliente");
             System.out.println("📧 Email simulado enviado a: " + emailDestinatario);
             System.out.println("🔗 Enlace para desarrollo: http://" + subdominio + ".localhost:5173/verificar-email?token=" + tokenVerificacion);
+            System.out.println("🔗 Enlace alternativo: http://localhost:5173/verificar-email?token=" + tokenVerificacion);
+            System.out.println("📋 Para probar, copia y pega el enlace en tu navegador");
+            System.out.println("==================================================");
+            System.out.println("🎯 ¡COPIA ESTE ENLACE AHORA!: http://localhost:5173/verificar-email?token=" + tokenVerificacion);
+            System.out.println("==================================================");
             return;
         }
         

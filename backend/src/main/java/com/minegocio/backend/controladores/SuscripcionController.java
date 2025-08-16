@@ -182,20 +182,30 @@ public class SuscripcionController {
      */
     @GetMapping("")
     public ResponseEntity<List<SuscripcionDTO>> obtenerSuscripciones(HttpServletRequest request) {
+        System.out.println("🔍 === INICIO OBTENER SUSCRIPCIONES SUPER ADMIN ===");
+        System.out.println("🔍 Endpoint llamado: /api/super-admin/suscripciones");
+        System.out.println("🔍 Método HTTP: " + request.getMethod());
+        System.out.println("🔍 URL completa: " + request.getRequestURL());
+        
         try {
             // Verificar autenticación de SUPER_ADMIN
+            System.out.println("🔍 Verificando autenticación...");
             ResponseEntity<?> authResponse = verificarAutenticacionSuperAdmin(request);
             if (authResponse != null) {
+                System.out.println("❌ Autenticación fallida");
                 return (ResponseEntity<List<SuscripcionDTO>>) authResponse;
             }
             
+            System.out.println("✅ Autenticación exitosa");
             System.out.println("🎯 SuscripcionController - Iniciando obtenerSuscripciones");
             List<SuscripcionDTO> suscripciones = suscripcionService.obtenerSuscripcionesConDetalles();
             System.out.println("🎯 SuscripcionController - Suscripciones obtenidas: " + suscripciones.size());
+            System.out.println("🔍 === FIN OBTENER SUSCRIPCIONES SUPER ADMIN ===");
             return ResponseEntity.ok(suscripciones);
         } catch (Exception e) {
             System.out.println("❌ SuscripcionController - Error obteniendo suscripciones: " + e.getMessage());
             e.printStackTrace();
+            System.out.println("🔍 === FIN OBTENER SUSCRIPCIONES SUPER ADMIN (ERROR) ===");
             // En lugar de devolver 500, devolvemos una lista vacía para evitar el 403
             return ResponseEntity.ok(new ArrayList<>());
         }

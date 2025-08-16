@@ -30,9 +30,6 @@ interface ConfiguracionEmpresa {
   imagenFondoUrl: string;
   moneda: string;
   idioma: string;
-  notificacionesPedidos: boolean;
-  notificacionesStock: boolean;
-  stockMinimo: number;
   mostrarPrecios: boolean;
   mostrarStock: boolean;
   permitirResenas: boolean;
@@ -327,9 +324,6 @@ export default function ConfiguracionEmpresa() {
     imagenFondoUrl: '',
     moneda: 'ARS',
     idioma: 'es',
-    notificacionesPedidos: true,
-    notificacionesStock: true,
-    stockMinimo: 5,
     mostrarPrecios: true,
     mostrarStock: true,
     permitirResenas: true,
@@ -361,8 +355,7 @@ export default function ConfiguracionEmpresa() {
     { icon: '🎨', label: 'Apariencia', id: 1 },
     { icon: '🛍️', label: 'Catálogo', id: 2 },
     { icon: '💳', label: 'Pagos', id: 3 },
-    { icon: '🔔', label: 'Notificaciones', id: 4 },
-    { icon: '📱', label: 'Redes Sociales', id: 5 }
+    { icon: '📱', label: 'Redes Sociales', id: 4 }
   ];
 
   // Preview del tema de colores
@@ -421,46 +414,43 @@ export default function ConfiguracionEmpresa() {
       console.log('  - Imagen Fondo:', empresa.imagenFondoUrl);
       console.log('=== FIN DEBUG ===');
       
-      const nuevaConfiguracion: ConfiguracionEmpresa = {
-        nombre: empresa.nombre || '',
-        descripcion: empresa.descripcion || '',
-        textoBienvenida: empresa.textoBienvenida || '',
-        subdominio: empresa.subdominio || '',
-        email: empresa.email || '',
-        telefono: empresa.telefono || '',
-        direccion: empresa.direccion || '',
-        ciudad: empresa.ciudad || '',
-        codigoPostal: empresa.codigoPostal || '',
-        pais: empresa.pais || '',
-        logo: null,
-        colorPrimario: empresa.colorPrimario || '#2563eb',
-        colorSecundario: empresa.colorSecundario || '#64748b',
-        colorAcento: empresa.colorAcento || '#f59e0b',
-        colorFondo: empresa.colorFondo || '#ffffff',
-        colorTexto: empresa.colorTexto || '#1f2937',
-        colorTituloPrincipal: empresa.colorTituloPrincipal || '#1f2937',
-        colorCardFiltros: empresa.colorCardFiltros || '#ffffff',
-        imagenFondo: null,
-        imagenFondoUrl: empresa.imagenFondoUrl || '',
-        moneda: empresa.moneda || 'ARS',
-        idioma: empresa.idioma || 'es',
-        notificacionesPedidos: empresa.notificacionesPedidos !== undefined ? empresa.notificacionesPedidos : true,
-        notificacionesStock: empresa.notificacionesStock !== undefined ? empresa.notificacionesStock : true,
-        stockMinimo: empresa.stockMinimo || 5,
-        mostrarPrecios: empresa.mostrarPrecios !== undefined ? empresa.mostrarPrecios : true,
-        mostrarStock: empresa.mostrarStock !== undefined ? empresa.mostrarStock : true,
-        permitirResenas: empresa.permitirResenas !== undefined ? empresa.permitirResenas : true,
-        mostrarCategorias: empresa.mostrarCategorias !== undefined ? empresa.mostrarCategorias : true,
-        transferenciaBancariaHabilitada: empresa.transferenciaBancariaHabilitada !== undefined ? empresa.transferenciaBancariaHabilitada : false,
-        banco: empresa.banco || '',
-        tipoCuenta: empresa.tipoCuenta || '',
-        numeroCuenta: empresa.numeroCuenta || '',
-        cbu: empresa.cbu || '',
-        alias: empresa.alias || '',
-        titular: empresa.titular || '',
-        instagramUrl: empresa.instagramUrl || '',
-        facebookUrl: empresa.facebookUrl || ''
-      };
+             const nuevaConfiguracion: ConfiguracionEmpresa = {
+         nombre: empresa.nombre || '',
+         descripcion: empresa.descripcion || '',
+         textoBienvenida: empresa.textoBienvenida || '',
+         subdominio: empresa.subdominio || '',
+         email: empresa.email || '',
+         telefono: empresa.telefono || '',
+         direccion: empresa.direccion || '',
+         ciudad: empresa.ciudad || '',
+         codigoPostal: empresa.codigoPostal || '',
+         pais: empresa.pais || '',
+         logo: null,
+         colorPrimario: empresa.colorPrimario || '#2563eb',
+         colorSecundario: empresa.colorSecundario || '#64748b',
+         colorAcento: empresa.colorAcento || '#f59e0b',
+         colorFondo: empresa.colorFondo || '#ffffff',
+         colorTexto: empresa.colorTexto || '#1f2937',
+         colorTituloPrincipal: empresa.colorTituloPrincipal || '#1f2937',
+         colorCardFiltros: empresa.colorCardFiltros || '#ffffff',
+         imagenFondo: null,
+         imagenFondoUrl: empresa.imagenFondoUrl || '',
+         moneda: empresa.moneda || 'ARS',
+         idioma: empresa.idioma || 'es',
+         mostrarPrecios: empresa.mostrarPrecios !== undefined ? empresa.mostrarPrecios : true,
+         mostrarStock: empresa.mostrarStock !== undefined ? empresa.mostrarStock : true,
+         permitirResenas: empresa.permitirResenas !== undefined ? empresa.permitirResenas : true,
+         mostrarCategorias: empresa.mostrarCategorias !== undefined ? empresa.mostrarCategorias : true,
+         transferenciaBancariaHabilitada: empresa.transferenciaBancariaHabilitada !== undefined ? empresa.transferenciaBancariaHabilitada : false,
+         banco: empresa.banco || '',
+         tipoCuenta: empresa.tipoCuenta || '',
+         numeroCuenta: empresa.numeroCuenta || '',
+         cbu: empresa.cbu || '',
+         alias: empresa.alias || '',
+         titular: empresa.titular || '',
+         instagramUrl: empresa.instagramUrl || '',
+         facebookUrl: empresa.facebookUrl || ''
+       };
       
       setConfiguracion(nuevaConfiguracion);
       setConfiguracionOriginal(nuevaConfiguracion);
@@ -577,13 +567,8 @@ export default function ConfiguracionEmpresa() {
         colorTituloPrincipal: configuracion.colorTituloPrincipal,
         colorCardFiltros: configuracion.colorCardFiltros,
         moneda: configuracion.moneda,
-        idioma: configuracion.idioma,
-        notificacionesPedidos: configuracion.notificacionesPedidos,
-        notificacionesStock: configuracion.notificacionesStock,
-        stockMinimo: configuracion.stockMinimo,
         mostrarPrecios: configuracion.mostrarPrecios,
         mostrarStock: configuracion.mostrarStock,
-        permitirResenas: configuracion.permitirResenas,
         mostrarCategorias: configuracion.mostrarCategorias,
         transferenciaBancariaHabilitada: configuracion.transferenciaBancariaHabilitada,
         banco: configuracion.banco,
@@ -1371,77 +1356,71 @@ export default function ConfiguracionEmpresa() {
           </div>
         );
 
-      case 2: // Catálogo
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-2" style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-              gap: isMobile ? '1rem' : '1.5rem'
-            }}>
-              <InputField
-                icon="💱"
-                label="Moneda"
-                type="select"
-                name="moneda"
-                value={configuracion.moneda}
-                onChange={manejarCambio}
-              />
-              <InputField
-                icon="🌐"
-                label="Idioma"
-                type="select"
-                name="idioma"
-                value={configuracion.idioma}
-                onChange={manejarCambio}
-              />
-            </div>
+             case 2: // Catálogo
+         return (
+           <div className="space-y-6">
+             <div className="space-y-4">
+               <h4 className="etiqueta" style={{ 
+                 marginBottom: '1rem',
+                 fontSize: isMobile ? '0.875rem' : '1rem',
+                 textAlign: isMobile ? 'center' : 'left'
+               }}>
+                 Configuración del Catálogo
+               </h4>
+               <div className="grid grid-2" style={{
+                 display: 'grid',
+                 gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                 gap: isMobile ? '1rem' : '1.5rem'
+               }}>
+                 <InputField
+                   icon="💱"
+                   label="Moneda"
+                   type="select"
+                   name="moneda"
+                   value={configuracion.moneda}
+                   onChange={manejarCambio}
+                 />
+               </div>
 
-            <div className="space-y-4">
-              <h4 className="etiqueta" style={{ 
-                marginBottom: '1rem',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                textAlign: isMobile ? 'center' : 'left'
-              }}>
-                Opciones de Visualización
-              </h4>
-              <div className="grid grid-2" style={{ 
-                gap: isMobile ? '0.75rem' : '1rem',
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)'
-              }}>
-                <CheckboxField
-                  label="Mostrar precios"
-                  name="mostrarPrecios"
-                  checked={configuracion.mostrarPrecios}
-                  onChange={manejarCambio}
-                  description="Los clientes podrán ver los precios de los productos"
-                />
-                <CheckboxField
-                  label="Mostrar stock disponible"
-                  name="mostrarStock"
-                  checked={configuracion.mostrarStock}
-                  onChange={manejarCambio}
-                  description="Mostrar la cantidad disponible de cada producto"
-                />
-                <CheckboxField
-                  label="Permitir reseñas"
-                  name="permitirResenas"
-                  checked={configuracion.permitirResenas}
-                  onChange={manejarCambio}
-                  description="Los clientes podrán dejar reseñas de los productos"
-                />
-                <CheckboxField
-                  label="Mostrar categorías"
-                  name="mostrarCategorias"
-                  checked={configuracion.mostrarCategorias}
-                  onChange={manejarCambio}
-                  description="Organizar productos por categorías"
-                />
-              </div>
-            </div>
-          </div>
-        );
+               <div className="space-y-4">
+                 <h4 className="etiqueta" style={{ 
+                   marginBottom: '1rem',
+                   fontSize: isMobile ? '0.875rem' : '1rem',
+                   textAlign: isMobile ? 'center' : 'left'
+                 }}>
+                   Opciones de Visualización
+                 </h4>
+                 <div className="grid grid-2" style={{ 
+                   gap: isMobile ? '0.75rem' : '1rem',
+                   display: 'grid',
+                   gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)'
+                 }}>
+                   <CheckboxField
+                     label="Mostrar precios"
+                     name="mostrarPrecios"
+                     checked={configuracion.mostrarPrecios}
+                     onChange={manejarCambio}
+                     description="Los clientes podrán ver los precios de los productos"
+                   />
+                   <CheckboxField
+                     label="Mostrar stock disponible"
+                     name="mostrarStock"
+                     checked={configuracion.mostrarStock}
+                     onChange={manejarCambio}
+                     description="Mostrar la cantidad disponible de cada producto"
+                   />
+                   <CheckboxField
+                     label="Mostrar categorías"
+                     name="mostrarCategorias"
+                     checked={configuracion.mostrarCategorias}
+                     onChange={manejarCambio}
+                     description="Organizar productos por categorías"
+                   />
+                 </div>
+               </div>
+             </div>
+           </div>
+         );
 
       case 3: // Pagos
         return (
@@ -1574,58 +1553,7 @@ export default function ConfiguracionEmpresa() {
           </div>
         );
 
-      case 4: // Notificaciones
-        return (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <h4 className="etiqueta" style={{ 
-                marginBottom: '1rem',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                textAlign: isMobile ? 'center' : 'left'
-              }}>
-                Configuración de Notificaciones
-              </h4>
-              <div className="grid grid-2" style={{ 
-                gap: isMobile ? '0.75rem' : '1rem',
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)'
-              }}>
-                <CheckboxField
-                  label="Notificaciones de pedidos"
-                  name="notificacionesPedidos"
-                  checked={configuracion.notificacionesPedidos}
-                  onChange={manejarCambio}
-                  description="Recibir notificaciones cuando se realicen nuevos pedidos"
-                />
-                <CheckboxField
-                  label="Notificaciones de stock"
-                  name="notificacionesStock"
-                  checked={configuracion.notificacionesStock}
-                  onChange={manejarCambio}
-                  description="Recibir alertas cuando el stock esté bajo"
-                />
-              </div>
-            </div>
-
-            <div className="grupo-campo">
-              <label className="etiqueta">Stock Mínimo</label>
-              <p className="texto-pequeno texto-gris" style={{ marginBottom: '0.5rem' }}>
-                Cantidad mínima de productos antes de recibir una alerta de stock bajo
-              </p>
-              <input
-                type="number"
-                name="stockMinimo"
-                value={configuracion.stockMinimo}
-                onChange={manejarCambio}
-                min="1"
-                className="campo"
-                style={{ maxWidth: '200px' }}
-              />
-            </div>
-          </div>
-        );
-
-      case 5: // Redes Sociales
+             case 4: // Redes Sociales
         return (
           <div className="space-y-6">
             <div className="space-y-4">

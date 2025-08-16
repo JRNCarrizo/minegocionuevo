@@ -1,11 +1,13 @@
 package com.minegocio.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 /**
  * DTO para crear y actualizar detalles de planillas de pedidos
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DetallePlanillaPedidoDTO {
 
     private Long id;

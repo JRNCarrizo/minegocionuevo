@@ -4,6 +4,7 @@ import { ventaRapidaService, type VentaRapida as VentaRapidaType, type Estadisti
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
+import { crearFechaLocal } from '../../utils/dateUtils';
 
 type VentaRapida = VentaRapidaType;
 type Estadisticas = EstadisticasVentaRapida;
@@ -40,20 +41,26 @@ const HistorialVentasRapidas: React.FC = () => {
       setLoading(true);
       const response = await ventaRapidaService.obtenerHistorial();
       
-      console.log('Respuesta del historial:', response);
+      console.log('📊 Respuesta del historial:', response);
       
       if (response.data && Array.isArray(response.data)) {
+        console.log('📋 Ventas cargadas:', response.data);
+        // Log de las primeras ventas para debug
+        if (response.data.length > 0) {
+          console.log('📅 Primera venta fechaVenta:', response.data[0].fechaVenta, 'tipo:', typeof response.data[0].fechaVenta);
+        }
         setVentas(response.data);
       } else if (response.data && typeof response.data === 'object' && 'contenido' in response.data && Array.isArray((response.data as any).contenido)) {
         // Si la respuesta tiene un formato paginado
+        console.log('📋 Ventas paginadas cargadas:', (response.data as any).contenido);
         setVentas((response.data as any).contenido);
       } else {
-        console.error('Respuesta inesperada:', response);
+        console.error('❌ Respuesta inesperada:', response);
         setVentas([]);
         setError('Formato de respuesta inesperado');
       }
     } catch (err) {
-      console.error('Error al cargar historial:', err);
+      console.error('❌ Error al cargar historial:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
       setVentas([]);
     } finally {
@@ -183,18 +190,81 @@ const HistorialVentasRapidas: React.FC = () => {
     }
   };
 
-  const formatearFecha = (fecha: string) => {
-    // Si la fecha viene sin zona, la tratamos como UTC
-    const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z';
-    return new Date(fechaUTC).toLocaleString('es-AR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: 'America/Argentina/Buenos_Aires',
-    });
+  const formatearFecha = (fecha: any) => {
+    console.log('🔍 Formateando fecha:', fecha, 'tipo:', typeof fecha);
+    
+    if (!fecha) return 'Fecha no disponible';
+    
+    try {
+      let fechaObj: Date;
+      
+      // Si es un string
+      if (typeof fecha === 'string') {
+        // Si es un string vacío
+        if (fecha.trim() === '') return 'Fecha no disponible';
+        
+        // Si ya tiene formato ISO o similar
+        if (fecha.includes('T') || fecha.includes('-')) {
+          fechaObj = new Date(fecha);
+        } else {
+          // Intentar parsear como timestamp
+          fechaObj = new Date(parseInt(fecha));
+        }
+      } 
+      // Si es un número (timestamp)
+      else if (typeof fecha === 'number') {
+        fechaObj = new Date(fecha);
+      }
+      // Si es un objeto Date
+      else if (fecha instanceof Date) {
+        fechaObj = fecha;
+      }
+      // Si es un array (formato [año, mes, día, hora, minuto, segundo, nanosegundos])
+      else if (Array.isArray(fecha)) {
+        // El array viene como [año, mes, día, hora, minuto, segundo, nanosegundos]
+        // Los meses en JavaScript van de 0-11, así que restamos 1 al mes
+        const [year, month, day, hour, minute, second, nanosecond] = fecha;
+        fechaObj = new Date(year, month - 1, day, hour, minute, second);
+      }
+      // Si es un objeto con propiedades de fecha
+      else if (typeof fecha === 'object' && fecha !== null) {
+        // Intentar diferentes propiedades comunes
+        if (fecha.timestamp) {
+          fechaObj = new Date(fecha.timestamp);
+        } else if (fecha.date) {
+          fechaObj = new Date(fecha.date);
+        } else if (fecha.fechaVenta) {
+          fechaObj = new Date(fecha.fechaVenta);
+        } else {
+          // Intentar crear Date directamente
+          fechaObj = new Date(fecha);
+        }
+      }
+      // Otros casos
+      else {
+        fechaObj = new Date(fecha);
+      }
+      
+      // Verificar si la fecha es válida
+      if (isNaN(fechaObj.getTime())) {
+        console.error('❌ Fecha inválida después del parsing:', fecha, 'fechaObj:', fechaObj);
+        return 'Fecha inválida';
+      }
+      
+      console.log('✅ Fecha parseada correctamente:', fechaObj);
+      
+      return fechaObj.toLocaleString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    } catch (error) {
+      console.error('❌ Error formateando fecha:', fecha, error);
+      return 'Fecha inválida';
+    }
   };
 
   const formatearMoneda = (monto: number) => {

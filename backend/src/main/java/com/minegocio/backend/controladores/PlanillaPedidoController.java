@@ -1,7 +1,9 @@
 package com.minegocio.backend.controladores;
 
 import com.minegocio.backend.dto.DetallePlanillaPedidoDTO;
+import com.minegocio.backend.dto.DetallePlanillaPedidoResponseDTO;
 import com.minegocio.backend.dto.PlanillaPedidoDTO;
+import com.minegocio.backend.dto.PlanillaPedidoResponseDTO;
 import com.minegocio.backend.entidades.DetallePlanillaPedido;
 import com.minegocio.backend.entidades.PlanillaPedido;
 import com.minegocio.backend.seguridad.UsuarioPrincipal;
@@ -40,11 +42,32 @@ public class PlanillaPedidoController {
             UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
             Long empresaId = usuarioPrincipal.getEmpresaId();
             Long usuarioId = usuarioPrincipal.getId();
+            
+            System.out.println("📋 Creando planilla para empresa ID: " + empresaId + ", usuario ID: " + usuarioId);
+                    System.out.println("📋 Datos de la planilla: " + dto.getNumeroPlanilla() + ", fecha recibida: " + dto.getFechaPlanilla());
+        System.out.println("📋 Fecha como string: " + dto.getFechaPlanilla().toString());
+        System.out.println("📋 Fecha actual del servidor: " + java.time.LocalDate.now());
+        System.out.println("📋 Zona horaria del servidor: " + java.time.ZoneId.systemDefault());
+            System.out.println("📋 Cantidad de detalles: " + (dto.getDetalles() != null ? dto.getDetalles().size() : 0));
+            
+            // Log detallado de los detalles
+            if (dto.getDetalles() != null) {
+                for (int i = 0; i < dto.getDetalles().size(); i++) {
+                    DetallePlanillaPedidoDTO detalle = dto.getDetalles().get(i);
+                    System.out.println("📋 Detalle " + i + ": productoId=" + detalle.getProductoId() + 
+                                     ", descripcion=" + detalle.getDescripcion() + 
+                                     ", cantidad=" + detalle.getCantidad());
+                }
+            }
 
             PlanillaPedido planilla = planillaPedidoService.crearPlanillaPedido(dto, empresaId, usuarioId);
             
+            System.out.println("✅ Planilla creada con ID: " + planilla.getId());
+            
             return ResponseEntity.ok(ApiResponse.success("Planilla de pedido creada exitosamente", planilla));
         } catch (Exception e) {
+            System.out.println("❌ Error al crear planilla: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Error al crear la planilla de pedido: " + e.getMessage()));
         }
@@ -54,15 +77,24 @@ public class PlanillaPedidoController {
      * Obtener todas las planillas de la empresa del usuario autenticado
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PlanillaPedido>>> obtenerPlanillas(Authentication authentication) {
+    public ResponseEntity<ApiResponse<List<PlanillaPedidoResponseDTO>>> obtenerPlanillas(Authentication authentication) {
         try {
             UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
             Long empresaId = usuarioPrincipal.getEmpresaId();
+            
+            System.out.println("🔍 Buscando planillas para empresa ID: " + empresaId);
 
-            List<PlanillaPedido> planillas = planillaPedidoService.obtenerPlanillasPorEmpresa(empresaId);
+            List<PlanillaPedidoResponseDTO> planillas = planillaPedidoService.obtenerPlanillasPorEmpresa(empresaId);
+            
+            System.out.println("📦 Planillas encontradas: " + planillas.size());
+            for (PlanillaPedidoResponseDTO planilla : planillas) {
+                System.out.println("  - Planilla ID: " + planilla.getId() + ", Número: " + planilla.getNumeroPlanilla() + ", Fecha: " + planilla.getFechaPlanilla());
+            }
             
             return ResponseEntity.ok(ApiResponse.success("Planillas obtenidas exitosamente", planillas));
         } catch (Exception e) {
+            System.out.println("❌ Error al obtener planillas: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Error al obtener las planillas: " + e.getMessage()));
         }

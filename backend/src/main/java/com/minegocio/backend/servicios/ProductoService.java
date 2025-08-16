@@ -96,7 +96,7 @@ public class ProductoService {
         Producto producto = new Producto();
         producto.setNombre(productoDTO.getNombre());
         producto.setDescripcion(productoDTO.getDescripcion());
-        producto.setPrecio(productoDTO.getPrecio() != null ? productoDTO.getPrecio() : BigDecimal.ZERO);
+        producto.setPrecio(productoDTO.getPrecio()); // El precio puede ser null
         producto.setStock(productoDTO.getStock() != null ? productoDTO.getStock() : 0);
         producto.setStockMinimo(productoDTO.getStockMinimo() != null ? productoDTO.getStockMinimo() : 0);
         
@@ -203,9 +203,8 @@ public class ProductoService {
         
         if (productoDTO.getPrecio() != null) {
             producto.setPrecio(productoDTO.getPrecio());
-        } else {
-            producto.setPrecio(BigDecimal.ZERO);
         }
+        // Si el precio es null, no se modifica el precio existente
         
         if (productoDTO.getStock() != null) {
             producto.setStock(productoDTO.getStock());

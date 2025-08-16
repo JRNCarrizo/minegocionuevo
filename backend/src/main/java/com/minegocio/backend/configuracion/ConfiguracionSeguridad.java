@@ -86,6 +86,8 @@ public class ConfiguracionSeguridad {
                 auth.requestMatchers("/api/empresas/*/productos/plantilla-**").permitAll();
                 auth.requestMatchers("/api/empresas/*/productos/reporte-**").permitAll();
                 auth.requestMatchers("/api/empresas/*/productos/test-**").permitAll();
+                auth.requestMatchers("/api/empresas/*/productos/validar-importacion").permitAll();
+                auth.requestMatchers("/api/empresas/*/productos/importar-productos").permitAll();
                 
                 // Endpoints de super admin públicos
                 auth.requestMatchers("/api/super-admin/crear-super-admin").permitAll();

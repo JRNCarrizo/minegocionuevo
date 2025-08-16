@@ -51,13 +51,13 @@ public class ReporteStockService {
             // Línea en blanco
             sheet.createRow(2);
 
-                                    // Encabezados
-                        Row headerRow = sheet.createRow(3);
-                        String[] headers = {
-                            "Nombre", "Marca", "Descripción", "Categoría", 
-                            "Sector Almacenamiento", "Stock Actual", "Stock Mínimo", 
-                            "Precio", "Código de Barras", "Código Personalizado", "Estado"
-                        };
+                                                // Encabezados
+            Row headerRow = sheet.createRow(3);
+            String[] headers = {
+                "Nombre*", "Marca", "Descripción", "Categoría", 
+                "Sector Almacenamiento", "Stock Actual*", "Stock Mínimo", 
+                "Precio", "Código de Barras", "Código Personalizado", "Estado"
+            };
 
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);

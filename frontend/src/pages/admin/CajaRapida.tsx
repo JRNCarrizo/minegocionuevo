@@ -117,11 +117,15 @@ export default function CajaRapida() {
   const [procesandoVenta, setProcesandoVenta] = useState(false);
   
   const inputCodigoRef = useRef<HTMLInputElement>(null);
+  const inputCantidadRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
   const [productoRecienAgregado, setProductoRecienAgregado] = useState<number | null>(null);
 
   const [mostrarModalPago, setMostrarModalPago] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<number>(-1);
+  const [productoParaCantidad, setProductoParaCantidad] = useState<Producto | null>(null);
+  const [cantidadTemporal, setCantidadTemporal] = useState(1);
+  const [modoCantidad, setModoCantidad] = useState(false);
 
   useEffect(() => {
     if (datosUsuario?.empresaId) {
@@ -152,6 +156,14 @@ export default function CajaRapida() {
     }
   }, [mostrarProductos]);
 
+  // Efecto para enfocar el campo de cantidad cuando se activa el modo cantidad
+  useEffect(() => {
+    if (modoCantidad && inputCantidadRef.current) {
+      inputCantidadRef.current.focus();
+      inputCantidadRef.current.select();
+    }
+  }, [modoCantidad]);
+
 
 
   const cargarProductos = async () => {
@@ -178,6 +190,66 @@ export default function CajaRapida() {
     const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
     const total = subtotal;
     return { subtotal, total };
+  };
+
+  // Seleccionar producto y activar modo cantidad
+  const seleccionarProducto = (producto: Producto) => {
+    setProductoParaCantidad(producto);
+    setCantidadTemporal(1);
+    setModoCantidad(true);
+    setMostrarProductos(false);
+    setProductoSeleccionado(-1);
+    setInputCodigo('');
+  };
+
+  // Confirmar cantidad y agregar producto
+  const confirmarCantidad = () => {
+    if (!productoParaCantidad) return;
+
+    agregarProducto(productoParaCantidad, cantidadTemporal);
+    
+    // Resetear estado
+    setModoCantidad(false);
+    setProductoParaCantidad(null);
+    setCantidadTemporal(1);
+    
+    // Volver al campo de búsqueda con un pequeño delay
+    setTimeout(() => {
+      inputCodigoRef.current?.focus();
+    }, 100);
+  };
+
+  // Cancelar modo cantidad
+  const cancelarCantidad = () => {
+    setModoCantidad(false);
+    setProductoParaCantidad(null);
+    setCantidadTemporal(1);
+    
+    // Volver al campo de búsqueda con un pequeño delay
+    setTimeout(() => {
+      inputCodigoRef.current?.focus();
+    }, 100);
+  };
+
+  // Manejar teclas en campo de cantidad
+  const manejarTeclasCantidad = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'Enter':
+        e.preventDefault();
+        confirmarCantidad();
+        break;
+      case 'Escape':
+        cancelarCantidad();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setCantidadTemporal(prev => Math.min(prev + 1, productoParaCantidad?.stock || 999));
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        setCantidadTemporal(prev => Math.max(prev - 1, 1));
+        break;
+    }
   };
 
   const agregarProducto = (producto: Producto, cantidad: number = 1) => {
@@ -253,6 +325,8 @@ export default function CajaRapida() {
       setVenta(prev => ({ ...prev, items: itemsActualizados, subtotal, total }));
     }
   };
+
+
 
   const buscarProductoPorCodigo = async (codigo: string) => {
     if (!codigo.trim()) return;
@@ -350,10 +424,7 @@ export default function CajaRapida() {
       case 'Enter':
         e.preventDefault();
         if (productoSeleccionado >= 0 && productoSeleccionado < productosFiltrados.length) {
-          agregarProducto(productosFiltrados[productoSeleccionado], 1);
-          setInputCodigo('');
-          setMostrarProductos(false);
-          setProductoSeleccionado(-1);
+          seleccionarProducto(productosFiltrados[productoSeleccionado]);
         } else if (inputCodigo.trim()) {
           buscarProductoPorCodigo(inputCodigo);
         }
@@ -585,31 +656,44 @@ export default function CajaRapida() {
                 🔍 Buscar Producto
               </label>
               
-              <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
-                                  <input
-                    ref={inputCodigoRef}
-                    type="text"
-                    placeholder="Código, nombre o escanear..."
-                    value={inputCodigo}
-                    onChange={(e) => {
-                      const valor = e.target.value;
-                      setInputCodigo(valor);
-                      mostrarPredicciones(valor);
-                    }}
-                    onKeyDown={manejarTeclas}
-                    style={{
-                      width: '100%',
-                      height: isMobile ? '44px' : '48px',
-                      padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '0.5rem',
-                      fontSize: isMobile ? '0.875rem' : '1rem',
-                      outline: 'none',
-                      background: 'white'
-                    }}
-                  />
-                
-                {mostrarProductos && (
+              {/* Campo de búsqueda y cantidad */}
+              <div style={{ marginBottom: '0.5rem' }}>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: modoCantidad ? '1fr 80px' : '1fr',
+                  gap: '0.5rem',
+                  alignItems: 'end'
+                }}>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      ref={inputCodigoRef}
+                      type="text"
+                      placeholder={modoCantidad ? "Producto seleccionado" : "Código, nombre o escanear..."}
+                      value={inputCodigo}
+                      onChange={(e) => {
+                        if (!modoCantidad) {
+                          const valor = e.target.value;
+                          setInputCodigo(valor);
+                          mostrarPredicciones(valor);
+                        }
+                      }}
+                      onKeyDown={manejarTeclas}
+                      disabled={modoCantidad}
+                      style={{
+                        width: '100%',
+                        height: isMobile ? '44px' : '48px',
+                        padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '0.5rem',
+                        fontSize: isMobile ? '0.875rem' : '1rem',
+                        outline: 'none',
+                        background: modoCantidad ? '#f3f4f6' : 'white',
+                        color: modoCantidad ? '#6b7280' : '#1e293b'
+                      }}
+                    />
+                    
+                    {/* Lista de productos filtrados */}
+                    {mostrarProductos && (
                   <div style={{
                     position: 'absolute',
                     top: '100%',
@@ -636,12 +720,7 @@ export default function CajaRapida() {
                                               productosFiltrados.map((producto, index) => (
                           <div
                             key={producto.id}
-                            onClick={() => {
-                              agregarProducto(producto, 1);
-                              setInputCodigo('');
-                              setMostrarProductos(false);
-                              setProductoSeleccionado(-1);
-                            }}
+                            onClick={() => seleccionarProducto(producto)}
                             style={{
                               padding: '0.75rem 1rem',
                               borderBottom: '1px solid #f1f5f9',
@@ -685,11 +764,61 @@ export default function CajaRapida() {
                               background: productoSeleccionado === index ? 'white' : '#eff6ff',
                               borderRadius: '0.25rem'
                             }}>
-                              Agregar
+                              Seleccionar
                             </div>
                         </div>
                       ))
                     )}
+                  </div>
+                )}
+                  </div>
+
+                  {/* Campo de cantidad */}
+                  {modoCantidad && (
+                    <div>
+                      <input
+                        ref={inputCantidadRef}
+                        type="number"
+                        min="1"
+                        max={productoParaCantidad?.stock || 999}
+                        value={cantidadTemporal}
+                        onChange={(e) => setCantidadTemporal(Math.max(1, parseInt(e.target.value) || 1))}
+                        onKeyDown={manejarTeclasCantidad}
+                        style={{
+                          width: '100%',
+                          height: isMobile ? '44px' : '48px',
+                          padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem',
+                          border: '2px solid #3b82f6',
+                          borderRadius: '0.5rem',
+                          fontSize: isMobile ? '0.875rem' : '1rem',
+                          textAlign: 'center',
+                          fontWeight: '600',
+                          background: 'white'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Información del producto seleccionado */}
+                {modoCantidad && productoParaCantidad && (
+                  <div style={{
+                    background: 'white',
+                    borderRadius: '0.5rem',
+                    padding: '0.75rem',
+                    border: '2px solid #3b82f6',
+                    marginTop: '0.5rem',
+                    fontSize: '0.75rem'
+                  }}>
+                    <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                      <strong>Producto:</strong> {productoParaCantidad.nombre}
+                    </div>
+                    <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                      <strong>Stock:</strong> {productoParaCantidad.stock}
+                    </div>
+                    <div style={{ color: '#3b82f6', fontWeight: '600' }}>
+                      💡 Enter para agregar • Escape para cancelar • ↑↓ para cambiar cantidad
+                    </div>
                   </div>
                 )}
               </div>
@@ -963,88 +1092,7 @@ export default function CajaRapida() {
               📊 Detalles de la Cuenta
             </h3>
 
-            {/* Lista detallada de productos */}
-            <div style={{ 
-              flex: 1, 
-              overflowY: 'auto',
-              marginBottom: '1.5rem'
-            }}>
-              {venta.items.length === 0 ? (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '2rem',
-                  color: '#64748b'
-                }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📋</div>
-                  <p>No hay productos</p>
-                  <p style={{ fontSize: '0.875rem' }}>Agrega productos para ver detalles</p>
-                </div>
-              ) : (
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: '0.75rem'
-                }}>
-                  {venta.items.map((item, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        padding: '0.75rem',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '0.5rem',
-                        background: '#f8fafc',
-                        fontSize: '0.875rem'
-                      }}
-                    >
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        marginBottom: '0.5rem'
-                      }}>
-                        <div style={{ flex: 1, marginRight: '0.5rem' }}>
-                          <div style={{ 
-                            fontWeight: '600', 
-                            color: '#1e293b',
-                            fontSize: '0.875rem',
-                            lineHeight: '1.3'
-                          }}>
-                            {item.producto.nombre}
-                          </div>
-                          <div style={{ 
-                            fontSize: '0.75rem', 
-                            color: '#64748b',
-                            marginTop: '0.25rem'
-                          }}>
-                            ${item.precioUnitario} c/u
-                          </div>
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'flex-end',
-                          gap: '0.25rem'
-                        }}>
-                          <div style={{ 
-                            fontSize: '0.75rem', 
-                            color: '#64748b' 
-                          }}>
-                            {item.cantidad} x ${item.precioUnitario}
-                          </div>
-                          <div style={{ 
-                            fontWeight: '700', 
-                            color: '#1e293b',
-                            fontSize: '0.875rem'
-                          }}>
-                            ${item.subtotal.toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+
 
             {/* Resumen de totales */}
             <div style={{

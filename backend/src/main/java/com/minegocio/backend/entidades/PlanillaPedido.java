@@ -30,7 +30,7 @@ public class PlanillaPedido {
 
     @NotNull(message = "La fecha de la planilla es obligatoria")
     @Column(name = "fecha_planilla", nullable = false)
-    private LocalDate fechaPlanilla;
+    private LocalDateTime fechaPlanilla;
 
     @Min(value = 0, message = "El total de productos debe ser mayor o igual a 0")
     @Column(name = "total_productos", nullable = false)
@@ -47,7 +47,7 @@ public class PlanillaPedido {
     private Usuario usuario;
 
     // Detalles de la planilla
-    @OneToMany(mappedBy = "planillaPedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "planillaPedido", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<DetallePlanillaPedido> detalles = new ArrayList<>();
 
     // Timestamps
@@ -62,11 +62,13 @@ public class PlanillaPedido {
     // Constructores
     public PlanillaPedido() {}
 
-    public PlanillaPedido(Empresa empresa, Usuario usuario, LocalDate fechaPlanilla) {
+    public PlanillaPedido(Empresa empresa, Usuario usuario, LocalDateTime fechaPlanilla) {
+        System.out.println("📋 [ENTITY] Constructor PlanillaPedido - Fecha recibida: " + fechaPlanilla);
         this.empresa = empresa;
         this.usuario = usuario;
         this.fechaPlanilla = fechaPlanilla;
         this.numeroPlanilla = generarNumeroPlanilla();
+        System.out.println("📋 [ENTITY] Fecha asignada a la entidad: " + this.fechaPlanilla);
     }
 
     // Métodos de utilidad
@@ -105,8 +107,8 @@ public class PlanillaPedido {
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
 
-    public LocalDate getFechaPlanilla() { return fechaPlanilla; }
-    public void setFechaPlanilla(LocalDate fechaPlanilla) { this.fechaPlanilla = fechaPlanilla; }
+    public LocalDateTime getFechaPlanilla() { return fechaPlanilla; }
+    public void setFechaPlanilla(LocalDateTime fechaPlanilla) { this.fechaPlanilla = fechaPlanilla; }
 
     public Integer getTotalProductos() { return totalProductos; }
     public void setTotalProductos(Integer totalProductos) { this.totalProductos = totalProductos; }

@@ -23,6 +23,9 @@ public class ImportacionProductoDTO {
     @Min(value = 0, message = "El stock no puede ser negativo")
     private Integer stock = 0;
     
+    @Min(value = 0, message = "El stock mínimo no puede ser negativo")
+    private Integer stockMinimo = 0;
+    
     @Size(max = 100, message = "La categoría no puede exceder 100 caracteres")
     private String categoria;
     
@@ -37,6 +40,8 @@ public class ImportacionProductoDTO {
     
     @Size(max = 50, message = "El código personalizado no puede exceder 50 caracteres")
     private String codigoPersonalizado;
+    
+    private String estado = "Activo"; // Por defecto activo
     
     // Constructores
     public ImportacionProductoDTO() {}
@@ -53,6 +58,23 @@ public class ImportacionProductoDTO {
         this.sectorAlmacenamiento = sectorAlmacenamiento;
         this.codigoBarras = codigoBarras;
         this.codigoPersonalizado = codigoPersonalizado;
+    }
+    
+    public ImportacionProductoDTO(String nombre, String descripcion, BigDecimal precio, 
+                                 Integer stock, Integer stockMinimo, String categoria, String marca, 
+                                 String sectorAlmacenamiento, String codigoBarras, String codigoPersonalizado, 
+                                 String estado) {
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.precio = precio;
+        this.stock = stock;
+        this.stockMinimo = stockMinimo;
+        this.categoria = categoria;
+        this.marca = marca;
+        this.sectorAlmacenamiento = sectorAlmacenamiento;
+        this.codigoBarras = codigoBarras;
+        this.codigoPersonalizado = codigoPersonalizado;
+        this.estado = estado != null ? estado : "Activo";
     }
     
     // Getters y Setters
@@ -128,6 +150,22 @@ public class ImportacionProductoDTO {
         this.codigoPersonalizado = codigoPersonalizado;
     }
     
+    public Integer getStockMinimo() {
+        return stockMinimo;
+    }
+    
+    public void setStockMinimo(Integer stockMinimo) {
+        this.stockMinimo = stockMinimo;
+    }
+    
+    public String getEstado() {
+        return estado;
+    }
+    
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+    
     @Override
     public String toString() {
         return "ImportacionProductoDTO{" +
@@ -135,11 +173,13 @@ public class ImportacionProductoDTO {
                 ", descripcion='" + descripcion + '\'' +
                 ", precio=" + precio +
                 ", stock=" + stock +
+                ", stockMinimo=" + stockMinimo +
                 ", categoria='" + categoria + '\'' +
                 ", marca='" + marca + '\'' +
                 ", sectorAlmacenamiento='" + sectorAlmacenamiento + '\'' +
                 ", codigoBarras='" + codigoBarras + '\'' +
                 ", codigoPersonalizado='" + codigoPersonalizado + '\'' +
+                ", estado='" + estado + '\'' +
                 '}';
     }
 }

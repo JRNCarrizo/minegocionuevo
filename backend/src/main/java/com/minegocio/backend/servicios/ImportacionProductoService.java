@@ -43,16 +43,23 @@ public class ImportacionProductoService {
             Workbook workbook = new XSSFWorkbook(inputStream);
             Sheet sheet = workbook.getSheetAt(0);
 
-                    // Validar que el archivo tenga el formato correcto
-        Row headerRow = sheet.getRow(0);
-        if (headerRow == null || !validarEncabezados(headerRow)) {
-            return new ResultadoImportacionDTO(0, 0, 1,
-                Arrays.asList(Map.of("fila", 1, "error", "Formato de archivo incorrecto. Verifique que tenga las columnas: Nombre, Marca, Descripción, Precio, Stock, Categoría, Sector_Almacenamiento, Código_Barras, Código_Personalizado")),
-                new ArrayList<>(), "Formato de archivo incorrecto");
-        }
+            // Buscar la fila de encabezados (puede estar en diferentes posiciones)
+            int headerRowIndex = encontrarFilaEncabezados(sheet);
+            if (headerRowIndex == -1) {
+                return new ResultadoImportacionDTO(0, 0, 1,
+                    Arrays.asList(Map.of("fila", 1, "error", "Formato de archivo incorrecto. No se encontraron los encabezados esperados. Verifique que tenga las columnas: Nombre*, Marca, Descripción, Categoría, Sector Almacenamiento, Stock Actual*, Stock Mínimo, Precio, Código de Barras, Código Personalizado, Estado")),
+                    new ArrayList<>(), "Formato de archivo incorrecto");
+            }
 
-            // Procesar cada fila de datos
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row headerRow = sheet.getRow(headerRowIndex);
+            if (headerRow == null || !validarEncabezados(headerRow)) {
+                return new ResultadoImportacionDTO(0, 0, 1,
+                    Arrays.asList(Map.of("fila", headerRowIndex + 1, "error", "Formato de archivo incorrecto. Verifique que tenga las columnas: Nombre*, Marca, Descripción, Categoría, Sector Almacenamiento, Stock Actual*, Stock Mínimo, Precio, Código de Barras, Código Personalizado, Estado")),
+                    new ArrayList<>(), "Formato de archivo incorrecto");
+            }
+
+            // Procesar cada fila de datos (empezar después de los encabezados)
+            for (int i = headerRowIndex + 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
@@ -89,8 +96,15 @@ public class ImportacionProductoService {
         List<Map<String, Object>> errores = new ArrayList<>();
         int registrosExitosos = 0;
 
+        System.out.println("🔍 Buscando empresa con ID: " + empresaId);
+        
         Empresa empresa = empresaRepository.findById(empresaId)
-            .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+            .orElseThrow(() -> {
+                System.err.println("❌ Empresa no encontrada con ID: " + empresaId);
+                return new RuntimeException("Empresa no encontrada con ID: " + empresaId);
+            });
+        
+        System.out.println("✅ Empresa encontrada: " + empresa.getNombre());
 
         for (int i = 0; i < productos.size(); i++) {
             ImportacionProductoDTO productoDTO = productos.get(i);
@@ -112,13 +126,15 @@ public class ImportacionProductoService {
                 // Manejar precio opcional - si es null, establecer null (no 0)
                 producto.setPrecio(productoDTO.getPrecio());
                 producto.setStock(productoDTO.getStock());
+                producto.setStockMinimo(productoDTO.getStockMinimo());
                 producto.setCategoria(productoDTO.getCategoria());
                 producto.setMarca(productoDTO.getMarca());
                 producto.setSectorAlmacenamiento(productoDTO.getSectorAlmacenamiento());
                 producto.setCodigoBarras(productoDTO.getCodigoBarras());
                 producto.setCodigoPersonalizado(productoDTO.getCodigoPersonalizado());
                 producto.setEmpresa(empresa);
-                producto.setActivo(true);
+                // Manejar estado - por defecto activo si no se especifica
+                producto.setActivo("Activo".equalsIgnoreCase(productoDTO.getEstado()));
 
                 productoRepository.save(producto);
                 registrosExitosos++;
@@ -140,150 +156,99 @@ public class ImportacionProductoService {
             errores, new ArrayList<>(), mensaje);
     }
 
+
+
     /**
-     * Genera una plantilla Excel para importación de productos
+     * Busca la fila que contiene los encabezados esperados
      */
-    public byte[] generarPlantillaExcel() throws IOException {
-        System.out.println("📥 Iniciando generación de plantilla Excel");
+    private int encontrarFilaEncabezados(Sheet sheet) {
+        String[] headersEsperados = {
+            "Nombre*", "Marca", "Descripción", "Categoría", 
+            "Sector Almacenamiento", "Stock Actual*", "Stock Mínimo", 
+            "Precio", "Código de Barras", "Código Personalizado", "Estado"
+        };
         
-        try {
-            // Crear workbook con manejo de errores
-            Workbook workbook = null;
-            try {
-                workbook = new XSSFWorkbook();
-                System.out.println("✅ Workbook creado exitosamente");
-            } catch (Exception e) {
-                System.err.println("❌ Error al crear workbook: " + e.getMessage());
-                throw new IOException("Error al crear el workbook Excel: " + e.getMessage(), e);
-            }
-
-            // Crear hoja
-            Sheet sheet = null;
-            try {
-                sheet = workbook.createSheet("Productos");
-                System.out.println("✅ Hoja creada exitosamente");
-            } catch (Exception e) {
-                System.err.println("❌ Error al crear hoja: " + e.getMessage());
-                throw new IOException("Error al crear la hoja Excel: " + e.getMessage(), e);
-            }
-
-            // Crear estilo para encabezados
-            CellStyle headerStyle = null;
-            Font headerFont = null;
-            try {
-                headerStyle = workbook.createCellStyle();
-                headerFont = workbook.createFont();
-                headerFont.setBold(true);
-                headerStyle.setFont(headerFont);
-                headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-                headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                System.out.println("✅ Estilos creados exitosamente");
-            } catch (Exception e) {
-                System.err.println("❌ Error al crear estilos: " + e.getMessage());
-                // Continuar sin estilos si fallan
-            }
-
-            // Crear encabezados
-            Row headerRow = null;
-            try {
-                headerRow = sheet.createRow(0);
-                String[] headers = {"Nombre*", "Marca", "Descripción", "Precio", "Stock*", "Categoría", "Sector_Almacenamiento", "Código_Barras", "Código_Personalizado"};
+        System.out.println("🔍 Buscando encabezados en las primeras filas del archivo...");
+        System.out.println("📋 Encabezados esperados: " + String.join(", ", headersEsperados));
+        
+        // Buscar en las primeras 15 filas (cubre reporte de stock y plantilla)
+        for (int rowIndex = 0; rowIndex <= Math.min(15, sheet.getLastRowNum()); rowIndex++) {
+            Row row = sheet.getRow(rowIndex);
+            if (row != null) {
+                String encabezadosFila = obtenerEncabezadosFila(row);
+                System.out.println("🔍 Fila " + rowIndex + ": " + encabezadosFila);
                 
-                for (int i = 0; i < headers.length; i++) {
-                    Cell cell = headerRow.createCell(i);
-                    cell.setCellValue(headers[i]);
-                    if (headerStyle != null) {
-                        cell.setCellStyle(headerStyle);
+                // Verificar si esta fila tiene suficientes celdas
+                if (row.getLastCellNum() >= 11) {
+                    if (validarEncabezados(row)) {
+                        System.out.println("✅ Encontrados encabezados válidos en fila " + rowIndex);
+                        return rowIndex;
                     }
+                } else {
+                    System.out.println("⚠️ Fila " + rowIndex + " no tiene suficientes columnas (" + row.getLastCellNum() + ")");
                 }
-                System.out.println("✅ Encabezados creados exitosamente");
-            } catch (Exception e) {
-                System.err.println("❌ Error al crear encabezados: " + e.getMessage());
-                throw new IOException("Error al crear los encabezados: " + e.getMessage(), e);
+            } else {
+                System.out.println("⚠️ Fila " + rowIndex + " está vacía");
             }
-
-            // Crear fila de ejemplo
-            try {
-                Row exampleRow = sheet.createRow(1);
-                exampleRow.createCell(0).setCellValue("Producto Ejemplo");
-                exampleRow.createCell(1).setCellValue("Samsung");
-                exampleRow.createCell(2).setCellValue("Descripción del producto");
-                exampleRow.createCell(3).setCellValue(100.50);
-                exampleRow.createCell(4).setCellValue(50);
-                exampleRow.createCell(5).setCellValue("Electrónicos");
-                exampleRow.createCell(6).setCellValue("Depósito A");
-                exampleRow.createCell(7).setCellValue("1234567890123");
-                exampleRow.createCell(8).setCellValue("PROD-001");
-                System.out.println("✅ Fila de ejemplo creada exitosamente");
-            } catch (Exception e) {
-                System.err.println("❌ Error al crear fila de ejemplo: " + e.getMessage());
-                // Continuar sin fila de ejemplo si falla
-            }
-
-            // Ajustar ancho de columnas (opcional)
-            try {
-                for (int i = 0; i < 9; i++) {
-                    sheet.autoSizeColumn(i);
-                }
-                System.out.println("✅ Ancho de columnas ajustado");
-            } catch (Exception e) {
-                System.err.println("⚠️ Error al ajustar ancho de columnas: " + e.getMessage());
-                // Continuar sin ajustar ancho si falla
-            }
-
-            // Convertir a bytes
-            byte[] result = null;
-            try (java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream()) {
-                workbook.write(outputStream);
-                outputStream.flush();
-                result = outputStream.toByteArray();
-                
-                if (result == null || result.length == 0) {
-                    throw new IOException("Error: El archivo generado está vacío");
-                }
-                
-                System.out.println("✅ Archivo Excel generado exitosamente. Tamaño: " + result.length + " bytes");
-                return result;
-                
-            } catch (Exception e) {
-                System.err.println("❌ Error al convertir a bytes: " + e.getMessage());
-                throw new IOException("Error al generar el archivo Excel: " + e.getMessage(), e);
-            } finally {
-                // Cerrar workbook
-                try {
-                    if (workbook != null) {
-                        workbook.close();
-                        System.out.println("✅ Workbook cerrado exitosamente");
-                    }
-                } catch (Exception e) {
-                    System.err.println("⚠️ Error al cerrar workbook: " + e.getMessage());
-                }
-            }
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error general en generarPlantillaExcel: " + e.getMessage());
-            e.printStackTrace();
-            throw new IOException("Error general al generar la plantilla Excel: " + e.getMessage(), e);
         }
+        
+        System.out.println("❌ No se encontraron encabezados válidos en ninguna fila");
+        System.out.println("📊 Total de filas revisadas: " + Math.min(15, sheet.getLastRowNum() + 1));
+        return -1; // No se encontró
+    }
+    
+    /**
+     * Obtiene los encabezados de una fila para debugging
+     */
+    private String obtenerEncabezadosFila(Row row) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 11; i++) {
+            Cell cell = row.getCell(i);
+            if (cell != null) {
+                String valor = obtenerValorCelda(cell);
+                sb.append("[").append(valor != null ? valor : "null").append("] ");
+            } else {
+                sb.append("[null] ");
+            }
+        }
+        return sb.toString();
     }
 
     /**
-     * Valida que los encabezados del archivo sean correctos
+     * Valida que los encabezados del archivo sean correctos (formato del reporte de stock)
      */
     private boolean validarEncabezados(Row headerRow) {
-        String[] headersEsperados = {"Nombre*", "Marca", "Descripción", "Precio", "Stock*", "Categoría", "Sector_Almacenamiento", "Código_Barras", "Código_Personalizado"};
+        String[] headersEsperados = {
+            "Nombre*", "Marca", "Descripción", "Categoría", 
+            "Sector Almacenamiento", "Stock Actual*", "Stock Mínimo", 
+            "Precio", "Código de Barras", "Código Personalizado", "Estado"
+        };
+        
+        System.out.println("🔍 Validando encabezados de la fila...");
         
         for (int i = 0; i < headersEsperados.length; i++) {
             Cell cell = headerRow.getCell(i);
-            if (cell == null || !headersEsperados[i].equals(cell.getStringCellValue())) {
+            String valorCelda = obtenerValorCelda(cell);
+            
+            if (cell == null) {
+                System.out.println("❌ Columna " + i + " está vacía, esperado: '" + headersEsperados[i] + "'");
                 return false;
             }
+            
+            if (!headersEsperados[i].equals(valorCelda)) {
+                System.out.println("❌ Encabezado no coincide en columna " + i + ": esperado='" + headersEsperados[i] + "', encontrado='" + valorCelda + "'");
+                return false;
+            }
+            
+            System.out.println("✅ Columna " + i + ": '" + valorCelda + "' coincide");
         }
+        
+        System.out.println("✅ Todos los encabezados coinciden perfectamente");
         return true;
     }
 
     /**
-     * Valida una fila de datos
+     * Valida una fila de datos (formato del reporte de stock)
      */
     private Map<String, Object> validarFila(Row row, int numeroFila, Long empresaId) {
         // Validar nombre (obligatorio)
@@ -307,59 +272,73 @@ public class ImportacionProductoService {
             return Map.of("fila", numeroFila, "error", "La descripción no puede exceder 1000 caracteres");
         }
 
-        // Validar precio (opcional pero debe ser positivo si existe)
-        BigDecimal precio = obtenerValorDecimal(row.getCell(3));
-        if (precio != null && precio.compareTo(BigDecimal.ZERO) <= 0) {
-            return Map.of("fila", numeroFila, "error", "El precio debe ser mayor a 0");
-        }
-
-        // Validar stock (obligatorio)
-        Integer stock = obtenerValorEntero(row.getCell(4));
-        if (stock == null || stock < 0) {
-            return Map.of("fila", numeroFila, "error", "El stock debe ser un número mayor o igual a 0");
-        }
-
         // Validar categoría (opcional pero con límite)
-        String categoria = obtenerValorCelda(row.getCell(5));
+        String categoria = obtenerValorCelda(row.getCell(3));
         if (categoria != null && categoria.length() > 100) {
             return Map.of("fila", numeroFila, "error", "La categoría no puede exceder 100 caracteres");
         }
 
         // Validar sector de almacenamiento (opcional pero con límite)
-        String sectorAlmacenamiento = obtenerValorCelda(row.getCell(6));
+        String sectorAlmacenamiento = obtenerValorCelda(row.getCell(4));
         if (sectorAlmacenamiento != null && sectorAlmacenamiento.length() > 100) {
             return Map.of("fila", numeroFila, "error", "El sector de almacenamiento no puede exceder 100 caracteres");
         }
 
+        // Validar stock actual (obligatorio)
+        Integer stock = obtenerValorEntero(row.getCell(5));
+        if (stock == null || stock < 0) {
+            return Map.of("fila", numeroFila, "error", "El stock actual debe ser un número mayor o igual a 0");
+        }
+
+        // Validar stock mínimo (opcional)
+        Integer stockMinimo = obtenerValorEntero(row.getCell(6));
+        if (stockMinimo != null && stockMinimo < 0) {
+            return Map.of("fila", numeroFila, "error", "El stock mínimo debe ser un número mayor o igual a 0");
+        }
+
+        // Validar precio (opcional)
+        BigDecimal precio = obtenerValorDecimal(row.getCell(7));
+        if (precio != null && precio.compareTo(BigDecimal.ZERO) <= 0) {
+            return Map.of("fila", numeroFila, "error", "El precio debe ser mayor a 0 si se especifica");
+        }
+
         // Validar código de barras (opcional pero con límite)
-        String codigoBarras = obtenerValorCelda(row.getCell(7));
+        String codigoBarras = obtenerValorCelda(row.getCell(8));
         if (codigoBarras != null && codigoBarras.length() > 50) {
             return Map.of("fila", numeroFila, "error", "El código de barras no puede exceder 50 caracteres");
         }
 
         // Validar código personalizado (opcional pero con límite)
-        String codigoPersonalizado = obtenerValorCelda(row.getCell(8));
+        String codigoPersonalizado = obtenerValorCelda(row.getCell(9));
         if (codigoPersonalizado != null && codigoPersonalizado.length() > 50) {
             return Map.of("fila", numeroFila, "error", "El código personalizado no puede exceder 50 caracteres");
+        }
+
+        // Validar estado (opcional)
+        String estado = obtenerValorCelda(row.getCell(10));
+        if (estado != null && !estado.equalsIgnoreCase("Activo") && !estado.equalsIgnoreCase("Inactivo")) {
+            return Map.of("fila", numeroFila, "error", "El estado debe ser 'Activo' o 'Inactivo'");
         }
 
         return null; // Sin errores
     }
 
     /**
-     * Convierte una fila de Excel a DTO de producto
+     * Convierte una fila de Excel a DTO de producto (formato del reporte de stock)
      */
     private ImportacionProductoDTO convertirFilaAProducto(Row row) {
         return new ImportacionProductoDTO(
             obtenerValorCelda(row.getCell(0)), // nombre
             obtenerValorCelda(row.getCell(2)), // descripcion
-            obtenerValorDecimal(row.getCell(3)), // precio
-            obtenerValorEntero(row.getCell(4)), // stock
-            obtenerValorCelda(row.getCell(5)), // categoria
+            obtenerValorDecimal(row.getCell(7)), // precio
+            obtenerValorEntero(row.getCell(5)), // stock
+            obtenerValorEntero(row.getCell(6)), // stockMinimo
+            obtenerValorCelda(row.getCell(3)), // categoria
             obtenerValorCelda(row.getCell(1)), // marca
-            obtenerValorCelda(row.getCell(6)), // sectorAlmacenamiento
-            obtenerValorCelda(row.getCell(7)), // codigoBarras
-            obtenerValorCelda(row.getCell(8))  // codigoPersonalizado
+            obtenerValorCelda(row.getCell(4)), // sectorAlmacenamiento
+            obtenerValorCelda(row.getCell(8)), // codigoBarras
+            obtenerValorCelda(row.getCell(9)), // codigoPersonalizado
+            obtenerValorCelda(row.getCell(10)) // estado
         );
     }
 
@@ -373,7 +352,13 @@ public class ImportacionProductoService {
             case STRING:
                 return cell.getStringCellValue().trim();
             case NUMERIC:
-                return String.valueOf((int) cell.getNumericCellValue());
+                // Para números, convertir a string sin decimales si es entero
+                double numericValue = cell.getNumericCellValue();
+                if (numericValue == (int) numericValue) {
+                    return String.valueOf((int) numericValue);
+                } else {
+                    return String.valueOf(numericValue);
+                }
             case BOOLEAN:
                 return String.valueOf(cell.getBooleanCellValue());
             default:
@@ -392,7 +377,10 @@ public class ImportacionProductoService {
                 return (int) cell.getNumericCellValue();
             case STRING:
                 try {
-                    return Integer.parseInt(cell.getStringCellValue().trim());
+                    String valor = cell.getStringCellValue().trim();
+                    // Manejar formato de números con separadores de miles
+                    valor = valor.replace(".", "").replace(",", "");
+                    return Integer.parseInt(valor);
                 } catch (NumberFormatException e) {
                     return null;
                 }
@@ -412,7 +400,14 @@ public class ImportacionProductoService {
                 return BigDecimal.valueOf(cell.getNumericCellValue());
             case STRING:
                 try {
-                    return new BigDecimal(cell.getStringCellValue().trim());
+                    String valor = cell.getStringCellValue().trim();
+                    // Manejar formato de moneda argentina: "$8.000,00" -> 8000.00
+                    if (valor.startsWith("$")) {
+                        valor = valor.substring(1); // Remover el símbolo $
+                    }
+                    // Reemplazar punto por nada (separador de miles) y coma por punto (separador decimal)
+                    valor = valor.replace(".", "").replace(",", ".");
+                    return new BigDecimal(valor);
                 } catch (NumberFormatException e) {
                     return null;
                 }

@@ -255,8 +255,11 @@ export default function GestionEmpresa() {
                 e.currentTarget.style.borderColor = '#e2e8f0';
               }}
               onClick={() => {
-                // Por ahora mostrar un toast, luego se implementarán las páginas
-                toast.success(`Funcionalidad de ${card.titulo} en desarrollo`);
+                if (card.enlace) {
+                  navigate(card.enlace);
+                } else {
+                  toast.success(`Funcionalidad de ${card.titulo} en desarrollo`);
+                }
               }}
             >
               <div style={{

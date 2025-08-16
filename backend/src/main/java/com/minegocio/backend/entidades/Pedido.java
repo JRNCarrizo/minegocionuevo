@@ -86,12 +86,15 @@ public class Pedido {
     private LocalDateTime fechaActualizacion;
 
     // Constructores
-    public Pedido() {}
+    public Pedido() {
+        System.out.println("🔍 Pedido constructor vacío - fecha actual: " + LocalDateTime.now());
+    }
 
     public Pedido(Cliente cliente, Empresa empresa) {
         this.cliente = cliente;
         this.empresa = empresa;
         this.numeroPedido = generarNumeroPedido();
+        System.out.println("🔍 Pedido constructor con cliente - fecha actual: " + LocalDateTime.now());
     }
 
     // Enum para estados del pedido

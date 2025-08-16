@@ -4,6 +4,85 @@ import api from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useResponsive } from '../../hooks/useResponsive';
 import type { Cliente, Pedido } from '../../types';
+import { crearFechaLocal } from '../../utils/dateUtils';
+
+// Función helper para formatear fechas de manera segura
+const formatearFechaSegura = (fecha: any): string => {
+  console.log('🔍 Formateando fecha en GestionClientes:', fecha, 'tipo:', typeof fecha);
+  
+  if (!fecha) return 'Fecha no disponible';
+  
+  try {
+    let fechaObj: Date;
+    
+    // Si es un string
+    if (typeof fecha === 'string') {
+      // Si es un string vacío
+      if (fecha.trim() === '') return 'Fecha no disponible';
+      
+      // Si ya tiene formato ISO o similar
+      if (fecha.includes('T') || fecha.includes('-')) {
+        fechaObj = new Date(fecha);
+      } else {
+        // Intentar parsear como timestamp
+        fechaObj = new Date(parseInt(fecha));
+      }
+    } 
+    // Si es un número (timestamp)
+    else if (typeof fecha === 'number') {
+      fechaObj = new Date(fecha);
+    }
+    // Si es un objeto Date
+    else if (fecha instanceof Date) {
+      fechaObj = fecha;
+    }
+    // Si es un array (formato [año, mes, día, hora, minuto, segundo, nanosegundos])
+    else if (Array.isArray(fecha)) {
+      // El array viene como [año, mes, día, hora, minuto, segundo, nanosegundos]
+      // Los meses en JavaScript van de 0-11, así que restamos 1 al mes
+      const [year, month, day, hour, minute, second, nanosecond] = fecha;
+      fechaObj = new Date(year, month - 1, day, hour, minute, second);
+    }
+    // Si es un objeto con propiedades de fecha
+    else if (typeof fecha === 'object' && fecha !== null) {
+      // Intentar diferentes propiedades comunes
+      if (fecha.timestamp) {
+        fechaObj = new Date(fecha.timestamp);
+      } else if (fecha.date) {
+        fechaObj = new Date(fecha.date);
+      } else if (fecha.fechaCreacion) {
+        fechaObj = new Date(fecha.fechaCreacion);
+      } else {
+        // Intentar crear Date directamente
+        fechaObj = new Date(fecha);
+      }
+    }
+    // Otros casos
+    else {
+      fechaObj = new Date(fecha);
+    }
+    
+    // Verificar si la fecha es válida
+    if (isNaN(fechaObj.getTime())) {
+      console.error('❌ Fecha inválida después del parsing:', fecha, 'fechaObj:', fechaObj);
+      return 'Fecha inválida';
+    }
+    
+    console.log('✅ Fecha parseada correctamente:', fechaObj);
+    
+    return fechaObj.toLocaleString('es-AR', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false 
+    });
+  } catch (error) {
+    console.error('❌ Error formateando fecha:', fecha, error);
+    return 'Fecha inválida';
+  }
+};
 
 // Componente Modal para detalles del cliente
 function ClienteDetalleModal({ cliente, pedidos, open, onClose }: { 
@@ -26,6 +105,7 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
   const obtenerColorEstado = (estado: Pedido['estado']) => {
     const colores: Record<Pedido['estado'], string> = {
       PENDIENTE: '#f59e0b',
+      PENDIENTE_PAGO: '#f59e0b',
       CONFIRMADO: '#3b82f6',
       PREPARANDO: '#6366f1',
       ENVIADO: '#8b5cf6',
@@ -38,6 +118,7 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
   const obtenerTextoEstado = (estado: Pedido['estado']) => {
     const textos: Record<Pedido['estado'], string> = {
       PENDIENTE: 'Pendiente',
+      PENDIENTE_PAGO: 'Pendiente de Pago',
       CONFIRMADO: 'Confirmado',
       PREPARANDO: 'Preparando',
       ENVIADO: 'Enviado',
@@ -222,7 +303,7 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
                   color: '#1e293b',
                   wordBreak: 'break-word'
                 }}>
-                  {(() => { const fecha = cliente.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: isMobile ? 'short' : '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
+                  {formatearFechaSegura(cliente.fechaCreacion)}
                 </p>
               </div>
             </div>
@@ -592,14 +673,8 @@ export default function GestionClientes() {
     
     setCargandoDetalle(true);
     try {
-      // Primero probar el endpoint de debug
-      console.log('Probando endpoint de debug...');
-      try {
-        const debugResponse = await api.debugAuth(empresaId);
-        console.log('Debug response:', debugResponse);
-      } catch (debugError) {
-        console.error('Error en debug endpoint:', debugError);
-      }
+      // Debug de autenticación
+      console.log('Debug de autenticación para empresaId:', empresaId);
       
       // Cargar detalles del cliente y su historial de pedidos
       console.log('Llamando a obtenerClienteConHistorial...');
@@ -1111,7 +1186,7 @@ export default function GestionClientes() {
                             fontSize: '12px',
                             color: '#64748b'
                           }}>
-                            📅 Registrado: {(() => { const fecha = cliente.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
+                            📅 Registrado: {formatearFechaSegura(cliente.fechaCreacion)}
                           </p>
                         </div>
                         <div className="text-right">
