@@ -668,14 +668,14 @@ export default function CrearPlanilla() {
                           key={producto.id}
                           onClick={() => stockDisponible > 0 ? seleccionarProducto(producto) : null}
                           style={{
-                            padding: '0.75rem',
+                            padding: '0.5rem',
                             cursor: stockDisponible > 0 ? 'pointer' : 'not-allowed',
                             borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
                             background: index === productoSeleccionado ? '#3b82f6' : stockDisponible > 0 ? 'white' : '#f3f4f6',
                             color: index === productoSeleccionado ? 'white' : stockDisponible > 0 ? '#1e293b' : '#9ca3af',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '1rem',
+                            gap: '0.75rem',
                             borderRadius: index === productoSeleccionado ? '0.375rem' : '0',
                             boxShadow: index === productoSeleccionado ? '0 2px 4px rgba(59, 130, 246, 0.3)' : 'none',
                             opacity: stockDisponible > 0 ? 1 : 0.6
@@ -686,7 +686,8 @@ export default function CrearPlanilla() {
                             <div style={{
                               fontWeight: '600',
                               color: index === productoSeleccionado ? 'white' : '#1e293b',
-                              fontSize: '0.875rem'
+                              fontSize: '0.8rem',
+                              lineHeight: '1.2'
                             }}>
                               {producto.codigoPersonalizado ? (
                                 <>
@@ -705,7 +706,8 @@ export default function CrearPlanilla() {
                             </div>
                             <div style={{
                               color: index === productoSeleccionado ? '#e2e8f0' : '#64748b',
-                              fontSize: '0.75rem'
+                              fontSize: '0.7rem',
+                              marginTop: '0.125rem'
                             }}>
                               Stock disponible: {obtenerStockDisponible(producto)}
                             </div>
@@ -851,11 +853,11 @@ export default function CrearPlanilla() {
                     <div
                       key={index}
                       style={{
-                        padding: '1rem 1.5rem',
+                        padding: '0.75rem 1rem',
                         borderBottom: index < nuevaPlanilla.detalles.length - 1 ? '1px solid #f1f5f9' : 'none',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '1rem'
+                        gap: '0.75rem'
                       }}
                     >
                       {/* Número */}
@@ -863,12 +865,12 @@ export default function CrearPlanilla() {
                         background: '#3b82f6',
                         color: 'white',
                         borderRadius: '50%',
-                        width: '2rem',
-                        height: '2rem',
+                        width: '1.5rem',
+                        height: '1.5rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '0.875rem',
+                        fontSize: '0.75rem',
                         fontWeight: '600',
                         flexShrink: 0
                       }}>
@@ -880,8 +882,9 @@ export default function CrearPlanilla() {
                         <div style={{
                           fontWeight: '600',
                           color: '#1e293b',
-                          fontSize: '1rem',
-                          marginBottom: '0.25rem'
+                          fontSize: '0.875rem',
+                          marginBottom: '0.125rem',
+                          lineHeight: '1.2'
                         }}>
                           {detalle.numeroPersonalizado ? (
                             <>
@@ -901,7 +904,7 @@ export default function CrearPlanilla() {
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem',
+                        gap: '0.375rem',
                         flexShrink: 0
                       }}>
                         <button
@@ -910,9 +913,9 @@ export default function CrearPlanilla() {
                             background: '#f3f4f6',
                             border: 'none',
                             borderRadius: '0.25rem',
-                            width: '2rem',
-                            height: '2rem',
-                            fontSize: '1.25rem',
+                            width: '1.75rem',
+                            height: '1.75rem',
+                            fontSize: '1rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
@@ -923,10 +926,10 @@ export default function CrearPlanilla() {
                         </button>
                         
                         <span style={{
-                          fontSize: '1.125rem',
+                          fontSize: '1rem',
                           fontWeight: '600',
                           color: '#1e293b',
-                          minWidth: '2rem',
+                          minWidth: '1.75rem',
                           textAlign: 'center'
                         }}>
                           {detalle.cantidad}
@@ -939,9 +942,9 @@ export default function CrearPlanilla() {
                             color: 'white',
                             border: 'none',
                             borderRadius: '0.25rem',
-                            width: '2rem',
-                            height: '2rem',
-                            fontSize: '1.25rem',
+                            width: '1.75rem',
+                            height: '1.75rem',
+                            fontSize: '1rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
@@ -960,8 +963,8 @@ export default function CrearPlanilla() {
                           color: 'white',
                           border: 'none',
                           borderRadius: '0.25rem',
-                          padding: '0.5rem',
-                          fontSize: '0.75rem',
+                          padding: '0.375rem',
+                          fontSize: '0.7rem',
                           cursor: 'pointer',
                           flexShrink: 0
                         }}

@@ -1634,7 +1634,7 @@ const GestionProductos: React.FC = () => {
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      ⊟
+                      ⊞
                     </button>
                     <button 
                       className={`boton ${vista === 'cuadricula' ? 'boton-primario' : 'boton-secundario'}`}
@@ -1652,7 +1652,7 @@ const GestionProductos: React.FC = () => {
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      ⊞
+                      ⊟
                     </button>
                   </div>
                 </>
@@ -1742,7 +1742,7 @@ const GestionProductos: React.FC = () => {
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      ⊟
+                      ⊞
                     </button>
                     <button 
                       className={`boton ${vista === 'cuadricula' ? 'boton-primario' : 'boton-secundario'}`}
@@ -1760,7 +1760,7 @@ const GestionProductos: React.FC = () => {
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      ⊞
+                      ⊟
                     </button>
                   </div>
                 </>
@@ -1941,6 +1941,16 @@ const GestionProductos: React.FC = () => {
                       </div>
                       
                       <div className="columna-nombre">
+                        {producto.codigoPersonalizado && (
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#3b82f6',
+                            fontWeight: '700',
+                            marginBottom: '2px'
+                          }}>
+                            {producto.codigoPersonalizado}
+                          </div>
+                        )}
                         <h4 style={{
                           margin: '0 0 4px 0',
                           fontSize: '16px',
@@ -1983,9 +1993,9 @@ const GestionProductos: React.FC = () => {
                         <div style={{
                           fontSize: '18px',
                           fontWeight: '700',
-                          color: '#059669'
+                          color: producto.precio ? '#059669' : '#1e293b'
                         }}>
-                          {producto.precio ? `$${producto.precio.toFixed(2)}` : 'No especificado'}
+                          {producto.precio ? `$${producto.precio.toFixed(2)}` : 's/p'}
                         </div>
                       </div>
                       
@@ -2323,9 +2333,9 @@ const GestionProductos: React.FC = () => {
                             <div style={{
                               fontSize: '18px',
                               fontWeight: '700',
-                              color: '#059669'
+                              color: producto.precio ? '#059669' : '#1e293b'
                             }}>
-                              {producto.precio ? `${producto.precio.toFixed(2)}` : 'No especificado'}
+                              {producto.precio ? `${producto.precio.toFixed(2)}` : 's/p'}
                             </div>
                             <div style={{
                               fontSize: '11px',
@@ -2367,16 +2377,6 @@ const GestionProductos: React.FC = () => {
                             border: '1px solid #e2e8f0'
                           }}>
                             📂 {producto.categoria}
-                          </span>
-                          
-                          <span style={{
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: producto.stock <= (producto.stockMinimo || 0) ? '#ef4444' : '#059669',
-                            minWidth: '25px',
-                            textAlign: 'center'
-                          }}>
-                            Stock: {producto.stock}
                           </span>
                         </div>
 
@@ -2611,9 +2611,9 @@ const GestionProductos: React.FC = () => {
                             <div style={{
                               fontSize: '18px',
                               fontWeight: '700',
-                              color: '#059669'
+                              color: producto.precio ? '#059669' : '#1e293b'
                             }}>
-                              {producto.precio ? `${producto.precio.toFixed(2)}` : 'No especificado'}
+                              {producto.precio ? `${producto.precio.toFixed(2)}` : 's/p'}
                             </div>
                             <div style={{
                               fontSize: '11px',
@@ -2655,20 +2655,6 @@ const GestionProductos: React.FC = () => {
                             border: '1px solid #e2e8f0'
                           }}>
                             📂 {producto.categoria}
-                          </span>
-                          
-                          <span style={{
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#374151',
-                            minWidth: '20px',
-                            textAlign: 'center',
-                            background: '#f8fafc',
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            border: '1px solid #e2e8f0'
-                          }}>
-                            Stock: {producto.stock}
                           </span>
                         </div>
 
