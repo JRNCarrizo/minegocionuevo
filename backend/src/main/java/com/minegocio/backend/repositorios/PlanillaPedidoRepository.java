@@ -52,4 +52,9 @@ public interface PlanillaPedidoRepository extends JpaRepository<PlanillaPedido, 
      * Contar planillas por empresa y fecha
      */
     long countByEmpresaIdAndFechaPlanilla(Long empresaId, LocalDate fechaPlanilla);
+
+    /**
+     * Buscar planilla por ID y empresa
+     */
+    Optional<PlanillaPedido> findByIdAndEmpresaId(Long id, Long empresaId);
 }

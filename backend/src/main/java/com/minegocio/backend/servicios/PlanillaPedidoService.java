@@ -10,11 +10,16 @@ import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.PlanillaPedidoRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -319,6 +324,151 @@ public class PlanillaPedidoService {
             int nuevoStock = producto.getStock() + cantidad;
             producto.setStock(nuevoStock);
             productoRepository.save(producto);
+        }
+    }
+
+    /**
+     * Exportar planilla de pedido a Excel
+     */
+    public byte[] exportarPlanillaAExcel(Long planillaId, Long empresaId) throws IOException {
+        // Verificar que la planilla pertenece a la empresa
+        PlanillaPedido planilla = planillaPedidoRepository.findByIdAndEmpresaId(planillaId, empresaId)
+                .orElseThrow(() -> new RuntimeException("Planilla no encontrada o no pertenece a la empresa"));
+
+        // Obtener los detalles de la planilla
+        List<DetallePlanillaPedido> detalles = detallePlanillaPedidoRepository
+                .findByPlanillaPedidoIdOrderByFechaCreacionAsc(planillaId);
+
+        // Crear el workbook de Excel
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Planilla de Pedido");
+
+            // Crear estilos
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+
+            CellStyle dataStyle = workbook.createCellStyle();
+            dataStyle.setBorderTop(BorderStyle.THIN);
+            dataStyle.setBorderBottom(BorderStyle.THIN);
+            dataStyle.setBorderLeft(BorderStyle.THIN);
+            dataStyle.setBorderRight(BorderStyle.THIN);
+
+            // Crear encabezado de información de la planilla
+            int rowNum = 0;
+            
+            // Título principal
+            Row titleRow = sheet.createRow(rowNum++);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue("PLANILLA DE PEDIDO");
+            titleCell.setCellStyle(headerStyle);
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 3));
+
+            // Información de la planilla
+            rowNum++;
+            Row infoRow1 = sheet.createRow(rowNum++);
+            infoRow1.createCell(0).setCellValue("Empresa:");
+            infoRow1.createCell(1).setCellValue(planilla.getEmpresa().getNombre());
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 3));
+
+            Row infoRow2 = sheet.createRow(rowNum++);
+            infoRow2.createCell(0).setCellValue("Número de Planilla:");
+            infoRow2.createCell(1).setCellValue(planilla.getNumeroPlanilla());
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 3));
+
+            if (planilla.getObservaciones() != null && !planilla.getObservaciones().isEmpty()) {
+                rowNum++;
+                Row obsRow = sheet.createRow(rowNum++);
+                obsRow.createCell(0).setCellValue("Observaciones:");
+                obsRow.createCell(1).setCellValue(planilla.getObservaciones());
+                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 3));
+            }
+
+            Row infoRow3 = sheet.createRow(rowNum++);
+            infoRow3.createCell(0).setCellValue("Fecha:");
+            infoRow3.createCell(1).setCellValue(planilla.getFechaPlanilla().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 3));
+
+            // Calcular cantidad de productos únicos y total de unidades
+            int cantidadProductosUnicos = detalles.size();
+            int cantidadTotalUnidades = detalles.stream().mapToInt(DetallePlanillaPedido::getCantidad).sum();
+
+            Row infoRow4 = sheet.createRow(rowNum++);
+            infoRow4.createCell(0).setCellValue("Cantidad de Productos:");
+            infoRow4.createCell(1).setCellValue(cantidadProductosUnicos);
+            infoRow4.createCell(2).setCellValue("");
+            infoRow4.createCell(3).setCellValue("");
+
+            Row infoRow5 = sheet.createRow(rowNum++);
+            infoRow5.createCell(0).setCellValue("Cantidad Total de Unidades:");
+            infoRow5.createCell(1).setCellValue(cantidadTotalUnidades);
+            infoRow5.createCell(2).setCellValue("");
+            infoRow5.createCell(3).setCellValue("");
+
+            // Línea en blanco
+            rowNum++;
+
+            // Encabezados de la tabla de productos
+            Row headerRow = sheet.createRow(rowNum++);
+            String[] headers = {"#", "Código Interno", "Nombre del Producto", "Cantidad"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Datos de los productos
+            for (int i = 0; i < detalles.size(); i++) {
+                DetallePlanillaPedido detalle = detalles.get(i);
+                Row dataRow = sheet.createRow(rowNum++);
+                
+                dataRow.createCell(0).setCellValue(i + 1);
+                
+                // Código personalizado (del producto si existe, sino del detalle)
+                String codigoPersonalizado = "";
+                if (detalle.getProducto() != null && detalle.getProducto().getCodigoPersonalizado() != null) {
+                    codigoPersonalizado = detalle.getProducto().getCodigoPersonalizado();
+                } else if (detalle.getNumeroPersonalizado() != null) {
+                    codigoPersonalizado = detalle.getNumeroPersonalizado();
+                }
+                dataRow.createCell(1).setCellValue(codigoPersonalizado);
+                
+                // Nombre del producto (del producto si existe, sino descripción del detalle)
+                String nombreProducto = "";
+                if (detalle.getProducto() != null && detalle.getProducto().getNombre() != null) {
+                    nombreProducto = detalle.getProducto().getNombre();
+                } else {
+                    nombreProducto = detalle.getDescripcion();
+                }
+                dataRow.createCell(2).setCellValue(nombreProducto);
+                
+                dataRow.createCell(3).setCellValue(detalle.getCantidad());
+                
+                // Aplicar estilo a todas las celdas
+                for (int j = 0; j < 4; j++) {
+                    dataRow.getCell(j).setCellStyle(dataStyle);
+                }
+            }
+
+            // Ajustar ancho de columnas
+            sheet.setColumnWidth(0, 1000);  // #
+            sheet.setColumnWidth(1, 6000);  // Código Interno
+            sheet.setColumnWidth(2, 20000); // Nombre del Producto
+            sheet.setColumnWidth(3, 4000);  // Cantidad
+
+            // Convertir a bytes
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
         }
     }
 }

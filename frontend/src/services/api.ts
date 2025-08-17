@@ -81,7 +81,8 @@ class ApiService {
           (/\/admin\//.test(config.url) ||
            /\/empresas\/\d+\//.test(config.url) ||
            /\/notificaciones\//.test(config.url) ||
-           /\/historial-carga-productos\//.test(config.url))
+           /\/historial-carga-productos\//.test(config.url) ||
+           /\/planillas-pedidos\//.test(config.url))
         ) {
           const tokenAdmin = localStorage.getItem('token');
           if (tokenAdmin) {

@@ -284,4 +284,40 @@ public class PlanillaPedidoController {
                     .body(ApiResponse.error("Error al obtener las estadísticas: " + e.getMessage()));
         }
     }
+
+    /**
+     * Exportar planilla de pedido a Excel
+     */
+    @GetMapping("/{id}/exportar")
+    public ResponseEntity<byte[]> exportarPlanilla(@PathVariable Long id, Authentication authentication) {
+        try {
+            System.out.println("🔍 [EXPORTAR] Iniciando exportación de planilla ID: " + id);
+            System.out.println("🔍 [EXPORTAR] Authentication: " + (authentication != null ? "Presente" : "Nulo"));
+            
+            if (authentication == null) {
+                System.out.println("❌ [EXPORTAR] Error: Authentication es nulo");
+                return ResponseEntity.status(403).build();
+            }
+            
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            System.out.println("🔍 [EXPORTAR] Usuario: " + usuarioPrincipal.getUsername());
+            System.out.println("🔍 [EXPORTAR] Empresa ID: " + usuarioPrincipal.getEmpresaId());
+            System.out.println("🔍 [EXPORTAR] Roles: " + usuarioPrincipal.getAuthorities());
+            
+            Long empresaId = usuarioPrincipal.getEmpresaId();
+            
+            byte[] excelBytes = planillaPedidoService.exportarPlanillaAExcel(id, empresaId);
+            
+            System.out.println("✅ [EXPORTAR] Planilla exportada exitosamente. Tamaño: " + excelBytes.length + " bytes");
+            
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    .header("Content-Disposition", "attachment; filename=\"Planilla_" + id + ".xlsx\"")
+                    .body(excelBytes);
+        } catch (Exception e) {
+            System.out.println("❌ [EXPORTAR] Error al exportar planilla: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }
