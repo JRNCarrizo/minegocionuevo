@@ -82,7 +82,8 @@ class ApiService {
            /\/empresas\/\d+\//.test(config.url) ||
            /\/notificaciones\//.test(config.url) ||
            /\/historial-carga-productos\//.test(config.url) ||
-           /\/planillas-pedidos\//.test(config.url))
+           /\/planillas-pedidos\//.test(config.url) ||
+           /\/roturas-perdidas\//.test(config.url))
         ) {
           const tokenAdmin = localStorage.getItem('token');
           if (tokenAdmin) {
@@ -1771,6 +1772,109 @@ class ApiService {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error al descargar plantilla de carga masiva:', error);
+      throw error;
+    }
+  }
+
+  // ===== ROTURAS Y PÉRDIDAS =====
+
+  // Obtener todas las roturas y pérdidas
+  async obtenerRoturasPerdidas(): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await this.api.get('/roturas-perdidas');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener roturas y pérdidas:', error);
+      throw error;
+    }
+  }
+
+  // Crear rotura o pérdida
+  async crearRoturaPerdida(roturaPerdidaData: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.post('/roturas-perdidas', roturaPerdidaData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al crear rotura/pérdida:', error);
+      throw error;
+    }
+  }
+
+  // Obtener roturas y pérdidas por fecha
+  async obtenerRoturasPerdidasPorFecha(fecha: string): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await this.api.get(`/roturas-perdidas/fecha/${fecha}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener roturas y pérdidas por fecha:', error);
+      throw error;
+    }
+  }
+
+  // Obtener roturas y pérdidas por rango de fechas
+  async obtenerRoturasPerdidasPorRangoFechas(fechaInicio: string, fechaFin: string): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await this.api.get(`/roturas-perdidas/rango-fechas?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener roturas y pérdidas por rango de fechas:', error);
+      throw error;
+    }
+  }
+
+  // Obtener rotura/pérdida por ID
+  async obtenerRoturaPerdidaPorId(id: number): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.get(`/roturas-perdidas/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener rotura/pérdida por ID:', error);
+      throw error;
+    }
+  }
+
+  // Actualizar rotura/pérdida
+  async actualizarRoturaPerdida(id: number, roturaPerdidaData: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.put(`/roturas-perdidas/${id}`, roturaPerdidaData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al actualizar rotura/pérdida:', error);
+      throw error;
+    }
+  }
+
+  // Eliminar rotura/pérdida
+  async eliminarRoturaPerdida(id: number): Promise<ApiResponse<string>> {
+    try {
+      const response = await this.api.delete(`/roturas-perdidas/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al eliminar rotura/pérdida:', error);
+      throw error;
+    }
+  }
+
+  // Obtener estadísticas de roturas y pérdidas
+  async obtenerEstadisticasRoturasPerdidas(): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.get('/roturas-perdidas/estadisticas');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener estadísticas de roturas y pérdidas:', error);
+      throw error;
+    }
+  }
+
+  // Exportar roturas y pérdidas
+  async exportarRoturasPerdidas(fechaInicio: string, fechaFin: string): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/roturas-perdidas/exportar?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar roturas y pérdidas:', error);
       throw error;
     }
   }

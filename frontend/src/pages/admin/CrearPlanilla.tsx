@@ -61,6 +61,8 @@ export default function CrearPlanilla() {
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
   const inputCantidadRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
+  const codigoPlanillaRef = useRef<HTMLInputElement>(null);
+  const observacionesRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -100,6 +102,30 @@ export default function CrearPlanilla() {
       setProductoSeleccionado(-1);
     }
   }, [mostrarProductos]);
+
+  // Efecto para enfocar el campo de código de planilla cuando se carga la página
+  useEffect(() => {
+    if (codigoPlanillaRef.current && !cargando) {
+      // Pequeño delay para asegurar que la página esté completamente renderizada
+      setTimeout(() => {
+        codigoPlanillaRef.current?.focus();
+      }, 100);
+    }
+  }, [cargando]);
+
+  // Manejar tecla Escape para volver a la vista principal
+  useEffect(() => {
+    const manejarEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        navigate('/admin/gestion-empresa');
+      }
+    };
+
+    document.addEventListener('keydown', manejarEscape);
+    return () => {
+      document.removeEventListener('keydown', manejarEscape);
+    };
+  }, [navigate]);
 
   // Efecto para enfocar el campo de cantidad cuando se activa el modo cantidad
   useEffect(() => {
@@ -160,6 +186,39 @@ export default function CrearPlanilla() {
         setMostrarProductos(false);
         setProductoSeleccionado(-1);
         break;
+    }
+  };
+
+  // Manejar teclas en campo de código de planilla
+  const manejarTeclasCodigoPlanilla = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      observacionesRef.current?.focus();
+    }
+  };
+
+  // Manejar teclas en campo de observaciones
+  const manejarTeclasObservaciones = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Hacer scroll suave hacia la sección del buscador
+      if (inputBusquedaRef.current) {
+        const element = inputBusquedaRef.current;
+        const rect = element.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const targetPosition = scrollTop + rect.top - 140; // 140px de margen desde arriba
+        
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
+        });
+        
+        // Enfocar el campo después de un pequeño delay para que el scroll termine
+        setTimeout(() => {
+          inputBusquedaRef.current?.focus();
+        }, 300);
+      }
     }
   };
 
@@ -535,6 +594,7 @@ export default function CrearPlanilla() {
                 Código de Planilla (8 dígitos)
               </label>
               <input
+                ref={codigoPlanillaRef}
                 type="text"
                 placeholder="12345678"
                 maxLength={8}
@@ -544,6 +604,7 @@ export default function CrearPlanilla() {
                   ...prev,
                   codigoPlanilla: e.target.value.replace(/\D/g, '').slice(0, 8)
                 }))}
+                onKeyDown={manejarTeclasCodigoPlanilla}
                 style={{
                   width: '100%',
                   padding: '0.75rem',
@@ -564,6 +625,7 @@ export default function CrearPlanilla() {
                 Observaciones
               </label>
               <input
+                ref={observacionesRef}
                 type="text"
                 placeholder="Observaciones opcionales..."
                 value={nuevaPlanilla.observaciones}
@@ -571,6 +633,7 @@ export default function CrearPlanilla() {
                   ...prev,
                   observaciones: e.target.value
                 }))}
+                onKeyDown={manejarTeclasObservaciones}
                 style={{
                   width: '100%',
                   padding: '0.75rem',

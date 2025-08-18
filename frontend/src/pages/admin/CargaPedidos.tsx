@@ -38,6 +38,7 @@ export default function CargaPedidos() {
   const [filtroFecha, setFiltroFecha] = useState('');
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
   const [diasExpandidos, setDiasExpandidos] = useState<Set<string>>(new Set());
+  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -163,6 +164,40 @@ export default function CargaPedidos() {
       return nuevo;
     });
   };
+
+  // Manejar teclas globales para abrir modal con Enter
+  const manejarTeclasGlobales = (e: KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+      // Verificar que no esté en un input o textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        navigate('/admin/crear-planilla');
+      }
+    }
+  };
+
+  // Agregar y remover event listener para teclas globales
+  useEffect(() => {
+    document.addEventListener('keydown', manejarTeclasGlobales);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclasGlobales);
+    };
+  }, [navigate]);
+
+  // Manejar tecla Escape para volver a la vista principal
+  useEffect(() => {
+    const manejarEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        navigate('/admin/gestion-empresa');
+      }
+    };
+
+    document.addEventListener('keydown', manejarEscape);
+    return () => {
+      document.removeEventListener('keydown', manejarEscape);
+    };
+  }, [navigate]);
 
   const estaDiaExpandido = (fecha: string) => {
     const fechaActual = obtenerFechaActual();
@@ -296,6 +331,14 @@ export default function CargaPedidos() {
                   fontSize: '0.875rem'
                 }}>
                   Gestiona las planillas de pedidos realizados
+                </p>
+                <p style={{
+                  color: '#059669',
+                  margin: '0.25rem 0 0 0',
+                  fontSize: '0.75rem',
+                  fontWeight: '500'
+                }}>
+                  💡 Presiona Enter para crear una nueva planilla
                 </p>
               </div>
             </div>

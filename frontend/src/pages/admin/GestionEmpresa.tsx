@@ -43,6 +43,20 @@ export default function GestionEmpresa() {
     cargarEmpresa();
   }, [navigate]);
 
+  // Manejar tecla Escape para volver al panel principal de admin
+  useEffect(() => {
+    const manejarEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        navigate('/admin');
+      }
+    };
+
+    document.addEventListener('keydown', manejarEscape);
+    return () => {
+      document.removeEventListener('keydown', manejarEscape);
+    };
+  }, [navigate]);
+
   const cargarEmpresa = async () => {
     try {
       setCargando(true);

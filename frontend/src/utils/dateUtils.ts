@@ -8,8 +8,9 @@
  * Evita problemas de zona horaria interpretando la fecha como local
  */
 export const crearFechaLocal = (fechaString: string): Date => {
-  const [year, month, day] = fechaString.split('-').map(Number);
-  return new Date(year, month - 1, day); // month - 1 porque los meses van de 0-11
+  // Agregar 'T00:00:00' para asegurar que se interprete como fecha local
+  const fechaConTiempo = fechaString + 'T00:00:00';
+  return new Date(fechaConTiempo);
 };
 
 /**
@@ -18,7 +19,7 @@ export const crearFechaLocal = (fechaString: string): Date => {
  * @param opciones - Opciones de formato (opcional)
  */
 export const formatearFecha = (
-  fecha: string, 
+  fecha: string | Date,
   opciones: Intl.DateTimeFormatOptions = {
     weekday: 'long',
     year: 'numeric',
@@ -26,17 +27,36 @@ export const formatearFecha = (
     day: 'numeric'
   }
 ): string => {
-  // Si la fecha incluye tiempo (formato ISO), extraer solo la parte de la fecha
-  const fechaSolo = fecha.split('T')[0];
-  const fechaLocal = crearFechaLocal(fechaSolo);
-  return fechaLocal.toLocaleDateString('es-ES', opciones);
+  try {
+    let fechaString: string;
+    
+    // Si es un objeto Date, convertirlo a string
+    if (fecha instanceof Date) {
+      fechaString = fecha.toISOString().split('T')[0];
+    } else if (typeof fecha === 'string') {
+      // Si la fecha incluye tiempo (formato ISO), extraer solo la parte de la fecha
+      fechaString = fecha.split('T')[0];
+    } else {
+      console.error('❌ Tipo de fecha no válido:', typeof fecha, fecha);
+      return 'Fecha inválida';
+    }
+    
+    // Crear fecha directamente sin usar crearFechaLocal
+    const [year, month, day] = fechaString.split('-').map(Number);
+    const fechaLocal = new Date(year, month - 1, day);
+    
+    return fechaLocal.toLocaleDateString('es-ES', opciones);
+  } catch (error) {
+    console.error('❌ Error al formatear fecha:', error, fecha);
+    return 'Fecha inválida';
+  }
 };
 
 /**
  * Formatea una fecha para mostrar en formato corto
  * @param fecha - String en formato YYYY-MM-DD o YYYY-MM-DDTHH:mm:ss
  */
-export const formatearFechaCorta = (fecha: string): string => {
+export const formatearFechaCorta = (fecha: string | Date): string => {
   return formatearFecha(fecha, {
     weekday: 'short',
     year: 'numeric',

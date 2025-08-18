@@ -108,6 +108,7 @@ public class ConfiguracionSeguridad {
                 auth.requestMatchers("/api/notificaciones/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
                 auth.requestMatchers("/api/historial-carga-productos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
                 auth.requestMatchers("/api/planillas-pedidos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
+                auth.requestMatchers("/api/roturas-perdidas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
                 
                 // Cualquier otra solicitud requiere autenticación
                 auth.anyRequest().authenticated();
