@@ -96,6 +96,37 @@ public class PublicoController {
     }
 
     /**
+     * Configuración check endpoint para Railway
+     */
+    @GetMapping("/health/config")
+    public ResponseEntity<?> configHealthCheck() {
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "UP");
+            response.put("message", "Configuration check");
+            response.put("timestamp", java.time.LocalDateTime.now().toString());
+            
+            // Verificar variables críticas
+            Map<String, Object> config = new HashMap<>();
+            config.put("datasource_url", System.getenv("SPRING_DATASOURCE_URL") != null ? "SET" : "NOT_SET");
+            config.put("datasource_username", System.getenv("SPRING_DATASOURCE_USERNAME") != null ? "SET" : "NOT_SET");
+            config.put("datasource_password", System.getenv("SPRING_DATASOURCE_PASSWORD") != null ? "SET" : "NOT_SET");
+            config.put("jwt_secret", System.getenv("MINE_NEGOCIO_APP_JWT_SECRET") != null ? "SET" : "NOT_SET");
+            config.put("cloudinary_cloud_name", System.getenv("CLOUDINARY_CLOUD_NAME") != null ? "SET" : "NOT_SET");
+            config.put("mail_username", System.getenv("MAIL_USERNAME") != null ? "SET" : "NOT_SET");
+            
+            response.put("config", config);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "DOWN");
+            response.put("message", "Configuration check failed");
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+        }
+    }
+
+    /**
      * Obtener información pública de una empresa por subdominio
      */
     @GetMapping("/{subdominio}/empresa")
