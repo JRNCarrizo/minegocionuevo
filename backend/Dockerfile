@@ -19,8 +19,8 @@ RUN chmod +x mvnw
 COPY src src
 COPY railway-build-optimized.sh .
 
-# Construir la aplicación con optimizaciones para Railway
-RUN chmod +x railway-build-optimized.sh && ./railway-build-optimized.sh
+# Construir la aplicación
+RUN ./mvnw clean package -DskipTests
 
 # Crear directorio para uploads
 RUN mkdir -p /tmp/uploads/images /tmp/uploads/logos
@@ -32,5 +32,5 @@ EXPOSE 8080
 ENV SPRING_PROFILES_ACTIVE=railway
 ENV PORT=8080
 
-# Comando para ejecutar la aplicación con optimizaciones
-ENTRYPOINT ["java", "-Xmx512m", "-Xms256m", "-Dspring.profiles.active=railway", "-jar", "target/backend-0.0.1-SNAPSHOT.jar"] 
+# Comando para ejecutar la aplicación
+ENTRYPOINT ["java", "-Dspring.profiles.active=railway", "-jar", "target/backend-0.0.1-SNAPSHOT.jar"] 

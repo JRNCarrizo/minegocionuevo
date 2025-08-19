@@ -5,7 +5,7 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "java -Xmx512m -Xms256m -Dspring.profiles.active=railway -jar target/backend-0.0.1-SNAPSHOT.jar",
+    "startCommand": "java -Dspring.profiles.active=railway -jar target/backend-0.0.1-SNAPSHOT.jar",
     "healthcheckPath": "/api/publico/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE"

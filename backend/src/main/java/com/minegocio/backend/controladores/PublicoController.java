@@ -73,6 +73,29 @@ public class PublicoController {
     }
 
     /**
+     * Database health check endpoint para Railway
+     */
+    @GetMapping("/health/db")
+    public ResponseEntity<?> databaseHealthCheck() {
+        try {
+            // Probar conexión a la base de datos
+            empresaService.obtenerPorSubdominio("test");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "UP");
+            response.put("message", "Database connection successful");
+            response.put("timestamp", java.time.LocalDateTime.now().toString());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "DOWN");
+            response.put("message", "Database connection failed");
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+        }
+    }
+
+    /**
      * Obtener información pública de una empresa por subdominio
      */
     @GetMapping("/{subdominio}/empresa")
