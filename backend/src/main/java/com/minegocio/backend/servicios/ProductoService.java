@@ -207,7 +207,12 @@ public class ProductoService {
         // Si el precio es null, no se modifica el precio existente
         
         if (productoDTO.getStock() != null) {
+            System.out.println("🔍 === DEBUG ACTUALIZACIÓN STOCK ===");
+            System.out.println("🔍 Stock anterior: " + producto.getStock());
+            System.out.println("🔍 Stock nuevo recibido: " + productoDTO.getStock());
+            System.out.println("🔍 Stock nuevo a establecer: " + productoDTO.getStock());
             producto.setStock(productoDTO.getStock());
+            System.out.println("🔍 Stock establecido: " + producto.getStock());
         }
         
         if (productoDTO.getStockMinimo() != null) {
@@ -264,9 +269,17 @@ public class ProductoService {
         }
 
         Producto productoActualizado = productoRepository.save(producto);
+        System.out.println("🔍 === DESPUÉS DE GUARDAR ===");
+        System.out.println("🔍 Stock en producto guardado: " + productoActualizado.getStock());
+        System.out.println("🔍 Stock en producto original: " + producto.getStock());
         
         // Registrar cambio de stock en el historial si hubo cambio
         if (productoDTO.getStock() != null && !productoDTO.getStock().equals(stockAnterior) && usuarioId != null) {
+            System.out.println("🔍 === REGISTRANDO HISTORIAL ===");
+            System.out.println("🔍 Stock anterior guardado: " + stockAnterior);
+            System.out.println("🔍 Stock nuevo: " + productoDTO.getStock());
+            System.out.println("🔍 Diferencia: " + (productoDTO.getStock() - stockAnterior));
+            System.out.println("🔍 Cantidad a registrar: " + Math.abs(productoDTO.getStock() - stockAnterior));
             try {
                 InventarioRequestDTO request = new InventarioRequestDTO();
                 request.setProductoId(id);
