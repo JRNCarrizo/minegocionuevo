@@ -87,7 +87,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             System.err.println("❌ Error general en AuthTokenFilter: " + e.getMessage());
+            System.err.println("❌ Stack trace: " + e.toString());
             logger.error("Error general en AuthTokenFilter: {}", e.getMessage());
+            logger.error("Stack trace completo: ", e);
             // Continuar con el filtro incluso si hay error
         }
 

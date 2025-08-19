@@ -161,6 +161,28 @@ public class PublicoController {
     }
 
     /**
+     * Debug endpoint para probar autenticación
+     */
+    @GetMapping("/debug/auth-test")
+    public ResponseEntity<?> debugAuthTest() {
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "AUTH_TEST");
+            response.put("message", "Authentication test endpoint");
+            response.put("timestamp", java.time.LocalDateTime.now().toString());
+            response.put("public_endpoint", true);
+            response.put("auth_required", false);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "ERROR");
+            response.put("message", "Auth test failed");
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
      * Obtener información pública de una empresa por subdominio
      */
     @GetMapping("/{subdominio}/empresa")
