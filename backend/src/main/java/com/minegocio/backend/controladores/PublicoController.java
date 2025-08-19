@@ -127,6 +127,40 @@ public class PublicoController {
     }
 
     /**
+     * Debug endpoint para verificar variables de entorno en Railway
+     */
+    @GetMapping("/debug/env")
+    public ResponseEntity<?> debugEnvironmentVariables() {
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "DEBUG");
+            response.put("message", "Environment variables debug");
+            response.put("timestamp", java.time.LocalDateTime.now().toString());
+            
+            // Obtener todas las variables de entorno relevantes
+            Map<String, Object> envVars = new HashMap<>();
+            envVars.put("SPRING_DATASOURCE_URL", System.getenv("SPRING_DATASOURCE_URL"));
+            envVars.put("SPRING_DATASOURCE_USERNAME", System.getenv("SPRING_DATASOURCE_USERNAME"));
+            envVars.put("SPRING_DATASOURCE_PASSWORD", System.getenv("SPRING_DATASOURCE_PASSWORD") != null ? "***HIDDEN***" : null);
+            envVars.put("SPRING_PROFILES_ACTIVE", System.getenv("SPRING_PROFILES_ACTIVE"));
+            envVars.put("MINE_NEGOCIO_APP_JWT_SECRET", System.getenv("MINE_NEGOCIO_APP_JWT_SECRET") != null ? "***HIDDEN***" : null);
+            envVars.put("PORT", System.getenv("PORT"));
+            envVars.put("RAILWAY_ENVIRONMENT", System.getenv("RAILWAY_ENVIRONMENT"));
+            envVars.put("RAILWAY_PROJECT_ID", System.getenv("RAILWAY_PROJECT_ID"));
+            envVars.put("RAILWAY_SERVICE_ID", System.getenv("RAILWAY_SERVICE_ID"));
+            
+            response.put("environment_variables", envVars);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "ERROR");
+            response.put("message", "Debug failed");
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
      * Obtener información pública de una empresa por subdominio
      */
     @GetMapping("/{subdominio}/empresa")
