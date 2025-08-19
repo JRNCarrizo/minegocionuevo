@@ -53,6 +53,26 @@ public class PublicoController {
     private PedidoRepository pedidoRepository;
 
     /**
+     * Health check endpoint para Railway
+     */
+    @GetMapping("/health")
+    public ResponseEntity<?> healthCheck() {
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "UP");
+            response.put("message", "MiNegocio Backend is running");
+            response.put("timestamp", java.time.LocalDateTime.now().toString());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "DOWN");
+            response.put("message", "Service unavailable");
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+        }
+    }
+
+    /**
      * Obtener información pública de una empresa por subdominio
      */
     @GetMapping("/{subdominio}/empresa")

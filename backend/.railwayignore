@@ -1,0 +1,22 @@
+# Archivos y directorios a ignorar en Railway
+target/
+!target/*.jar
+.mvn/
+mvnw
+mvnw.cmd
+*.md
+.git/
+.gitignore
+README*
+Dockerfile*
+docker-compose*
+.env*
+*.log
+*.tmp
+temp/
+logs/
+.idea/
+.vscode/
+*.iml
+node_modules/
+frontend/
