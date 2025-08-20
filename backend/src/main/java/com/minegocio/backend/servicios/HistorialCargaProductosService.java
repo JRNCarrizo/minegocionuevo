@@ -52,6 +52,21 @@ public class HistorialCargaProductosService {
             String observacion,
             String metodoEntrada,
             String codigoBarras) {
+        return registrarOperacion(empresaId, productoId, usuarioId, tipoOperacion, cantidad, precioUnitario, observacion, metodoEntrada, codigoBarras, true);
+    }
+
+    // Registrar una nueva operación de carga con opción de actualizar stock
+    public ApiResponse<HistorialCargaProductosDTO> registrarOperacion(
+            Long empresaId,
+            Long productoId,
+            Long usuarioId,
+            HistorialCargaProductos.TipoOperacion tipoOperacion,
+            Integer cantidad,
+            BigDecimal precioUnitario,
+            String observacion,
+            String metodoEntrada,
+            String codigoBarras,
+            boolean actualizarStock) {
         
         try {
             // Validar que existan las entidades
@@ -100,9 +115,11 @@ public class HistorialCargaProductosService {
             // Guardar el historial
             HistorialCargaProductos historialGuardado = historialRepository.save(historial);
             
-            // Actualizar el stock del producto
-            producto.setStock(stockNuevo);
-            productoRepository.save(producto);
+            // Actualizar el stock del producto solo si se solicita
+            if (actualizarStock) {
+                producto.setStock(stockNuevo);
+                productoRepository.save(producto);
+            }
             
             return new ApiResponse<>(true, "Operación registrada correctamente", 
                     new HistorialCargaProductosDTO(historialGuardado));

@@ -4,6 +4,7 @@ import { FaUsers, FaStore, FaBox, FaShoppingCart, FaEye, FaEdit, FaTrash, FaSear
 import { MdBusiness, MdEmail, MdPhone, MdCalendarToday, MdWarning, MdCheckCircle, MdBlock } from 'react-icons/md';
 import { superAdminService } from '../../services/superAdminService';
 import { formatearFechaConHora } from '../../utils/dateUtils';
+import TimeZoneInfo from '../../components/TimeZoneInfo';
 
 interface Empresa {
   id: number;
@@ -294,6 +295,41 @@ const GestionEmpresas: React.FC = () => {
         <div style={{ color: 'white', textAlign: 'right' }}>
           <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{empresas.length}</div>
           <div style={{ fontSize: '1rem' }}>Empresas Totales</div>
+        </div>
+      </div>
+
+      {/* Información de zona horaria */}
+      <div style={{
+        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+        borderRadius: '12px',
+        padding: '16px',
+        marginBottom: '20px',
+        border: '1px solid #e2e8f0'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px'
+        }}>
+          <div>
+            <h3 style={{
+              margin: '0 0 8px 0',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#1e293b'
+            }}>
+              📅 Información de Fechas
+            </h3>
+            <p style={{
+              margin: 0,
+              fontSize: '14px',
+              color: '#64748b'
+            }}>
+              Las fechas se muestran en tu zona horaria local
+            </p>
+          </div>
+          <TimeZoneInfo showDetails={true} />
         </div>
       </div>
 

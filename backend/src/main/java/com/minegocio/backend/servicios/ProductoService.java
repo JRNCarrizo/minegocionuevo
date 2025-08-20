@@ -291,7 +291,7 @@ public class ProductoService {
                 request.setCodigoBarras(producto.getCodigoBarras());
                 request.setMetodoEntrada("MANUAL");
                 
-                historialInventarioService.registrarOperacionInventario(request, usuarioId, empresaId);
+                historialInventarioService.registrarOperacionInventario(request, usuarioId, empresaId, false);
             } catch (Exception e) {
                 // Log del error pero no fallar la operación principal
                 System.err.println("Error al registrar historial de inventario: " + e.getMessage());
@@ -339,7 +339,8 @@ public class ProductoService {
                     producto.getPrecio() != null ? producto.getPrecio() : BigDecimal.ZERO,
                     "Actualización de stock de producto",
                     "MANUAL",
-                    producto.getCodigoBarras()
+                    producto.getCodigoBarras(),
+                    false // No actualizar stock porque ya se actualizó arriba
                 );
             } catch (Exception e) {
                 // Log del error pero no fallar la operación principal
