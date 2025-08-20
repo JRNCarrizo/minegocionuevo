@@ -6,6 +6,7 @@ import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import ApiService from '../../services/api';
 import type { Producto } from '../../types';
+import { formatearFechaConHora } from '../../utils/dateUtils';
 
 interface HistorialCargaProductos {
   id: number;
@@ -224,17 +225,7 @@ export default function HistorialCargaProductos() {
   };
 
   const formatearFecha = (fecha: string) => {
-    // Si la fecha viene sin zona, la tratamos como UTC
-    const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z';
-    return new Date(fechaUTC).toLocaleString('es-AR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: 'America/Argentina/Buenos_Aires',
-    });
+    return formatearFechaConHora(fecha);
   };
 
   const obtenerColorTipoOperacion = (tipo: string) => {

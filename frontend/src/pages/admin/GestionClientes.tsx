@@ -4,7 +4,7 @@ import api from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useResponsive } from '../../hooks/useResponsive';
 import type { Cliente, Pedido } from '../../types';
-import { crearFechaLocal } from '../../utils/dateUtils';
+import { crearFechaLocal, formatearFechaConHora } from '../../utils/dateUtils';
 
 // Función helper para formatear fechas de manera segura
 const formatearFechaSegura = (fecha: any): string => {
@@ -502,7 +502,7 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
                           color: '#64748b',
                           wordBreak: 'break-word'
                         }}>
-                          {(() => { const fecha = pedido.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: isMobile ? 'short' : '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
+                          {formatearFechaConHora(pedido.fechaCreacion)}
                         </p>
                         <span
                           style={{
@@ -1035,7 +1035,7 @@ export default function GestionClientes() {
                           fontSize: '11px',
                           color: '#64748b'
                         }}>
-                          📅 Registrado: {(() => { const fecha = cliente.fechaCreacion; const fechaUTC = fecha.endsWith('Z') ? fecha : fecha + 'Z'; return new Date(fechaUTC).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); })()}
+                          📅 Registrado: {formatearFechaConHora(cliente.fechaCreacion)}
                         </p>
                       </div>
 

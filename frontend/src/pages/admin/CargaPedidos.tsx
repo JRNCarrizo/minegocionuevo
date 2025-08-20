@@ -5,7 +5,8 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha, formatearFechaCorta } from '../../utils/dateUtils';
+import { formatearFecha, formatearFechaCorta, formatearFechaConHora } from '../../utils/dateUtils';
+import TimeZoneInfo from '../../components/TimeZoneInfo';
 
 interface PlanillaPedido {
   id: number;
@@ -340,6 +341,9 @@ export default function CargaPedidos() {
                 }}>
                   💡 Presiona Enter para crear una nueva planilla
                 </p>
+                <div style={{ marginTop: '8px' }}>
+                  <TimeZoneInfo showDetails={true} />
+                </div>
               </div>
             </div>
             <button
@@ -677,10 +681,7 @@ export default function CargaPedidos() {
                                    {planilla.totalProductos}
                                  </span> unidades</span>
                                  <span>🛒 {planilla.detalles.length} productos</span>
-                                <span>⏰ {new Date(planilla.fechaCreacion).toLocaleTimeString('es-ES', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                })}</span>
+                                <span>⏰ {formatearFechaConHora(planilla.fechaCreacion)}</span>
                               </div>
                             </div>
                             <div style={{
