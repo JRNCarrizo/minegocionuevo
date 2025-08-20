@@ -6,6 +6,7 @@ import { useResponsive } from '../../hooks/useResponsive';
 import type { Pedido } from '../../types';
 import type { DetallePedido } from '../../types';
 import { formatearFechaConHora } from '../../utils/dateUtils';
+import TimeZoneInfo from '../../components/TimeZoneInfo';
 
 // Tipo para las estadísticas de pedidos
 interface EstadisticasPedidos {
@@ -1148,6 +1149,9 @@ export default function GestionPedidos() {
           }}>
             Administra todos los pedidos de tu tienda de manera eficiente.
           </p>
+          <div style={{ marginTop: '8px' }}>
+            <TimeZoneInfo showDetails={true} />
+          </div>
           <div style={{
             height: '4px',
             width: '60px',

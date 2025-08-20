@@ -10,9 +10,12 @@ public class TimeZoneConfig {
 
     @PostConstruct
     public void init() {
-        // Configurar zona horaria local del servidor para evitar problemas de fechas
+        // Configurar zona horaria UTC como base para consistencia global
+        // El frontend se encargará de convertir a la zona horaria local del cliente
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         System.out.println("🌍 Zona horaria del servidor configurada: " + TimeZone.getDefault().getID());
         System.out.println("🌍 Zona horaria actual: " + TimeZone.getDefault().getDisplayName());
+        System.out.println("🌍 Offset actual: " + TimeZone.getDefault().getRawOffset() / (1000 * 60 * 60) + " horas");
+        System.out.println("🌍 Configuración: Todas las fechas se almacenan en UTC y se convierten en el frontend");
     }
 }

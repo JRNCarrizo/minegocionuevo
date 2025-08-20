@@ -1,7 +1,53 @@
 /**
  * Utilidades para manejo de fechas en la aplicación
- * Maneja fechas de manera consistente sin problemas de zona horaria
+ * Maneja fechas de manera consistente con soporte global para zonas horarias
  */
+
+/**
+ * Obtiene la zona horaria local del cliente
+ */
+export const obtenerZonaHorariaLocal = (): string => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch (error) {
+    console.warn('No se pudo detectar la zona horaria local, usando UTC');
+    return 'UTC';
+  }
+};
+
+/**
+ * Obtiene el offset de la zona horaria local en minutos
+ */
+export const obtenerOffsetLocal = (): number => {
+  return new Date().getTimezoneOffset();
+};
+
+/**
+ * Convierte una fecha UTC a la zona horaria local del cliente
+ * @param fechaUTC - Fecha en UTC (string ISO o Date)
+ */
+export const convertirUTCALocal = (fechaUTC: string | Date): Date => {
+  try {
+    let fecha: Date;
+    
+    if (typeof fechaUTC === 'string') {
+      // Asegurar que la fecha se interprete como UTC
+      const fechaConZ = fechaUTC.endsWith('Z') ? fechaUTC : fechaUTC + 'Z';
+      fecha = new Date(fechaConZ);
+    } else {
+      fecha = new Date(fechaUTC);
+    }
+    
+    if (isNaN(fecha.getTime())) {
+      throw new Error('Fecha inválida');
+    }
+    
+    return fecha;
+  } catch (error) {
+    console.error('Error convirtiendo fecha UTC a local:', error);
+    return new Date();
+  }
+};
 
 /**
  * Crea una fecha local a partir de un string YYYY-MM-DD
@@ -99,6 +145,7 @@ export const compararFechas = (fechaA: string, fechaB: string): number => {
 
 /**
  * Formatea una fecha con hora para mostrar en la interfaz
+ * Convierte automáticamente de UTC a la zona horaria local del cliente
  * @param fechaString - String en formato ISO o similar, o array de números
  */
 export const formatearFechaConHora = (fechaString: any): string => {
@@ -110,24 +157,29 @@ export const formatearFechaConHora = (fechaString: any): string => {
       return 'N/A';
     }
     
-         // Si es un array (formato [year, month, day, hour, minute, second, nanoseconds])
-     if (Array.isArray(fechaString)) {
-       console.log('🔍 Procesando array de fecha:', fechaString);
-       const [year, month, day, hour = 0, minute = 0, second = 0, nanoseconds = 0] = fechaString;
-       const fecha = new Date(year, month - 1, day, hour, minute, second);
+    // Obtener zona horaria local del cliente
+    const zonaHorariaLocal = obtenerZonaHorariaLocal();
+    console.log('🌍 Zona horaria detectada:', zonaHorariaLocal);
+    
+    // Si es un array (formato [year, month, day, hour, minute, second, nanoseconds])
+    if (Array.isArray(fechaString)) {
+      console.log('🔍 Procesando array de fecha:', fechaString);
+      const [year, month, day, hour = 0, minute = 0, second = 0, nanoseconds = 0] = fechaString;
+      const fecha = new Date(year, month - 1, day, hour, minute, second);
       
       if (isNaN(fecha.getTime())) {
         console.log('🔍 Fecha inválida desde array:', fechaString);
         return 'Fecha inválida';
       }
       
-      return fecha.toLocaleString('es-AR', {
+      return fecha.toLocaleString('es-ES', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: false,
+        timeZone: zonaHorariaLocal
       });
     }
     
@@ -141,13 +193,14 @@ export const formatearFechaConHora = (fechaString: any): string => {
         return 'Fecha inválida';
       }
       
-      return fecha.toLocaleString('es-AR', {
+      return fecha.toLocaleString('es-ES', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: false,
+        timeZone: zonaHorariaLocal
       });
     }
     
@@ -155,26 +208,24 @@ export const formatearFechaConHora = (fechaString: any): string => {
     if (typeof fechaString === 'string') {
       console.log('🔍 Procesando string de fecha:', fechaString);
       
-      // Si la fecha termina en Z, removerla para evitar problemas de zona horaria
-      const fechaLimpia = fechaString.endsWith('Z') ? fechaString.slice(0, -1) : fechaString;
-      
-      // Crear fecha local sin interpretar zona horaria
-      const fecha = new Date(fechaLimpia);
+      // Convertir de UTC a zona horaria local
+      const fechaLocal = convertirUTCALocal(fechaString);
       
       // Verificar que la fecha es válida
-      if (isNaN(fecha.getTime())) {
+      if (isNaN(fechaLocal.getTime())) {
         console.log('🔍 Fecha inválida desde string:', fechaString);
         return 'Fecha inválida';
       }
       
-      // Formatear usando la zona horaria local
-      return fecha.toLocaleString('es-AR', {
+      // Formatear usando la zona horaria local del cliente
+      return fechaLocal.toLocaleString('es-ES', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: false,
+        timeZone: zonaHorariaLocal
       });
     }
     
@@ -187,13 +238,14 @@ export const formatearFechaConHora = (fechaString: any): string => {
         return 'Fecha inválida';
       }
       
-      return fechaString.toLocaleString('es-AR', {
+      return fechaString.toLocaleString('es-ES', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: false,
+        timeZone: zonaHorariaLocal
       });
     }
     
@@ -203,5 +255,25 @@ export const formatearFechaConHora = (fechaString: any): string => {
   } catch (error) {
     console.error('Error formateando fecha con hora:', error, 'Input:', fechaString);
     return 'Fecha inválida';
+  }
+};
+
+/**
+ * Formatea una fecha con hora en formato más detallado
+ * Incluye información de la zona horaria
+ */
+export const formatearFechaConHoraDetallada = (fechaString: any): string => {
+  try {
+    const fechaFormateada = formatearFechaConHora(fechaString);
+    const zonaHoraria = obtenerZonaHorariaLocal();
+    const offset = obtenerOffsetLocal();
+    const offsetHoras = Math.abs(Math.floor(offset / 60));
+    const offsetMinutos = Math.abs(offset % 60);
+    const signo = offset <= 0 ? '+' : '-';
+    
+    return `${fechaFormateada} (${zonaHoraria}, UTC${signo}${offsetHoras.toString().padStart(2, '0')}:${offsetMinutos.toString().padStart(2, '0')})`;
+  } catch (error) {
+    console.error('Error formateando fecha detallada:', error);
+    return formatearFechaConHora(fechaString);
   }
 };
