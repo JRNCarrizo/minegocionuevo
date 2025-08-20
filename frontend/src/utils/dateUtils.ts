@@ -61,6 +61,7 @@ export const crearFechaLocal = (fechaString: string): Date => {
 
 /**
  * Formatea una fecha para mostrar en la interfaz
+ * Convierte automáticamente de UTC a la zona horaria local del cliente
  * @param fecha - String en formato YYYY-MM-DD o YYYY-MM-DDTHH:mm:ss
  * @param opciones - Opciones de formato (opcional)
  */
@@ -74,24 +75,50 @@ export const formatearFecha = (
   }
 ): string => {
   try {
-    let fechaString: string;
+    console.log('🔍 formatearFecha - Input:', fecha, 'Tipo:', typeof fecha);
     
-    // Si es un objeto Date, convertirlo a string
+    // Si es null o undefined
+    if (fecha == null) {
+      return 'N/A';
+    }
+    
+    let fechaLocal: Date;
+    
+    // Si es un objeto Date
     if (fecha instanceof Date) {
-      fechaString = fecha.toISOString().split('T')[0];
+      if (isNaN(fecha.getTime())) {
+        console.log('🔍 Fecha inválida desde objeto Date');
+        return 'Fecha inválida';
+      }
+      fechaLocal = fecha;
     } else if (typeof fecha === 'string') {
-      // Si la fecha incluye tiempo (formato ISO), extraer solo la parte de la fecha
-      fechaString = fecha.split('T')[0];
+      // Si la fecha incluye tiempo (formato ISO), convertir de UTC a local
+      if (fecha.includes('T') || fecha.includes('Z')) {
+        fechaLocal = convertirUTCALocal(fecha);
+      } else {
+        // Si es solo fecha (YYYY-MM-DD), crear fecha en zona horaria local
+        const [year, month, day] = fecha.split('-').map(Number);
+        fechaLocal = new Date(year, month - 1, day);
+      }
     } else {
       console.error('❌ Tipo de fecha no válido:', typeof fecha, fecha);
       return 'Fecha inválida';
     }
     
-    // Crear fecha directamente sin usar crearFechaLocal
-    const [year, month, day] = fechaString.split('-').map(Number);
-    const fechaLocal = new Date(year, month - 1, day);
+    // Verificar que la fecha es válida
+    if (isNaN(fechaLocal.getTime())) {
+      console.log('🔍 Fecha inválida después de procesamiento:', fecha);
+      return 'Fecha inválida';
+    }
     
-    return fechaLocal.toLocaleDateString('es-ES', opciones);
+    // Obtener zona horaria local del cliente
+    const zonaHorariaLocal = obtenerZonaHorariaLocal();
+    
+    // Formatear usando la zona horaria local del cliente
+    return fechaLocal.toLocaleDateString('es-ES', {
+      ...opciones,
+      timeZone: zonaHorariaLocal
+    });
   } catch (error) {
     console.error('❌ Error al formatear fecha:', error, fecha);
     return 'Fecha inválida';
@@ -100,6 +127,7 @@ export const formatearFecha = (
 
 /**
  * Formatea una fecha para mostrar en formato corto
+ * Convierte automáticamente de UTC a la zona horaria local del cliente
  * @param fecha - String en formato YYYY-MM-DD o YYYY-MM-DDTHH:mm:ss
  */
 export const formatearFechaCorta = (fecha: string | Date): string => {

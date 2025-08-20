@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import ApiService from '../services/api';
 import { useResponsive } from '../hooks/useResponsive';
 import { useUsuarioActual } from '../hooks/useUsuarioActual';
+import { obtenerFechaActual } from '../utils/dateUtils';
 
 interface Producto {
   id: number;
@@ -39,12 +40,6 @@ export default function ModalAgregarRoturaPerdida({
   const [cantidadTemporal, setCantidadTemporal] = useState(1);
   const [modoCantidad, setModoCantidad] = useState(false);
   
-  // Función para obtener la fecha actual en zona horaria local
-  const obtenerFechaActual = () => {
-    const hoy = new Date();
-    return hoy.toISOString().split('T')[0];
-  };
-
   // Estados para el formulario
   const [fecha, setFecha] = useState(obtenerFechaActual());
   const [observaciones, setObservaciones] = useState('');

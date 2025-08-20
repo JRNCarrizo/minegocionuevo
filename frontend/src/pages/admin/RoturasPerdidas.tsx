@@ -5,8 +5,9 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha, formatearFechaCorta } from '../../utils/dateUtils';
+import { formatearFecha, formatearFechaCorta, obtenerFechaActual } from '../../utils/dateUtils';
 import ModalAgregarRoturaPerdida from '../../components/ModalAgregarRoturaPerdida';
+import TimeZoneInfo from '../../components/TimeZoneInfo';
 
 interface RoturaPerdida {
   id: number;
@@ -37,12 +38,6 @@ export default function RoturasPerdidas() {
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
   const [diasExpandidos, setDiasExpandidos] = useState<Set<string>>(new Set());
   const [mostrarModalAgregar, setMostrarModalAgregar] = useState(false);
-
-  // Función para obtener la fecha actual en zona horaria local
-  const obtenerFechaActual = () => {
-    const hoy = new Date();
-    return hoy.toISOString().split('T')[0];
-  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -314,6 +309,7 @@ export default function RoturasPerdidas() {
                  }}>
                    💡 Presiona Enter para agregar una nueva rotura/pérdida
                  </p>
+                 <TimeZoneInfo showDetails={true} />
               </div>
             </div>
             
