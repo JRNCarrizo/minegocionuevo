@@ -16,7 +16,7 @@ import org.springframework.core.env.Environment;
 @Service
 public class EmailService {
 
-    @Autowired
+    @Autowired(required = false)
     private JavaMailSender mailSender;
 
     @Autowired
@@ -49,6 +49,7 @@ public class EmailService {
         System.out.println("JavaMailSender: " + (mailSender != null ? "Configurado" : "NO CONFIGURADO"));
         System.out.println("Modo desarrollo: " + (isDevelopmentMode() ? "SÍ" : "NO"));
         System.out.println("Perfiles activos: " + String.join(", ", environment.getActiveProfiles()));
+        System.out.println("Mail habilitado: " + (mailSender != null ? "SÍ" : "NO"));
         System.out.println("==========================");
     }
 
@@ -64,8 +65,8 @@ public class EmailService {
         System.out.println("🔗 Enlace de recuperación: https://negocio360.org/recuperar-contraseña?token=" + token);
         System.out.println("==================================================");
         
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de email de recuperación");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de email de recuperación");
             System.out.println("📧 Email simulado enviado a: " + emailDestino);
             System.out.println("🔗 Enlace para desarrollo: http://localhost:5173/recuperar-contraseña?token=" + token);
             return;
@@ -119,8 +120,8 @@ public class EmailService {
         System.out.println("🏪 Subdominio: " + subdominio);
         System.out.println("🔑 Token: " + token);
         
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de email de recuperación de cliente");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de email de recuperación de cliente");
             System.out.println("📧 Email simulado enviado a: " + emailDestino);
             System.out.println("🔗 Enlace para desarrollo: http://" + subdominio + ".localhost:5173/reset-password?token=" + token);
             return;
@@ -194,8 +195,8 @@ public class EmailService {
      * Envía un email de confirmación de cambio de contraseña para clientes
      */
     public void enviarEmailConfirmacionCambioCliente(String emailDestino, String nombreUsuario) {
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de email de confirmación de cambio de cliente");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de email de confirmación de cambio de cliente");
             System.out.println("📧 Email simulado enviado a: " + emailDestino);
             return;
         }
@@ -230,8 +231,8 @@ public class EmailService {
      * Envía un email de confirmación de cambio de contraseña
      */
     public void enviarEmailConfirmacionCambio(String emailDestino, String nombreUsuario) {
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de email de confirmación de cambio");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de email de confirmación de cambio");
             System.out.println("📧 Email simulado enviado a: " + emailDestino);
             return;
         }
@@ -271,8 +272,8 @@ public class EmailService {
         System.out.println("👤 Usuario: " + nombreUsuario);
         System.out.println("🔑 Token: " + tokenVerificacion);
         
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de email de verificación");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de email de verificación");
             System.out.println("📧 Email simulado enviado a: " + emailDestinatario);
             System.out.println("🔗 Enlace para desarrollo: http://localhost:5173/verificar-email-admin?token=" + tokenVerificacion);
             System.out.println("📋 Para probar, copia y pega el enlace en tu navegador");
@@ -319,8 +320,8 @@ public class EmailService {
         System.out.println("🔑 Token: " + tokenVerificacion);
         System.out.println("🔍 Modo desarrollo detectado: " + (isDevelopmentMode() ? "SÍ" : "NO"));
         
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de email de verificación de cliente");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de email de verificación de cliente");
             System.out.println("📧 Email simulado enviado a: " + emailDestinatario);
             System.out.println("🔗 Enlace para desarrollo: http://" + subdominio + ".localhost:5173/verificar-email?token=" + tokenVerificacion);
             System.out.println("🔗 Enlace alternativo: http://localhost:5173/verificar-email?token=" + tokenVerificacion);
@@ -375,8 +376,8 @@ public class EmailService {
      * Envía email de bienvenida después de verificar la cuenta
      */
     public void enviarEmailBienvenida(String emailDestinatario, String nombreUsuario, String nombreEmpresa) {
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de email de bienvenida");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de email de bienvenida");
             System.out.println("📧 Email simulado enviado a: " + emailDestinatario);
             return;
         }
@@ -418,8 +419,8 @@ public class EmailService {
      * Envía email de recordatorio de verificación
      */
     public void enviarEmailRecordatorioVerificacion(String emailDestinatario, String nombreUsuario, String tokenVerificacion) {
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de email de recordatorio de verificación");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de email de recordatorio de verificación");
             System.out.println("📧 Email simulado enviado a: " + emailDestinatario);
             return;
         }
@@ -454,8 +455,8 @@ public class EmailService {
      * Envía un email genérico
      */
     public void enviarEmail(String emailDestinatario, String asunto, String contenido) {
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de email genérico");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de email genérico");
             System.out.println("📧 Email simulado enviado a: " + emailDestinatario);
             System.out.println("📝 Asunto: " + asunto);
             return;
@@ -480,8 +481,8 @@ public class EmailService {
      * Envía notificación de nuevo pedido al email de contacto de la empresa
      */
     public void enviarNotificacionNuevoPedido(String emailEmpresa, String nombreEmpresa, String numeroPedido, String clienteNombre, String clienteEmail, BigDecimal total, String direccionEntrega) {
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de notificación de nuevo pedido");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de notificación de nuevo pedido");
             System.out.println("📧 Email simulado enviado a: " + emailEmpresa);
             System.out.println("🛒 Pedido: " + numeroPedido);
             return;
@@ -531,8 +532,8 @@ public class EmailService {
      * Envía notificación de pedido cancelado al email de contacto de la empresa
      */
     public void enviarNotificacionPedidoCancelado(String emailEmpresa, String nombreEmpresa, String numeroPedido, String clienteNombre, String clienteEmail, BigDecimal total) {
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de notificación de pedido cancelado");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de notificación de pedido cancelado");
             System.out.println("📧 Email simulado enviado a: " + emailEmpresa);
             System.out.println("❌ Pedido cancelado: " + numeroPedido);
             return;
@@ -578,8 +579,8 @@ public class EmailService {
      * Envía confirmación de compra al cliente
      */
     public void enviarConfirmacionCompraCliente(String emailCliente, String nombreCliente, String nombreEmpresa, String numeroPedido, BigDecimal total, String direccionEntrega) {
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de confirmación de compra al cliente");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de confirmación de compra al cliente");
             System.out.println("📧 Email simulado enviado a: " + emailCliente);
             System.out.println("🛒 Pedido: " + numeroPedido);
             return;
@@ -627,8 +628,8 @@ public class EmailService {
      * Envía confirmación de pedido por administrador al cliente
      */
     public void enviarConfirmacionAdminCliente(String emailCliente, String nombreCliente, String nombreEmpresa, String numeroPedido, BigDecimal total) {
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de confirmación de administrador al cliente");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de confirmación de administrador al cliente");
             System.out.println("📧 Email simulado enviado a: " + emailCliente);
             System.out.println("✅ Pedido confirmado: " + numeroPedido);
             return;
@@ -674,8 +675,8 @@ public class EmailService {
      * Envía notificación de entrega al cliente
      */
     public void enviarNotificacionEntregaCliente(String emailCliente, String nombreCliente, String nombreEmpresa, String numeroPedido, BigDecimal total) {
-        if (isDevelopmentMode()) {
-            System.out.println("🚀 MODO DESARROLLO: Simulando envío de notificación de entrega al cliente");
+        if (isDevelopmentMode() || mailSender == null) {
+            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de notificación de entrega al cliente");
             System.out.println("📧 Email simulado enviado a: " + emailCliente);
             System.out.println("🎉 Pedido entregado: " + numeroPedido);
             return;

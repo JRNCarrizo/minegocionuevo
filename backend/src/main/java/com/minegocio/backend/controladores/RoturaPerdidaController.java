@@ -31,7 +31,7 @@ public class RoturaPerdidaController {
      * Crear una nueva rotura o pérdida
      */
     @PostMapping
-    public ResponseEntity<ApiResponse<RoturaPerdida>> crearRoturaPerdida(
+    public ResponseEntity<ApiResponse<RoturaPerdidaResponseDTO>> crearRoturaPerdida(
             @Valid @RequestBody RoturaPerdidaDTO dto,
             Authentication authentication) {
         
@@ -47,7 +47,10 @@ public class RoturaPerdidaController {
             
             System.out.println("✅ Rotura/Pérdida creada con ID: " + roturaPerdida.getId());
             
-            return ResponseEntity.ok(ApiResponse.success("Rotura/Pérdida registrada exitosamente", roturaPerdida));
+            // Convertir a DTO para evitar problemas de serialización
+            RoturaPerdidaResponseDTO roturaPerdidaResponse = roturaPerdidaService.convertirADTO(roturaPerdida);
+            
+            return ResponseEntity.ok(ApiResponse.success("Rotura/Pérdida registrada exitosamente", roturaPerdidaResponse));
         } catch (Exception e) {
             System.out.println("❌ Error al crear rotura/pérdida: " + e.getMessage());
             e.printStackTrace();

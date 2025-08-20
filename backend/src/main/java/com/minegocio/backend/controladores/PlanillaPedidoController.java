@@ -34,7 +34,7 @@ public class PlanillaPedidoController {
      * Crear una nueva planilla de pedido
      */
     @PostMapping
-    public ResponseEntity<ApiResponse<PlanillaPedido>> crearPlanillaPedido(
+    public ResponseEntity<ApiResponse<PlanillaPedidoResponseDTO>> crearPlanillaPedido(
             @Valid @RequestBody PlanillaPedidoDTO dto,
             Authentication authentication) {
         
@@ -64,7 +64,10 @@ public class PlanillaPedidoController {
             
             System.out.println("✅ Planilla creada con ID: " + planilla.getId());
             
-            return ResponseEntity.ok(ApiResponse.success("Planilla de pedido creada exitosamente", planilla));
+            // Convertir a DTO para evitar problemas de serialización
+            PlanillaPedidoResponseDTO planillaResponse = planillaPedidoService.convertirADTO(planilla);
+            
+            return ResponseEntity.ok(ApiResponse.success("Planilla de pedido creada exitosamente", planillaResponse));
         } catch (Exception e) {
             System.out.println("❌ Error al crear planilla: " + e.getMessage());
             e.printStackTrace();

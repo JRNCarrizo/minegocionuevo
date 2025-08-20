@@ -20,7 +20,7 @@ public class JwtUtils {
     
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-    @Value("${MINE_NEGOCIO_APP_JWT_SECRET:miNegocioSecretKeyParaJWT2024}")
+    @Value("${minegocio.app.jwt-secret:miNegocioSecretKeyParaJWT2024ConLongitudSuficientePara256Bits}")
     private String jwtSecret;
 
     @Value("${minegocio.app.jwtExpirationMs:86400000}") // 24 horas

@@ -12,6 +12,7 @@ import com.minegocio.backend.dto.ClienteDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -51,6 +52,9 @@ public class PublicoController {
 
     @Autowired
     private PedidoRepository pedidoRepository;
+    
+    @Autowired
+    private com.minegocio.backend.repositorios.UsuarioRepository usuarioRepository;
 
     /**
      * Health check endpoint para Railway
@@ -183,6 +187,70 @@ public class PublicoController {
     }
 
     /**
+     * Debug endpoint público para verificar si el backend está funcionando
+     */
+    @GetMapping("/debug/backend-status")
+    public ResponseEntity<?> debugBackendStatus() {
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "BACKEND_OK");
+            response.put("message", "Backend is running correctly");
+            response.put("timestamp", java.time.LocalDateTime.now().toString());
+            response.put("public_endpoint", true);
+            response.put("auth_required", false);
+            response.put("jwt_secret_configured", System.getenv("MINE_NEGOCIO_APP_JWT_SECRET") != null);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "ERROR");
+            response.put("message", "Backend status check failed");
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Debug endpoint para verificar estado de autenticación
+     */
+    @GetMapping("/debug/auth-status")
+    public ResponseEntity<?> debugAuthStatus(Authentication authentication) {
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "AUTH_STATUS");
+            response.put("timestamp", java.time.LocalDateTime.now().toString());
+            response.put("authentication", authentication != null ? "PRESENT" : "NULL");
+            
+            if (authentication != null) {
+                response.put("principal_type", authentication.getPrincipal().getClass().getSimpleName());
+                response.put("principal_name", authentication.getName());
+                response.put("authorities", authentication.getAuthorities().stream()
+                    .map(Object::toString)
+                    .collect(Collectors.toList()));
+                response.put("authenticated", authentication.isAuthenticated());
+                
+                // Información adicional del usuario
+                if (authentication.getPrincipal() instanceof com.minegocio.backend.seguridad.UsuarioPrincipal) {
+                    com.minegocio.backend.seguridad.UsuarioPrincipal principal = 
+                        (com.minegocio.backend.seguridad.UsuarioPrincipal) authentication.getPrincipal();
+                    response.put("user_id", principal.getId());
+                    response.put("empresa_id", principal.getEmpresaId());
+                    response.put("nombre_completo", principal.getNombreCompleto());
+                    response.put("rol_usuario", principal.getUsuario().getRol().name());
+                    response.put("usuario_activo", principal.getUsuario().getActivo());
+                    response.put("email_verificado", principal.getUsuario().getEmailVerificado());
+                }
+            }
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "ERROR");
+            response.put("message", "Auth status check failed");
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+  /**
      * Obtener información pública de una empresa por subdominio
      */
     @GetMapping("/{subdominio}/empresa")
@@ -1382,6 +1450,57 @@ public class PublicoController {
                 "error", "Error interno del servidor: " + e.getMessage()
             );
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Endpoint temporal para cambiar el rol del usuario actual a ADMINISTRADOR
+     */
+    @PostMapping("/debug/cambiar-rol-admin")
+    public ResponseEntity<?> cambiarRolAAdmin(Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Usuario no autenticado"));
+            }
+
+            if (!(authentication.getPrincipal() instanceof com.minegocio.backend.seguridad.UsuarioPrincipal)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Tipo de usuario no válido"));
+            }
+
+            com.minegocio.backend.seguridad.UsuarioPrincipal principal = 
+                (com.minegocio.backend.seguridad.UsuarioPrincipal) authentication.getPrincipal();
+            
+            com.minegocio.backend.entidades.Usuario usuario = principal.getUsuario();
+            
+            System.out.println("=== CAMBIANDO ROL DE USUARIO ===");
+            System.out.println("Usuario ID: " + usuario.getId());
+            System.out.println("Email: " + usuario.getEmail());
+            System.out.println("Rol anterior: " + usuario.getRol());
+            
+            // Cambiar rol a ADMINISTRADOR
+            usuario.setRol(com.minegocio.backend.entidades.Usuario.RolUsuario.ADMINISTRADOR);
+            
+            // Guardar en la base de datos
+            usuarioRepository.save(usuario);
+            
+            System.out.println("Rol nuevo: " + usuario.getRol());
+            System.out.println("================================");
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Rol cambiado exitosamente a ADMINISTRADOR",
+                "usuario_id", usuario.getId(),
+                "email", usuario.getEmail(),
+                "rol_anterior", principal.getUsuario().getRol().name(),
+                "rol_nuevo", "ADMINISTRADOR"
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("Error al cambiar rol: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al cambiar rol: " + e.getMessage()));
         }
     }
 }

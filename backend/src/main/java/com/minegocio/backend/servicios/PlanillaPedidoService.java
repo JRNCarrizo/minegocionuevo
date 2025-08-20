@@ -471,4 +471,43 @@ public class PlanillaPedidoService {
             return outputStream.toByteArray();
         }
     }
+
+    /**
+     * Convierte una entidad PlanillaPedido a PlanillaPedidoResponseDTO
+     */
+    public PlanillaPedidoResponseDTO convertirADTO(PlanillaPedido planilla) {
+        PlanillaPedidoResponseDTO dto = new PlanillaPedidoResponseDTO();
+        dto.setId(planilla.getId());
+        dto.setNumeroPlanilla(planilla.getNumeroPlanilla());
+        dto.setFechaPlanilla(planilla.getFechaPlanilla());
+        dto.setObservaciones(planilla.getObservaciones());
+        dto.setTotalProductos(planilla.getTotalProductos());
+        dto.setFechaCreacion(planilla.getFechaCreacion());
+        dto.setFechaActualizacion(planilla.getFechaActualizacion());
+        
+        // Convertir detalles
+        if (planilla.getDetalles() != null) {
+            List<DetallePlanillaPedidoResponseDTO> detallesDTO = planilla.getDetalles().stream()
+                    .map(this::convertirDetalleADTO)
+                    .collect(Collectors.toList());
+            dto.setDetalles(detallesDTO);
+        }
+        
+        return dto;
+    }
+
+    /**
+     * Convierte una entidad DetallePlanillaPedido a DetallePlanillaPedidoResponseDTO
+     */
+    private DetallePlanillaPedidoResponseDTO convertirDetalleADTO(DetallePlanillaPedido detalle) {
+        DetallePlanillaPedidoResponseDTO dto = new DetallePlanillaPedidoResponseDTO();
+        dto.setId(detalle.getId());
+        dto.setDescripcion(detalle.getDescripcion());
+        dto.setCantidad(detalle.getCantidad());
+        dto.setNumeroPersonalizado(detalle.getNumeroPersonalizado());
+        dto.setObservaciones(detalle.getObservaciones());
+        dto.setFechaCreacion(detalle.getFechaCreacion());
+        
+        return dto;
+    }
 }

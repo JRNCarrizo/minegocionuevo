@@ -98,7 +98,7 @@ public class RoturaPerdidaService {
         List<RoturaPerdida> roturasPerdidas = roturaPerdidaRepository.findByEmpresaIdOrderByFechaDesc(empresaId);
         
         return roturasPerdidas.stream()
-                .map(this::convertirAResponseDTO)
+                .map(this::convertirADTO)
                 .collect(Collectors.toList());
     }
 
@@ -109,7 +109,7 @@ public class RoturaPerdidaService {
         List<RoturaPerdida> roturasPerdidas = roturaPerdidaRepository.findByEmpresaIdAndFechaOrderByFechaCreacionDesc(empresaId, fecha);
         
         return roturasPerdidas.stream()
-                .map(this::convertirAResponseDTO)
+                .map(this::convertirADTO)
                 .collect(Collectors.toList());
     }
 
@@ -120,7 +120,7 @@ public class RoturaPerdidaService {
         List<RoturaPerdida> roturasPerdidas = roturaPerdidaRepository.findByEmpresaIdAndFechaBetweenOrderByFechaDesc(empresaId, fechaInicio, fechaFin);
         
         return roturasPerdidas.stream()
-                .map(this::convertirAResponseDTO)
+                .map(this::convertirADTO)
                 .collect(Collectors.toList());
     }
 
@@ -333,7 +333,7 @@ public class RoturaPerdidaService {
     /**
      * Convertir entidad a DTO de respuesta
      */
-    private RoturaPerdidaResponseDTO convertirAResponseDTO(RoturaPerdida roturaPerdida) {
+    public RoturaPerdidaResponseDTO convertirADTO(RoturaPerdida roturaPerdida) {
         RoturaPerdidaResponseDTO dto = new RoturaPerdidaResponseDTO();
         dto.setId(roturaPerdida.getId());
         dto.setFecha(roturaPerdida.getFecha());

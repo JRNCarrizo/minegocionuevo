@@ -86,6 +86,9 @@ class ApiService {
            /\/roturas-perdidas\//.test(config.url))
         ) {
           const tokenAdmin = localStorage.getItem('token');
+          console.log('🔍 === DEBUG INTERCEPTOR ADMIN ===');
+          console.log('🔍 URL:', config.url);
+          console.log('🔍 Token encontrado:', tokenAdmin ? 'SÍ' : 'NO');
           if (tokenAdmin) {
             console.log('👨‍💼 Token admin agregado para:', config.url);
             console.log('🔑 Token (primeros 20 chars):', tokenAdmin.substring(0, 20) + '...');
@@ -125,8 +128,15 @@ class ApiService {
         const tokenCliente = localStorage.getItem('clienteToken');
         const token = tokenAdmin || tokenCliente;
         
+        console.log('🔍 === DEBUG INTERCEPTOR ===');
+        console.log('🔍 URL:', config.url);
+        console.log('🔍 Token admin presente:', !!tokenAdmin);
+        console.log('🔍 Token cliente presente:', !!tokenCliente);
+        console.log('🔍 Token seleccionado:', !!token);
+        
         if (token) {
           console.log('🔑 Token genérico agregado');
+          console.log('🔍 Token (primeros 50 chars):', token.substring(0, 50) + '...');
           config.headers.Authorization = `Bearer ${token}`;
         } else {
           console.log('⚠️ No se encontró token para endpoint:', config.url);
@@ -1335,6 +1345,40 @@ class ApiService {
     return response.data;
   }
 
+  async debugAuthStatus() {
+    const response = await this.api.get('/debug/auth-status');
+    return response.data;
+  }
+
+  async checkLocalStorageAuth() {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    
+    console.log('🔍 === CHECK LOCALSTORAGE AUTH ===');
+    console.log('🔍 Token presente:', !!token);
+    console.log('🔍 User presente:', !!user);
+    
+    if (token) {
+      console.log('🔍 Token (primeros 50 chars):', token.substring(0, 50) + '...');
+    }
+    
+    if (user) {
+      try {
+        const userObj = JSON.parse(user);
+        console.log('🔍 User object:', userObj);
+      } catch (e) {
+        console.log('🔍 User (raw):', user);
+      }
+    }
+    
+    return {
+      hasToken: !!token,
+      hasUser: !!user,
+      token: token ? token.substring(0, 50) + '...' : null,
+      user: user
+    };
+  }
+
   // Métodos para registro en dos etapas
   async registrarAdministrador(data: {
     nombre: string;
@@ -1623,10 +1667,41 @@ class ApiService {
   // Crear nueva planilla de pedidos
   async crearPlanillaPedido(planillaData: any): Promise<ApiResponse<any>> {
     try {
+      console.log('🔍 === DEBUG CREAR PLANILLA PEDIDO ===');
+      console.log('🔍 Token en localStorage:', localStorage.getItem('token') ? 'Presente' : 'No encontrado');
+      console.log('🔍 User en localStorage:', localStorage.getItem('user') ? 'Presente' : 'No encontrado');
+      console.log('🔍 Datos de la planilla:', planillaData);
+      
+      // Verificar si el usuario está logueado
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      
+      if (!token || !user) {
+        throw new Error('Usuario no autenticado. Por favor, inicie sesión.');
+      }
+      
+      // Verificar el estado de autenticación con el backend
+      try {
+        const authStatus = await this.debugAuthStatus();
+        console.log('🔍 Estado de autenticación:', authStatus);
+      } catch (authError) {
+        console.warn('⚠️ No se pudo verificar el estado de autenticación:', authError);
+      }
+      
       const response = await this.api.post('/planillas-pedidos', planillaData);
+      console.log('✅ Planilla creada exitosamente');
       return response.data;
     } catch (error: any) {
       console.error('❌ Error al crear planilla de pedidos:', error);
+      console.error('❌ Status:', error.response?.status);
+      console.error('❌ Data:', error.response?.data);
+      
+      // Si es un error 403, sugerir hacer login
+      if (error.response?.status === 403) {
+        console.error('🔐 Error 403: Usuario no autorizado. Verifique que esté logueado con un rol de administrador.');
+        alert('Error de autorización. Por favor, verifique que esté logueado con un rol de administrador.');
+      }
+      
       throw error;
     }
   }
