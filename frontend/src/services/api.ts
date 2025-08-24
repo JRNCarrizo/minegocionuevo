@@ -1345,9 +1345,18 @@ class ApiService {
     return response.data;
   }
 
-  async debugAuthStatus() {
-    const response = await this.api.get('/debug/auth-status');
-    return response.data;
+  async debugAuthStatus(): Promise<any> {
+    try {
+      console.log('🔍 Verificando estado de autenticación...');
+      const response = await this.api.get('/debug/auth-status');
+      console.log('✅ Estado de autenticación:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al verificar estado de autenticación:', error);
+      console.error('❌ Status:', error.response?.status);
+      console.error('❌ Data:', error.response?.data);
+      throw error;
+    }
   }
 
   async checkLocalStorageAuth() {
@@ -1772,6 +1781,65 @@ class ApiService {
     }
   }
 
+  // ===== PLANILLAS DE DEVOLUCIÓN =====
+  
+  // Crear planilla de devolución
+  async crearPlanillaDevolucion(planillaData: any): Promise<ApiResponse<any>> {
+    try {
+      console.log('🔄 Enviando planilla de devolución:', planillaData);
+      const response = await this.api.post('/devoluciones', planillaData);
+      console.log('✅ Planilla de devolución creada exitosamente');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al crear planilla de devolución:', error);
+      console.error('❌ Status:', error.response?.status);
+      console.error('❌ Data:', error.response?.data);
+      
+      // Si es un error 403, sugerir hacer login
+      if (error.response?.status === 403) {
+        console.error('🔐 Error 403: Usuario no autorizado. Verifique que esté logueado con un rol de administrador.');
+        alert('Error de autorización. Por favor, verifique que esté logueado con un rol de administrador.');
+      }
+      
+      throw error;
+    }
+  }
+
+  // Obtener planillas de devolución
+  async obtenerPlanillasDevolucion(): Promise<any[]> {
+    try {
+      const response = await this.api.get('/devoluciones');
+      console.log('🔍 ApiService - Respuesta completa:', response);
+      console.log('🔍 ApiService - response.data:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener planillas de devolución:', error);
+      throw error;
+    }
+  }
+
+  // Obtener planilla de devolución por ID
+  async obtenerPlanillaDevolucionPorId(id: number): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.get(`/devoluciones/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener planilla de devolución por ID:', error);
+      throw error;
+    }
+  }
+
+  // Eliminar planilla de devolución
+  async eliminarPlanillaDevolucion(id: number): Promise<ApiResponse<string>> {
+    try {
+      const response = await this.api.delete(`/devoluciones/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al eliminar planilla de devolución:', error);
+      throw error;
+    }
+  }
+
   // Agregar detalle a una planilla
   async agregarDetallePlanilla(planillaId: number, detalleData: any): Promise<ApiResponse<any>> {
     try {
@@ -1803,6 +1871,52 @@ class ApiService {
       return response.data;
     } catch (error: any) {
       console.error('❌ Error al exportar planilla de pedidos:', error);
+      throw error;
+    }
+  }
+
+  // ===== REMITOS DE INGRESO =====
+
+  // Crear remito de ingreso
+  async crearRemitoIngreso(remitoData: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.post('/remitos-ingreso', remitoData);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al crear remito de ingreso:', error);
+      throw error;
+    }
+  }
+
+  // Obtener remitos de ingreso
+  async obtenerRemitosIngreso(): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await this.api.get('/remitos-ingreso');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener remitos de ingreso:', error);
+      throw error;
+    }
+  }
+
+  // Obtener remito de ingreso por ID
+  async obtenerRemitoIngreso(id: number): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.get(`/remitos-ingreso/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener remito de ingreso:', error);
+      throw error;
+    }
+  }
+
+  // Eliminar remito de ingreso
+  async eliminarRemitoIngreso(id: number): Promise<ApiResponse<string>> {
+    try {
+      const response = await this.api.delete(`/remitos-ingreso/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al eliminar remito de ingreso:', error);
       throw error;
     }
   }

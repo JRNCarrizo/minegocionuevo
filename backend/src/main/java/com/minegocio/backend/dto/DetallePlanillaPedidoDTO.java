@@ -1,8 +1,10 @@
 package com.minegocio.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 
 /**
  * DTO para crear y actualizar detalles de planillas de pedidos
@@ -21,6 +23,8 @@ public class DetallePlanillaPedidoDTO {
     private Integer cantidad;
     
     private String observaciones;
+    
+    private LocalDateTime fechaCreacion;
     
     private Long planillaPedidoId;
     private Long productoId;
@@ -54,6 +58,9 @@ public class DetallePlanillaPedidoDTO {
 
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+
+    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
 
     public Long getPlanillaPedidoId() { return planillaPedidoId; }
     public void setPlanillaPedidoId(Long planillaPedidoId) { this.planillaPedidoId = planillaPedidoId; }

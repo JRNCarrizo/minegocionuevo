@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,15 +56,23 @@ public class PlanillaPedidoService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrada"));
 
         System.out.println("📋 [SERVICE] Fecha recibida en DTO: " + dto.getFechaPlanilla());
-        System.out.println("📋 [SERVICE] Fecha actual del servidor: " + java.time.LocalDate.now());
+        System.out.println("📋 [SERVICE] Fecha actual del servidor: " + java.time.LocalDateTime.now());
         System.out.println("📋 [SERVICE] Zona horaria del servidor: " + java.time.ZoneId.systemDefault());
         System.out.println("📋 [SERVICE] Comparación de fechas:");
         System.out.println("   - Fecha DTO: " + dto.getFechaPlanilla());
-        System.out.println("   - Fecha actual: " + java.time.LocalDate.now());
-        System.out.println("   - Son iguales: " + dto.getFechaPlanilla().equals(java.time.LocalDate.now()));
+        System.out.println("   - Fecha actual: " + java.time.LocalDateTime.now());
+        System.out.println("   - Son iguales: " + dto.getFechaPlanilla().equals(java.time.LocalDateTime.now()));
         
-        PlanillaPedido planilla = new PlanillaPedido(empresa, usuario, dto.getFechaPlanilla());
+        // Asegurar que la fecha se procese correctamente en UTC
+        LocalDateTime fechaPlanilla = dto.getFechaPlanilla();
+        if (fechaPlanilla == null) {
+            fechaPlanilla = LocalDateTime.now();
+            System.out.println("📋 [SERVICE] Fecha nula, usando fecha actual: " + fechaPlanilla);
+        }
+        
+        PlanillaPedido planilla = new PlanillaPedido(empresa, usuario, fechaPlanilla);
         planilla.setObservaciones(dto.getObservaciones());
+        planilla.setTipo("PEDIDO"); // Marcar como pedido
 
         // Si se proporciona un número de planilla específico, usarlo
         if (dto.getNumeroPlanilla() != null && !dto.getNumeroPlanilla().isEmpty()) {
@@ -117,7 +126,7 @@ public class PlanillaPedidoService {
      * Obtener todas las planillas de una empresa
      */
     public List<PlanillaPedidoResponseDTO> obtenerPlanillasPorEmpresa(Long empresaId) {
-        List<PlanillaPedido> planillas = planillaPedidoRepository.findByEmpresaIdOrderByFechaPlanillaDesc(empresaId);
+        List<PlanillaPedido> planillas = planillaPedidoRepository.findByEmpresaIdAndTipoOrderByFechaPlanillaDesc(empresaId, "PEDIDO");
         
         return planillas.stream().map(planilla -> {
             // Cargar los detalles para cada planilla

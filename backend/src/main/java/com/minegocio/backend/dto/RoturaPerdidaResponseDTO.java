@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 public class RoturaPerdidaResponseDTO {
 
     private Long id;
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fecha;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime fecha;
     private Integer cantidad;
     private String observaciones;
     private String descripcionProducto;
@@ -27,7 +27,7 @@ public class RoturaPerdidaResponseDTO {
     // Constructores
     public RoturaPerdidaResponseDTO() {}
 
-    public RoturaPerdidaResponseDTO(Long id, LocalDate fecha, Integer cantidad, String observaciones) {
+    public RoturaPerdidaResponseDTO(Long id, LocalDateTime fecha, Integer cantidad, String observaciones) {
         this.id = id;
         this.fecha = fecha;
         this.cantidad = cantidad;
@@ -43,11 +43,11 @@ public class RoturaPerdidaResponseDTO {
         this.id = id;
     }
 
-    public LocalDate getFecha() {
+    public LocalDateTime getFecha() {
         return fecha;
     }
 
-    public void setFecha(LocalDate fecha) {
+    public void setFecha(LocalDateTime fecha) {
         this.fecha = fecha;
     }
 

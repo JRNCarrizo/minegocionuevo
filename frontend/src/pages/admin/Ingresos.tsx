@@ -34,6 +34,59 @@ export default function Ingresos() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
+
+  // Función helper para convertir fechaRemito a string de fecha
+  const obtenerFechaRemitoString = (fechaRemito: any): string => {
+    try {
+      // Si es null o undefined
+      if (fechaRemito == null) {
+        return 'Fecha no disponible';
+      }
+
+      // Si es un string
+      if (typeof fechaRemito === 'string') {
+        // Si ya tiene formato de fecha (YYYY-MM-DD)
+        if (fechaRemito.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return fechaRemito;
+        }
+        // Si tiene formato ISO con T
+        if (fechaRemito.includes('T')) {
+          const partes = fechaRemito.split('T');
+          if (partes.length >= 1) {
+            return partes[0];
+          }
+        }
+        // Si es otro formato, intentar parsear
+        // Solo intentar parsear si no es un array
+        if (!Array.isArray(fechaRemito)) {
+          const fechaObj = new Date(fechaRemito);
+          if (!isNaN(fechaObj.getTime())) {
+            return fechaObj.toISOString().split('T')[0];
+          }
+        }
+      }
+
+      // Si es un objeto Date o timestamp
+      if (fechaRemito instanceof Date || typeof fechaRemito === 'number') {
+        const fechaObj = new Date(fechaRemito);
+        if (!isNaN(fechaObj.getTime())) {
+          return fechaObj.toISOString().split('T')[0];
+        }
+      }
+
+      // Si es un array (formato [year, month, day, hour, minute, second])
+      if (Array.isArray(fechaRemito)) {
+        const [year, month, day] = fechaRemito;
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      }
+
+      console.error('Formato de fecha no reconocido:', fechaRemito, 'tipo:', typeof fechaRemito);
+      return 'Fecha inválida';
+    } catch (error) {
+      console.error('Error procesando fecha:', fechaRemito, error);
+      return 'Fecha inválida';
+    }
+  };
   
   const [remitos, setRemitos] = useState<RemitoIngreso[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -105,55 +158,21 @@ export default function Ingresos() {
   const cargarRemitos = async () => {
     try {
       console.log('🔍 Cargando remitos...');
-      // TODO: Implementar API para obtener remitos
-      // const response = await ApiService.obtenerRemitosIngreso();
-      // setRemitos(response.data || []);
-      
-      // Cargar desde localStorage temporalmente
-      const remitosGuardados = JSON.parse(localStorage.getItem('remitosIngreso') || '[]');
-      
-      // Si no hay remitos guardados, mostrar el ejemplo
-      if (remitosGuardados.length === 0) {
-        const remitosEjemplo: RemitoIngreso[] = [
-          {
-            id: 1,
-            numeroRemito: '20241201-143022',
-            fechaRemito: '2024-12-01',
-            observaciones: 'Ingreso de mercadería nueva',
-            totalProductos: 25,
-            fechaCreacion: '2024-12-01T14:30:22',
-            fechaActualizacion: '2024-12-01T14:30:22',
-            detalles: [
-              {
-                id: 1,
-                productoId: 1,
-                codigoPersonalizado: 'PROD001',
-                descripcion: 'Producto Ejemplo 1',
-                cantidad: 10,
-                precioUnitario: 100,
-                observaciones: '',
-                fechaCreacion: '2024-12-01T14:30:22'
-              },
-              {
-                id: 2,
-                productoId: 2,
-                codigoPersonalizado: 'PROD002',
-                descripcion: 'Producto Ejemplo 2',
-                cantidad: 15,
-                precioUnitario: 150,
-                observaciones: '',
-                fechaCreacion: '2024-12-01T14:30:22'
-              }
-            ]
-          }
-        ];
-        setRemitos(remitosEjemplo);
+      const response = await ApiService.obtenerRemitosIngreso();
+      if (response && response.data) {
+        console.log('📋 Remitos cargados:', response.data);
+        // Debug: verificar formato de fechas
+        response.data.forEach((remito: any, index: number) => {
+          console.log(`📅 Remito ${index + 1} - fechaRemito:`, remito.fechaRemito, 'tipo:', typeof remito.fechaRemito);
+        });
+        setRemitos(response.data);
       } else {
-        setRemitos(remitosGuardados);
+        setRemitos([]);
       }
     } catch (error) {
       console.error('❌ Error al cargar remitos:', error);
       toast.error('Error al cargar los remitos');
+      setRemitos([]);
     }
   };
 
@@ -166,7 +185,9 @@ export default function Ingresos() {
 
     // Filtrar por fecha
     if (filtroFecha) {
-      remitosFiltrados = remitosFiltrados.filter(r => r.fechaRemito === filtroFecha);
+      remitosFiltrados = remitosFiltrados.filter(r => {
+        return obtenerFechaRemitoString(r.fechaRemito) === filtroFecha;
+      });
     }
 
     // Filtrar por búsqueda
@@ -185,7 +206,8 @@ export default function Ingresos() {
     const grupos: { [fecha: string]: RemitoIngreso[] } = {};
     
     remitosFiltrados.forEach(remito => {
-      const fecha = remito.fechaRemito.split('T')[0];
+      const fecha = obtenerFechaRemitoString(remito.fechaRemito);
+      
       if (!grupos[fecha]) {
         grupos[fecha] = [];
       }
@@ -240,16 +262,10 @@ export default function Ingresos() {
     }
 
     try {
-      // TODO: Implementar API para eliminar remito
-      // await ApiService.eliminarRemitoIngreso(id);
+      await ApiService.eliminarRemitoIngreso(id);
       
       // Actualizar estado local
       setRemitos(prev => prev.filter(r => r.id !== id));
-      
-      // Actualizar localStorage
-      const remitosGuardados = JSON.parse(localStorage.getItem('remitosIngreso') || '[]');
-      const remitosActualizados = remitosGuardados.filter((r: RemitoIngreso) => r.id !== id);
-      localStorage.setItem('remitosIngreso', JSON.stringify(remitosActualizados));
       
       toast.success('Remito eliminado exitosamente');
     } catch (error) {
@@ -266,7 +282,8 @@ export default function Ingresos() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Remito_${remito.numeroRemito}_${remito.fechaRemito}.xlsx`;
+      const fechaRemitoStr = obtenerFechaRemitoString(remito.fechaRemito);
+      link.download = `Remito_${remito.numeroRemito}_${fechaRemitoStr}.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -659,6 +676,7 @@ export default function Ingresos() {
                                 </span> unidades</span>
                                 <span>🛒 {remito.detalles.length} productos</span>
                                 <span>⏰ {formatearFechaConHora(remito.fechaCreacion)}</span>
+                                {/* Debug: {console.log('Fecha creación remito:', remito.fechaCreacion)} */}
                               </div>
                             </div>
                             <div style={{
@@ -908,7 +926,7 @@ export default function Ingresos() {
                       display: 'block',
                       marginBottom: '0.25rem'
                     }}>
-                      Cantidad de Productos
+                      Productos Diferentes
                     </label>
                     <p style={{
                       fontSize: '1rem',

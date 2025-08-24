@@ -635,10 +635,20 @@ export default function CrearIngreso() {
 
     try {
       setGuardando(true);
+      
+      // Asegurar que la fecha esté en el formato correcto con hora actual
+      const fechaActual = new Date();
+      const fechaFormateada = fechaRemito + 'T' + 
+        fechaActual.getHours().toString().padStart(2, '0') + ':' +
+        fechaActual.getMinutes().toString().padStart(2, '0') + ':' +
+        fechaActual.getSeconds().toString().padStart(2, '0');
+      
+      // Preparar los datos del remito para la API
       const remitoData = {
         numeroRemito,
-        fechaRemito,
+        fechaRemito: fechaFormateada,
         observaciones,
+        totalProductos: detalles.reduce((total, detalle) => total + detalle.cantidad, 0),
         detalles: detalles.map(detalle => ({
           productoId: detalle.productoId,
           codigoPersonalizado: detalle.codigoPersonalizado,
@@ -648,42 +658,19 @@ export default function CrearIngreso() {
         }))
       };
 
-      // TODO: Implementar API para guardar remito
-      console.log('Guardando remito:', remitoData);
+      console.log('📋 Fecha seleccionada:', fechaRemito);
+      console.log('📋 Fecha formateada:', fechaFormateada);
+      console.log('📋 Enviando remito:', remitoData);
+
+      // Guardar remito usando la API
+      const response = await ApiService.crearRemitoIngreso(remitoData);
       
-      // Crear el objeto remito completo para almacenar
-      const remitoCompleto = {
-        id: Date.now(), // ID temporal
-        numeroRemito,
-        fechaRemito,
-        observaciones,
-        totalProductos: detalles.reduce((total, detalle) => total + detalle.cantidad, 0),
-        fechaCreacion: new Date().toISOString(),
-        fechaActualizacion: new Date().toISOString(),
-        detalles: detalles.map(detalle => ({
-          id: Date.now() + Math.random(), // ID temporal
-          productoId: detalle.productoId,
-          codigoPersonalizado: detalle.codigoPersonalizado,
-          descripcion: detalle.descripcion,
-          cantidad: detalle.cantidad,
-          observaciones: detalle.observaciones,
-          fechaCreacion: new Date().toISOString()
-        }))
-      };
-      
-      // Guardar en localStorage temporalmente
-      const remitosGuardados = JSON.parse(localStorage.getItem('remitosIngreso') || '[]');
-      remitosGuardados.push(remitoCompleto);
-      localStorage.setItem('remitosIngreso', JSON.stringify(remitosGuardados));
-      
-             // Actualizar el stock de los productos
-       await actualizarStockProductos();
-       
-       // Recargar productos desde la API para asegurar que los datos estén actualizados
-       await cargarProductos();
-       
-       toast.success('Remito guardado exitosamente y stock actualizado');
-       navigate('/admin/ingresos');
+      if (response && response.data) {
+        toast.success('Remito guardado exitosamente');
+        navigate('/admin/ingresos');
+      } else {
+        toast.error('Error al guardar el remito');
+      }
     } catch (error) {
       console.error('Error al guardar remito:', error);
       toast.error('Error al guardar el remito');

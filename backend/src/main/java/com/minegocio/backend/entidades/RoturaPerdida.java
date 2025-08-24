@@ -22,7 +22,7 @@ public class RoturaPerdida {
 
     @NotNull(message = "La fecha es obligatoria")
     @Column(name = "fecha", nullable = false)
-    private LocalDate fecha;
+    private LocalDateTime fecha;
 
     @Min(value = 1, message = "La cantidad debe ser mayor a 0")
     @Column(name = "cantidad", nullable = false)
@@ -66,7 +66,7 @@ public class RoturaPerdida {
     // Constructores
     public RoturaPerdida() {}
 
-    public RoturaPerdida(Empresa empresa, Usuario usuario, LocalDate fecha, Integer cantidad) {
+    public RoturaPerdida(Empresa empresa, Usuario usuario, LocalDateTime fecha, Integer cantidad) {
         this.empresa = empresa;
         this.usuario = usuario;
         this.fecha = fecha;
@@ -82,11 +82,11 @@ public class RoturaPerdida {
         this.id = id;
     }
 
-    public LocalDate getFecha() {
+    public LocalDateTime getFecha() {
         return fecha;
     }
 
-    public void setFecha(LocalDate fecha) {
+    public void setFecha(LocalDateTime fecha) {
         this.fecha = fecha;
     }
 

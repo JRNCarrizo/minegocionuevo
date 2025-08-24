@@ -302,8 +302,39 @@ export default function ModalAgregarRoturaPerdida({
       
 
       
+      // Crear fecha con hora local, igual que en las planillas
+      const fechaSeleccionada = new Date(fecha + 'T00:00:00');
+      const ahora = new Date();
+      
+      // Obtener la hora local del usuario
+      const horaLocal = ahora.getHours();
+      const minutosLocal = ahora.getMinutes();
+      const segundosLocal = ahora.getSeconds();
+      
+      // Crear fecha directamente en UTC usando Date.UTC()
+      // Esto evita problemas de conversión de zona horaria
+      const fechaUTC = new Date(Date.UTC(
+        fechaSeleccionada.getFullYear(),
+        fechaSeleccionada.getMonth(),
+        fechaSeleccionada.getDate(),
+        horaLocal,
+        minutosLocal,
+        segundosLocal
+      ));
+      
+      // Formatear como ISO string para enviar al backend
+      const fechaFormateada = fechaUTC.toISOString();
+      
+      console.log('📋 Fecha seleccionada:', fecha);
+      console.log('📋 Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
+      console.log('📋 Fecha creada en UTC:', fechaUTC.toString());
+      console.log('📋 Fecha formateada en UTC:', fechaFormateada);
+      console.log('📋 Fecha actual del sistema:', new Date().toISOString());
+      console.log('📋 Zona horaria del navegador:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+      console.log('📋 Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
+      
       const datosRoturaPerdida = {
-        fecha,
+        fecha: fechaFormateada,
         cantidad: cantidadFinal,
         observaciones: observaciones.trim() || null,
         productoId: productoFinalSeleccionado?.id || null,

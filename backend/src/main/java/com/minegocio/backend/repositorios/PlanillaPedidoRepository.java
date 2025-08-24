@@ -19,6 +19,11 @@ public interface PlanillaPedidoRepository extends JpaRepository<PlanillaPedido, 
     List<PlanillaPedido> findByEmpresaIdOrderByFechaPlanillaDesc(Long empresaId);
 
     /**
+     * Buscar planillas por empresa y tipo
+     */
+    List<PlanillaPedido> findByEmpresaIdAndTipoOrderByFechaPlanillaDesc(Long empresaId, String tipo);
+
+    /**
      * Buscar planillas por empresa y fecha
      */
     List<PlanillaPedido> findByEmpresaIdAndFechaPlanillaOrderByFechaCreacionDesc(Long empresaId, LocalDate fechaPlanilla);

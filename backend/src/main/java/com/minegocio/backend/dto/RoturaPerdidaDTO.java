@@ -3,12 +3,12 @@ package com.minegocio.backend.dto;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class RoturaPerdidaDTO {
 
     @NotNull(message = "La fecha es obligatoria")
-    private LocalDate fecha;
+    private LocalDateTime fecha;
 
     @NotNull(message = "La cantidad es obligatoria")
     @Min(value = 1, message = "La cantidad debe ser mayor a 0")
@@ -28,17 +28,17 @@ public class RoturaPerdidaDTO {
     // Constructores
     public RoturaPerdidaDTO() {}
 
-    public RoturaPerdidaDTO(LocalDate fecha, Integer cantidad) {
+    public RoturaPerdidaDTO(LocalDateTime fecha, Integer cantidad) {
         this.fecha = fecha;
         this.cantidad = cantidad;
     }
 
     // Getters y Setters
-    public LocalDate getFecha() {
+    public LocalDateTime getFecha() {
         return fecha;
     }
 
-    public void setFecha(LocalDate fecha) {
+    public void setFecha(LocalDateTime fecha) {
         this.fecha = fecha;
     }
 

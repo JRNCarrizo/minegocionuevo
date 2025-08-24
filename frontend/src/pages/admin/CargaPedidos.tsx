@@ -40,6 +40,139 @@ export default function CargaPedidos() {
   const [diasExpandidos, setDiasExpandidos] = useState<Set<string>>(new Set());
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
 
+  // Función helper para convertir fechaPlanilla a string de fecha
+  const obtenerFechaPlanillaString = (fechaPlanilla: any): string => {
+    try {
+      // Si es null o undefined
+      if (fechaPlanilla == null) {
+        return 'Fecha no disponible';
+      }
+
+      // Si es un string
+      if (typeof fechaPlanilla === 'string') {
+        // Si ya tiene formato de fecha (YYYY-MM-DD)
+        if (fechaPlanilla.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return fechaPlanilla;
+        }
+        // Si tiene formato ISO con T
+        if (fechaPlanilla.includes('T')) {
+          const partes = fechaPlanilla.split('T');
+          if (partes.length >= 1) {
+            return partes[0];
+          }
+        }
+        // Si es otro formato, intentar parsear
+        if (!Array.isArray(fechaPlanilla)) {
+          const fechaObj = new Date(fechaPlanilla);
+          if (!isNaN(fechaObj.getTime())) {
+            return fechaObj.toISOString().split('T')[0];
+          }
+        }
+      }
+
+      // Si es un objeto Date o timestamp
+      if (fechaPlanilla instanceof Date || typeof fechaPlanilla === 'number') {
+        const fechaObj = new Date(fechaPlanilla);
+        if (!isNaN(fechaObj.getTime())) {
+          return fechaObj.toISOString().split('T')[0];
+        }
+      }
+
+      // Si es un array (formato [year, month, day, hour, minute, second])
+      // Los arrays del backend representan fechas UTC
+      if (Array.isArray(fechaPlanilla)) {
+        const [year, month, day] = fechaPlanilla;
+        // Crear fecha UTC y convertir a zona horaria local para obtener la fecha correcta
+        const fechaUTC = new Date(Date.UTC(year, month - 1, day));
+        const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        
+        // Convertir a zona horaria local usando toLocaleDateString
+        const fechaLocal = fechaUTC.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal }); // formato YYYY-MM-DD
+        return fechaLocal;
+      }
+
+      console.error('Formato de fecha no reconocido:', fechaPlanilla, 'tipo:', typeof fechaPlanilla);
+      return 'Fecha inválida';
+    } catch (error) {
+      console.error('Error procesando fecha:', fechaPlanilla, error);
+      return 'Fecha inválida';
+    }
+  };
+
+  // Función helper para formatear fecha con hora desde arrays UTC
+  const formatearFechaConHoraLocal = (fechaArray: any): string => {
+    try {
+      if (fechaArray == null) {
+        return 'N/A';
+      }
+
+      // Si es un array (formato [year, month, day, hour, minute, second])
+      if (Array.isArray(fechaArray)) {
+        const [year, month, day, hour = 0, minute = 0, second = 0] = fechaArray;
+        
+        // Crear fecha UTC usando Date.UTC
+        const fechaUTC = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+        
+        if (isNaN(fechaUTC.getTime())) {
+          return 'Fecha inválida';
+        }
+        
+        // La fecha ya está en UTC, solo formatear sin cambiar zona horaria
+        return fechaUTC.toLocaleString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'UTC'
+        });
+      }
+
+      // Para otros tipos, usar la función de dateUtils
+      return formatearFechaConHora(fechaArray);
+    } catch (error) {
+      console.error('Error formateando fecha con hora:', error);
+      return 'Fecha inválida';
+    }
+  };
+
+  // Función helper para formatear fecha corta desde arrays UTC
+  const formatearFechaCortaLocal = (fechaArray: any): string => {
+    try {
+      if (fechaArray == null) {
+        return 'N/A';
+      }
+
+      // Si es un array (formato [year, month, day, hour, minute, second])
+      if (Array.isArray(fechaArray)) {
+        const [year, month, day] = fechaArray;
+        
+        // Crear fecha UTC usando Date.UTC
+        const fechaUTC = new Date(Date.UTC(year, month - 1, day));
+        
+        if (isNaN(fechaUTC.getTime())) {
+          return 'Fecha inválida';
+        }
+        
+        // La fecha ya está en UTC, solo formatear sin cambiar zona horaria
+        return fechaUTC.toLocaleDateString('es-ES', {
+          weekday: 'short',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          timeZone: 'UTC'
+        });
+      }
+
+      // Para otros tipos, usar la función de dateUtils
+      return formatearFechaCorta(fechaArray);
+    } catch (error) {
+      console.error('Error formateando fecha corta:', error);
+      return 'Fecha inválida';
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -111,7 +244,7 @@ export default function CargaPedidos() {
 
     if (filtroFecha) {
       planillasFiltradas = planillasFiltradas.filter(p => 
-        p.fechaPlanilla.split('T')[0] === filtroFecha
+        obtenerFechaPlanillaString(p.fechaPlanilla) === filtroFecha
       );
     }
 
@@ -131,7 +264,7 @@ export default function CargaPedidos() {
     
     planillasFiltradas.forEach(planilla => {
       // Extraer solo la parte de la fecha (YYYY-MM-DD) del LocalDateTime
-      const fecha = planilla.fechaPlanilla.split('T')[0];
+      const fecha = obtenerFechaPlanillaString(planilla.fechaPlanilla);
       if (!grupos[fecha]) {
         grupos[fecha] = [];
       }
@@ -222,7 +355,8 @@ export default function CargaPedidos() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Planilla_${planilla.numeroPlanilla}_${planilla.fechaPlanilla}.xlsx`;
+      const fechaPlanillaStr = obtenerFechaPlanillaString(planilla.fechaPlanilla);
+      link.download = `Planilla_${planilla.numeroPlanilla}_${fechaPlanillaStr}.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -669,7 +803,7 @@ export default function CargaPedidos() {
                                 color: '#64748b',
                                 flexWrap: 'wrap'
                               }}>
-                                <span>📅 {formatearFechaCorta(planilla.fechaPlanilla)}</span>
+                                                                 <span>📅 {formatearFechaCortaLocal(planilla.fechaPlanilla)}</span>
                                                                  <span>📦 <span style={{ 
                                    color: '#3b82f6', 
                                    fontWeight: '700'
@@ -677,7 +811,7 @@ export default function CargaPedidos() {
                                    {planilla.totalProductos}
                                  </span> unidades</span>
                                  <span>🛒 {planilla.detalles.length} productos</span>
-                                <span>⏰ {formatearFechaConHora(planilla.fechaCreacion)}</span>
+                                                                 <span>⏰ {formatearFechaConHoraLocal(planilla.fechaCreacion)}</span>
                               </div>
                             </div>
                             <div style={{
@@ -919,7 +1053,7 @@ export default function CargaPedidos() {
                         color: '#1e293b',
                         fontWeight: '500'
                       }}>
-                        {formatearFecha(planillaSeleccionada.fechaPlanilla)}
+                        {formatearFechaCortaLocal(planillaSeleccionada.fechaPlanilla)}
                       </div>
                     </div>
                                          <div>

@@ -340,12 +340,40 @@ export default function CrearPlanilla() {
         return;
       }
 
-      // Asegurar que la fecha esté en el formato correcto con hora actual
-      const fechaActual = new Date();
-      const fechaFormateada = nuevaPlanilla.fechaPlanilla + 'T' + 
-        fechaActual.getHours().toString().padStart(2, '0') + ':' +
-        fechaActual.getMinutes().toString().padStart(2, '0') + ':' +
-        fechaActual.getSeconds().toString().padStart(2, '0');
+      // Verificar autenticación antes de crear la planilla
+      console.log('🔍 Verificando autenticación antes de crear planilla...');
+      try {
+        const authStatus = await ApiService.debugAuthStatus();
+        console.log('✅ Estado de autenticación:', authStatus);
+      } catch (authError) {
+        console.error('❌ Error de autenticación:', authError);
+        toast.error('Error de autenticación. Por favor, inicie sesión nuevamente.');
+        return;
+      }
+
+      // Crear fecha en UTC para evitar problemas de zona horaria
+      // Tomar la fecha seleccionada y combinarla con la hora actual local
+      const fechaSeleccionada = new Date(nuevaPlanilla.fechaPlanilla + 'T00:00:00');
+      const ahora = new Date();
+      
+      // Obtener la hora local del usuario
+      const horaLocal = ahora.getHours();
+      const minutosLocal = ahora.getMinutes();
+      const segundosLocal = ahora.getSeconds();
+      
+      // Crear fecha directamente en UTC usando Date.UTC()
+      // Esto evita problemas de conversión de zona horaria
+      const fechaUTC = new Date(Date.UTC(
+        fechaSeleccionada.getFullYear(),
+        fechaSeleccionada.getMonth(),
+        fechaSeleccionada.getDate(),
+        horaLocal,
+        minutosLocal,
+        segundosLocal
+      ));
+      
+      // Formatear como ISO string para enviar al backend
+      const fechaFormateada = fechaUTC.toISOString();
       
       const planillaData = {
         fechaPlanilla: fechaFormateada,
@@ -355,18 +383,30 @@ export default function CrearPlanilla() {
       };
 
       console.log('📋 Fecha seleccionada:', nuevaPlanilla.fechaPlanilla);
-      console.log('📋 Fecha formateada:', fechaFormateada);
+      console.log('📋 Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
+      console.log('📋 Fecha creada en UTC:', fechaUTC.toString());
+      console.log('📋 Fecha formateada en UTC:', fechaFormateada);
       console.log('📋 Fecha actual del sistema:', new Date().toISOString());
       console.log('📋 Zona horaria del navegador:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+      console.log('📋 Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
       console.log('📋 Enviando planilla:', planillaData);
+      
       await ApiService.crearPlanillaPedido(planillaData);
       toast.success('Planilla creada exitosamente');
       
       // Navegar de vuelta a la página de carga de pedidos
       navigate('/admin/carga-pedidos');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al crear planilla:', error);
-      toast.error('Error al crear la planilla');
+      
+      // Proporcionar información más específica sobre el error
+      if (error.response?.status === 403) {
+        toast.error('Error de autorización. Por favor, verifique que esté logueado con un rol de administrador.');
+      } else if (error.response?.status === 400) {
+        toast.error('Error en los datos enviados. Verifique la información de la planilla.');
+      } else {
+        toast.error('Error al crear la planilla. Por favor, intente nuevamente.');
+      }
     }
   };
 

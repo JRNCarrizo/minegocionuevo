@@ -66,7 +66,7 @@ export const crearFechaLocal = (fechaString: string): Date => {
  * @param opciones - Opciones de formato (opcional)
  */
 export const formatearFecha = (
-  fecha: string | Date,
+  fecha: any,
   opciones: Intl.DateTimeFormatOptions = {
     weekday: 'long',
     year: 'numeric',
@@ -82,16 +82,41 @@ export const formatearFecha = (
       return 'N/A';
     }
     
+    // Obtener zona horaria local del cliente
+    const zonaHorariaLocal = obtenerZonaHorariaLocal();
+    
     let fechaLocal: Date;
     
+    // Si es un array (formato [year, month, day, hour, minute, second, nanoseconds])
+    // Los arrays del backend representan fechas UTC
+    if (Array.isArray(fecha)) {
+      console.log('🔍 Procesando array de fecha UTC:', fecha);
+      const [year, month, day, hour = 0, minute = 0, second = 0] = fecha;
+      
+      // Crear fecha UTC usando Date.UTC para evitar conversión automática a local
+      const fechaUTC = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+      
+      if (isNaN(fechaUTC.getTime())) {
+        console.log('🔍 Fecha inválida desde array UTC:', fecha);
+        return 'Fecha inválida';
+      }
+      
+      // Usar UTC para mostrar la fecha correcta sin retraso de zona horaria
+      return fechaUTC.toLocaleDateString('es-ES', {
+        ...opciones,
+        timeZone: 'UTC'
+      });
+    }
     // Si es un objeto Date
-    if (fecha instanceof Date) {
+    else if (fecha instanceof Date) {
       if (isNaN(fecha.getTime())) {
         console.log('🔍 Fecha inválida desde objeto Date');
         return 'Fecha inválida';
       }
       fechaLocal = fecha;
-    } else if (typeof fecha === 'string') {
+    } 
+    // Si es un string
+    else if (typeof fecha === 'string') {
       // Si la fecha incluye tiempo (formato ISO), convertir de UTC a local
       if (fecha.includes('T') || fecha.includes('Z')) {
         fechaLocal = convertirUTCALocal(fecha);
@@ -100,7 +125,18 @@ export const formatearFecha = (
         const [year, month, day] = fecha.split('-').map(Number);
         fechaLocal = new Date(year, month - 1, day);
       }
-    } else {
+    }
+    // Si es un número (timestamp)
+    else if (typeof fecha === 'number') {
+      console.log('🔍 Procesando timestamp:', fecha);
+      fechaLocal = new Date(fecha);
+      
+      if (isNaN(fechaLocal.getTime())) {
+        console.log('🔍 Fecha inválida desde timestamp:', fecha);
+        return 'Fecha inválida';
+      }
+    }
+    else {
       console.error('❌ Tipo de fecha no válido:', typeof fecha, fecha);
       return 'Fecha inválida';
     }
@@ -111,13 +147,10 @@ export const formatearFecha = (
       return 'Fecha inválida';
     }
     
-    // Obtener zona horaria local del cliente
-    const zonaHorariaLocal = obtenerZonaHorariaLocal();
-    
-    // Formatear usando la zona horaria local del cliente
+    // Usar UTC para mostrar la fecha correcta sin retraso de zona horaria
     return fechaLocal.toLocaleDateString('es-ES', {
       ...opciones,
-      timeZone: zonaHorariaLocal
+      timeZone: 'UTC'
     });
   } catch (error) {
     console.error('❌ Error al formatear fecha:', error, fecha);
@@ -189,27 +222,31 @@ export const formatearFechaConHora = (fechaString: any): string => {
     const zonaHorariaLocal = obtenerZonaHorariaLocal();
     console.log('🌍 Zona horaria detectada:', zonaHorariaLocal);
     
-    // Si es un array (formato [year, month, day, hour, minute, second, nanoseconds])
-    if (Array.isArray(fechaString)) {
-      console.log('🔍 Procesando array de fecha:', fechaString);
-      const [year, month, day, hour = 0, minute = 0, second = 0, nanoseconds = 0] = fechaString;
-      const fecha = new Date(year, month - 1, day, hour, minute, second);
-      
-      if (isNaN(fecha.getTime())) {
-        console.log('🔍 Fecha inválida desde array:', fechaString);
-        return 'Fecha inválida';
-      }
-      
-      return fecha.toLocaleString('es-ES', {
+         // Si es un array (formato [year, month, day, hour, minute, second, nanoseconds])
+     // Los arrays del backend representan fechas UTC
+     if (Array.isArray(fechaString)) {
+       console.log('🔍 Procesando array de fecha UTC:', fechaString);
+       const [year, month, day, hour = 0, minute = 0, second = 0, nanoseconds = 0] = fechaString;
+       
+       // Crear fecha UTC usando Date.UTC para evitar conversión automática a local
+       const fechaUTC = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+       
+       if (isNaN(fechaUTC.getTime())) {
+         console.log('🔍 Fecha inválida desde array UTC:', fechaString);
+         return 'Fecha inválida';
+       }
+       
+             // Usar UTC para mostrar la fecha correcta sin retraso de zona horaria
+      return fechaUTC.toLocaleString('es-ES', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
-        timeZone: zonaHorariaLocal
+        timeZone: 'UTC'
       });
-    }
+     }
     
     // Si es un número (timestamp)
     if (typeof fechaString === 'number') {
@@ -228,7 +265,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
-        timeZone: zonaHorariaLocal
+        timeZone: 'UTC'
       });
     }
     
@@ -245,7 +282,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
         return 'Fecha inválida';
       }
       
-      // Formatear usando la zona horaria local del cliente
+      // Usar UTC para mostrar la fecha correcta sin retraso de zona horaria
       return fechaLocal.toLocaleString('es-ES', {
         year: 'numeric',
         month: '2-digit',
@@ -253,7 +290,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
-        timeZone: zonaHorariaLocal
+        timeZone: 'UTC'
       });
     }
     
@@ -273,7 +310,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
-        timeZone: zonaHorariaLocal
+        timeZone: 'UTC'
       });
     }
     

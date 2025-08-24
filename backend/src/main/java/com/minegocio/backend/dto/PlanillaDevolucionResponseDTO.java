@@ -1,47 +1,44 @@
 package com.minegocio.backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * DTO para crear y actualizar planillas de pedidos
+ * DTO de respuesta para planillas de devolución
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class PlanillaPedidoDTO {
+public class PlanillaDevolucionResponseDTO {
 
     private Long id;
-    
-    @NotNull(message = "El número de planilla es obligatorio")
     private String numeroPlanilla;
-    
     private String observaciones;
     
-    @NotNull(message = "La fecha de la planilla es obligatoria")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaPlanilla;
     
-    @Min(value = 0, message = "El total de productos debe ser mayor o igual a 0")
     private Integer totalProductos;
     
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;
     
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaActualizacion;
     
-    private Long empresaId;
-    private Long usuarioId;
-    
-    private List<DetallePlanillaPedidoDTO> detalles;
+    private List<DetallePlanillaDevolucionResponseDTO> detalles;
 
     // Constructores
-    public PlanillaPedidoDTO() {}
+    public PlanillaDevolucionResponseDTO() {}
 
-    public PlanillaPedidoDTO(String numeroPlanilla, LocalDateTime fechaPlanilla, String observaciones) {
+    public PlanillaDevolucionResponseDTO(Long id, String numeroPlanilla, String observaciones, LocalDateTime fechaPlanilla, Integer totalProductos, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion, List<DetallePlanillaDevolucionResponseDTO> detalles) {
+        this.id = id;
         this.numeroPlanilla = numeroPlanilla;
-        this.fechaPlanilla = fechaPlanilla;
         this.observaciones = observaciones;
+        this.fechaPlanilla = fechaPlanilla;
+        this.totalProductos = totalProductos;
+        this.fechaCreacion = fechaCreacion;
+        this.fechaActualizacion = fechaActualizacion;
+        this.detalles = detalles;
     }
 
     // Getters y Setters
@@ -66,12 +63,6 @@ public class PlanillaPedidoDTO {
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
     public void setFechaActualizacion(LocalDateTime fechaActualizacion) { this.fechaActualizacion = fechaActualizacion; }
 
-    public Long getEmpresaId() { return empresaId; }
-    public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
-
-    public Long getUsuarioId() { return usuarioId; }
-    public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
-
-    public List<DetallePlanillaPedidoDTO> getDetalles() { return detalles; }
-    public void setDetalles(List<DetallePlanillaPedidoDTO> detalles) { this.detalles = detalles; }
+    public List<DetallePlanillaDevolucionResponseDTO> getDetalles() { return detalles; }
+    public void setDetalles(List<DetallePlanillaDevolucionResponseDTO> detalles) { this.detalles = detalles; }
 }

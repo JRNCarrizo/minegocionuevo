@@ -6,17 +6,16 @@ import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Entidad que representa las planillas de pedidos realizados
+ * Entidad que representa las planillas de devoluciones realizadas
  */
 @Entity
-@Table(name = "planillas_pedidos")
-public class PlanillaPedido {
+@Table(name = "planillas_devoluciones")
+public class PlanillaDevolucion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,9 +35,6 @@ public class PlanillaPedido {
     @Column(name = "total_productos", nullable = false)
     private Integer totalProductos = 0;
 
-    @Column(name = "tipo", nullable = false, length = 20)
-    private String tipo = "PEDIDO"; // PEDIDO o DEVOLUCION
-
     // Relación con empresa
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
@@ -50,8 +46,8 @@ public class PlanillaPedido {
     private Usuario usuario;
 
     // Detalles de la planilla
-    @OneToMany(mappedBy = "planillaPedido", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<DetallePlanillaPedido> detalles = new ArrayList<>();
+    @OneToMany(mappedBy = "planillaDevolucion", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<DetallePlanillaDevolucion> detalles = new ArrayList<>();
 
     // Timestamps
     @CreationTimestamp
@@ -63,10 +59,10 @@ public class PlanillaPedido {
     private LocalDateTime fechaActualizacion;
 
     // Constructores
-    public PlanillaPedido() {}
+    public PlanillaDevolucion() {}
 
-    public PlanillaPedido(Empresa empresa, Usuario usuario, LocalDateTime fechaPlanilla) {
-        System.out.println("📋 [ENTITY] Constructor PlanillaPedido - Fecha recibida: " + fechaPlanilla);
+    public PlanillaDevolucion(Empresa empresa, Usuario usuario, LocalDateTime fechaPlanilla) {
+        System.out.println("📋 [ENTITY] Constructor PlanillaDevolucion - Fecha recibida: " + fechaPlanilla);
         this.empresa = empresa;
         this.usuario = usuario;
         this.fechaPlanilla = fechaPlanilla;
@@ -84,19 +80,19 @@ public class PlanillaPedido {
 
     public void calcularTotalProductos() {
         this.totalProductos = detalles.stream()
-                .mapToInt(DetallePlanillaPedido::getCantidad)
+                .mapToInt(DetallePlanillaDevolucion::getCantidad)
                 .sum();
     }
 
-    public void agregarDetalle(DetallePlanillaPedido detalle) {
+    public void agregarDetalle(DetallePlanillaDevolucion detalle) {
         detalles.add(detalle);
-        detalle.setPlanillaPedido(this);
+        detalle.setPlanillaDevolucion(this);
         calcularTotalProductos();
     }
 
-    public void removerDetalle(DetallePlanillaPedido detalle) {
+    public void removerDetalle(DetallePlanillaDevolucion detalle) {
         detalles.remove(detalle);
-        detalle.setPlanillaPedido(null);
+        detalle.setPlanillaDevolucion(null);
         calcularTotalProductos();
     }
 
@@ -122,8 +118,8 @@ public class PlanillaPedido {
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
 
-    public List<DetallePlanillaPedido> getDetalles() { return detalles; }
-    public void setDetalles(List<DetallePlanillaPedido> detalles) { 
+    public List<DetallePlanillaDevolucion> getDetalles() { return detalles; }
+    public void setDetalles(List<DetallePlanillaDevolucion> detalles) { 
         this.detalles = detalles;
         calcularTotalProductos();
     }
@@ -133,7 +129,4 @@ public class PlanillaPedido {
 
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
     public void setFechaActualizacion(LocalDateTime fechaActualizacion) { this.fechaActualizacion = fechaActualizacion; }
-
-    public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
 }

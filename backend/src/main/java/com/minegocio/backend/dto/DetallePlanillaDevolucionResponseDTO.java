@@ -1,21 +1,27 @@
 package com.minegocio.backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.time.LocalDateTime;
 
-public class DetallePlanillaPedidoResponseDTO {
+/**
+ * DTO de respuesta para detalles de planillas de devolución
+ */
+public class DetallePlanillaDevolucionResponseDTO {
+
     private Long id;
     private String numeroPersonalizado;
     private String descripcion;
     private Integer cantidad;
     private String observaciones;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;
 
-    // Constructor
-    public DetallePlanillaPedidoResponseDTO() {}
+    // Constructores
+    public DetallePlanillaDevolucionResponseDTO() {}
 
-    public DetallePlanillaPedidoResponseDTO(Long id, String numeroPersonalizado, String descripcion, 
-                                          Integer cantidad, String observaciones, LocalDateTime fechaCreacion) {
+    public DetallePlanillaDevolucionResponseDTO(Long id, String numeroPersonalizado, String descripcion, Integer cantidad, String observaciones, LocalDateTime fechaCreacion) {
         this.id = id;
         this.numeroPersonalizado = numeroPersonalizado;
         this.descripcion = descripcion;
