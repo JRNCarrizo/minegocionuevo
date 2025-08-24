@@ -47,6 +47,8 @@ import GestionEmpresa from './pages/admin/GestionEmpresa.tsx';
 import CargaPedidos from './pages/admin/CargaPedidos.tsx';
 import CrearPlanilla from './pages/admin/CrearPlanilla.tsx';
 import RoturasPerdidas from './pages/admin/RoturasPerdidas.tsx';
+import Ingresos from './pages/admin/Ingresos.tsx';
+import CrearIngreso from './pages/admin/CrearIngreso.tsx';
 import LoginDocumento from './pages/LoginDocumento.tsx';
 
 function AppContent() {
@@ -100,6 +102,8 @@ function AppContent() {
           <Route path="/admin/carga-pedidos" element={<CargaPedidos />} />
           <Route path="/admin/crear-planilla" element={<CrearPlanilla />} />
           <Route path="/admin/roturas-perdidas" element={<RoturasPerdidas />} />
+          <Route path="/admin/ingresos" element={<Ingresos />} />
+          <Route path="/admin/crear-ingreso" element={<CrearIngreso />} />
           <Route path="/dashboard-super-admin" element={<DashboardSuperAdmin />} />
           <Route path="/super-admin/empresas" element={<GestionEmpresas />} />
           <Route path="/super-admin/suscripciones" element={<GestionSuscripciones />} />

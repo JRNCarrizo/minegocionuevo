@@ -7,7 +7,6 @@ import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import { formatearFecha, formatearFechaCorta, obtenerFechaActual } from '../../utils/dateUtils';
 import ModalAgregarRoturaPerdida from '../../components/ModalAgregarRoturaPerdida';
-import TimeZoneInfo from '../../components/TimeZoneInfo';
 
 interface RoturaPerdida {
   id: number;
@@ -309,7 +308,6 @@ export default function RoturasPerdidas() {
                  }}>
                    💡 Presiona Enter para agregar una nueva rotura/pérdida
                  </p>
-                 <TimeZoneInfo showDetails={true} />
               </div>
             </div>
             

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, memo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, memo, useRef } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import LimitService from '../../services/limitService';
@@ -136,6 +136,10 @@ export default function NuevoProducto() {
   const navigate = useNavigate();
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile } = useResponsive();
+  const [searchParams] = useSearchParams();
+  
+  // Detectar si viene desde "Crear Ingreso"
+  const vieneDesdeIngreso = searchParams.get('desde') === 'ingreso';
 
   // Función para reproducir el sonido "pi"
   const playBeepSound = () => {
@@ -175,7 +179,7 @@ export default function NuevoProducto() {
     nombre: '',
     marca: '',
     descripcion: '',
-    precio: '',
+    precio: '0',
     stock: '',
     stockMinimo: '5',
     unidad: '',
@@ -201,6 +205,19 @@ export default function NuevoProducto() {
   const [codigosFiltrados, setCodigosFiltrados] = useState<string[]>([]);
   const [mostrarSugerenciasCodigo, setMostrarSugerenciasCodigo] = useState(false);
   const [mostrarScanner, setMostrarScanner] = useState(false);
+
+  // Refs para navegación con Enter
+  const nombreRef = useRef<HTMLInputElement>(null);
+  const marcaRef = useRef<HTMLInputElement>(null);
+  const codigoPersonalizadoRef = useRef<HTMLInputElement>(null);
+  const codigoBarrasRef = useRef<HTMLInputElement>(null);
+  const categoriaRef = useRef<HTMLSelectElement>(null);
+  const descripcionRef = useRef<HTMLTextAreaElement>(null);
+  const precioRef = useRef<HTMLInputElement>(null);
+  const unidadRef = useRef<HTMLInputElement>(null);
+  const stockRef = useRef<HTMLInputElement>(null);
+  const stockMinimoRef = useRef<HTMLInputElement>(null);
+  const sectorAlmacenamientoRef = useRef<HTMLInputElement>(null);
 
   const cargarCategorias = useCallback(async () => {
     try {
@@ -382,6 +399,13 @@ export default function NuevoProducto() {
     cargarCodigosPersonalizados();
   }, [cargarCategorias, cargarMarcas, cargarSectoresAlmacenamiento, cargarCodigosPersonalizados]);
 
+  // Auto-focus en el primer campo al cargar
+  useEffect(() => {
+    if (nombreRef.current) {
+      nombreRef.current.focus();
+    }
+  }, []);
+
   const manejarCambio = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormulario(prev => ({
@@ -486,6 +510,45 @@ export default function NuevoProducto() {
     return validarPaso(1) && validarPaso(2);
   };
 
+  // Navegación entre campos con Enter
+  const manejarEnterCampo = (e: React.KeyboardEvent, siguienteCampo: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      switch (siguienteCampo) {
+        case 'marca':
+          marcaRef.current?.focus();
+          break;
+        case 'codigoPersonalizado':
+          codigoPersonalizadoRef.current?.focus();
+          break;
+        case 'codigoBarras':
+          codigoBarrasRef.current?.focus();
+          break;
+        case 'categoria':
+          categoriaRef.current?.focus();
+          break;
+        case 'descripcion':
+          descripcionRef.current?.focus();
+          break;
+        case 'precio':
+          precioRef.current?.focus();
+          break;
+        case 'unidad':
+          unidadRef.current?.focus();
+          break;
+        case 'stock':
+          stockRef.current?.focus();
+          break;
+        case 'stockMinimo':
+          stockMinimoRef.current?.focus();
+          break;
+        case 'sectorAlmacenamiento':
+          sectorAlmacenamientoRef.current?.focus();
+          break;
+      }
+    }
+  };
+
   const enviarFormulario = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -537,7 +600,14 @@ export default function NuevoProducto() {
       
       if (response && (response.data || ('id' in response && response.id))) {
         toast.success('✅ Producto creado exitosamente');
-        navigate('/admin/productos');
+        
+        // Si viene desde "Crear Ingreso", regresar ahí con el producto creado
+        if (vieneDesdeIngreso) {
+          const producto = response.data || response;
+          navigate(`/admin/crear-ingreso?producto=${encodeURIComponent(JSON.stringify(producto))}`);
+        } else {
+          navigate('/admin/productos');
+        }
       } else {
         toast.error('Error: No se recibió respuesta del servidor');
       }
@@ -779,50 +849,67 @@ export default function NuevoProducto() {
                   </div>
 
                   <div className="campos-formulario">
-                    <CampoFormulario
-                      label="Nombre del Producto"
-                      name="nombre"
-                      placeholder="Ej: Camiseta Básica de Algodón"
-                      required
-                      error={errores.nombre}
-                      value={formulario.nombre}
-                      onChange={manejarCambio}
-                      onSelectChange={manejarCambioSelect}
-                      onNuevaCategoria={manejarNuevaCategoria}
-                      mostrarNuevaCategoria={mostrarNuevaCategoria}
-                      nuevaCategoria={nuevaCategoria}
-                      setNuevaCategoria={setNuevaCategoria}
-                      categorias={categorias}
-                    />
+                    <div className="campo-grupo" style={{ position: 'relative' }}>
+                      <label htmlFor="nombre" className="campo-label">
+                        Nombre del Producto <span className="campo-requerido">*</span>
+                      </label>
+                      <input
+                        ref={nombreRef}
+                        type="text"
+                        id="nombre"
+                        name="nombre"
+                        value={formulario.nombre}
+                        onChange={manejarCambio}
+                        onKeyDown={(e) => manejarEnterCampo(e, 'marca')}
+                        className={`campo-input ${errores.nombre ? 'campo-error' : ''}`}
+                        placeholder="Ej: Camiseta Básica de Algodón"
+                      />
+                      {errores.nombre && <div className="campo-mensaje-error">{errores.nombre}</div>}
+                    </div>
 
                     <div className="campos-fila">
-                      <CampoFormulario
-                        label="Marca"
-                        name="marca"
-                        placeholder="Ej: Nike, Apple, Samsung..."
-                        error={errores.marca}
-                        value={formulario.marca}
-                        onChange={manejarCambioMarca}
-                        onSelectChange={manejarCambioSelect}
-                        onNuevaCategoria={manejarNuevaCategoria}
-                        mostrarNuevaCategoria={mostrarNuevaCategoria}
-                        nuevaCategoria={nuevaCategoria}
-                        setNuevaCategoria={setNuevaCategoria}
-                        categorias={categorias}
-                        mostrarSugerenciasMarca={mostrarSugerenciasMarca}
-                        marcasFiltradas={marcasFiltradas}
-                        seleccionarMarca={seleccionarMarca}
-                      />
+                      <div className="campo-grupo" style={{ position: 'relative' }}>
+                        <label htmlFor="marca" className="campo-label">
+                          Marca
+                        </label>
+                        <input
+                          ref={marcaRef}
+                          type="text"
+                          id="marca"
+                          name="marca"
+                          value={formulario.marca}
+                          onChange={manejarCambioMarca}
+                          onKeyDown={(e) => manejarEnterCampo(e, 'codigoPersonalizado')}
+                          className={`campo-input ${errores.marca ? 'campo-error' : ''}`}
+                          placeholder="Ej: Nike, Apple, Samsung..."
+                        />
+                        {mostrarSugerenciasMarca && marcasFiltradas && seleccionarMarca && (
+                          <div className="sugerencias-marca">
+                            {marcasFiltradas.map((marca, index) => (
+                              <div
+                                key={index}
+                                className="sugerencia-marca"
+                                onClick={() => seleccionarMarca(marca)}
+                              >
+                                {marca}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {errores.marca && <div className="campo-mensaje-error">{errores.marca}</div>}
+                      </div>
                       <div className="campo-grupo" style={{ position: 'relative' }}>
                         <label htmlFor="codigoPersonalizado" className="campo-label">
                           Código Personalizado <span className="campo-opcional">(Opcional)</span>
                         </label>
                         <input
+                          ref={codigoPersonalizadoRef}
                           type="text"
                           id="codigoPersonalizado"
                           name="codigoPersonalizado"
                           value={formulario.codigoPersonalizado}
                           onChange={manejarCambioCodigoPersonalizado}
+                          onKeyDown={(e) => manejarEnterCampo(e, 'codigoBarras')}
                           className="campo-input"
                           placeholder="Ej: 330, 420, EL001, ROP001"
                         />
@@ -859,10 +946,12 @@ export default function NuevoProducto() {
                           width: '100%'
                         }}>
                           <input
+                            ref={codigoBarrasRef}
                             type="text"
                             id="codigoBarras"
                             value={formulario.codigoBarras}
                             onChange={manejarCambio}
+                            onKeyDown={(e) => manejarEnterCampo(e, 'categoria')}
                             style={{
                               flex: 1,
                               minWidth: 0,
@@ -982,71 +1071,102 @@ export default function NuevoProducto() {
                       </div>
                     </div>
 
-                    <CampoFormulario
-                      label="Categoría"
-                      name="categoria"
-                      type="select"
-                      required
-                      error={errores.categoria}
-                      value={formulario.categoria}
-                      onChange={manejarCambio}
-                      onSelectChange={manejarCambioSelect}
-                      onNuevaCategoria={manejarNuevaCategoria}
-                      mostrarNuevaCategoria={mostrarNuevaCategoria}
-                      nuevaCategoria={nuevaCategoria}
-                      setNuevaCategoria={setNuevaCategoria}
-                      categorias={categorias}
-                    />
+                    <div className="campo-grupo" style={{ position: 'relative' }}>
+                      <label htmlFor="categoria" className="campo-label">
+                        Categoría <span className="campo-requerido">*</span>
+                      </label>
+                      <select
+                        ref={categoriaRef}
+                        id="categoria"
+                        name="categoria"
+                        value={formulario.categoria}
+                        onChange={manejarCambioSelect}
+                        onKeyDown={(e) => manejarEnterCampo(e, 'descripcion')}
+                        className={`campo-input ${errores.categoria ? 'campo-error' : ''}`}
+                      >
+                        <option value="">Selecciona una opción</option>
+                        {categorias.map(categoria => (
+                          <option key={categoria} value={categoria}>
+                            {categoria}
+                          </option>
+                        ))}
+                        <option value="__nueva__">+ Agregar nueva categoría</option>
+                      </select>
+                      {mostrarNuevaCategoria && (
+                        <input
+                          type="text"
+                          placeholder="Escribe el nombre de la nueva categoría"
+                          className="campo-input"
+                          value={nuevaCategoria}
+                          onChange={(e) => setNuevaCategoria(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              manejarNuevaCategoria(e);
+                            }
+                          }}
+                          onBlur={manejarNuevaCategoria}
+                          autoFocus
+                        />
+                      )}
+                      {errores.categoria && <div className="campo-mensaje-error">{errores.categoria}</div>}
+                    </div>
 
-                    <CampoFormulario
-                      label="Descripción"
-                      name="descripcion"
-                      type="textarea"
-                      placeholder="Describe las características, beneficios y detalles del producto..."
-                      rows={4}
-                      error={errores.descripcion}
-                      value={formulario.descripcion}
-                      onChange={manejarCambio}
-                      onSelectChange={manejarCambioSelect}
-                      onNuevaCategoria={manejarNuevaCategoria}
-                      mostrarNuevaCategoria={mostrarNuevaCategoria}
-                      nuevaCategoria={nuevaCategoria}
-                      setNuevaCategoria={setNuevaCategoria}
-                      categorias={categorias}
-                    />
+                    <div className="campo-grupo" style={{ position: 'relative' }}>
+                      <label htmlFor="descripcion" className="campo-label">
+                        Descripción
+                      </label>
+                      <textarea
+                        ref={descripcionRef}
+                        id="descripcion"
+                        name="descripcion"
+                        value={formulario.descripcion}
+                        onChange={manejarCambio}
+                        onKeyDown={(e) => manejarEnterCampo(e, 'precio')}
+                        className={`campo-input ${errores.descripcion ? 'campo-error' : ''}`}
+                        placeholder="Describe las características, beneficios y detalles del producto..."
+                        rows={4}
+                      />
+                      {errores.descripcion && <div className="campo-mensaje-error">{errores.descripcion}</div>}
+                    </div>
 
                     <div className="campos-fila">
-                      <CampoFormulario
-                        label="Precio (opcional)"
-                        name="precio"
-                        type="number"
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                        error={errores.precio}
-                        value={formulario.precio}
-                        onChange={manejarCambio}
-                        onSelectChange={manejarCambioSelect}
-                        onNuevaCategoria={manejarNuevaCategoria}
-                        mostrarNuevaCategoria={mostrarNuevaCategoria}
-                        nuevaCategoria={nuevaCategoria}
-                        setNuevaCategoria={setNuevaCategoria}
-                        categorias={categorias}
-                      />
-                      <CampoFormulario
-                        label="Unidad"
-                        name="unidad"
-                        placeholder="Ej: kg, litro, unidad, par..."
-                        error={errores.unidad}
-                        value={formulario.unidad}
-                        onChange={manejarCambio}
-                        onSelectChange={manejarCambioSelect}
-                        onNuevaCategoria={manejarNuevaCategoria}
-                        mostrarNuevaCategoria={mostrarNuevaCategoria}
-                        nuevaCategoria={nuevaCategoria}
-                        setNuevaCategoria={setNuevaCategoria}
-                        categorias={categorias}
-                      />
+                      <div className="campo-grupo" style={{ position: 'relative' }}>
+                        <label htmlFor="precio" className="campo-label">
+                          Precio (opcional)
+                        </label>
+                        <input
+                          ref={precioRef}
+                          type="number"
+                          id="precio"
+                          name="precio"
+                          value={formulario.precio}
+                          onChange={manejarCambio}
+                          onKeyDown={(e) => manejarEnterCampo(e, 'unidad')}
+                          className={`campo-input ${errores.precio ? 'campo-error' : ''}`}
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                        />
+                        {errores.precio && <div className="campo-mensaje-error">{errores.precio}</div>}
+                      </div>
+                      <div className="campo-grupo" style={{ position: 'relative' }}>
+                        <label htmlFor="unidad" className="campo-label">
+                          Unidad
+                        </label>
+                        <input
+                          ref={unidadRef}
+                          type="text"
+                          id="unidad"
+                          name="unidad"
+                          value={formulario.unidad}
+                          onChange={manejarCambio}
+                          onKeyDown={(e) => manejarEnterCampo(e, 'stock')}
+                          className={`campo-input ${errores.unidad ? 'campo-error' : ''}`}
+                          placeholder="Ej: kg, litro, unidad, par..."
+                        />
+                        {errores.unidad && <div className="campo-mensaje-error">{errores.unidad}</div>}
+                      </div>
                     </div>
                   </div>
 
@@ -1076,39 +1196,42 @@ export default function NuevoProducto() {
 
                   <div className="campos-formulario">
                     <div className="campos-fila">
-                      <CampoFormulario
-                        label="Stock Actual"
-                        name="stock"
-                        type="number"
-                        placeholder="0"
-                        min="0"
-                        required
-                        error={errores.stock}
-                        value={formulario.stock}
-                        onChange={manejarCambio}
-                        onSelectChange={manejarCambioSelect}
-                        onNuevaCategoria={manejarNuevaCategoria}
-                        mostrarNuevaCategoria={mostrarNuevaCategoria}
-                        nuevaCategoria={nuevaCategoria}
-                        setNuevaCategoria={setNuevaCategoria}
-                        categorias={categorias}
-                      />
-                      <CampoFormulario
-                        label="Stock Mínimo"
-                        name="stockMinimo"
-                        type="number"
-                        placeholder="5"
-                        min="0"
-                        error={errores.stockMinimo}
-                        value={formulario.stockMinimo}
-                        onChange={manejarCambio}
-                        onSelectChange={manejarCambioSelect}
-                        onNuevaCategoria={manejarNuevaCategoria}
-                        mostrarNuevaCategoria={mostrarNuevaCategoria}
-                        nuevaCategoria={nuevaCategoria}
-                        setNuevaCategoria={setNuevaCategoria}
-                        categorias={categorias}
-                      />
+                      <div className="campo-grupo" style={{ position: 'relative' }}>
+                        <label htmlFor="stock" className="campo-label">
+                          Stock Actual <span className="campo-requerido">*</span>
+                        </label>
+                        <input
+                          ref={stockRef}
+                          type="number"
+                          id="stock"
+                          name="stock"
+                          value={formulario.stock}
+                          onChange={manejarCambio}
+                          onKeyDown={(e) => manejarEnterCampo(e, 'stockMinimo')}
+                          className={`campo-input ${errores.stock ? 'campo-error' : ''}`}
+                          placeholder="0"
+                          min="0"
+                        />
+                        {errores.stock && <div className="campo-mensaje-error">{errores.stock}</div>}
+                      </div>
+                      <div className="campo-grupo" style={{ position: 'relative' }}>
+                        <label htmlFor="stockMinimo" className="campo-label">
+                          Stock Mínimo <span className="campo-requerido">*</span>
+                        </label>
+                        <input
+                          ref={stockMinimoRef}
+                          type="number"
+                          id="stockMinimo"
+                          name="stockMinimo"
+                          value={formulario.stockMinimo}
+                          onChange={manejarCambio}
+                          onKeyDown={(e) => manejarEnterCampo(e, 'sectorAlmacenamiento')}
+                          className={`campo-input ${errores.stockMinimo ? 'campo-error' : ''}`}
+                          placeholder="5"
+                          min="0"
+                        />
+                        {errores.stockMinimo && <div className="campo-mensaje-error">{errores.stockMinimo}</div>}
+                      </div>
                     </div>
 
                     <div className="campo-grupo" style={{ position: 'relative' }}>
@@ -1116,11 +1239,18 @@ export default function NuevoProducto() {
                         Sector de Almacenamiento <span className="campo-opcional">(Opcional)</span>
                       </label>
                       <input
+                        ref={sectorAlmacenamientoRef}
                         type="text"
                         id="sectorAlmacenamiento"
                         name="sectorAlmacenamiento"
                         value={formulario.sectorAlmacenamiento}
                         onChange={manejarCambioSectorAlmacenamiento}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            // Aquí podríamos ir al siguiente paso o hacer focus en algún botón
+                          }
+                        }}
                         className="campo-input"
                         placeholder="Ej: depósito2, habitación A33, góndola 4, estante 23"
                       />

@@ -117,6 +117,10 @@ export default function CrearPlanilla() {
   useEffect(() => {
     const manejarEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // Si está en modo cantidad, no navegar fuera
+        if (modoCantidad) {
+          return;
+        }
         navigate('/admin/gestion-empresa');
       }
     };
@@ -125,7 +129,7 @@ export default function CrearPlanilla() {
     return () => {
       document.removeEventListener('keydown', manejarEscape);
     };
-  }, [navigate]);
+  }, [navigate, modoCantidad]);
 
   // Efecto para enfocar el campo de cantidad cuando se activa el modo cantidad
   useEffect(() => {
@@ -230,6 +234,8 @@ export default function CrearPlanilla() {
         confirmarCantidad();
         break;
       case 'Escape':
+        e.preventDefault();
+        e.stopPropagation(); // Detener la propagación del evento
         cancelarCantidad();
         break;
       case 'ArrowUp':
@@ -963,59 +969,41 @@ export default function CrearPlanilla() {
                         </div>
                       </div>
 
-                      {/* Controles de cantidad */}
+                      {/* Cantidad */}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.375rem',
                         flexShrink: 0
                       }}>
-                        <button
-                          onClick={() => disminuirCantidad(index)}
-                          style={{
-                            background: '#f3f4f6',
-                            border: 'none',
-                            borderRadius: '0.25rem',
-                            width: '1.75rem',
-                            height: '1.75rem',
-                            fontSize: '1rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          -
-                        </button>
-                        
-                        <span style={{
-                          fontSize: '1rem',
-                          fontWeight: '600',
-                          color: '#1e293b',
-                          minWidth: '1.75rem',
-                          textAlign: 'center'
-                        }}>
-                          {detalle.cantidad}
-                        </span>
-                        
-                        <button
-                          onClick={() => aumentarCantidad(index)}
-                          style={{
-                            background: '#3b82f6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '0.25rem',
-                            width: '1.75rem',
-                            height: '1.75rem',
-                            fontSize: '1rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          +
-                        </button>
+                                                 <input
+                           type="text"
+                           value={detalle.cantidad}
+                           onChange={(e) => {
+                             const valor = e.target.value;
+                             if (valor === '' || /^\d+$/.test(valor)) {
+                               const nuevaCantidad = valor === '' ? 0 : parseInt(valor);
+                               setNuevaPlanilla(prev => ({
+                                 ...prev,
+                                 detalles: prev.detalles.map((d, i) => 
+                                   i === index ? { ...d, cantidad: nuevaCantidad } : d
+                                 )
+                               }));
+                             }
+                           }}
+                           style={{
+                             width: '60px',
+                             padding: '0.25rem',
+                             border: '1px solid #e2e8f0',
+                             borderRadius: '0.25rem',
+                             fontSize: '0.8rem',
+                             textAlign: 'center',
+                             background: '#f8fafc',
+                             color: '#1e293b',
+                             fontWeight: '500',
+                             minHeight: '1.5rem'
+                           }}
+                         />
                       </div>
 
                       {/* Botón eliminar */}

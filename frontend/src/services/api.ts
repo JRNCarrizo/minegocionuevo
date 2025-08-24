@@ -1807,6 +1807,19 @@ class ApiService {
     }
   }
 
+  // Exportar remito de ingreso
+  async exportarRemitoIngreso(id: number): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/remitos-ingreso/${id}/exportar`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar remito de ingreso:', error);
+      throw error;
+    }
+  }
+
   // Eliminar detalle de una planilla
   async eliminarDetallePlanilla(detalleId: number): Promise<ApiResponse<string>> {
     try {

@@ -6,7 +6,6 @@ import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import { formatearFecha, formatearFechaCorta, formatearFechaConHora } from '../../utils/dateUtils';
-import TimeZoneInfo from '../../components/TimeZoneInfo';
 
 interface PlanillaPedido {
   id: number;
@@ -341,9 +340,6 @@ export default function CargaPedidos() {
                 }}>
                   💡 Presiona Enter para crear una nueva planilla
                 </p>
-                <div style={{ marginTop: '8px' }}>
-                  <TimeZoneInfo showDetails={true} />
-                </div>
               </div>
             </div>
             <button
