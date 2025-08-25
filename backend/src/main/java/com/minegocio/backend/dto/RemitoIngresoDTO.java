@@ -9,13 +9,16 @@ public class RemitoIngresoDTO {
     private Long id;
     private String numeroRemito;
     
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private LocalDateTime fechaRemito;
     
     private String observaciones;
     private Integer totalProductos;
     
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private LocalDateTime fechaCreacion;
     
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private LocalDateTime fechaActualizacion;
     private Long empresaId;
     private Long usuarioId;

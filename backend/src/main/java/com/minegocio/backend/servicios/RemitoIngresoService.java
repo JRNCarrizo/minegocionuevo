@@ -99,6 +99,9 @@ public class RemitoIngresoService {
         
         System.out.println("DEBUG: Fecha remito: " + remitoDTO.getFechaRemito());
         System.out.println("DEBUG: Fecha remito tipo: " + remitoDTO.getFechaRemito().getClass().getName());
+        System.out.println("DEBUG: Fecha remito toString: " + remitoDTO.getFechaRemito().toString());
+        System.out.println("DEBUG: Fecha remito toLocalDate: " + remitoDTO.getFechaRemito().toLocalDate());
+        System.out.println("DEBUG: Fecha remito toLocalTime: " + remitoDTO.getFechaRemito().toLocalTime());
         
         // Validar que la empresa existe
         Optional<Empresa> empresa = empresaRepository.findById(remitoDTO.getEmpresaId());

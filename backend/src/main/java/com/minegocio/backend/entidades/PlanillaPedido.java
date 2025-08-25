@@ -36,9 +36,6 @@ public class PlanillaPedido {
     @Column(name = "total_productos", nullable = false)
     private Integer totalProductos = 0;
 
-    @Column(name = "tipo", nullable = false, length = 20)
-    private String tipo = "PEDIDO"; // PEDIDO o DEVOLUCION
-
     // Relación con empresa
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
@@ -133,7 +130,4 @@ public class PlanillaPedido {
 
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
     public void setFechaActualizacion(LocalDateTime fechaActualizacion) { this.fechaActualizacion = fechaActualizacion; }
-
-    public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
 }

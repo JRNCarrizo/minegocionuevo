@@ -5,7 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha, formatearFechaCorta, formatearFechaConHora } from '../../utils/dateUtils';
+import { formatearFecha, formatearFechaCorta, formatearFechaConHora, obtenerFechaActual } from '../../utils/dateUtils';
 import BarcodeScanner from '../../components/BarcodeScanner';
 
 interface DetalleRemitoIngreso {
@@ -35,7 +35,7 @@ export default function CrearIngreso() {
   const navigate = useNavigate();
   
   const [numeroRemito, setNumeroRemito] = useState('');
-  const [fechaRemito, setFechaRemito] = useState('');
+  const [fechaRemito, setFechaRemito] = useState(obtenerFechaActual());
   const [observaciones, setObservaciones] = useState('');
   const [detalles, setDetalles] = useState<DetalleRemitoIngreso[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -134,7 +134,7 @@ export default function CrearIngreso() {
 
   const inicializarRemito = () => {
     setNumeroRemito('');
-    setFechaRemito(new Date().toISOString().split('T')[0]);
+    setFechaRemito(obtenerFechaActual());
     setObservaciones('');
     setDetalles([]);
   };
@@ -636,12 +636,19 @@ export default function CrearIngreso() {
     try {
       setGuardando(true);
       
-      // Asegurar que la fecha esté en el formato correcto con hora actual
-      const fechaActual = new Date();
-      const fechaFormateada = fechaRemito + 'T' + 
-        fechaActual.getHours().toString().padStart(2, '0') + ':' +
-        fechaActual.getMinutes().toString().padStart(2, '0') + ':' +
-        fechaActual.getSeconds().toString().padStart(2, '0');
+      // Crear fecha usando la fecha seleccionada y la hora actual
+      const ahora = new Date();
+      const horaLocal = ahora.getHours().toString().padStart(2, '0');
+      const minutosLocal = ahora.getMinutes().toString().padStart(2, '0');
+      const segundosLocal = ahora.getSeconds().toString().padStart(2, '0');
+      
+      // Crear fecha local y convertir a UTC manualmente para evitar problemas de zona horaria
+      const fechaLocal = new Date(fechaRemito + 'T' + horaLocal + ':' + minutosLocal + ':' + segundosLocal);
+      const offset = fechaLocal.getTimezoneOffset() * 60000; // offset en milisegundos
+      const fechaUTC = new Date(fechaLocal.getTime() - offset);
+      
+      // Formatear como ISO string para enviar al backend
+      const fechaFormateada = fechaUTC.toISOString();
       
       // Preparar los datos del remito para la API
       const remitoData = {
@@ -659,6 +666,7 @@ export default function CrearIngreso() {
       };
 
       console.log('📋 Fecha seleccionada:', fechaRemito);
+      console.log('📋 Hora local:', horaLocal, ':', minutosLocal, ':', segundosLocal);
       console.log('📋 Fecha formateada:', fechaFormateada);
       console.log('📋 Enviando remito:', remitoData);
 

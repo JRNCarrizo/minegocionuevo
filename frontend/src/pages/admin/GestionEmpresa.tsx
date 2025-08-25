@@ -45,7 +45,8 @@ export default function GestionEmpresa() {
       0: '#3b82f6', // Carga de Pedidos - Azul
       1: '#ef4444', // Roturas y Pérdidas - Rojo
       2: '#059669', // Ingresos - Verde
-      3: '#f59e0b'  // Gestión de Retornos - Amarillo/Naranja
+      3: '#f59e0b', // Gestión de Retornos - Amarillo/Naranja
+      4: '#8b5cf6'  // Movimientos del Día - Púrpura
     };
     
     const color = coloresCards[cardIndex as keyof typeof coloresCards] || '#3b82f6';
@@ -263,6 +264,14 @@ export default function GestionEmpresa() {
       color: '#f59e0b',
       enlace: '/admin/descarga-devoluciones',
       gradiente: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+    },
+    {
+      titulo: 'Movimientos del Día',
+      descripcion: 'Estadísticas generales de movimientos diarios',
+      icono: '📊',
+      color: '#8b5cf6',
+      enlace: '/admin/movimientos-dia',
+      gradiente: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
     }
   ];
 
@@ -439,7 +448,7 @@ export default function GestionEmpresa() {
         {/* Cards de Gestión */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',
+          gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
           gap: isMobile ? '1rem' : '1.5rem'
         }}>
                      {cardsGestion.map((card, index) => (

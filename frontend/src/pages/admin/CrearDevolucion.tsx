@@ -179,7 +179,7 @@ export default function CrearDevolucion() {
         return matchNombre || matchCodigo || matchBarras;
       });
       
-      setProductosFiltrados(filtrados);
+    setProductosFiltrados(filtrados);
       setMostrarProductos(filtrados.length > 0);
     } else {
       setProductosFiltrados([]);
@@ -367,7 +367,7 @@ export default function CrearDevolucion() {
 
     try {
       setGuardando(true);
-
+      
       // Crear fecha con hora local, igual que en las planillas
       const fechaSeleccionada = new Date(fechaPlanilla + 'T00:00:00');
       const ahora = new Date();
@@ -389,10 +389,10 @@ export default function CrearDevolucion() {
       
       // Formatear como ISO string para enviar al backend
       const fechaFormateada = fechaUTC.toISOString();
-
-             const planillaData = {
+      
+      const planillaData = {
          numeroPlanilla: numeroPlanilla.trim(),
-         fechaPlanilla: fechaFormateada,
+        fechaPlanilla: fechaFormateada,
          observaciones: observaciones.trim() || null,
          detalles: detalles.map(detalle => ({
            productoId: detalle.productoId,
@@ -511,9 +511,9 @@ export default function CrearDevolucion() {
           }}>
             <div style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: '1rem'
-            }}>
+            alignItems: 'center',
+            gap: '1rem'
+          }}>
               <button
                 onClick={() => navigate('/admin/descarga-devoluciones')}
                 style={{
@@ -546,18 +546,18 @@ export default function CrearDevolucion() {
               }}>
                 📋
               </div>
-              <div>
-                                 <h1 style={{
-                   fontSize: isMobile ? '1.5rem' : '2rem',
-                   fontWeight: '700',
-                   color: '#1e293b',
+            <div>
+              <h1 style={{
+                fontSize: isMobile ? '1.5rem' : '2rem',
+                fontWeight: '700',
+                color: '#1e293b',
                    margin: 0
-                 }}>
+              }}>
                    Nuevo Registro de Retorno
-                 </h1>
-                <p style={{
-                  color: '#64748b',
-                  margin: 0,
+              </h1>
+              <p style={{
+                color: '#64748b',
+                margin: 0,
                   fontSize: '0.875rem'
                 }}>
                   Registra los productos devueltos o no entregados
@@ -569,8 +569,8 @@ export default function CrearDevolucion() {
                   fontWeight: '500'
                 }}>
                   💡 Presiona Escape para volver a Devoluciones
-                </p>
-              </div>
+              </p>
+            </div>
             </div>
             <div style={{
               display: 'flex',
@@ -592,49 +592,49 @@ export default function CrearDevolucion() {
               >
                 Cancelar
               </button>
-                             <button
+              <button
                  onClick={guardarPlanilla}
                  disabled={guardando || detalles.length === 0}
-                 style={{
+                style={{
                    padding: '0.75rem 1.5rem',
                    background: guardando || detalles.length === 0 ? '#9ca3af' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                   color: 'white',
-                   border: 'none',
-                   borderRadius: '0.75rem',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.75rem',
                    fontSize: '0.875rem',
-                   fontWeight: '600',
+                  fontWeight: '600',
                    cursor: guardando || detalles.length === 0 ? 'not-allowed' : 'pointer',
                    transition: 'all 0.3s ease',
                    boxShadow: guardando || detalles.length === 0 ? 'none' : '0 4px 12px rgba(245, 158, 11, 0.3)'
                  }}
                >
                  {guardando ? '💾 Creando...' : '💾 Crear Registro'}
-               </button>
+              </button>
             </div>
           </div>
         </div>
 
         {/* Campos de información de la planilla */}
-        <div style={{
-          background: 'white',
-          borderRadius: '1rem',
+          <div style={{
+            background: 'white',
+            borderRadius: '1rem',
           padding: isMobile ? '1.5rem' : '2rem',
           marginBottom: '2rem',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <h2 style={{
+            border: '1px solid #e2e8f0'
+          }}>
+            <h2 style={{
             fontSize: '1.25rem',
-            fontWeight: '600',
-            color: '#1e293b',
+              fontWeight: '600',
+              color: '#1e293b',
             margin: '0 0 1.5rem 0',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
-          }}>
+            }}>
             📋 Información de la Planilla
-          </h2>
-          
+            </h2>
+
           <div style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr',
@@ -676,7 +676,7 @@ export default function CrearDevolucion() {
               }}>
                 📄 Número de Planilla
               </label>
-                             <input
+              <input
                  ref={numeroPlanillaRef}
                  type="text"
                  value={numeroPlanilla}
@@ -688,14 +688,14 @@ export default function CrearDevolucion() {
                    }
                  }}
                  placeholder="PL00000000"
-                 style={{
-                   width: '100%',
-                   padding: '0.75rem',
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
                    border: '2px solid #e2e8f0',
-                   borderRadius: '0.5rem',
+                  borderRadius: '0.5rem',
                    fontSize: '0.875rem'
-                 }}
-               />
+                }}
+              />
             </div>
 
             <div>
@@ -708,7 +708,7 @@ export default function CrearDevolucion() {
               }}>
                 💬 Observaciones
               </label>
-                             <textarea
+              <textarea
                  ref={observacionesRef}
                  value={observaciones}
                  onChange={(e) => setObservaciones(e.target.value)}
@@ -731,22 +731,22 @@ export default function CrearDevolucion() {
                  }}
                  placeholder="Observaciones sobre la devolución..."
                  rows={1}
-                 style={{
-                   width: '100%',
-                   padding: '0.75rem',
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
                    border: '2px solid #e2e8f0',
-                   borderRadius: '0.5rem',
+                  borderRadius: '0.5rem',
                    fontSize: '0.875rem',
                    resize: 'none'
-                 }}
-               />
+                }}
+              />
             </div>
           </div>
-        </div>
+            </div>
 
         {/* Contenido principal - Buscador, Lista y Resumen */}
-        <div style={{
-          display: 'grid',
+              <div style={{
+                display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '0.8fr 1.4fr 0.8fr',
           gap: '2rem'
         }}>
@@ -770,7 +770,7 @@ export default function CrearDevolucion() {
             }}>
               🛒 Agregar Productos
             </h2>
-            
+
             {/* Búsqueda de productos */}
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
@@ -789,31 +789,31 @@ export default function CrearDevolucion() {
                 alignItems: 'end'
               }}>
                 <div style={{ position: 'relative' }}>
-                  <input
+              <input
                     ref={inputBusquedaRef}
-                    type="text"
+                type="text"
                     placeholder="Código de barras, código personalizado o nombre..."
-                    value={inputBusqueda}
+                value={inputBusqueda}
                     onChange={(e) => setInputBusqueda(e.target.value)}
                     onKeyDown={manejarTeclas}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
                       border: '2px solid #e2e8f0',
-                      borderRadius: '0.5rem',
+                  borderRadius: '0.5rem',
                       fontSize: '0.875rem'
-                    }}
-                  />
-                
+                }}
+              />
+
                   {/* Lista de productos filtrados */}
                   {mostrarProductos && (
-                    <div style={{
+            <div style={{
                       position: 'absolute',
                       top: '100%',
                       left: 0,
                       right: 0,
                       background: 'white',
-                      border: '1px solid #e2e8f0',
+              border: '1px solid #e2e8f0',
                       borderRadius: '0.5rem',
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                       maxHeight: '200px',
@@ -821,12 +821,12 @@ export default function CrearDevolucion() {
                       zIndex: 1000
                     }}>
                       {productosFiltrados.map((producto, index) => (
-                        <div
-                          key={producto.id}
+                  <div
+                    key={producto.id}
                           onClick={() => seleccionarProducto(producto)}
-                          style={{
+                    style={{
                             padding: '0.75rem',
-                            cursor: 'pointer',
+                      cursor: 'pointer',
                             borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
                             background: index === productoSeleccionado ? '#f1f5f9' : 'white',
                             fontSize: '0.875rem'
@@ -834,8 +834,8 @@ export default function CrearDevolucion() {
                           onMouseOver={() => setProductoSeleccionado(index)}
                         >
                           <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                            {producto.nombre}
-                          </div>
+                      {producto.nombre}
+                    </div>
                           <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                             {producto.codigoPersonalizado && `Código: ${producto.codigoPersonalizado}`}
                             {producto.codigoBarras && ` • Barras: ${producto.codigoBarras}`}
@@ -878,13 +878,13 @@ export default function CrearDevolucion() {
                         fontSize: '0.875rem'
                       }}
                     />
-                  </div>
+                    </div>
                 )}
               </div>
 
               {/* Vista previa del producto seleccionado */}
               {mostrarCampoCantidad && productoSeleccionadoTemporal && (
-                <div style={{
+                    <div style={{
                   background: 'white',
                   borderRadius: '0.5rem',
                   padding: '0.75rem',
@@ -894,19 +894,19 @@ export default function CrearDevolucion() {
                 }}>
                   <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
                     <strong>Producto:</strong> {productoSeleccionadoTemporal.nombre}
-                  </div>
+                    </div>
                   {productoSeleccionadoTemporal.codigoPersonalizado && (
                     <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
                       <strong>Código:</strong> {productoSeleccionadoTemporal.codigoPersonalizado}
-                    </div>
-                  )}
+                  </div>
+              )}
                   <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
                     <strong>Stock actual:</strong> {productoSeleccionadoTemporal.stock}
-                  </div>
+            </div>
                   <div style={{ color: '#3b82f6', fontWeight: '600' }}>
                     💡 Enter para agregar • Escape para cancelar
-                  </div>
-                </div>
+          </div>
+        </div>
               )}
               
               <button
@@ -952,9 +952,9 @@ export default function CrearDevolucion() {
             }}>
               📦 Productos de la Planilla ({detalles.length})
             </h2>
-            
+
             {detalles.length === 0 ? (
-              <div style={{
+            <div style={{
                 textAlign: 'center',
                 padding: '3rem',
                 color: '#6b7280',
@@ -976,47 +976,47 @@ export default function CrearDevolucion() {
                 {detalles.map((detalle, index) => (
                   <div
                     key={detalle.id}
-                    style={{
+                  style={{
                       padding: '0.75rem',
                       borderBottom: index < detalles.length - 1 ? '1px solid #f1f5f9' : 'none',
                       background: index % 2 === 0 ? 'white' : '#f8fafc'
-                    }}
-                  >
-                    <div style={{
-                      display: 'grid',
+                  }}
+                >
+                  <div style={{
+                    display: 'grid',
                       gridTemplateColumns: isMobile ? '1fr' : '1fr auto auto',
                       gap: '0.75rem',
-                      alignItems: 'center'
-                    }}>
-                      <div>
-                        <div style={{ 
-                          fontWeight: '600', 
-                          color: '#1e293b',
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <div style={{
+                        fontWeight: '600',
+                        color: '#1e293b',
                           fontSize: '0.875rem',
                           lineHeight: '1.2'
-                        }}>
-                          {detalle.descripcion}
-                        </div>
-                        {detalle.codigoPersonalizado && (
-                          <div style={{ 
+                      }}>
+                        {detalle.descripcion}
+                      </div>
+                      {detalle.codigoPersonalizado && (
+                        <div style={{
                             fontSize: '0.7rem', 
                             color: '#64748b',
                             marginTop: '0.125rem'
-                          }}>
-                            Código: {detalle.codigoPersonalizado}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <label style={{
+                        }}>
+                          Código: {detalle.codigoPersonalizado}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label style={{
                           display: 'block',
                           fontSize: '0.7rem',
-                          fontWeight: '600',
+                        fontWeight: '600',
                           color: '#64748b',
                           marginBottom: '0.125rem'
-                        }}>
-                          Cantidad
-                        </label>
+                      }}>
+                        Cantidad
+                      </label>
                         <input
                           type="text"
                           value={detalle.cantidad}
@@ -1041,25 +1041,25 @@ export default function CrearDevolucion() {
                           }}
                         />
                       </div>
-                      <button
+                        <button
                         onClick={() => removerDetalle(index)}
-                        style={{
-                          background: '#ef4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '0.25rem',
+                          style={{
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '0.25rem',
                           padding: '0.375rem',
                           fontSize: '0.7rem',
                           cursor: 'pointer',
-                          width: '2rem',
-                          height: '2rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
+                            width: '2rem',
+                            height: '2rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
                         🗑️
-                      </button>
+                        </button>
                     </div>
                   </div>
                 ))}
@@ -1078,11 +1078,11 @@ export default function CrearDevolucion() {
           }}>
             <h2 style={{
               fontSize: '1.25rem',
-              fontWeight: '600',
-              color: '#1e293b',
+                          fontWeight: '600',
+                          color: '#1e293b',
               margin: '0 0 1.5rem 0',
-              display: 'flex',
-              alignItems: 'center',
+                            display: 'flex',
+                            alignItems: 'center',
               gap: '0.5rem'
             }}>
               📊 Resumen de la Planilla
@@ -1102,10 +1102,10 @@ export default function CrearDevolucion() {
                 }}>
                   <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>Total Productos</div>
                   <div style={{ fontSize: '2rem', fontWeight: '700' }}>{detalles.length}</div>
-                </div>
-              </div>
-              
-              <div>
+                      </div>
+                    </div>
+
+                    <div>
                 <div style={{
                   background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                   color: 'white',
@@ -1126,14 +1126,14 @@ export default function CrearDevolucion() {
                }}>
                  <h3 style={{
                    fontSize: '1rem',
-                   fontWeight: '600',
+                        fontWeight: '600',
                    color: '#1e293b',
                    margin: '0 0 0.75rem 0'
                  }}>
                    📋 Información
                  </h3>
                  <div style={{
-                   fontSize: '0.875rem',
+                          fontSize: '0.875rem',
                    color: '#64748b',
                    lineHeight: '1.5',
                    marginBottom: '1rem'
@@ -1141,25 +1141,25 @@ export default function CrearDevolucion() {
                    <div><strong>Número:</strong> {numeroPlanilla || 'No definido'}</div>
                    <div><strong>Fecha:</strong> {fechaPlanilla ? new Date(fechaPlanilla).toLocaleDateString() : 'No definida'}</div>
                    <div><strong>Observaciones:</strong> {observaciones ? 'Sí' : 'No'}</div>
-                 </div>
-                 
-                 <button
+                    </div>
+
+                    <button
                    onClick={guardarPlanilla}
                    disabled={guardando || detalles.length === 0}
-                   style={{
+                      style={{
                      width: '100%',
                      padding: '0.75rem',
                      background: guardando || detalles.length === 0 ? '#9ca3af' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                     color: 'white',
-                     border: 'none',
-                     borderRadius: '0.5rem',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '0.5rem',
                      fontSize: '0.875rem',
                      fontWeight: '600',
                      cursor: guardando || detalles.length === 0 ? 'not-allowed' : 'pointer',
                      transition: 'all 0.3s ease',
                      boxShadow: guardando || detalles.length === 0 ? 'none' : '0 4px 12px rgba(245, 158, 11, 0.3)',
-                     display: 'flex',
-                     alignItems: 'center',
+                        display: 'flex',
+                        alignItems: 'center',
                      justifyContent: 'center',
                      gap: '0.5rem'
                    }}
@@ -1179,11 +1179,11 @@ export default function CrearDevolucion() {
                    ) : (
                      '📋 Crear Registro'
                    )}
-                 </button>
-               </div>
+                    </button>
+                  </div>
+                </div>
             </div>
           </div>
-        </div>
       </div>
 
       {/* Scanner de código de barras */}

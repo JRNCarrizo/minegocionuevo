@@ -63,4 +63,14 @@ public interface RoturaPerdidaRepository extends JpaRepository<RoturaPerdida, Lo
             @Param("fechaInicio") LocalDate fechaInicio,
             @Param("fechaFin") LocalDate fechaFin
     );
+
+    /**
+     * Buscar roturas y pérdidas por empresa y rango de fechas usando LocalDateTime
+     */
+    @Query("SELECT r FROM RoturaPerdida r WHERE r.empresa.id = :empresaId AND r.fecha BETWEEN :fechaInicio AND :fechaFin ORDER BY r.fechaCreacion DESC")
+    List<RoturaPerdida> findByEmpresaIdAndFechaBetweenOrderByFechaCreacionDesc(
+            @Param("empresaId") Long empresaId,
+            @Param("fechaInicio") java.time.LocalDateTime fechaInicio,
+            @Param("fechaFin") java.time.LocalDateTime fechaFin
+    );
 }

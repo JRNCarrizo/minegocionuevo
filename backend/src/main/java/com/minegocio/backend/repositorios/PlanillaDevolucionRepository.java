@@ -34,4 +34,14 @@ public interface PlanillaDevolucionRepository extends JpaRepository<PlanillaDevo
      * Buscar planilla de devolución por ID y empresa
      */
     Optional<PlanillaDevolucion> findByIdAndEmpresaId(Long id, Long empresaId);
+
+    /**
+     * Buscar planillas de devolución por empresa y fecha de planilla
+     */
+    List<PlanillaDevolucion> findByEmpresaIdAndFechaPlanillaOrderByFechaCreacionDesc(Long empresaId, java.time.LocalDateTime fechaPlanilla);
+
+    /**
+     * Buscar planillas de devolución por empresa y rango de fechas de planilla
+     */
+    List<PlanillaDevolucion> findByEmpresaIdAndFechaPlanillaBetweenOrderByFechaCreacionDesc(Long empresaId, java.time.LocalDateTime fechaInicio, java.time.LocalDateTime fechaFin);
 }

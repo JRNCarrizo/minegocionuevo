@@ -72,7 +72,6 @@ public class PlanillaPedidoService {
         
         PlanillaPedido planilla = new PlanillaPedido(empresa, usuario, fechaPlanilla);
         planilla.setObservaciones(dto.getObservaciones());
-        planilla.setTipo("PEDIDO"); // Marcar como pedido
 
         // Si se proporciona un número de planilla específico, usarlo
         if (dto.getNumeroPlanilla() != null && !dto.getNumeroPlanilla().isEmpty()) {
@@ -126,7 +125,7 @@ public class PlanillaPedidoService {
      * Obtener todas las planillas de una empresa
      */
     public List<PlanillaPedidoResponseDTO> obtenerPlanillasPorEmpresa(Long empresaId) {
-        List<PlanillaPedido> planillas = planillaPedidoRepository.findByEmpresaIdAndTipoOrderByFechaPlanillaDesc(empresaId, "PEDIDO");
+        List<PlanillaPedido> planillas = planillaPedidoRepository.findByEmpresaIdOrderByFechaPlanillaDesc(empresaId);
         
         return planillas.stream().map(planilla -> {
             // Cargar los detalles para cada planilla

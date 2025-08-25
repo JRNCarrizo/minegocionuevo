@@ -18,10 +18,7 @@ public interface PlanillaPedidoRepository extends JpaRepository<PlanillaPedido, 
      */
     List<PlanillaPedido> findByEmpresaIdOrderByFechaPlanillaDesc(Long empresaId);
 
-    /**
-     * Buscar planillas por empresa y tipo
-     */
-    List<PlanillaPedido> findByEmpresaIdAndTipoOrderByFechaPlanillaDesc(Long empresaId, String tipo);
+
 
     /**
      * Buscar planillas por empresa y fecha
@@ -62,4 +59,14 @@ public interface PlanillaPedidoRepository extends JpaRepository<PlanillaPedido, 
      * Buscar planilla por ID y empresa
      */
     Optional<PlanillaPedido> findByIdAndEmpresaId(Long id, Long empresaId);
+
+    /**
+     * Buscar planillas por empresa y rango de fechas usando LocalDateTime
+     */
+    @Query("SELECT p FROM PlanillaPedido p WHERE p.empresa.id = :empresaId AND p.fechaPlanilla BETWEEN :fechaInicio AND :fechaFin ORDER BY p.fechaCreacion DESC")
+    List<PlanillaPedido> findByEmpresaIdAndFechaPlanillaBetweenOrderByFechaCreacionDesc(
+            @Param("empresaId") Long empresaId,
+            @Param("fechaInicio") java.time.LocalDateTime fechaInicio,
+            @Param("fechaFin") java.time.LocalDateTime fechaFin
+    );
 }

@@ -12,6 +12,45 @@ import type {
   ApiResponse,
   PaginatedResponse
 } from '../types';
+
+// Interfaces para Movimientos del Día
+interface MovimientoDiaDTO {
+  fecha: string;
+  stockInicial: StockInicialDTO;
+  ingresos: MovimientosDTO;
+  devoluciones: MovimientosDTO;
+  salidas: MovimientosDTO;
+  roturas: MovimientosDTO;
+  balanceFinal: StockInicialDTO;
+  diaCerrado: boolean;
+}
+
+interface StockInicialDTO {
+  cantidadTotal: number;
+  productos: ProductoStockDTO[];
+}
+
+interface MovimientosDTO {
+  cantidadTotal: number;
+  productos: ProductoMovimientoDTO[];
+}
+
+interface ProductoStockDTO {
+  id: number;
+  nombre: string;
+  codigoPersonalizado?: string;
+  cantidad: number;
+  precio?: number;
+}
+
+interface ProductoMovimientoDTO {
+  id: number;
+  nombre: string;
+  codigoPersonalizado?: string;
+  cantidad: number;
+  fechaMovimiento: string;
+  observaciones?: string;
+}
 import { API_CONFIG } from '../config/api';
 import { getCookie } from '../utils/cookies';
 
@@ -1920,6 +1959,32 @@ class ApiService {
       throw error;
     }
   }
+
+  // ===== MOVIMIENTOS DEL DÍA =====
+
+  // Obtener movimientos del día
+  async obtenerMovimientosDia(fecha: string): Promise<MovimientoDiaDTO> {
+    try {
+      const response = await this.api.get(`/movimientos-dia/${fecha}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener movimientos del día:', error);
+      throw error;
+    }
+  }
+
+  // Obtener movimientos por rango de fechas
+  async obtenerMovimientosRango(fechaInicio: string, fechaFin: string): Promise<MovimientoDiaDTO> {
+    try {
+      const response = await this.api.get(`/movimientos-dia/rango?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener movimientos por rango:', error);
+      throw error;
+    }
+  }
+
+
 
   // Exportar remito de ingreso
   async exportarRemitoIngreso(id: number): Promise<Blob> {
