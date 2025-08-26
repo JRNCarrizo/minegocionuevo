@@ -74,6 +74,12 @@ export default function CrearIngreso() {
   const [sugerenciaSeleccionadaNombre, setSugerenciaSeleccionadaNombre] = useState(-1);
   const [sugerenciaSeleccionadaMarca, setSugerenciaSeleccionadaMarca] = useState(-1);
   
+  // Estados para autocomplete de sectores
+  const [sectoresAlmacenamiento, setSectoresAlmacenamiento] = useState<string[]>([]);
+  const [sectoresFiltrados, setSectoresFiltrados] = useState<string[]>([]);
+  const [mostrarSugerenciasSector, setMostrarSugerenciasSector] = useState(false);
+  const [sectorSeleccionadoIndex, setSectorSeleccionadoIndex] = useState(-1);
+  
 
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
   const numeroRemitoRef = useRef<HTMLInputElement>(null);
@@ -91,6 +97,7 @@ export default function CrearIngreso() {
     if (datosUsuario) {
       cargarProductos();
       cargarCategorias();
+      cargarSectoresAlmacenamiento();
       // Solo inicializar si no hay datos del remito
       if (!numeroRemito && detalles.length === 0) {
         inicializarRemito();
@@ -396,6 +403,31 @@ export default function CrearIngreso() {
     }
   };
 
+  const cargarSectoresAlmacenamiento = async () => {
+    try {
+      // Cargar sectores desde la gestión de sectores
+      const response = await fetch(`/api/empresas/${datosUsuario!.empresaId}/sectores/todos`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Extraer solo los nombres de los sectores activos
+        const sectoresActivos = (data.data || [])
+          .filter((sector: any) => sector.activo)
+          .map((sector: any) => sector.nombre);
+        setSectoresAlmacenamiento(sectoresActivos);
+      } else {
+        console.error('Error al cargar sectores:', response.status);
+      }
+    } catch (error) {
+      console.error('Error al cargar sectores de almacenamiento:', error);
+    }
+  };
+
   const extraerNombresYMarcas = () => {
     console.log('🔍 [PREDICTIVO] Extrayendo nombres y marcas...');
     console.log('🔍 [PREDICTIVO] Productos disponibles:', productos.length);
@@ -525,6 +557,108 @@ export default function CrearIngreso() {
     }
   };
 
+  const manejarCambioSectorAlmacenamiento = (valor: string) => {
+    setNuevoProducto(prev => ({ ...prev, sectorAlmacenamiento: valor }));
+    
+    // Resetear índice de selección
+    setSectorSeleccionadoIndex(-1);
+    
+    // Filtrar sectores que coincidan con lo que está escribiendo
+    if (valor.trim()) {
+      const filtrados = sectoresAlmacenamiento.filter(sector =>
+        sector.toLowerCase().includes(valor.toLowerCase())
+      );
+      setSectoresFiltrados(filtrados);
+      setMostrarSugerenciasSector(filtrados.length > 0);
+    } else {
+      setSectoresFiltrados([]);
+      setMostrarSugerenciasSector(false);
+    }
+  };
+
+  const seleccionarSector = (sector: string) => {
+    setNuevoProducto(prev => ({ ...prev, sectorAlmacenamiento: sector }));
+    setMostrarSugerenciasSector(false);
+    setSectorSeleccionadoIndex(-1);
+  };
+
+  const crearNuevoSector = async (nombreSector: string) => {
+    try {
+      const response = await fetch(`/api/empresas/${datosUsuario!.empresaId}/sectores`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nombre: nombreSector,
+          descripcion: `Sector creado automáticamente desde modal de crear producto en ingresos`,
+          ubicacion: '',
+          activo: true
+        })
+      });
+      
+      if (response.ok) {
+        // Agregar el nuevo sector a la lista local
+        setSectoresAlmacenamiento(prev => [...prev, nombreSector]);
+        toast.success(`Sector "${nombreSector}" creado exitosamente`);
+        return true;
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Error al crear sector');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error al crear sector:', error);
+      toast.error('Error al crear sector');
+      return false;
+    }
+  };
+
+  const manejarTecladoSector = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!mostrarSugerenciasSector) return;
+
+    const totalOpciones = sectoresFiltrados.length + 
+      (nuevoProducto.sectorAlmacenamiento.trim() && 
+       !sectoresFiltrados.includes(nuevoProducto.sectorAlmacenamiento.trim()) ? 1 : 0);
+
+    if (totalOpciones === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSectorSeleccionadoIndex(prev => 
+          prev < totalOpciones - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSectorSeleccionadoIndex(prev => 
+          prev > 0 ? prev - 1 : totalOpciones - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (sectorSeleccionadoIndex >= 0 && sectorSeleccionadoIndex < sectoresFiltrados.length) {
+          seleccionarSector(sectoresFiltrados[sectorSeleccionadoIndex]);
+        } else if (sectorSeleccionadoIndex === sectoresFiltrados.length && 
+                   nuevoProducto.sectorAlmacenamiento.trim() && 
+                   !sectoresFiltrados.includes(nuevoProducto.sectorAlmacenamiento.trim())) {
+          // Crear nuevo sector
+          crearNuevoSector(nuevoProducto.sectorAlmacenamiento.trim()).then(success => {
+            if (success) {
+              seleccionarSector(nuevoProducto.sectorAlmacenamiento.trim());
+            }
+          });
+        }
+        break;
+      case 'Escape':
+        setMostrarSugerenciasSector(false);
+        setSectorSeleccionadoIndex(-1);
+        break;
+    }
+  };
+
   const manejarCambioSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     
@@ -567,26 +701,83 @@ export default function CrearIngreso() {
     try {
       setGuardandoProducto(true);
       
-             const productoData = {
-         nombre: nuevoProducto.nombre,
-         marca: nuevoProducto.marca,
-         descripcion: nuevoProducto.descripcion,
-         precio: parseFloat(nuevoProducto.precio) || 0,
-         stock: 0, // Siempre 0 para productos nuevos - se agregará stock al ingresar al remito
-         stockMinimo: 5, // Valor por defecto para productos nuevos
-         unidad: nuevoProducto.unidad,
-         categoria: nuevoProducto.categoria,
-         sectorAlmacenamiento: nuevoProducto.sectorAlmacenamiento,
-         codigoPersonalizado: nuevoProducto.codigoPersonalizado || undefined,
-         codigoBarras: nuevoProducto.codigoBarras || undefined,
-         imagenes: nuevoProducto.imagenes,
-         activo: true
-       };
+      const productoData = {
+        nombre: nuevoProducto.nombre,
+        marca: nuevoProducto.marca,
+        descripcion: nuevoProducto.descripcion,
+        precio: parseFloat(nuevoProducto.precio) || 0,
+        stock: 0, // Siempre 0 para productos nuevos - se agregará stock al ingresar al remito
+        stockMinimo: 5, // Valor por defecto para productos nuevos
+        unidad: nuevoProducto.unidad,
+        categoria: nuevoProducto.categoria,
+        sectorAlmacenamiento: nuevoProducto.sectorAlmacenamiento,
+        codigoPersonalizado: nuevoProducto.codigoPersonalizado || undefined,
+        codigoBarras: nuevoProducto.codigoBarras || undefined,
+        imagenes: nuevoProducto.imagenes,
+        activo: true
+      };
 
       const response = await ApiService.crearProducto(datosUsuario!.empresaId, productoData);
       
       if (response && response.data) {
         const producto = response.data;
+        
+        // Si el producto tiene un sector asignado, asignarlo automáticamente al sector
+        if (nuevoProducto.sectorAlmacenamiento && nuevoProducto.sectorAlmacenamiento.trim()) {
+          try {
+            console.log('🔍 [ASIGNACIÓN AUTOMÁTICA] Asignando producto al sector:', nuevoProducto.sectorAlmacenamiento);
+            
+            // Buscar el sector por nombre para obtener su ID
+            const sectoresResponse = await fetch(`/api/empresas/${datosUsuario!.empresaId}/sectores/todos`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (sectoresResponse.ok) {
+              const sectoresData = await sectoresResponse.json();
+              const sectorEncontrado = (sectoresData.data || []).find(
+                (sector: any) => sector.nombre === nuevoProducto.sectorAlmacenamiento && sector.activo
+              );
+              
+              if (sectorEncontrado) {
+                // Asignar el producto al sector con cantidad 0 (ya que el stock se agregará cuando se ingrese al remito)
+                const asignacionResponse = await fetch(`/api/empresas/${datosUsuario!.empresaId}/sectores/${sectorEncontrado.id}/asignar-productos`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify([{
+                    productoId: producto.id,
+                    cantidad: 0 // Cantidad inicial 0, se actualizará cuando se ingrese al remito
+                  }])
+                });
+                
+                if (asignacionResponse.ok) {
+                  console.log('🔍 [ASIGNACIÓN AUTOMÁTICA] Producto asignado exitosamente al sector');
+                  toast.success(`✅ Producto "${producto.nombre}" creado y asignado al sector "${nuevoProducto.sectorAlmacenamiento}" exitosamente.`);
+                } else {
+                  console.log('🔍 [ASIGNACIÓN AUTOMÁTICA] Error al asignar producto al sector:', asignacionResponse.status);
+                  toast.success(`✅ Producto "${producto.nombre}" creado exitosamente, pero hubo un problema al asignarlo al sector.`);
+                }
+              } else {
+                console.log('🔍 [ASIGNACIÓN AUTOMÁTICA] Sector no encontrado:', nuevoProducto.sectorAlmacenamiento);
+                toast.success(`✅ Producto "${producto.nombre}" creado exitosamente. Ahora puedes buscarlo y agregarlo al remito.`);
+              }
+            } else {
+              console.log('🔍 [ASIGNACIÓN AUTOMÁTICA] Error al obtener sectores:', sectoresResponse.status);
+              toast.success(`✅ Producto "${producto.nombre}" creado exitosamente. Ahora puedes buscarlo y agregarlo al remito.`);
+            }
+          } catch (asignacionError) {
+            console.error('🔍 [ASIGNACIÓN AUTOMÁTICA] Error en asignación automática:', asignacionError);
+            toast.success(`✅ Producto "${producto.nombre}" creado exitosamente. Ahora puedes buscarlo y agregarlo al remito.`);
+          }
+        } else {
+          // Si no tiene sector asignado, mostrar mensaje normal
+          toast.success(`✅ Producto "${producto.nombre}" creado exitosamente. Ahora puedes buscarlo y agregarlo al remito.`);
+        }
         
         // Agregar el producto a la lista local
         setProductos(prev => [...prev, producto]);
@@ -594,15 +785,12 @@ export default function CrearIngreso() {
         // Cerrar el modal
         cerrarModalCrearProducto();
         
-                 // Mostrar mensaje de éxito
-         toast.success(`✅ Producto "${producto.nombre}" creado exitosamente. Ahora puedes buscarlo y agregarlo al remito.`);
-         
-         // Hacer focus en el buscador para que pueda buscarlo
-         setTimeout(() => {
-           if (inputBusquedaRef.current) {
-             inputBusquedaRef.current.focus();
-           }
-         }, 500);
+        // Hacer focus en el buscador para que pueda buscarlo
+        setTimeout(() => {
+          if (inputBusquedaRef.current) {
+            inputBusquedaRef.current.focus();
+          }
+        }, 500);
         
       } else {
         toast.error('Error: No se recibió respuesta del servidor');
@@ -1998,7 +2186,7 @@ export default function CrearIngreso() {
                
 
                {/* Sector de Almacenamiento */}
-               <div>
+               <div style={{ position: 'relative' }}>
                  <label style={{
                    display: 'block',
                    fontSize: '0.875rem',
@@ -2011,8 +2199,17 @@ export default function CrearIngreso() {
                  <input
                    type="text"
                    value={nuevoProducto.sectorAlmacenamiento}
-                   onChange={(e) => setNuevoProducto(prev => ({ ...prev, sectorAlmacenamiento: e.target.value }))}
-                   placeholder="Sector o ubicación"
+                   onChange={(e) => manejarCambioSectorAlmacenamiento(e.target.value)}
+                   onKeyDown={manejarTecladoSector}
+                   onBlur={() => {
+                     // Pequeño delay para permitir que el click en las sugerencias funcione
+                     setTimeout(() => {
+                       setMostrarSugerenciasSector(false);
+                       setSectorSeleccionadoIndex(-1);
+                     }, 150);
+                   }}
+                   placeholder="Escribe el nombre del sector o selecciona uno existente"
+                   autoComplete="off"
                    style={{
                      width: '100%',
                      padding: '0.75rem',
@@ -2021,6 +2218,87 @@ export default function CrearIngreso() {
                      fontSize: '0.875rem'
                    }}
                  />
+                 {mostrarSugerenciasSector && sectoresFiltrados && sectoresFiltrados.length > 0 && (
+                   <div style={{
+                     position: 'absolute',
+                     top: '100%',
+                     left: 0,
+                     right: 0,
+                     background: 'white',
+                     border: '1px solid #e5e7eb',
+                     borderTop: 'none',
+                     borderRadius: '0 0 0.5rem 0.5rem',
+                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                     zIndex: 1000,
+                     maxHeight: '200px',
+                     overflowY: 'auto'
+                   }}>
+                     {sectoresFiltrados.map((sector, index) => (
+                       <div
+                         key={index}
+                         style={{
+                           padding: '0.75rem',
+                           cursor: 'pointer',
+                           borderBottom: '1px solid #f3f4f6',
+                           transition: 'all 0.2s ease',
+                           display: 'flex',
+                           alignItems: 'center',
+                           gap: '0.5rem',
+                           backgroundColor: index === sectorSeleccionadoIndex ? '#eff6ff' : 'transparent',
+                           borderLeft: index === sectorSeleccionadoIndex ? '3px solid #3b82f6' : 'none'
+                         }}
+                         onClick={() => seleccionarSector(sector)}
+                         onMouseEnter={() => setSectorSeleccionadoIndex(index)}
+                       >
+                         <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>🏢</span>
+                         <span style={{ flex: 1, fontWeight: '500', fontSize: '0.875rem' }}>{sector}</span>
+                         <span style={{
+                           background: '#6b7280',
+                           color: 'white',
+                           padding: '0.25rem 0.5rem',
+                           borderRadius: '0.75rem',
+                           fontSize: '0.75rem',
+                           fontWeight: '600'
+                         }}>Existente</span>
+                       </div>
+                     ))}
+                     {nuevoProducto.sectorAlmacenamiento.trim() && 
+                      !sectoresFiltrados.includes(nuevoProducto.sectorAlmacenamiento.trim()) && (
+                       <div
+                         style={{
+                           padding: '0.75rem',
+                           cursor: 'pointer',
+                           borderTop: '2px solid #e5e7eb',
+                           transition: 'all 0.2s ease',
+                           display: 'flex',
+                           alignItems: 'center',
+                           gap: '0.5rem',
+                           backgroundColor: '#fef3c7',
+                           borderLeft: sectoresFiltrados.length === sectorSeleccionadoIndex ? '3px solid #3b82f6' : 'none'
+                         }}
+                         onClick={() => {
+                           crearNuevoSector(nuevoProducto.sectorAlmacenamiento.trim()).then(success => {
+                             if (success) {
+                               seleccionarSector(nuevoProducto.sectorAlmacenamiento.trim());
+                             }
+                           });
+                         }}
+                         onMouseEnter={() => setSectorSeleccionadoIndex(sectoresFiltrados.length)}
+                       >
+                         <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>➕</span>
+                         <span style={{ flex: 1, fontWeight: '500', fontSize: '0.875rem' }}>Crear sector "{nuevoProducto.sectorAlmacenamiento.trim()}"</span>
+                         <span style={{
+                           background: '#10b981',
+                           color: 'white',
+                           padding: '0.25rem 0.5rem',
+                           borderRadius: '0.75rem',
+                           fontSize: '0.75rem',
+                           fontWeight: '600'
+                         }}>Nuevo</span>
+                       </div>
+                     )}
+                   </div>
+                 )}
                </div>
              </div>
 

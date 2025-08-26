@@ -201,6 +201,7 @@ export default function NuevoProducto() {
   const [sectoresAlmacenamiento, setSectoresAlmacenamiento] = useState<string[]>([]);
   const [sectoresFiltrados, setSectoresFiltrados] = useState<string[]>([]);
   const [mostrarSugerenciasSector, setMostrarSugerenciasSector] = useState(false);
+  const [sectorSeleccionadoIndex, setSectorSeleccionadoIndex] = useState(-1);
   const [codigosPersonalizados, setCodigosPersonalizados] = useState<string[]>([]);
   const [codigosFiltrados, setCodigosFiltrados] = useState<string[]>([]);
   const [mostrarSugerenciasCodigo, setMostrarSugerenciasCodigo] = useState(false);
@@ -243,9 +244,23 @@ export default function NuevoProducto() {
 
   const cargarSectoresAlmacenamiento = useCallback(async () => {
     try {
-      const response = await ApiService.obtenerSectoresAlmacenamiento(empresaId);
-      if (response.data) {
-        setSectoresAlmacenamiento(response.data);
+      // Cargar sectores desde la gestión de sectores
+      const response = await fetch(`/api/empresas/${empresaId}/sectores/todos`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Extraer solo los nombres de los sectores activos
+        const sectoresActivos = (data.data || [])
+          .filter((sector: any) => sector.activo)
+          .map((sector: any) => sector.nombre);
+        setSectoresAlmacenamiento(sectoresActivos);
+      } else {
+        console.error('Error al cargar sectores:', response.status);
       }
     } catch (error) {
       console.error('Error al cargar sectores de almacenamiento:', error);
@@ -303,6 +318,9 @@ export default function NuevoProducto() {
     const { value } = e.target;
     setFormulario(prev => ({ ...prev, sectorAlmacenamiento: value }));
     
+    // Resetear índice de selección
+    setSectorSeleccionadoIndex(-1);
+    
     // Filtrar sectores que coincidan con lo que está escribiendo
     if (value.trim()) {
       const filtrados = sectoresAlmacenamiento.filter(sector =>
@@ -311,6 +329,7 @@ export default function NuevoProducto() {
       setSectoresFiltrados(filtrados);
       setMostrarSugerenciasSector(filtrados.length > 0);
     } else {
+      setSectoresFiltrados([]);
       setMostrarSugerenciasSector(false);
     }
     
@@ -325,7 +344,85 @@ export default function NuevoProducto() {
   const seleccionarSector = useCallback((sector: string) => {
     setFormulario(prev => ({ ...prev, sectorAlmacenamiento: sector }));
     setMostrarSugerenciasSector(false);
+    setSectorSeleccionadoIndex(-1);
   }, []);
+
+  const crearNuevoSector = useCallback(async (nombreSector: string) => {
+    try {
+      const response = await fetch(`/api/empresas/${empresaId}/sectores`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nombre: nombreSector,
+          descripcion: `Sector creado automáticamente desde formulario de producto`,
+          ubicacion: '',
+          activo: true
+        })
+      });
+      
+      if (response.ok) {
+        // Agregar el nuevo sector a la lista local
+        setSectoresAlmacenamiento(prev => [...prev, nombreSector]);
+        toast.success(`Sector "${nombreSector}" creado exitosamente`);
+        return true;
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Error al crear sector');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error al crear sector:', error);
+      toast.error('Error al crear sector');
+      return false;
+    }
+  }, [empresaId]);
+
+  const manejarTecladoSector = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!mostrarSugerenciasSector) return;
+
+    const totalOpciones = sectoresFiltrados.length + 
+      (formulario.sectorAlmacenamiento.trim() && 
+       !sectoresFiltrados.includes(formulario.sectorAlmacenamiento.trim()) ? 1 : 0);
+
+    if (totalOpciones === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSectorSeleccionadoIndex(prev => 
+          prev < totalOpciones - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSectorSeleccionadoIndex(prev => 
+          prev > 0 ? prev - 1 : totalOpciones - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (sectorSeleccionadoIndex >= 0 && sectorSeleccionadoIndex < sectoresFiltrados.length) {
+          seleccionarSector(sectoresFiltrados[sectorSeleccionadoIndex]);
+        } else if (sectorSeleccionadoIndex === sectoresFiltrados.length && 
+                   formulario.sectorAlmacenamiento.trim() && 
+                   !sectoresFiltrados.includes(formulario.sectorAlmacenamiento.trim())) {
+          // Crear nuevo sector
+          crearNuevoSector(formulario.sectorAlmacenamiento.trim()).then(success => {
+            if (success) {
+              seleccionarSector(formulario.sectorAlmacenamiento.trim());
+            }
+          });
+        }
+        break;
+      case 'Escape':
+        setMostrarSugerenciasSector(false);
+        setSectorSeleccionadoIndex(-1);
+        break;
+    }
+  }, [mostrarSugerenciasSector, sectoresFiltrados, sectorSeleccionadoIndex, seleccionarSector, crearNuevoSector, formulario.sectorAlmacenamiento]);
 
   const manejarCambioCodigoPersonalizado = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { value } = e.target;
@@ -1245,26 +1342,50 @@ export default function NuevoProducto() {
                         name="sectorAlmacenamiento"
                         value={formulario.sectorAlmacenamiento}
                         onChange={manejarCambioSectorAlmacenamiento}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            // Aquí podríamos ir al siguiente paso o hacer focus en algún botón
-                          }
+                        onKeyDown={manejarTecladoSector}
+                        onBlur={() => {
+                          // Pequeño delay para permitir que el click en las sugerencias funcione
+                          setTimeout(() => {
+                            setMostrarSugerenciasSector(false);
+                            setSectorSeleccionadoIndex(-1);
+                          }, 150);
                         }}
                         className="campo-input"
-                        placeholder="Ej: depósito2, habitación A33, góndola 4, estante 23"
+                        placeholder="Escribe el nombre del sector o selecciona uno existente"
+                        autoComplete="off"
                       />
-                      {mostrarSugerenciasSector && sectoresFiltrados && (
+                      {mostrarSugerenciasSector && sectoresFiltrados && sectoresFiltrados.length > 0 && (
                         <div className="sugerencias-marca">
                           {sectoresFiltrados.map((sector, index) => (
                             <div
                               key={index}
-                              className="sugerencia-marca"
+                              className={`sugerencia-marca ${index === sectorSeleccionadoIndex ? 'sugerencia-seleccionada' : ''}`}
                               onClick={() => seleccionarSector(sector)}
+                              onMouseEnter={() => setSectorSeleccionadoIndex(index)}
                             >
-                              {sector}
+                              <span className="icono-sector">🏢</span>
+                              <span className="texto-sector">{sector}</span>
+                              <span className="badge-existente">Existente</span>
                             </div>
                           ))}
+                          {formulario.sectorAlmacenamiento.trim() && 
+                           !sectoresFiltrados.includes(formulario.sectorAlmacenamiento.trim()) && (
+                            <div
+                              className={`sugerencia-marca sugerencia-nueva ${sectoresFiltrados.length === sectorSeleccionadoIndex ? 'sugerencia-seleccionada' : ''}`}
+                              onClick={() => {
+                                crearNuevoSector(formulario.sectorAlmacenamiento.trim()).then(success => {
+                                  if (success) {
+                                    seleccionarSector(formulario.sectorAlmacenamiento.trim());
+                                  }
+                                });
+                              }}
+                              onMouseEnter={() => setSectorSeleccionadoIndex(sectoresFiltrados.length)}
+                            >
+                              <span className="icono-sector">➕</span>
+                              <span className="texto-sector">Crear sector "{formulario.sectorAlmacenamiento.trim()}"</span>
+                              <span className="badge-nuevo">Nuevo</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1281,7 +1402,7 @@ export default function NuevoProducto() {
                         <div className="info-icono">🏢</div>
                         <div className="info-contenido">
                           <h4>Sector de Almacenamiento</h4>
-                          <p>Organiza tu inventario asignando ubicaciones específicas. Los sectores se guardan para reutilizarlos en futuras creaciones.</p>
+                          <p>Asigna este producto a un sector específico de tu empresa. Puedes seleccionar sectores existentes o crear nuevos directamente desde aquí.</p>
                         </div>
                       </div>
                     </div>

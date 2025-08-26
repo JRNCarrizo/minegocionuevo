@@ -47,6 +47,15 @@ const EditarProducto: React.FC = () => {
   const [marcasFiltradas, setMarcasFiltradas] = useState<string[]>([]);
   const [mostrarSugerenciasMarca, setMostrarSugerenciasMarca] = useState(false);
   const [mostrarScanner, setMostrarScanner] = useState(false);
+  
+  // Estados para autocomplete de sectores
+  const [sectoresAlmacenamiento, setSectoresAlmacenamiento] = useState<string[]>([]);
+  const [sectoresFiltrados, setSectoresFiltrados] = useState<string[]>([]);
+  const [mostrarSugerenciasSector, setMostrarSugerenciasSector] = useState(false);
+  const [sectorSeleccionadoIndex, setSectorSeleccionadoIndex] = useState(-1);
+  
+  // Estado para guardar el sector original del producto
+  const [sectorOriginal, setSectorOriginal] = useState<string>('');
 
   const playBeepSound = () => {
     // Sonido simple de beep
@@ -108,6 +117,9 @@ const EditarProducto: React.FC = () => {
           destacado: producto.destacado || false,
           imagenes: producto.imagenes || []
         });
+        
+        // Guardar el sector original para comparar después
+        setSectorOriginal(producto.sectorAlmacenamiento || '');
       } else {
         setError('Producto no encontrado o respuesta inválida del servidor');
       }
@@ -162,6 +174,31 @@ const EditarProducto: React.FC = () => {
     }
   }, [empresaId]);
 
+  const cargarSectoresAlmacenamiento = useCallback(async () => {
+    try {
+      // Cargar sectores desde la gestión de sectores
+      const response = await fetch(`/api/empresas/${empresaId}/sectores/todos`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Extraer solo los nombres de los sectores activos
+        const sectoresActivos = (data.data || [])
+          .filter((sector: any) => sector.activo)
+          .map((sector: any) => sector.nombre);
+        setSectoresAlmacenamiento(sectoresActivos);
+      } else {
+        console.error('Error al cargar sectores:', response.status);
+      }
+    } catch (error) {
+      console.error('Error al cargar sectores de almacenamiento:', error);
+    }
+  }, [empresaId]);
+
   const manejarCambioMarca = (valor: string) => {
     manejarCambio('marca', valor);
     
@@ -183,6 +220,108 @@ const EditarProducto: React.FC = () => {
     setMarcasFiltradas([]);
     setMostrarSugerenciasMarca(false);
   };
+
+  const manejarCambioSectorAlmacenamiento = useCallback((valor: string) => {
+    manejarCambio('sectorAlmacenamiento', valor);
+    
+    // Resetear índice de selección
+    setSectorSeleccionadoIndex(-1);
+    
+    // Filtrar sectores que coincidan con lo que está escribiendo
+    if (valor.trim()) {
+      const filtrados = sectoresAlmacenamiento.filter(sector =>
+        sector.toLowerCase().includes(valor.toLowerCase())
+      );
+      setSectoresFiltrados(filtrados);
+      setMostrarSugerenciasSector(filtrados.length > 0);
+    } else {
+      setSectoresFiltrados([]);
+      setMostrarSugerenciasSector(false);
+    }
+  }, [sectoresAlmacenamiento]);
+
+  const seleccionarSector = (sector: string) => {
+    setFormulario(prev => ({ ...prev, sectorAlmacenamiento: sector }));
+    setMostrarSugerenciasSector(false);
+    setSectorSeleccionadoIndex(-1);
+  };
+
+  const crearNuevoSector = useCallback(async (nombreSector: string) => {
+    try {
+      const response = await fetch(`/api/empresas/${empresaId}/sectores`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nombre: nombreSector,
+          descripcion: `Sector creado automáticamente desde formulario de editar producto`,
+          ubicacion: '',
+          activo: true
+        })
+      });
+      
+      if (response.ok) {
+        // Agregar el nuevo sector a la lista local
+        setSectoresAlmacenamiento(prev => [...prev, nombreSector]);
+        setExito(`Sector "${nombreSector}" creado exitosamente`);
+        return true;
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Error al crear sector');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error al crear sector:', error);
+      setError('Error al crear sector');
+      return false;
+    }
+  }, [empresaId]);
+
+  const manejarTecladoSector = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!mostrarSugerenciasSector) return;
+
+    const totalOpciones = sectoresFiltrados.length + 
+      (formulario.sectorAlmacenamiento.trim() && 
+       !sectoresFiltrados.includes(formulario.sectorAlmacenamiento.trim()) ? 1 : 0);
+
+    if (totalOpciones === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSectorSeleccionadoIndex(prev => 
+          prev < totalOpciones - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSectorSeleccionadoIndex(prev => 
+          prev > 0 ? prev - 1 : totalOpciones - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (sectorSeleccionadoIndex >= 0 && sectorSeleccionadoIndex < sectoresFiltrados.length) {
+          seleccionarSector(sectoresFiltrados[sectorSeleccionadoIndex]);
+        } else if (sectorSeleccionadoIndex === sectoresFiltrados.length && 
+                   formulario.sectorAlmacenamiento.trim() && 
+                   !sectoresFiltrados.includes(formulario.sectorAlmacenamiento.trim())) {
+          // Crear nuevo sector
+          crearNuevoSector(formulario.sectorAlmacenamiento.trim()).then(success => {
+            if (success) {
+              seleccionarSector(formulario.sectorAlmacenamiento.trim());
+            }
+          });
+        }
+        break;
+      case 'Escape':
+        setMostrarSugerenciasSector(false);
+        setSectorSeleccionadoIndex(-1);
+        break;
+    }
+  }, [mostrarSugerenciasSector, sectoresFiltrados, sectorSeleccionadoIndex, crearNuevoSector, formulario.sectorAlmacenamiento]);
 
   const generarCodigoBarras = useCallback(async () => {
     try {
@@ -216,7 +355,8 @@ const EditarProducto: React.FC = () => {
     }
     cargarCategorias();
     cargarMarcas();
-  }, [id, cargarProducto, cargarCategorias, cargarMarcas]);
+    cargarSectoresAlmacenamiento();
+  }, [id, cargarProducto, cargarCategorias, cargarMarcas, cargarSectoresAlmacenamiento]);
 
   const manejarCambio = (campo: string, valor: string | number | boolean) => {
     setFormulario({ ...formulario, [campo]: valor });
@@ -257,7 +397,47 @@ const EditarProducto: React.FC = () => {
         const response = await ApiService.actualizarProducto(empresaId, parseInt(id), datosProducto);
         
         if (response && response.data) {
-          setExito('Producto actualizado correctamente');
+          // Verificar si cambió el sector de almacenamiento
+          const sectorAnterior = sectorOriginal;
+          const sectorNuevo = formulario.sectorAlmacenamiento;
+          
+          console.log('🔍 DEBUG MIGRACIÓN - Sector anterior:', sectorAnterior);
+          console.log('🔍 DEBUG MIGRACIÓN - Sector nuevo:', sectorNuevo);
+          console.log('🔍 DEBUG MIGRACIÓN - ¿Son diferentes?', sectorAnterior !== sectorNuevo);
+          console.log('🔍 DEBUG MIGRACIÓN - ¿Sector nuevo no está vacío?', sectorNuevo.trim() !== '');
+          
+          if (sectorAnterior !== sectorNuevo && sectorNuevo.trim()) {
+            console.log('🔍 DEBUG MIGRACIÓN - Iniciando migración automática...');
+            try {
+              // Migrar el stock al nuevo sector
+              const migracionResponse = await fetch(`/api/empresas/${empresaId}/productos/${id}/migrar-sector`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  sectorDestino: sectorNuevo
+                })
+              });
+              
+              console.log('🔍 DEBUG MIGRACIÓN - Respuesta migración:', migracionResponse.status);
+              
+              if (migracionResponse.ok) {
+                console.log('🔍 DEBUG MIGRACIÓN - Migración exitosa');
+                setExito('Producto actualizado correctamente y stock migrado al nuevo sector');
+              } else {
+                console.log('🔍 DEBUG MIGRACIÓN - Error en migración:', migracionResponse.status);
+                setExito('Producto actualizado correctamente, pero hubo un problema al migrar el stock');
+              }
+            } catch (migracionError) {
+              console.error('Error al migrar stock:', migracionError);
+              setExito('Producto actualizado correctamente, pero hubo un problema al migrar el stock');
+            }
+          } else {
+            console.log('🔍 DEBUG MIGRACIÓN - No se requiere migración');
+            setExito('Producto actualizado correctamente');
+          }
           
           setTimeout(() => {
             navigate('/admin/productos');
@@ -846,7 +1026,7 @@ const EditarProducto: React.FC = () => {
                 </div>
 
                 {/* Sector de Almacenamiento */}
-                <div>
+                <div style={{ position: 'relative' }}>
                   <label htmlFor="sectorAlmacenamiento" style={{
                     display: 'block',
                     fontSize: '14px',
@@ -860,7 +1040,8 @@ const EditarProducto: React.FC = () => {
                     type="text"
                     id="sectorAlmacenamiento"
                     value={formulario.sectorAlmacenamiento}
-                    onChange={(e) => manejarCambio('sectorAlmacenamiento', e.target.value)}
+                    onChange={(e) => manejarCambioSectorAlmacenamiento(e.target.value)}
+                    onKeyDown={manejarTecladoSector}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -869,7 +1050,8 @@ const EditarProducto: React.FC = () => {
                       fontSize: '16px',
                       transition: 'all 0.2s ease'
                     }}
-                    placeholder="Ej: depósito2, habitación A33, góndola 4, estante 23"
+                    placeholder="Escribe el nombre del sector o selecciona uno existente"
+                    autoComplete="off"
                     onFocus={(e) => {
                       e.target.style.borderColor = '#3b82f6';
                       e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
@@ -877,8 +1059,94 @@ const EditarProducto: React.FC = () => {
                     onBlur={(e) => {
                       e.target.style.borderColor = '#e2e8f0';
                       e.target.style.boxShadow = 'none';
+                      // Pequeño delay para permitir que el click en las sugerencias funcione
+                      setTimeout(() => {
+                        setMostrarSugerenciasSector(false);
+                        setSectorSeleccionadoIndex(-1);
+                      }, 150);
                     }}
                   />
+                  {mostrarSugerenciasSector && sectoresFiltrados && sectoresFiltrados.length > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderTop: 'none',
+                      borderRadius: '0 0 8px 8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                      zIndex: 1000,
+                      maxHeight: '200px',
+                      overflowY: 'auto'
+                    }}>
+                      {sectoresFiltrados.map((sector, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            padding: '12px 16px',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid #f3f4f6',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            backgroundColor: index === sectorSeleccionadoIndex ? '#eff6ff' : 'transparent',
+                            borderLeft: index === sectorSeleccionadoIndex ? '3px solid #3b82f6' : 'none'
+                          }}
+                          onClick={() => seleccionarSector(sector)}
+                          onMouseEnter={() => setSectorSeleccionadoIndex(index)}
+                        >
+                          <span style={{ fontSize: '16px', color: '#6b7280' }}>🏢</span>
+                          <span style={{ flex: 1, fontWeight: '500' }}>{sector}</span>
+                          <span style={{
+                            background: '#6b7280',
+                            color: 'white',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}>Existente</span>
+                        </div>
+                      ))}
+                      {formulario.sectorAlmacenamiento.trim() && 
+                       !sectoresFiltrados.includes(formulario.sectorAlmacenamiento.trim()) && (
+                        <div
+                          style={{
+                            padding: '12px 16px',
+                            cursor: 'pointer',
+                            borderTop: '2px solid #e5e7eb',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            backgroundColor: '#fef3c7',
+                            borderLeft: sectoresFiltrados.length === sectorSeleccionadoIndex ? '3px solid #3b82f6' : 'none'
+                          }}
+                          onClick={() => {
+                            crearNuevoSector(formulario.sectorAlmacenamiento.trim()).then(success => {
+                              if (success) {
+                                seleccionarSector(formulario.sectorAlmacenamiento.trim());
+                              }
+                            });
+                          }}
+                          onMouseEnter={() => setSectorSeleccionadoIndex(sectoresFiltrados.length)}
+                        >
+                          <span style={{ fontSize: '16px', color: '#6b7280' }}>➕</span>
+                          <span style={{ flex: 1, fontWeight: '500' }}>Crear sector "{formulario.sectorAlmacenamiento.trim()}"</span>
+                          <span style={{
+                            background: '#10b981',
+                            color: 'white',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}>Nuevo</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Código Personalizado */}

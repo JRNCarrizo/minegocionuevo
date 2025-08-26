@@ -1328,6 +1328,39 @@ public class ProductoController {
     }
 
     /**
+     * Migra el stock de un producto a un nuevo sector
+     */
+    @PostMapping("/{productoId}/migrar-sector")
+    public ResponseEntity<?> migrarSectorProducto(
+            @PathVariable Long empresaId,
+            @PathVariable Long productoId,
+            @RequestBody Map<String, String> request) {
+        try {
+            String sectorDestino = request.get("sectorDestino");
+            
+            if (sectorDestino == null || sectorDestino.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El sector de destino es requerido"));
+            }
+            
+            productoService.migrarSectorProducto(empresaId, productoId, sectorDestino.trim());
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Stock migrado exitosamente al sector: " + sectorDestino,
+                "productoId", productoId,
+                "sectorDestino", sectorDestino
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("Error al migrar sector del producto: " + e.getMessage());
+            e.printStackTrace();
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "error", "Error al migrar sector: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
      * Endpoint completamente público para reporte de stock sin Spring Security
      */
     @RequestMapping(value = "/reporte-stock-directo", method = RequestMethod.GET)

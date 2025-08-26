@@ -7,9 +7,13 @@ import com.minegocio.backend.entidades.Producto;
 import com.minegocio.backend.entidades.HistorialInventario;
 import com.minegocio.backend.entidades.HistorialCargaProductos;
 import com.minegocio.backend.entidades.Usuario;
+import com.minegocio.backend.entidades.Sector;
+import com.minegocio.backend.entidades.StockPorSector;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
+import com.minegocio.backend.repositorios.SectorRepository;
+import com.minegocio.backend.repositorios.StockPorSectorRepository;
 import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -46,6 +50,12 @@ public class ProductoService {
     
     @Autowired
     private UsuarioRepository usuarioRepository;
+    
+    @Autowired
+    private SectorRepository sectorRepository;
+    
+    @Autowired
+    private StockPorSectorRepository stockPorSectorRepository;
 
     public List<ProductoDTO> obtenerTodosLosProductos(Long empresaId) {
         List<Producto> productos = productoRepository.findByEmpresaIdAndActivoTrue(empresaId);
@@ -624,6 +634,89 @@ public class ProductoService {
         }
         List<Producto> productos = productoRepository.findByEmpresaIdAndCodigoBarras(empresaId, codigoBarras.trim());
         return !productos.isEmpty();
+    }
+
+    /**
+     * Migra el stock de un producto a un nuevo sector
+     */
+    @Transactional
+    public void migrarSectorProducto(Long empresaId, Long productoId, String sectorDestino) {
+        // Verificar que el producto existe y pertenece a la empresa
+        Producto producto = productoRepository.findByIdAndEmpresaId(productoId, empresaId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        // Verificar que el sector destino existe
+        Sector sectorDestinoEntity = sectorRepository.findByNombreAndEmpresaId(sectorDestino, empresaId)
+                .orElseThrow(() -> new RuntimeException("Sector destino no encontrado: " + sectorDestino));
+        
+        if (!sectorDestinoEntity.getActivo()) {
+            throw new RuntimeException("Sector destino está inactivo: " + sectorDestino);
+        }
+        
+        String sectorAnterior = producto.getSectorAlmacenamiento();
+        
+        if (sectorAnterior != null && sectorAnterior.equals(sectorDestino)) {
+            // No hay cambio de sector
+            return;
+        }
+        
+        // Buscar el sector anterior si existe
+        final Sector sectorAnteriorEntity;
+        if (sectorAnterior != null && !sectorAnterior.trim().isEmpty()) {
+            sectorAnteriorEntity = sectorRepository.findByNombreAndEmpresaId(sectorAnterior, empresaId).orElse(null);
+        } else {
+            sectorAnteriorEntity = null;
+        }
+        
+        // Buscar asignaciones de stock existentes para este producto
+        List<StockPorSector> asignacionesExistentes = stockPorSectorRepository.findByProductoId(productoId);
+        
+        // Obtener la cantidad que estaba asignada al sector anterior
+        Integer cantidadAMigrar = 0;
+        if (sectorAnteriorEntity != null) {
+            StockPorSector stockAnterior = asignacionesExistentes.stream()
+                    .filter(stock -> stock.getSector().getId().equals(sectorAnteriorEntity.getId()))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (stockAnterior != null) {
+                cantidadAMigrar = stockAnterior.getCantidad();
+                // Remover stock del sector anterior
+                stockPorSectorRepository.delete(stockAnterior);
+                System.out.println("🗑️ Removido stock del sector anterior: " + sectorAnterior + " (cantidad: " + cantidadAMigrar + ")");
+            }
+        }
+        
+        // Si no había stock asignado al sector anterior, usar el stock total del producto
+        if (cantidadAMigrar == 0) {
+            cantidadAMigrar = producto.getStock() != null ? producto.getStock() : 0;
+            System.out.println("📊 No había stock asignado al sector anterior, usando stock total del producto: " + cantidadAMigrar);
+        }
+        
+        // Verificar si ya existe stock asignado al sector destino
+        StockPorSector stockDestino = asignacionesExistentes.stream()
+                .filter(stock -> stock.getSector().getId().equals(sectorDestinoEntity.getId()))
+                .findFirst()
+                .orElse(null);
+        
+        if (stockDestino != null) {
+            // Actualizar cantidad existente
+            stockDestino.setCantidad(stockDestino.getCantidad() + cantidadAMigrar);
+            stockPorSectorRepository.save(stockDestino);
+            System.out.println("📈 Actualizado stock existente en sector destino: " + sectorDestino + " (nueva cantidad: " + stockDestino.getCantidad() + ")");
+        } else {
+            // Crear nueva asignación de stock
+            StockPorSector nuevaAsignacion = new StockPorSector(producto, sectorDestinoEntity, cantidadAMigrar);
+            stockPorSectorRepository.save(nuevaAsignacion);
+            System.out.println("➕ Creada nueva asignación de stock en sector destino: " + sectorDestino + " (cantidad: " + cantidadAMigrar + ")");
+        }
+        
+        // Actualizar el sector de almacenamiento del producto
+        producto.setSectorAlmacenamiento(sectorDestino);
+        productoRepository.save(producto);
+        
+        System.out.println("✅ Producto " + producto.getNombre() + " migrado del sector '" + 
+                          sectorAnterior + "' al sector '" + sectorDestino + "' (cantidad migrada: " + cantidadAMigrar + ")");
     }
 
     private ProductoDTO convertirADTO(Producto producto) {

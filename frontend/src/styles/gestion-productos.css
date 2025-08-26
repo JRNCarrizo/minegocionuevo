@@ -5,6 +5,132 @@
   background-color: #f8fafc;
 }
 
+/* ===== ESTILOS PARA AUTOCOMPLETE DE SECTORES ===== */
+.sugerencias-marca {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.sugerencia-marca {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sugerencia-marca:last-child {
+  border-bottom: none;
+}
+
+.sugerencia-marca:hover,
+.sugerencia-seleccionada {
+  background: #f8fafc;
+  color: #3b82f6;
+}
+
+.sugerencia-seleccionada {
+  background: #eff6ff !important;
+  border-left: 3px solid #3b82f6;
+}
+
+.sugerencia-marca .icono-sector {
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+.sugerencia-marca:hover .icono-sector {
+  color: #3b82f6;
+}
+
+.sugerencia-marca .texto-sector {
+  flex: 1;
+  font-weight: 500;
+}
+
+.sugerencia-marca .badge-nuevo {
+  background: #10b981;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sugerencia-marca .badge-existente {
+  background: #6b7280;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sugerencia-nueva {
+  border-top: 2px solid #e5e7eb;
+  background: #fef3c7;
+}
+
+.sugerencia-nueva:hover {
+  background: #fde68a !important;
+}
+
+/* Estilos para el campo de sector con autocomplete */
+.campo-grupo[style*="position: relative"] {
+  position: relative;
+}
+
+.campo-grupo[style*="position: relative"] .campo-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Animación para las sugerencias */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sugerencias-marca {
+  animation: slideDown 0.2s ease-out;
+}
+
+/* Responsive para autocomplete */
+@media (max-width: 768px) {
+  .sugerencias-marca {
+    max-height: 150px;
+  }
+  
+  .sugerencia-marca {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+  
+  .sugerencia-marca .badge-nuevo,
+  .sugerencia-marca .badge-existente {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
+
 .contenedor-principal {
   max-width: 1200px;
   margin: 0 auto;
