@@ -466,7 +466,8 @@ public class ClienteAuthController {
             cliente.getEmail(), 
             cliente.getId(), 
             empresa.getId(), 
-            cliente.getNombre() + " " + (cliente.getApellidos() != null ? cliente.getApellidos() : "")
+            cliente.getNombre() + " " + (cliente.getApellidos() != null ? cliente.getApellidos() : ""),
+            List.of("CLIENTE") // Los clientes tienen rol CLIENTE
         );
     }
 

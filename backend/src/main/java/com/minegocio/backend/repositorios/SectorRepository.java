@@ -43,3 +43,4 @@ public interface SectorRepository extends JpaRepository<Sector, Long> {
     List<Object[]> findSectoresConConteoProductos(@Param("empresaId") Long empresaId);
 }
 
+

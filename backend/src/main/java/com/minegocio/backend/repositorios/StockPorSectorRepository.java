@@ -56,3 +56,4 @@ public interface StockPorSectorRepository extends JpaRepository<StockPorSector, 
     boolean existsByProductoIdAndSectorId(Long productoId, Long sectorId);
 }
 
+

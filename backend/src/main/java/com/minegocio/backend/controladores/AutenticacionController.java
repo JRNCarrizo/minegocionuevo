@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -278,7 +279,8 @@ public class AutenticacionController {
                 usuario.getEmail(),
                 usuario.getId(),
                 usuario.getEmpresa() != null ? usuario.getEmpresa().getId() : null,
-                usuario.getNombre() + " " + usuario.getApellidos()
+                usuario.getNombre() + " " + usuario.getApellidos(),
+                List.of(usuario.getRol() != null ? usuario.getRol().name() : "USUARIO")
             );
             
             System.out.println("🎯 Token JWT generado para: " + usuario.getEmail());

@@ -243,7 +243,8 @@ public class AutenticacionService {
             usuarioEntity.getEmail(), 
             usuarioEntity.getId(), 
             usuarioEntity.getEmpresa() != null ? usuarioEntity.getEmpresa().getId() : null,
-            usuarioEntity.getNombre() + " " + (usuarioEntity.getApellidos() != null ? usuarioEntity.getApellidos() : "")
+            usuarioEntity.getNombre() + " " + (usuarioEntity.getApellidos() != null ? usuarioEntity.getApellidos() : ""),
+            List.of(usuarioEntity.getRol() != null ? usuarioEntity.getRol().name() : "USUARIO")
         );
 
         // Obtener información de la empresa si existe
