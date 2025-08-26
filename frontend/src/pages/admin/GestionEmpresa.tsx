@@ -46,7 +46,8 @@ export default function GestionEmpresa() {
       1: '#ef4444', // Roturas y Pérdidas - Rojo
       2: '#059669', // Ingresos - Verde
       3: '#f59e0b', // Gestión de Retornos - Amarillo/Naranja
-      4: '#8b5cf6'  // Movimientos del Día - Púrpura
+      4: '#06b6d4', // Gestión de Sectores - Cian
+      5: '#8b5cf6'  // Movimientos del Día - Púrpura
     };
     
     const color = coloresCards[cardIndex as keyof typeof coloresCards] || '#3b82f6';
@@ -71,10 +72,7 @@ export default function GestionEmpresa() {
     const baseStyles = {
       background: 'white',
       borderRadius: '1rem',
-      paddingTop: isMobile ? '1.5rem' : '2rem',
-      paddingBottom: isMobile ? '1.5rem' : '2rem',
-      paddingLeft: isMobile ? '1.5rem' : '2rem',
-      paddingRight: isMobile ? '1.5rem' : '2rem',
+      padding: isMobile ? '1.5rem' : '2rem',
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
       border: '1px solid #e2e8f0',
       cursor: 'pointer',
@@ -264,6 +262,14 @@ export default function GestionEmpresa() {
       color: '#f59e0b',
       enlace: '/admin/descarga-devoluciones',
       gradiente: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+    },
+    {
+      titulo: 'Gestión de Sectores',
+      descripcion: 'Administra los sectores de almacenamiento de tu empresa',
+      icono: '🏢',
+      color: '#06b6d4',
+      enlace: '/admin/sectores',
+      gradiente: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
     },
     {
       titulo: 'Movimientos del Día',

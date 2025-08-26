@@ -187,3 +187,5 @@ ApiService.debugAuthStatus().then(console.log).catch(console.error);
 **Síntomas**: Error interno del servidor
 **Solución**: Verificar logs del backend y estado de la base de datos
 
+
+

@@ -40,7 +40,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             if (requestPath.contains("/plantilla-importacion") || requestPath.contains("/auth/") || 
                 requestPath.contains("/reporte-stock") || requestPath.contains("/reportes/") ||
                 requestPath.contains("/direct/") || requestPath.contains("/public/") ||
-                requestPath.contains("/files/") || requestPath.contains("/ultra/")) {
+                requestPath.contains("/files/") || requestPath.contains("/ultra/") ||
+                requestPath.contains("/stock-general")) {
                 System.out.println("🌐 REQUEST RECIBIDA: " + method + " " + requestPath);
             }
             
@@ -70,6 +71,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                         UsuarioPrincipal principal = (UsuarioPrincipal) userDetails;
                         System.out.println("EmpresaId del usuario: " + principal.getEmpresaId());
                         System.out.println("Rol del usuario: " + principal.getUsuario().getRol());
+                        System.out.println("Authorities del usuario: " + principal.getAuthorities());
                     }
                     
                     UsernamePasswordAuthenticationToken authentication = 
@@ -78,6 +80,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     System.out.println("✅ Autenticación establecida exitosamente para: " + email);
+                    System.out.println("✅ Authorities establecidos: " + userDetails.getAuthorities());
                 } catch (Exception e) {
                     System.err.println("❌ Error al cargar usuario: " + e.getMessage());
                     logger.error("No se puede establecer la autenticación del usuario: {}", e.getMessage());

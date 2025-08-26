@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Utilidad para generar y validar tokens JWT
@@ -46,12 +48,16 @@ public class JwtUtils {
                 UsuarioPrincipal userPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
                 System.out.println("🎯 JWT - UsuarioPrincipal obtenido: " + userPrincipal.getUsername());
                 System.out.println("🎯 JWT - UsuarioPrincipal ID: " + userPrincipal.getId());
+                System.out.println("🎯 JWT - Roles: " + userPrincipal.getAuthorities());
                 
                 return Jwts.builder()
                         .subject(userPrincipal.getUsername())
                         .claim("userId", userPrincipal.getId())
                         .claim("empresaId", userPrincipal.getEmpresaId())
                         .claim("nombreCompleto", userPrincipal.getNombreCompleto())
+                        .claim("roles", userPrincipal.getAuthorities().stream()
+                                .map(Object::toString)
+                                .collect(java.util.stream.Collectors.toList()))
                         .issuedAt(Date.from(Instant.now()))
                         .expiration(Date.from(Instant.now().plusMillis(jwtExpirationMs)))
                         .signWith(getSigningKey(), Jwts.SIG.HS256)
@@ -81,12 +87,13 @@ public class JwtUtils {
     /**
      * Genera un token JWT para un usuario específico
      */
-    public String generarJwtToken(String email, Long userId, Long empresaId, String nombreCompleto) {
+    public String generarJwtToken(String email, Long userId, Long empresaId, String nombreCompleto, List<String> roles) {
         return Jwts.builder()
                 .subject(email)
                 .claim("userId", userId)
                 .claim("empresaId", empresaId)
                 .claim("nombreCompleto", nombreCompleto)
+                .claim("roles", roles)
                 .issuedAt(Date.from(Instant.now()))
                 .expiration(Date.from(Instant.now().plusMillis(jwtExpirationMs)))
                 .signWith(getSigningKey(), Jwts.SIG.HS256)

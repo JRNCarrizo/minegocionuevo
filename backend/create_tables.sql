@@ -35,3 +35,5 @@ CREATE INDEX IF NOT EXISTS idx_detalles_remito_ingreso_remito ON detalles_remito
 CREATE INDEX IF NOT EXISTS idx_detalles_remito_ingreso_producto ON detalles_remito_ingreso(producto_id);
 
 
+
+

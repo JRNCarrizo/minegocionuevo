@@ -168,3 +168,5 @@ System.setProperty("user.timezone", "America/New_York");
 - **Configuración centralizada**: La zona horaria se configura en un solo lugar
 - **Logs detallados**: Se agregaron logs para debugging de fechas y zonas horarias
 
+
+

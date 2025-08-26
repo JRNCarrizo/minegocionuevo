@@ -150,3 +150,5 @@ Si un usuario en Argentina (UTC-3) crea una planilla a las 15:30:
 2. **Backend**: Recibe 18:30 UTC → Se guarda como 18:30 UTC
 3. **Visualización**: Se muestra como 15:30 en la zona horaria local del usuario
 
+
+

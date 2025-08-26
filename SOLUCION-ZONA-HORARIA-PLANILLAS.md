@@ -134,3 +134,5 @@ Para verificar que la solución funciona:
 - **Logs mejorados**: Se agregaron logs detallados para debugging de fechas
 - **Configuración centralizada**: La configuración de zona horaria está centralizada en TimeZoneConfig
 
+
+

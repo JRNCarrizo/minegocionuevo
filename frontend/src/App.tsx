@@ -53,6 +53,8 @@ import DescargaDevoluciones from './pages/admin/DescargaDevoluciones.tsx';
 import CrearDevolucion from './pages/admin/CrearDevolucion.tsx';
 import MovimientosDia from './pages/admin/MovimientosDia.tsx';
 import LoginDocumento from './pages/LoginDocumento.tsx';
+import GestionSectores from './pages/admin/GestionSectores.tsx';
+import StockGeneral from './pages/admin/StockGeneral.tsx';
 
 function AppContent() {
   const { esSubdominioPrincipal, cargando } = useSubdominio();
@@ -110,6 +112,8 @@ function AppContent() {
           <Route path="/admin/descarga-devoluciones" element={<DescargaDevoluciones />} />
           <Route path="/admin/crear-devolucion" element={<CrearDevolucion />} />
           <Route path="/admin/movimientos-dia" element={<MovimientosDia />} />
+          <Route path="/admin/sectores" element={<GestionSectores />} />
+          <Route path="/admin/stock-general" element={<StockGeneral />} />
           <Route path="/dashboard-super-admin" element={<DashboardSuperAdmin />} />
           <Route path="/super-admin/empresas" element={<GestionEmpresas />} />
           <Route path="/super-admin/suscripciones" element={<GestionSuscripciones />} />

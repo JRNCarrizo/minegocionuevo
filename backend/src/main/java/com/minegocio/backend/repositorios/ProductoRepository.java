@@ -94,6 +94,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<String> findSectoresAlmacenamientoPorEmpresa(@Param("empresa") Empresa empresa);
 
     /**
+     * Busca productos con sector de almacenamiento asignado (campo antiguo)
+     */
+    List<Producto> findByEmpresaAndSectorAlmacenamientoIsNotNullAndSectorAlmacenamientoNot(Empresa empresa, String sectorAlmacenamiento);
+
+    /**
      * Busca productos más vendidos por empresa
      */
     @Query("SELECT p FROM Producto p JOIN p.detallesPedidos dp GROUP BY p ORDER BY SUM(dp.cantidad) DESC")

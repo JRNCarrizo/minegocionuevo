@@ -129,10 +129,8 @@ export default function CrearDevolucion() {
   }, [navigate]);
 
   const inicializarPlanilla = () => {
-    // Generar número de planilla único con timestamp (máximo 8 caracteres)
-    const timestamp = Date.now();
-    const numeroPlanillaAuto = `PL${timestamp.toString().slice(-6)}`;
-    setNumeroPlanilla(numeroPlanillaAuto);
+    // No establecer número de planilla predeterminado
+    setNumeroPlanilla('');
   };
 
   const cargarProductos = async () => {

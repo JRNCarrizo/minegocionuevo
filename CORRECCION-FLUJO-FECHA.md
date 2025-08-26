@@ -131,3 +131,5 @@ Para verificar que funciona correctamente:
 - **Consistencia**: El backend siempre recibe fechas en UTC
 - **Visualización**: El frontend se encarga de mostrar en zona horaria local
 
+
+
