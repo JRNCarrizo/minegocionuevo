@@ -444,4 +444,69 @@ public class SectorController {
             ));
         }
     }
+    
+    /**
+     * Transferir stock entre sectores
+     */
+    @PostMapping("/transferir-stock")
+    public ResponseEntity<?> transferirStockEntreSectores(
+            @PathVariable Long empresaId,
+            @RequestBody Map<String, Object> request) {
+        try {
+            System.out.println("🔍 TRANSFERIR STOCK - Endpoint llamado");
+            System.out.println("🔍 TRANSFERIR STOCK - Empresa: " + empresaId);
+            
+            Long productoId = Long.valueOf(request.get("productoId").toString());
+            Long sectorOrigenId = Long.valueOf(request.get("sectorOrigenId").toString());
+            Long sectorDestinoId = Long.valueOf(request.get("sectorDestinoId").toString());
+            Integer cantidad = Integer.valueOf(request.get("cantidad").toString());
+            
+            System.out.println("🔍 TRANSFERIR STOCK - Producto: " + productoId);
+            System.out.println("🔍 TRANSFERIR STOCK - Sector Origen: " + sectorOrigenId);
+            System.out.println("🔍 TRANSFERIR STOCK - Sector Destino: " + sectorDestinoId);
+            System.out.println("🔍 TRANSFERIR STOCK - Cantidad: " + cantidad);
+            
+            sectorService.transferirStockEntreSectores(empresaId, productoId, sectorOrigenId, sectorDestinoId, cantidad);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Stock transferido exitosamente entre sectores",
+                "productoId", productoId,
+                "sectorOrigenId", sectorOrigenId,
+                "sectorDestinoId", sectorDestinoId,
+                "cantidad", cantidad
+            ));
+        } catch (Exception e) {
+            System.err.println("🔍 TRANSFERIR STOCK - Error: " + e.getMessage());
+            e.printStackTrace();
+            
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Error al transferir stock: " + e.getMessage()
+            ));
+        }
+    }
+    
+    /**
+     * Limpiar duplicaciones de stock por sector
+     * Endpoint temporal para corregir datos existentes
+     */
+    @PostMapping("/limpiar-duplicaciones")
+    public ResponseEntity<?> limpiarDuplicacionesStock(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🔍 LIMPIAR DUPLICACIONES - Endpoint llamado para empresa: " + empresaId);
+            
+            sectorService.limpiarDuplicacionesStock(empresaId);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Duplicaciones de stock limpiadas exitosamente",
+                "empresaId", empresaId
+            ));
+        } catch (Exception e) {
+            System.err.println("🔍 LIMPIAR DUPLICACIONES - Error: " + e.getMessage());
+            e.printStackTrace();
+            
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Error al limpiar duplicaciones: " + e.getMessage()
+            ));
+        }
+    }
 }

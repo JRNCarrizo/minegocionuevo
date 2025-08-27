@@ -1750,3 +1750,192 @@
     font-size: 0.7rem;
   }
 }
+
+/* Estilos para el modal de transferencia de stock */
+.modal-formulario {
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.seccion-transferencia {
+  padding: 1rem 0;
+}
+
+.seccion-transferencia h4 {
+  color: #374151;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.campo-transferencia {
+  margin-bottom: 1.5rem;
+}
+
+.campo-transferencia label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.select-transferencia {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  background-color: white;
+  transition: border-color 0.3s ease;
+}
+
+.select-transferencia:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input-cantidad-transferencia {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.input-transferencia {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  background-color: white;
+  transition: border-color 0.3s ease;
+}
+
+.input-transferencia:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.stock-disponible-transferencia {
+  color: #6b7280;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.resumen-transferencia {
+  background: #f8fafc;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.resumen-transferencia h4 {
+  color: #374151;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.detalles-transferencia p {
+  margin: 0.5rem 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.detalles-transferencia strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+/* Estilos para el botón de transferir */
+.boton-accion.boton-transferir {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.boton-accion.boton-transferir:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+}
+
+.boton-accion.boton-transferir:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive para modal de transferencia */
+@media (max-width: 768px) {
+  .modal-transferir {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+  
+  .seccion-transferencia {
+    padding: 0.75rem 0;
+  }
+  
+  .campo-transferencia {
+    margin-bottom: 1rem;
+  }
+  
+  .input-cantidad-transferencia {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  
+  .stock-disponible-transferencia {
+    text-align: center;
+    font-size: 0.8rem;
+  }
+  
+  .resumen-transferencia {
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-transferir {
+    margin: 0.5rem;
+    max-height: calc(100vh - 1rem);
+  }
+  
+  .seccion-transferencia h4 {
+    font-size: 1rem;
+  }
+  
+  .campo-transferencia label {
+    font-size: 0.9rem;
+  }
+  
+  .select-transferencia,
+  .input-transferencia {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+  
+  .detalles-transferencia p {
+    font-size: 0.85rem;
+  }
+}

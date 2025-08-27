@@ -59,6 +59,7 @@ export default function GestionSectores() {
   const [mostrarModalProductos, setMostrarModalProductos] = useState(false);
   const [mostrarModalDetalle, setMostrarModalDetalle] = useState(false);
   const [mostrarModalAsignar, setMostrarModalAsignar] = useState(false);
+  const [mostrarModalTransferir, setMostrarModalTransferir] = useState(false);
   const [sectorSeleccionado, setSectorSeleccionado] = useState<Sector | null>(null);
   const [productosEnSector, setProductosEnSector] = useState<StockPorSector[]>([]);
   const [productosDisponibles, setProductosDisponibles] = useState<ProductoDisponible[]>([]);
@@ -68,6 +69,13 @@ export default function GestionSectores() {
   const [filtroBusquedaAsignacion, setFiltroBusquedaAsignacion] = useState('');
   const [filtroBusquedaProductos, setFiltroBusquedaProductos] = useState('');
   const [quitandoProducto, setQuitandoProducto] = useState(false);
+  
+  // Estados para transferencia de stock
+  const [productosConStock, setProductosConStock] = useState<StockPorSector[]>([]);
+  const [productoSeleccionado, setProductoSeleccionado] = useState<StockPorSector | null>(null);
+  const [sectorDestino, setSectorDestino] = useState<number | ''>('');
+  const [cantidadTransferir, setCantidadTransferir] = useState<number>(0);
+  const [transferiendo, setTransferiendo] = useState(false);
   
   // Nuevo estado para mostrar sectores inactivos
   const [mostrarSectoresInactivos, setMostrarSectoresInactivos] = useState(false);
@@ -467,6 +475,34 @@ export default function GestionSectores() {
     setMostrarModalProductos(true);
   };
 
+  const abrirModalTransferir = async (sector: Sector) => {
+    setSectorSeleccionado(sector);
+    setProductoSeleccionado(null);
+    setSectorDestino('');
+    setCantidadTransferir(0);
+    setMostrarModalTransferir(true);
+    
+    // Cargar productos del sector
+    try {
+      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/${sector.id}/productos`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setProductosConStock(data.data || []);
+      } else {
+        console.error('Error al cargar productos del sector');
+        setProductosConStock([]);
+      }
+    } catch (error) {
+      console.error('Error al cargar productos del sector:', error);
+      setProductosConStock([]);
+    }
+  };
+
   const limpiarFormulario = () => {
     setFormData({
       nombre: '',
@@ -483,6 +519,7 @@ export default function GestionSectores() {
     setMostrarModalProductos(false);
     setMostrarModalDetalle(false);
     setMostrarModalAsignar(false);
+    setMostrarModalTransferir(false);
     setSectorSeleccionado(null);
     setProductosEnSector([]);
     setProductosDisponibles([]);
@@ -490,7 +527,56 @@ export default function GestionSectores() {
     setFiltroBusquedaAsignacion('');
     setFiltroBusquedaProductos('');
     setQuitandoProducto(false);
+    setProductosConStock([]);
+    setProductoSeleccionado(null);
+    setSectorDestino('');
+    setCantidadTransferir(0);
     limpiarFormulario();
+  };
+
+  const realizarTransferencia = async () => {
+    if (!productoSeleccionado || !sectorDestino || cantidadTransferir <= 0) {
+      toast.error('Por favor completa todos los campos');
+      return;
+    }
+
+    if (cantidadTransferir > productoSeleccionado.cantidad) {
+      toast.error('La cantidad a transferir no puede ser mayor al stock disponible');
+      return;
+    }
+
+    try {
+      setTransferiendo(true);
+      
+      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/transferir-stock`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          productoId: productoSeleccionado.producto.id,
+          sectorOrigenId: sectorSeleccionado?.id,
+          sectorDestinoId: sectorDestino,
+          cantidad: cantidadTransferir
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(data.mensaje || 'Stock transferido exitosamente');
+        cerrarModal();
+        cargarSectores();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Error al transferir stock');
+      }
+    } catch (error) {
+      console.error('Error al transferir stock:', error);
+      toast.error('Error al transferir stock');
+    } finally {
+      setTransferiendo(false);
+    }
   };
 
   const obtenerColorSector = (index: number) => {
@@ -720,6 +806,16 @@ export default function GestionSectores() {
                             title="Ver productos"
                           >
                             📦
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              abrirModalTransferir(sector);
+                            }}
+                            className="boton-accion boton-transferir"
+                            title="Transferir stock"
+                          >
+                            🔄
                           </button>
                           <button
                             onClick={(e) => {
@@ -1453,6 +1549,117 @@ export default function GestionSectores() {
                 className="boton-primario"
               >
                 {guardandoAsignaciones ? 'Asignando...' : 'Asignar Productos'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Transferir Stock */}
+      {mostrarModalTransferir && (
+        <div className="modal-overlay">
+          <div className="modal-formulario">
+            <div className="header-modal">
+              <div className="contenido-header-modal">
+                <div className="icono-modal">🔄</div>
+                <div>
+                  <h3 className="titulo-modal">Transferir Stock entre Sectores</h3>
+                  <p className="subtitulo-modal">Mover productos entre sectores de almacenamiento</p>
+                </div>
+              </div>
+              <button onClick={cerrarModal} className="boton-cerrar-modal">
+                ✕
+              </button>
+            </div>
+            
+            <div className="contenido-modal-formulario">
+              <div className="seccion-transferencia">
+                <h4>Sector Origen: {sectorSeleccionado?.nombre}</h4>
+                
+                <div className="campo-transferencia">
+                  <label>Producto a transferir:</label>
+                  <select
+                    value={productoSeleccionado?.id || ''}
+                    onChange={(e) => {
+                      const productoId = parseInt(e.target.value);
+                      const producto = productosConStock.find(p => p.id === productoId);
+                      setProductoSeleccionado(producto || null);
+                      setCantidadTransferir(0);
+                    }}
+                    className="select-transferencia"
+                  >
+                    <option value="">Selecciona un producto</option>
+                    {productosConStock.map((producto) => (
+                      <option key={producto.id} value={producto.id}>
+                        {producto.producto.nombre} - Stock: {producto.cantidad}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="campo-transferencia">
+                  <label>Sector destino:</label>
+                  <select
+                    value={sectorDestino}
+                    onChange={(e) => setSectorDestino(parseInt(e.target.value) || '')}
+                    className="select-transferencia"
+                  >
+                    <option value="">Selecciona un sector</option>
+                    {sectoresActivos
+                      .filter(s => s.id !== sectorSeleccionado?.id)
+                      .map((sector) => (
+                        <option key={sector.id} value={sector.id}>
+                          {sector.nombre}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="campo-transferencia">
+                  <label>Cantidad a transferir:</label>
+                  <div className="input-cantidad-transferencia">
+                    <input
+                      type="number"
+                      min="1"
+                      max={productoSeleccionado?.cantidad || 0}
+                      value={cantidadTransferir || ''}
+                      onChange={(e) => setCantidadTransferir(parseInt(e.target.value) || 0)}
+                      className="input-transferencia"
+                      placeholder="0"
+                    />
+                    <span className="stock-disponible-transferencia">
+                      Máximo: {productoSeleccionado?.cantidad || 0}
+                    </span>
+                  </div>
+                </div>
+
+                {productoSeleccionado && sectorDestino && cantidadTransferir > 0 && (
+                  <div className="resumen-transferencia">
+                    <h4>Resumen de Transferencia</h4>
+                    <div className="detalles-transferencia">
+                      <p><strong>Producto:</strong> {productoSeleccionado.producto.nombre}</p>
+                      <p><strong>Desde:</strong> {sectorSeleccionado?.nombre}</p>
+                      <p><strong>Hacia:</strong> {sectoresActivos.find(s => s.id === sectorDestino)?.nombre}</p>
+                      <p><strong>Cantidad:</strong> {cantidadTransferir}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="botones-modal">
+              <button
+                onClick={cerrarModal}
+                className="boton-cancelar"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={realizarTransferencia}
+                disabled={transferiendo || !productoSeleccionado || !sectorDestino || cantidadTransferir <= 0}
+                className="boton-primario"
+              >
+                {transferiendo ? 'Transferiendo...' : 'Transferir Stock'}
               </button>
             </div>
           </div>

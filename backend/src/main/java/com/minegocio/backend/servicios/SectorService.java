@@ -455,11 +455,11 @@ public class SectorService {
                 Optional<StockPorSector> stockExistente = stockPorSectorRepository.findByProductoIdAndSectorId(productoId, sectorId);
                 
                 if (stockExistente.isPresent()) {
-                    // Actualizar la cantidad existente
+                    // Reemplazar la cantidad existente (no sumar)
                     StockPorSector stock = stockExistente.get();
-                    stock.setCantidad(stock.getCantidad() + cantidad);
+                    stock.setCantidad(cantidad);
                     stockPorSectorRepository.save(stock);
-                    System.out.println("🔍 SECTOR SERVICE - Stock actualizado: " + stock.getCantidad());
+                    System.out.println("🔍 SECTOR SERVICE - Stock reemplazado: " + stock.getCantidad());
                 } else {
                     // Crear nueva asignación
                     StockPorSector nuevoStock = new StockPorSector(producto, sector, cantidad);
@@ -515,5 +515,162 @@ public class SectorService {
         stockPorSectorRepository.delete(stockPorSector);
         
         System.out.println("🔍 SECTOR SERVICE - Producto quitado exitosamente del sector");
+    }
+    
+    /**
+     * Transferir stock entre sectores
+     */
+    @Transactional
+    public void transferirStockEntreSectores(Long empresaId, Long productoId, Long sectorOrigenId, Long sectorDestinoId, Integer cantidad) {
+        System.out.println("🔍 TRANSFERIR STOCK - Iniciando transferencia");
+        System.out.println("🔍 TRANSFERIR STOCK - Empresa: " + empresaId);
+        System.out.println("🔍 TRANSFERIR STOCK - Producto: " + productoId);
+        System.out.println("🔍 TRANSFERIR STOCK - Sector Origen: " + sectorOrigenId);
+        System.out.println("🔍 TRANSFERIR STOCK - Sector Destino: " + sectorDestinoId);
+        System.out.println("🔍 TRANSFERIR STOCK - Cantidad: " + cantidad);
+        
+        // Validaciones básicas
+        if (cantidad <= 0) {
+            throw new RuntimeException("La cantidad a transferir debe ser mayor a 0");
+        }
+        
+        if (sectorOrigenId.equals(sectorDestinoId)) {
+            throw new RuntimeException("No se puede transferir al mismo sector");
+        }
+        
+        // Verificar que el producto existe y pertenece a la empresa
+        Producto producto = productoRepository.findById(productoId)
+            .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productoId));
+        
+        if (!producto.getEmpresa().getId().equals(empresaId)) {
+            throw new RuntimeException("El producto no pertenece a la empresa especificada");
+        }
+        
+        if (!producto.getActivo()) {
+            throw new RuntimeException("No se pueden transferir productos inactivos: " + producto.getNombre());
+        }
+        
+        // Verificar que el sector origen existe y pertenece a la empresa
+        Sector sectorOrigen = sectorRepository.findById(sectorOrigenId)
+            .orElseThrow(() -> new RuntimeException("Sector origen no encontrado: " + sectorOrigenId));
+        
+        if (!sectorOrigen.getEmpresa().getId().equals(empresaId)) {
+            throw new RuntimeException("El sector origen no pertenece a la empresa especificada");
+        }
+        
+        if (!sectorOrigen.getActivo()) {
+            throw new RuntimeException("El sector origen está inactivo: " + sectorOrigen.getNombre());
+        }
+        
+        // Verificar que el sector destino existe y pertenece a la empresa
+        Sector sectorDestino = sectorRepository.findById(sectorDestinoId)
+            .orElseThrow(() -> new RuntimeException("Sector destino no encontrado: " + sectorDestinoId));
+        
+        if (!sectorDestino.getEmpresa().getId().equals(empresaId)) {
+            throw new RuntimeException("El sector destino no pertenece a la empresa especificada");
+        }
+        
+        if (!sectorDestino.getActivo()) {
+            throw new RuntimeException("El sector destino está inactivo: " + sectorDestino.getNombre());
+        }
+        
+        // Buscar el stock en el sector origen
+        Optional<StockPorSector> stockOrigen = stockPorSectorRepository.findByProductoIdAndSectorId(productoId, sectorOrigenId);
+        
+        if (stockOrigen.isEmpty()) {
+            throw new RuntimeException("El producto no tiene stock asignado en el sector origen: " + sectorOrigen.getNombre());
+        }
+        
+        StockPorSector stockOrigenEntity = stockOrigen.get();
+        
+        // Verificar que hay suficiente stock en el sector origen
+        if (stockOrigenEntity.getCantidad() < cantidad) {
+            throw new RuntimeException("Stock insuficiente en el sector origen. Disponible: " + 
+                stockOrigenEntity.getCantidad() + ", Solicitado: " + cantidad);
+        }
+        
+        // Buscar el stock en el sector destino
+        Optional<StockPorSector> stockDestino = stockPorSectorRepository.findByProductoIdAndSectorId(productoId, sectorDestinoId);
+        
+        // Realizar la transferencia
+        if (stockDestino.isPresent()) {
+            // Actualizar stock existente en el sector destino
+            StockPorSector stockDestinoEntity = stockDestino.get();
+            stockDestinoEntity.setCantidad(stockDestinoEntity.getCantidad() + cantidad);
+            stockPorSectorRepository.save(stockDestinoEntity);
+            System.out.println("🔍 TRANSFERIR STOCK - Stock actualizado en sector destino: " + stockDestinoEntity.getCantidad());
+        } else {
+            // Crear nueva asignación en el sector destino
+            StockPorSector nuevoStockDestino = new StockPorSector(producto, sectorDestino, cantidad);
+            stockPorSectorRepository.save(nuevoStockDestino);
+            System.out.println("🔍 TRANSFERIR STOCK - Nueva asignación creada en sector destino: " + cantidad);
+        }
+        
+        // Reducir stock del sector origen
+        stockOrigenEntity.setCantidad(stockOrigenEntity.getCantidad() - cantidad);
+        
+        // Si el stock del sector origen queda en 0, eliminar el registro
+        if (stockOrigenEntity.getCantidad() == 0) {
+            stockPorSectorRepository.delete(stockOrigenEntity);
+            System.out.println("🔍 TRANSFERIR STOCK - Registro eliminado del sector origen (stock = 0)");
+        } else {
+            stockPorSectorRepository.save(stockOrigenEntity);
+            System.out.println("🔍 TRANSFERIR STOCK - Stock actualizado en sector origen: " + stockOrigenEntity.getCantidad());
+        }
+        
+        System.out.println("🔍 TRANSFERIR STOCK - Transferencia completada exitosamente");
+        System.out.println("🔍 TRANSFERIR STOCK - Producto: " + producto.getNombre());
+        System.out.println("🔍 TRANSFERIR STOCK - Desde: " + sectorOrigen.getNombre() + " (" + (stockOrigenEntity.getCantidad() + cantidad) + " -> " + stockOrigenEntity.getCantidad() + ")");
+        System.out.println("🔍 TRANSFERIR STOCK - Hacia: " + sectorDestino.getNombre() + " (+" + cantidad + ")");
+    }
+    
+    /**
+     * Limpia duplicaciones de stock por sector para una empresa
+     * Este método debe ejecutarse una vez para corregir datos existentes
+     */
+    @Transactional
+    public void limpiarDuplicacionesStock(Long empresaId) {
+        System.out.println("🔍 LIMPIAR DUPLICACIONES - Iniciando limpieza para empresa: " + empresaId);
+        
+        // Obtener todos los productos de la empresa
+        List<Producto> productos = productoRepository.findByEmpresaId(empresaId);
+        
+        for (Producto producto : productos) {
+            System.out.println("🔍 LIMPIAR DUPLICACIONES - Procesando producto: " + producto.getNombre());
+            
+            // Obtener todas las asignaciones de stock para este producto
+            List<StockPorSector> asignaciones = stockPorSectorRepository.findByProductoId(producto.getId());
+            
+            if (asignaciones.isEmpty()) {
+                continue;
+            }
+            
+            // Calcular el stock total asignado
+            Integer stockTotalAsignado = asignaciones.stream()
+                .mapToInt(StockPorSector::getCantidad)
+                .sum();
+            
+            System.out.println("🔍 LIMPIAR DUPLICACIONES - Stock total asignado: " + stockTotalAsignado);
+            System.out.println("🔍 LIMPIAR DUPLICACIONES - Stock real del producto: " + producto.getStock());
+            
+            // Si el stock asignado supera el stock real, hay duplicación
+            if (stockTotalAsignado > (producto.getStock() != null ? producto.getStock() : 0)) {
+                System.out.println("🔍 LIMPIAR DUPLICACIONES - ¡DUPLICACIÓN DETECTADA!");
+                
+                // Eliminar todas las asignaciones existentes
+                stockPorSectorRepository.deleteAll(asignaciones);
+                System.out.println("🔍 LIMPIAR DUPLICACIONES - Asignaciones eliminadas");
+                
+                // Crear una nueva asignación con el stock real en el primer sector
+                if (!asignaciones.isEmpty()) {
+                    Sector primerSector = asignaciones.get(0).getSector();
+                    StockPorSector nuevaAsignacion = new StockPorSector(producto, primerSector, producto.getStock() != null ? producto.getStock() : 0);
+                    stockPorSectorRepository.save(nuevaAsignacion);
+                    System.out.println("🔍 LIMPIAR DUPLICACIONES - Nueva asignación creada en sector: " + primerSector.getNombre());
+                }
+            }
+        }
+        
+        System.out.println("🔍 LIMPIAR DUPLICACIONES - Limpieza completada");
     }
 }
