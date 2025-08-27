@@ -57,6 +57,61 @@ public class ProductoService {
     @Autowired
     private StockPorSectorRepository stockPorSectorRepository;
 
+    /**
+     * Método auxiliar para crear sector automáticamente si no existe
+     */
+    private Sector crearSectorAutomaticamente(String nombreSector, Long empresaId) {
+        if (nombreSector == null || nombreSector.trim().isEmpty()) {
+            return null;
+        }
+        
+        // Verificar si el sector ya existe
+        Optional<Sector> sectorExistente = sectorRepository.findByNombreAndEmpresaId(nombreSector.trim(), empresaId);
+        if (sectorExistente.isPresent()) {
+            return sectorExistente.get();
+        }
+        
+        // Crear nuevo sector
+        Empresa empresa = empresaRepository.findById(empresaId)
+            .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        
+        Sector nuevoSector = new Sector();
+        nuevoSector.setNombre(nombreSector.trim());
+        nuevoSector.setDescripcion("Sector creado automáticamente desde producto");
+        nuevoSector.setUbicacion("Ubicación por definir");
+        nuevoSector.setEmpresa(empresa);
+        nuevoSector.setActivo(true);
+        
+        Sector sectorGuardado = sectorRepository.save(nuevoSector);
+        System.out.println("✅ Sector creado automáticamente: " + nombreSector);
+        
+        return sectorGuardado;
+    }
+
+    /**
+     * Método auxiliar para asignar stock a sector automáticamente
+     */
+    private void asignarStockASectorAutomaticamente(Producto producto, Sector sector, Integer stock) {
+        if (sector == null || stock == null || stock <= 0) {
+            return;
+        }
+        
+        // Verificar si ya existe un registro para este producto y sector
+        Optional<StockPorSector> stockExistente = stockPorSectorRepository
+            .findByProductoIdAndSectorId(producto.getId(), sector.getId());
+        
+        if (stockExistente.isEmpty()) {
+            // Crear registro de stock por sector
+            StockPorSector stockPorSector = new StockPorSector();
+            stockPorSector.setProducto(producto);
+            stockPorSector.setSector(sector);
+            stockPorSector.setCantidad(stock);
+            
+            stockPorSectorRepository.save(stockPorSector);
+            System.out.println("✅ Stock asignado automáticamente al sector: " + sector.getNombre() + " - Cantidad: " + stock);
+        }
+    }
+
     public List<ProductoDTO> obtenerTodosLosProductos(Long empresaId) {
         List<Producto> productos = productoRepository.findByEmpresaIdAndActivoTrue(empresaId);
         return productos.stream()
@@ -137,6 +192,21 @@ public class ProductoService {
         System.out.println("🔍 Guardando producto en base de datos...");
         Producto productoGuardado = productoRepository.save(producto);
         System.out.println("✅ Producto guardado con ID: " + productoGuardado.getId());
+        
+        // Crear sector automáticamente si se especificó un sector de almacenamiento
+        if (productoDTO.getSectorAlmacenamiento() != null && !productoDTO.getSectorAlmacenamiento().trim().isEmpty()) {
+            try {
+                System.out.println("🔍 Procesando sector de almacenamiento: " + productoDTO.getSectorAlmacenamiento());
+                Sector sector = crearSectorAutomaticamente(productoDTO.getSectorAlmacenamiento(), empresaId);
+                
+                if (sector != null && productoDTO.getStock() != null && productoDTO.getStock() > 0) {
+                    asignarStockASectorAutomaticamente(productoGuardado, sector, productoDTO.getStock());
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Error al procesar sector automáticamente: " + e.getMessage());
+                // No fallar la creación del producto si hay error en el sector
+            }
+        }
         
         // Registrar la creación en el historial de inventario
         /*
@@ -282,6 +352,21 @@ public class ProductoService {
         System.out.println("🔍 === DESPUÉS DE GUARDAR ===");
         System.out.println("🔍 Stock en producto guardado: " + productoActualizado.getStock());
         System.out.println("🔍 Stock en producto original: " + producto.getStock());
+        
+        // Crear sector automáticamente si se especificó un sector de almacenamiento
+        if (productoDTO.getSectorAlmacenamiento() != null && !productoDTO.getSectorAlmacenamiento().trim().isEmpty()) {
+            try {
+                System.out.println("🔍 Procesando sector de almacenamiento en actualización: " + productoDTO.getSectorAlmacenamiento());
+                Sector sector = crearSectorAutomaticamente(productoDTO.getSectorAlmacenamiento(), empresaId);
+                
+                if (sector != null && productoDTO.getStock() != null && productoDTO.getStock() > 0) {
+                    asignarStockASectorAutomaticamente(productoActualizado, sector, productoDTO.getStock());
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Error al procesar sector automáticamente en actualización: " + e.getMessage());
+                // No fallar la actualización del producto si hay error en el sector
+            }
+        }
         
         // Registrar cambio de stock en el historial si hubo cambio
         if (productoDTO.getStock() != null && !productoDTO.getStock().equals(stockAnterior) && usuarioId != null) {
