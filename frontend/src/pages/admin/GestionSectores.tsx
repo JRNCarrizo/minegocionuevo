@@ -106,7 +106,9 @@ export default function GestionSectores() {
   // Función helper para hacer llamadas a la API con URL base correcta
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     const baseUrl = API_CONFIG.getBaseUrl();
-    const url = `${baseUrl}${endpoint}`;
+    // Asegurar que el endpoint no empiece con /api para evitar duplicación
+    const cleanEndpoint = endpoint.startsWith('/api') ? endpoint.substring(4) : endpoint;
+    const url = `${baseUrl}${cleanEndpoint}`;
     
     const defaultOptions: RequestInit = {
       headers: {
