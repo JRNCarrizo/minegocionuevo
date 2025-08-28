@@ -1,6 +1,7 @@
 package com.minegocio.backend.entidades;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,10 +16,12 @@ public class StockPorSector {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id", nullable = false)
+    @JsonIgnore
     private Producto producto;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sector_id", nullable = false)
+    @JsonIgnore
     private Sector sector;
     
     @Column(name = "cantidad", nullable = false)
