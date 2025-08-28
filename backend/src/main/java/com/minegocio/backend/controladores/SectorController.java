@@ -45,20 +45,26 @@ public class SectorController {
     }
     
     private StockPorSectorDTO convertirAStockPorSectorDTO(StockPorSector stockPorSector) {
-        return new StockPorSectorDTO(
-            stockPorSector.getId(),
-            new StockPorSectorDTO.ProductoSimpleDTO(
-                stockPorSector.getProducto().getId(),
-                stockPorSector.getProducto().getNombre(),
-                stockPorSector.getProducto().getCodigoPersonalizado()
-            ),
-            new StockPorSectorDTO.SectorSimpleDTO(
-                stockPorSector.getSector().getId(),
-                stockPorSector.getSector().getNombre()
-            ),
-            stockPorSector.getCantidad(),
-            stockPorSector.getFechaActualizacion()
-        );
+        try {
+            return new StockPorSectorDTO(
+                stockPorSector.getId(),
+                new StockPorSectorDTO.ProductoSimpleDTO(
+                    stockPorSector.getProducto().getId(),
+                    stockPorSector.getProducto().getNombre(),
+                    stockPorSector.getProducto().getCodigoPersonalizado()
+                ),
+                new StockPorSectorDTO.SectorSimpleDTO(
+                    stockPorSector.getSector().getId(),
+                    stockPorSector.getSector().getNombre()
+                ),
+                stockPorSector.getCantidad(),
+                stockPorSector.getFechaActualizacion()
+            );
+        } catch (Exception e) {
+            System.err.println("Error al convertir StockPorSector a DTO: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al convertir datos del sector", e);
+        }
     }
     
     /**

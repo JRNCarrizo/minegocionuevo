@@ -46,7 +46,8 @@ public interface StockPorSectorRepository extends JpaRepository<StockPorSector, 
      * Obtiene productos con stock en un sector específico
      */
     @Query("SELECT sps FROM StockPorSector sps " +
-           "JOIN sps.producto p " +
+           "JOIN FETCH sps.producto p " +
+           "JOIN FETCH sps.sector s " +
            "WHERE sps.sector.id = :sectorId AND p.empresa.id = :empresaId AND sps.cantidad > 0")
     List<StockPorSector> findProductosConStockEnSector(@Param("sectorId") Long sectorId, @Param("empresaId") Long empresaId);
     
