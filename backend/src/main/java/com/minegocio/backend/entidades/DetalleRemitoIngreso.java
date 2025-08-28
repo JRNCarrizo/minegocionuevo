@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 
@@ -35,11 +36,13 @@ public class DetalleRemitoIngreso {
     // Relación con remito de ingreso
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "remito_ingreso_id", nullable = false)
+    @JsonIgnore
     private RemitoIngreso remitoIngreso;
 
     // Relación con producto
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id", nullable = false)
+    @JsonIgnore
     private Producto producto;
 
     // Información del producto al momento del remito (para historial)

@@ -3,6 +3,7 @@ package com.minegocio.backend.entidades;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -45,6 +46,7 @@ public class RemitoIngreso {
     private Usuario usuario;
     
     @OneToMany(mappedBy = "remitoIngreso", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<DetalleRemitoIngreso> detalles;
     
     // Constructores
