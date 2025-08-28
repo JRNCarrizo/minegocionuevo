@@ -134,9 +134,16 @@ public class AutenticacionController {
                     .body(Map.of("error", "Credenciales inválidas"));
             }
 
-            // Actualizar último acceso
-            usuario.setUltimoAcceso(LocalDateTime.now());
+            // Actualizar último acceso del usuario y de la empresa
+            LocalDateTime ahora = LocalDateTime.now();
+            usuario.setUltimoAcceso(ahora);
             usuarioRepository.save(usuario);
+            
+            // Actualizar último acceso de la empresa
+            if (usuario.getEmpresa() != null) {
+                usuario.getEmpresa().setUltimoAcceso(ahora);
+                empresaRepository.save(usuario.getEmpresa());
+            }
 
             // Generar token JWT usando el servicio de autenticación
             LoginDTO loginDTO = new LoginDTO(usuario.getEmail(), loginDocumentoDTO.getNumeroDocumento());

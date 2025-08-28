@@ -1855,6 +1855,74 @@
   font-weight: 600;
 }
 
+/* Estilos para botones de acción de productos */
+.botones-accion-producto {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.boton-transferir-producto {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.boton-transferir-producto:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  transform: translateY(-1px);
+}
+
+.boton-quitar-producto {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.boton-quitar-producto:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-1px);
+}
+
+/* Estilos para producto seleccionado en transferencia */
+.producto-seleccionado {
+  background: #f8fafc;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.producto-seleccionado strong {
+  display: block;
+  color: #374151;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.producto-seleccionado .stock-disponible {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
 /* Estilos para el botón de transferir */
 .boton-accion.boton-transferir {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);

@@ -39,3 +39,4 @@ CREATE INDEX IF NOT EXISTS idx_detalles_remito_ingreso_producto ON detalles_remi
 
 
 
+

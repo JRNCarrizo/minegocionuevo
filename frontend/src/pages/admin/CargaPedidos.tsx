@@ -117,15 +117,14 @@ export default function CargaPedidos() {
           return 'Fecha inválida';
         }
         
-        // La fecha ya está en UTC, solo formatear sin cambiar zona horaria
+        // Convertir UTC a zona horaria local del usuario
         return fechaUTC.toLocaleString('es-ES', {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit',
           hour: '2-digit',
           minute: '2-digit',
-          hour12: false,
-          timeZone: 'UTC'
+          hour12: false
         });
       }
 
@@ -155,13 +154,12 @@ export default function CargaPedidos() {
           return 'Fecha inválida';
         }
         
-        // La fecha ya está en UTC, solo formatear sin cambiar zona horaria
+        // Convertir UTC a zona horaria local del usuario
         return fechaUTC.toLocaleDateString('es-ES', {
           weekday: 'short',
           year: 'numeric',
           month: 'short',
-          day: 'numeric',
-          timeZone: 'UTC'
+          day: 'numeric'
         });
       }
 

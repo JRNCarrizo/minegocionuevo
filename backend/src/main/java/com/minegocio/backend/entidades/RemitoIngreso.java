@@ -1,6 +1,8 @@
 package com.minegocio.backend.entidades;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,9 +28,11 @@ public class RemitoIngreso {
     @Column(name = "total_productos", nullable = false)
     private Integer totalProductos;
     
-    @Column(name = "fecha_creacion", nullable = false)
+    @CreationTimestamp
+    @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
     
+    @UpdateTimestamp
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
     
@@ -53,7 +57,6 @@ public class RemitoIngreso {
         this.observaciones = observaciones;
         this.totalProductos = totalProductos;
         this.empresa = empresa;
-        this.fechaCreacion = LocalDateTime.now();
     }
     
     // Getters y Setters
@@ -138,14 +141,5 @@ public class RemitoIngreso {
     }
     
     // Métodos de utilidad
-    @PreUpdate
-    protected void onUpdate() {
-        this.fechaActualizacion = LocalDateTime.now();
-    }
-    
-    @PrePersist
-    protected void onCreate() {
-        this.fechaCreacion = LocalDateTime.now();
-        this.fechaActualizacion = LocalDateTime.now();
-    }
+    // Los timestamps se manejan automáticamente con @CreationTimestamp y @UpdateTimestamp
 }

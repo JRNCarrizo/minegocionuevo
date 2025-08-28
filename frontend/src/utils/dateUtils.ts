@@ -31,7 +31,7 @@ export const convertirUTCALocal = (fechaUTC: string | Date): Date => {
     let fecha: Date;
     
     if (typeof fechaUTC === 'string') {
-      // Asegurar que la fecha se interprete como UTC
+      // Si ya tiene 'Z' al final, es UTC, si no, agregarlo
       const fechaConZ = fechaUTC.endsWith('Z') ? fechaUTC : fechaUTC + 'Z';
       fecha = new Date(fechaConZ);
     } else {
@@ -42,6 +42,7 @@ export const convertirUTCALocal = (fechaUTC: string | Date): Date => {
       throw new Error('Fecha inválida');
     }
     
+    // JavaScript automáticamente convierte UTC a local cuando usamos new Date()
     return fecha;
   } catch (error) {
     console.error('Error convirtiendo fecha UTC a local:', error);
@@ -101,10 +102,9 @@ export const formatearFecha = (
         return 'Fecha inválida';
       }
       
-      // Usar UTC para mostrar la fecha correcta sin retraso de zona horaria
+      // Convertir UTC a zona horaria local del usuario
       return fechaUTC.toLocaleDateString('es-ES', {
-        ...opciones,
-        timeZone: 'UTC'
+        ...opciones
       });
     }
     // Si es un objeto Date
@@ -147,10 +147,9 @@ export const formatearFecha = (
       return 'Fecha inválida';
     }
     
-    // Usar UTC para mostrar la fecha correcta sin retraso de zona horaria
+    // Mostrar en zona horaria local del usuario
     return fechaLocal.toLocaleDateString('es-ES', {
-      ...opciones,
-      timeZone: 'UTC'
+      ...opciones
     });
   } catch (error) {
     console.error('❌ Error al formatear fecha:', error, fecha);
@@ -236,15 +235,14 @@ export const formatearFechaConHora = (fechaString: any): string => {
          return 'Fecha inválida';
        }
        
-             // Usar UTC para mostrar la fecha correcta sin retraso de zona horaria
+             // Convertir UTC a zona horaria local del usuario
       return fechaUTC.toLocaleString('es-ES', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false,
-        timeZone: 'UTC'
+        hour12: false
       });
      }
     
@@ -264,8 +262,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false,
-        timeZone: 'UTC'
+        hour12: false
       });
     }
     
@@ -282,15 +279,14 @@ export const formatearFechaConHora = (fechaString: any): string => {
         return 'Fecha inválida';
       }
       
-      // Usar UTC para mostrar la fecha correcta sin retraso de zona horaria
+      // Mostrar en zona horaria local del usuario
       return fechaLocal.toLocaleString('es-ES', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false,
-        timeZone: 'UTC'
+        hour12: false
       });
     }
     
@@ -309,8 +305,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false,
-        timeZone: 'UTC'
+        hour12: false
       });
     }
     

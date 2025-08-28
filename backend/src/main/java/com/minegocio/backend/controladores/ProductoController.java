@@ -29,6 +29,7 @@ import java.time.LocalDate;
 import com.minegocio.backend.servicios.EmpresaService;
 import java.io.IOException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
 import com.minegocio.backend.seguridad.UsuarioPrincipal;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -543,6 +544,20 @@ public class ProductoController {
     @GetMapping("/sectores-almacenamiento")
     public ResponseEntity<?> obtenerSectoresAlmacenamiento(@PathVariable Long empresaId) {
         try {
+            // Verificar autenticación
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(java.util.Map.of("error", "No autorizado"));
+            }
+
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioEmpresaId = usuarioPrincipal.getEmpresaId();
+            
+            // Verificar que el usuario pertenece a la empresa
+            if (usuarioEmpresaId == null || !usuarioEmpresaId.equals(empresaId)) {
+                return ResponseEntity.status(403).body(java.util.Map.of("error", "No autorizado para acceder a esta empresa"));
+            }
+
             List<ProductoDTO> productos = productoService.obtenerTodosLosProductosIncluirInactivos(empresaId);
             
             // Extraer sectores de almacenamiento únicos
@@ -558,10 +573,50 @@ public class ProductoController {
                 "data", sectores
             ));
         } catch (Exception e) {
+            System.err.println("Error al obtener sectores de almacenamiento: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(java.util.Map.of(
                 "error", "Error al obtener sectores de almacenamiento",
                 "mensaje", e.getMessage()
             ));
+        }
+    }
+
+    /**
+     * Obtiene sectores de almacenamiento únicos de productos de una empresa (endpoint alternativo)
+     */
+    @GetMapping("/sectores-almacenamiento-simple")
+    public ResponseEntity<List<String>> obtenerSectoresAlmacenamientoSimple(@PathVariable Long empresaId) {
+        try {
+            // Verificar autenticación
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).build();
+            }
+
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioEmpresaId = usuarioPrincipal.getEmpresaId();
+            
+            // Verificar que el usuario pertenece a la empresa
+            if (usuarioEmpresaId == null || !usuarioEmpresaId.equals(empresaId)) {
+                return ResponseEntity.status(403).build();
+            }
+
+            List<ProductoDTO> productos = productoService.obtenerTodosLosProductosIncluirInactivos(empresaId);
+            
+            // Extraer sectores de almacenamiento únicos
+            List<String> sectores = productos.stream()
+                .map(ProductoDTO::getSectorAlmacenamiento)
+                .filter(sector -> sector != null && !sector.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(sectores);
+        } catch (Exception e) {
+            System.err.println("Error al obtener sectores de almacenamiento simple: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
         }
     }
 

@@ -173,6 +173,9 @@ public class Empresa {
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 
+    @Column(name = "ultimo_acceso")
+    private LocalDateTime ultimoAcceso;
+
     // Constructores
     public Empresa() {}
 
@@ -325,6 +328,9 @@ public class Empresa {
 
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
     public void setFechaActualizacion(LocalDateTime fechaActualizacion) { this.fechaActualizacion = fechaActualizacion; }
+
+    public LocalDateTime getUltimoAcceso() { return ultimoAcceso; }
+    public void setUltimoAcceso(LocalDateTime ultimoAcceso) { this.ultimoAcceso = ultimoAcceso; }
 
     // Métodos para baja de cuenta
     public LocalDateTime getFechaBaja() { return fechaBaja; }

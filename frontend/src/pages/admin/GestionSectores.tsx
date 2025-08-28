@@ -503,6 +503,18 @@ export default function GestionSectores() {
     }
   };
 
+  const abrirModalTransferirProducto = async (stock: StockPorSector) => {
+    // Buscar el sector completo en la lista de sectores
+    const sectorCompleto = sectores.find(s => s.id === stock.sector.id);
+    if (sectorCompleto) {
+      setSectorSeleccionado(sectorCompleto);
+    }
+    setProductoSeleccionado(stock);
+    setSectorDestino('');
+    setCantidadTransferir(0);
+    setMostrarModalTransferir(true);
+  };
+
   const limpiarFormulario = () => {
     setFormData({
       nombre: '',
@@ -739,7 +751,7 @@ export default function GestionSectores() {
                     <div
                       key={sector.id}
                       className="tarjeta-sector"
-                      onClick={() => abrirModalDetalle(sector)}
+                      onClick={() => abrirModalProductos(sector)}
                       style={{
                         animationDelay: `${index * 0.1}s`
                       }}
@@ -800,26 +812,6 @@ export default function GestionSectores() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              abrirModalProductos(sector);
-                            }}
-                            className="boton-accion boton-productos"
-                            title="Ver productos"
-                          >
-                            📦
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              abrirModalTransferir(sector);
-                            }}
-                            className="boton-accion boton-transferir"
-                            title="Transferir stock"
-                          >
-                            🔄
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
                               abrirModalEditar(sector);
                             }}
                             className="boton-accion boton-editar"
@@ -857,7 +849,7 @@ export default function GestionSectores() {
                     <div
                       key={sector.id}
                       className="tarjeta-sector tarjeta-inactiva"
-                      onClick={() => abrirModalDetalle(sector)}
+                      onClick={() => abrirModalProductos(sector)}
                       style={{
                         animationDelay: `${index * 0.1}s`
                       }}
@@ -905,16 +897,6 @@ export default function GestionSectores() {
 
                         {/* Botones de acción para sectores inactivos */}
                         <div className="botones-accion-sector">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              abrirModalProductos(sector);
-                            }}
-                            className="boton-accion boton-productos"
-                            title="Ver productos"
-                          >
-                            📦
-                          </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1349,13 +1331,22 @@ export default function GestionSectores() {
                             {new Date(stock.fechaActualizacion).toLocaleDateString()}
                           </td>
                           <td className="acciones-producto-tabla">
-                            <button
-                              onClick={() => quitarProductoDelSector(stock.id, stock.producto.nombre)}
-                              className="boton-quitar-producto"
-                              title="Quitar producto del sector"
-                            >
-                              🗑️
-                            </button>
+                            <div className="botones-accion-producto">
+                              <button
+                                onClick={() => abrirModalTransferirProducto(stock)}
+                                className="boton-transferir-producto"
+                                title="Transferir stock"
+                              >
+                                🔄
+                              </button>
+                              <button
+                                onClick={() => quitarProductoDelSector(stock.id, stock.producto.nombre)}
+                                className="boton-quitar-producto"
+                                title="Quitar producto del sector"
+                              >
+                                🗑️
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1576,26 +1567,36 @@ export default function GestionSectores() {
               <div className="seccion-transferencia">
                 <h4>Sector Origen: {sectorSeleccionado?.nombre}</h4>
                 
-                <div className="campo-transferencia">
-                  <label>Producto a transferir:</label>
-                  <select
-                    value={productoSeleccionado?.id || ''}
-                    onChange={(e) => {
-                      const productoId = parseInt(e.target.value);
-                      const producto = productosConStock.find(p => p.id === productoId);
-                      setProductoSeleccionado(producto || null);
-                      setCantidadTransferir(0);
-                    }}
-                    className="select-transferencia"
-                  >
-                    <option value="">Selecciona un producto</option>
-                    {productosConStock.map((producto) => (
-                      <option key={producto.id} value={producto.id}>
-                        {producto.producto.nombre} - Stock: {producto.cantidad}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {productoSeleccionado ? (
+                  <div className="campo-transferencia">
+                    <label>Producto seleccionado:</label>
+                    <div className="producto-seleccionado">
+                      <strong>{productoSeleccionado.producto.nombre}</strong>
+                      <span className="stock-disponible">Stock disponible: {productoSeleccionado.cantidad}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="campo-transferencia">
+                    <label>Producto a transferir:</label>
+                    <select
+                      value={productoSeleccionado?.id || ''}
+                      onChange={(e) => {
+                        const productoId = parseInt(e.target.value);
+                        const producto = productosConStock.find(p => p.id === productoId);
+                        setProductoSeleccionado(producto || null);
+                        setCantidadTransferir(0);
+                      }}
+                      className="select-transferencia"
+                    >
+                      <option value="">Selecciona un producto</option>
+                      {productosConStock.map((producto) => (
+                        <option key={producto.id} value={producto.id}>
+                          {producto.producto.nombre} - Stock: {producto.cantidad}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="campo-transferencia">
                   <label>Sector destino:</label>

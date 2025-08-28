@@ -824,16 +824,26 @@ export default function CrearIngreso() {
     try {
       setGuardando(true);
       
-      // Crear fecha usando la fecha seleccionada y la hora actual
+      // Crear fecha en UTC para evitar problemas de zona horaria
+      // Tomar la fecha seleccionada y combinarla con la hora actual local
+      const fechaSeleccionada = new Date(fechaRemito + 'T00:00:00');
       const ahora = new Date();
-      const horaLocal = ahora.getHours().toString().padStart(2, '0');
-      const minutosLocal = ahora.getMinutes().toString().padStart(2, '0');
-      const segundosLocal = ahora.getSeconds().toString().padStart(2, '0');
       
-      // Crear fecha local y convertir a UTC manualmente para evitar problemas de zona horaria
-      const fechaLocal = new Date(fechaRemito + 'T' + horaLocal + ':' + minutosLocal + ':' + segundosLocal);
-      const offset = fechaLocal.getTimezoneOffset() * 60000; // offset en milisegundos
-      const fechaUTC = new Date(fechaLocal.getTime() - offset);
+      // Obtener la hora local del usuario
+      const horaLocal = ahora.getHours();
+      const minutosLocal = ahora.getMinutes();
+      const segundosLocal = ahora.getSeconds();
+      
+      // Crear fecha directamente en UTC usando Date.UTC()
+      // Esto evita problemas de conversión de zona horaria
+      const fechaUTC = new Date(Date.UTC(
+        fechaSeleccionada.getFullYear(),
+        fechaSeleccionada.getMonth(),
+        fechaSeleccionada.getDate(),
+        horaLocal,
+        minutosLocal,
+        segundosLocal
+      ));
       
       // Formatear como ISO string para enviar al backend
       const fechaFormateada = fechaUTC.toISOString();
@@ -854,8 +864,12 @@ export default function CrearIngreso() {
       };
 
       console.log('📋 Fecha seleccionada:', fechaRemito);
-      console.log('📋 Hora local:', horaLocal, ':', minutosLocal, ':', segundosLocal);
-      console.log('📋 Fecha formateada:', fechaFormateada);
+      console.log('📋 Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
+      console.log('📋 Fecha creada en UTC:', fechaUTC.toString());
+      console.log('📋 Fecha formateada en UTC:', fechaFormateada);
+      console.log('📋 Fecha actual del sistema:', new Date().toISOString());
+      console.log('📋 Zona horaria del navegador:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+      console.log('📋 Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
       console.log('📋 Enviando remito:', remitoData);
 
       // Guardar remito usando la API

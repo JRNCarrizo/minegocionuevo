@@ -412,8 +412,8 @@ public class SuperAdminService {
         }
         
         Long transacciones = (long) (totalTransaccionesVentaRapida + totalTransaccionesPedidos);
-        LocalDateTime ultimaConexion = empresa.getFechaActualizacion() != null ? 
-            empresa.getFechaActualizacion() : empresa.getFechaCreacion();
+        LocalDateTime ultimaConexion = empresa.getUltimoAcceso() != null ? 
+            empresa.getUltimoAcceso() : empresa.getFechaCreacion();
         
         dto.setTotalVentasRapidas(ventasRapidas);
         dto.setTotalTransacciones(transacciones);

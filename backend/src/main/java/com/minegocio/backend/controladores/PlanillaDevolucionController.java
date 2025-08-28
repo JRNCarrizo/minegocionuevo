@@ -24,6 +24,21 @@ public class PlanillaDevolucionController {
     private PlanillaDevolucionService planillaDevolucionService;
 
     /**
+     * Validar que el usuario tenga rol de administrador
+     */
+    private boolean esAdministrador(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+        
+        UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+        String rol = usuarioPrincipal.getUsuario().getRol().name();
+        return rol != null && 
+               (rol.equals("ADMINISTRADOR") || 
+                rol.equals("SUPER_ADMIN"));
+    }
+
+    /**
      * Crear una nueva planilla de devolución
      */
     @PostMapping
@@ -33,6 +48,13 @@ public class PlanillaDevolucionController {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
+            }
+
+            // Validar rol de administrador
+            if (!esAdministrador(authentication)) {
+                return ResponseEntity.status(403).body(Map.of(
+                    "error", "Usuario no autorizado. Verifique que esté logueado con un rol de administrador."
+                ));
             }
 
             UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
@@ -68,6 +90,13 @@ public class PlanillaDevolucionController {
                 return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
             }
 
+            // Validar rol de administrador
+            if (!esAdministrador(authentication)) {
+                return ResponseEntity.status(403).body(Map.of(
+                    "error", "Usuario no autorizado. Verifique que esté logueado con un rol de administrador."
+                ));
+            }
+
             UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
             Long empresaId = usuarioPrincipal.getEmpresaId();
 
@@ -91,6 +120,18 @@ public class PlanillaDevolucionController {
     @GetMapping("/{id}")
     public ResponseEntity<?> obtenerPlanillaDevolucionPorId(@PathVariable Long id) {
         try {
+            // Validar rol de administrador
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
+            }
+
+            if (!esAdministrador(authentication)) {
+                return ResponseEntity.status(403).body(Map.of(
+                    "error", "Usuario no autorizado. Verifique que esté logueado con un rol de administrador."
+                ));
+            }
+
             Optional<PlanillaDevolucion> planilla = planillaDevolucionService.obtenerPlanillaDevolucionPorId(id);
             
             if (planilla.isPresent()) {
@@ -114,6 +155,18 @@ public class PlanillaDevolucionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarPlanillaDevolucion(@PathVariable Long id) {
         try {
+            // Validar rol de administrador
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
+            }
+
+            if (!esAdministrador(authentication)) {
+                return ResponseEntity.status(403).body(Map.of(
+                    "error", "Usuario no autorizado. Verifique que esté logueado con un rol de administrador."
+                ));
+            }
+
             planillaDevolucionService.eliminarPlanillaDevolucion(id);
             
             return ResponseEntity.ok(Map.of(
