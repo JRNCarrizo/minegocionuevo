@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -38,15 +39,18 @@ public class PlanillaDevolucion {
     // Relación con empresa
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
+    @JsonIgnore
     private Empresa empresa;
 
     // Usuario que creó la planilla
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
+    @JsonIgnore
     private Usuario usuario;
 
     // Detalles de la planilla
     @OneToMany(mappedBy = "planillaDevolucion", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<DetallePlanillaDevolucion> detalles = new ArrayList<>();
 
     // Timestamps

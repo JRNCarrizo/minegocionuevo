@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 
@@ -35,11 +36,13 @@ public class DetallePlanillaDevolucion {
     // Relación con la planilla de devolución
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "planilla_devolucion_id", nullable = false)
+    @JsonIgnore
     private PlanillaDevolucion planillaDevolucion;
 
     // Relación con el producto (opcional)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id")
+    @JsonIgnore
     private Producto producto;
 
     // Timestamps

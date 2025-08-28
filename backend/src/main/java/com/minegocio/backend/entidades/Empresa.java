@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -156,12 +157,15 @@ public class Empresa {
 
     // Relaciones
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Usuario> usuarios = new HashSet<>();
 
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Producto> productos = new HashSet<>();
 
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Cliente> clientes = new HashSet<>();
 
     // Timestamps
