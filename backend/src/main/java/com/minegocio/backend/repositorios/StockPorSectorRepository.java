@@ -59,3 +59,4 @@ public interface StockPorSectorRepository extends JpaRepository<StockPorSector, 
 
 
 
+

@@ -5,6 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
+import { API_CONFIG } from '../../config/api';
 import './GestionSectores.css';
 
 interface Sector {
@@ -102,20 +103,34 @@ export default function GestionSectores() {
     }
   }, [navigate, datosUsuario]);
 
+  // Función helper para hacer llamadas a la API con URL base correcta
+  const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+    const baseUrl = API_CONFIG.getBaseUrl();
+    const url = `${baseUrl}${endpoint}`;
+    
+    const defaultOptions: RequestInit = {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    };
+
+    console.log('🌐 API Call:', url); // Debug log
+    return fetch(url, defaultOptions);
+  };
+
   const cargarSectores = async () => {
     try {
       setCargando(true);
-      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/todos`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/todos`);
       
       if (response.ok) {
         const data = await response.json();
         setSectores(data.data || []);
       } else {
+        console.error('❌ Error response:', response.status, response.statusText);
         toast.error('Error al cargar sectores');
       }
     } catch (error) {
@@ -128,12 +143,7 @@ export default function GestionSectores() {
 
   const cargarProductosEnSector = async (sectorId: number) => {
     try {
-      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/${sectorId}/productos`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/${sectorId}/productos`);
       
       if (response.ok) {
         const data = await response.json();
@@ -177,12 +187,8 @@ export default function GestionSectores() {
     
     try {
       setGuardando(true);
-      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores`, {
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(formData)
       });
       
@@ -208,12 +214,8 @@ export default function GestionSectores() {
     
     try {
       setGuardando(true);
-      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/${sectorSeleccionado.id}`, {
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/${sectorSeleccionado.id}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(formData)
       });
       
@@ -236,12 +238,8 @@ export default function GestionSectores() {
 
   const cambiarEstadoSector = async (sectorId: number, activo: boolean) => {
     try {
-      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/${sectorId}/estado`, {
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/${sectorId}/estado`, {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({ activo })
       });
       
@@ -259,12 +257,8 @@ export default function GestionSectores() {
 
   const migrarSectores = async () => {
     try {
-      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/migrar`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/migrar`, {
+        method: 'POST'
       });
       
       if (response.ok) {
@@ -286,12 +280,7 @@ export default function GestionSectores() {
       setCargandoProductos(true);
       
       // Cargar productos
-      const productosResponse = await fetch(`/api/empresas/${datosUsuario?.empresaId}/productos`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const productosResponse = await apiCall(`/empresas/${datosUsuario?.empresaId}/productos`);
       
       if (!productosResponse.ok) {
         toast.error('Error al cargar productos');
@@ -302,12 +291,7 @@ export default function GestionSectores() {
       const productos = productosData.data || [];
       
       // Cargar stock general para obtener información de asignaciones
-      const stockResponse = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/stock-general`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const stockResponse = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/stock-general`);
       
       let stockAsignadoPorProducto: { [key: number]: number } = {};
       
@@ -387,12 +371,8 @@ export default function GestionSectores() {
       const requestBody = { asignaciones };
       console.log('🔍 REQUEST BODY:', requestBody);
       
-      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/${sectorSeleccionado?.id}/asignar-productos`, {
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/${sectorSeleccionado?.id}/asignar-productos`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(requestBody)
       });
       
@@ -429,12 +409,8 @@ export default function GestionSectores() {
     try {
       setQuitandoProducto(true);
       
-      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/${sectorSeleccionado.id}/quitar-producto/${stockId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/${sectorSeleccionado.id}/quitar-producto/${stockId}`, {
+        method: 'DELETE'
       });
       
       if (response.ok) {
@@ -484,11 +460,7 @@ export default function GestionSectores() {
     
     // Cargar productos del sector
     try {
-      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/${sector.id}/productos`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/${sector.id}/productos`);
       
       if (response.ok) {
         const data = await response.json();
@@ -560,12 +532,8 @@ export default function GestionSectores() {
     try {
       setTransferiendo(true);
       
-      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/transferir-stock`, {
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/transferir-stock`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
           productoId: productoSeleccionado.producto.id,
           sectorOrigenId: sectorSeleccionado?.id,
@@ -1579,10 +1547,10 @@ export default function GestionSectores() {
                   <div className="campo-transferencia">
                     <label>Producto a transferir:</label>
                     <select
-                      value={productoSeleccionado?.id || ''}
+                      value={productoSeleccionado ? productoSeleccionado.id.toString() : ''}
                       onChange={(e) => {
                         const productoId = parseInt(e.target.value);
-                        const producto = productosConStock.find(p => p.id === productoId);
+                        const producto = productosConStock.find((p: StockPorSector) => p.id === productoId);
                         setProductoSeleccionado(producto || null);
                         setCantidadTransferir(0);
                       }}
