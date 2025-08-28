@@ -297,28 +297,7 @@ public class SectorController {
             @PathVariable Long empresaId,
             @PathVariable Long sectorId) {
         try {
-            System.out.println("🔍 OBTENER PRODUCTOS EN SECTOR - Endpoint llamado");
-            System.out.println("🔍 OBTENER PRODUCTOS EN SECTOR - Empresa: " + empresaId);
-            System.out.println("🔍 OBTENER PRODUCTOS EN SECTOR - Sector: " + sectorId);
-            
-            // Verificar autenticación
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null || !authentication.isAuthenticated()) {
-                System.out.println("❌ OBTENER PRODUCTOS EN SECTOR - No autenticado");
-                return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
-            }
-            
-            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
-            Long usuarioEmpresaId = usuarioPrincipal.getEmpresaId();
-            System.out.println("🔍 OBTENER PRODUCTOS EN SECTOR - Usuario empresa ID: " + usuarioEmpresaId);
-            
-            if (usuarioEmpresaId == null || !usuarioEmpresaId.equals(empresaId)) {
-                System.out.println("❌ OBTENER PRODUCTOS EN SECTOR - No autorizado para esta empresa");
-                return ResponseEntity.status(403).body(Map.of("error", "No autorizado para acceder a esta empresa"));
-            }
-            
             List<StockPorSector> productosEnSector = sectorService.obtenerProductosEnSector(sectorId, empresaId);
-            System.out.println("🔍 OBTENER PRODUCTOS EN SECTOR - Productos encontrados: " + productosEnSector.size());
             
             List<StockPorSectorDTO> productosDTO = productosEnSector.stream()
                 .map(this::convertirAStockPorSectorDTO)
@@ -329,8 +308,6 @@ public class SectorController {
                 "data", productosDTO
             ));
         } catch (Exception e) {
-            System.err.println("❌ OBTENER PRODUCTOS EN SECTOR - Error: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Error al obtener productos en sector: " + e.getMessage()
             ));
