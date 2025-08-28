@@ -3,6 +3,7 @@ package com.minegocio.backend.entidades;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 
 @Entity
@@ -31,6 +32,7 @@ public class Sector {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
+    @JsonIgnore
     private Empresa empresa;
     
     @Column(name = "fecha_creacion", nullable = false)
