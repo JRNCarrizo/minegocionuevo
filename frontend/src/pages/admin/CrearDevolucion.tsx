@@ -439,7 +439,7 @@ export default function CrearDevolucion() {
         segundosLocal
       );
       
-      // Formatear como string local sin conversión UTC
+      // Formatear como string local sin conversión UTC (incluyendo segundos)
       const fechaFormateada = fechaLocal.getFullYear() + '-' + 
         String(fechaLocal.getMonth() + 1).padStart(2, '0') + '-' + 
         String(fechaLocal.getDate()).padStart(2, '0') + 'T' + 
@@ -467,6 +467,8 @@ export default function CrearDevolucion() {
       console.log('📋 [DEBUG] Fecha local creada:', fechaLocal.toString());
       console.log('📋 [DEBUG] Fecha formateada (sin Z):', fechaFormateada);
       console.log('📋 [DEBUG] Zona horaria del usuario:', zonaHorariaUsuario);
+      console.log('📋 [DEBUG] Token actual:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
+      console.log('📋 [DEBUG] Token (primeros 20 chars):', localStorage.getItem('token')?.substring(0, 20) + '...');
       console.log('📋 [DEBUG] Enviando planilla de devolución:', planillaData);
       
       await ApiService.crearPlanillaDevolucion(planillaData);
