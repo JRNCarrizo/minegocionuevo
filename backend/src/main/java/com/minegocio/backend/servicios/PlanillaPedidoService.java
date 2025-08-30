@@ -208,7 +208,12 @@ public class PlanillaPedidoService {
         }
 
         if (dto.getFechaPlanilla() != null) {
-            planilla.setFechaPlanilla(dto.getFechaPlanilla());
+            try {
+                LocalDateTime fechaPlanilla = LocalDateTime.parse(dto.getFechaPlanilla(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+                planilla.setFechaPlanilla(fechaPlanilla);
+            } catch (Exception e) {
+                throw new RuntimeException("Error al parsear la fecha de la planilla: " + dto.getFechaPlanilla(), e);
+            }
         }
 
         return planillaPedidoRepository.save(planilla);
