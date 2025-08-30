@@ -77,6 +77,11 @@ public class PlanillaDevolucionService {
         // Si se proporciona un número de planilla específico, usarlo
         if (dto.getNumeroPlanilla() != null && !dto.getNumeroPlanilla().isEmpty()) {
             planilla.setNumeroPlanilla(dto.getNumeroPlanilla());
+        } else {
+            // Temporal: generar un valor por defecto para evitar el error de NOT NULL
+            String numeroPlanillaDefault = "DEV-" + System.currentTimeMillis();
+            planilla.setNumeroPlanilla(numeroPlanillaDefault);
+            System.out.println("🔄 [DEVOLUCION] Usando número de planilla por defecto: " + numeroPlanillaDefault);
         }
 
         planilla = planillaDevolucionRepository.save(planilla);
