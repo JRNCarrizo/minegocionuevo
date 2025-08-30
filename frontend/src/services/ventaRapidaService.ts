@@ -40,6 +40,7 @@ export interface VentaRapidaDTO {
   montoRecibido?: number;
   vuelto?: number;
   observaciones?: string;
+  fechaVenta?: string;
   detalles: DetalleVentaRapidaDTO[];
 }
 

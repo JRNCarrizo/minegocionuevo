@@ -40,6 +40,8 @@ public class VentaRapidaDTO {
     @Size(max = 500, message = "Las observaciones no pueden exceder 500 caracteres")
     private String observaciones;
 
+    private String fechaVenta;
+
     @NotEmpty(message = "Los detalles de la venta son obligatorios")
     private List<DetalleVentaRapidaDTO> detalles;
 
@@ -48,7 +50,7 @@ public class VentaRapidaDTO {
 
     public VentaRapidaDTO(String clienteNombre, String clienteEmail, BigDecimal total, 
                          BigDecimal subtotal, String metodoPago, BigDecimal montoRecibido, 
-                         BigDecimal vuelto, String observaciones, List<DetalleVentaRapidaDTO> detalles) {
+                         BigDecimal vuelto, String observaciones, String fechaVenta, List<DetalleVentaRapidaDTO> detalles) {
         this.clienteNombre = clienteNombre;
         this.clienteEmail = clienteEmail;
         this.total = total;
@@ -57,6 +59,7 @@ public class VentaRapidaDTO {
         this.montoRecibido = montoRecibido;
         this.vuelto = vuelto;
         this.observaciones = observaciones;
+        this.fechaVenta = fechaVenta;
         this.detalles = detalles;
     }
 
@@ -84,6 +87,9 @@ public class VentaRapidaDTO {
 
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+
+    public String getFechaVenta() { return fechaVenta; }
+    public void setFechaVenta(String fechaVenta) { this.fechaVenta = fechaVenta; }
 
     public List<DetalleVentaRapidaDTO> getDetalles() { return detalles; }
     public void setDetalles(List<DetalleVentaRapidaDTO> detalles) { this.detalles = detalles; }

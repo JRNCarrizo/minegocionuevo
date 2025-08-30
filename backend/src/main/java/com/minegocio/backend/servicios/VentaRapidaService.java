@@ -70,8 +70,26 @@ public class VentaRapidaService {
         ventaRapida.setMontoRecibido(ventaDTO.getMontoRecibido());
         ventaRapida.setVuelto(ventaDTO.getVuelto());
         ventaRapida.setObservaciones(ventaDTO.getObservaciones());
-        ventaRapida.setFechaVenta(LocalDateTime.now());
-        ventaRapida.setNumeroComprobante("VR-" + System.currentTimeMillis()); // Generar número de comprobante único
+        
+        // Usar la fecha del DTO si está disponible, sino usar la fecha actual
+        LocalDateTime fechaVenta;
+        if (ventaDTO.getFechaVenta() != null && !ventaDTO.getFechaVenta().isEmpty()) {
+            try {
+                fechaVenta = LocalDateTime.parse(ventaDTO.getFechaVenta(), DATETIME_FORMATTER);
+                System.out.println("📅 [VENTA RAPIDA] Usando fecha del DTO: " + fechaVenta);
+            } catch (Exception e) {
+                System.out.println("⚠️ [VENTA RAPIDA] Error al parsear fecha del DTO, usando fecha actual: " + e.getMessage());
+                fechaVenta = LocalDateTime.now();
+            }
+        } else {
+            fechaVenta = LocalDateTime.now();
+            System.out.println("📅 [VENTA RAPIDA] Usando fecha actual: " + fechaVenta);
+        }
+        ventaRapida.setFechaVenta(fechaVenta);
+        
+        // Generar número de comprobante usando la fecha del usuario
+        String numeroComprobante = "VR-" + (fechaVenta.getHour() * 100 + fechaVenta.getMinute());
+        ventaRapida.setNumeroComprobante(numeroComprobante);
 
         // Agregar detalles de la venta
         for (VentaRapidaDTO.DetalleVentaRapidaDTO detalleDTO : ventaDTO.getDetalles()) {

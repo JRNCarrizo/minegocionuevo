@@ -7,6 +7,7 @@ import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import type { Producto } from '../../types';
 import BarcodeScanner from '../../components/BarcodeScanner';
+import { crearFechaLocal } from '../../utils/dateUtils';
 
 // Extender la interfaz Window para incluir webkitAudioContext
 declare global {
@@ -469,6 +470,7 @@ export default function CajaRapida() {
         montoRecibido: venta.metodoPago === 'EFECTIVO' ? parseFloat(inputMontoRecibido) : undefined,
         vuelto: venta.metodoPago === 'EFECTIVO' ? vueltoCalculado : undefined,
         observaciones: inputObservaciones || `Venta ${venta.metodoPago.toLowerCase()}`,
+        fechaVenta: new Date().toISOString().slice(0, 19).replace('T', ' '),
         detalles: venta.items.map(item => ({
           productoId: item.producto.id,
           productoNombre: item.producto.nombre,
