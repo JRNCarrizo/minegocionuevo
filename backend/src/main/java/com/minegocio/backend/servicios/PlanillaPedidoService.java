@@ -85,9 +85,14 @@ public class PlanillaPedidoService {
         PlanillaPedido planilla = new PlanillaPedido(empresa, usuario, fechaPlanilla);
         planilla.setObservaciones(dto.getObservaciones());
 
-        // Si se proporciona un número de planilla específico, usarlo
+        // Generar número de planilla automáticamente si no se proporciona uno
         if (dto.getNumeroPlanilla() != null && !dto.getNumeroPlanilla().isEmpty()) {
             planilla.setNumeroPlanilla(dto.getNumeroPlanilla());
+        } else {
+            // Generar número de planilla automático con timestamp
+            String numeroPlanillaAuto = "PED-" + System.currentTimeMillis();
+            planilla.setNumeroPlanilla(numeroPlanillaAuto);
+            System.out.println("📋 [PEDIDO] Generando número de planilla automático: " + numeroPlanillaAuto);
         }
 
         planilla = planillaPedidoRepository.save(planilla);
