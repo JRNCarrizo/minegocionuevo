@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,8 +30,8 @@ public interface RoturaPerdidaRepository extends JpaRepository<RoturaPerdida, Lo
     @Query("SELECT r FROM RoturaPerdida r WHERE r.empresa.id = :empresaId AND r.fecha BETWEEN :fechaInicio AND :fechaFin ORDER BY r.fecha DESC, r.fechaCreacion DESC")
     List<RoturaPerdida> findByEmpresaIdAndFechaBetweenOrderByFechaDesc(
             @Param("empresaId") Long empresaId,
-            @Param("fechaInicio") LocalDate fechaInicio,
-            @Param("fechaFin") LocalDate fechaFin
+            @Param("fechaInicio") java.time.LocalDateTime fechaInicio,
+            @Param("fechaFin") java.time.LocalDateTime fechaFin
     );
 
     /**
@@ -60,8 +61,8 @@ public interface RoturaPerdidaRepository extends JpaRepository<RoturaPerdida, Lo
     @Query("SELECT COALESCE(SUM(r.cantidad), 0) FROM RoturaPerdida r WHERE r.empresa.id = :empresaId AND r.fecha BETWEEN :fechaInicio AND :fechaFin")
     Integer sumCantidadByEmpresaIdAndFechaBetween(
             @Param("empresaId") Long empresaId,
-            @Param("fechaInicio") LocalDate fechaInicio,
-            @Param("fechaFin") LocalDate fechaFin
+            @Param("fechaInicio") LocalDateTime fechaInicio,
+            @Param("fechaFin") LocalDateTime fechaFin
     );
 
     /**

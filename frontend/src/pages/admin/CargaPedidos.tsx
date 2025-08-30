@@ -42,6 +42,12 @@ export default function CargaPedidos() {
 
   // Función helper para convertir fechaPlanilla a string de fecha
   const obtenerFechaPlanillaString = (fechaPlanilla: any): string => {
+    console.log('🔍 [DEBUG] obtenerFechaPlanillaString - Input:', {
+      fechaPlanilla,
+      tipo: typeof fechaPlanilla,
+      esArray: Array.isArray(fechaPlanilla)
+    });
+    
     try {
       // Si es null o undefined
       if (fechaPlanilla == null) {
@@ -50,14 +56,17 @@ export default function CargaPedidos() {
 
       // Si es un string
       if (typeof fechaPlanilla === 'string') {
+        console.log('🔍 [DEBUG] Procesando como string:', fechaPlanilla);
         // Si ya tiene formato de fecha (YYYY-MM-DD)
         if (fechaPlanilla.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          console.log('🔍 [DEBUG] Formato YYYY-MM-DD detectado');
           return fechaPlanilla;
         }
         // Si tiene formato ISO con T
         if (fechaPlanilla.includes('T')) {
           const partes = fechaPlanilla.split('T');
           if (partes.length >= 1) {
+            console.log('🔍 [DEBUG] Formato ISO detectado, parte fecha:', partes[0]);
             return partes[0];
           }
         }
@@ -65,7 +74,9 @@ export default function CargaPedidos() {
         if (!Array.isArray(fechaPlanilla)) {
           const fechaObj = new Date(fechaPlanilla);
           if (!isNaN(fechaObj.getTime())) {
-            return fechaObj.toISOString().split('T')[0];
+            const resultado = fechaObj.toISOString().split('T')[0];
+            console.log('🔍 [DEBUG] Parseado como Date, resultado:', resultado);
+            return resultado;
           }
         }
       }
@@ -81,6 +92,7 @@ export default function CargaPedidos() {
       // Si es un array (formato [year, month, day, hour, minute, second])
       // Los arrays del backend representan fechas UTC
       if (Array.isArray(fechaPlanilla)) {
+        console.log('🔍 [DEBUG] Procesando como array:', fechaPlanilla);
         const [year, month, day] = fechaPlanilla;
         // Crear fecha UTC y convertir a zona horaria local para obtener la fecha correcta
         const fechaUTC = new Date(Date.UTC(year, month - 1, day));
@@ -88,6 +100,12 @@ export default function CargaPedidos() {
         
         // Convertir a zona horaria local usando toLocaleDateString
         const fechaLocal = fechaUTC.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal }); // formato YYYY-MM-DD
+        console.log('🔍 [DEBUG] Array procesado:', {
+          year, month, day,
+          fechaUTC: fechaUTC.toISOString(),
+          zonaHorariaLocal,
+          fechaLocal
+        });
         return fechaLocal;
       }
 
@@ -281,7 +299,45 @@ export default function CargaPedidos() {
 
   const obtenerFechaActual = () => {
     const hoy = new Date();
-    return hoy.toISOString().split('T')[0];
+    const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const fechaActual = hoy.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal }); // formato YYYY-MM-DD
+    console.log('🔍 [DEBUG] obtenerFechaActual:', {
+      hoy: hoy.toISOString(),
+      zonaHorariaLocal,
+      fechaActual
+    });
+    return fechaActual;
+  };
+
+  const formatearFechaConHoy = (fechaPlanilla: any, formato: 'corta' | 'completa' = 'corta') => {
+    const fechaPlanillaString = obtenerFechaPlanillaString(fechaPlanilla);
+    const fechaActual = obtenerFechaActual();
+    const esHoy = fechaPlanillaString === fechaActual;
+    
+    console.log('🔍 [DEBUG] formatearFechaConHoy:', {
+      fechaPlanilla,
+      fechaPlanillaString,
+      fechaActual,
+      esHoy,
+      formato
+    });
+    
+    if (esHoy) {
+      return 'Hoy';
+    }
+    
+    return formato === 'corta' ? formatearFechaCortaLocal(fechaPlanilla) : formatearFecha(fechaPlanilla);
+  };
+
+  const formatearFechaGrupoConHoy = (fecha: string) => {
+    const fechaActual = obtenerFechaActual();
+    const esHoy = fecha === fechaActual;
+    console.log('🔍 [DEBUG] formatearFechaGrupoConHoy:', {
+      fecha,
+      fechaActual,
+      esHoy
+    });
+    return esHoy ? 'Hoy' : formatearFecha(fecha);
   };
 
   const alternarExpansionDia = (fecha: string) => {
@@ -455,7 +511,7 @@ export default function CargaPedidos() {
                   color: '#1e293b',
                   margin: 0
                 }}>
-                  Carga de Pedidos
+                  Carga de Planillas
                 </h1>
                 <p style={{
                   color: '#64748b',
@@ -693,7 +749,7 @@ export default function CargaPedidos() {
                             margin: 0,
                             textTransform: 'capitalize'
                           }}>
-                            {formatearFecha(grupo.fecha)}
+                            {formatearFechaGrupoConHoy(grupo.fecha)}
                           </h4>
                           <p style={{
                             fontSize: '0.875rem',
@@ -801,7 +857,7 @@ export default function CargaPedidos() {
                                 color: '#64748b',
                                 flexWrap: 'wrap'
                               }}>
-                                                                 <span>📅 {formatearFechaCortaLocal(planilla.fechaPlanilla)}</span>
+                                                                 <span>📅 {formatearFechaConHoy(planilla.fechaPlanilla, 'corta')}</span>
                                                                  <span>📦 <span style={{ 
                                    color: '#3b82f6', 
                                    fontWeight: '700'
@@ -959,7 +1015,7 @@ export default function CargaPedidos() {
                     opacity: 0.9,
                     fontSize: '0.875rem'
                   }}>
-                    {formatearFecha(planillaSeleccionada.fechaPlanilla)}
+                    {formatearFechaConHoy(planillaSeleccionada.fechaPlanilla, 'completa')}
                   </p>
                 </div>
                 <div style={{
@@ -1051,7 +1107,7 @@ export default function CargaPedidos() {
                         color: '#1e293b',
                         fontWeight: '500'
                       }}>
-                        {formatearFechaCortaLocal(planillaSeleccionada.fechaPlanilla)}
+                        {formatearFechaConHoy(planillaSeleccionada.fechaPlanilla, 'corta')}
                       </div>
                     </div>
                                          <div>

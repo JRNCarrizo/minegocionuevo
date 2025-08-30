@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +25,8 @@ import java.util.Optional;
  */
 @Service
 public class VentaRapidaService {
+    
+    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     @Autowired
     private VentaRapidaRepository ventaRapidaRepository;
@@ -230,7 +233,7 @@ public class VentaRapidaService {
             venta.getVuelto(),
             venta.getObservaciones(),
             venta.getNumeroComprobante(),
-            venta.getFechaVenta()
+            venta.getFechaVenta().format(DATETIME_FORMATTER)
         );
 
         // Convertir detalles

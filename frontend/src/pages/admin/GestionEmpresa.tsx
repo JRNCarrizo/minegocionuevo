@@ -42,7 +42,7 @@ export default function GestionEmpresa() {
     
     // Definir colores específicos para cada card
     const coloresCards = {
-      0: '#3b82f6', // Carga de Pedidos - Azul
+              0: '#3b82f6', // Carga de Planillas - Azul
       1: '#ef4444', // Roturas y Pérdidas - Rojo
       2: '#059669', // Ingresos - Verde
       3: '#f59e0b', // Gestión de Retornos - Amarillo/Naranja
@@ -232,7 +232,7 @@ export default function GestionEmpresa() {
 
   const cardsGestion = [
     {
-      titulo: 'Carga de Pedidos',
+              titulo: 'Carga de Planillas',
       descripcion: 'Gestiona los pedidos realizados',
       icono: '📦',
       color: '#3b82f6',

@@ -97,11 +97,10 @@ public class RemitoIngresoService {
             throw new RuntimeException("La fecha del remito es obligatoria");
         }
         
-        System.out.println("DEBUG: Fecha remito: " + remitoDTO.getFechaRemito());
-        System.out.println("DEBUG: Fecha remito tipo: " + remitoDTO.getFechaRemito().getClass().getName());
-        System.out.println("DEBUG: Fecha remito toString: " + remitoDTO.getFechaRemito().toString());
-        System.out.println("DEBUG: Fecha remito toLocalDate: " + remitoDTO.getFechaRemito().toLocalDate());
-        System.out.println("DEBUG: Fecha remito toLocalTime: " + remitoDTO.getFechaRemito().toLocalTime());
+        System.out.println("📋 [SERVICE] Fecha remito recibida: " + remitoDTO.getFechaRemito());
+        System.out.println("📋 [SERVICE] Zona horaria del usuario: " + remitoDTO.getZonaHoraria());
+        System.out.println("📋 [SERVICE] Fecha actual del servidor: " + java.time.LocalDateTime.now());
+        System.out.println("📋 [SERVICE] Zona horaria del servidor: " + java.time.ZoneId.systemDefault());
         
         // Validar que la empresa existe
         Optional<Empresa> empresa = empresaRepository.findById(remitoDTO.getEmpresaId());
@@ -132,7 +131,27 @@ public class RemitoIngresoService {
         // Crear el remito
         RemitoIngreso remito = new RemitoIngreso();
         remito.setNumeroRemito(remitoDTO.getNumeroRemito());
-        remito.setFechaRemito(remitoDTO.getFechaRemito());
+        
+        // Parsear la fecha string a LocalDateTime
+        LocalDateTime fechaRemito;
+        if (remitoDTO.getFechaRemito() != null) {
+            String fechaString = remitoDTO.getFechaRemito();
+            System.out.println("📋 [SERVICE] Fecha string original: " + fechaString);
+            
+            if (fechaString.endsWith("Z")) {
+                fechaString = fechaString.substring(0, fechaString.length() - 1);
+                System.out.println("📋 [SERVICE] Fecha string después de remover Z: " + fechaString);
+            }
+            
+            fechaRemito = LocalDateTime.parse(fechaString);
+            System.out.println("📋 [SERVICE] Fecha parseada como LocalDateTime: " + fechaRemito);
+            System.out.println("📋 [SERVICE] Guardando fecha exacta del usuario (sin conversión UTC)");
+        } else {
+            fechaRemito = LocalDateTime.now();
+            System.out.println("📋 [SERVICE] Fecha nula, usando fecha actual: " + fechaRemito);
+        }
+        
+        remito.setFechaRemito(fechaRemito);
         remito.setObservaciones(remitoDTO.getObservaciones());
         remito.setTotalProductos(remitoDTO.getTotalProductos());
         remito.setEmpresa(empresa.get());
@@ -374,7 +393,7 @@ public class RemitoIngresoService {
         RemitoIngresoDTO dto = new RemitoIngresoDTO(
                 remito.getId(),
                 remito.getNumeroRemito(),
-                remito.getFechaRemito(),
+                remito.getFechaRemito().toString(),
                 remito.getObservaciones(),
                 remito.getTotalProductos(),
                 remito.getFechaCreacion(),

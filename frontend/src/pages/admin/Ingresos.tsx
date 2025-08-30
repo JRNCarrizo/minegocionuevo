@@ -37,6 +37,12 @@ export default function Ingresos() {
 
   // Función helper para convertir fechaRemito a string de fecha
   const obtenerFechaRemitoString = (fechaRemito: any): string => {
+    console.log('🔍 [DEBUG] obtenerFechaRemitoString - Input:', {
+      fechaRemito,
+      tipo: typeof fechaRemito,
+      esArray: Array.isArray(fechaRemito)
+    });
+    
     try {
       // Si es null o undefined
       if (fechaRemito == null) {
@@ -45,14 +51,17 @@ export default function Ingresos() {
 
       // Si es un string
       if (typeof fechaRemito === 'string') {
+        console.log('🔍 [DEBUG] Procesando como string:', fechaRemito);
         // Si ya tiene formato de fecha (YYYY-MM-DD)
         if (fechaRemito.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          console.log('🔍 [DEBUG] Formato YYYY-MM-DD detectado');
           return fechaRemito;
         }
         // Si tiene formato ISO con T
         if (fechaRemito.includes('T')) {
           const partes = fechaRemito.split('T');
           if (partes.length >= 1) {
+            console.log('🔍 [DEBUG] Formato ISO detectado, parte fecha:', partes[0]);
             return partes[0];
           }
         }
@@ -61,7 +70,9 @@ export default function Ingresos() {
         if (!Array.isArray(fechaRemito)) {
           const fechaObj = new Date(fechaRemito);
           if (!isNaN(fechaObj.getTime())) {
-            return fechaObj.toISOString().split('T')[0];
+            const resultado = fechaObj.toISOString().split('T')[0];
+            console.log('🔍 [DEBUG] Parseado como Date, resultado:', resultado);
+            return resultado;
           }
         }
       }
@@ -76,8 +87,21 @@ export default function Ingresos() {
 
       // Si es un array (formato [year, month, day, hour, minute, second])
       if (Array.isArray(fechaRemito)) {
+        console.log('🔍 [DEBUG] Procesando como array:', fechaRemito);
         const [year, month, day] = fechaRemito;
-        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        // Crear fecha UTC y convertir a zona horaria local para obtener la fecha correcta
+        const fechaUTC = new Date(Date.UTC(year, month - 1, day));
+        const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        
+        // Convertir a zona horaria local usando toLocaleDateString
+        const fechaLocal = fechaUTC.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal }); // formato YYYY-MM-DD
+        console.log('🔍 [DEBUG] Array procesado:', {
+          year, month, day,
+          fechaUTC: fechaUTC.toISOString(),
+          zonaHorariaLocal,
+          fechaLocal
+        });
+        return fechaLocal;
       }
 
       console.error('Formato de fecha no reconocido:', fechaRemito, 'tipo:', typeof fechaRemito);
@@ -224,9 +248,47 @@ export default function Ingresos() {
 
   const gruposPorFecha = agruparRemitosPorFecha();
 
+  const formatearFechaConHoy = (fechaRemito: any, formato: 'corta' | 'completa' = 'corta') => {
+    const fechaRemitoString = obtenerFechaRemitoString(fechaRemito);
+    const fechaActual = obtenerFechaActual();
+    const esHoy = fechaRemitoString === fechaActual;
+    
+    console.log('🔍 [DEBUG] formatearFechaConHoy:', {
+      fechaRemito,
+      fechaRemitoString,
+      fechaActual,
+      esHoy,
+      formato
+    });
+    
+    if (esHoy) {
+      return 'Hoy';
+    }
+    
+    return formato === 'corta' ? formatearFechaCorta(fechaRemito) : formatearFecha(fechaRemito);
+  };
+
+  const formatearFechaGrupoConHoy = (fecha: string) => {
+    const fechaActual = obtenerFechaActual();
+    const esHoy = fecha === fechaActual;
+    console.log('🔍 [DEBUG] formatearFechaGrupoConHoy:', {
+      fecha,
+      fechaActual,
+      esHoy
+    });
+    return esHoy ? 'Hoy' : formatearFecha(fecha);
+  };
+
   const obtenerFechaActual = () => {
     const hoy = new Date();
-    return hoy.toISOString().split('T')[0];
+    const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const fechaActual = hoy.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal }); // format YYYY-MM-DD
+    console.log('🔍 [DEBUG] obtenerFechaActual:', {
+      hoy: hoy.toISOString(),
+      zonaHorariaLocal,
+      fechaActual
+    });
+    return fechaActual;
   };
 
   const alternarExpansionDia = (fecha: string) => {
@@ -578,7 +640,7 @@ export default function Ingresos() {
                           color: '#1e293b',
                           margin: 0
                         }}>
-                          {formatearFechaCorta(grupo.fecha)}
+                          {formatearFechaGrupoConHoy(grupo.fecha)}
                         </h3>
                         <p style={{
                           fontSize: '0.875rem',
@@ -667,7 +729,7 @@ export default function Ingresos() {
                                 color: '#64748b',
                                 flexWrap: 'wrap'
                               }}>
-                                <span>📅 {formatearFechaCorta(remito.fechaRemito)}</span>
+                                <span>📅 {formatearFechaConHoy(remito.fechaRemito, 'corta')}</span>
                                 <span>📦 <span style={{ 
                                   color: '#059669', 
                                   fontWeight: '700'
@@ -817,7 +879,7 @@ export default function Ingresos() {
                   margin: 0,
                   opacity: 0.9
                 }}>
-                  {formatearFechaCorta(remitoSeleccionado.fechaRemito)} • {remitoSeleccionado.detalles.length} productos
+                  {formatearFechaConHoy(remitoSeleccionado.fechaRemito, 'completa')} • {remitoSeleccionado.detalles.length} productos
                 </p>
               </div>
               <button
@@ -896,7 +958,7 @@ export default function Ingresos() {
                       color: '#1e293b',
                       margin: 0
                     }}>
-                      {formatearFechaCorta(remitoSeleccionado.fechaRemito)}
+                      {formatearFechaConHoy(remitoSeleccionado.fechaRemito, 'completa')}
                     </p>
                   </div>
                   <div>

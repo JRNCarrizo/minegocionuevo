@@ -9,9 +9,12 @@ public class PlanillaPedidoResponseDTO {
     private Long id;
     private String numeroPlanilla;
     private String observaciones;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaPlanilla;
     private Integer totalProductos;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaActualizacion;
     private List<DetallePlanillaPedidoResponseDTO> detalles;
 

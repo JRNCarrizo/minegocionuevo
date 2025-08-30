@@ -68,10 +68,16 @@ export default function MovimientosDia() {
   // Obtener fecha actual en formato YYYY-MM-DD usando zona horaria local
   const obtenerFechaActual = () => {
     const hoy = new Date();
-    const year = hoy.getFullYear();
-    const month = String(hoy.getMonth() + 1).padStart(2, '0');
-    const day = String(hoy.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const fechaActual = hoy.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal }); // formato YYYY-MM-DD
+    
+    console.log('🔍 [DEBUG] obtenerFechaActual:', {
+      hoy: hoy.toISOString(),
+      zonaHorariaLocal,
+      fechaActual
+    });
+    
+    return fechaActual;
   };
 
   useEffect(() => {
@@ -120,7 +126,7 @@ export default function MovimientosDia() {
       0: '#3b82f6', // Stock Inicial - Azul
       1: '#059669', // Ingresos - Verde
       2: '#f59e0b', // Retornos y Devoluciones - Amarillo/Naranja
-      3: '#ef4444', // Carga de Pedidos - Rojo
+              3: '#ef4444', // Carga de Planillas - Rojo
       4: '#7c3aed', // Roturas y Pérdidas - Púrpura
       5: '#8b5cf6'  // Balance Final - Púrpura
     };
@@ -174,7 +180,7 @@ export default function MovimientosDia() {
   const manejarNavegacionTeclado = (event: KeyboardEvent) => {
     if (!movimientos) return;
     
-    const totalCards = 6; // Stock Inicial, Ingresos, Retornos, Carga de Pedidos, Roturas, Balance Final
+    const totalCards = 6; // Stock Inicial, Ingresos, Retornos, Carga de Planillas, Roturas, Balance Final
     
     switch (event.key) {
       case 'Escape':
@@ -250,7 +256,11 @@ export default function MovimientosDia() {
   const cargarMovimientosDia = async (fecha: string, mostrarToast: boolean = true) => {
     try {
       setCargando(true);
-      console.log('🔍 Cargando movimientos para fecha:', fecha);
+      console.log('🔍 [DEBUG] cargarMovimientosDia:', {
+        fecha,
+        zonaHorariaLocal: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        fechaActual: obtenerFechaActual()
+      });
       
       const response = await ApiService.obtenerMovimientosDia(fecha);
       console.log('📊 Datos recibidos del backend:', response);
@@ -365,7 +375,7 @@ export default function MovimientosDia() {
   const obtenerTituloModal = (seccion: string) => {
     switch (seccion) {
       case 'stockInicial': return 'Stock Inicial';
-      case 'salidas': return 'Carga de Pedidos';
+              case 'salidas': return 'Carga de Planillas';
       case 'ingresos': return 'Ingresos';
       case 'roturas': return 'Roturas y Pérdidas';
       case 'devoluciones': return 'Retornos y Devoluciones';
@@ -976,7 +986,7 @@ export default function MovimientosDia() {
                </div>
              </div>
 
-             {/* Carga de Pedidos (Salidas) */}
+             {/* Carga de Planillas (Salidas) */}
              <div
                data-card-index="3"
                style={obtenerEstilosCard(3, indiceSeleccionado === 3)}
@@ -1027,7 +1037,7 @@ export default function MovimientosDia() {
                      color: '#1e293b',
                      margin: '0 0 0.5rem 0'
                    }}>
-                     Carga de Pedidos
+                     Carga de Planillas
                    </h3>
                    <p style={{
                      fontSize: '1.5rem',

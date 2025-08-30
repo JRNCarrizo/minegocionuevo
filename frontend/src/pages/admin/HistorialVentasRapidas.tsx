@@ -190,6 +190,88 @@ const HistorialVentasRapidas: React.FC = () => {
     }
   };
 
+  // Función para obtener fecha actual en formato YYYY-MM-DD usando zona horaria local
+  const obtenerFechaActual = () => {
+    const hoy = new Date();
+    const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const fechaActual = hoy.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal }); // formato YYYY-MM-DD
+    
+    console.log('🔍 [DEBUG] obtenerFechaActual:', {
+      hoy: hoy.toISOString(),
+      zonaHorariaLocal,
+      fechaActual
+    });
+    
+    return fechaActual;
+  };
+
+  // Función para formatear fecha con hora completa (sin "Hoy")
+  const formatearFechaConHora = (fecha: any) => {
+    try {
+      console.log('🔍 [DEBUG] formatearFechaConHora - entrada:', {
+        fecha,
+        tipo: typeof fecha,
+        incluyeZ: typeof fecha === 'string' ? fecha.includes('Z') : 'N/A'
+      });
+      
+      // Si la fecha viene como string sin 'Z', tratarla como fecha local
+      if (typeof fecha === 'string' && !fecha.includes('Z')) {
+        // Parsear como fecha local
+        const [datePart, timePart] = fecha.split('T');
+        const [year, month, day] = datePart.split('-');
+        const [hour, minute, second] = timePart.split(':');
+        
+        // Crear fecha local (los meses van de 0-11)
+        const localDate = new Date(
+          parseInt(year), 
+          parseInt(month) - 1, 
+          parseInt(day), 
+          parseInt(hour), 
+          parseInt(minute), 
+          parseInt(second || '0')
+        );
+        
+        console.log('🔍 [DEBUG] formatearFechaConHora (fecha local):', {
+          fecha,
+          localDate: localDate.toISOString(),
+          zonaHorariaLocal: Intl.DateTimeFormat().resolvedOptions().timeZone
+        });
+        
+        return localDate.toLocaleString('es-AR', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          hour12: false 
+        });
+      }
+      
+      // Para otros casos, usar el método estándar
+      const fechaObj = new Date(fecha);
+      if (isNaN(fechaObj.getTime())) {
+        return 'Fecha inválida';
+      }
+      
+      console.log('🔍 [DEBUG] formatearFechaConHora (estándar):', {
+        fecha,
+        fechaObj: fechaObj.toISOString()
+      });
+      
+      return fechaObj.toLocaleString('es-AR', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+      });
+    } catch (error) {
+      console.error('❌ Error en formatearFechaConHora:', error);
+      return 'Fecha inválida';
+    }
+  };
+
   const formatearFecha = (fecha: any) => {
     console.log('🔍 Formateando fecha:', fecha, 'tipo:', typeof fecha);
     
@@ -754,7 +836,7 @@ const HistorialVentasRapidas: React.FC = () => {
                           >
                             <td style={{ padding: '1rem' }}>{venta.numeroComprobante}</td>
                             <td style={{ padding: '1rem' }}>{venta.clienteNombre}</td>
-                            <td style={{ padding: '1rem' }}>{formatearFecha(venta.fechaVenta)}</td>
+                            <td style={{ padding: '1rem' }}>{formatearFechaConHora(venta.fechaVenta)}</td>
                             <td style={{ padding: '1rem' }}>
                               <span style={{
                                 padding: '0.25rem 0.75rem',
@@ -1094,7 +1176,7 @@ const HistorialVentasRapidas: React.FC = () => {
                 </div>
                 <div>
                   <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Fecha</div>
-                  <div style={{ fontWeight: '600' }}>{formatearFecha(selectedVenta.fechaVenta)}</div>
+                  <div style={{ fontWeight: '600' }}>{formatearFechaConHora(selectedVenta.fechaVenta)}</div>
                 </div>
                 <div>
                   <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Método de Pago</div>

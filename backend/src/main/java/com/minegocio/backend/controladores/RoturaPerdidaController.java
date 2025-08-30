@@ -232,4 +232,32 @@ public class RoturaPerdidaController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    /**
+     * Exportar roturas y pérdidas del día actual a Excel
+     */
+    @GetMapping("/exportar/dia")
+    public ResponseEntity<byte[]> exportarRoturasPerdidasDelDia(Authentication authentication) {
+        try {
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long empresaId = usuarioPrincipal.getEmpresaId();
+            LocalDate fechaActual = LocalDate.now();
+            
+            System.out.println("📊 [EXPORTAR DIA] Exportando roturas y pérdidas del día para empresa ID: " + empresaId);
+            System.out.println("📊 [EXPORTAR DIA] Fecha: " + fechaActual);
+            
+            byte[] excelBytes = roturaPerdidaService.exportarRoturasPerdidasDelDiaAExcel(empresaId, fechaActual);
+            
+            System.out.println("✅ [EXPORTAR DIA] Reporte del día exportado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+            
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    .header("Content-Disposition", "attachment; filename=\"Roturas_Perdidas_Dia_" + fechaActual + ".xlsx\"")
+                    .body(excelBytes);
+        } catch (Exception e) {
+            System.out.println("❌ [EXPORTAR DIA] Error al exportar roturas y pérdidas del día: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

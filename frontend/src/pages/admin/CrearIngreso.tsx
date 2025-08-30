@@ -44,6 +44,7 @@ export default function CrearIngreso() {
   const [productoSeleccionado, setProductoSeleccionado] = useState(-1);
   const [inputBusqueda, setInputBusqueda] = useState('');
   const [mostrarScanner, setMostrarScanner] = useState(false);
+  const [mostrarScannerModal, setMostrarScannerModal] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [mostrarCampoCantidad, setMostrarCampoCantidad] = useState(false);
   const [cantidadTemporal, setCantidadTemporal] = useState(0);
@@ -834,19 +835,22 @@ export default function CrearIngreso() {
       const minutosLocal = ahora.getMinutes();
       const segundosLocal = ahora.getSeconds();
       
-      // Crear fecha directamente en UTC usando Date.UTC()
-      // Esto evita problemas de conversión de zona horaria
-      const fechaUTC = new Date(Date.UTC(
+      // Obtener la zona horaria del usuario
+      const zonaHorariaUsuario = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      console.log('🌍 Zona horaria del usuario:', zonaHorariaUsuario);
+      
+      // Crear fecha en la zona horaria local del usuario
+      const fechaLocal = new Date(
         fechaSeleccionada.getFullYear(),
         fechaSeleccionada.getMonth(),
         fechaSeleccionada.getDate(),
         horaLocal,
         minutosLocal,
         segundosLocal
-      ));
+      );
       
-      // Formatear como ISO string para enviar al backend
-      const fechaFormateada = fechaUTC.toISOString();
+      // Formatear como ISO string pero SIN la Z al final para que el backend la trate como fecha local
+      const fechaFormateada = fechaLocal.toISOString().replace('Z', '');
       
       // Preparar los datos del remito para la API
       const remitoData = {
@@ -860,17 +864,18 @@ export default function CrearIngreso() {
           descripcion: detalle.descripcion,
           cantidad: detalle.cantidad,
           observaciones: detalle.observaciones
-        }))
+        })),
+        zonaHoraria: zonaHorariaUsuario
       };
 
-      console.log('📋 Fecha seleccionada:', fechaRemito);
-      console.log('📋 Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
-      console.log('📋 Fecha creada en UTC:', fechaUTC.toString());
-      console.log('📋 Fecha formateada en UTC:', fechaFormateada);
-      console.log('📋 Fecha actual del sistema:', new Date().toISOString());
-      console.log('📋 Zona horaria del navegador:', Intl.DateTimeFormat().resolvedOptions().timeZone);
-      console.log('📋 Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
-      console.log('📋 Enviando remito:', remitoData);
+      console.log('📋 [DEBUG] Fecha seleccionada:', fechaRemito);
+      console.log('📋 [DEBUG] Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
+      console.log('📋 [DEBUG] Fecha local creada:', fechaLocal.toString());
+      console.log('📋 [DEBUG] Fecha formateada (sin Z):', fechaFormateada);
+      console.log('📋 [DEBUG] Zona horaria del usuario:', zonaHorariaUsuario);
+      console.log('📋 [DEBUG] Fecha actual del sistema:', new Date().toISOString());
+      console.log('📋 [DEBUG] Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
+      console.log('📋 [DEBUG] Enviando remito:', remitoData);
 
       // Guardar remito usando la API
       const response = await ApiService.crearRemitoIngreso(remitoData);
@@ -1789,6 +1794,17 @@ export default function CrearIngreso() {
          onClose={() => setMostrarScanner(false)}
        />
 
+       {/* Scanner de código de barras para el modal */}
+       <BarcodeScanner
+         isOpen={mostrarScannerModal}
+         onScan={(codigo) => {
+           setNuevoProducto(prev => ({ ...prev, codigoBarras: codigo }));
+           setMostrarScannerModal(false);
+         }}
+         onClose={() => setMostrarScannerModal(false)}
+         zIndex={10001}
+       />
+
        {/* Modal de Crear Producto */}
        {mostrarModalCrearProducto && (
          <div style={{
@@ -2014,19 +2030,45 @@ export default function CrearIngreso() {
                  }}>
                    📊 Código de Barras
                  </label>
-                 <input
-                   type="text"
-                   value={nuevoProducto.codigoBarras}
-                   onChange={(e) => setNuevoProducto(prev => ({ ...prev, codigoBarras: e.target.value }))}
-                   placeholder="Código de barras"
-                   style={{
-                     width: '100%',
-                     padding: '0.75rem',
-                     border: '2px solid #e2e8f0',
-                     borderRadius: '0.5rem',
-                     fontSize: '0.875rem'
-                   }}
-                 />
+                 <div style={{ position: 'relative' }}>
+                   <input
+                     type="text"
+                     value={nuevoProducto.codigoBarras}
+                     onChange={(e) => setNuevoProducto(prev => ({ ...prev, codigoBarras: e.target.value }))}
+                     placeholder="Código de barras"
+                     style={{
+                       width: '100%',
+                       padding: '0.75rem',
+                       paddingRight: '3rem',
+                       border: '2px solid #e2e8f0',
+                       borderRadius: '0.5rem',
+                       fontSize: '0.875rem'
+                     }}
+                   />
+                   <button
+                     type="button"
+                     onClick={() => setMostrarScannerModal(true)}
+                     style={{
+                       position: 'absolute',
+                       right: '0.5rem',
+                       top: '50%',
+                       transform: 'translateY(-50%)',
+                       background: '#3b82f6',
+                       color: 'white',
+                       border: 'none',
+                       borderRadius: '0.25rem',
+                       padding: '0.5rem',
+                       cursor: 'pointer',
+                       fontSize: '0.875rem',
+                       display: 'flex',
+                       alignItems: 'center',
+                       justifyContent: 'center'
+                     }}
+                     title="Escanear código de barras"
+                   >
+                     📷
+                   </button>
+                 </div>
                </div>
 
                                {/* Categoría */}

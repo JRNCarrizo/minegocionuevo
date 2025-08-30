@@ -7,7 +7,7 @@ import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import { formatearFecha, formatearFechaCorta, formatearFechaConHora } from '../../utils/dateUtils';
 
-interface PlanillaPedido {
+interface PlanillaDevolucion {
   id: number;
   numeroPlanilla: string;
   fechaPlanilla: string;
@@ -15,16 +15,17 @@ interface PlanillaPedido {
   totalProductos: number;
   fechaCreacion: string;
   fechaActualizacion: string;
-  detalles: DetallePlanillaPedido[];
+  detalles: DetallePlanillaDevolucion[];
 }
 
-interface DetallePlanillaPedido {
+interface DetallePlanillaDevolucion {
   id: number;
   productoId?: number;
   codigoPersonalizado?: string;
   descripcion: string;
   cantidad: number;
   observaciones?: string;
+  estadoProducto?: string;
   fechaCreacion: string;
 }
 
@@ -33,20 +34,28 @@ export default function DescargaDevoluciones() {
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
   
-  const [planillas, setPlanillas] = useState<PlanillaPedido[]>([]);
+  const [planillas, setPlanillas] = useState<PlanillaDevolucion[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [planillaSeleccionada, setPlanillaSeleccionada] = useState<PlanillaPedido | null>(null);
+  const [planillaSeleccionada, setPlanillaSeleccionada] = useState<PlanillaDevolucion | null>(null);
   const [filtroFecha, setFiltroFecha] = useState('');
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
   const [diasExpandidos, setDiasExpandidos] = useState<Set<string>>(new Set());
 
   // Función helper para convertir fechaPlanilla a string de fecha
   const obtenerFechaPlanillaString = (fechaPlanilla: any): string => {
+    console.log('🔍 [DEBUG] obtenerFechaPlanillaString - Input:', {
+      fechaPlanilla,
+      tipo: typeof fechaPlanilla,
+      esArray: Array.isArray(fechaPlanilla)
+    });
+    
     try {
       // Si es null o undefined
       if (fechaPlanilla == null) {
         return 'Fecha no disponible';
       }
+
+      const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       // Si es un string
       if (typeof fechaPlanilla === 'string') {
@@ -58,6 +67,11 @@ export default function DescargaDevoluciones() {
         if (fechaPlanilla.includes('T')) {
           const partes = fechaPlanilla.split('T');
           if (partes.length >= 1) {
+            // Convertir de UTC a zona horaria local
+            const fechaUTC = new Date(fechaPlanilla);
+            if (!isNaN(fechaUTC.getTime())) {
+              return fechaUTC.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal });
+            }
             return partes[0];
           }
         }
@@ -65,7 +79,7 @@ export default function DescargaDevoluciones() {
         if (!Array.isArray(fechaPlanilla)) {
           const fechaObj = new Date(fechaPlanilla);
           if (!isNaN(fechaObj.getTime())) {
-            return fechaObj.toISOString().split('T')[0];
+            return fechaObj.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal });
           }
         }
       }
@@ -74,7 +88,7 @@ export default function DescargaDevoluciones() {
       if (fechaPlanilla instanceof Date || typeof fechaPlanilla === 'number') {
         const fechaObj = new Date(fechaPlanilla);
         if (!isNaN(fechaObj.getTime())) {
-          return fechaObj.toISOString().split('T')[0];
+          return fechaObj.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal });
         }
       }
 
@@ -84,7 +98,6 @@ export default function DescargaDevoluciones() {
         const [year, month, day] = fechaPlanilla;
         // Crear fecha UTC y convertir a zona horaria local para obtener la fecha correcta
         const fechaUTC = new Date(Date.UTC(year, month - 1, day));
-        const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
         
         // Convertir a zona horaria local usando toLocaleDateString
         const fechaLocal = fechaUTC.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal }); // formato YYYY-MM-DD
@@ -211,7 +224,7 @@ export default function DescargaDevoluciones() {
 
   const agruparPlanillasPorFecha = () => {
     const planillasFiltradas = filtrarPlanillas();
-    const grupos: { [fecha: string]: PlanillaPedido[] } = {};
+    const grupos: { [fecha: string]: PlanillaDevolucion[] } = {};
     
     planillasFiltradas.forEach(planilla => {
       // Extraer solo la parte de la fecha (YYYY-MM-DD) del LocalDateTime
@@ -234,7 +247,45 @@ export default function DescargaDevoluciones() {
 
   const obtenerFechaActual = () => {
     const hoy = new Date();
-    return hoy.toISOString().split('T')[0];
+    const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const fechaActual = hoy.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal }); // formato YYYY-MM-DD
+    console.log('🔍 [DEBUG] obtenerFechaActual:', {
+      hoy: hoy.toISOString(),
+      zonaHorariaLocal,
+      fechaActual
+    });
+    return fechaActual;
+  };
+
+  const formatearFechaConHoy = (fechaPlanilla: any, formato: 'corta' | 'completa' = 'corta') => {
+    const fechaPlanillaString = obtenerFechaPlanillaString(fechaPlanilla);
+    const fechaActual = obtenerFechaActual();
+    const esHoy = fechaPlanillaString === fechaActual;
+    
+    console.log('🔍 [DEBUG] formatearFechaConHoy:', {
+      fechaPlanilla,
+      fechaPlanillaString,
+      fechaActual,
+      esHoy,
+      formato
+    });
+    
+    if (esHoy) {
+      return 'Hoy';
+    }
+    
+    return formato === 'corta' ? formatearFechaCorta(fechaPlanilla) : formatearFecha(fechaPlanilla);
+  };
+
+  const formatearFechaGrupoConHoy = (fecha: string) => {
+    const fechaActual = obtenerFechaActual();
+    const esHoy = fecha === fechaActual;
+    console.log('🔍 [DEBUG] formatearFechaGrupoConHoy:', {
+      fecha,
+      fechaActual,
+      esHoy
+    });
+    return esHoy ? 'Hoy' : formatearFecha(fecha);
   };
 
   const estaDiaExpandido = (fecha: string) => {
@@ -264,9 +315,9 @@ export default function DescargaDevoluciones() {
     });
   };
 
-  const exportarPlanilla = async (planilla: PlanillaPedido) => {
+  const exportarPlanilla = async (planilla: PlanillaDevolucion) => {
     try {
-      const blob = await ApiService.exportarPlanillaPedido(planilla.id);
+      const blob = await ApiService.exportarPlanillaDevolucion(planilla.id);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -562,7 +613,7 @@ export default function DescargaDevoluciones() {
                       <span style={{ fontSize: '1.25rem' }}>📅</span>
                       <div>
                         <div style={{ fontWeight: '600', fontSize: '1.125rem' }}>
-                          {formatearFecha(grupo.fecha)}
+                          {formatearFechaGrupoConHoy(grupo.fecha)}
                         </div>
                         <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
                           {grupo.planillas.length} planillas • {grupo.planillas.reduce((total, p) => total + p.totalProductos, 0)} productos
@@ -621,7 +672,7 @@ export default function DescargaDevoluciones() {
                                   fontSize: '0.75rem',
                                   fontWeight: '600'
                                 }}>
-                                  {formatearFechaCorta(planilla.fechaPlanilla)}
+                                  {formatearFechaConHoy(planilla.fechaPlanilla, 'corta')}
                                 </span>
                               </div>
                               
@@ -778,7 +829,7 @@ export default function DescargaDevoluciones() {
                   color: '#64748b',
                   margin: 0
                 }}>
-                  {planillaSeleccionada.numeroPlanilla} • {formatearFecha(planillaSeleccionada.fechaPlanilla)}
+                  {planillaSeleccionada.numeroPlanilla} • {formatearFechaConHoy(planillaSeleccionada.fechaPlanilla, 'completa')}
                 </p>
               </div>
               <button
@@ -837,7 +888,7 @@ export default function DescargaDevoluciones() {
                   color: '#1e293b',
                   margin: 0
                 }}>
-                  {formatearFecha(planillaSeleccionada.fechaPlanilla)}
+                  {formatearFechaConHoy(planillaSeleccionada.fechaPlanilla, 'completa')}
                 </p>
               </div>
               <div>
@@ -966,6 +1017,26 @@ export default function DescargaDevoluciones() {
                           }}>
                             unidades
                           </div>
+                          {detalle.estadoProducto && (
+                            <div style={{
+                              marginTop: '0.25rem',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '0.25rem',
+                              fontSize: '0.7rem',
+                              fontWeight: '600',
+                              color: 'white',
+                              background: detalle.estadoProducto === 'BUEN_ESTADO' ? '#10b981' :
+                                         detalle.estadoProducto === 'ROTO' ? '#ef4444' :
+                                         detalle.estadoProducto === 'MAL_ESTADO' ? '#f59e0b' :
+                                         detalle.estadoProducto === 'DEFECTUOSO' ? '#dc2626' : '#6b7280',
+                              textAlign: 'center'
+                            }}>
+                              {detalle.estadoProducto === 'BUEN_ESTADO' ? 'Buen Estado' :
+                               detalle.estadoProducto === 'ROTO' ? 'Roto' :
+                               detalle.estadoProducto === 'MAL_ESTADO' ? 'Mal Estado' :
+                               detalle.estadoProducto === 'DEFECTUOSO' ? 'Defectuoso' : detalle.estadoProducto}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

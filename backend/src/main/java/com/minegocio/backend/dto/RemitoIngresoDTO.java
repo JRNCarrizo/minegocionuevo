@@ -9,25 +9,25 @@ public class RemitoIngresoDTO {
     private Long id;
     private String numeroRemito;
     
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-    private LocalDateTime fechaRemito;
+    private String fechaRemito;
     
     private String observaciones;
     private Integer totalProductos;
     
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;
     
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaActualizacion;
     private Long empresaId;
     private Long usuarioId;
     private List<DetalleRemitoIngresoDTO> detalles;
+    private String zonaHoraria;
     
     // Constructores
     public RemitoIngresoDTO() {}
     
-    public RemitoIngresoDTO(Long id, String numeroRemito, LocalDateTime fechaRemito, String observaciones,
+    public RemitoIngresoDTO(Long id, String numeroRemito, String fechaRemito, String observaciones,
                             Integer totalProductos, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion,
                             Long empresaId, Long usuarioId, List<DetalleRemitoIngresoDTO> detalles) {
         this.id = id;
@@ -59,11 +59,11 @@ public class RemitoIngresoDTO {
         this.numeroRemito = numeroRemito;
     }
     
-    public LocalDateTime getFechaRemito() {
+    public String getFechaRemito() {
         return fechaRemito;
     }
     
-    public void setFechaRemito(LocalDateTime fechaRemito) {
+    public void setFechaRemito(String fechaRemito) {
         this.fechaRemito = fechaRemito;
     }
     
@@ -121,5 +121,13 @@ public class RemitoIngresoDTO {
     
     public void setDetalles(List<DetalleRemitoIngresoDTO> detalles) {
         this.detalles = detalles;
+    }
+    
+    public String getZonaHoraria() {
+        return zonaHoraria;
+    }
+    
+    public void setZonaHoraria(String zonaHoraria) {
+        this.zonaHoraria = zonaHoraria;
     }
 }

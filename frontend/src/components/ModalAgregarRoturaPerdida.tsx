@@ -302,7 +302,11 @@ export default function ModalAgregarRoturaPerdida({
       
 
       
-      // Crear fecha con hora local, igual que en las planillas
+      // Obtener la zona horaria del usuario
+      const zonaHorariaUsuario = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      console.log('🌍 Zona horaria del usuario:', zonaHorariaUsuario);
+      
+      // Crear fecha con hora local del usuario
       const fechaSeleccionada = new Date(fecha + 'T00:00:00');
       const ahora = new Date();
       
@@ -311,27 +315,23 @@ export default function ModalAgregarRoturaPerdida({
       const minutosLocal = ahora.getMinutes();
       const segundosLocal = ahora.getSeconds();
       
-      // Crear fecha directamente en UTC usando Date.UTC()
-      // Esto evita problemas de conversión de zona horaria
-      const fechaUTC = new Date(Date.UTC(
+      // Crear fecha en la zona horaria local del usuario
+      const fechaLocal = new Date(
         fechaSeleccionada.getFullYear(),
         fechaSeleccionada.getMonth(),
         fechaSeleccionada.getDate(),
         horaLocal,
         minutosLocal,
         segundosLocal
-      ));
+      );
       
       // Formatear como ISO string para enviar al backend
-      const fechaFormateada = fechaUTC.toISOString();
+      const fechaFormateada = fechaLocal.toISOString();
       
       console.log('📋 Fecha seleccionada:', fecha);
       console.log('📋 Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
-      console.log('📋 Fecha creada en UTC:', fechaUTC.toString());
+      console.log('📋 Fecha local creada:', fechaLocal.toString());
       console.log('📋 Fecha formateada en UTC:', fechaFormateada);
-      console.log('📋 Fecha actual del sistema:', new Date().toISOString());
-      console.log('📋 Zona horaria del navegador:', Intl.DateTimeFormat().resolvedOptions().timeZone);
-      console.log('📋 Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
       
       const datosRoturaPerdida = {
         fecha: fechaFormateada,
@@ -339,7 +339,8 @@ export default function ModalAgregarRoturaPerdida({
         observaciones: observaciones.trim() || null,
         productoId: productoFinalSeleccionado?.id || null,
         descripcionProducto: !productoFinalSeleccionado ? descripcionProducto.trim() : null,
-        codigoPersonalizado: !productoFinalSeleccionado ? codigoPersonalizado.trim() : null
+        codigoPersonalizado: !productoFinalSeleccionado ? codigoPersonalizado.trim() : null,
+        zonaHoraria: zonaHorariaUsuario
       };
 
       await ApiService.crearRoturaPerdida(datosRoturaPerdida);

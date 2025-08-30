@@ -25,6 +25,9 @@ public class RoturaPerdidaDTO {
     // Código personalizado del producto
     private String codigoPersonalizado;
 
+    // Zona horaria del usuario (ej: "America/Argentina/Buenos_Aires", "UTC", etc.)
+    private String zonaHoraria;
+
     // Constructores
     public RoturaPerdidaDTO() {}
 
@@ -80,5 +83,13 @@ public class RoturaPerdidaDTO {
 
     public void setCodigoPersonalizado(String codigoPersonalizado) {
         this.codigoPersonalizado = codigoPersonalizado;
+    }
+
+    public String getZonaHoraria() {
+        return zonaHoraria;
+    }
+
+    public void setZonaHoraria(String zonaHoraria) {
+        this.zonaHoraria = zonaHoraria;
     }
 }

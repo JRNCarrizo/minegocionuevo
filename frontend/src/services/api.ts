@@ -122,6 +122,7 @@ class ApiService {
            /\/notificaciones\//.test(config.url) ||
            /\/historial-carga-productos\//.test(config.url) ||
            /\/planillas-pedidos\//.test(config.url) ||
+           /\/devoluciones\//.test(config.url) ||
            /\/roturas-perdidas\//.test(config.url))
         ) {
           const tokenAdmin = localStorage.getItem('token');
@@ -1750,6 +1751,14 @@ class ApiService {
         alert('Error de autorización. Por favor, verifique que esté logueado con un rol de administrador.');
       }
       
+      // Si es un error 400, verificar si es un mensaje específico del backend
+      if (error.response?.status === 400 && error.response?.data?.error) {
+        const errorMessage = error.response.data.error;
+        if (errorMessage.includes('número de planilla ya existe')) {
+          throw new Error('El número de planilla ya existe. Por favor, use un número diferente.');
+        }
+      }
+      
       throw error;
     }
   }
@@ -1840,12 +1849,20 @@ class ApiService {
         alert('Error de autorización. Por favor, verifique que esté logueado con un rol de administrador.');
       }
       
+      // Si es un error 400, verificar si es un mensaje específico del backend
+      if (error.response?.status === 400 && error.response?.data?.error) {
+        const errorMessage = error.response.data.error;
+        if (errorMessage.includes('número de planilla ya existe')) {
+          throw new Error('El número de planilla ya existe. Por favor, use un número diferente.');
+        }
+      }
+      
       throw error;
     }
   }
 
   // Obtener planillas de devolución
-  async obtenerPlanillasDevolucion(): Promise<any[]> {
+  async obtenerPlanillasDevolucion(): Promise<any> {
     try {
       const response = await this.api.get('/devoluciones');
       console.log('🔍 ApiService - Respuesta completa:', response);
@@ -1910,6 +1927,32 @@ class ApiService {
       return response.data;
     } catch (error: any) {
       console.error('❌ Error al exportar planilla de pedidos:', error);
+      throw error;
+    }
+  }
+
+  // Exportar planilla de devolución
+  async exportarPlanillaDevolucion(id: number): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/devoluciones/${id}/exportar`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar planilla de devolución:', error);
+      throw error;
+    }
+  }
+
+  // Exportar roturas y pérdidas del día
+  async exportarRoturasPerdidasDelDia(): Promise<Blob> {
+    try {
+      const response = await this.api.get('/roturas-perdidas/exportar/dia', {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar roturas y pérdidas del día:', error);
       throw error;
     }
   }

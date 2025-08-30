@@ -1,5 +1,6 @@
 package com.minegocio.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -50,7 +51,11 @@ public class ClienteDTO {
     // Campos para estadísticas de compras
     private Integer totalPedidos;
     private Double totalCompras;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaActualizacion;
 
     // Constructores

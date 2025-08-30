@@ -21,7 +21,7 @@ public class PlanillaPedidoDTO {
     private String observaciones;
     
     @NotNull(message = "La fecha de la planilla es obligatoria")
-    private LocalDateTime fechaPlanilla;
+    private String fechaPlanilla;
     
     @Min(value = 0, message = "El total de productos debe ser mayor o igual a 0")
     private Integer totalProductos;
@@ -34,11 +34,13 @@ public class PlanillaPedidoDTO {
     private Long usuarioId;
     
     private List<DetallePlanillaPedidoDTO> detalles;
+    
+    private String zonaHoraria;
 
     // Constructores
     public PlanillaPedidoDTO() {}
 
-    public PlanillaPedidoDTO(String numeroPlanilla, LocalDateTime fechaPlanilla, String observaciones) {
+    public PlanillaPedidoDTO(String numeroPlanilla, String fechaPlanilla, String observaciones) {
         this.numeroPlanilla = numeroPlanilla;
         this.fechaPlanilla = fechaPlanilla;
         this.observaciones = observaciones;
@@ -54,8 +56,8 @@ public class PlanillaPedidoDTO {
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
 
-    public LocalDateTime getFechaPlanilla() { return fechaPlanilla; }
-    public void setFechaPlanilla(LocalDateTime fechaPlanilla) { this.fechaPlanilla = fechaPlanilla; }
+    public String getFechaPlanilla() { return fechaPlanilla; }
+    public void setFechaPlanilla(String fechaPlanilla) { this.fechaPlanilla = fechaPlanilla; }
 
     public Integer getTotalProductos() { return totalProductos; }
     public void setTotalProductos(Integer totalProductos) { this.totalProductos = totalProductos; }
@@ -74,4 +76,7 @@ public class PlanillaPedidoDTO {
 
     public List<DetallePlanillaPedidoDTO> getDetalles() { return detalles; }
     public void setDetalles(List<DetallePlanillaPedidoDTO> detalles) { this.detalles = detalles; }
+    
+    public String getZonaHoraria() { return zonaHoraria; }
+    public void setZonaHoraria(String zonaHoraria) { this.zonaHoraria = zonaHoraria; }
 }

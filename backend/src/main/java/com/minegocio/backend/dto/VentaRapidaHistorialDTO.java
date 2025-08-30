@@ -1,5 +1,6 @@
 package com.minegocio.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,7 +19,9 @@ public class VentaRapidaHistorialDTO {
     private BigDecimal vuelto;
     private String observaciones;
     private String numeroComprobante;
-    private LocalDateTime fechaVenta;
+    
+    private String fechaVenta;
+    
     private List<DetalleVentaRapidaHistorialDTO> detalles;
 
     // Constructores
@@ -27,7 +30,7 @@ public class VentaRapidaHistorialDTO {
     public VentaRapidaHistorialDTO(Long id, String clienteNombre, String clienteEmail, 
                                   BigDecimal total, BigDecimal subtotal, String metodoPago,
                                   BigDecimal montoRecibido, BigDecimal vuelto, String observaciones,
-                                  String numeroComprobante, LocalDateTime fechaVenta) {
+                                  String numeroComprobante, String fechaVenta) {
         this.id = id;
         this.clienteNombre = clienteNombre;
         this.clienteEmail = clienteEmail;
@@ -72,8 +75,8 @@ public class VentaRapidaHistorialDTO {
     public String getNumeroComprobante() { return numeroComprobante; }
     public void setNumeroComprobante(String numeroComprobante) { this.numeroComprobante = numeroComprobante; }
 
-    public LocalDateTime getFechaVenta() { return fechaVenta; }
-    public void setFechaVenta(LocalDateTime fechaVenta) { this.fechaVenta = fechaVenta; }
+    public String getFechaVenta() { return fechaVenta; }
+    public void setFechaVenta(String fechaVenta) { this.fechaVenta = fechaVenta; }
 
     public List<DetalleVentaRapidaHistorialDTO> getDetalles() { return detalles; }
     public void setDetalles(List<DetalleVentaRapidaHistorialDTO> detalles) { this.detalles = detalles; }

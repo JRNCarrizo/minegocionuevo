@@ -20,6 +20,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,16 +58,26 @@ public class PlanillaPedidoService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrada"));
 
         System.out.println("📋 [SERVICE] Fecha recibida en DTO: " + dto.getFechaPlanilla());
+        System.out.println("📋 [SERVICE] Zona horaria del usuario: " + dto.getZonaHoraria());
         System.out.println("📋 [SERVICE] Fecha actual del servidor: " + java.time.LocalDateTime.now());
         System.out.println("📋 [SERVICE] Zona horaria del servidor: " + java.time.ZoneId.systemDefault());
-        System.out.println("📋 [SERVICE] Comparación de fechas:");
-        System.out.println("   - Fecha DTO: " + dto.getFechaPlanilla());
-        System.out.println("   - Fecha actual: " + java.time.LocalDateTime.now());
-        System.out.println("   - Son iguales: " + dto.getFechaPlanilla().equals(java.time.LocalDateTime.now()));
         
-        // Asegurar que la fecha se procese correctamente en UTC
-        LocalDateTime fechaPlanilla = dto.getFechaPlanilla();
-        if (fechaPlanilla == null) {
+        // Guardar la fecha exacta que envía el usuario (sin convertir a UTC)
+        LocalDateTime fechaPlanilla;
+        if (dto.getFechaPlanilla() != null) {
+            // Parsear la fecha ISO string a LocalDateTime
+            String fechaString = dto.getFechaPlanilla();
+            System.out.println("📋 [SERVICE] Fecha string original: " + fechaString);
+            
+            if (fechaString.endsWith("Z")) {
+                fechaString = fechaString.substring(0, fechaString.length() - 1);
+                System.out.println("📋 [SERVICE] Fecha string después de remover Z: " + fechaString);
+            }
+            
+            fechaPlanilla = LocalDateTime.parse(fechaString);
+            System.out.println("📋 [SERVICE] Fecha parseada como LocalDateTime: " + fechaPlanilla);
+            System.out.println("📋 [SERVICE] Guardando fecha exacta del usuario (sin conversión UTC)");
+        } else {
             fechaPlanilla = LocalDateTime.now();
             System.out.println("📋 [SERVICE] Fecha nula, usando fecha actual: " + fechaPlanilla);
         }
@@ -517,5 +529,54 @@ public class PlanillaPedidoService {
         dto.setFechaCreacion(detalle.getFechaCreacion());
         
         return dto;
+    }
+    
+    /**
+     * Convierte una fecha de la zona horaria del usuario a UTC
+     */
+    private LocalDateTime convertirFechaUsuarioAUTC(LocalDateTime fechaUsuario, String zonaHorariaUsuario) {
+        if (fechaUsuario == null || zonaHorariaUsuario == null) {
+            System.out.println("⚠️ [DEBUG] Fecha o zona horaria nula en convertirFechaUsuarioAUTC");
+            return fechaUsuario;
+        }
+        
+        try {
+            ZoneId zonaUsuario = ZoneId.of(zonaHorariaUsuario);
+            ZonedDateTime fechaZonada = fechaUsuario.atZone(zonaUsuario);
+            ZonedDateTime fechaUTC = fechaZonada.withZoneSameInstant(ZoneId.of("UTC"));
+            LocalDateTime resultado = fechaUTC.toLocalDateTime();
+            
+            System.out.println("🔍 [DEBUG] convertirFechaUsuarioAUTC:");
+            System.out.println("  - fechaUsuario: " + fechaUsuario);
+            System.out.println("  - zonaHorariaUsuario: " + zonaHorariaUsuario);
+            System.out.println("  - zonaUsuario: " + zonaUsuario);
+            System.out.println("  - fechaZonada: " + fechaZonada);
+            System.out.println("  - fechaUTC: " + fechaUTC);
+            System.out.println("  - resultado: " + resultado);
+            
+            return resultado;
+        } catch (Exception e) {
+            System.out.println("⚠️ Error convirtiendo fecha de usuario a UTC: " + e.getMessage());
+            return fechaUsuario;
+        }
+    }
+    
+    /**
+     * Convierte una fecha UTC a la zona horaria del usuario
+     */
+    private LocalDateTime convertirFechaUTCAUsuario(LocalDateTime fechaUTC, String zonaHorariaUsuario) {
+        if (fechaUTC == null || zonaHorariaUsuario == null) {
+            return fechaUTC;
+        }
+        
+        try {
+            ZoneId zonaUsuario = ZoneId.of(zonaHorariaUsuario);
+            ZonedDateTime fechaZonadaUTC = fechaUTC.atZone(ZoneId.of("UTC"));
+            ZonedDateTime fechaUsuario = fechaZonadaUTC.withZoneSameInstant(zonaUsuario);
+            return fechaUsuario.toLocalDateTime();
+        } catch (Exception e) {
+            System.out.println("⚠️ Error convirtiendo fecha UTC a usuario: " + e.getMessage());
+            return fechaUTC;
+        }
     }
 }

@@ -22,7 +22,7 @@ public class PlanillaDevolucion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "numero_planilla", unique = true, nullable = false, length = 8)
+    @Column(name = "numero_planilla", unique = true, nullable = true, length = 8)
     private String numeroPlanilla;
 
     @Column(length = 1000)
@@ -70,7 +70,7 @@ public class PlanillaDevolucion {
         this.empresa = empresa;
         this.usuario = usuario;
         this.fechaPlanilla = fechaPlanilla;
-        this.numeroPlanilla = generarNumeroPlanilla();
+        // No generar número de planilla automáticamente - será opcional
         System.out.println("📋 [ENTITY] Fecha asignada a la entidad: " + this.fechaPlanilla);
     }
 

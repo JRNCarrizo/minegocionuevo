@@ -33,6 +33,11 @@ public class DetallePlanillaDevolucion {
     @Column(length = 1000)
     private String observaciones;
 
+    // Estado del producto devuelto (opcional para compatibilidad)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_producto", nullable = true)
+    private EstadoProducto estadoProducto;
+
     // Relación con la planilla de devolución
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "planilla_devolucion_id", nullable = false)
@@ -83,4 +88,31 @@ public class DetallePlanillaDevolucion {
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+
+    public EstadoProducto getEstadoProducto() { 
+        return estadoProducto != null ? estadoProducto : EstadoProducto.BUEN_ESTADO; 
+    }
+    public void setEstadoProducto(EstadoProducto estadoProducto) { 
+        this.estadoProducto = estadoProducto != null ? estadoProducto : EstadoProducto.BUEN_ESTADO; 
+    }
+
+    /**
+     * Enum para el estado del producto devuelto
+     */
+    public enum EstadoProducto {
+        BUEN_ESTADO("Buen Estado"),
+        ROTO("Roto"),
+        MAL_ESTADO("Mal Estado"),
+        DEFECTUOSO("Defectuoso");
+
+        private final String descripcion;
+
+        EstadoProducto(String descripcion) {
+            this.descripcion = descripcion;
+        }
+
+        public String getDescripcion() {
+            return descripcion;
+        }
+    }
 }

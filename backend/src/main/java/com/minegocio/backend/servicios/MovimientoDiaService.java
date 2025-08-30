@@ -50,6 +50,7 @@ public class MovimientoDiaService {
     private DetalleRemitoIngresoRepository detalleRemitoIngresoRepository;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     
     /**
      * Obtener movimientos del día para una fecha específica
@@ -129,14 +130,24 @@ public class MovimientoDiaService {
     }
     
     /**
-     * Obtener stock inicial (balance final del día anterior)
+     * Obtener stock inicial (stock real al inicio del día, sin incluir movimientos del día actual)
+     * 
+     * Lógica:
+     * 1. Si hay un cierre del día anterior: usar el balance final del día anterior
+     * 2. Si no hay cierre del día anterior: calcular el stock actual menos los movimientos del día actual
+     * 3. Para días futuros: usar el stock actual
      */
     private MovimientoDiaDTO.StockInicialDTO obtenerStockInicial(Long empresaId, LocalDate fecha) {
         LocalDate diaAnterior = fecha.minusDays(1);
+        LocalDate fechaActual = LocalDate.now();
         Optional<CierreDia> cierreAnterior = cierreDiaRepository.findByEmpresaIdAndFecha(empresaId, diaAnterior);
         
+        System.out.println("🔍 [STOCK INICIAL] Calculando para fecha: " + fecha + ", Día anterior: " + diaAnterior);
+        
         if (cierreAnterior.isPresent() && cierreAnterior.get().getCerrado()) {
-            // Usar balance final del día anterior
+            // CASO 1: Hay cierre del día anterior - usar balance final del día anterior
+            System.out.println("📊 [STOCK INICIAL] Usando balance final del día anterior");
+            
             List<DetalleCierreDia> detallesBalance = detalleCierreDiaRepository
                 .findByCierreDiaIdAndTipoMovimientoOrderByFechaCreacionAsc(
                     cierreAnterior.get().getId(), 
@@ -157,9 +168,72 @@ public class MovimientoDiaService {
             
             int cantidadTotal = productos.stream().mapToInt(MovimientoDiaDTO.ProductoStockDTO::getCantidad).sum();
             
+            System.out.println("📊 [STOCK INICIAL] Balance final del día anterior - Total: " + cantidadTotal);
+            
             return new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productos);
+            
+        } else if (fecha.isBefore(fechaActual) || fecha.isEqual(fechaActual)) {
+            // CASO 2: No hay cierre del día anterior y es día pasado o actual
+            // Calcular stock actual menos movimientos del día actual
+            System.out.println("📊 [STOCK INICIAL] Calculando stock actual menos movimientos del día");
+            
+            // Obtener stock actual
+            List<Producto> productosActuales = productoRepository.findByEmpresaId(empresaId);
+            Map<Long, Integer> stockActual = productosActuales.stream()
+                .collect(Collectors.toMap(Producto::getId, Producto::getStock));
+            
+            // Obtener movimientos del día actual
+            MovimientoDiaDTO.MovimientosDTO ingresos = obtenerIngresos(empresaId, fecha);
+            MovimientoDiaDTO.MovimientosDTO devoluciones = obtenerDevoluciones(empresaId, fecha);
+            MovimientoDiaDTO.MovimientosDTO salidas = obtenerSalidas(empresaId, fecha);
+            MovimientoDiaDTO.MovimientosDTO roturas = obtenerRoturas(empresaId, fecha);
+            
+            // Calcular stock inicial = stock actual - movimientos del día
+            Map<Long, Integer> stockInicial = new HashMap<>(stockActual);
+            
+            // Restar ingresos (se sumaron al stock actual)
+            for (MovimientoDiaDTO.ProductoMovimientoDTO ingreso : ingresos.getProductos()) {
+                stockInicial.merge(ingreso.getId(), -ingreso.getCantidad(), Integer::sum);
+            }
+            
+            // Restar devoluciones (se sumaron al stock actual)
+            for (MovimientoDiaDTO.ProductoMovimientoDTO devolucion : devoluciones.getProductos()) {
+                stockInicial.merge(devolucion.getId(), -devolucion.getCantidad(), Integer::sum);
+            }
+            
+            // Sumar salidas (se restaron del stock actual)
+            for (MovimientoDiaDTO.ProductoMovimientoDTO salida : salidas.getProductos()) {
+                stockInicial.merge(salida.getId(), salida.getCantidad(), Integer::sum);
+            }
+            
+            // Sumar roturas (se restaron del stock actual)
+            for (MovimientoDiaDTO.ProductoMovimientoDTO rotura : roturas.getProductos()) {
+                stockInicial.merge(rotura.getId(), rotura.getCantidad(), Integer::sum);
+            }
+            
+            // Crear DTOs
+            List<MovimientoDiaDTO.ProductoStockDTO> productosDTO = productosActuales.stream()
+                .map(producto -> {
+                    MovimientoDiaDTO.ProductoStockDTO productoDTO = new MovimientoDiaDTO.ProductoStockDTO();
+                    productoDTO.setId(producto.getId());
+                    productoDTO.setNombre(producto.getNombre());
+                    productoDTO.setCodigoPersonalizado(producto.getCodigoPersonalizado());
+                    productoDTO.setCantidad(stockInicial.getOrDefault(producto.getId(), 0));
+                    productoDTO.setPrecio(producto.getPrecio() != null ? producto.getPrecio().doubleValue() : null);
+                    return productoDTO;
+                })
+                .collect(Collectors.toList());
+            
+            int cantidadTotal = productosDTO.stream().mapToInt(MovimientoDiaDTO.ProductoStockDTO::getCantidad).sum();
+            
+            System.out.println("📊 [STOCK INICIAL] Stock actual menos movimientos - Total: " + cantidadTotal);
+            
+            return new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productosDTO);
+            
         } else {
-            // Si no hay día anterior, usar stock actual
+            // CASO 3: Día futuro - usar stock actual
+            System.out.println("📊 [STOCK INICIAL] Día futuro - usando stock actual");
+            
             List<Producto> productos = productoRepository.findByEmpresaId(empresaId);
             List<MovimientoDiaDTO.ProductoStockDTO> productosDTO = productos.stream()
                 .map(producto -> {
@@ -174,6 +248,8 @@ public class MovimientoDiaService {
                 .collect(Collectors.toList());
             
             int cantidadTotal = productosDTO.stream().mapToInt(MovimientoDiaDTO.ProductoStockDTO::getCantidad).sum();
+            
+            System.out.println("📊 [STOCK INICIAL] Stock actual para día futuro - Total: " + cantidadTotal);
             
             return new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productosDTO);
         }
@@ -211,7 +287,7 @@ public class MovimientoDiaService {
                             detalle.getProducto().getNombre(),
                             detalle.getProducto().getCodigoPersonalizado(),
                             detalle.getCantidad(),
-                            remito.getFechaRemito().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                            remito.getFechaRemito().format(DATETIME_FORMATTER),
                             null // Sin observaciones
                         ));
                     }
@@ -261,7 +337,7 @@ public class MovimientoDiaService {
                         detalle.getProducto().getNombre(),
                         detalle.getProducto().getCodigoPersonalizado(),
                         detalle.getCantidad(),
-                        detalle.getFechaCreacion().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        detalle.getFechaCreacion().format(DATETIME_FORMATTER),
                         null // Sin observaciones
                     ));
                 }
@@ -310,7 +386,7 @@ public class MovimientoDiaService {
                         detalle.getProducto().getNombre(),
                         detalle.getProducto().getCodigoPersonalizado(),
                         detalle.getCantidad(),
-                        detalle.getFechaCreacion().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        detalle.getFechaCreacion().format(DATETIME_FORMATTER),
                         null // Sin observaciones
                     ));
                 }
@@ -355,7 +431,7 @@ public class MovimientoDiaService {
                     rotura.getProducto().getNombre(),
                     rotura.getProducto().getCodigoPersonalizado(),
                     rotura.getCantidad(),
-                    rotura.getFecha().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                    rotura.getFecha().format(DATETIME_FORMATTER),
                     null // Sin observaciones
                 ));
             }
@@ -374,6 +450,15 @@ public class MovimientoDiaService {
     
     /**
      * Calcular balance final
+     * 
+     * Fórmula: Balance Final = Stock Inicial + Ingresos + Devoluciones - Salidas - Roturas
+     * 
+     * Donde:
+     * - Stock Inicial = Balance final del día anterior (ya incluye todos los movimientos previos)
+     * - Ingresos = Remitos de ingreso del día actual
+     * - Devoluciones = Planillas de devolución del día actual
+     * - Salidas = Planillas de pedidos del día actual
+     * - Roturas = Roturas y pérdidas del día actual
      */
     private MovimientoDiaDTO.StockInicialDTO calcularBalanceFinal(
             MovimientoDiaDTO.StockInicialDTO stockInicial,
@@ -385,21 +470,23 @@ public class MovimientoDiaService {
         // Crear mapa para agrupar productos por ID
         Map<Long, MovimientoDiaDTO.ProductoStockDTO> balanceProductos = new HashMap<>();
         
-        // Agregar stock inicial y guardar cantidad inicial para calcular variación
+        // PASO 1: Agregar stock inicial (balance final del día anterior)
+        // Este es el stock base que ya incluye todos los movimientos previos
         for (MovimientoDiaDTO.ProductoStockDTO producto : stockInicial.getProductos()) {
             balanceProductos.put(producto.getId(), new MovimientoDiaDTO.ProductoStockDTO(
                 producto.getId(),
                 producto.getNombre(),
                 producto.getCodigoPersonalizado(),
-                producto.getCantidad(),
+                producto.getCantidad(), // Stock inicial (sin modificaciones)
                 producto.getPrecio(),
-                producto.getCantidad(), // cantidadInicial
+                producto.getCantidad(), // cantidadInicial = stock inicial
                 0, // variacion inicial
                 "SIN_CAMBIOS" // tipoVariacion inicial
             ));
         }
         
-        // Sumar ingresos
+        // PASO 2: Sumar ingresos del día actual
+        // Los ingresos se suman al stock inicial para obtener el stock disponible
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : ingresos.getProductos()) {
             balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
                 balance.setCantidad(balance.getCantidad() + producto.getCantidad());
@@ -420,7 +507,8 @@ public class MovimientoDiaService {
             });
         }
         
-        // Sumar devoluciones
+        // PASO 3: Sumar devoluciones del día actual
+        // Las devoluciones se suman al stock (productos que regresan)
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : devoluciones.getProductos()) {
             balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
                 balance.setCantidad(balance.getCantidad() + producto.getCantidad());
@@ -441,7 +529,8 @@ public class MovimientoDiaService {
             });
         }
         
-        // Restar salidas
+        // PASO 4: Restar salidas del día actual
+        // Las salidas se restan del stock (productos que salen)
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : salidas.getProductos()) {
             balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
                 balance.setCantidad(balance.getCantidad() - producto.getCantidad());
@@ -462,7 +551,8 @@ public class MovimientoDiaService {
             });
         }
         
-        // Restar roturas
+        // PASO 5: Restar roturas del día actual
+        // Las roturas se restan del stock (productos perdidos/deteriorados)
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : roturas.getProductos()) {
             balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
                 balance.setCantidad(balance.getCantidad() - producto.getCantidad());
@@ -483,7 +573,8 @@ public class MovimientoDiaService {
             });
         }
         
-        // Calcular variación para cada producto que ya estaba en stock inicial
+        // PASO 6: Calcular variación para cada producto
+        // La variación es la diferencia entre cantidad final y cantidad inicial
         for (MovimientoDiaDTO.ProductoStockDTO producto : balanceProductos.values()) {
             // Solo recalcular variación si no se estableció previamente (productos que ya estaban en stock inicial)
             if (producto.getTipoVariacion() == null || producto.getTipoVariacion().equals("SIN_CAMBIOS")) {
@@ -660,7 +751,7 @@ public class MovimientoDiaService {
                 detalle.getNombreProducto(),
                 detalle.getCodigoPersonalizado(),
                 detalle.getCantidad(),
-                detalle.getFechaMovimiento() != null ? detalle.getFechaMovimiento().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
+                detalle.getFechaMovimiento() != null ? detalle.getFechaMovimiento().format(DATETIME_FORMATTER) : null,
                 null // Sin observaciones
             ))
             .collect(Collectors.toList());
@@ -797,7 +888,7 @@ public class MovimientoDiaService {
                         detalle.getProducto().getNombre(),
                         detalle.getProducto().getCodigoPersonalizado(),
                         detalle.getCantidad(),
-                        remito.getFechaRemito().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        remito.getFechaRemito().format(DATETIME_FORMATTER),
                         null
                     ));
                 }
@@ -834,7 +925,7 @@ public class MovimientoDiaService {
                         detalle.getProducto().getNombre(),
                         detalle.getProducto().getCodigoPersonalizado(),
                         detalle.getCantidad(),
-                        devolucion.getFechaPlanilla().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        devolucion.getFechaPlanilla().format(DATETIME_FORMATTER),
                         null
                     ));
                 }
@@ -871,7 +962,7 @@ public class MovimientoDiaService {
                         detalle.getProducto().getNombre(),
                         detalle.getProducto().getCodigoPersonalizado(),
                         detalle.getCantidad(),
-                        pedido.getFechaPlanilla().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        pedido.getFechaPlanilla().format(DATETIME_FORMATTER),
                         null
                     ));
                 }
@@ -907,7 +998,7 @@ public class MovimientoDiaService {
                     rotura.getProducto().getNombre(),
                     rotura.getProducto().getCodigoPersonalizado(),
                     rotura.getCantidad(),
-                    rotura.getFecha().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                    rotura.getFecha().format(DATETIME_FORMATTER),
                     null
                 ));
             }

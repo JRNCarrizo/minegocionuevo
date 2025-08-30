@@ -31,10 +31,19 @@ export const convertirUTCALocal = (fechaUTC: string | Date): Date => {
     let fecha: Date;
     
     if (typeof fechaUTC === 'string') {
-      // Si ya tiene 'Z' al final, es UTC, si no, agregarlo
-      const fechaConZ = fechaUTC.endsWith('Z') ? fechaUTC : fechaUTC + 'Z';
-      fecha = new Date(fechaConZ);
+      console.log('🔍 [DEBUG] convertirUTCALocal - Input string:', fechaUTC);
+      // Si tiene 'Z' al final, es UTC, si no, es fecha local del usuario
+      if (fechaUTC.endsWith('Z')) {
+        // Es UTC, convertir a local
+        console.log('🔍 [DEBUG] Detectado como UTC, convirtiendo a local');
+        fecha = new Date(fechaUTC);
+      } else {
+        // Es fecha local del usuario, no convertir
+        console.log('🔍 [DEBUG] Detectado como fecha local, no convirtiendo');
+        fecha = new Date(fechaUTC);
+      }
     } else {
+      console.log('🔍 [DEBUG] convertirUTCALocal - Input Date:', fechaUTC);
       fecha = new Date(fechaUTC);
     }
     
@@ -42,7 +51,7 @@ export const convertirUTCALocal = (fechaUTC: string | Date): Date => {
       throw new Error('Fecha inválida');
     }
     
-    // JavaScript automáticamente convierte UTC a local cuando usamos new Date()
+    console.log('🔍 [DEBUG] convertirUTCALocal - Resultado:', fecha.toISOString());
     return fecha;
   } catch (error) {
     console.error('Error convirtiendo fecha UTC a local:', error);

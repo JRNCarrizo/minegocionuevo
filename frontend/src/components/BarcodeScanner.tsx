@@ -5,9 +5,10 @@ interface BarcodeScannerProps {
   onScan: (result: string) => void;
   onClose: () => void;
   isOpen: boolean;
+  zIndex?: number;
 }
 
-const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose, isOpen }) => {
+const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose, isOpen, zIndex = 9999 }) => {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -175,7 +176,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose, isOpen
       right: 0,
       bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      zIndex: 9999,
+      zIndex: zIndex,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',

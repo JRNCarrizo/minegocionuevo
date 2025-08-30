@@ -17,6 +17,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -51,8 +53,9 @@ public class RoturaPerdidaService {
 
 
 
-        // Guardar la fecha exactamente como la recibe del frontend
-        RoturaPerdida roturaPerdida = new RoturaPerdida(empresa, usuario, dto.getFecha(), dto.getCantidad());
+        // Convertir la fecha a la zona horaria del usuario y luego a UTC para almacenamiento
+        LocalDateTime fechaConvertida = convertirFechaUsuarioAUTC(dto.getFecha(), dto.getZonaHoraria());
+        RoturaPerdida roturaPerdida = new RoturaPerdida(empresa, usuario, fechaConvertida, dto.getCantidad());
         roturaPerdida.setObservaciones(dto.getObservaciones());
 
         // Si se especifica un producto, asociarlo y descontar del stock
@@ -117,7 +120,11 @@ public class RoturaPerdidaService {
      * Obtener roturas y pérdidas por empresa y rango de fechas
      */
     public List<RoturaPerdidaResponseDTO> obtenerRoturasPerdidasPorEmpresaYRangoFechas(Long empresaId, LocalDate fechaInicio, LocalDate fechaFin) {
-        List<RoturaPerdida> roturasPerdidas = roturaPerdidaRepository.findByEmpresaIdAndFechaBetweenOrderByFechaDesc(empresaId, fechaInicio, fechaFin);
+        // Convertir LocalDate a LocalDateTime para la consulta
+        LocalDateTime fechaInicioDateTime = fechaInicio.atStartOfDay();
+        LocalDateTime fechaFinDateTime = fechaFin.atTime(23, 59, 59);
+        
+        List<RoturaPerdida> roturasPerdidas = roturaPerdidaRepository.findByEmpresaIdAndFechaBetweenOrderByFechaDesc(empresaId, fechaInicioDateTime, fechaFinDateTime);
         
         return roturasPerdidas.stream()
                 .map(this::convertirADTO)
@@ -138,8 +145,9 @@ public class RoturaPerdidaService {
         RoturaPerdida roturaPerdida = roturaPerdidaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Rotura/Pérdida no encontrada"));
 
-        // Guardar la fecha exactamente como la recibe del frontend
-        roturaPerdida.setFecha(dto.getFecha());
+        // Convertir la fecha a la zona horaria del usuario y luego a UTC para almacenamiento
+        LocalDateTime fechaConvertida = convertirFechaUsuarioAUTC(dto.getFecha(), dto.getZonaHoraria());
+        roturaPerdida.setFecha(fechaConvertida);
         roturaPerdida.setCantidad(dto.getCantidad());
         roturaPerdida.setObservaciones(dto.getObservaciones());
 
@@ -208,14 +216,21 @@ public class RoturaPerdidaService {
      * Obtener total de unidades perdidas por empresa y rango de fechas
      */
     public Integer obtenerTotalUnidadesPerdidasPorEmpresaYRangoFechas(Long empresaId, LocalDate fechaInicio, LocalDate fechaFin) {
-        return roturaPerdidaRepository.sumCantidadByEmpresaIdAndFechaBetween(empresaId, fechaInicio, fechaFin);
+        // Convertir LocalDate a LocalDateTime para la consulta
+        LocalDateTime fechaInicioDateTime = fechaInicio.atStartOfDay();
+        LocalDateTime fechaFinDateTime = fechaFin.atTime(23, 59, 59);
+        return roturaPerdidaRepository.sumCantidadByEmpresaIdAndFechaBetween(empresaId, fechaInicioDateTime, fechaFinDateTime);
     }
 
     /**
      * Exportar roturas y pérdidas a Excel
      */
     public byte[] exportarRoturasPerdidasAExcel(Long empresaId, LocalDate fechaInicio, LocalDate fechaFin) throws IOException {
-        List<RoturaPerdida> roturasPerdidas = roturaPerdidaRepository.findByEmpresaIdAndFechaBetweenOrderByFechaDesc(empresaId, fechaInicio, fechaFin);
+        // Convertir LocalDate a LocalDateTime para la consulta
+        LocalDateTime fechaInicioDateTime = fechaInicio.atStartOfDay();
+        LocalDateTime fechaFinDateTime = fechaFin.atTime(23, 59, 59);
+        
+        List<RoturaPerdida> roturasPerdidas = roturaPerdidaRepository.findByEmpresaIdAndFechaBetweenOrderByFechaDesc(empresaId, fechaInicioDateTime, fechaFinDateTime);
         
         if (roturasPerdidas.isEmpty()) {
             throw new RuntimeException("No hay datos para exportar en el rango de fechas especificado");
@@ -271,18 +286,26 @@ public class RoturaPerdidaService {
                                                " al " + fechaFin.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
             sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 4));
 
-            // Estadísticas
+            // Estadísticas (en la misma columna que empresa y período)
             int totalProductos = roturasPerdidas.size();
-            int totalUnidades = roturaPerdidaRepository.sumCantidadByEmpresaIdAndFechaBetween(empresaId, fechaInicio, fechaFin);
+            int totalUnidades = roturaPerdidaRepository.sumCantidadByEmpresaIdAndFechaBetween(empresaId, fechaInicioDateTime, fechaFinDateTime);
 
             Row infoRow3 = sheet.createRow(rowNum++);
-            infoRow3.createCell(0).setCellValue("Total de Productos Afectados:");
-            infoRow3.createCell(1).setCellValue(totalProductos);
+            Cell cell3 = infoRow3.createCell(0);
+            cell3.setCellValue("Total de Productos Afectados:");
+            Cell cell3Value = infoRow3.createCell(1);
+            cell3Value.setCellValue(totalProductos);
+            CellStyle leftAlignStyle = workbook.createCellStyle();
+            leftAlignStyle.setAlignment(HorizontalAlignment.LEFT);
+            cell3Value.setCellStyle(leftAlignStyle);
             sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 4));
 
             Row infoRow4 = sheet.createRow(rowNum++);
-            infoRow4.createCell(0).setCellValue("Total de Unidades Perdidas:");
-            infoRow4.createCell(1).setCellValue(totalUnidades);
+            Cell cell4 = infoRow4.createCell(0);
+            cell4.setCellValue("Total de Unidades Perdidas:");
+            Cell cell4Value = infoRow4.createCell(1);
+            cell4Value.setCellValue(totalUnidades);
+            cell4Value.setCellStyle(leftAlignStyle);
             sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 4));
 
             // Línea en blanco
@@ -331,6 +354,128 @@ public class RoturaPerdidaService {
     }
 
     /**
+     * Exportar roturas y pérdidas del día actual a Excel
+     */
+    public byte[] exportarRoturasPerdidasDelDiaAExcel(Long empresaId, LocalDate fecha) throws IOException {
+        List<RoturaPerdida> roturasPerdidas = roturaPerdidaRepository.findByEmpresaIdAndFechaOrderByFechaCreacionDesc(empresaId, fecha);
+        
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+
+        // Crear el workbook de Excel
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Roturas y Pérdidas del Día");
+
+            // Crear estilos
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.RED.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+
+            CellStyle dataStyle = workbook.createCellStyle();
+            dataStyle.setBorderTop(BorderStyle.THIN);
+            dataStyle.setBorderBottom(BorderStyle.THIN);
+            dataStyle.setBorderLeft(BorderStyle.THIN);
+            dataStyle.setBorderRight(BorderStyle.THIN);
+
+            // Crear encabezado de información
+            int rowNum = 0;
+            
+            // Título principal
+            Row titleRow = sheet.createRow(rowNum++);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue("REPORTE DE ROTURAS Y PÉRDIDAS DEL DÍA");
+            titleCell.setCellStyle(headerStyle);
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 5));
+
+            // Información del reporte
+            rowNum++;
+            Row infoRow1 = sheet.createRow(rowNum++);
+            infoRow1.createCell(0).setCellValue("Empresa:");
+            infoRow1.createCell(1).setCellValue(empresa.getNombre());
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 5));
+
+            Row infoRow2 = sheet.createRow(rowNum++);
+            infoRow2.createCell(0).setCellValue("Fecha:");
+            infoRow2.createCell(1).setCellValue(fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 5));
+
+            // Estadísticas (en la misma columna que empresa y fecha)
+            int totalProductos = roturasPerdidas.size();
+            int totalUnidades = roturaPerdidaRepository.sumCantidadByEmpresaIdAndFecha(empresaId, fecha);
+
+            Row infoRow3 = sheet.createRow(rowNum++);
+            Cell cell3 = infoRow3.createCell(0);
+            cell3.setCellValue("Total de Productos Afectados:");
+            Cell cell3Value = infoRow3.createCell(1);
+            cell3Value.setCellValue(totalProductos);
+            CellStyle leftAlignStyle = workbook.createCellStyle();
+            leftAlignStyle.setAlignment(HorizontalAlignment.LEFT);
+            cell3Value.setCellStyle(leftAlignStyle);
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 5));
+
+            Row infoRow4 = sheet.createRow(rowNum++);
+            Cell cell4 = infoRow4.createCell(0);
+            cell4.setCellValue("Total de Unidades Perdidas:");
+            Cell cell4Value = infoRow4.createCell(1);
+            cell4Value.setCellValue(totalUnidades);
+            cell4Value.setCellStyle(leftAlignStyle);
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 5));
+
+            // Línea en blanco
+            rowNum++;
+
+            // Encabezados de la tabla
+            Row headerRow = sheet.createRow(rowNum++);
+            String[] headers = {"#", "Hora", "Código Interno", "Nombre del Producto", "Cantidad", "Observaciones"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Datos de las roturas y pérdidas
+            for (int i = 0; i < roturasPerdidas.size(); i++) {
+                RoturaPerdida roturaPerdida = roturasPerdidas.get(i);
+                Row dataRow = sheet.createRow(rowNum++);
+                
+                dataRow.createCell(0).setCellValue(i + 1);
+                dataRow.createCell(1).setCellValue(roturaPerdida.getFechaCreacion().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+                dataRow.createCell(2).setCellValue(roturaPerdida.getCodigoCompleto());
+                dataRow.createCell(3).setCellValue(roturaPerdida.getDescripcionCompleta());
+                dataRow.createCell(4).setCellValue(roturaPerdida.getCantidad());
+                dataRow.createCell(5).setCellValue(roturaPerdida.getObservaciones() != null ? roturaPerdida.getObservaciones() : "");
+                
+                // Aplicar estilo a todas las celdas
+                for (int j = 0; j < 6; j++) {
+                    dataRow.getCell(j).setCellStyle(dataStyle);
+                }
+            }
+
+            // Ajustar ancho de columnas
+            sheet.setColumnWidth(0, 1000);  // #
+            sheet.setColumnWidth(1, 4000);  // Hora
+            sheet.setColumnWidth(2, 6000);  // Código Interno
+            sheet.setColumnWidth(3, 20000); // Nombre del Producto
+            sheet.setColumnWidth(4, 4000);  // Cantidad
+            sheet.setColumnWidth(5, 12000); // Observaciones
+
+            // Convertir a bytes
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+        }
+    }
+
+    /**
      * Convertir entidad a DTO de respuesta
      */
     public RoturaPerdidaResponseDTO convertirADTO(RoturaPerdida roturaPerdida) {
@@ -353,5 +498,57 @@ public class RoturaPerdidaService {
         }
 
         return dto;
+    }
+
+    /**
+     * Convertir fecha de la zona horaria del usuario a UTC
+     */
+    private LocalDateTime convertirFechaUsuarioAUTC(LocalDateTime fechaUsuario, String zonaHorariaUsuario) {
+        try {
+            // Si no se especifica zona horaria, usar UTC
+            if (zonaHorariaUsuario == null || zonaHorariaUsuario.trim().isEmpty()) {
+                return fechaUsuario;
+            }
+
+            // Crear ZonedDateTime en la zona horaria del usuario
+            ZoneId zonaUsuario = ZoneId.of(zonaHorariaUsuario);
+            ZonedDateTime fechaZonada = fechaUsuario.atZone(zonaUsuario);
+
+            // Convertir a UTC
+            ZonedDateTime fechaUTC = fechaZonada.withZoneSameInstant(ZoneId.of("UTC"));
+
+            // Retornar como LocalDateTime
+            return fechaUTC.toLocalDateTime();
+        } catch (Exception e) {
+            // Si hay error en la conversión, usar la fecha original
+            System.out.println("⚠️ Error al convertir zona horaria '" + zonaHorariaUsuario + "': " + e.getMessage());
+            return fechaUsuario;
+        }
+    }
+
+    /**
+     * Convertir fecha UTC a la zona horaria del usuario
+     */
+    private LocalDateTime convertirFechaUTCAUsuario(LocalDateTime fechaUTC, String zonaHorariaUsuario) {
+        try {
+            // Si no se especifica zona horaria, usar UTC
+            if (zonaHorariaUsuario == null || zonaHorariaUsuario.trim().isEmpty()) {
+                return fechaUTC;
+            }
+
+            // Crear ZonedDateTime en UTC
+            ZonedDateTime fechaZonadaUTC = fechaUTC.atZone(ZoneId.of("UTC"));
+
+            // Convertir a la zona horaria del usuario
+            ZoneId zonaUsuario = ZoneId.of(zonaHorariaUsuario);
+            ZonedDateTime fechaUsuario = fechaZonadaUTC.withZoneSameInstant(zonaUsuario);
+
+            // Retornar como LocalDateTime
+            return fechaUsuario.toLocalDateTime();
+        } catch (Exception e) {
+            // Si hay error en la conversión, usar la fecha original
+            System.out.println("⚠️ Error al convertir zona horaria '" + zonaHorariaUsuario + "': " + e.getMessage());
+            return fechaUTC;
+        }
     }
 }

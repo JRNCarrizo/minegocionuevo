@@ -15,6 +15,7 @@ interface DetallePlanillaPedido {
   descripcion: string;
   cantidad: number;
   observaciones?: string;
+  estadoProducto: string;
   fechaCreacion: string;
 }
 
@@ -46,7 +47,9 @@ export default function CrearDevolucion() {
   const [mostrarScanner, setMostrarScanner] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [mostrarCampoCantidad, setMostrarCampoCantidad] = useState(false);
+  const [mostrarSelectorEstado, setMostrarSelectorEstado] = useState(false);
   const [cantidadTemporal, setCantidadTemporal] = useState(0);
+  const [estadoTemporal, setEstadoTemporal] = useState('BUEN_ESTADO');
   const [productoSeleccionadoTemporal, setProductoSeleccionadoTemporal] = useState<Producto | null>(null);
   const [mostrarModalCrearProducto, setMostrarModalCrearProducto] = useState(false);
   const [nuevoProducto, setNuevoProducto] = useState({
@@ -74,12 +77,21 @@ export default function CrearDevolucion() {
   const [sugerenciaSeleccionadaNombre, setSugerenciaSeleccionadaNombre] = useState(-1);
   const [sugerenciaSeleccionadaMarca, setSugerenciaSeleccionadaMarca] = useState(-1);
   
+  // Estados para el estado del producto
+  const [estadosProducto] = useState([
+    { value: 'BUEN_ESTADO', label: 'Buen Estado', color: '#10b981' },
+    { value: 'ROTO', label: 'Roto', color: '#ef4444' },
+    { value: 'MAL_ESTADO', label: 'Mal Estado', color: '#f59e0b' },
+    { value: 'DEFECTUOSO', label: 'Defectuoso', color: '#dc2626' }
+  ]);
+  
 
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
   const numeroPlanillaRef = useRef<HTMLInputElement>(null);
   const fechaPlanillaRef = useRef<HTMLInputElement>(null);
   const observacionesRef = useRef<HTMLTextAreaElement>(null);
   const cantidadTemporalRef = useRef<HTMLInputElement>(null);
+  const estadoTemporalRef = useRef<HTMLSelectElement>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -200,6 +212,13 @@ export default function CrearDevolucion() {
     }
   }, [mostrarCampoCantidad]);
 
+  // Efecto para enfocar el selector de estado cuando se activa
+  useEffect(() => {
+    if (mostrarSelectorEstado && estadoTemporalRef.current) {
+      estadoTemporalRef.current.focus();
+    }
+  }, [mostrarSelectorEstado]);
+
   // Efecto para enfocar el campo de número de planilla cuando se abre la página
   useEffect(() => {
     if (datosUsuario && numeroPlanillaRef.current) {
@@ -244,7 +263,7 @@ export default function CrearDevolucion() {
     switch (e.key) {
       case 'Enter':
         e.preventDefault();
-        confirmarCantidad();
+        activarSelectorEstado();
         break;
       case 'Escape':
         cancelarCantidad();
@@ -263,48 +282,31 @@ export default function CrearDevolucion() {
   const seleccionarProducto = (producto: Producto) => {
     setProductoSeleccionadoTemporal(producto);
     setCantidadTemporal(1);
+    setEstadoTemporal('BUEN_ESTADO');
     setMostrarCampoCantidad(true);
     setMostrarProductos(false);
     setProductoSeleccionado(-1);
     setInputBusqueda('');
   };
 
-  const confirmarCantidad = () => {
+  // Función confirmarCantidad ya no se usa, reemplazada por el nuevo flujo
+  // const confirmarCantidad = () => { ... }
+
+  const activarSelectorEstado = () => {
     if (!productoSeleccionadoTemporal || cantidadTemporal <= 0) {
       toast.error('Por favor ingrese una cantidad válida');
       return;
     }
-
-    // Verificar si el producto ya está en la lista
-    const productoExistente = detalles.find(d => d.productoId === productoSeleccionadoTemporal.id);
-    
-    if (productoExistente) {
-      // Actualizar cantidad del producto existente
-      setDetalles(prev => prev.map(d => 
-        d.productoId === productoSeleccionadoTemporal.id 
-          ? { ...d, cantidad: d.cantidad + cantidadTemporal }
-          : d
-      ));
-      toast.success(`Cantidad actualizada: ${productoSeleccionadoTemporal.nombre}`);
-    } else {
-      // Agregar nuevo producto
-      const nuevoDetalle: DetallePlanillaPedido = {
-        id: Date.now(), // ID temporal
-        productoId: productoSeleccionadoTemporal.id,
-        codigoPersonalizado: productoSeleccionadoTemporal.codigoPersonalizado,
-        descripcion: productoSeleccionadoTemporal.nombre,
-        cantidad: cantidadTemporal,
-        fechaCreacion: new Date().toISOString()
-      };
-      
-      setDetalles(prev => [...prev, nuevoDetalle]);
-      toast.success(`${productoSeleccionadoTemporal.nombre} agregado (${cantidadTemporal} unidades)`);
-    }
-
-    // Resetear estado
     setMostrarCampoCantidad(false);
+    setMostrarSelectorEstado(true);
+  };
+
+  const cancelarCantidad = () => {
+    setMostrarCampoCantidad(false);
+    setMostrarSelectorEstado(false);
     setProductoSeleccionadoTemporal(null);
     setCantidadTemporal(1);
+    setEstadoTemporal('BUEN_ESTADO');
     
     // Volver al campo de búsqueda
     setTimeout(() => {
@@ -312,10 +314,58 @@ export default function CrearDevolucion() {
     }, 100);
   };
 
-  const cancelarCantidad = () => {
+  // Manejar teclas en selector de estado
+  const manejarTeclasEstado = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'Enter':
+        e.preventDefault();
+        confirmarProducto();
+        break;
+      case 'Escape':
+        e.preventDefault();
+        cancelarCantidad();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        const currentIndexUp = estadosProducto.findIndex(estado => estado.value === estadoTemporal);
+        const prevIndex = currentIndexUp > 0 ? currentIndexUp - 1 : estadosProducto.length - 1;
+        setEstadoTemporal(estadosProducto[prevIndex].value);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        const currentIndexDown = estadosProducto.findIndex(estado => estado.value === estadoTemporal);
+        const nextIndex = (currentIndexDown + 1) % estadosProducto.length;
+        setEstadoTemporal(estadosProducto[nextIndex].value);
+        break;
+    }
+  };
+
+  const confirmarProducto = () => {
+    if (!productoSeleccionadoTemporal || cantidadTemporal <= 0) {
+      toast.error('Por favor ingrese una cantidad válida');
+      return;
+    }
+
+    // Siempre agregar como nueva línea (cada producto + estado es único)
+    const nuevoDetalle: DetallePlanillaPedido = {
+      id: Date.now(), // ID temporal
+      productoId: productoSeleccionadoTemporal.id,
+      codigoPersonalizado: productoSeleccionadoTemporal.codigoPersonalizado,
+      descripcion: productoSeleccionadoTemporal.nombre,
+      cantidad: cantidadTemporal,
+      estadoProducto: estadoTemporal,
+      fechaCreacion: new Date().toISOString()
+    };
+    
+    setDetalles(prev => [...prev, nuevoDetalle]);
+    toast.success(`${productoSeleccionadoTemporal.nombre} agregado (${cantidadTemporal} unidades - ${estadoTemporal})`);
+
+    // Resetear estado
     setMostrarCampoCantidad(false);
+    setMostrarSelectorEstado(false);
     setProductoSeleccionadoTemporal(null);
     setCantidadTemporal(1);
+    setEstadoTemporal('BUEN_ESTADO');
     
     // Volver al campo de búsqueda
     setTimeout(() => {
@@ -344,13 +394,13 @@ export default function CrearDevolucion() {
     ));
   };
 
-  const guardarPlanilla = async () => {
-    if (!numeroPlanilla.trim()) {
-      toast.error('Por favor ingrese el número de planilla');
-      numeroPlanillaRef.current?.focus();
-      return;
-    }
+  const actualizarEstadoProducto = (index: number, estadoProducto: string) => {
+    setDetalles(prev => prev.map((detalle, i) => 
+      i === index ? { ...detalle, estadoProducto } : detalle
+    ));
+  };
 
+  const guardarPlanilla = async () => {
     if (!fechaPlanilla) {
       toast.error('Por favor seleccione la fecha de la planilla');
       fechaPlanillaRef.current?.focus();
@@ -366,7 +416,11 @@ export default function CrearDevolucion() {
     try {
       setGuardando(true);
       
-      // Crear fecha con hora local, igual que en las planillas
+      // Obtener la zona horaria del usuario
+      const zonaHorariaUsuario = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      console.log('🌍 Zona horaria del usuario:', zonaHorariaUsuario);
+      
+      // Crear fecha con hora local del usuario
       const fechaSeleccionada = new Date(fechaPlanilla + 'T00:00:00');
       const ahora = new Date();
       
@@ -375,33 +429,40 @@ export default function CrearDevolucion() {
       const minutosLocal = ahora.getMinutes();
       const segundosLocal = ahora.getSeconds();
       
-      // Crear fecha directamente en UTC usando Date.UTC()
-      const fechaUTC = new Date(Date.UTC(
+      // Crear fecha en la zona horaria local del usuario
+      const fechaLocal = new Date(
         fechaSeleccionada.getFullYear(),
         fechaSeleccionada.getMonth(),
         fechaSeleccionada.getDate(),
         horaLocal,
         minutosLocal,
         segundosLocal
-      ));
+      );
       
-      // Formatear como ISO string para enviar al backend
-      const fechaFormateada = fechaUTC.toISOString();
+      // Formatear como ISO string pero SIN la Z al final para que el backend la trate como fecha local
+      const fechaFormateada = fechaLocal.toISOString().replace('Z', '');
       
       const planillaData = {
-         numeroPlanilla: numeroPlanilla.trim(),
+         numeroPlanilla: numeroPlanilla.trim() || null,
         fechaPlanilla: fechaFormateada,
          observaciones: observaciones.trim() || null,
+         zonaHoraria: zonaHorariaUsuario,
          detalles: detalles.map(detalle => ({
            productoId: detalle.productoId,
            numeroPersonalizado: detalle.codigoPersonalizado,
            descripcion: detalle.descripcion,
            cantidad: detalle.cantidad,
-           observaciones: detalle.observaciones
+           observaciones: detalle.observaciones,
+           estadoProducto: detalle.estadoProducto
          }))
        };
 
-      console.log('📋 Enviando planilla de devolución:', planillaData);
+      console.log('📋 [DEBUG] Fecha seleccionada:', fechaPlanilla);
+      console.log('📋 [DEBUG] Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
+      console.log('📋 [DEBUG] Fecha local creada:', fechaLocal.toString());
+      console.log('📋 [DEBUG] Fecha formateada (sin Z):', fechaFormateada);
+      console.log('📋 [DEBUG] Zona horaria del usuario:', zonaHorariaUsuario);
+      console.log('📋 [DEBUG] Enviando planilla de devolución:', planillaData);
       
       await ApiService.crearPlanillaDevolucion(planillaData);
       toast.success('Planilla de devolución creada exitosamente');
@@ -606,7 +667,7 @@ export default function CrearDevolucion() {
                    boxShadow: guardando || detalles.length === 0 ? 'none' : '0 4px 12px rgba(245, 158, 11, 0.3)'
                  }}
                >
-                 {guardando ? '💾 Creando...' : '💾 Crear Registro'}
+                 {guardando ? '💾 Creando...' : '💾 Crear Registro de Devolución'}
               </button>
             </div>
           </div>
@@ -630,7 +691,7 @@ export default function CrearDevolucion() {
             alignItems: 'center',
             gap: '0.5rem'
             }}>
-            📋 Información de la Planilla
+            📋 Información del Registro de Devolución
             </h2>
 
           <div style={{
@@ -672,7 +733,7 @@ export default function CrearDevolucion() {
                 color: '#64748b',
                 marginBottom: '0.5rem'
               }}>
-                📄 Número de Planilla
+                📄 Número de Planilla (Opcional)
               </label>
               <input
                  ref={numeroPlanillaRef}
@@ -685,7 +746,7 @@ export default function CrearDevolucion() {
                      observacionesRef.current?.focus();
                    }
                  }}
-                 placeholder="PL00000000"
+                 placeholder="PL00000000 (solo si viene de planilla)"
                 style={{
                   width: '100%',
                   padding: '0.75rem',
@@ -704,7 +765,7 @@ export default function CrearDevolucion() {
                 color: '#64748b',
                 marginBottom: '0.5rem'
               }}>
-                💬 Observaciones
+                💬 Observaciones / Motivo
               </label>
               <textarea
                  ref={observacionesRef}
@@ -727,7 +788,7 @@ export default function CrearDevolucion() {
                       }, 50);
                    }
                  }}
-                 placeholder="Observaciones sobre la devolución..."
+                 placeholder="Ej: Devolución por planilla, Retiro de cliente, Producto recuperado, etc."
                  rows={1}
                 style={{
                   width: '100%',
@@ -782,7 +843,7 @@ export default function CrearDevolucion() {
               </label>
               <div style={{ 
                 display: 'grid',
-                gridTemplateColumns: mostrarCampoCantidad ? '1fr 120px' : '1fr',
+                gridTemplateColumns: mostrarCampoCantidad ? '1fr 120px' : mostrarSelectorEstado ? '1fr 120px' : '1fr',
                 gap: '0.5rem',
                 alignItems: 'end'
               }}>
@@ -876,13 +937,48 @@ export default function CrearDevolucion() {
                         fontSize: '0.875rem'
                       }}
                     />
-                    </div>
+                  </div>
+                )}
+
+                {/* Selector de estado temporal */}
+                {mostrarSelectorEstado && (
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      color: '#64748b',
+                      marginBottom: '0.25rem'
+                    }}>
+                      Estado
+                    </label>
+                    <select
+                      ref={estadoTemporalRef}
+                      value={estadoTemporal}
+                      onChange={(e) => setEstadoTemporal(e.target.value)}
+                      onKeyDown={manejarTeclasEstado}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.875rem',
+                        backgroundColor: 'white'
+                      }}
+                    >
+                      {estadosProducto.map(estado => (
+                        <option key={estado.value} value={estado.value}>
+                          {estado.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 )}
               </div>
 
               {/* Vista previa del producto seleccionado */}
-              {mostrarCampoCantidad && productoSeleccionadoTemporal && (
-                    <div style={{
+              {(mostrarCampoCantidad || mostrarSelectorEstado) && productoSeleccionadoTemporal && (
+                <div style={{
                   background: 'white',
                   borderRadius: '0.5rem',
                   padding: '0.75rem',
@@ -892,19 +988,27 @@ export default function CrearDevolucion() {
                 }}>
                   <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
                     <strong>Producto:</strong> {productoSeleccionadoTemporal.nombre}
-                    </div>
+                  </div>
                   {productoSeleccionadoTemporal.codigoPersonalizado && (
                     <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
                       <strong>Código:</strong> {productoSeleccionadoTemporal.codigoPersonalizado}
-                  </div>
-              )}
+                    </div>
+                  )}
                   <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
                     <strong>Stock actual:</strong> {productoSeleccionadoTemporal.stock}
-            </div>
+                  </div>
+                  <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                    <strong>Cantidad:</strong> {cantidadTemporal}
+                  </div>
+                  {mostrarSelectorEstado && (
+                    <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                      <strong>Estado:</strong> {estadosProducto.find(e => e.value === estadoTemporal)?.label}
+                    </div>
+                  )}
                   <div style={{ color: '#3b82f6', fontWeight: '600' }}>
-                    💡 Enter para agregar • Escape para cancelar
-          </div>
-        </div>
+                    {mostrarCampoCantidad ? '💡 Enter para continuar • Escape para cancelar' : '💡 Enter para agregar • Escape para cancelar'}
+                  </div>
+                </div>
               )}
               
               <button
@@ -982,7 +1086,7 @@ export default function CrearDevolucion() {
                 >
                   <div style={{
                     display: 'grid',
-                      gridTemplateColumns: isMobile ? '1fr' : '1fr auto auto',
+                      gridTemplateColumns: isMobile ? '1fr' : '1fr auto auto auto',
                       gap: '0.75rem',
                     alignItems: 'center'
                   }}>
@@ -1038,6 +1142,38 @@ export default function CrearDevolucion() {
                             minHeight: '1.5rem'
                           }}
                         />
+                      </div>
+                      <div>
+                        <label style={{
+                          display: 'block',
+                          fontSize: '0.7rem',
+                          fontWeight: '600',
+                          color: '#64748b',
+                          marginBottom: '0.125rem'
+                        }}>
+                          Estado
+                        </label>
+                        <select
+                          value={detalle.estadoProducto}
+                          onChange={(e) => actualizarEstadoProducto(index, e.target.value)}
+                          style={{
+                            padding: '0.25rem',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.7rem',
+                            background: '#f8fafc',
+                            color: '#1e293b',
+                            fontWeight: '500',
+                            minHeight: '1.5rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {estadosProducto.map(estado => (
+                            <option key={estado.value} value={estado.value}>
+                              {estado.label}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                         <button
                         onClick={() => removerDetalle(index)}

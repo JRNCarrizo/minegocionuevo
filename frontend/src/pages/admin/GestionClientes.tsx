@@ -4,7 +4,7 @@ import api from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useResponsive } from '../../hooks/useResponsive';
 import type { Cliente, Pedido } from '../../types';
-import { crearFechaLocal, formatearFechaConHora } from '../../utils/dateUtils';
+import { crearFechaLocal } from '../../utils/dateUtils';
 
 // Función helper para formatear fechas de manera segura
 const formatearFechaSegura = (fecha: any): string => {
@@ -80,6 +80,88 @@ const formatearFechaSegura = (fecha: any): string => {
     });
   } catch (error) {
     console.error('❌ Error formateando fecha:', fecha, error);
+    return 'Fecha inválida';
+  }
+};
+
+// Función para obtener fecha actual en formato YYYY-MM-DD usando zona horaria local
+const obtenerFechaActual = () => {
+  const hoy = new Date();
+  const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const fechaActual = hoy.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal }); // formato YYYY-MM-DD
+  
+  console.log('🔍 [DEBUG] obtenerFechaActual:', {
+    hoy: hoy.toISOString(),
+    zonaHorariaLocal,
+    fechaActual
+  });
+  
+  return fechaActual;
+};
+
+// Función para formatear fecha con "Hoy"
+const formatearFechaConHora = (fecha: any) => {
+  try {
+    console.log('🔍 [DEBUG] formatearFechaConHora - entrada:', {
+      fecha,
+      tipo: typeof fecha,
+      incluyeZ: typeof fecha === 'string' ? fecha.includes('Z') : 'N/A'
+    });
+    
+    // Si la fecha viene como string sin 'Z', tratarla como fecha local
+    if (typeof fecha === 'string' && !fecha.includes('Z')) {
+      // Parsear como fecha local
+      const [datePart, timePart] = fecha.split('T');
+      const [year, month, day] = datePart.split('-');
+      const [hour, minute, second] = timePart.split(':');
+      
+      // Crear fecha local (los meses van de 0-11)
+      const localDate = new Date(
+        parseInt(year), 
+        parseInt(month) - 1, 
+        parseInt(day), 
+        parseInt(hour), 
+        parseInt(minute), 
+        parseInt(second || '0')
+      );
+      
+      console.log('🔍 [DEBUG] formatearFechaConHora (fecha local):', {
+        fecha,
+        localDate: localDate.toISOString(),
+        zonaHorariaLocal: Intl.DateTimeFormat().resolvedOptions().timeZone
+      });
+      
+      return localDate.toLocaleString('es-AR', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+      });
+    }
+    
+    // Para otros casos, usar el método estándar
+    const fechaObj = new Date(fecha);
+    if (isNaN(fechaObj.getTime())) {
+      return 'Fecha inválida';
+    }
+    
+    console.log('🔍 [DEBUG] formatearFechaConHora (estándar):', {
+      fecha,
+      fechaObj: fechaObj.toISOString()
+    });
+    
+    return fechaObj.toLocaleString('es-AR', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false 
+    });
+  } catch (error) {
+    console.error('❌ Error en formatearFechaConHora:', error);
     return 'Fecha inválida';
   }
 };
@@ -303,7 +385,7 @@ function ClienteDetalleModal({ cliente, pedidos, open, onClose }: {
                   color: '#1e293b',
                   wordBreak: 'break-word'
                 }}>
-                  {formatearFechaSegura(cliente.fechaCreacion)}
+                  {formatearFechaConHora(cliente.fechaCreacion)}
                 </p>
               </div>
             </div>
@@ -1186,7 +1268,7 @@ export default function GestionClientes() {
                             fontSize: '12px',
                             color: '#64748b'
                           }}>
-                            📅 Registrado: {formatearFechaSegura(cliente.fechaCreacion)}
+                            📅 Registrado: {formatearFechaConHora(cliente.fechaCreacion)}
                           </p>
                         </div>
                         <div className="text-right">

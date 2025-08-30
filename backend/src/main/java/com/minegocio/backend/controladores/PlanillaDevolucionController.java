@@ -72,6 +72,14 @@ public class PlanillaDevolucionController {
                 "planilla", planilla
             ));
         } catch (Exception e) {
+            // Verificar si es un error de violación de restricción de unicidad
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && errorMessage.contains("NUMERO_PLANILLA") && errorMessage.contains("Unique index")) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "El número de planilla ya existe. Por favor, use un número diferente."
+                ));
+            }
+            
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Error al crear la planilla de devolución: " + e.getMessage()
             ));
@@ -176,6 +184,42 @@ public class PlanillaDevolucionController {
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Error al eliminar la planilla de devolución: " + e.getMessage()
             ));
+        }
+    }
+
+    /**
+     * Exportar planilla de devolución a Excel
+     */
+    @GetMapping("/{id}/exportar")
+    public ResponseEntity<byte[]> exportarPlanilla(@PathVariable Long id, Authentication authentication) {
+        try {
+            System.out.println("📊 [EXPORTAR DEVOLUCION] Iniciando exportación de planilla ID: " + id);
+            
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("❌ [EXPORTAR DEVOLUCION] Authentication: Ausente");
+                return ResponseEntity.status(401).build();
+            }
+            
+            System.out.println("✅ [EXPORTAR DEVOLUCION] Authentication: Presente");
+            
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long empresaId = usuarioPrincipal.getEmpresaId();
+            
+            System.out.println("👤 [EXPORTAR DEVOLUCION] Usuario: " + usuarioPrincipal.getUsername());
+            System.out.println("🏢 [EXPORTAR DEVOLUCION] Empresa ID: " + empresaId);
+            System.out.println("🔐 [EXPORTAR DEVOLUCION] Roles: " + usuarioPrincipal.getAuthorities());
+            
+            byte[] excelBytes = planillaDevolucionService.exportarPlanillaAExcel(id, empresaId);
+            
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"planilla-devolucion-" + id + ".xlsx\"")
+                    .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    .body(excelBytes);
+                    
+        } catch (Exception e) {
+            System.out.println("❌ [EXPORTAR DEVOLUCION] Error al exportar planilla: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
         }
     }
 }

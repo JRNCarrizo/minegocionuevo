@@ -351,8 +351,10 @@ export default function CrearPlanilla() {
         return;
       }
 
-      // Crear fecha en UTC para evitar problemas de zona horaria
-      // Tomar la fecha seleccionada y combinarla con la hora actual local
+      // Obtener zona horaria del usuario
+      const zonaHorariaUsuario = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
+      // Crear fecha local combinando la fecha seleccionada con la hora actual
       const fechaSeleccionada = new Date(nuevaPlanilla.fechaPlanilla + 'T00:00:00');
       const ahora = new Date();
       
@@ -361,35 +363,36 @@ export default function CrearPlanilla() {
       const minutosLocal = ahora.getMinutes();
       const segundosLocal = ahora.getSeconds();
       
-      // Crear fecha directamente en UTC usando Date.UTC()
-      // Esto evita problemas de conversión de zona horaria
-      const fechaUTC = new Date(Date.UTC(
+      // Crear fecha local con la hora actual
+      const fechaLocal = new Date(
         fechaSeleccionada.getFullYear(),
         fechaSeleccionada.getMonth(),
         fechaSeleccionada.getDate(),
         horaLocal,
         minutosLocal,
         segundosLocal
-      ));
+      );
       
-      // Formatear como ISO string para enviar al backend
-      const fechaFormateada = fechaUTC.toISOString();
+      // Enviar la fecha como string en formato ISO pero SIN la Z al final
+      // para que el backend la trate como fecha local del usuario
+      const fechaFormateada = fechaLocal.toISOString().replace('Z', '');
       
       const planillaData = {
         fechaPlanilla: fechaFormateada,
         numeroPlanilla: nuevaPlanilla.codigoPlanilla,
         observaciones: nuevaPlanilla.observaciones,
-        detalles: nuevaPlanilla.detalles
+        detalles: nuevaPlanilla.detalles,
+        zonaHoraria: zonaHorariaUsuario
       };
 
-      console.log('📋 Fecha seleccionada:', nuevaPlanilla.fechaPlanilla);
-      console.log('📋 Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
-      console.log('📋 Fecha creada en UTC:', fechaUTC.toString());
-      console.log('📋 Fecha formateada en UTC:', fechaFormateada);
-      console.log('📋 Fecha actual del sistema:', new Date().toISOString());
-      console.log('📋 Zona horaria del navegador:', Intl.DateTimeFormat().resolvedOptions().timeZone);
-      console.log('📋 Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
-      console.log('📋 Enviando planilla:', planillaData);
+      console.log('📋 [DEBUG] Fecha seleccionada:', nuevaPlanilla.fechaPlanilla);
+      console.log('📋 [DEBUG] Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
+      console.log('📋 [DEBUG] Fecha creada local:', fechaLocal.toString());
+      console.log('📋 [DEBUG] Fecha formateada (sin Z):', fechaFormateada);
+      console.log('📋 [DEBUG] Zona horaria del usuario:', zonaHorariaUsuario);
+      console.log('📋 [DEBUG] Fecha actual del sistema:', new Date().toISOString());
+      console.log('📋 [DEBUG] Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
+      console.log('📋 [DEBUG] Enviando planilla:', planillaData);
       
       await ApiService.crearPlanillaPedido(planillaData);
       toast.success('Planilla creada exitosamente');

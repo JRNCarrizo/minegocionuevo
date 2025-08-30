@@ -9,6 +9,7 @@ public class DetallePlanillaPedidoResponseDTO {
     private String descripcion;
     private Integer cantidad;
     private String observaciones;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;
 
     // Constructor

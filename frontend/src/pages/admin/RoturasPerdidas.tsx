@@ -117,6 +117,52 @@ export default function RoturasPerdidas() {
     }
   };
 
+  const exportarRoturasPerdidasDelDia = async () => {
+    try {
+      const response = await ApiService.exportarRoturasPerdidasDelDia();
+      
+      const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const fechaActual = obtenerFechaActual();
+      link.download = `Roturas_Perdidas_Dia_${fechaActual}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Reporte del día exportado exitosamente');
+    } catch (error) {
+      console.error('Error al exportar roturas y pérdidas del día:', error);
+      toast.error('Error al exportar el reporte del día');
+    }
+  };
+
+  const exportarRoturasPerdidasPorFecha = async (fecha: string) => {
+    try {
+      // Extraer solo la fecha (YYYY-MM-DD) sin la hora
+      const fechaSolo = fecha.split('T')[0];
+      
+      const response = await ApiService.exportarRoturasPerdidas(fechaSolo, fechaSolo);
+      
+      const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Roturas_Perdidas_${fechaSolo}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Reporte exportado exitosamente');
+    } catch (error) {
+      console.error('Error al exportar roturas y pérdidas:', error);
+      toast.error('Error al exportar el reporte');
+    }
+  };
+
 
 
   const estaDiaExpandido = (fecha: string) => {
@@ -192,7 +238,8 @@ export default function RoturasPerdidas() {
   const roturasPerdidasPorFecha = mostrarVistaBúsqueda 
     ? { 'búsqueda': roturasPerdidasFiltradas } // Agrupar todos en una sola "fecha" llamada "búsqueda"
     : roturasPerdidasFiltradas.reduce((acc, roturaPerdida) => {
-        const fecha = roturaPerdida.fecha;
+        // Extraer solo la fecha (YYYY-MM-DD) sin la hora para agrupar
+        const fecha = roturaPerdida.fecha.split('T')[0];
 
         if (!acc[fecha]) {
           acc[fecha] = [];
@@ -335,6 +382,8 @@ export default function RoturasPerdidas() {
               >
                 ➕ Agregar Rotura/Pérdida
               </button>
+              
+
             </div>
           </div>
         </div>
@@ -861,6 +910,28 @@ export default function RoturasPerdidas() {
                          alignItems: 'center',
                          gap: '1rem'
                        }}>
+                         <button
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             exportarRoturasPerdidasPorFecha(fecha);
+                           }}
+                           style={{
+                             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                             color: 'white',
+                             border: 'none',
+                             borderRadius: '0.5rem',
+                             padding: '0.5rem 1rem',
+                             fontSize: '0.75rem',
+                             fontWeight: '600',
+                             cursor: 'pointer',
+                             display: 'flex',
+                             alignItems: 'center',
+                             gap: '0.25rem',
+                             boxShadow: '0 2px 4px -1px rgba(0, 0, 0, 0.1)'
+                           }}
+                         >
+                           📄 Exportar
+                         </button>
                          <span style={{
                            fontSize: '1.25rem',
                            color: esHoy ? 'white' : '#374151',

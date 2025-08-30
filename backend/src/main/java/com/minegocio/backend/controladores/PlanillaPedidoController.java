@@ -71,6 +71,14 @@ public class PlanillaPedidoController {
         } catch (Exception e) {
             System.out.println("❌ Error al crear planilla: " + e.getMessage());
             e.printStackTrace();
+            
+            // Verificar si es un error de violación de restricción de unicidad
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && errorMessage.contains("NUMERO_PLANILLA") && errorMessage.contains("Unique index")) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("El número de planilla ya existe. Por favor, use un número diferente."));
+            }
+            
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Error al crear la planilla de pedido: " + e.getMessage()));
         }

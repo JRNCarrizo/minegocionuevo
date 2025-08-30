@@ -27,16 +27,19 @@ public class DetallePlanillaDevolucionDTO {
 
     private Long productoId;
 
+    private String estadoProducto = "BUEN_ESTADO";
+
     // Constructores
     public DetallePlanillaDevolucionDTO() {}
 
-    public DetallePlanillaDevolucionDTO(Long id, String descripcion, Integer cantidad, String numeroPersonalizado, String observaciones, Long productoId) {
+    public DetallePlanillaDevolucionDTO(Long id, String descripcion, Integer cantidad, String numeroPersonalizado, String observaciones, Long productoId, String estadoProducto) {
         this.id = id;
         this.descripcion = descripcion;
         this.cantidad = cantidad;
         this.numeroPersonalizado = numeroPersonalizado;
         this.observaciones = observaciones;
         this.productoId = productoId;
+        this.estadoProducto = estadoProducto;
     }
 
     // Getters y Setters
@@ -57,4 +60,7 @@ public class DetallePlanillaDevolucionDTO {
 
     public Long getProductoId() { return productoId; }
     public void setProductoId(Long productoId) { this.productoId = productoId; }
+
+    public String getEstadoProducto() { return estadoProducto; }
+    public void setEstadoProducto(String estadoProducto) { this.estadoProducto = estadoProducto; }
 }
