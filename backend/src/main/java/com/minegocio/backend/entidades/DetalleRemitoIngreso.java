@@ -41,12 +41,12 @@ public class DetalleRemitoIngreso {
 
     // Relación con producto
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "producto_id", nullable = false)
+    @JoinColumn(name = "producto_id", nullable = true)
     @JsonIgnore
     private Producto producto;
 
     // Información del producto al momento del remito (para historial)
-    @Column(name = "nombre_producto", nullable = false)
+    @Column(name = "nombre_producto", nullable = true)
     private String nombreProducto;
 
     @Column(name = "descripcion_producto", length = 1000)
@@ -84,6 +84,11 @@ public class DetalleRemitoIngreso {
             this.descripcionProducto = this.producto.getDescripcion();
             this.categoriaProducto = this.producto.getCategoria();
             this.marcaProducto = this.producto.getMarca();
+        } else if (this.producto == null) {
+            // Si no hay producto, usar valores por defecto o de la descripción
+            if (this.nombreProducto == null && this.descripcion != null) {
+                this.nombreProducto = this.descripcion;
+            }
         }
     }
 

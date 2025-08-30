@@ -169,6 +169,10 @@ public class RemitoIngresoService {
                         }
                         
                         detalle.setProducto(producto.get());
+                        detalle.setNombreProducto(producto.get().getNombre());
+                        detalle.setDescripcionProducto(producto.get().getDescripcion());
+                        detalle.setCategoriaProducto(producto.get().getCategoria());
+                        detalle.setMarcaProducto(producto.get().getMarca());
                         
                         // Actualizar el stock del producto
                         Producto productoActualizado = producto.get();
@@ -177,6 +181,9 @@ public class RemitoIngresoService {
                     } else {
                         throw new RuntimeException("Producto no encontrado con ID: " + detalleDTO.getProductoId());
                     }
+                } else {
+                    // Si no hay producto, usar la descripción como nombre del producto
+                    detalle.setNombreProducto(detalleDTO.getDescripcion().trim());
                 }
                 
                 detalleRemitoIngresoRepository.save(detalle);
