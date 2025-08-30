@@ -79,7 +79,8 @@ public class PlanillaDevolucionService {
             planilla.setNumeroPlanilla(dto.getNumeroPlanilla());
         } else {
             // Temporal: generar un valor por defecto para evitar el error de NOT NULL
-            String numeroPlanillaDefault = "DEV" + (System.currentTimeMillis() % 10000);
+            // Usar la fecha del usuario para generar el número, no la hora del servidor
+            String numeroPlanillaDefault = "DEV" + (fechaPlanilla.getHour() * 100 + fechaPlanilla.getMinute());
             planilla.setNumeroPlanilla(numeroPlanillaDefault);
             System.out.println("🔄 [DEVOLUCION] Usando número de planilla por defecto: " + numeroPlanillaDefault);
         }

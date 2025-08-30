@@ -90,7 +90,8 @@ public class PlanillaPedidoService {
             planilla.setNumeroPlanilla(dto.getNumeroPlanilla());
         } else {
             // Generar número de planilla automático con timestamp
-            String numeroPlanillaAuto = "PED" + (System.currentTimeMillis() % 10000);
+            // Usar la fecha del usuario para generar el número, no la hora del servidor
+            String numeroPlanillaAuto = "PED" + (fechaPlanilla.getHour() * 100 + fechaPlanilla.getMinute());
             planilla.setNumeroPlanilla(numeroPlanillaAuto);
             System.out.println("📋 [PEDIDO] Generando número de planilla automático: " + numeroPlanillaAuto);
         }
