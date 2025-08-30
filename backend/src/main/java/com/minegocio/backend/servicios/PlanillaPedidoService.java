@@ -90,7 +90,7 @@ public class PlanillaPedidoService {
             planilla.setNumeroPlanilla(dto.getNumeroPlanilla());
         } else {
             // Generar número de planilla automático con timestamp
-            String numeroPlanillaAuto = "PED-" + System.currentTimeMillis();
+            String numeroPlanillaAuto = "PED" + (System.currentTimeMillis() % 10000);
             planilla.setNumeroPlanilla(numeroPlanillaAuto);
             System.out.println("📋 [PEDIDO] Generando número de planilla automático: " + numeroPlanillaAuto);
         }
