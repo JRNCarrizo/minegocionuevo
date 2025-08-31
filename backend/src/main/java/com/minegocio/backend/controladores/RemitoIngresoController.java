@@ -71,6 +71,8 @@ public class RemitoIngresoController {
                 return ResponseEntity.badRequest().body(java.util.Map.of("error", "Datos del remito no pueden ser nulos. Verifique el formato JSON."));
             }
             
+            System.out.println("✅ RemitoDTO recibido correctamente");
+            
             UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
             Long empresaId = usuarioPrincipal.getEmpresaId();
             System.out.println("DEBUG: Usuario autenticado: " + usuarioPrincipal.getUsername());
@@ -91,8 +93,10 @@ public class RemitoIngresoController {
                 }
             }
             
+            System.out.println("✅ Configurando empresaId y usuarioId...");
             remitoDTO.setEmpresaId(empresaId);
             remitoDTO.setUsuarioId(usuarioPrincipal.getId());
+            System.out.println("✅ empresaId y usuarioId configurados");
             
             System.out.println("DEBUG: Llamando a remitoIngresoService.crearRemito...");
             RemitoIngresoDTO remitoCreado = remitoIngresoService.crearRemito(remitoDTO);
