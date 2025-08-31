@@ -4,7 +4,7 @@ import api from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useResponsive } from '../../hooks/useResponsive';
 import type { Cliente, Pedido } from '../../types';
-import { crearFechaLocal } from '../../utils/dateUtils';
+import { crearFechaLocal, formatearFechaConHora } from '../../utils/dateUtils';
 
 // Función helper para formatear fechas de manera segura
 const formatearFechaSegura = (fecha: any): string => {
@@ -143,106 +143,7 @@ const obtenerFechaActual = () => {
   return fechaActual;
 };
 
-// Función para formatear fecha con "Hoy"
-const formatearFechaConHora = (fecha: any) => {
-  try {
-    console.log('🔍 [DEBUG] formatearFechaConHora - entrada:', {
-      fecha,
-      tipo: typeof fecha,
-      esArray: Array.isArray(fecha)
-    });
-    
-    // Si es null o undefined
-    if (fecha == null) {
-      return 'Fecha no disponible';
-    }
 
-    // Si es un array (formato [year, month, day, hour, minute, second])
-    if (Array.isArray(fecha)) {
-      console.log('🔍 [DEBUG] Procesando como array:', fecha);
-      const [year, month, day, hour, minute, second] = fecha;
-      // Crear fecha local (no UTC) para evitar conversión automática
-      const fechaLocal = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
-      
-      console.log('🔍 [DEBUG] Array procesado como fecha local:', {
-        year, month, day, hour, minute, second,
-        fechaLocal: fechaLocal.toISOString(),
-        zonaHorariaLocal: Intl.DateTimeFormat().resolvedOptions().timeZone
-      });
-      
-      return fechaLocal.toLocaleString('es-AR', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit', 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        hour12: false 
-      });
-    }
-
-    // Si es un string
-    if (typeof fecha === 'string') {
-      // Si ya tiene formato de fecha (YYYY-MM-DD)
-      if (fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        return fecha;
-      }
-      // Si tiene formato ISO con T
-      if (fecha.includes('T')) {
-        const partes = fecha.split('T');
-        if (partes.length >= 1) {
-          // Convertir de UTC a zona horaria local
-          const fechaUTC = new Date(fecha);
-          if (!isNaN(fechaUTC.getTime())) {
-            return fechaUTC.toLocaleString('es-AR', { 
-              year: 'numeric', 
-              month: '2-digit', 
-              day: '2-digit', 
-              hour: '2-digit', 
-              minute: '2-digit', 
-              hour12: false 
-            });
-          }
-          return partes[0];
-        }
-      }
-      // Si es otro formato, intentar parsear
-      if (!Array.isArray(fecha)) {
-        const fechaObj = new Date(fecha);
-        if (!isNaN(fechaObj.getTime())) {
-          return fechaObj.toLocaleString('es-AR', { 
-            year: 'numeric', 
-            month: '2-digit', 
-            day: '2-digit', 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            hour12: false 
-          });
-        }
-      }
-    }
-
-    // Si es un objeto Date o timestamp
-    if (fecha instanceof Date || typeof fecha === 'number') {
-      const fechaObj = new Date(fecha);
-      if (!isNaN(fechaObj.getTime())) {
-        return fechaObj.toLocaleString('es-AR', { 
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit', 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          hour12: false 
-        });
-      }
-    }
-
-    console.error('Formato de fecha no reconocido:', fecha, 'tipo:', typeof fecha);
-    return 'Fecha inválida';
-  } catch (error) {
-    console.error('❌ Error en formatearFechaConHora:', error);
-    return 'Fecha inválida';
-  }
-};
 
 // Componente Modal para detalles del cliente
 function ClienteDetalleModal({ cliente, pedidos, open, onClose }: { 
