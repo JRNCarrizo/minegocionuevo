@@ -510,7 +510,7 @@ public class PlanillaPedidoService {
         PlanillaPedidoResponseDTO dto = new PlanillaPedidoResponseDTO();
         dto.setId(planilla.getId());
         dto.setNumeroPlanilla(planilla.getNumeroPlanilla());
-        dto.setFechaPlanilla(planilla.getFechaPlanilla());
+        dto.setFechaPlanilla(planilla.getFechaPlanilla().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
         dto.setObservaciones(planilla.getObservaciones());
         dto.setTotalProductos(planilla.getTotalProductos());
         dto.setFechaCreacion(planilla.getFechaCreacion());
