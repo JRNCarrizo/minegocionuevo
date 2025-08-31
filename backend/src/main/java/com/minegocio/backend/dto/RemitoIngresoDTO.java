@@ -14,9 +14,9 @@ public class RemitoIngresoDTO {
     private String observaciones;
     private Integer totalProductos;
     
-    private String fechaCreacion;
+    private LocalDateTime fechaCreacion;
     
-    private String fechaActualizacion;
+    private LocalDateTime fechaActualizacion;
     private Long empresaId;
     private Long usuarioId;
     private List<DetalleRemitoIngresoDTO> detalles;
@@ -26,7 +26,7 @@ public class RemitoIngresoDTO {
     public RemitoIngresoDTO() {}
     
     public RemitoIngresoDTO(Long id, String numeroRemito, String fechaRemito, String observaciones,
-                            Integer totalProductos, String fechaCreacion, String fechaActualizacion,
+                            Integer totalProductos, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion,
                             Long empresaId, Long usuarioId, List<DetalleRemitoIngresoDTO> detalles, String zonaHoraria) {
         this.id = id;
         this.numeroRemito = numeroRemito;
@@ -82,19 +82,19 @@ public class RemitoIngresoDTO {
         this.totalProductos = totalProductos;
     }
     
-    public String getFechaCreacion() {
+    public LocalDateTime getFechaCreacion() {
         return fechaCreacion;
     }
     
-    public void setFechaCreacion(String fechaCreacion) {
+    public void setFechaCreacion(LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
     }
     
-    public String getFechaActualizacion() {
+    public LocalDateTime getFechaActualizacion() {
         return fechaActualizacion;
     }
     
-    public void setFechaActualizacion(String fechaActualizacion) {
+    public void setFechaActualizacion(LocalDateTime fechaActualizacion) {
         this.fechaActualizacion = fechaActualizacion;
     }
     
