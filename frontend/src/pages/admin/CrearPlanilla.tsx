@@ -396,6 +396,9 @@ export default function CrearPlanilla() {
       console.log('📋 [DEBUG] Zona horaria del usuario:', zonaHorariaUsuario);
       console.log('📋 [DEBUG] Fecha actual del sistema:', new Date().toISOString());
       console.log('📋 [DEBUG] Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
+      console.log('📋 [DEBUG] Fecha local getTime():', fechaLocal.getTime());
+      console.log('📋 [DEBUG] Fecha local toISOString():', fechaLocal.toISOString());
+      console.log('📋 [DEBUG] Fecha local toLocaleString():', fechaLocal.toLocaleString());
       console.log('📋 [DEBUG] Enviando planilla:', planillaData);
       
       await ApiService.crearPlanillaPedido(planillaData);
