@@ -10,13 +10,13 @@ El problema estaba en la diferencia de cómo se manejaban las fechas entre los d
 
 1. **PlanillaDevolucion (funcionaba correctamente)**:
    - DTO: `fechaPlanilla` como `LocalDateTime`
-   - Servicio: Usaba directamente `dto.getFechaPlanilla()`
-   - Jackson: Interpretaba correctamente las fechas
+   - Frontend: Envía objeto `Date` que Jackson deserializa correctamente
+   - Servicio: Usa directamente `dto.getFechaPlanilla()`
 
 2. **RemitoIngreso (tenía el problema)**:
    - DTO: `fechaRemito` como `String`
-   - Servicio: Parseaba el string a `LocalDateTime` con lógica compleja
-   - Jackson: Interpretaba las fechas de manera diferente
+   - Frontend: Envía string que Jackson interpreta como UTC
+   - Servicio: Parseaba el string con lógica compleja
 
 ## Solución Implementada
 
@@ -33,7 +33,19 @@ private String fechaRemito;
 private LocalDateTime fechaRemito;
 ```
 
-### 2. Simplificación del Servicio
+### 2. Cambio en Frontend (CrearIngreso.tsx)
+
+**Antes:**
+```javascript
+fechaRemito: fechaFormateada, // String
+```
+
+**Después:**
+```javascript
+fechaRemito: fechaLocal, // Objeto Date
+```
+
+### 3. Simplificación del Servicio
 
 **Antes (RemitoIngresoService.java):**
 ```java
@@ -59,13 +71,9 @@ if (fechaRemito == null) {
 }
 ```
 
-### 3. Eliminación de Lógica Compleja de Zona Horaria
-
-Se eliminó la lógica compleja que intentaba manejar manualmente la zona horaria para `fechaCreacion`, dejando que `@CreationTimestamp` maneje automáticamente la fecha de creación, igual que en PlanillaDevolucion.
-
 ## Flujo de Datos Corregido
 
-### Frontend (sin cambios)
+### Frontend (modificado)
 ```javascript
 // Crear fecha en la zona horaria local del usuario
 const fechaLocal = new Date(
@@ -77,17 +85,15 @@ const fechaLocal = new Date(
   segundosLocal
 );
 
-// Formatear como string local sin conversión UTC
-const fechaFormateada = fechaLocal.getFullYear() + '-' + 
-  String(fechaLocal.getMonth() + 1).padStart(2, '0') + '-' + 
-  String(fechaLocal.getDate()).padStart(2, '0') + 'T' + 
-  String(fechaLocal.getHours()).padStart(2, '0') + ':' + 
-  String(fechaLocal.getMinutes()).padStart(2, '0') + ':' + 
-  String(fechaLocal.getSeconds()).padStart(2, '0');
+// Enviar como objeto Date (no como string)
+const remitoData = {
+  fechaRemito: fechaLocal, // Jackson deserializará esto correctamente
+  // ... otros campos
+};
 ```
 
 ### Backend (corregido)
-1. **Jackson**: Recibe la fecha como `LocalDateTime` (no como string)
+1. **Jackson**: Recibe objeto `Date` → Lo deserializa como `LocalDateTime` usando la configuración local
 2. **Servicio**: Usa directamente `dto.getFechaRemito()` sin parsing
 3. **Base de datos**: Se guarda la fecha exacta enviada por el usuario
 
@@ -97,6 +103,7 @@ const fechaFormateada = fechaLocal.getFullYear() + '-' +
 2. **Simplicidad**: Eliminación de lógica compleja de parsing y zona horaria
 3. **Precisión**: Las fechas se guardan exactamente como las envía el usuario
 4. **Mantenibilidad**: Código más limpio y fácil de mantener
+5. **Compatibilidad**: Jackson maneja automáticamente la deserialización
 
 ## Verificación
 
@@ -118,18 +125,22 @@ Para verificar que la solución funciona:
    - Eliminación de lógica compleja de zona horaria
    - Actualización del método `convertirADTO`
 
+3. `frontend/src/pages/admin/CrearIngreso.tsx`
+   - Cambio de envío de string a objeto `Date`
+
 ## Notas Importantes
 
-- **Compatibilidad**: Los cambios son compatibles con el frontend existente
-- **Configuración**: No se requieren cambios en la configuración de Jackson o zona horaria
+- **Jackson**: Configurado para usar fechas locales sin conversión UTC
+- **Frontend**: Envía objeto `Date` que Jackson deserializa automáticamente
+- **Backend**: Usa `LocalDateTime` directamente sin parsing manual
 - **Testing**: Se recomienda probar en desarrollo antes de desplegar a producción
 
 ## Ejemplo de Funcionamiento
 
 Si un usuario en Argentina (UTC-3) crea un ingreso a las 15:30:
 
-1. **Frontend**: 15:30 hora local → Se envía como "2024-01-15T15:30:00"
-2. **Backend**: Jackson interpreta como `LocalDateTime` → Se guarda como 15:30
+1. **Frontend**: 15:30 hora local → Se envía como objeto `Date`
+2. **Backend**: Jackson deserializa como `LocalDateTime` → Se guarda como 15:30
 3. **Visualización**: Se muestra como 15:30 en la zona horaria local del usuario
 
-La solución asegura que tanto ingresos como devoluciones manejen las fechas de manera consistente y correcta.
+La solución asegura que tanto ingresos como devoluciones manejen las fechas de manera consistente y correcta, eliminando el problema de las 3 horas de diferencia.

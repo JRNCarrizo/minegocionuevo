@@ -860,7 +860,7 @@ export default function CrearIngreso() {
       // Preparar los datos del remito para la API
       const remitoData = {
         numeroRemito,
-        fechaRemito: fechaFormateada,
+        fechaRemito: fechaLocal, // Enviar como objeto Date en lugar de string
         observaciones,
         totalProductos: detalles.reduce((total, detalle) => total + detalle.cantidad, 0),
         detalles: detalles.map(detalle => ({
