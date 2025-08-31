@@ -529,7 +529,7 @@ public class RoturaPerdidaService {
     public RoturaPerdidaResponseDTO convertirADTO(RoturaPerdida roturaPerdida) {
         RoturaPerdidaResponseDTO dto = new RoturaPerdidaResponseDTO();
         dto.setId(roturaPerdida.getId());
-        dto.setFecha(roturaPerdida.getFecha());
+        dto.setFecha(roturaPerdida.getFecha().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
         dto.setCantidad(roturaPerdida.getCantidad());
         dto.setObservaciones(roturaPerdida.getObservaciones());
         dto.setDescripcionProducto(roturaPerdida.getDescripcionProducto());
