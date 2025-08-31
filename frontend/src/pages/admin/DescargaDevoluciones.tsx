@@ -690,7 +690,7 @@ export default function DescargaDevoluciones() {
                                   {planilla.totalProductos}
                                 </span> unidades</span>
                                 <span>🛒 {planilla.detalles.length} productos</span>
-                                <span>⏰ {formatearFechaConHora(planilla.fechaCreacion)}</span>
+                                <span>⏰ {formatearFechaConHora(planilla.fechaPlanilla)}</span>
                               </div>
                             </div>
                             <div style={{
