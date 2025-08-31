@@ -392,7 +392,7 @@ export default function CrearPlanilla() {
       console.log('📋 [DEBUG] Fecha seleccionada:', nuevaPlanilla.fechaPlanilla);
       console.log('📋 [DEBUG] Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
       console.log('📋 [DEBUG] Fecha creada local:', fechaLocal.toString());
-      console.log('📋 [DEBUG] Fecha formateada (sin Z):', fechaFormateada);
+      console.log('📋 [DEBUG] Fecha formateada (local):', fechaFormateada);
       console.log('📋 [DEBUG] Zona horaria del usuario:', zonaHorariaUsuario);
       console.log('📋 [DEBUG] Fecha actual del sistema:', new Date().toISOString());
       console.log('📋 [DEBUG] Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
