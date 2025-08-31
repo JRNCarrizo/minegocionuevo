@@ -13,8 +13,8 @@ interface RemitoIngreso {
   fechaRemito: string;
   observaciones?: string;
   totalProductos: number;
-  fechaCreacion: string;
-  fechaActualizacion: string;
+  fechaCreacion: any;
+  fechaActualizacion: any;
   detalles: DetalleRemitoIngreso[];
 }
 
@@ -25,7 +25,7 @@ interface DetalleRemitoIngreso {
   descripcion: string;
   cantidad: number;
   observaciones?: string;
-  fechaCreacion: string;
+  fechaCreacion: any;
 }
 
 
