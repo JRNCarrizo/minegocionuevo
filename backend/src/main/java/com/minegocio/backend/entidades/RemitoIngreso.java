@@ -32,12 +32,10 @@ public class RemitoIngreso {
     
     @CreationTimestamp
     @Column(name = "fecha_creacion", updatable = false)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;
     
     @UpdateTimestamp
     @Column(name = "fecha_actualizacion")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaActualizacion;
     
     @ManyToOne(fetch = FetchType.EAGER)
