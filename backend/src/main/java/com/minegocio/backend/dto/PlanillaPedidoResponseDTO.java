@@ -9,8 +9,7 @@ public class PlanillaPedidoResponseDTO {
     private Long id;
     private String numeroPlanilla;
     private String observaciones;
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime fechaPlanilla;
+    private String fechaPlanilla;
     private Integer totalProductos;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;
@@ -22,7 +21,7 @@ public class PlanillaPedidoResponseDTO {
     public PlanillaPedidoResponseDTO() {}
 
     public PlanillaPedidoResponseDTO(Long id, String numeroPlanilla, String observaciones, 
-                                   LocalDateTime fechaPlanilla, Integer totalProductos, 
+                                   String fechaPlanilla, Integer totalProductos, 
                                    LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion,
                                    List<DetallePlanillaPedidoResponseDTO> detalles) {
         this.id = id;
@@ -45,8 +44,8 @@ public class PlanillaPedidoResponseDTO {
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
 
-    public LocalDateTime getFechaPlanilla() { return fechaPlanilla; }
-    public void setFechaPlanilla(LocalDateTime fechaPlanilla) { this.fechaPlanilla = fechaPlanilla; }
+    public String getFechaPlanilla() { return fechaPlanilla; }
+    public void setFechaPlanilla(String fechaPlanilla) { this.fechaPlanilla = fechaPlanilla; }
 
     public Integer getTotalProductos() { return totalProductos; }
     public void setTotalProductos(Integer totalProductos) { this.totalProductos = totalProductos; }

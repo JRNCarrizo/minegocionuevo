@@ -165,7 +165,7 @@ public class PlanillaPedidoService {
                 planilla.getId(),
                 planilla.getNumeroPlanilla(),
                 planilla.getObservaciones(),
-                planilla.getFechaPlanilla(),
+                planilla.getFechaPlanilla().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")),
                 planilla.getTotalProductos(),
                 planilla.getFechaCreacion(),
                 planilla.getFechaActualizacion(),
