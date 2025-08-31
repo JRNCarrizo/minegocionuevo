@@ -9,6 +9,7 @@ Después de implementar la corrección de zona horaria en ingresos, se presentar
 3. **Problema de zona horaria**: Las fechas seguían apareciendo 3 horas adelantadas
 4. **Problema de autorización**: Endpoint no configurado en Spring Security
 5. **Problema de deserialización flexible**: Jackson no aceptaba fechas con formato ISO completo
+6. **Problema de conversión UTC en frontend**: El frontend enviaba objetos Date que se convertían automáticamente a UTC
 
 ### Causa Raíz
 
@@ -18,6 +19,21 @@ Después de implementar la corrección de zona horaria en ingresos, se presentar
 4. **Configuraciones redundantes**: Anotaciones @JsonFormat innecesarias en DTOs
 5. **Problema de autorización**: El endpoint `/api/remitos-ingreso` no estaba configurado en ConfiguracionSeguridad.java
 6. **Problema de deserialización flexible**: Jackson necesitaba aceptar múltiples formatos de fecha
+7. **Problema de conversión UTC en frontend**: El frontend enviaba objetos `Date` que Jackson convertía automáticamente a UTC
+
+### Error de Conversión UTC en Frontend
+
+**Problema específico**: El frontend estaba enviando objetos `Date` en lugar de strings locales:
+
+```javascript
+// ❌ INCORRECTO - Envía objeto Date que se convierte a UTC
+fechaRemito: fechaLocal, // Objeto Date → toISOString() → UTC
+
+// ✅ CORRECTO - Envía string local sin conversión UTC
+fechaRemito: fechaFormateada, // String local: "2025-08-31T00:24:07"
+```
+
+**Resultado**: Hora local 00:24 se convertía a 03:24 UTC (+3 horas).
 
 ## Análisis del Problema de Zona Horaria
 
@@ -41,6 +57,11 @@ Después de implementar la corrección de zona horaria en ingresos, se presentar
    ```
 
 4. **JacksonConfig.java**: Usaba DateTimeFormatter.ISO_DATE_TIME (con 'Z')
+
+5. **CrearIngreso.tsx**: Enviaba objetos Date que se convertían a UTC
+   ```javascript
+   fechaRemito: fechaLocal, // ❌ Objeto Date → UTC automático
+   ```
 
 ### Configuraciones Redundantes Encontradas:
 
@@ -210,22 +231,47 @@ auth.requestMatchers("/api/roturas-perdidas/**").hasAnyRole("ADMINISTRADOR", "SU
 auth.requestMatchers("/api/remitos-ingreso/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN"); // ← Agregado
 ```
 
+### 8. Corrección de Conversión UTC en Frontend
+
+**Archivo**: `frontend/src/pages/admin/CrearIngreso.tsx`
+
+**Antes**:
+```javascript
+// ❌ INCORRECTO - Envía objeto Date que se convierte a UTC
+const remitoData = {
+  numeroRemito,
+  fechaRemito: fechaLocal, // Objeto Date → toISOString() → UTC
+  observaciones,
+  // ...
+};
+```
+
+**Después**:
+```javascript
+// ✅ CORRECTO - Envía string local sin conversión UTC
+const remitoData = {
+  numeroRemito,
+  fechaRemito: fechaFormateada, // String local: "2025-08-31T00:24:07"
+  observaciones,
+  // ...
+};
+```
+
 ## Flujo de Datos Corregido
 
 ### Frontend
-1. Usuario crea un remito de ingreso o planilla de pedidos
-2. Interceptor detecta el endpoint y agrega token de administrador
-3. Se envía fecha con formato local o ISO según el contexto
+1. Usuario crea un remito de ingreso a las 00:24 (hora local)
+2. Frontend crea fecha local: `new Date(2025, 7, 31, 0, 24, 7)`
+3. Frontend formatea como string local: `"2025-08-31T00:24:07"`
+4. Interceptor detecta el endpoint y agrega token de administrador
+5. Se envía string local sin conversión UTC
 
 ### Backend
 1. Spring Security permite el acceso al endpoint para administradores
-2. Jackson recibe fecha (ej: `"2025-08-30T15:30:00"` o `"2025-08-30T15:30:00.000Z"`)
-3. Deserializador personalizado intenta múltiples formatos:
-   - Primero: `yyyy-MM-dd'T'HH:mm:ss` (formato simple)
-   - Segundo: `DateTimeFormatter.ISO_DATE_TIME` (con 'Z')
-   - Tercero: `DateTimeFormatter.ISO_LOCAL_DATE_TIME` (sin 'Z')
-4. Se convierte a `LocalDateTime` sin conversiones UTC
-5. Se guarda en la base de datos con hora local
+2. Jackson recibe string local: `"2025-08-31T00:24:07"`
+3. Deserializador personalizado parsea correctamente como LocalDateTime
+4. Se guarda en la base de datos con hora exacta: `2025-08-31T00:24:07`
+5. Se devuelve la fecha exacta sin conversiones
 
 ## Verificación
 
@@ -244,6 +290,20 @@ auth.requestMatchers("/api/remitos-ingreso/**").hasAnyRole("ADMINISTRADOR", "SUP
 
 ### Logs de Deserialización
 Ya no aparecen errores de parsing JSON.
+
+### Logs de Frontend (Corregido)
+```
+📋 [DEBUG] Fecha seleccionada: 2025-08-31
+📋 [DEBUG] Hora local del usuario: 0:24:7
+📋 [DEBUG] Fecha formateada (sin Z): 2025-08-31T00:24:07
+📋 [DEBUG] Enviando remito: { fechaRemito: "2025-08-31T00:24:07" }
+```
+
+### Logs de Backend (Corregido)
+```
+📋 [SERVICE] Fecha remito recibida: 2025-08-31T00:24:07
+📋 [SERVICE] Guardando fecha exacta del usuario: 2025-08-31T00:24:07
+```
 
 ## Archivos Modificados
 
@@ -283,6 +343,10 @@ Ya no aparecen errores de parsing JSON.
 11. **`backend/src/main/java/com/minegocio/backend/seguridad/AuthTokenFilter.java`**
     - Agregados logs específicos para debugging de `/remitos-ingreso`
 
+12. **`frontend/src/pages/admin/CrearIngreso.tsx`**
+    - Cambiado de enviar objeto `Date` a enviar string local
+    - Eliminada conversión UTC automática
+
 ## Beneficios de la Solución
 
 1. **Consistencia**: Todas las configuraciones de fecha están alineadas
@@ -293,6 +357,7 @@ Ya no aparecen errores de parsing JSON.
 6. **Limpieza**: Eliminadas configuraciones redundantes e inconsistentes
 7. **Autorización**: Endpoint correctamente configurado en Spring Security
 8. **Tolerancia a errores**: Deserializador maneja múltiples formatos de fecha
+9. **Sin conversión UTC**: Fechas se manejan exactamente como las envía el usuario
 
 ## Notas Importantes
 
@@ -303,16 +368,17 @@ Ya no aparecen errores de parsing JSON.
 - **Configuración centralizada**: JacksonConfig maneja todos los formatos de fecha
 - **Autorización explícita**: Endpoint configurado para roles ADMINISTRADOR y SUPER_ADMIN
 - **Deserialización robusta**: Múltiples intentos de parsing para máxima compatibilidad
+- **Frontend corregido**: Envía strings locales en lugar de objetos Date
 
 ## Ejemplo de Funcionamiento
 
-Si un usuario crea un ingreso a las 15:30:
+Si un usuario crea un ingreso a las 00:24:
 
-1. **Frontend**: Envía `"2025-08-30T15:30:00"` o `"2025-08-30T15:30:00.000Z"`
+1. **Frontend**: Envía `"2025-08-31T00:24:07"` (string local)
 2. **Spring Security**: Permite acceso al endpoint para administradores
-3. **Jackson**: Deserializador personalizado intenta múltiples formatos
-4. **Backend**: Guarda como `LocalDateTime` con hora exacta
+3. **Jackson**: Deserializador personalizado parsea correctamente
+4. **Backend**: Guarda como `LocalDateTime` con hora exacta: `2025-08-31T00:24:07`
 5. **Base de datos**: Almacena la fecha exacta enviada por el usuario
-6. **Visualización**: Muestra la hora correcta sin adelantos
+6. **Visualización**: Muestra la hora correcta: `00:24` (sin adelantos)
 
 La solución asegura que tanto la autenticación como el manejo de fechas funcionen correctamente sin problemas de zona horaria y con configuraciones limpias y consistentes.
