@@ -123,7 +123,8 @@ class ApiService {
            /\/historial-carga-productos\//.test(config.url) ||
            /\/planillas-pedidos\//.test(config.url) ||
            /\/devoluciones\//.test(config.url) ||
-           /\/roturas-perdidas\//.test(config.url))
+           /\/roturas-perdidas\//.test(config.url) ||
+           /\/remitos-ingreso\//.test(config.url))
         ) {
           const tokenAdmin = localStorage.getItem('token');
           console.log('🔍 === DEBUG INTERCEPTOR ADMIN ===');
