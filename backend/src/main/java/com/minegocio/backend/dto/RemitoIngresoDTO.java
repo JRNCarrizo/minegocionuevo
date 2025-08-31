@@ -9,7 +9,7 @@ public class RemitoIngresoDTO {
     private Long id;
     private String numeroRemito;
     
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private LocalDateTime fechaRemito;
     
     private String observaciones;

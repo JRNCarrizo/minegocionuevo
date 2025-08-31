@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 public class JacksonConfig {
 
     private static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
+    private static final String DATETIME_FORMAT_WITH_Z = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
     @Bean
     @Primary
@@ -27,8 +28,8 @@ public class JacksonConfig {
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         
         // Configurar serializador y deserializador para LocalDateTime
-        // Usar formato local sin conversión UTC
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATETIME_FORMAT);
+        // Usar formato ISO completo que incluye 'Z' para compatibilidad con frontend
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME;
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter));
         javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter));
         
@@ -42,7 +43,7 @@ public class JacksonConfig {
         // NO configurar zona horaria UTC para mantener fechas locales
         // objectMapper.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
         
-        System.out.println("🔧 Jackson configurado para usar fechas locales sin conversión UTC");
+        System.out.println("🔧 Jackson configurado para usar fechas ISO completas (con 'Z')");
         System.out.println("🔧 [JACKSON] Configuración completada. ObjectMapper listo.");
         
         return objectMapper;

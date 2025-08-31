@@ -72,6 +72,10 @@ class ApiService {
     this.api.interceptors.request.use(
       (config) => {
         console.log('🌐 API Request:', config.method?.toUpperCase(), config.url);
+        console.log('🔍 === DEBUG INTERCEPTOR INICIO ===');
+        console.log('🔍 URL completa:', config.url);
+        console.log('🔍 Método:', config.method);
+        console.log('🔍 Headers actuales:', config.headers);
         
         // Endpoints completamente públicos (no requieren token)
         if (
@@ -115,8 +119,8 @@ class ApiService {
         }
         
         // Endpoints de administrador (requieren token de admin)
-        if (
-          config.url &&
+        console.log('🔍 Verificando si es endpoint de administrador...');
+        const isAdminEndpoint = config.url &&
           (/\/admin\//.test(config.url) ||
            /\/empresas\/\d+\//.test(config.url) ||
            /\/notificaciones\//.test(config.url) ||
@@ -124,8 +128,12 @@ class ApiService {
            /\/planillas-pedidos\//.test(config.url) ||
            /\/devoluciones\//.test(config.url) ||
            /\/roturas-perdidas\//.test(config.url) ||
-           /\/remitos-ingreso\//.test(config.url))
-        ) {
+           /\/remitos-ingreso\//.test(config.url));
+        
+        console.log('🔍 Es endpoint de admin?', isAdminEndpoint);
+        console.log('🔍 Patrón remitos-ingreso coincide?', /\/remitos-ingreso\//.test(config.url || ''));
+        
+        if (isAdminEndpoint) {
           const tokenAdmin = localStorage.getItem('token');
           console.log('🔍 === DEBUG INTERCEPTOR ADMIN ===');
           console.log('🔍 URL:', config.url);
@@ -183,6 +191,12 @@ class ApiService {
           console.log('⚠️ No se encontró token para endpoint:', config.url);
         }
         
+        console.log('🔍 === DEBUG INTERCEPTOR FINAL ===');
+        console.log('🔍 Headers finales:', config.headers);
+        console.log('🔍 Authorization header presente:', !!config.headers.Authorization);
+        if (config.headers.Authorization && typeof config.headers.Authorization === 'string') {
+          console.log('🔍 Authorization header:', config.headers.Authorization.substring(0, 50) + '...');
+        }
         return config;
       },
       (error) => Promise.reject(error)

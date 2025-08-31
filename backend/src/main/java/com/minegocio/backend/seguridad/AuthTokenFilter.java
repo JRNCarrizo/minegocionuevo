@@ -41,7 +41,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 requestPath.contains("/reporte-stock") || requestPath.contains("/reportes/") ||
                 requestPath.contains("/direct/") || requestPath.contains("/public/") ||
                 requestPath.contains("/files/") || requestPath.contains("/ultra/") ||
-                requestPath.contains("/stock-general")) {
+                requestPath.contains("/stock-general") || requestPath.contains("/remitos-ingreso")) {
                 System.out.println("🌐 REQUEST RECIBIDA: " + method + " " + requestPath);
             }
             
@@ -59,6 +59,16 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             }
             
             String jwt = parseJwt(request);
+            
+            // Log específico para remitos-ingreso
+            if (requestPath.contains("/remitos-ingreso")) {
+                System.out.println("🔍 === DEBUG REMITOS-INGRESO ===");
+                System.out.println("🔍 JWT presente: " + (jwt != null ? "SÍ" : "NO"));
+                System.out.println("🔍 JWT válido: " + (jwt != null && jwtUtils != null && jwtUtils.validateJwtToken(jwt) ? "SÍ" : "NO"));
+                if (jwt != null) {
+                    System.out.println("🔍 JWT (primeros 50 chars): " + jwt.substring(0, Math.min(50, jwt.length())) + "...");
+                }
+            }
             
             if (jwt != null && jwtUtils != null && jwtUtils.validateJwtToken(jwt)) {
                 String email = jwtUtils.extractUsername(jwt);
