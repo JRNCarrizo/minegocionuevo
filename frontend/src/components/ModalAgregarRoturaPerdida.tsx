@@ -315,6 +315,11 @@ export default function ModalAgregarRoturaPerdida({
       const minutosLocal = ahora.getMinutes();
       const segundosLocal = ahora.getSeconds();
       
+      console.log('📋 [DEBUG] Fecha seleccionada (input):', fecha);
+      console.log('📋 [DEBUG] Fecha seleccionada (Date object):', fechaSeleccionada.toString());
+      console.log('📋 [DEBUG] Hora actual del sistema:', ahora.toString());
+      console.log('📋 [DEBUG] Hora local extraída:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
+      
       // Crear fecha en la zona horaria local del usuario
       const fechaLocal = new Date(
         fechaSeleccionada.getFullYear(),
@@ -325,13 +330,14 @@ export default function ModalAgregarRoturaPerdida({
         segundosLocal
       );
       
-      // Formatear como string local sin conversión UTC
-      const fechaFormateada = fechaLocal.getFullYear() + '-' + 
-        String(fechaLocal.getMonth() + 1).padStart(2, '0') + '-' + 
-        String(fechaLocal.getDate()).padStart(2, '0') + 'T' + 
-        String(fechaLocal.getHours()).padStart(2, '0') + ':' + 
-        String(fechaLocal.getMinutes()).padStart(2, '0') + ':' + 
-        String(fechaLocal.getSeconds()).padStart(2, '0');
+      console.log('📋 [DEBUG] Fecha local creada:', fechaLocal.toString());
+      console.log('📋 [DEBUG] Fecha local getTime():', fechaLocal.getTime());
+      console.log('📋 [DEBUG] Fecha local toISOString():', fechaLocal.toISOString());
+      console.log('📋 [DEBUG] Fecha local toLocaleString():', fechaLocal.toLocaleString());
+      console.log('📋 [DEBUG] Offset de zona horaria:', fechaLocal.getTimezoneOffset(), 'minutos');
+      
+      // Formatear como ISO string pero SIN la Z al final para que el backend la trate como fecha local
+      const fechaFormateada = fechaLocal.toISOString().replace('Z', '');
       
       console.log('📋 Fecha seleccionada:', fecha);
       console.log('📋 Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
