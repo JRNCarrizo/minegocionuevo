@@ -26,8 +26,8 @@ public class JacksonConfig {
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         
         // Configurar serializador y deserializador para LocalDateTime
-        // Usar formato ISO que incluye 'Z' para UTC
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME;
+        // Usar formato local sin conversión UTC
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATETIME_FORMAT);
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter));
         javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter));
         
@@ -38,10 +38,10 @@ public class JacksonConfig {
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.disable(SerializationFeature.WRITE_DATES_WITH_ZONE_ID);
         
-        // Configurar zona horaria UTC para manejar fechas correctamente
-        objectMapper.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        // NO configurar zona horaria UTC para mantener fechas locales
+        // objectMapper.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
         
-        System.out.println("🔧 Jackson configurado para usar UTC");
+        System.out.println("🔧 Jackson configurado para usar fechas locales sin conversión UTC");
         
         return objectMapper;
     }
