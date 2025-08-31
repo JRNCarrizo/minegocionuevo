@@ -393,7 +393,7 @@ public class RemitoIngresoService {
         RemitoIngresoDTO dto = new RemitoIngresoDTO(
                 remito.getId(),
                 remito.getNumeroRemito(),
-                remito.getFechaRemito().toString(),
+                remito.getFechaRemito().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")),
                 remito.getObservaciones(),
                 remito.getTotalProductos(),
                 remito.getFechaCreacion(),
