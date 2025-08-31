@@ -10,15 +10,11 @@ public class TimeZoneConfig {
 
     @PostConstruct
     public void init() {
-        // NO configurar zona horaria UTC globalmente
-        // Permitir que las fechas se manejen localmente sin conversiones
-        System.out.println("🌍 Zona horaria del servidor actual: " + TimeZone.getDefault().getID());
-        System.out.println("🌍 Zona horaria actual: " + TimeZone.getDefault().getDisplayName());
-        System.out.println("🌍 Offset actual: " + TimeZone.getDefault().getRawOffset() / (1000 * 60 * 60) + " horas");
-        System.out.println("🌍 Configuración: Las fechas se manejan localmente sin conversiones UTC");
-        
-        // NO configurar zona horaria del sistema
-        // System.setProperty("user.timezone", "UTC");
+        // NO configurar zona horaria del servidor
+        // Permitir que las fechas se manejen exactamente como las envía el frontend
+        System.out.println("🌍 Zona horaria del servidor: " + TimeZone.getDefault().getID());
+        System.out.println("🌍 Configuración: Las fechas se manejan sin conversiones de zona horaria");
         System.out.println("🌍 Sistema usando zona horaria: " + System.getProperty("user.timezone"));
+        System.out.println("🌍 IMPORTANTE: Las fechas se procesan como vienen del frontend (sin conversiones)");
     }
 }
