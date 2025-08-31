@@ -738,7 +738,7 @@ export default function Ingresos() {
                                   {remito.totalProductos}
                                 </span> unidades</span>
                                 <span>🛒 {remito.detalles.length} productos</span>
-                                <span>⏰ {formatearFechaConHora(remito.fechaCreacion)}</span>
+                                <span>⏰ {formatearFechaConHora(remito.fechaRemito)}</span>
                                 {/* Debug: {console.log('Fecha creación remito:', remito.fechaCreacion, 'Tipo:', typeof remito.fechaCreacion, 'Es array:', Array.isArray(remito.fechaCreacion))} */}
                               </div>
                             </div>

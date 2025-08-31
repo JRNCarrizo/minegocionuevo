@@ -296,6 +296,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
     // Si es un string
     if (typeof fechaString === 'string') {
       console.log('🔍 Procesando string de fecha local:', fechaString);
+      console.log('🔍 String original recibido del backend:', fechaString);
       
       // IMPORTANTE: Las fechas del backend ya vienen en hora local del usuario
       // Mostrar directamente sin conversiones de zona horaria
@@ -311,12 +312,16 @@ export const formatearFechaConHora = (fechaString: any): string => {
         const hour = parseInt(horaParte[0]);
         const minute = parseInt(horaParte[1]);
         
+        console.log('🔍 Parseado manual - Year:', year, 'Month:', month, 'Day:', day, 'Hour:', hour, 'Minute:', minute);
+        
         // Formatear directamente sin usar Date constructor para evitar conversiones
         const fechaFormateada = `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
         const horaFormateada = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         
         const resultado = `${fechaFormateada}, ${horaFormateada}`;
         console.log('🔍 formatearFechaConHora - Resultado directo (string):', resultado);
+        console.log('🔍 Hora original del backend:', `${hour}:${minute}`);
+        console.log('🔍 Hora formateada final:', horaFormateada);
         return resultado;
       } else {
         // Otros formatos, usar Date constructor
