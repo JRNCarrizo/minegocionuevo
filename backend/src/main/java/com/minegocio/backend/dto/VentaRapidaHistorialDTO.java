@@ -20,7 +20,8 @@ public class VentaRapidaHistorialDTO {
     private String observaciones;
     private String numeroComprobante;
     
-    private String fechaVenta;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime fechaVenta;
     
     private List<DetalleVentaRapidaHistorialDTO> detalles;
 
@@ -30,7 +31,7 @@ public class VentaRapidaHistorialDTO {
     public VentaRapidaHistorialDTO(Long id, String clienteNombre, String clienteEmail, 
                                   BigDecimal total, BigDecimal subtotal, String metodoPago,
                                   BigDecimal montoRecibido, BigDecimal vuelto, String observaciones,
-                                  String numeroComprobante, String fechaVenta) {
+                                  String numeroComprobante, LocalDateTime fechaVenta) {
         this.id = id;
         this.clienteNombre = clienteNombre;
         this.clienteEmail = clienteEmail;
@@ -75,8 +76,8 @@ public class VentaRapidaHistorialDTO {
     public String getNumeroComprobante() { return numeroComprobante; }
     public void setNumeroComprobante(String numeroComprobante) { this.numeroComprobante = numeroComprobante; }
 
-    public String getFechaVenta() { return fechaVenta; }
-    public void setFechaVenta(String fechaVenta) { this.fechaVenta = fechaVenta; }
+    public LocalDateTime getFechaVenta() { return fechaVenta; }
+    public void setFechaVenta(LocalDateTime fechaVenta) { this.fechaVenta = fechaVenta; }
 
     public List<DetalleVentaRapidaHistorialDTO> getDetalles() { return detalles; }
     public void setDetalles(List<DetalleVentaRapidaHistorialDTO> detalles) { this.detalles = detalles; }

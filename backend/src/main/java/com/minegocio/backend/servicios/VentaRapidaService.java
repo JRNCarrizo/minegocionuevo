@@ -251,7 +251,7 @@ public class VentaRapidaService {
             venta.getVuelto(),
             venta.getObservaciones(),
             venta.getNumeroComprobante(),
-            venta.getFechaVenta().format(DATETIME_FORMATTER)
+            venta.getFechaVenta()
         );
 
         // Convertir detalles

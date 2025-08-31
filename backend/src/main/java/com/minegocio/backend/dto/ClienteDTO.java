@@ -52,8 +52,10 @@ public class ClienteDTO {
     private Integer totalPedidos;
     private Double totalCompras;
     
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;
     
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaActualizacion;
 
     // Constructores

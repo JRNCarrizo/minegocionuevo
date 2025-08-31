@@ -274,7 +274,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
       });
       
       // Mostrar en zona horaria local del usuario
-      return fechaLocal.toLocaleString('es-ES', {
+      return fechaLocal.toLocaleString('es-AR', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -294,7 +294,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
         return 'Fecha inválida';
       }
       
-      return fecha.toLocaleString('es-ES', {
+      return fecha.toLocaleString('es-AR', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -319,7 +319,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
         // Convertir de UTC a zona horaria local
         const fechaUTC = new Date(fechaString);
         if (!isNaN(fechaUTC.getTime())) {
-          return fechaUTC.toLocaleString('es-ES', { 
+          return fechaUTC.toLocaleString('es-AR', { 
             year: 'numeric', 
             month: '2-digit', 
             day: '2-digit', 
@@ -339,7 +339,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
         return 'Fecha inválida';
       }
       
-      return fechaLocal.toLocaleString('es-ES', {
+      return fechaLocal.toLocaleString('es-AR', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -358,7 +358,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
         return 'Fecha inválida';
       }
       
-      return fechaString.toLocaleString('es-ES', {
+      return fechaString.toLocaleString('es-AR', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
