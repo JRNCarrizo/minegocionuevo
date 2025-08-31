@@ -89,19 +89,20 @@ export default function Ingresos() {
       if (Array.isArray(fechaRemito)) {
         console.log('🔍 [DEBUG] Procesando como array:', fechaRemito);
         const [year, month, day] = fechaRemito;
-        // Crear fecha UTC y convertir a zona horaria local para obtener la fecha correcta
-        const fechaUTC = new Date(Date.UTC(year, month - 1, day));
-        const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        // Crear fecha local (no UTC) para evitar conversión automática
+        const fechaLocal = new Date(year, month - 1, day);
         
-        // Convertir a zona horaria local usando toLocaleDateString
-        const fechaLocal = fechaUTC.toLocaleDateString('en-CA', { timeZone: zonaHorariaLocal }); // formato YYYY-MM-DD
-        console.log('🔍 [DEBUG] Array procesado:', {
+        // Formatear como YYYY-MM-DD en zona horaria local
+        const fechaFormateada = fechaLocal.getFullYear() + '-' + 
+          String(fechaLocal.getMonth() + 1).padStart(2, '0') + '-' + 
+          String(fechaLocal.getDate()).padStart(2, '0');
+        
+        console.log('🔍 [DEBUG] Array procesado como fecha local:', {
           year, month, day,
-          fechaUTC: fechaUTC.toISOString(),
-          zonaHorariaLocal,
-          fechaLocal
+          fechaLocal: fechaLocal.toISOString(),
+          fechaFormateada
         });
-        return fechaLocal;
+        return fechaFormateada;
       }
 
       console.error('Formato de fecha no reconocido:', fechaRemito, 'tipo:', typeof fechaRemito);

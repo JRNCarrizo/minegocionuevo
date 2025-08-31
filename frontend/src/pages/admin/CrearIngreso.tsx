@@ -849,8 +849,13 @@ export default function CrearIngreso() {
         segundosLocal
       );
       
-      // Formatear como ISO string pero SIN la Z al final para que el backend la trate como fecha local
-      const fechaFormateada = fechaLocal.toISOString().replace('Z', '');
+      // Formatear como string local sin conversión UTC (igual que en CrearDevolucion.tsx)
+      const fechaFormateada = fechaLocal.getFullYear() + '-' + 
+        String(fechaLocal.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(fechaLocal.getDate()).padStart(2, '0') + 'T' + 
+        String(fechaLocal.getHours()).padStart(2, '0') + ':' + 
+        String(fechaLocal.getMinutes()).padStart(2, '0') + ':' + 
+        String(fechaLocal.getSeconds()).padStart(2, '0');
       
       // Preparar los datos del remito para la API
       const remitoData = {
