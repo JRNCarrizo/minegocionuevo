@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public class RoturaPerdidaDTO {
 
     @NotNull(message = "La fecha es obligatoria")
-    private LocalDateTime fecha;
+    private String fecha;
 
     @NotNull(message = "La cantidad es obligatoria")
     @Min(value = 1, message = "La cantidad debe ser mayor a 0")
@@ -31,17 +31,17 @@ public class RoturaPerdidaDTO {
     // Constructores
     public RoturaPerdidaDTO() {}
 
-    public RoturaPerdidaDTO(LocalDateTime fecha, Integer cantidad) {
+    public RoturaPerdidaDTO(String fecha, Integer cantidad) {
         this.fecha = fecha;
         this.cantidad = cantidad;
     }
 
     // Getters y Setters
-    public LocalDateTime getFecha() {
+    public String getFecha() {
         return fecha;
     }
 
-    public void setFecha(LocalDateTime fecha) {
+    public void setFecha(String fecha) {
         this.fecha = fecha;
     }
 

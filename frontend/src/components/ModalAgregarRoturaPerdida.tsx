@@ -325,13 +325,24 @@ export default function ModalAgregarRoturaPerdida({
         segundosLocal
       );
       
-      // Formatear como ISO string para enviar al backend
-      const fechaFormateada = fechaLocal.toISOString();
+      // Formatear como string local sin conversión UTC
+      const fechaFormateada = fechaLocal.getFullYear() + '-' + 
+        String(fechaLocal.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(fechaLocal.getDate()).padStart(2, '0') + 'T' + 
+        String(fechaLocal.getHours()).padStart(2, '0') + ':' + 
+        String(fechaLocal.getMinutes()).padStart(2, '0') + ':' + 
+        String(fechaLocal.getSeconds()).padStart(2, '0');
       
       console.log('📋 Fecha seleccionada:', fecha);
       console.log('📋 Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
       console.log('📋 Fecha local creada:', fechaLocal.toString());
-      console.log('📋 Fecha formateada en UTC:', fechaFormateada);
+      console.log('📋 Fecha formateada (local):', fechaFormateada);
+      console.log('📋 Zona horaria del usuario:', zonaHorariaUsuario);
+      console.log('📋 Fecha actual del sistema:', new Date().toISOString());
+      console.log('📋 Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
+      console.log('📋 Fecha local getTime():', fechaLocal.getTime());
+      console.log('📋 Fecha local toISOString():', fechaLocal.toISOString());
+      console.log('📋 Fecha local toLocaleString():', fechaLocal.toLocaleString());
       
       const datosRoturaPerdida = {
         fecha: fechaFormateada,

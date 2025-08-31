@@ -53,9 +53,26 @@ public class RoturaPerdidaService {
 
 
 
-        // Convertir la fecha a la zona horaria del usuario y luego a UTC para almacenamiento
-        LocalDateTime fechaConvertida = convertirFechaUsuarioAUTC(dto.getFecha(), dto.getZonaHoraria());
-        RoturaPerdida roturaPerdida = new RoturaPerdida(empresa, usuario, fechaConvertida, dto.getCantidad());
+        // Parsear la fecha string a LocalDateTime y guardar la fecha exacta del usuario
+        LocalDateTime fechaPlanilla;
+        if (dto.getFecha() != null) {
+            // Parsear la fecha ISO string a LocalDateTime
+            String fechaString = dto.getFecha();
+            System.out.println("📋 [SERVICE] Fecha string original: " + fechaString);
+            
+            if (fechaString.endsWith("Z")) {
+                fechaString = fechaString.substring(0, fechaString.length() - 1);
+                System.out.println("📋 [SERVICE] Fecha string después de remover Z: " + fechaString);
+            }
+            
+            fechaPlanilla = LocalDateTime.parse(fechaString, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+            System.out.println("📋 [SERVICE] Fecha parseada como LocalDateTime: " + fechaPlanilla);
+            System.out.println("📋 [SERVICE] Guardando fecha exacta del usuario (sin conversión UTC)");
+        } else {
+            fechaPlanilla = LocalDateTime.now();
+            System.out.println("📋 [SERVICE] Fecha nula, usando fecha actual: " + fechaPlanilla);
+        }
+        RoturaPerdida roturaPerdida = new RoturaPerdida(empresa, usuario, fechaPlanilla, dto.getCantidad());
         roturaPerdida.setObservaciones(dto.getObservaciones());
 
         // Si se especifica un producto, asociarlo y descontar del stock
@@ -145,9 +162,18 @@ public class RoturaPerdidaService {
         RoturaPerdida roturaPerdida = roturaPerdidaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Rotura/Pérdida no encontrada"));
 
-        // Convertir la fecha a la zona horaria del usuario y luego a UTC para almacenamiento
-        LocalDateTime fechaConvertida = convertirFechaUsuarioAUTC(dto.getFecha(), dto.getZonaHoraria());
-        roturaPerdida.setFecha(fechaConvertida);
+        // Parsear la fecha string a LocalDateTime
+        LocalDateTime fechaPlanilla;
+        if (dto.getFecha() != null) {
+            String fechaString = dto.getFecha();
+            if (fechaString.endsWith("Z")) {
+                fechaString = fechaString.substring(0, fechaString.length() - 1);
+            }
+            fechaPlanilla = LocalDateTime.parse(fechaString, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+        } else {
+            fechaPlanilla = LocalDateTime.now();
+        }
+        roturaPerdida.setFecha(fechaPlanilla);
         roturaPerdida.setCantidad(dto.getCantidad());
         roturaPerdida.setObservaciones(dto.getObservaciones());
 
