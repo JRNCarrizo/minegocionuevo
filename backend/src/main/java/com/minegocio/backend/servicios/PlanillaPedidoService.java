@@ -74,7 +74,7 @@ public class PlanillaPedidoService {
                 System.out.println("📋 [SERVICE] Fecha string después de remover Z: " + fechaString);
             }
             
-            fechaPlanilla = LocalDateTime.parse(fechaString);
+            fechaPlanilla = LocalDateTime.parse(fechaString, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
             System.out.println("📋 [SERVICE] Fecha parseada como LocalDateTime: " + fechaPlanilla);
             System.out.println("📋 [SERVICE] Guardando fecha exacta del usuario (sin conversión UTC)");
         } else {
