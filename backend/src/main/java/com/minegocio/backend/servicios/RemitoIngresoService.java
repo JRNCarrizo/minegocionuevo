@@ -99,6 +99,8 @@ public class RemitoIngresoService {
         
         System.out.println("📋 [SERVICE] Fecha remito recibida: " + remitoDTO.getFechaRemito());
         System.out.println("📋 [SERVICE] Zona horaria del usuario: " + remitoDTO.getZonaHoraria());
+        System.out.println("📋 [SERVICE] Zona horaria es null?: " + (remitoDTO.getZonaHoraria() == null));
+        System.out.println("📋 [SERVICE] Zona horaria está vacía?: " + (remitoDTO.getZonaHoraria() != null && remitoDTO.getZonaHoraria().trim().isEmpty()));
         System.out.println("📋 [SERVICE] Fecha actual del servidor: " + java.time.LocalDateTime.now());
         System.out.println("📋 [SERVICE] Zona horaria del servidor: " + java.time.ZoneId.systemDefault());
         
@@ -159,6 +161,9 @@ public class RemitoIngresoService {
         
         // Establecer fechaCreacion manualmente usando la hora local del usuario
         // en lugar de dejar que @CreationTimestamp use la hora del servidor
+        System.out.println("📋 [SERVICE] Verificando zona horaria para fechaCreacion...");
+        System.out.println("📋 [SERVICE] Zona horaria recibida: '" + remitoDTO.getZonaHoraria() + "'");
+        
         if (remitoDTO.getZonaHoraria() != null && !remitoDTO.getZonaHoraria().trim().isEmpty()) {
             try {
                 // Usar la zona horaria del usuario para crear la fecha de creación
@@ -167,12 +172,18 @@ public class RemitoIngresoService {
                 LocalDateTime fechaCreacionLocal = fechaCreacionUsuario.toLocalDateTime();
                 remito.setFechaCreacion(fechaCreacionLocal);
                 System.out.println("📋 [SERVICE] Fecha creación establecida manualmente: " + fechaCreacionLocal);
+                System.out.println("📋 [SERVICE] Zona horaria utilizada: " + remitoDTO.getZonaHoraria());
             } catch (Exception e) {
                 System.out.println("⚠️ [SERVICE] Error al establecer fecha creación manual, usando fecha del servidor: " + e.getMessage());
+                System.out.println("⚠️ [SERVICE] Stack trace: " + e.getStackTrace());
                 // Si hay error, usar la fecha del servidor (comportamiento por defecto)
             }
         } else {
             System.out.println("⚠️ [SERVICE] No se especificó zona horaria, usando fecha del servidor");
+            System.out.println("⚠️ [SERVICE] Zona horaria es null: " + (remitoDTO.getZonaHoraria() == null));
+            if (remitoDTO.getZonaHoraria() != null) {
+                System.out.println("⚠️ [SERVICE] Zona horaria está vacía: " + remitoDTO.getZonaHoraria().trim().isEmpty());
+            }
         }
         
         remito = remitoIngresoRepository.save(remito);
