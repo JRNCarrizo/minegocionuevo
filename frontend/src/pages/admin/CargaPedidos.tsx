@@ -117,7 +117,7 @@ export default function CargaPedidos() {
     }
   };
 
-  // Función helper para formatear fecha con hora desde arrays UTC
+  // Función helper para formatear fecha con hora desde arrays locales
   const formatearFechaConHoraLocal = (fechaArray: any): string => {
     try {
       if (fechaArray == null) {
@@ -128,15 +128,15 @@ export default function CargaPedidos() {
       if (Array.isArray(fechaArray)) {
         const [year, month, day, hour = 0, minute = 0, second = 0] = fechaArray;
         
-        // Crear fecha UTC usando Date.UTC
-        const fechaUTC = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+        // Crear fecha local (no UTC) para evitar conversión automática
+        const fechaLocal = new Date(year, month - 1, day, hour, minute, second);
         
-        if (isNaN(fechaUTC.getTime())) {
+        if (isNaN(fechaLocal.getTime())) {
           return 'Fecha inválida';
         }
         
-        // Convertir UTC a zona horaria local del usuario
-        return fechaUTC.toLocaleString('es-ES', {
+        // Mostrar en zona horaria local del usuario
+        return fechaLocal.toLocaleString('es-ES', {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit',
@@ -154,7 +154,7 @@ export default function CargaPedidos() {
     }
   };
 
-  // Función helper para formatear fecha corta desde arrays UTC
+  // Función helper para formatear fecha corta desde arrays locales
   const formatearFechaCortaLocal = (fechaArray: any): string => {
     try {
       if (fechaArray == null) {
@@ -165,15 +165,15 @@ export default function CargaPedidos() {
       if (Array.isArray(fechaArray)) {
         const [year, month, day] = fechaArray;
         
-        // Crear fecha UTC usando Date.UTC
-        const fechaUTC = new Date(Date.UTC(year, month - 1, day));
+        // Crear fecha local (no UTC) para evitar conversión automática
+        const fechaLocal = new Date(year, month - 1, day);
         
-        if (isNaN(fechaUTC.getTime())) {
+        if (isNaN(fechaLocal.getTime())) {
           return 'Fecha inválida';
         }
         
-        // Convertir UTC a zona horaria local del usuario
-        return fechaUTC.toLocaleDateString('es-ES', {
+        // Mostrar en zona horaria local del usuario
+        return fechaLocal.toLocaleDateString('es-ES', {
           weekday: 'short',
           year: 'numeric',
           month: 'short',
