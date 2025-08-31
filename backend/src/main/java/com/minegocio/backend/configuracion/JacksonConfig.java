@@ -24,7 +24,10 @@ public class JacksonConfig {
     @Bean
     @Primary
     public ObjectMapper objectMapper() {
-        System.out.println("🔧 [JACKSON] Iniciando configuración de ObjectMapper...");
+        System.out.println("🔧 [JACKSON] ==========================================");
+        System.out.println("🔧 [JACKSON] INICIANDO CONFIGURACIÓN DE JACKSON");
+        System.out.println("🔧 [JACKSON] ==========================================");
+        
         ObjectMapper objectMapper = new ObjectMapper();
         
         // Configurar módulo para Java Time
@@ -32,6 +35,8 @@ public class JacksonConfig {
         
         // Configurar serializador y deserializador personalizados para LocalDateTime
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATETIME_FORMAT);
+        
+        System.out.println("🔧 [JACKSON] Registrando serializador personalizado para LocalDateTime...");
         
         // Serializador personalizado que NO hace conversiones de zona horaria
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter) {
@@ -52,6 +57,8 @@ public class JacksonConfig {
                 }
             }
         });
+        
+        System.out.println("🔧 [JACKSON] Serializador personalizado registrado exitosamente");
         
         // Deserializador personalizado que acepta múltiples formatos
         javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter) {
@@ -85,18 +92,26 @@ public class JacksonConfig {
             }
         });
         
+        System.out.println("🔧 [JACKSON] Deserializador personalizado registrado exitosamente");
+        
         // Registrar el módulo
         objectMapper.registerModule(javaTimeModule);
+        
+        System.out.println("🔧 [JACKSON] Módulo JavaTime registrado exitosamente");
         
         // Configuraciones adicionales - IMPORTANTE: NO hacer conversiones de zona horaria
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.disable(SerializationFeature.WRITE_DATES_WITH_ZONE_ID);
         
+        System.out.println("🔧 [JACKSON] Configuraciones de serialización aplicadas");
+        
         // NO configurar zona horaria para evitar conversiones automáticas
         // objectMapper.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
         
-        System.out.println("🔧 Jackson configurado para NO hacer conversiones de zona horaria");
-        System.out.println("🔧 [JACKSON] Configuración completada. ObjectMapper listo.");
+        System.out.println("🔧 [JACKSON] ==========================================");
+        System.out.println("🔧 [JACKSON] CONFIGURACIÓN COMPLETADA EXITOSAMENTE");
+        System.out.println("🔧 [JACKSON] ObjectMapper listo para usar");
+        System.out.println("🔧 [JACKSON] ==========================================");
         
         return objectMapper;
     }
