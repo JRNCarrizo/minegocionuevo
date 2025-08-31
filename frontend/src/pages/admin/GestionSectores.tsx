@@ -281,10 +281,16 @@ export default function GestionSectores() {
     try {
       setCargandoProductos(true);
       
+      console.log('🔍 CARGAR PRODUCTOS - Iniciando...');
+      console.log('🔍 CARGAR PRODUCTOS - Empresa ID:', datosUsuario?.empresaId);
+      
       // Cargar productos
       const productosResponse = await apiCall(`/empresas/${datosUsuario?.empresaId}/productos`);
       
+      console.log('🔍 CARGAR PRODUCTOS - Response productos:', productosResponse.status, productosResponse.ok);
+      
       if (!productosResponse.ok) {
+        console.error('🔍 CARGAR PRODUCTOS - Error en productos:', productosResponse.status);
         toast.error('Error al cargar productos');
         return;
       }
@@ -292,14 +298,21 @@ export default function GestionSectores() {
       const productosData = await productosResponse.json();
       const productos = productosData.data || [];
       
+      console.log('🔍 CARGAR PRODUCTOS - Productos cargados:', productos.length);
+      
       // Cargar stock general para obtener información de asignaciones
+      console.log('🔍 CARGAR PRODUCTOS - Llamando stock general...');
       const stockResponse = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/stock-general`);
+      
+      console.log('🔍 CARGAR PRODUCTOS - Response stock general:', stockResponse.status, stockResponse.ok);
       
       let stockAsignadoPorProducto: { [key: number]: number } = {};
       
       if (stockResponse.ok) {
         const stockData = await stockResponse.json();
         const stockGeneral = stockData.data || [];
+        
+        console.log('🔍 CARGAR PRODUCTOS - Stock general cargado:', stockGeneral.length, 'items');
         
         // Calcular stock asignado por producto
         stockGeneral.forEach((item: any) => {
@@ -308,6 +321,12 @@ export default function GestionSectores() {
             stockAsignadoPorProducto[productoId] = (stockAsignadoPorProducto[productoId] || 0) + item.cantidad;
           }
         });
+        
+        console.log('🔍 CARGAR PRODUCTOS - Stock asignado calculado:', Object.keys(stockAsignadoPorProducto).length, 'productos');
+      } else {
+        console.error('🔍 CARGAR PRODUCTOS - Error en stock general:', stockResponse.status);
+        const errorText = await stockResponse.text();
+        console.error('🔍 CARGAR PRODUCTOS - Error response:', errorText);
       }
       
       // Filtrar solo productos activos con stock disponible
@@ -329,9 +348,10 @@ export default function GestionSectores() {
         })
         .filter((producto: any) => producto.stockDisponible > 0); // Solo productos con stock disponible
         
+      console.log('🔍 CARGAR PRODUCTOS - Productos disponibles finales:', productosDisponibles.length);
       setProductosDisponibles(productosDisponibles);
     } catch (error) {
-      console.error('Error al cargar productos disponibles:', error);
+      console.error('🔍 CARGAR PRODUCTOS - Error general:', error);
       toast.error('Error al cargar productos disponibles');
     } finally {
       setCargandoProductos(false);
@@ -1549,7 +1569,7 @@ export default function GestionSectores() {
                   <div className="campo-transferencia">
                     <label>Producto a transferir:</label>
                     <select
-                      value={productoSeleccionado ? productoSeleccionado.id.toString() : ''}
+                      value={productoSeleccionado ? (productoSeleccionado as StockPorSector).id.toString() : ''}
                       onChange={(e) => {
                         const productoId = parseInt(e.target.value);
                         const producto = productosConStock.find((p: StockPorSector) => p.id === productoId);

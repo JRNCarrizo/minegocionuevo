@@ -16,6 +16,7 @@ import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.minegocio.backend.repositorios.EmpresaRepository;
 
 @RestController
 @RequestMapping("/api/empresas/{empresaId}/sectores")
@@ -30,6 +31,9 @@ public class SectorController {
     
     @Autowired
     private SectorService sectorService;
+    
+    @Autowired
+    private EmpresaRepository empresaRepository;
     
     // Métodos de conversión
     private SectorDTO convertirASectorDTO(Sector sector) {
@@ -367,6 +371,17 @@ public class SectorController {
         try {
             System.out.println("🔍 STOCK GENERAL - Endpoint llamado para empresa: " + empresaId);
             System.out.println("🔍 STOCK GENERAL - Iniciando proceso...");
+            System.out.println("🔍 STOCK GENERAL - Timestamp: " + new java.util.Date());
+            
+            // Verificar que la empresa existe
+            System.out.println("🔍 STOCK GENERAL - Verificando empresa...");
+            if (!empresaRepository.existsById(empresaId)) {
+                System.err.println("🔍 STOCK GENERAL - Empresa no encontrada: " + empresaId);
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Empresa no encontrada con ID: " + empresaId
+                ));
+            }
+            System.out.println("🔍 STOCK GENERAL - Empresa encontrada: " + empresaId);
             
             List<Map<String, Object>> stockGeneral = sectorService.obtenerStockGeneral(empresaId);
             System.out.println("🔍 STOCK GENERAL - Datos obtenidos: " + stockGeneral.size() + " items");
@@ -376,6 +391,7 @@ public class SectorController {
                 System.out.println("🔍 STOCK GENERAL - Item " + i + ": " + stockGeneral.get(i));
             }
             
+            System.out.println("🔍 STOCK GENERAL - Proceso completado exitosamente");
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Stock general obtenido exitosamente",
                 "data", stockGeneral
