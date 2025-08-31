@@ -172,6 +172,10 @@ export default function CrearDevolucion() {
           setTransportistaSeleccionado(-1);
           break;
       }
+    } else if (e.key === 'Enter') {
+      // Si no hay opciones de transportista mostradas, pasar al siguiente campo
+      e.preventDefault();
+      observacionesRef.current?.focus();
     }
   };
 
@@ -191,23 +195,8 @@ export default function CrearDevolucion() {
       return;
     }
 
-    const filtrados = transportistas.filter(transportista => 
-      transportista.activo && (
-        transportista.codigoInterno.toLowerCase().includes(inputBusquedaTransporte.toLowerCase()) ||
-        transportista.nombreApellido.toLowerCase().includes(inputBusquedaTransporte.toLowerCase()) ||
-        (transportista.nombreEmpresa && transportista.nombreEmpresa.toLowerCase().includes(inputBusquedaTransporte.toLowerCase())) ||
-        transportista.vehiculos.some((vehiculo: any) => 
-          vehiculo.activo && (
-            vehiculo.marca.toLowerCase().includes(inputBusquedaTransporte.toLowerCase()) ||
-            vehiculo.modelo.toLowerCase().includes(inputBusquedaTransporte.toLowerCase()) ||
-            vehiculo.patente.toLowerCase().includes(inputBusquedaTransporte.toLowerCase())
-          )
-        )
-      )
-    );
-
-    setTransportistasFiltrados(filtrados);
-
+    const busqueda = inputBusquedaTransporte.toLowerCase().trim();
+    
     // Crear opciones individuales para cada transportista-vehículo
     const opciones: Array<{
       transportista: any;
@@ -216,28 +205,59 @@ export default function CrearDevolucion() {
       key: string;
     }> = [];
 
-    filtrados.forEach(transportista => {
+    transportistas.forEach(transportista => {
+      if (!transportista.activo) return;
+      
       const vehiculosActivos = transportista.vehiculos.filter((v: any) => v.activo);
       
-      if (vehiculosActivos.length === 0) {
-        opciones.push({
-          transportista,
-          displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido}`,
-          key: `transportista-${transportista.id}`
-        });
-      } else {
-        vehiculosActivos.forEach((vehiculo: any) => {
+      // Verificar si la búsqueda coincide con código interno o nombre del transportista
+      const matchCodigo = transportista.codigoInterno.toLowerCase().includes(busqueda);
+      const matchNombre = transportista.nombreApellido.toLowerCase().includes(busqueda);
+      const matchEmpresa = transportista.nombreEmpresa && transportista.nombreEmpresa.toLowerCase().includes(busqueda);
+      
+      // Si coincide con transportista, mostrar todos sus vehículos
+      if (matchCodigo || matchNombre || matchEmpresa) {
+        if (vehiculosActivos.length === 0) {
+          // Si no tiene vehículos activos, mostrar solo el transportista
           opciones.push({
             transportista,
-            vehiculo,
-            displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.marca} ${vehiculo.modelo})`,
-            key: `transportista-${transportista.id}-vehiculo-${vehiculo.id}`
+            displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido}`,
+            key: `transportista-${transportista.id}`
           });
+        } else {
+          // Crear una opción por cada vehículo activo del transportista
+          vehiculosActivos.forEach((vehiculo: any) => {
+            opciones.push({
+              transportista,
+              vehiculo,
+              displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.marca} ${vehiculo.modelo})`,
+              key: `transportista-${transportista.id}-vehiculo-${vehiculo.id}`
+            });
+          });
+        }
+      } else {
+        // Si no coincide con transportista, buscar vehículos específicos que coincidan
+        vehiculosActivos.forEach((vehiculo: any) => {
+          const matchMarca = vehiculo.marca.toLowerCase().includes(busqueda);
+          const matchModelo = vehiculo.modelo.toLowerCase().includes(busqueda);
+          const matchPatente = vehiculo.patente.toLowerCase().includes(busqueda);
+          
+          if (matchMarca || matchModelo || matchPatente) {
+            opciones.push({
+              transportista,
+              vehiculo,
+              displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.marca} ${vehiculo.modelo})`,
+              key: `transportista-${transportista.id}-vehiculo-${vehiculo.id}`
+            });
+          }
         });
       }
     });
 
     setOpcionesTransporte(opciones);
+    setTransportistasFiltrados(transportistas.filter(t => 
+      opciones.some(opcion => opcion.transportista.id === t.id)
+    ));
     setMostrarTransportistas(opciones.length > 0);
   }, [inputBusquedaTransporte, transportistas]);
 
