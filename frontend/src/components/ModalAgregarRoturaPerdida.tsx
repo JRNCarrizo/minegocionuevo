@@ -306,24 +306,24 @@ export default function ModalAgregarRoturaPerdida({
       const zonaHorariaUsuario = Intl.DateTimeFormat().resolvedOptions().timeZone;
       console.log('🌍 Zona horaria del usuario:', zonaHorariaUsuario);
       
-      // Crear fecha con hora local del usuario
-      const fechaSeleccionada = new Date(fecha + 'T00:00:00');
-      const ahora = new Date();
+             // Parsear la fecha manualmente para evitar conversión UTC automática
+       const [year, month, day] = fecha.split('-').map(Number);
+       const ahora = new Date();
       
       // Obtener la hora local del usuario
       const horaLocal = ahora.getHours();
       const minutosLocal = ahora.getMinutes();
       const segundosLocal = ahora.getSeconds();
       
-      console.log('📋 [DEBUG] Fecha seleccionada (input):', fecha);
-      console.log('📋 [DEBUG] Fecha seleccionada (Date object):', fechaSeleccionada.toString());
-      console.log('📋 [DEBUG] Hora actual del sistema:', ahora.toString());
-      console.log('📋 [DEBUG] Hora local extraída:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
-      
-             // Formatear como string local sin conversión UTC (igual que en otras secciones que funcionan)
-       const fechaFormateada = fechaSeleccionada.getFullYear() + '-' + 
-         String(fechaSeleccionada.getMonth() + 1).padStart(2, '0') + '-' + 
-         String(fechaSeleccionada.getDate()).padStart(2, '0') + 'T' + 
+             console.log('📋 [DEBUG] Fecha seleccionada (input):', fecha);
+       console.log('📋 [DEBUG] Fecha parseada manualmente:', `${year}-${month}-${day}`);
+       console.log('📋 [DEBUG] Hora actual del sistema:', ahora.toString());
+       console.log('📋 [DEBUG] Hora local extraída:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
+       
+       // Formatear como string local sin conversión UTC (igual que en otras secciones que funcionan)
+       const fechaFormateada = year + '-' + 
+         String(month).padStart(2, '0') + '-' + 
+         String(day).padStart(2, '0') + 'T' + 
          String(horaLocal).padStart(2, '0') + ':' + 
          String(minutosLocal).padStart(2, '0') + ':' + 
          String(segundosLocal).padStart(2, '0');
