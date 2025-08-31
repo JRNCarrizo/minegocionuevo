@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useUsuario } from '../../contexts/UsuarioContext';
 import { useResponsive } from '../../hooks/useResponsive';
 import NavbarAdmin from '../../components/NavbarAdmin';
+import { API_CONFIG } from '../../config/api';
 import './StockGeneral.css';
 
 interface StockItem {
@@ -34,6 +35,25 @@ export default function StockGeneral() {
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'con_sector' | 'sin_sector' | 'sin_sectorizar'>('todos');
   const [ordenarPor, setOrdenarPor] = useState<'nombre' | 'codigo' | 'cantidad' | 'sector'>('nombre');
   const [ordenAscendente, setOrdenAscendente] = useState(true);
+
+  // Función helper para hacer llamadas a la API con URL base correcta
+  const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+    const baseUrl = API_CONFIG.getBaseUrl();
+    // Asegurar que el endpoint no empiece con /api para evitar duplicación
+    const cleanEndpoint = endpoint.startsWith('/api') ? endpoint.substring(4) : endpoint;
+    const url = `${baseUrl}${cleanEndpoint}`;
+    
+    const defaultOptions: RequestInit = {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    };
+    
+    return fetch(url, defaultOptions);
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -85,24 +105,30 @@ export default function StockGeneral() {
   const cargarStockGeneral = async () => {
     try {
       setCargando(true);
-      const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/sectores/stock-general?t=${Date.now()}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        }
-      });
+      console.log('🔍 STOCK GENERAL - Iniciando carga...');
+      console.log('🔍 STOCK GENERAL - Empresa ID:', datosUsuario?.empresaId);
+      
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/stock-general`);
+      
+      console.log('🔍 STOCK GENERAL - Response status:', response.status);
+      console.log('🔍 STOCK GENERAL - Response ok:', response.ok);
       
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 STOCK GENERAL - Datos recibidos:', data);
         setStockData(data.data || []);
+        console.log('🔍 STOCK GENERAL - Stock data establecido:', data.data?.length || 0, 'items');
       } else if (response.status === 403) {
+        console.error('🔍 STOCK GENERAL - Error 403: No autorizado');
         toast.error('Error de autenticación. Por favor, inicia sesión nuevamente.');
         navigate('/admin/login');
       } else {
+        const errorText = await response.text();
+        console.error('🔍 STOCK GENERAL - Error response:', errorText);
         toast.error('Error al cargar el stock general');
       }
     } catch (error) {
+      console.error('🔍 STOCK GENERAL - Error general:', error);
       toast.error('Error al cargar el stock general');
     } finally {
       setCargando(false);
