@@ -291,7 +291,7 @@ export default function CargaPedidos() {
       .sort(([fechaA], [fechaB]) => new Date(fechaB).getTime() - new Date(fechaA).getTime())
       .map(([fecha, planillas]) => ({
         fecha,
-        planillas: planillas.sort((a, b) => new Date(b.fechaCreacion).getTime() - new Date(a.fechaCreacion).getTime())
+        planillas: planillas.sort((a, b) => new Date(b.fechaPlanilla).getTime() - new Date(a.fechaPlanilla).getTime())
       }));
   };
 
@@ -865,7 +865,7 @@ export default function CargaPedidos() {
                                    {planilla.totalProductos}
                                  </span> unidades</span>
                                  <span>🛒 {planilla.detalles.length} productos</span>
-                                                                 <span>⏰ {formatearFechaConHoraLocal(planilla.fechaCreacion)}</span>
+                                                                 <span>⏰ {formatearFechaConHoraLocal(planilla.fechaPlanilla)}</span>
                               </div>
                             </div>
                             <div style={{
