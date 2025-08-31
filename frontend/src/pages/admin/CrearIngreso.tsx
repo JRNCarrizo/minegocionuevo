@@ -881,9 +881,18 @@ export default function CrearIngreso() {
       } else {
         toast.error('Error al guardar el remito');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al guardar remito:', error);
-      toast.error('Error al guardar el remito');
+      
+      // Mostrar mensaje específico del error si está disponible
+      let mensajeError = 'Error al guardar el remito';
+      if (error.response && error.response.data && error.response.data.error) {
+        mensajeError = error.response.data.error;
+      } else if (error.message) {
+        mensajeError = error.message;
+      }
+      
+      toast.error(mensajeError);
     } finally {
       setGuardando(false);
     }

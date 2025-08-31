@@ -22,11 +22,14 @@ public class RemitoIngresoDTO {
     private String zonaHoraria;
     
     // Constructores
-    public RemitoIngresoDTO() {}
+    public RemitoIngresoDTO() {
+        System.out.println("🔍 [DTO] Constructor vacío llamado");
+    }
     
     public RemitoIngresoDTO(Long id, String numeroRemito, LocalDateTime fechaRemito, String observaciones,
                             Integer totalProductos, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion,
                             Long empresaId, Long usuarioId, List<DetalleRemitoIngresoDTO> detalles, String zonaHoraria) {
+        System.out.println("🔍 [DTO] Constructor con parámetros llamado");
         this.id = id;
         this.numeroRemito = numeroRemito;
         this.fechaRemito = fechaRemito;
@@ -54,6 +57,7 @@ public class RemitoIngresoDTO {
     }
     
     public void setNumeroRemito(String numeroRemito) {
+        System.out.println("🔍 [DTO] setNumeroRemito: " + numeroRemito);
         this.numeroRemito = numeroRemito;
     }
     
@@ -62,6 +66,7 @@ public class RemitoIngresoDTO {
     }
     
     public void setFechaRemito(LocalDateTime fechaRemito) {
+        System.out.println("🔍 [DTO] setFechaRemito: " + fechaRemito);
         this.fechaRemito = fechaRemito;
     }
     
@@ -70,6 +75,7 @@ public class RemitoIngresoDTO {
     }
     
     public void setObservaciones(String observaciones) {
+        System.out.println("🔍 [DTO] setObservaciones: " + observaciones);
         this.observaciones = observaciones;
     }
     
@@ -78,6 +84,7 @@ public class RemitoIngresoDTO {
     }
     
     public void setTotalProductos(Integer totalProductos) {
+        System.out.println("🔍 [DTO] setTotalProductos: " + totalProductos);
         this.totalProductos = totalProductos;
     }
     
@@ -118,6 +125,7 @@ public class RemitoIngresoDTO {
     }
     
     public void setDetalles(List<DetalleRemitoIngresoDTO> detalles) {
+        System.out.println("🔍 [DTO] setDetalles: " + (detalles != null ? detalles.size() : "null"));
         this.detalles = detalles;
     }
     
@@ -126,6 +134,7 @@ public class RemitoIngresoDTO {
     }
     
     public void setZonaHoraria(String zonaHoraria) {
+        System.out.println("🔍 [DTO] setZonaHoraria: " + zonaHoraria);
         this.zonaHoraria = zonaHoraria;
     }
 }

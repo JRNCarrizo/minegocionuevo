@@ -375,7 +375,9 @@ public class RemitoIngresoService {
         System.out.println("=== DEBUG convertirADTO ===");
         System.out.println("Convirtiendo remito ID: " + remito.getId());
         System.out.println("Número remito: " + remito.getNumeroRemito());
-        System.out.println("Fecha remito: " + remito.getFechaRemito());
+        System.out.println("Fecha remito (LocalDateTime): " + remito.getFechaRemito());
+        System.out.println("Fecha remito (toString): " + remito.getFechaRemito().toString());
+        System.out.println("Fecha remito (ISO): " + remito.getFechaRemito().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         
         List<DetalleRemitoIngresoDTO> detallesDTO = detalleRemitoIngresoRepository
                 .findByRemitoIngresoIdOrderByFechaCreacionAsc(remito.getId())
