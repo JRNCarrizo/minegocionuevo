@@ -134,23 +134,13 @@ public class RemitoIngresoService {
         RemitoIngreso remito = new RemitoIngreso();
         remito.setNumeroRemito(remitoDTO.getNumeroRemito());
         
-        // Parsear la fecha string a LocalDateTime
-        LocalDateTime fechaRemito;
-        if (remitoDTO.getFechaRemito() != null) {
-            String fechaString = remitoDTO.getFechaRemito();
-            System.out.println("📋 [SERVICE] Fecha string original: " + fechaString);
-            
-            if (fechaString.endsWith("Z")) {
-                fechaString = fechaString.substring(0, fechaString.length() - 1);
-                System.out.println("📋 [SERVICE] Fecha string después de remover Z: " + fechaString);
-            }
-            
-            fechaRemito = LocalDateTime.parse(fechaString);
-            System.out.println("📋 [SERVICE] Fecha parseada como LocalDateTime: " + fechaRemito);
-            System.out.println("📋 [SERVICE] Guardando fecha exacta del usuario (sin conversión UTC)");
-        } else {
+        // Guardar la fecha exacta que envía el usuario (sin convertir a UTC)
+        LocalDateTime fechaRemito = remitoDTO.getFechaRemito();
+        if (fechaRemito == null) {
             fechaRemito = LocalDateTime.now();
             System.out.println("📋 [SERVICE] Fecha nula, usando fecha actual: " + fechaRemito);
+        } else {
+            System.out.println("📋 [SERVICE] Guardando fecha exacta del usuario (sin conversión UTC): " + fechaRemito);
         }
         
         remito.setFechaRemito(fechaRemito);
@@ -159,38 +149,8 @@ public class RemitoIngresoService {
         remito.setEmpresa(empresa.get());
         remito.setUsuario(usuario.get());
         
-        // Establecer fechaCreacion manualmente usando la hora local del usuario
-        // en lugar de dejar que @CreationTimestamp use la hora del servidor
-        System.out.println("📋 [SERVICE] === INICIO SECCIÓN FECHA CREACIÓN ===");
-        System.out.println("📋 [SERVICE] Verificando zona horaria para fechaCreacion...");
-        System.out.println("📋 [SERVICE] Zona horaria recibida: '" + remitoDTO.getZonaHoraria() + "'");
-        System.out.println("📋 [SERVICE] Zona horaria es null?: " + (remitoDTO.getZonaHoraria() == null));
-        System.out.println("📋 [SERVICE] Zona horaria está vacía?: " + (remitoDTO.getZonaHoraria() != null && remitoDTO.getZonaHoraria().trim().isEmpty()));
-        
-        if (remitoDTO.getZonaHoraria() != null && !remitoDTO.getZonaHoraria().trim().isEmpty()) {
-            try {
-                // Usar la zona horaria del usuario para crear la fecha de creación
-                java.time.ZoneId zonaUsuario = java.time.ZoneId.of(remitoDTO.getZonaHoraria());
-                java.time.ZonedDateTime fechaCreacionUsuario = java.time.ZonedDateTime.now(zonaUsuario);
-                LocalDateTime fechaCreacionLocal = fechaCreacionUsuario.toLocalDateTime();
-                remito.setFechaCreacion(fechaCreacionLocal);
-                System.out.println("📋 [SERVICE] Fecha creación establecida manualmente: " + fechaCreacionLocal);
-                System.out.println("📋 [SERVICE] Zona horaria utilizada: " + remitoDTO.getZonaHoraria());
-            } catch (Exception e) {
-                System.out.println("⚠️ [SERVICE] Error al establecer fecha creación manual, usando fecha del servidor: " + e.getMessage());
-                System.out.println("⚠️ [SERVICE] Stack trace: " + e.getStackTrace());
-                // Si hay error, usar la fecha del servidor (comportamiento por defecto)
-            }
-        } else {
-            System.out.println("⚠️ [SERVICE] No se especificó zona horaria, usando fecha del servidor");
-            System.out.println("⚠️ [SERVICE] Zona horaria es null: " + (remitoDTO.getZonaHoraria() == null));
-            if (remitoDTO.getZonaHoraria() != null) {
-                System.out.println("⚠️ [SERVICE] Zona horaria está vacía: " + remitoDTO.getZonaHoraria().trim().isEmpty());
-            }
-        }
-        
-        System.out.println("📋 [SERVICE] === FIN SECCIÓN FECHA CREACIÓN ===");
-        System.out.println("📋 [SERVICE] Fecha creación final: " + remito.getFechaCreacion());
+        // La fechaCreacion se establecerá automáticamente por @CreationTimestamp
+        // igual que en PlanillaDevolucion
         
         remito = remitoIngresoRepository.save(remito);
         
@@ -428,7 +388,7 @@ public class RemitoIngresoService {
         RemitoIngresoDTO dto = new RemitoIngresoDTO(
                 remito.getId(),
                 remito.getNumeroRemito(),
-                remito.getFechaRemito().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")),
+                remito.getFechaRemito(),
                 remito.getObservaciones(),
                 remito.getTotalProductos(),
                 remito.getFechaCreacion(),

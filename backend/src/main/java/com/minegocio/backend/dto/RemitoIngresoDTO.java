@@ -9,7 +9,8 @@ public class RemitoIngresoDTO {
     private Long id;
     private String numeroRemito;
     
-    private String fechaRemito;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime fechaRemito;
     
     private String observaciones;
     private Integer totalProductos;
@@ -27,7 +28,7 @@ public class RemitoIngresoDTO {
     // Constructores
     public RemitoIngresoDTO() {}
     
-    public RemitoIngresoDTO(Long id, String numeroRemito, String fechaRemito, String observaciones,
+    public RemitoIngresoDTO(Long id, String numeroRemito, LocalDateTime fechaRemito, String observaciones,
                             Integer totalProductos, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion,
                             Long empresaId, Long usuarioId, List<DetalleRemitoIngresoDTO> detalles, String zonaHoraria) {
         this.id = id;
@@ -60,11 +61,11 @@ public class RemitoIngresoDTO {
         this.numeroRemito = numeroRemito;
     }
     
-    public String getFechaRemito() {
+    public LocalDateTime getFechaRemito() {
         return fechaRemito;
     }
     
-    public void setFechaRemito(String fechaRemito) {
+    public void setFechaRemito(LocalDateTime fechaRemito) {
         this.fechaRemito = fechaRemito;
     }
     
