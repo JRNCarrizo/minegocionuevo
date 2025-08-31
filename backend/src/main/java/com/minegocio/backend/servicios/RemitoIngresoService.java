@@ -157,6 +157,24 @@ public class RemitoIngresoService {
         remito.setEmpresa(empresa.get());
         remito.setUsuario(usuario.get());
         
+        // Establecer fechaCreacion manualmente usando la hora local del usuario
+        // en lugar de dejar que @CreationTimestamp use la hora del servidor
+        if (remitoDTO.getZonaHoraria() != null && !remitoDTO.getZonaHoraria().trim().isEmpty()) {
+            try {
+                // Usar la zona horaria del usuario para crear la fecha de creación
+                java.time.ZoneId zonaUsuario = java.time.ZoneId.of(remitoDTO.getZonaHoraria());
+                java.time.ZonedDateTime fechaCreacionUsuario = java.time.ZonedDateTime.now(zonaUsuario);
+                LocalDateTime fechaCreacionLocal = fechaCreacionUsuario.toLocalDateTime();
+                remito.setFechaCreacion(fechaCreacionLocal);
+                System.out.println("📋 [SERVICE] Fecha creación establecida manualmente: " + fechaCreacionLocal);
+            } catch (Exception e) {
+                System.out.println("⚠️ [SERVICE] Error al establecer fecha creación manual, usando fecha del servidor: " + e.getMessage());
+                // Si hay error, usar la fecha del servidor (comportamiento por defecto)
+            }
+        } else {
+            System.out.println("⚠️ [SERVICE] No se especificó zona horaria, usando fecha del servidor");
+        }
+        
         remito = remitoIngresoRepository.save(remito);
         
         // Crear los detalles
