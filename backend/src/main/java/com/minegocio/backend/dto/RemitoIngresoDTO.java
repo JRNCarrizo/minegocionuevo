@@ -27,7 +27,7 @@ public class RemitoIngresoDTO {
     
     public RemitoIngresoDTO(Long id, String numeroRemito, String fechaRemito, String observaciones,
                             Integer totalProductos, String fechaCreacion, String fechaActualizacion,
-                            Long empresaId, Long usuarioId, List<DetalleRemitoIngresoDTO> detalles) {
+                            Long empresaId, Long usuarioId, List<DetalleRemitoIngresoDTO> detalles, String zonaHoraria) {
         this.id = id;
         this.numeroRemito = numeroRemito;
         this.fechaRemito = fechaRemito;
@@ -38,6 +38,7 @@ public class RemitoIngresoDTO {
         this.empresaId = empresaId;
         this.usuarioId = usuarioId;
         this.detalles = detalles;
+        this.zonaHoraria = zonaHoraria;
     }
     
     // Getters y Setters

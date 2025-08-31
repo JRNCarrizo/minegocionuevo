@@ -418,7 +418,8 @@ public class RemitoIngresoService {
                 remito.getFechaActualizacion().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")),
                 remito.getEmpresa().getId(),
                 remito.getUsuario().getId(),
-                detallesDTO
+                detallesDTO,
+                null // zonaHoraria no está disponible en la entidad, se establece desde el frontend
         );
         
         System.out.println("DTO creado: " + dto);
