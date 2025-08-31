@@ -839,23 +839,14 @@ export default function CrearIngreso() {
       const zonaHorariaUsuario = Intl.DateTimeFormat().resolvedOptions().timeZone;
       console.log('🌍 Zona horaria del usuario:', zonaHorariaUsuario);
       
-      // Crear fecha en la zona horaria local del usuario
-      const fechaLocal = new Date(
-        fechaSeleccionada.getFullYear(),
-        fechaSeleccionada.getMonth(),
-        fechaSeleccionada.getDate(),
-        horaLocal,
-        minutosLocal,
-        segundosLocal
-      );
-      
-      // Formatear como string local sin conversión UTC (igual que en CrearDevolucion.tsx)
-      const fechaFormateada = fechaLocal.getFullYear() + '-' + 
-        String(fechaLocal.getMonth() + 1).padStart(2, '0') + '-' + 
-        String(fechaLocal.getDate()).padStart(2, '0') + 'T' + 
-        String(fechaLocal.getHours()).padStart(2, '0') + ':' + 
-        String(fechaLocal.getMinutes()).padStart(2, '0') + ':' + 
-        String(fechaLocal.getSeconds()).padStart(2, '0');
+      // IMPORTANTE: Usar directamente los valores seleccionados por el usuario
+      // NO usar el constructor Date que interpreta como UTC
+      const fechaFormateada = fechaSeleccionada.getFullYear() + '-' + 
+        String(fechaSeleccionada.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(fechaSeleccionada.getDate()).padStart(2, '0') + 'T' + 
+        String(horaLocal).padStart(2, '0') + ':' + 
+        String(minutosLocal).padStart(2, '0') + ':' + 
+        String(segundosLocal).padStart(2, '0');
       
       // Preparar los datos del remito para la API
       const remitoData = {
@@ -875,8 +866,7 @@ export default function CrearIngreso() {
 
       console.log('📋 [DEBUG] Fecha seleccionada:', fechaRemito);
       console.log('📋 [DEBUG] Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
-      console.log('📋 [DEBUG] Fecha local creada:', fechaLocal.toString());
-      console.log('📋 [DEBUG] Fecha formateada (sin Z):', fechaFormateada);
+      console.log('📋 [DEBUG] Fecha formateada (sin conversión UTC):', fechaFormateada);
       console.log('📋 [DEBUG] Zona horaria del usuario:', zonaHorariaUsuario);
       console.log('📋 [DEBUG] Fecha actual del sistema:', new Date().toISOString());
       console.log('📋 [DEBUG] Offset de zona horaria (minutos):', new Date().getTimezoneOffset());

@@ -297,47 +297,45 @@ export const formatearFechaConHora = (fechaString: any): string => {
     if (typeof fechaString === 'string') {
       console.log('🔍 Procesando string de fecha local:', fechaString);
       
-      // Parsear como fecha local (no UTC)
-      let fechaLocal: Date;
-      
-      // Si tiene formato ISO con T (ej: "2025-08-30T20:55:08")
+      // IMPORTANTE: Las fechas del backend ya vienen en hora local del usuario
+      // Mostrar directamente sin conversiones de zona horaria
       if (fechaString.includes('T')) {
-        // Parsear manualmente para evitar conversión UTC automática
+        // Parsear manualmente para mostrar exactamente como viene del backend
         const partes = fechaString.split('T');
         const fechaParte = partes[0].split('-');
         const horaParte = partes[1].split(':');
         
         const year = parseInt(fechaParte[0]);
-        const month = parseInt(fechaParte[1]) - 1; // Meses van de 0-11
+        const month = parseInt(fechaParte[1]);
         const day = parseInt(fechaParte[2]);
         const hour = parseInt(horaParte[0]);
         const minute = parseInt(horaParte[1]);
-        const second = parseInt(horaParte[2]) || 0;
         
-        fechaLocal = new Date(year, month, day, hour, minute, second);
-        console.log('🔍 Fecha local parseada manualmente:', fechaLocal);
+        // Formatear directamente sin usar Date constructor para evitar conversiones
+        const fechaFormateada = `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+        const horaFormateada = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        
+        const resultado = `${fechaFormateada}, ${horaFormateada}`;
+        console.log('🔍 formatearFechaConHora - Resultado directo (string):', resultado);
+        return resultado;
       } else {
         // Otros formatos, usar Date constructor
-        fechaLocal = new Date(fechaString);
+        const fechaLocal = new Date(fechaString);
+        
+        if (isNaN(fechaLocal.getTime())) {
+          console.log('🔍 Fecha inválida desde string:', fechaString);
+          return 'Fecha inválida';
+        }
+        
+        return fechaLocal.toLocaleString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
       }
-      
-      // Verificar que la fecha es válida
-      if (isNaN(fechaLocal.getTime())) {
-        console.log('🔍 Fecha inválida desde string:', fechaString);
-        return 'Fecha inválida';
-      }
-      
-      // Mostrar en zona horaria local del usuario
-      const resultado = fechaLocal.toLocaleString('es-ES', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
-      console.log('🔍 formatearFechaConHora - Resultado final (string):', resultado);
-      return resultado;
     }
     
     // Si es un objeto Date
