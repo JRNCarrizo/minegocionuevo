@@ -14,11 +14,9 @@ public class RemitoIngresoDTO {
     private String observaciones;
     private Integer totalProductos;
     
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime fechaCreacion;
+    private String fechaCreacion;
     
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime fechaActualizacion;
+    private String fechaActualizacion;
     private Long empresaId;
     private Long usuarioId;
     private List<DetalleRemitoIngresoDTO> detalles;
@@ -28,7 +26,7 @@ public class RemitoIngresoDTO {
     public RemitoIngresoDTO() {}
     
     public RemitoIngresoDTO(Long id, String numeroRemito, String fechaRemito, String observaciones,
-                            Integer totalProductos, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion,
+                            Integer totalProductos, String fechaCreacion, String fechaActualizacion,
                             Long empresaId, Long usuarioId, List<DetalleRemitoIngresoDTO> detalles) {
         this.id = id;
         this.numeroRemito = numeroRemito;
@@ -83,19 +81,19 @@ public class RemitoIngresoDTO {
         this.totalProductos = totalProductos;
     }
     
-    public LocalDateTime getFechaCreacion() {
+    public String getFechaCreacion() {
         return fechaCreacion;
     }
     
-    public void setFechaCreacion(LocalDateTime fechaCreacion) {
+    public void setFechaCreacion(String fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
     }
     
-    public LocalDateTime getFechaActualizacion() {
+    public String getFechaActualizacion() {
         return fechaActualizacion;
     }
     
-    public void setFechaActualizacion(LocalDateTime fechaActualizacion) {
+    public void setFechaActualizacion(String fechaActualizacion) {
         this.fechaActualizacion = fechaActualizacion;
     }
     

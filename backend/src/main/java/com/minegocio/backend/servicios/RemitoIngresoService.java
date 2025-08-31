@@ -396,8 +396,8 @@ public class RemitoIngresoService {
                 remito.getFechaRemito().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")),
                 remito.getObservaciones(),
                 remito.getTotalProductos(),
-                remito.getFechaCreacion(),
-                remito.getFechaActualizacion(),
+                remito.getFechaCreacion().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")),
+                remito.getFechaActualizacion().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")),
                 remito.getEmpresa().getId(),
                 remito.getUsuario().getId(),
                 detallesDTO
