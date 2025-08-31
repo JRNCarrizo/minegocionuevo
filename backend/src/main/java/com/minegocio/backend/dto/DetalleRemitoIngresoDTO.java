@@ -1,6 +1,5 @@
 package com.minegocio.backend.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 
 public class DetalleRemitoIngresoDTO {

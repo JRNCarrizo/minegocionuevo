@@ -56,16 +56,32 @@ public class RemitoIngresoController {
     
     // Crear un nuevo remito
     @PostMapping
-    public ResponseEntity<?> crearRemito(@RequestBody RemitoIngresoDTO remitoDTO, Authentication authentication) {
+    public ResponseEntity<?> crearRemito(@RequestBody(required = false) RemitoIngresoDTO remitoDTO, Authentication authentication) {
         try {
+            System.out.println("=== DEBUG RemitoIngresoController.crearRemito ===");
+            System.out.println("Authentication: " + (authentication != null ? "PRESENTE" : "AUSENTE"));
+            
+            if (authentication == null) {
+                System.out.println("❌ ERROR: Authentication es null");
+                return ResponseEntity.status(401).body(java.util.Map.of("error", "No autorizado"));
+            }
+            
+            if (remitoDTO == null) {
+                System.out.println("❌ ERROR: RemitoDTO es null - posible error de deserialización JSON");
+                return ResponseEntity.badRequest().body(java.util.Map.of("error", "Datos del remito no pueden ser nulos. Verifique el formato JSON."));
+            }
+            
             UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
             Long empresaId = usuarioPrincipal.getEmpresaId();
-            System.out.println("DEBUG: Creando remito para empresa ID: " + empresaId);
-            System.out.println("DEBUG: Datos del remito: " + remitoDTO);
+            System.out.println("DEBUG: Usuario autenticado: " + usuarioPrincipal.getUsername());
+            System.out.println("DEBUG: Empresa ID: " + empresaId);
+            System.out.println("DEBUG: Datos del remito recibidos: " + remitoDTO);
+            
             System.out.println("DEBUG: Número de remito: " + remitoDTO.getNumeroRemito());
             System.out.println("DEBUG: Fecha remito: " + remitoDTO.getFechaRemito());
             System.out.println("DEBUG: Total productos: " + remitoDTO.getTotalProductos());
             System.out.println("DEBUG: Detalles: " + (remitoDTO.getDetalles() != null ? remitoDTO.getDetalles().size() : "null"));
+            
             if (remitoDTO.getDetalles() != null) {
                 for (int i = 0; i < remitoDTO.getDetalles().size(); i++) {
                     var detalle = remitoDTO.getDetalles().get(i);
@@ -74,19 +90,22 @@ public class RemitoIngresoController {
                                      ", Cantidad: " + detalle.getCantidad());
                 }
             }
+            
             remitoDTO.setEmpresaId(empresaId);
             remitoDTO.setUsuarioId(usuarioPrincipal.getId());
             
+            System.out.println("DEBUG: Llamando a remitoIngresoService.crearRemito...");
             RemitoIngresoDTO remitoCreado = remitoIngresoService.crearRemito(remitoDTO);
             System.out.println("DEBUG: Remito creado exitosamente con ID: " + remitoCreado.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of("data", remitoCreado));
+            
         } catch (RuntimeException e) {
-            System.err.println("ERROR RuntimeException en crearRemito: " + e.getMessage());
+            System.err.println("❌ ERROR RuntimeException en crearRemito: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.badRequest()
                 .body(java.util.Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            System.err.println("ERROR Exception en crearRemito: " + e.getMessage());
+            System.err.println("❌ ERROR Exception en crearRemito: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(java.util.Map.of("error", "Error interno del servidor: " + e.getMessage()));
