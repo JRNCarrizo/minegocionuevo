@@ -310,7 +310,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
       }
       
       // Mostrar en zona horaria local del usuario
-      return fechaLocal.toLocaleString('es-ES', {
+      const resultado = fechaLocal.toLocaleString('es-ES', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -318,6 +318,8 @@ export const formatearFechaConHora = (fechaString: any): string => {
         minute: '2-digit',
         hour12: false
       });
+      console.log('🔍 formatearFechaConHora - Resultado final (string):', resultado);
+      return resultado;
     }
     
     // Si es un objeto Date
