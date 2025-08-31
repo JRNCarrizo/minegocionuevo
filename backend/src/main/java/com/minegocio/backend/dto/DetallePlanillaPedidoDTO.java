@@ -1,6 +1,7 @@
 package com.minegocio.backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -59,7 +60,9 @@ public class DetallePlanillaPedidoDTO {
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
 
+    @JsonIgnore
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
+    @JsonIgnore
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
 
     public Long getPlanillaPedidoId() { return planillaPedidoId; }
