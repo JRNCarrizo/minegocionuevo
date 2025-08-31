@@ -13,6 +13,7 @@ Después de implementar la corrección de zona horaria en ingresos, se presentar
 1. **Error 403**: El endpoint `/api/remitos-ingreso` no estaba incluido en el interceptor de Axios
 2. **Error de deserialización**: Jackson no podía parsear fechas ISO completas con 'Z' al final
 3. **Problema de zona horaria**: Configuraciones conflictivas entre TimeZoneConfig, Jackson y application.properties
+4. **Configuraciones redundantes**: Anotaciones @JsonFormat innecesarias en DTOs
 
 ## Análisis del Problema de Zona Horaria
 
@@ -36,6 +37,16 @@ Después de implementar la corrección de zona horaria en ingresos, se presentar
    ```
 
 4. **JacksonConfig.java**: Usaba DateTimeFormatter.ISO_DATE_TIME (con 'Z')
+
+### Configuraciones Redundantes Encontradas:
+
+Comparando con entidades que funcionan correctamente (PlanillaDevolucion, Producto, Usuario, Cliente):
+
+- **Entidades que funcionan**: Solo tienen `@CreationTimestamp` y `@UpdateTimestamp` **SIN** `@JsonFormat`
+- **DTOs que funcionan**: No tienen `@JsonFormat` en campos de fecha
+- **RemitoIngresoDTO**: Tenía `@JsonFormat` redundante en `fechaRemito`
+- **ProductoDTO**: Tenía `@JsonFormat` redundante en `fechaCreacion` y `fechaActualizacion`
+- **ClienteDTO**: Tenía `@JsonFormat` redundante en `fechaCreacion` y `fechaActualizacion`
 
 ### Error de Deserialización
 Los logs mostraron:
@@ -129,14 +140,36 @@ private LocalDateTime fechaCreacion;
 private LocalDateTime fechaActualizacion;
 ```
 
-### 6. Corrección del DTO
+### 6. Limpieza de Configuraciones Redundantes
 
-**Archivo**: `backend/src/main/java/com/minegocio/backend/dto/RemitoIngresoDTO.java`
+**Archivos limpiados**:
 
-**Cambio**:
+**RemitoIngresoDTO.java**:
 ```java
-@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") // Formato simple sin 'Z'
+// @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") // REMOVIDO
 private LocalDateTime fechaRemito;
+```
+
+**PlanillaDevolucionDTO.java**:
+```java
+// @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") // REMOVIDO
+private LocalDateTime fechaPlanilla;
+```
+
+**ProductoDTO.java**:
+```java
+// @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") // REMOVIDO
+private LocalDateTime fechaCreacion;
+// @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") // REMOVIDO
+private LocalDateTime fechaActualizacion;
+```
+
+**ClienteDTO.java**:
+```java
+// @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") // REMOVIDO
+private LocalDateTime fechaCreacion;
+// @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") // REMOVIDO
+private LocalDateTime fechaActualizacion;
 ```
 
 ## Flujo de Datos Corregido
@@ -163,7 +196,7 @@ private LocalDateTime fechaRemito;
 ### Logs de Zona Horaria
 ```
 🌍 Zona horaria del servidor actual: [zona local]
-🌍 Configuración: Las fechas se manejan localmente sin conversiones UTC
+🌍 Configuración: Las fechas se manejen localmente sin conversiones UTC
 🔧 Jackson configurado para usar fechas locales sin conversiones UTC
 ```
 
@@ -191,10 +224,19 @@ Ya no aparecen errores de parsing JSON.
    - Removidas anotaciones @JsonFormat conflictivas
 
 6. **`backend/src/main/java/com/minegocio/backend/dto/RemitoIngresoDTO.java`**
-   - Actualizada anotación @JsonFormat para formato simple
+   - Removida anotación @JsonFormat redundante
 
-7. **`backend/src/main/java/com/minegocio/backend/seguridad/AuthTokenFilter.java`**
-   - Agregados logs específicos para debugging de `/remitos-ingreso`
+7. **`backend/src/main/java/com/minegocio/backend/dto/PlanillaDevolucionDTO.java`**
+   - Removida anotación @JsonFormat redundante
+
+8. **`backend/src/main/java/com/minegocio/backend/dto/ProductoDTO.java`**
+   - Removidas anotaciones @JsonFormat redundantes
+
+9. **`backend/src/main/java/com/minegocio/backend/dto/ClienteDTO.java`**
+   - Removidas anotaciones @JsonFormat redundantes
+
+10. **`backend/src/main/java/com/minegocio/backend/seguridad/AuthTokenFilter.java`**
+    - Agregados logs específicos para debugging de `/remitos-ingreso`
 
 ## Beneficios de la Solución
 
@@ -203,6 +245,7 @@ Ya no aparecen errores de parsing JSON.
 3. **Robustez**: Manejo correcto de fechas locales
 4. **Compatibilidad**: Funciona con cualquier zona horaria del servidor
 5. **Debugging**: Logs detallados para facilitar troubleshooting futuro
+6. **Limpieza**: Eliminadas configuraciones redundantes e inconsistentes
 
 ## Notas Importantes
 
@@ -210,6 +253,7 @@ Ya no aparecen errores de parsing JSON.
 - **Formato simple**: `yyyy-MM-dd'T'HH:mm:ss` sin 'Z' al final
 - **Sin conversiones**: Las fechas se manejan tal como se reciben
 - **Consistencia**: Ingresos y devoluciones funcionan de manera idéntica
+- **Configuración centralizada**: JacksonConfig maneja todos los formatos de fecha
 
 ## Ejemplo de Funcionamiento
 
@@ -221,4 +265,4 @@ Si un usuario crea un ingreso a las 15:30:
 4. **Base de datos**: Almacena la fecha exacta enviada por el usuario
 5. **Visualización**: Muestra la hora correcta sin adelantos
 
-La solución asegura que tanto la autenticación como el manejo de fechas funcionen correctamente sin problemas de zona horaria.
+La solución asegura que tanto la autenticación como el manejo de fechas funcionen correctamente sin problemas de zona horaria y con configuraciones limpias y consistentes.

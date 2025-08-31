@@ -64,10 +64,8 @@ public class ProductoDTO {
     private String empresaNombre;
     
     // Nuevos campos para las fechas
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime fechaCreacion;
     
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime fechaActualizacion;
     
     // Constructores
