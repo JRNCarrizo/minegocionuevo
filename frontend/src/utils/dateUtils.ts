@@ -214,7 +214,7 @@ export const compararFechas = (fechaA: string, fechaB: string): number => {
 
 /**
  * Formatea una fecha con hora para mostrar en la interfaz
- * Convierte automáticamente de UTC a la zona horaria local del cliente
+ * Maneja fechas locales sin conversión UTC (para planillas de devolución)
  * @param fechaString - String en formato ISO o similar, o array de números
  */
 export const formatearFechaConHora = (fechaString: any): string => {
@@ -230,22 +230,22 @@ export const formatearFechaConHora = (fechaString: any): string => {
     const zonaHorariaLocal = obtenerZonaHorariaLocal();
     console.log('🌍 Zona horaria detectada:', zonaHorariaLocal);
     
-         // Si es un array (formato [year, month, day, hour, minute, second, nanoseconds])
-     // Los arrays del backend representan fechas UTC
-     if (Array.isArray(fechaString)) {
-       console.log('🔍 Procesando array de fecha UTC:', fechaString);
-       const [year, month, day, hour = 0, minute = 0, second = 0, nanoseconds = 0] = fechaString;
-       
-       // Crear fecha UTC usando Date.UTC para evitar conversión automática a local
-       const fechaUTC = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
-       
-       if (isNaN(fechaUTC.getTime())) {
-         console.log('🔍 Fecha inválida desde array UTC:', fechaString);
-         return 'Fecha inválida';
-       }
-       
-             // Convertir UTC a zona horaria local del usuario
-      return fechaUTC.toLocaleString('es-ES', {
+    // Si es un array (formato [year, month, day, hour, minute, second, nanoseconds])
+    // Los arrays del backend representan fechas locales (no UTC)
+    if (Array.isArray(fechaString)) {
+      console.log('🔍 Procesando array de fecha local:', fechaString);
+      const [year, month, day, hour = 0, minute = 0, second = 0, nanoseconds = 0] = fechaString;
+      
+      // Crear fecha local (no UTC) para evitar conversión automática
+      const fechaLocal = new Date(year, month - 1, day, hour, minute, second);
+      
+      if (isNaN(fechaLocal.getTime())) {
+        console.log('🔍 Fecha inválida desde array local:', fechaString);
+        return 'Fecha inválida';
+      }
+      
+      // Mostrar en zona horaria local del usuario
+      return fechaLocal.toLocaleString('es-ES', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -253,7 +253,7 @@ export const formatearFechaConHora = (fechaString: any): string => {
         minute: '2-digit',
         hour12: false
       });
-     }
+    }
     
     // Si es un número (timestamp)
     if (typeof fechaString === 'number') {
@@ -277,10 +277,31 @@ export const formatearFechaConHora = (fechaString: any): string => {
     
     // Si es un string
     if (typeof fechaString === 'string') {
-      console.log('🔍 Procesando string de fecha:', fechaString);
+      console.log('🔍 Procesando string de fecha local:', fechaString);
       
-      // Convertir de UTC a zona horaria local
-      const fechaLocal = convertirUTCALocal(fechaString);
+      // Parsear como fecha local (no UTC)
+      let fechaLocal: Date;
+      
+      // Si tiene formato ISO con T (ej: "2025-08-30T20:55:08")
+      if (fechaString.includes('T')) {
+        // Parsear manualmente para evitar conversión UTC automática
+        const partes = fechaString.split('T');
+        const fechaParte = partes[0].split('-');
+        const horaParte = partes[1].split(':');
+        
+        const year = parseInt(fechaParte[0]);
+        const month = parseInt(fechaParte[1]) - 1; // Meses van de 0-11
+        const day = parseInt(fechaParte[2]);
+        const hour = parseInt(horaParte[0]);
+        const minute = parseInt(horaParte[1]);
+        const second = parseInt(horaParte[2]) || 0;
+        
+        fechaLocal = new Date(year, month, day, hour, minute, second);
+        console.log('🔍 Fecha local parseada manualmente:', fechaLocal);
+      } else {
+        // Otros formatos, usar Date constructor
+        fechaLocal = new Date(fechaString);
+      }
       
       // Verificar que la fecha es válida
       if (isNaN(fechaLocal.getTime())) {
