@@ -7,6 +7,7 @@ Después de implementar la corrección de zona horaria en ingresos, se presentar
 1. **Error 403 (Forbidden)** al intentar crear remitos de ingreso
 2. **Error de deserialización JSON** cuando se resolvió el 403
 3. **Problema de zona horaria**: Las fechas seguían apareciendo 3 horas adelantadas
+4. **Problema de autorización**: Endpoint no configurado en Spring Security
 
 ### Causa Raíz
 
@@ -14,6 +15,7 @@ Después de implementar la corrección de zona horaria en ingresos, se presentar
 2. **Error de deserialización**: Jackson no podía parsear fechas ISO completas con 'Z' al final
 3. **Problema de zona horaria**: Configuraciones conflictivas entre TimeZoneConfig, Jackson y application.properties
 4. **Configuraciones redundantes**: Anotaciones @JsonFormat innecesarias en DTOs
+5. **Problema de autorización**: El endpoint `/api/remitos-ingreso` no estaba configurado en ConfiguracionSeguridad.java
 
 ## Análisis del Problema de Zona Horaria
 
@@ -172,6 +174,17 @@ private LocalDateTime fechaCreacion;
 private LocalDateTime fechaActualizacion;
 ```
 
+### 7. Corrección de ConfiguracionSeguridad
+
+**Archivo**: `backend/src/main/java/com/minegocio/backend/configuracion/ConfiguracionSeguridad.java`
+
+**Cambio**:
+```java
+auth.requestMatchers("/api/planillas-pedidos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
+auth.requestMatchers("/api/roturas-perdidas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
+auth.requestMatchers("/api/remitos-ingreso/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN"); // ← Agregado
+```
+
 ## Flujo de Datos Corregido
 
 ### Frontend
@@ -180,10 +193,11 @@ private LocalDateTime fechaActualizacion;
 3. Se envía objeto `Date` que se serializa como string simple
 
 ### Backend
-1. Jackson recibe fecha simple (ej: `"2025-08-30T15:30:00"`)
-2. `DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")` parsea correctamente
-3. Se convierte a `LocalDateTime` sin conversiones UTC
-4. Se guarda en la base de datos con hora local
+1. Spring Security permite el acceso al endpoint `/api/remitos-ingreso` para administradores
+2. Jackson recibe fecha simple (ej: `"2025-08-30T15:30:00"`)
+3. `DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")` parsea correctamente
+4. Se convierte a `LocalDateTime` sin conversiones UTC
+5. Se guarda en la base de datos con hora local
 
 ## Verificación
 
@@ -235,7 +249,10 @@ Ya no aparecen errores de parsing JSON.
 9. **`backend/src/main/java/com/minegocio/backend/dto/ClienteDTO.java`**
    - Removidas anotaciones @JsonFormat redundantes
 
-10. **`backend/src/main/java/com/minegocio/backend/seguridad/AuthTokenFilter.java`**
+10. **`backend/src/main/java/com/minegocio/backend/configuracion/ConfiguracionSeguridad.java`**
+    - Agregado endpoint `/api/remitos-ingreso/**` para administradores
+
+11. **`backend/src/main/java/com/minegocio/backend/seguridad/AuthTokenFilter.java`**
     - Agregados logs específicos para debugging de `/remitos-ingreso`
 
 ## Beneficios de la Solución
@@ -246,6 +263,7 @@ Ya no aparecen errores de parsing JSON.
 4. **Compatibilidad**: Funciona con cualquier zona horaria del servidor
 5. **Debugging**: Logs detallados para facilitar troubleshooting futuro
 6. **Limpieza**: Eliminadas configuraciones redundantes e inconsistentes
+7. **Autorización**: Endpoint correctamente configurado en Spring Security
 
 ## Notas Importantes
 
@@ -254,15 +272,17 @@ Ya no aparecen errores de parsing JSON.
 - **Sin conversiones**: Las fechas se manejan tal como se reciben
 - **Consistencia**: Ingresos y devoluciones funcionan de manera idéntica
 - **Configuración centralizada**: JacksonConfig maneja todos los formatos de fecha
+- **Autorización explícita**: Endpoint configurado para roles ADMINISTRADOR y SUPER_ADMIN
 
 ## Ejemplo de Funcionamiento
 
 Si un usuario crea un ingreso a las 15:30:
 
 1. **Frontend**: Envía `"2025-08-30T15:30:00"`
-2. **Jackson**: Parsea correctamente usando formato simple
-3. **Backend**: Guarda como `LocalDateTime` con hora exacta
-4. **Base de datos**: Almacena la fecha exacta enviada por el usuario
-5. **Visualización**: Muestra la hora correcta sin adelantos
+2. **Spring Security**: Permite acceso al endpoint para administradores
+3. **Jackson**: Parsea correctamente usando formato simple
+4. **Backend**: Guarda como `LocalDateTime` con hora exacta
+5. **Base de datos**: Almacena la fecha exacta enviada por el usuario
+6. **Visualización**: Muestra la hora correcta sin adelantos
 
 La solución asegura que tanto la autenticación como el manejo de fechas funcionen correctamente sin problemas de zona horaria y con configuraciones limpias y consistentes.
