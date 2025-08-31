@@ -320,35 +320,20 @@ export default function ModalAgregarRoturaPerdida({
       console.log('📋 [DEBUG] Hora actual del sistema:', ahora.toString());
       console.log('📋 [DEBUG] Hora local extraída:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
       
-      // Crear fecha en la zona horaria local del usuario
-      const fechaLocal = new Date(
-        fechaSeleccionada.getFullYear(),
-        fechaSeleccionada.getMonth(),
-        fechaSeleccionada.getDate(),
-        horaLocal,
-        minutosLocal,
-        segundosLocal
-      );
+             // Formatear como string local sin conversión UTC (igual que en otras secciones que funcionan)
+       const fechaFormateada = fechaSeleccionada.getFullYear() + '-' + 
+         String(fechaSeleccionada.getMonth() + 1).padStart(2, '0') + '-' + 
+         String(fechaSeleccionada.getDate()).padStart(2, '0') + 'T' + 
+         String(horaLocal).padStart(2, '0') + ':' + 
+         String(minutosLocal).padStart(2, '0') + ':' + 
+         String(segundosLocal).padStart(2, '0');
+       
+       console.log('📋 [DEBUG] Fecha formateada manualmente:', fechaFormateada);
       
-      console.log('📋 [DEBUG] Fecha local creada:', fechaLocal.toString());
-      console.log('📋 [DEBUG] Fecha local getTime():', fechaLocal.getTime());
-      console.log('📋 [DEBUG] Fecha local toISOString():', fechaLocal.toISOString());
-      console.log('📋 [DEBUG] Fecha local toLocaleString():', fechaLocal.toLocaleString());
-      console.log('📋 [DEBUG] Offset de zona horaria:', fechaLocal.getTimezoneOffset(), 'minutos');
-      
-      // Formatear como ISO string pero SIN la Z al final para que el backend la trate como fecha local
-      const fechaFormateada = fechaLocal.toISOString().replace('Z', '');
-      
-      console.log('📋 Fecha seleccionada:', fecha);
-      console.log('📋 Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
-      console.log('📋 Fecha local creada:', fechaLocal.toString());
-      console.log('📋 Fecha formateada (local):', fechaFormateada);
-      console.log('📋 Zona horaria del usuario:', zonaHorariaUsuario);
-      console.log('📋 Fecha actual del sistema:', new Date().toISOString());
-      console.log('📋 Offset de zona horaria (minutos):', new Date().getTimezoneOffset());
-      console.log('📋 Fecha local getTime():', fechaLocal.getTime());
-      console.log('📋 Fecha local toISOString():', fechaLocal.toISOString());
-      console.log('📋 Fecha local toLocaleString():', fechaLocal.toLocaleString());
+             console.log('📋 Fecha seleccionada:', fecha);
+       console.log('📋 Hora local del usuario:', `${horaLocal}:${minutosLocal}:${segundosLocal}`);
+       console.log('📋 Fecha formateada (local):', fechaFormateada);
+       console.log('📋 Zona horaria del usuario:', zonaHorariaUsuario);
       
       const datosRoturaPerdida = {
         fecha: fechaFormateada,
