@@ -161,8 +161,11 @@ public class RemitoIngresoService {
         
         // Establecer fechaCreacion manualmente usando la hora local del usuario
         // en lugar de dejar que @CreationTimestamp use la hora del servidor
+        System.out.println("📋 [SERVICE] === INICIO SECCIÓN FECHA CREACIÓN ===");
         System.out.println("📋 [SERVICE] Verificando zona horaria para fechaCreacion...");
         System.out.println("📋 [SERVICE] Zona horaria recibida: '" + remitoDTO.getZonaHoraria() + "'");
+        System.out.println("📋 [SERVICE] Zona horaria es null?: " + (remitoDTO.getZonaHoraria() == null));
+        System.out.println("📋 [SERVICE] Zona horaria está vacía?: " + (remitoDTO.getZonaHoraria() != null && remitoDTO.getZonaHoraria().trim().isEmpty()));
         
         if (remitoDTO.getZonaHoraria() != null && !remitoDTO.getZonaHoraria().trim().isEmpty()) {
             try {
@@ -185,6 +188,9 @@ public class RemitoIngresoService {
                 System.out.println("⚠️ [SERVICE] Zona horaria está vacía: " + remitoDTO.getZonaHoraria().trim().isEmpty());
             }
         }
+        
+        System.out.println("📋 [SERVICE] === FIN SECCIÓN FECHA CREACIÓN ===");
+        System.out.println("📋 [SERVICE] Fecha creación final: " + remito.getFechaCreacion());
         
         remito = remitoIngresoRepository.save(remito);
         
