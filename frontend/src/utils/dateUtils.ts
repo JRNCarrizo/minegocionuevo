@@ -98,21 +98,21 @@ export const formatearFecha = (
     let fechaLocal: Date;
     
     // Si es un array (formato [year, month, day, hour, minute, second, nanoseconds])
-    // Los arrays del backend representan fechas UTC
+    // Los arrays del backend representan fechas locales (no UTC)
     if (Array.isArray(fecha)) {
-      console.log('🔍 Procesando array de fecha UTC:', fecha);
+      console.log('🔍 Procesando array de fecha local:', fecha);
       const [year, month, day, hour = 0, minute = 0, second = 0] = fecha;
       
-      // Crear fecha UTC usando Date.UTC para evitar conversión automática a local
-      const fechaUTC = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+      // Crear fecha local (no UTC) para evitar conversión automática
+      const fechaLocal = new Date(year, month - 1, day, hour, minute, second);
       
-      if (isNaN(fechaUTC.getTime())) {
-        console.log('🔍 Fecha inválida desde array UTC:', fecha);
+      if (isNaN(fechaLocal.getTime())) {
+        console.log('🔍 Fecha inválida desde array local:', fecha);
         return 'Fecha inválida';
       }
       
-      // Convertir UTC a zona horaria local del usuario
-      return fechaUTC.toLocaleDateString('es-ES', {
+      // Mostrar en zona horaria local del usuario
+      return fechaLocal.toLocaleDateString('es-ES', {
         ...opciones
       });
     }
