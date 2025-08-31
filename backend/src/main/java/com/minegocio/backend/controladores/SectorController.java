@@ -366,15 +366,23 @@ public class SectorController {
     public ResponseEntity<?> obtenerStockGeneral(@PathVariable Long empresaId) {
         try {
             System.out.println("🔍 STOCK GENERAL - Endpoint llamado para empresa: " + empresaId);
+            System.out.println("🔍 STOCK GENERAL - Iniciando proceso...");
             
             List<Map<String, Object>> stockGeneral = sectorService.obtenerStockGeneral(empresaId);
             System.out.println("🔍 STOCK GENERAL - Datos obtenidos: " + stockGeneral.size() + " items");
+            
+            // Log de los primeros 3 items para debug
+            for (int i = 0; i < Math.min(3, stockGeneral.size()); i++) {
+                System.out.println("🔍 STOCK GENERAL - Item " + i + ": " + stockGeneral.get(i));
+            }
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Stock general obtenido exitosamente",
                 "data", stockGeneral
             ));
         } catch (Exception e) {
+            System.err.println("🔍 STOCK GENERAL - Error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Error al obtener stock general: " + e.getMessage()
             ));
