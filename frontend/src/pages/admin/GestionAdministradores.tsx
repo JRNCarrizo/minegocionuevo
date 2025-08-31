@@ -43,6 +43,21 @@ export default function GestionAdministradores() {
     cargarAdministradores();
   }, []);
 
+  // Manejar tecla Esc para salir de la sección
+  useEffect(() => {
+    const manejarTeclaEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        window.location.href = '/admin';
+      }
+    };
+
+    document.addEventListener('keydown', manejarTeclaEsc);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclaEsc);
+    };
+  }, []);
+
   const cargarAdministradores = async () => {
     try {
       console.log('🔄 Iniciando carga de administradores...');

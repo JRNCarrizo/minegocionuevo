@@ -485,6 +485,21 @@ export default function ConfiguracionEmpresa() {
     cargarConfiguracion(false); // No mostrar toast al cargar inicialmente
   }, []); // Remove cargarConfiguracion from dependencies to prevent infinite re-renders
 
+  // Manejar tecla Esc para salir de la sección
+  useEffect(() => {
+    const manejarTeclaEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        window.location.href = '/admin';
+      }
+    };
+
+    document.addEventListener('keydown', manejarTeclaEsc);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclaEsc);
+    };
+  }, []);
+
   const manejarCambio = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;

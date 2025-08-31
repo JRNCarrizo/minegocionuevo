@@ -377,7 +377,7 @@ export default function CargaPedidos() {
   useEffect(() => {
     const manejarEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        navigate('/admin/gestion-empresa');
+        navigate('/admin');
       }
     };
 

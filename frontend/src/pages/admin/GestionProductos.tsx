@@ -108,6 +108,10 @@ const GestionProductos: React.FC = () => {
   const [guardandoStock, setGuardandoStock] = useState(false);
   const [modoTerminar, setModoTerminar] = useState(false);
   
+  // Estados para navegación por teclado
+  const [cardSeleccionada, setCardSeleccionada] = useState<number>(-1);
+  const [navegacionActiva, setNavegacionActiva] = useState(false);
+  
   // Estados para paginación (TODO: implementar cuando sea necesario)
   // const [paginaActual, setPaginaActual] = useState(0);
   // const [totalPaginas, setTotalPaginas] = useState(1);
@@ -247,7 +251,126 @@ const GestionProductos: React.FC = () => {
     }
   }, [empresaId, cargarProductos, cargarSectoresAlmacenamiento, cargarCodigosPersonalizados]);
 
+  // Manejar navegación por teclado
+  useEffect(() => {
+    const manejarTeclas = (event: KeyboardEvent) => {
+      // Si hay un modal abierto, no manejar navegación por teclado
+      if (modalDetalleAbierto || mostrarScanner || mostrarScannerStock || 
+          mostrarScannerUSB || mostrarModalSeleccionScanner || mostrarImportacion) {
+        return;
+      }
 
+      const productosFiltrados = productos.filter(producto => {
+        if (busqueda) {
+          const textoBusqueda = busqueda.toLowerCase();
+          const coincideNombre = producto.nombre.toLowerCase().includes(textoBusqueda);
+          const coincideDescripcion = producto.descripcion?.toLowerCase().includes(textoBusqueda);
+          const coincideCodigo = producto.codigoPersonalizado?.toLowerCase().includes(textoBusqueda);
+          const coincideCodigoBarras = producto.codigoBarras?.toLowerCase().includes(textoBusqueda);
+          
+          if (!coincideNombre && !coincideDescripcion && !coincideCodigo && !coincideCodigoBarras) {
+            return false;
+          }
+        }
+
+        if (filtros.categoria && producto.categoria !== filtros.categoria) return false;
+        if (filtros.marca && producto.marca !== filtros.marca) return false;
+        if (filtros.sectorAlmacenamiento && producto.sectorAlmacenamiento !== filtros.sectorAlmacenamiento) return false;
+        if (filtros.codigoPersonalizado && producto.codigoPersonalizado !== filtros.codigoPersonalizado) return false;
+        if (filtros.codigoBarras && producto.codigoBarras !== filtros.codigoBarras) return false;
+        if (filtros.activo !== undefined && producto.activo !== filtros.activo) return false;
+        if (filtros.stockBajo !== undefined) {
+          if (filtros.stockBajo && producto.stock >= (producto.stockMinimo || 0)) return false;
+          if (!filtros.stockBajo && producto.stock < (producto.stockMinimo || 0)) return false;
+        }
+
+        return true;
+      });
+
+      // Definir las cards de acciones rápidas (6 cards)
+      const totalAccionesRapidas = 6;
+      const totalCards = totalAccionesRapidas + productosFiltrados.length;
+
+      switch (event.key) {
+        case 'ArrowUp':
+        case 'ArrowDown':
+        case 'ArrowLeft':
+        case 'ArrowRight':
+          event.preventDefault();
+          
+          if (!navegacionActiva) {
+            setNavegacionActiva(true);
+            setCardSeleccionada(0);
+            return;
+          }
+
+          let nuevaSeleccion = cardSeleccionada;
+          
+          if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+            nuevaSeleccion = Math.min(cardSeleccionada + 1, totalCards - 1);
+          } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+            nuevaSeleccion = Math.max(cardSeleccionada - 1, 0);
+          }
+          
+          setCardSeleccionada(nuevaSeleccion);
+          
+          // Hacer scroll a la card seleccionada
+          if (nuevaSeleccion < totalAccionesRapidas) {
+            // Es una card de acciones rápidas
+            const cardElement = document.querySelector(`[data-card-index="${nuevaSeleccion}"]`) as HTMLElement;
+            if (cardElement) {
+              cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          } else {
+            // Es un producto
+            const productoIndex = nuevaSeleccion - totalAccionesRapidas;
+            const cardElement = document.querySelector(`[data-producto-id="${productosFiltrados[productoIndex]?.id}"]`) as HTMLElement;
+            if (cardElement) {
+              cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }
+          break;
+          
+        case 'Enter':
+          if (navegacionActiva && cardSeleccionada >= 0) {
+            event.preventDefault();
+            
+            if (cardSeleccionada < totalAccionesRapidas) {
+              // Es una card de acciones rápidas - ejecutar su acción
+              const cardElement = document.querySelector(`[data-card-index="${cardSeleccionada}"]`) as HTMLElement;
+              if (cardElement) {
+                cardElement.click();
+              }
+            } else {
+              // Es un producto - abrir modal de detalle
+              const productoIndex = cardSeleccionada - totalAccionesRapidas;
+              if (productosFiltrados[productoIndex]) {
+                const productoSeleccionado = productosFiltrados[productoIndex];
+                setProductoSeleccionado(productoSeleccionado);
+                setModalDetalleAbierto(true);
+              }
+            }
+          }
+          break;
+          
+        case 'Escape':
+          event.preventDefault();
+          if (navegacionActiva) {
+            setNavegacionActiva(false);
+            setCardSeleccionada(-1);
+          } else {
+            window.location.href = '/admin';
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', manejarTeclas);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclas);
+    };
+  }, [productos, busqueda, filtros, cardSeleccionada, navegacionActiva, modalDetalleAbierto, 
+      mostrarScanner, mostrarScannerStock, mostrarScannerUSB, mostrarModalSeleccionScanner, mostrarImportacion]);
 
   // Función para filtrar productos
   const productosFiltrados = productos.filter(producto => {
@@ -713,6 +836,7 @@ const GestionProductos: React.FC = () => {
           }}>
             {/* Tarjeta Nuevo Producto */}
             <div 
+              data-card-index="0"
               onClick={() => navigate('/admin/productos/nuevo')}
               style={{
                 background: 'white',
@@ -720,19 +844,24 @@ const GestionProductos: React.FC = () => {
                 padding: '1.5rem',
                 cursor: 'pointer',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: '1px solid #e2e8f0',
+                border: navegacionActiva && cardSeleccionada === 0 ? '2px solid #000' : '1px solid #e2e8f0',
                 transition: 'all 0.3s ease',
-                animation: 'slideInUp 0.6s ease-out 0.3s both'
+                animation: 'slideInUp 0.6s ease-out 0.3s both',
+                backgroundColor: navegacionActiva && cardSeleccionada === 0 ? '#f0f9ff' : 'white'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                e.currentTarget.style.borderColor = '#667eea';
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.borderColor = '#667eea';
+                }
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                }
               }}
             >
               <div style={{
@@ -784,8 +913,88 @@ const GestionProductos: React.FC = () => {
               </div>
             </div>
 
+            {/* Tarjeta Control de Inventario */}
+            <div 
+              data-card-index="1"
+              onClick={() => navigate('/admin/control-inventario')}
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: navegacionActiva && cardSeleccionada === 1 ? '2px solid #000' : '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                animation: 'slideInUp 0.6s ease-out 0.4s both',
+                backgroundColor: navegacionActiva && cardSeleccionada === 1 ? '#f0f9ff' : 'white'
+              }}
+              onMouseOver={(e) => {
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(220, 38, 38, 0.15)';
+                  e.currentTarget.style.borderColor = '#dc2626';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                }
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.25rem',
+                  marginRight: '0.75rem',
+                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)'
+                }}>
+                  🔍
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Control de Inventario
+                  </h3>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Realiza conteo físico y control de stock
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: '#dc2626',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                Ir al control →
+              </div>
+            </div>
+
             {/* Tarjeta Scanner */}
             <div 
+              data-card-index="2"
               onClick={abrirModalSeleccionScanner}
               style={{
                 background: 'white',
@@ -793,19 +1002,24 @@ const GestionProductos: React.FC = () => {
                 padding: '1.5rem',
                 cursor: 'pointer',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: '1px solid #e2e8f0',
+                border: navegacionActiva && cardSeleccionada === 2 ? '2px solid #000' : '1px solid #e2e8f0',
                 transition: 'all 0.3s ease',
-                animation: 'slideInUp 0.6s ease-out 0.4s both'
+                animation: 'slideInUp 0.6s ease-out 0.4s both',
+                backgroundColor: navegacionActiva && cardSeleccionada === 2 ? '#f0f9ff' : 'white'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                e.currentTarget.style.borderColor = '#8b5cf6';
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.borderColor = '#8b5cf6';
+                }
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                }
               }}
             >
               <div style={{
@@ -859,6 +1073,7 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Historial de Carga */}
             <div 
+              data-card-index="3"
               onClick={irAHistorialCarga}
               style={{
                 background: 'white',
@@ -866,19 +1081,24 @@ const GestionProductos: React.FC = () => {
                 padding: '1.5rem',
                 cursor: 'pointer',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: '1px solid #e2e8f0',
+                border: navegacionActiva && cardSeleccionada === 3 ? '2px solid #000' : '1px solid #e2e8f0',
                 transition: 'all 0.3s ease',
-                animation: 'slideInUp 0.6s ease-out 0.6s both'
+                animation: 'slideInUp 0.6s ease-out 0.6s both',
+                backgroundColor: navegacionActiva && cardSeleccionada === 3 ? '#f0f9ff' : 'white'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                e.currentTarget.style.borderColor = '#f59e0b';
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.borderColor = '#f59e0b';
+                }
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                }
               }}
             >
               <div style={{
@@ -932,6 +1152,7 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Importación Masiva */}
             <div 
+              data-card-index="4"
               onClick={abrirImportacion}
               style={{
                 background: 'white',
@@ -939,19 +1160,24 @@ const GestionProductos: React.FC = () => {
                 padding: '1.5rem',
                 cursor: 'pointer',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: '1px solid #e2e8f0',
+                border: navegacionActiva && cardSeleccionada === 4 ? '2px solid #000' : '1px solid #e2e8f0',
                 transition: 'all 0.3s ease',
-                animation: 'slideInUp 0.6s ease-out 0.7s both'
+                animation: 'slideInUp 0.6s ease-out 0.7s both',
+                backgroundColor: navegacionActiva && cardSeleccionada === 4 ? '#f0f9ff' : 'white'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                e.currentTarget.style.borderColor = '#10b981';
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.borderColor = '#10b981';
+                }
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                }
               }}
             >
               <div style={{
@@ -1005,6 +1231,7 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Reporte de Stock */}
             <div 
+              data-card-index="5"
               onClick={cargando ? undefined : descargarReporteStock}
               style={{
                 background: 'white',
@@ -1012,22 +1239,25 @@ const GestionProductos: React.FC = () => {
                 padding: '1.5rem',
                 cursor: cargando ? 'not-allowed' : 'pointer',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: '1px solid #e2e8f0',
+                border: navegacionActiva && cardSeleccionada === 5 ? '2px solid #000' : '1px solid #e2e8f0',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.8s both',
-                opacity: cargando ? 0.7 : 1
+                opacity: cargando ? 0.7 : 1,
+                backgroundColor: navegacionActiva && cardSeleccionada === 5 ? '#f0f9ff' : 'white'
               }}
               onMouseOver={(e) => {
-                if (!cargando) {
+                if (!cargando && !navegacionActiva) {
                   e.currentTarget.style.transform = 'translateY(-8px)';
                   e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
                   e.currentTarget.style.borderColor = '#3b82f6';
                 }
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                }
               }}
             >
               <div style={{
@@ -1873,27 +2103,39 @@ const GestionProductos: React.FC = () => {
                     <div>⚙️ Acciones</div>
                   </div>
                   
-                  {productosFiltrados.map(producto => (
-                    <div key={producto.id} className="fila-producto" style={{
-                      padding: '0 24px',
-                      borderBottom: '1px solid #f1f5f9',
-                      display: 'grid',
-                      gridTemplateColumns: '80px 2fr 1fr 1fr 1fr 1fr 1fr',
-                      gap: '16px',
-                      alignItems: 'center',
-                      transition: 'all 0.2s ease',
-                      cursor: 'pointer',
-                      height: '80px'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = '#f8fafc';
-                      e.currentTarget.style.transform = 'translateX(4px)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                      e.currentTarget.style.transform = 'translateX(0)';
-                    }}
-                    >
+                  {productosFiltrados.map((producto, index) => {
+                    const isSelected = navegacionActiva && cardSeleccionada === index;
+                    return (
+                    <div 
+                      key={producto.id} 
+                      className="fila-producto" 
+                      data-producto-id={producto.id}
+                      style={{
+                        padding: '0 24px',
+                        borderBottom: '1px solid #f1f5f9',
+                        display: 'grid',
+                        gridTemplateColumns: '80px 2fr 1fr 1fr 1fr 1fr 1fr',
+                        gap: '16px',
+                        alignItems: 'center',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer',
+                        height: '80px',
+                        border: isSelected ? '2px solid #000' : 'none',
+                        backgroundColor: isSelected ? '#f0f9ff' : 'transparent'
+                      }}
+                      onMouseOver={(e) => {
+                        if (!navegacionActiva) {
+                          e.currentTarget.style.backgroundColor = '#f8fafc';
+                          e.currentTarget.style.transform = 'translateX(4px)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (!navegacionActiva) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.transform = 'translateX(0)';
+                        }
+                      }}
+                      >
                       <div className="columna-imagen" style={{
                         height: '100%',
                         width: '80px',
@@ -2146,7 +2388,8 @@ const GestionProductos: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               </div>
             ) : isMobile && vista === 'lista' ? (
@@ -2208,28 +2451,39 @@ const GestionProductos: React.FC = () => {
                   gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
                   gap: '16px'
                 }}>
-                  {productosFiltrados.map(producto => (
-                    <div key={producto.id} className="tarjeta-producto" style={{
-                      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '16px',
-                      padding: '0',
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      overflow: 'hidden'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = '#3b82f6';
-                      e.currentTarget.style.transform = 'translateY(-4px)';
-                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(59,130,246,0.15)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = '#e2e8f0';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
-                    }}
-                    >
+                  {productosFiltrados.map((producto, index) => {
+                    const isSelected = navegacionActiva && cardSeleccionada === index;
+                    return (
+                    <div 
+                      key={producto.id} 
+                      className="tarjeta-producto" 
+                      data-producto-id={producto.id}
+                      style={{
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                        border: isSelected ? '2px solid #000' : '2px solid #e2e8f0',
+                        borderRadius: '16px',
+                        padding: '0',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        backgroundColor: isSelected ? '#f0f9ff' : undefined
+                      }}
+                      onMouseOver={(e) => {
+                        if (!navegacionActiva) {
+                          e.currentTarget.style.borderColor = '#3b82f6';
+                          e.currentTarget.style.transform = 'translateY(-4px)';
+                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(59,130,246,0.15)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (!navegacionActiva) {
+                          e.currentTarget.style.borderColor = '#e2e8f0';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                        }
+                      }}
+                      >
                       {/* Badges de estado */}
                       <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px', zIndex: 10 }}>
                         {producto.destacado && (
@@ -2476,7 +2730,8 @@ const GestionProductos: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               </div>
             ) : (
@@ -2486,28 +2741,39 @@ const GestionProductos: React.FC = () => {
                   gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                   gap: '16px'
                 }}>
-                  {productosFiltrados.map(producto => (
-                    <div key={producto.id} className="tarjeta-producto" style={{
-                      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '16px',
-                      padding: '0',
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      overflow: 'hidden'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = '#3b82f6';
-                      e.currentTarget.style.transform = 'translateY(-4px)';
-                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(59,130,246,0.15)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = '#e2e8f0';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
-                    }}
-                    >
+                  {productosFiltrados.map((producto, index) => {
+                    const isSelected = navegacionActiva && cardSeleccionada === index;
+                    return (
+                    <div 
+                      key={producto.id} 
+                      className="tarjeta-producto" 
+                      data-producto-id={producto.id}
+                      style={{
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                        border: isSelected ? '2px solid #000' : '2px solid #e2e8f0',
+                        borderRadius: '16px',
+                        padding: '0',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        backgroundColor: isSelected ? '#f0f9ff' : undefined
+                      }}
+                      onMouseOver={(e) => {
+                        if (!navegacionActiva) {
+                          e.currentTarget.style.borderColor = '#3b82f6';
+                          e.currentTarget.style.transform = 'translateY(-4px)';
+                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(59,130,246,0.15)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (!navegacionActiva) {
+                          e.currentTarget.style.borderColor = '#e2e8f0';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                        }
+                      }}
+                      >
                       {/* Badges de estado */}
                       <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px', zIndex: 10 }}>
                         {producto.destacado && (
@@ -2777,7 +3043,8 @@ const GestionProductos: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               </div>
             )}

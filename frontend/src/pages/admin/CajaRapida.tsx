@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import { ventaRapidaService } from '../../services/ventaRapidaService';
@@ -164,6 +165,21 @@ export default function CajaRapida() {
       inputCantidadRef.current.select();
     }
   }, [modoCantidad]);
+
+  // Manejar tecla Esc para salir de la sección
+  useEffect(() => {
+    const manejarTeclaEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        window.location.href = '/admin';
+      }
+    };
+
+    document.addEventListener('keydown', manejarTeclaEsc);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclaEsc);
+    };
+  }, []);
 
 
 
@@ -611,6 +627,73 @@ export default function CajaRapida() {
             }}>
               Sistema de punto de venta para ventas cara a cara
             </p>
+          </div>
+          
+          {/* Card Historial de Ventas */}
+          <div style={{
+            marginTop: '2rem',
+            display: 'flex',
+            justifyContent: 'center'
+          }}>
+            <Link 
+              to="/admin/historial-ventas"
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem 2rem',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #e2e8f0',
+                textDecoration: 'none',
+                color: 'inherit',
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                maxWidth: '400px',
+                width: '100%'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(139, 92, 246, 0.15)';
+                e.currentTarget.style.borderColor = '#8b5cf6';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+              }}
+            >
+              <div style={{
+                width: '3rem',
+                height: '3rem',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                borderRadius: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.5rem',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+              }}>
+                📊
+              </div>
+              <div>
+                <h3 style={{
+                  fontSize: '1.125rem',
+                  fontWeight: '600',
+                  color: '#1e293b',
+                  margin: '0 0 0.25rem 0'
+                }}>
+                  Historial de Ventas
+                </h3>
+                <p style={{
+                  fontSize: '0.875rem',
+                  color: '#64748b',
+                  margin: 0
+                }}>
+                  Consulta el historial de ventas rápidas
+                </p>
+              </div>
+            </Link>
           </div>
         </div>
 

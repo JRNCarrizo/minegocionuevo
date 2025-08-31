@@ -710,6 +710,21 @@ export default function GestionClientes() {
     }
   }, [empresaId, cargarClientes]);
 
+  // Manejar tecla Esc para salir de la sección
+  useEffect(() => {
+    const manejarTeclaEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        window.location.href = '/admin';
+      }
+    };
+
+    document.addEventListener('keydown', manejarTeclaEsc);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclaEsc);
+    };
+  }, []);
+
   const alternarEstadoCliente = async (id: number) => {
     try {
       // Simular actualización

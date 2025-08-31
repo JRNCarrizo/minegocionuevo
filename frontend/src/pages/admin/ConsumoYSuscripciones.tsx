@@ -173,6 +173,21 @@ export default function ConsumoYSuscripciones() {
     cargarDatos();
   }, [navigate]);
 
+  // Manejar tecla Esc para salir de la sección
+  useEffect(() => {
+    const manejarTeclaEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        window.location.href = '/admin';
+      }
+    };
+
+    document.addEventListener('keydown', manejarTeclaEsc);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclaEsc);
+    };
+  }, []);
+
   const cerrarSesion = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

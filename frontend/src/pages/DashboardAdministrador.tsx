@@ -372,34 +372,13 @@ export default function DashboardAdministrador() {
   ];
 
   const accionesRapidas = [
+
     {
-      titulo: 'Añadir Producto',
-      descripcion: 'Añade un nuevo producto a tu inventario',
-      icono: '➕',
-      enlace: '/admin/productos/nuevo',
-      color: '#059669'
-    },
-    {
-      // aca hice cambios
-      titulo: 'Historial de Ventas',
-      descripcion: 'Consulta el historial de ventas rápidas, Caja Mostrador',
-      icono: '📊',
-      enlace: '/admin/historial-ventas',
-      color: '#8b5cf6'
-    },
-    {
-      titulo: 'Control de Inventario',
-      descripcion: 'Realiza conteo físico y control de stock',
-      icono: '🔍',
-      enlace: '/admin/control-inventario',
-      color: '#dc2626'
-    },
-    {
-      titulo: 'Consumo y Suscripciones',
-      descripcion: 'Monitorea uso de recursos y gestiona tu suscripción',
-      icono: '📊',
-      enlace: '/admin/consumo-suscripciones',
-      color: '#3b82f6'
+      titulo: 'Configura tu tienda',
+      descripcion: 'Tu tienda online',
+      icono: '⚙️',
+      enlace: '/admin/configuracion',
+      color: '#6b7280'
     },
     {
       titulo: 'Gestión de Administradores',
@@ -415,19 +394,13 @@ export default function DashboardAdministrador() {
       enlace: '/admin/gestion-empresa',
       color: '#f59e0b'
     },
+
     {
-      titulo: 'Gestión de Transportistas',
-      descripcion: 'Administra transportistas y sus vehículos',
-      icono: '🚛',
-      enlace: '/admin/transportistas',
-      color: '#8b5cf6'
-    },
-    {
-      titulo: 'Configuración',
-      descripcion: 'Personaliza tu tienda',
-      icono: '⚙️',
-      enlace: '/admin/configuracion',
-      color: '#6b7280'
+      titulo: 'Consumo y Suscripciones',
+      descripcion: 'Monitorea uso de recursos y gestiona tu suscripción',
+      icono: '📊',
+      enlace: '/admin/consumo-suscripciones',
+      color: '#3b82f6'
     }
   ];
 

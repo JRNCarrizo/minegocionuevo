@@ -126,6 +126,21 @@ export default function Estadisticas() {
     cargarEstadisticas();
   }, [datosUsuario?.empresaId]);
 
+  // Manejar tecla Esc para salir de la sección
+  useEffect(() => {
+    const manejarTeclaEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        window.location.href = '/admin';
+      }
+    };
+
+    document.addEventListener('keydown', manejarTeclaEsc);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclaEsc);
+    };
+  }, []);
+
   const cerrarSesionConToast = () => {
     cerrarSesion();
     toast.success('Sesión cerrada correctamente');
