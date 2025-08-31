@@ -20,6 +20,7 @@ public class JacksonConfig {
     @Bean
     @Primary
     public ObjectMapper objectMapper() {
+        System.out.println("🔧 [JACKSON] Iniciando configuración de ObjectMapper...");
         ObjectMapper objectMapper = new ObjectMapper();
         
         // Configurar módulo para Java Time
@@ -42,6 +43,7 @@ public class JacksonConfig {
         // objectMapper.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
         
         System.out.println("🔧 Jackson configurado para usar fechas locales sin conversión UTC");
+        System.out.println("🔧 [JACKSON] Configuración completada. ObjectMapper listo.");
         
         return objectMapper;
     }
