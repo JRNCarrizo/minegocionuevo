@@ -8,6 +8,7 @@ Después de implementar la corrección de zona horaria en ingresos, se presentar
 2. **Error de deserialización JSON** cuando se resolvió el 403
 3. **Problema de zona horaria**: Las fechas seguían apareciendo 3 horas adelantadas
 4. **Problema de autorización**: Endpoint no configurado en Spring Security
+5. **Problema de deserialización flexible**: Jackson no aceptaba fechas con formato ISO completo
 
 ### Causa Raíz
 
@@ -16,6 +17,7 @@ Después de implementar la corrección de zona horaria en ingresos, se presentar
 3. **Problema de zona horaria**: Configuraciones conflictivas entre TimeZoneConfig, Jackson y application.properties
 4. **Configuraciones redundantes**: Anotaciones @JsonFormat innecesarias en DTOs
 5. **Problema de autorización**: El endpoint `/api/remitos-ingreso` no estaba configurado en ConfiguracionSeguridad.java
+6. **Problema de deserialización flexible**: Jackson necesitaba aceptar múltiples formatos de fecha
 
 ## Análisis del Problema de Zona Horaria
 
@@ -115,14 +117,37 @@ System.setProperty("user.timezone", "UTC");
 
 **Antes**:
 ```java
-// Usar formato ISO completo que incluye 'Z' para compatibilidad con frontend
-DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME;
+// Usar formato simple sin 'Z' para evitar conversiones UTC
+DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATETIME_FORMAT);
+javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter));
 ```
 
 **Después**:
 ```java
-// Usar formato simple sin 'Z' para evitar conversiones UTC
+// Usar deserializador personalizado que acepta ambos formatos
 DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATETIME_FORMAT);
+javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter) {
+    @Override
+    public LocalDateTime deserialize(com.fasterxml.jackson.core.JsonParser p, com.fasterxml.jackson.databind.DeserializationContext ctxt) throws java.io.IOException {
+        String text = p.getText();
+        if (text == null || text.trim().isEmpty()) {
+            return null;
+        }
+        
+        try {
+            // Primero intentar con el formato simple
+            return LocalDateTime.parse(text, dateTimeFormatter);
+        } catch (DateTimeParseException e1) {
+            try {
+                // Si falla, intentar con formato ISO completo (con 'Z')
+                return LocalDateTime.parse(text, DateTimeFormatter.ISO_DATE_TIME);
+            } catch (DateTimeParseException e2) {
+                // Si ambos fallan, intentar con formato ISO sin 'Z'
+                return LocalDateTime.parse(text, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            }
+        }
+    }
+});
 ```
 
 ### 5. Corrección de RemitoIngreso.java
@@ -188,14 +213,17 @@ auth.requestMatchers("/api/remitos-ingreso/**").hasAnyRole("ADMINISTRADOR", "SUP
 ## Flujo de Datos Corregido
 
 ### Frontend
-1. Usuario crea un remito de ingreso
-2. Interceptor detecta `/api/remitos-ingreso` y agrega token de administrador
-3. Se envía objeto `Date` que se serializa como string simple
+1. Usuario crea un remito de ingreso o planilla de pedidos
+2. Interceptor detecta el endpoint y agrega token de administrador
+3. Se envía fecha con formato local o ISO según el contexto
 
 ### Backend
-1. Spring Security permite el acceso al endpoint `/api/remitos-ingreso` para administradores
-2. Jackson recibe fecha simple (ej: `"2025-08-30T15:30:00"`)
-3. `DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")` parsea correctamente
+1. Spring Security permite el acceso al endpoint para administradores
+2. Jackson recibe fecha (ej: `"2025-08-30T15:30:00"` o `"2025-08-30T15:30:00.000Z"`)
+3. Deserializador personalizado intenta múltiples formatos:
+   - Primero: `yyyy-MM-dd'T'HH:mm:ss` (formato simple)
+   - Segundo: `DateTimeFormatter.ISO_DATE_TIME` (con 'Z')
+   - Tercero: `DateTimeFormatter.ISO_LOCAL_DATE_TIME` (sin 'Z')
 4. Se convierte a `LocalDateTime` sin conversiones UTC
 5. Se guarda en la base de datos con hora local
 
@@ -211,7 +239,7 @@ auth.requestMatchers("/api/remitos-ingreso/**").hasAnyRole("ADMINISTRADOR", "SUP
 ```
 🌍 Zona horaria del servidor actual: [zona local]
 🌍 Configuración: Las fechas se manejen localmente sin conversiones UTC
-🔧 Jackson configurado para usar fechas locales sin conversiones UTC
+🔧 Jackson configurado para aceptar fechas con y sin 'Z'
 ```
 
 ### Logs de Deserialización
@@ -231,7 +259,7 @@ Ya no aparecen errores de parsing JSON.
    - Comentada configuración de Jackson que interfería
 
 4. **`backend/src/main/java/com/minegocio/backend/configuracion/JacksonConfig.java`**
-   - Cambiado a formato simple sin 'Z'
+   - Implementado deserializador personalizado que acepta múltiples formatos
    - Eliminadas conversiones UTC
 
 5. **`backend/src/main/java/com/minegocio/backend/entidades/RemitoIngreso.java`**
@@ -258,29 +286,31 @@ Ya no aparecen errores de parsing JSON.
 ## Beneficios de la Solución
 
 1. **Consistencia**: Todas las configuraciones de fecha están alineadas
-2. **Simplicidad**: Formato simple sin conversiones UTC
+2. **Flexibilidad**: Jackson acepta múltiples formatos de fecha
 3. **Robustez**: Manejo correcto de fechas locales
 4. **Compatibilidad**: Funciona con cualquier zona horaria del servidor
 5. **Debugging**: Logs detallados para facilitar troubleshooting futuro
 6. **Limpieza**: Eliminadas configuraciones redundantes e inconsistentes
 7. **Autorización**: Endpoint correctamente configurado en Spring Security
+8. **Tolerancia a errores**: Deserializador maneja múltiples formatos de fecha
 
 ## Notas Importantes
 
 - **Sin UTC forzado**: El servidor usa su zona horaria local
-- **Formato simple**: `yyyy-MM-dd'T'HH:mm:ss` sin 'Z' al final
+- **Formato flexible**: Jackson acepta fechas con y sin 'Z'
 - **Sin conversiones**: Las fechas se manejan tal como se reciben
 - **Consistencia**: Ingresos y devoluciones funcionan de manera idéntica
 - **Configuración centralizada**: JacksonConfig maneja todos los formatos de fecha
 - **Autorización explícita**: Endpoint configurado para roles ADMINISTRADOR y SUPER_ADMIN
+- **Deserialización robusta**: Múltiples intentos de parsing para máxima compatibilidad
 
 ## Ejemplo de Funcionamiento
 
 Si un usuario crea un ingreso a las 15:30:
 
-1. **Frontend**: Envía `"2025-08-30T15:30:00"`
+1. **Frontend**: Envía `"2025-08-30T15:30:00"` o `"2025-08-30T15:30:00.000Z"`
 2. **Spring Security**: Permite acceso al endpoint para administradores
-3. **Jackson**: Parsea correctamente usando formato simple
+3. **Jackson**: Deserializador personalizado intenta múltiples formatos
 4. **Backend**: Guarda como `LocalDateTime` con hora exacta
 5. **Base de datos**: Almacena la fecha exacta enviada por el usuario
 6. **Visualización**: Muestra la hora correcta sin adelantos
