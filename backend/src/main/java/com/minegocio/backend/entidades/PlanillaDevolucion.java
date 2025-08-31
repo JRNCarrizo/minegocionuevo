@@ -28,6 +28,9 @@ public class PlanillaDevolucion {
     @Column(length = 1000)
     private String observaciones;
 
+    @Column(length = 500)
+    private String transporte;
+
     @NotNull(message = "La fecha de la planilla es obligatoria")
     @Column(name = "fecha_planilla", nullable = false)
     private LocalDateTime fechaPlanilla;
@@ -109,6 +112,9 @@ public class PlanillaDevolucion {
 
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+
+    public String getTransporte() { return transporte; }
+    public void setTransporte(String transporte) { this.transporte = transporte; }
 
     public LocalDateTime getFechaPlanilla() { return fechaPlanilla; }
     public void setFechaPlanilla(LocalDateTime fechaPlanilla) { this.fechaPlanilla = fechaPlanilla; }

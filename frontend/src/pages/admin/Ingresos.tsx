@@ -880,7 +880,7 @@ export default function Ingresos() {
                   margin: 0,
                   opacity: 0.9
                 }}>
-                  {formatearFechaConHoy(remitoSeleccionado.fechaRemito, 'completa')} • {remitoSeleccionado.detalles.length} productos
+                  {formatearFecha(remitoSeleccionado.fechaRemito)} • {remitoSeleccionado.detalles.length} productos
                 </p>
               </div>
               <button
@@ -959,7 +959,7 @@ export default function Ingresos() {
                       color: '#1e293b',
                       margin: 0
                     }}>
-                      {formatearFechaConHoy(remitoSeleccionado.fechaRemito, 'completa')}
+                      {formatearFecha(remitoSeleccionado.fechaRemito)}
                     </p>
                   </div>
                   <div>

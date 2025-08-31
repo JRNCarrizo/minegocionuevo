@@ -90,9 +90,8 @@ public class PlanillaPedidoService {
         if (dto.getNumeroPlanilla() != null && !dto.getNumeroPlanilla().isEmpty()) {
             planilla.setNumeroPlanilla(dto.getNumeroPlanilla());
         } else {
-            // Generar número de planilla automático con timestamp
-            // Usar la fecha del usuario para generar el número, no la hora del servidor
-            String numeroPlanillaAuto = "PED" + (fechaPlanilla.getHour() * 100 + fechaPlanilla.getMinute());
+            // Generar número de planilla automático único
+            String numeroPlanillaAuto = generarNumeroPlanillaUnico(empresaId);
             planilla.setNumeroPlanilla(numeroPlanillaAuto);
             System.out.println("📋 [PEDIDO] Generando número de planilla automático: " + numeroPlanillaAuto);
         }
@@ -138,6 +137,39 @@ public class PlanillaPedidoService {
         }
 
         return planillaPedidoRepository.save(planilla);
+    }
+
+    /**
+     * Generar un número de planilla único para una empresa
+     */
+    private String generarNumeroPlanillaUnico(Long empresaId) {
+        int maxIntentos = 20;
+        int intento = 0;
+        
+        while (intento < maxIntentos) {
+            // Generar número basado en timestamp + empresaId + intento
+            long timestamp = System.currentTimeMillis();
+            String numero = String.format("PED%06d%02d", 
+                (timestamp % 1000000), // Últimos 6 dígitos del timestamp
+                (intento % 100)); // 2 dígitos del intento
+            
+            // Verificar si el número ya existe
+            if (!planillaPedidoRepository.existsByNumeroPlanilla(numero)) {
+                return numero;
+            }
+            
+            intento++;
+            // Pequeña pausa para evitar colisiones en sistemas muy rápidos
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        
+        // Si después de 20 intentos no se encuentra un número único, usar timestamp completo
+        return "PED" + System.currentTimeMillis();
     }
 
     /**

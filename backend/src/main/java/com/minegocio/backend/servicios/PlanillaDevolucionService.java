@@ -73,6 +73,7 @@ public class PlanillaDevolucionService {
         
         PlanillaDevolucion planilla = new PlanillaDevolucion(empresa, usuario, fechaPlanilla);
         planilla.setObservaciones(dto.getObservaciones());
+        planilla.setTransporte(dto.getTransporte());
 
         // Si se proporciona un número de planilla específico, usarlo
         if (dto.getNumeroPlanilla() != null && !dto.getNumeroPlanilla().isEmpty()) {
@@ -218,6 +219,7 @@ public class PlanillaDevolucionService {
                 planilla.getId(),
                 planilla.getNumeroPlanilla(),
                 planilla.getObservaciones(),
+                planilla.getTransporte(),
                 planilla.getFechaPlanilla(),
                 planilla.getTotalProductos(),
                 planilla.getFechaCreacion(),
@@ -367,6 +369,14 @@ public class PlanillaDevolucionService {
                 Row obsRow = sheet.createRow(rowNum++);
                 obsRow.createCell(0).setCellValue("Observaciones:");
                 obsRow.createCell(1).setCellValue(planilla.getObservaciones());
+                sheet.addMergedRegion(new CellRangeAddress(rowNum-1, rowNum-1, 1, 4));
+            }
+
+            if (planilla.getTransporte() != null && !planilla.getTransporte().isEmpty()) {
+                rowNum++;
+                Row transRow = sheet.createRow(rowNum++);
+                transRow.createCell(0).setCellValue("Transporte:");
+                transRow.createCell(1).setCellValue(planilla.getTransporte());
                 sheet.addMergedRegion(new CellRangeAddress(rowNum-1, rowNum-1, 1, 4));
             }
 

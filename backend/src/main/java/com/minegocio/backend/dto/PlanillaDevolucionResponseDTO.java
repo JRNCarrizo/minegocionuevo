@@ -13,6 +13,7 @@ public class PlanillaDevolucionResponseDTO {
     private Long id;
     private String numeroPlanilla;
     private String observaciones;
+    private String transporte;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaPlanilla;
@@ -30,10 +31,11 @@ public class PlanillaDevolucionResponseDTO {
     // Constructores
     public PlanillaDevolucionResponseDTO() {}
 
-    public PlanillaDevolucionResponseDTO(Long id, String numeroPlanilla, String observaciones, LocalDateTime fechaPlanilla, Integer totalProductos, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion, List<DetallePlanillaDevolucionResponseDTO> detalles) {
+    public PlanillaDevolucionResponseDTO(Long id, String numeroPlanilla, String observaciones, String transporte, LocalDateTime fechaPlanilla, Integer totalProductos, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion, List<DetallePlanillaDevolucionResponseDTO> detalles) {
         this.id = id;
         this.numeroPlanilla = numeroPlanilla;
         this.observaciones = observaciones;
+        this.transporte = transporte;
         this.fechaPlanilla = fechaPlanilla;
         this.totalProductos = totalProductos;
         this.fechaCreacion = fechaCreacion;
@@ -50,6 +52,9 @@ public class PlanillaDevolucionResponseDTO {
 
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+
+    public String getTransporte() { return transporte; }
+    public void setTransporte(String transporte) { this.transporte = transporte; }
 
     public LocalDateTime getFechaPlanilla() { return fechaPlanilla; }
     public void setFechaPlanilla(LocalDateTime fechaPlanilla) { this.fechaPlanilla = fechaPlanilla; }

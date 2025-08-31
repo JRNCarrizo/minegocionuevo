@@ -172,7 +172,7 @@ export default function CrearPlanilla() {
             opciones.push({
               transportista,
               vehiculo,
-              displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.marca} ${vehiculo.modelo} - ${vehiculo.patente})`,
+              displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.marca} ${vehiculo.modelo})`,
               key: `transportista-${transportista.id}-vehiculo-${vehiculo.id}`
             });
           });

@@ -12,6 +12,7 @@ interface PlanillaDevolucion {
   numeroPlanilla: string;
   fechaPlanilla: string;
   observaciones?: string;
+  transporte?: string;
   totalProductos: number;
   fechaCreacion: string;
   fechaActualizacion: string;
@@ -752,7 +753,7 @@ export default function DescargaDevoluciones() {
                             </div>
                           </div>
                           
-                          {planilla.observaciones && (
+                          {(planilla.observaciones || planilla.transporte) && (
                             <div style={{
                               background: '#f8fafc',
                               borderRadius: '0.5rem',
@@ -766,7 +767,16 @@ export default function DescargaDevoluciones() {
                                 margin: 0,
                                 fontStyle: 'italic'
                               }}>
-                                💬 {planilla.observaciones}
+                                {planilla.transporte && (
+                                  <span style={{ marginRight: '1rem' }}>
+                                    🚛 {planilla.transporte}
+                                  </span>
+                                )}
+                                {planilla.observaciones && (
+                                  <span>
+                                    💬 {planilla.observaciones}
+                                  </span>
+                                )}
                               </p>
                             </div>
                           )}
@@ -825,12 +835,12 @@ export default function DescargaDevoluciones() {
                 }}>
                   📋 Detalles de la Planilla
                 </h2>
-                <p style={{
-                  color: '#64748b',
-                  margin: 0
-                }}>
-                  {planillaSeleccionada.numeroPlanilla} • {formatearFechaConHoy(planillaSeleccionada.fechaPlanilla, 'completa')}
-                </p>
+                                 <p style={{
+                   color: '#64748b',
+                   margin: 0
+                 }}>
+                   {planillaSeleccionada.numeroPlanilla} • {formatearFecha(planillaSeleccionada.fechaPlanilla)}
+                 </p>
               </div>
               <button
                 onClick={() => setPlanillaSeleccionada(null)}
@@ -883,13 +893,13 @@ export default function DescargaDevoluciones() {
                 }}>
                   Fecha de Planilla
                 </label>
-                <p style={{
-                  fontSize: '1rem',
-                  color: '#1e293b',
-                  margin: 0
-                }}>
-                  {formatearFechaConHoy(planillaSeleccionada.fechaPlanilla, 'completa')}
-                </p>
+                                 <p style={{
+                   fontSize: '1rem',
+                   color: '#1e293b',
+                   margin: 0
+                 }}>
+                   {formatearFecha(planillaSeleccionada.fechaPlanilla)}
+                 </p>
               </div>
               <div>
                 <label style={{
@@ -928,7 +938,7 @@ export default function DescargaDevoluciones() {
                   {planillaSeleccionada.detalles.length}
                 </p>
               </div>
-              {planillaSeleccionada.observaciones && (
+                                           {(planillaSeleccionada.observaciones || planillaSeleccionada.transporte) && (
                 <div style={{ marginTop: '1rem' }}>
                   <label style={{
                     fontSize: '0.875rem',
@@ -937,16 +947,25 @@ export default function DescargaDevoluciones() {
                     display: 'block',
                     marginBottom: '0.25rem'
                   }}>
-                    Observaciones
+                    Información Adicional
                   </label>
-                  <p style={{
+                  <div style={{
                     fontSize: '1rem',
                     color: '#1e293b',
                     margin: 0,
                     fontStyle: 'italic'
                   }}>
-                    {planillaSeleccionada.observaciones}
-                  </p>
+                    {planillaSeleccionada.transporte && (
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        🚛 <strong>Transporte:</strong> {planillaSeleccionada.transporte}
+                      </div>
+                    )}
+                    {planillaSeleccionada.observaciones && (
+                      <div>
+                        💬 <strong>Observaciones:</strong> {planillaSeleccionada.observaciones}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

@@ -19,6 +19,9 @@ public class PlanillaDevolucionDTO {
     @Size(max = 1000, message = "Las observaciones no pueden exceder 1000 caracteres")
     private String observaciones;
 
+    @Size(max = 500, message = "El transporte no puede exceder 500 caracteres")
+    private String transporte;
+
     @NotNull(message = "La fecha de la planilla es obligatoria")
     private LocalDateTime fechaPlanilla;
 
@@ -47,6 +50,9 @@ public class PlanillaDevolucionDTO {
 
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+
+    public String getTransporte() { return transporte; }
+    public void setTransporte(String transporte) { this.transporte = transporte; }
 
     public LocalDateTime getFechaPlanilla() { return fechaPlanilla; }
     public void setFechaPlanilla(LocalDateTime fechaPlanilla) { this.fechaPlanilla = fechaPlanilla; }

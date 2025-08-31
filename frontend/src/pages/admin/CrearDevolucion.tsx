@@ -77,6 +77,8 @@ export default function CrearDevolucion() {
   const [sugerenciaSeleccionadaNombre, setSugerenciaSeleccionadaNombre] = useState(-1);
   const [sugerenciaSeleccionadaMarca, setSugerenciaSeleccionadaMarca] = useState(-1);
   
+
+  
   // Estados para el estado del producto
   const [estadosProducto] = useState([
     { value: 'BUEN_ESTADO', label: 'Buen Estado', color: '#10b981' },
@@ -92,6 +94,152 @@ export default function CrearDevolucion() {
   const observacionesRef = useRef<HTMLTextAreaElement>(null);
   const cantidadTemporalRef = useRef<HTMLInputElement>(null);
   const estadoTemporalRef = useRef<HTMLSelectElement>(null);
+
+  // Estados para transportista
+  const [transporte, setTransporte] = useState('');
+  const [transportistas, setTransportistas] = useState<any[]>([]);
+  const [transportistasFiltrados, setTransportistasFiltrados] = useState<any[]>([]);
+  const [mostrarTransportistas, setMostrarTransportistas] = useState(false);
+  const [transportistaSeleccionado, setTransportistaSeleccionado] = useState(-1);
+  const [inputBusquedaTransporte, setInputBusquedaTransporte] = useState('');
+  const [opcionesTransporte, setOpcionesTransporte] = useState<Array<{
+    transportista: any;
+    vehiculo?: any;
+    displayText: string;
+    key: string;
+  }>>([]);
+
+  // Cargar transportistas
+  const cargarTransportistas = async () => {
+    if (!datosUsuario?.empresaId) return;
+    
+    try {
+      const response = await fetch(`http://localhost:8080/api/empresas/${datosUsuario.empresaId}/transportistas`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setTransportistas(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error al cargar transportistas:', error);
+    }
+  };
+
+  // Función para seleccionar transportista
+  const seleccionarTransportista = (opcion: { transportista: any; vehiculo?: any; displayText: string }) => {
+    setTransporte(opcion.displayText);
+    setInputBusquedaTransporte('');
+    setMostrarTransportistas(false);
+    setTransportistaSeleccionado(-1);
+    
+    // Pasar al siguiente campo
+    observacionesRef.current?.focus();
+  };
+
+  // Función para manejar teclas en el buscador de transportista
+  const manejarTeclasTransporte = (e: React.KeyboardEvent) => {
+    if (mostrarTransportistas && opcionesTransporte.length > 0) {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setTransportistaSeleccionado(prev => 
+            prev < opcionesTransporte.length - 1 ? prev + 1 : 0
+          );
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setTransportistaSeleccionado(prev => 
+            prev > 0 ? prev - 1 : opcionesTransporte.length - 1
+          );
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (transportistaSeleccionado >= 0 && transportistaSeleccionado < opcionesTransporte.length) {
+            seleccionarTransportista(opcionesTransporte[transportistaSeleccionado]);
+          } else if (transporte) {
+            // Si ya hay un transportista seleccionado, pasar al siguiente campo
+            observacionesRef.current?.focus();
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setMostrarTransportistas(false);
+          setTransportistaSeleccionado(-1);
+          break;
+      }
+    }
+  };
+
+  // Cargar transportistas al montar el componente
+  useEffect(() => {
+    if (datosUsuario?.empresaId) {
+      cargarTransportistas();
+    }
+  }, [datosUsuario?.empresaId]);
+
+  // Filtrar transportistas cuando cambia la búsqueda
+  useEffect(() => {
+    if (!inputBusquedaTransporte.trim()) {
+      setTransportistasFiltrados(transportistas);
+      setOpcionesTransporte([]);
+      setMostrarTransportistas(false);
+      return;
+    }
+
+    const filtrados = transportistas.filter(transportista => 
+      transportista.activo && (
+        transportista.codigoInterno.toLowerCase().includes(inputBusquedaTransporte.toLowerCase()) ||
+        transportista.nombreApellido.toLowerCase().includes(inputBusquedaTransporte.toLowerCase()) ||
+        (transportista.nombreEmpresa && transportista.nombreEmpresa.toLowerCase().includes(inputBusquedaTransporte.toLowerCase())) ||
+        transportista.vehiculos.some((vehiculo: any) => 
+          vehiculo.activo && (
+            vehiculo.marca.toLowerCase().includes(inputBusquedaTransporte.toLowerCase()) ||
+            vehiculo.modelo.toLowerCase().includes(inputBusquedaTransporte.toLowerCase()) ||
+            vehiculo.patente.toLowerCase().includes(inputBusquedaTransporte.toLowerCase())
+          )
+        )
+      )
+    );
+
+    setTransportistasFiltrados(filtrados);
+
+    // Crear opciones individuales para cada transportista-vehículo
+    const opciones: Array<{
+      transportista: any;
+      vehiculo?: any;
+      displayText: string;
+      key: string;
+    }> = [];
+
+    filtrados.forEach(transportista => {
+      const vehiculosActivos = transportista.vehiculos.filter((v: any) => v.activo);
+      
+      if (vehiculosActivos.length === 0) {
+        opciones.push({
+          transportista,
+          displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido}`,
+          key: `transportista-${transportista.id}`
+        });
+      } else {
+        vehiculosActivos.forEach((vehiculo: any) => {
+          opciones.push({
+            transportista,
+            vehiculo,
+            displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.marca} ${vehiculo.modelo})`,
+            key: `transportista-${transportista.id}-vehiculo-${vehiculo.id}`
+          });
+        });
+      }
+    });
+
+    setOpcionesTransporte(opciones);
+    setMostrarTransportistas(opciones.length > 0);
+  }, [inputBusquedaTransporte, transportistas]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -451,6 +599,7 @@ export default function CrearDevolucion() {
          numeroPlanilla: numeroPlanilla.trim() || null,
         fechaPlanilla: fechaFormateada,
          observaciones: observaciones.trim() || null,
+         transporte: transporte.trim() || null,
          zonaHoraria: zonaHorariaUsuario,
          detalles: detalles.map(detalle => ({
            productoId: detalle.productoId,
@@ -703,7 +852,7 @@ export default function CrearDevolucion() {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 2fr',
             gap: '1rem'
           }}>
             <div>
@@ -740,7 +889,7 @@ export default function CrearDevolucion() {
                 color: '#64748b',
                 marginBottom: '0.5rem'
               }}>
-                📄 Número de Planilla (Opcional)
+                📄 Número de Planilla
               </label>
               <input
                  ref={numeroPlanillaRef}
@@ -750,10 +899,14 @@ export default function CrearDevolucion() {
                  onKeyDown={(e) => {
                    if (e.key === 'Enter') {
                      e.preventDefault();
-                     observacionesRef.current?.focus();
+                     // Focus en el campo de transportista
+                     const transporteInput = document.querySelector('input[placeholder*="Buscar transportista"]') as HTMLInputElement;
+                     if (transporteInput) {
+                       transporteInput.focus();
+                     }
                    }
                  }}
-                 placeholder="PL00000000 (solo si viene de planilla)"
+                 placeholder="Opcional"
                 style={{
                   width: '100%',
                   padding: '0.75rem',
@@ -762,6 +915,112 @@ export default function CrearDevolucion() {
                    fontSize: '0.875rem'
                 }}
               />
+            </div>
+
+            <div style={{ position: 'relative' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#64748b',
+                marginBottom: '0.5rem'
+              }}>
+                🚛 Transporte (Opcional)
+              </label>
+              {transporte ? (
+                <div style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '2px solid #10b981',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
+                  backgroundColor: '#f0fdf4',
+                  color: '#065f46',
+                  fontWeight: '500',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span>{transporte}</span>
+                  <button
+                    onClick={() => {
+                      setTransporte('');
+                      setInputBusquedaTransporte('');
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#dc2626',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      padding: '0.25rem'
+                    }}
+                    title="Limpiar transporte"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={inputBusquedaTransporte}
+                  onChange={(e) => {
+                    setInputBusquedaTransporte(e.target.value);
+                  }}
+                  onKeyDown={manejarTeclasTransporte}
+                  onFocus={() => {
+                    setInputBusquedaTransporte('');
+                    setMostrarTransportistas(true);
+                  }}
+                  placeholder="Buscar transportista por código, nombre o vehículo..."
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              )}
+              
+              {/* Dropdown de transportistas */}
+              {mostrarTransportistas && opcionesTransporte.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: 'white',
+                  border: '2px solid #e2e8f0',
+                  borderRadius: '0.5rem',
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                  zIndex: 1000,
+                  maxHeight: '200px',
+                  overflowY: 'auto'
+                }}>
+                  {opcionesTransporte.map((opcion, index) => (
+                    <div
+                      key={opcion.key}
+                      onClick={() => seleccionarTransportista(opcion)}
+                      style={{
+                        padding: '0.75rem',
+                        cursor: 'pointer',
+                        backgroundColor: transportistaSeleccionado === index ? '#f1f5f9' : 'transparent',
+                        borderBottom: index < opcionesTransporte.length - 1 ? '1px solid #f3f4f6' : 'none'
+                      }}
+                    >
+                      <div style={{ fontWeight: '600', fontSize: '0.875rem' }}>
+                        {opcion.displayText}
+                      </div>
+                      {opcion.transportista.nombreEmpresa && (
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                          {opcion.transportista.nombreEmpresa}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>
@@ -795,7 +1054,7 @@ export default function CrearDevolucion() {
                       }, 50);
                    }
                  }}
-                 placeholder="Ej: Devolución por planilla, Retiro de cliente, Producto recuperado, etc."
+                 placeholder="Devolución, retiro, recuperado, etc."
                  rows={1}
                 style={{
                   width: '100%',

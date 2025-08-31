@@ -1046,7 +1046,7 @@ export default function CargaPedidos() {
                     opacity: 0.9,
                     fontSize: '0.875rem'
                   }}>
-                    {formatearFechaConHoy(planillaSeleccionada.fechaPlanilla, 'completa')}
+                    {formatearFecha(planillaSeleccionada.fechaPlanilla)}
                   </p>
                 </div>
                 <div style={{
@@ -1138,7 +1138,7 @@ export default function CargaPedidos() {
                         color: '#1e293b',
                         fontWeight: '500'
                       }}>
-                        {formatearFechaConHoy(planillaSeleccionada.fechaPlanilla, 'corta')}
+                        {formatearFecha(planillaSeleccionada.fechaPlanilla)}
                       </div>
                     </div>
                                          <div>
