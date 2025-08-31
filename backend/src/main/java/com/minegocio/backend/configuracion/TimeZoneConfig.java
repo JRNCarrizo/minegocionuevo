@@ -12,9 +12,11 @@ public class TimeZoneConfig {
     public void init() {
         // NO configurar zona horaria del servidor
         // Permitir que las fechas se manejen exactamente como las envía el frontend
+        // Esto permite que usuarios de cualquier zona horaria usen la aplicación
         System.out.println("🌍 Zona horaria del servidor: " + TimeZone.getDefault().getID());
         System.out.println("🌍 Configuración: Las fechas se manejan sin conversiones de zona horaria");
         System.out.println("🌍 Sistema usando zona horaria: " + System.getProperty("user.timezone"));
         System.out.println("🌍 IMPORTANTE: Las fechas se procesan como vienen del frontend (sin conversiones)");
+        System.out.println("🌍 USUARIOS: Cualquier zona horaria del mundo puede usar la aplicación");
     }
 }

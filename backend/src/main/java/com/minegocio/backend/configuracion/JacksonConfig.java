@@ -37,12 +37,17 @@ public class JacksonConfig {
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter) {
             @Override
             public void serialize(LocalDateTime value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+                System.out.println("🔧 [JACKSON] === SERIALIZADOR PERSONALIZADO EJECUTÁNDOSE ===");
+                System.out.println("🔧 [JACKSON] Valor LocalDateTime a serializar: " + value);
+                
                 if (value == null) {
                     gen.writeNull();
                 } else {
                     // Formatear como string local SIN conversiones de zona horaria
                     String formatted = value.format(dateTimeFormatter);
                     System.out.println("🔧 [JACKSON] Serializando fecha SIN conversión: " + value + " → " + formatted);
+                    System.out.println("🔧 [JACKSON] Zona horaria del servidor: " + java.util.TimeZone.getDefault().getID());
+                    System.out.println("🔧 [JACKSON] IMPORTANTE: NO se hace conversión UTC, se mantiene fecha local del usuario");
                     gen.writeString(formatted);
                 }
             }
