@@ -6,6 +6,7 @@ import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import { obtenerFechaActual } from '../../utils/dateUtils';
+import { API_CONFIG } from '../../config/api';
 
 interface DetallePlanillaPedido {
   id: number;
@@ -26,6 +27,23 @@ interface Producto {
   codigoBarras?: string;
 }
 
+interface Transportista {
+  id: number;
+  codigoInterno: string;
+  nombreApellido: string;
+  nombreEmpresa?: string;
+  activo: boolean;
+  vehiculos: Vehiculo[];
+}
+
+interface Vehiculo {
+  id: number;
+  marca: string;
+  modelo: string;
+  patente: string;
+  activo: boolean;
+}
+
 export default function CrearPlanilla() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile, isTablet } = useResponsive();
@@ -40,6 +58,7 @@ export default function CrearPlanilla() {
   const [nuevaPlanilla, setNuevaPlanilla] = useState({
     fechaPlanilla: obtenerFechaActual(),
     codigoPlanilla: '',
+    transporte: '',
     observaciones: '',
     detalles: [] as DetallePlanillaPedido[]
   });
@@ -57,11 +76,25 @@ export default function CrearPlanilla() {
   const [cantidadTemporal, setCantidadTemporal] = useState(1);
   const [modoCantidad, setModoCantidad] = useState(false);
 
+  // Estados para búsqueda de transportistas
+  const [transportistas, setTransportistas] = useState<Transportista[]>([]);
+  const [transportistasFiltrados, setTransportistasFiltrados] = useState<Transportista[]>([]);
+  const [opcionesTransporte, setOpcionesTransporte] = useState<Array<{
+    transportista: Transportista;
+    vehiculo?: Vehiculo;
+    displayText: string;
+    key: string;
+  }>>([]);
+  const [mostrarTransportistas, setMostrarTransportistas] = useState(false);
+  const [transportistaSeleccionado, setTransportistaSeleccionado] = useState<number>(-1);
+  const [inputBusquedaTransporte, setInputBusquedaTransporte] = useState('');
+
   // Referencias
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
   const inputCantidadRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
   const codigoPlanillaRef = useRef<HTMLInputElement>(null);
+  const transporteRef = useRef<HTMLInputElement>(null);
   const observacionesRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -74,6 +107,7 @@ export default function CrearPlanilla() {
     // Solo cargar datos si el usuario ya está cargado
     if (datosUsuario) {
       cargarProductos();
+      cargarTransportistas();
     }
   }, [navigate, datosUsuario]);
 
@@ -95,6 +129,65 @@ export default function CrearPlanilla() {
       setMostrarProductos(false);
     }
   }, [inputBusqueda, productos]);
+
+  // Efecto para filtrar transportistas
+  useEffect(() => {
+    if (inputBusquedaTransporte.trim()) {
+      const filtrados = transportistas.filter(transportista => {
+        const matchCodigo = transportista.codigoInterno.toLowerCase().includes(inputBusquedaTransporte.toLowerCase());
+        const matchNombre = transportista.nombreApellido.toLowerCase().includes(inputBusquedaTransporte.toLowerCase());
+        const matchEmpresa = transportista.nombreEmpresa && transportista.nombreEmpresa.toLowerCase().includes(inputBusquedaTransporte.toLowerCase());
+        
+        // Buscar en vehículos del transportista
+        const matchVehiculo = transportista.vehiculos.some(vehiculo => 
+          vehiculo.marca.toLowerCase().includes(inputBusquedaTransporte.toLowerCase()) ||
+          vehiculo.modelo.toLowerCase().includes(inputBusquedaTransporte.toLowerCase()) ||
+          vehiculo.patente.toLowerCase().includes(inputBusquedaTransporte.toLowerCase())
+        );
+        
+        return matchCodigo || matchNombre || matchEmpresa || matchVehiculo;
+      });
+      
+      // Crear opciones individuales para cada transportista-vehículo
+      const opciones: Array<{
+        transportista: Transportista;
+        vehiculo?: Vehiculo;
+        displayText: string;
+        key: string;
+      }> = [];
+      
+      filtrados.forEach(transportista => {
+        const vehiculosActivos = transportista.vehiculos.filter(v => v.activo);
+        
+        if (vehiculosActivos.length === 0) {
+          // Si no tiene vehículos activos, mostrar solo el transportista
+          opciones.push({
+            transportista,
+            displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido}`,
+            key: `transportista-${transportista.id}`
+          });
+        } else {
+          // Crear una opción por cada vehículo activo
+          vehiculosActivos.forEach(vehiculo => {
+            opciones.push({
+              transportista,
+              vehiculo,
+              displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.marca} ${vehiculo.modelo} - ${vehiculo.patente})`,
+              key: `transportista-${transportista.id}-vehiculo-${vehiculo.id}`
+            });
+          });
+        }
+      });
+      
+      setOpcionesTransporte(opciones);
+      setTransportistasFiltrados(filtrados);
+      setMostrarTransportistas(opciones.length > 0);
+    } else {
+      setOpcionesTransporte([]);
+      setTransportistasFiltrados([]);
+      setMostrarTransportistas(false);
+    }
+  }, [inputBusquedaTransporte, transportistas]);
 
   // Resetear selección cuando se cierra la lista
   useEffect(() => {
@@ -158,6 +251,29 @@ export default function CrearPlanilla() {
     }
   };
 
+  const cargarTransportistas = async () => {
+    try {
+      if (!datosUsuario?.empresaId) {
+        console.error('No se encontró el ID de la empresa');
+        return;
+      }
+      
+      const response = await fetch(`${API_CONFIG.getBaseUrl()}/empresas/${datosUsuario.empresaId}/transportistas`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setTransportistas(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error al cargar transportistas:', error);
+    }
+  };
+
   // Función para mostrar predicciones mientras escribes
   const mostrarPredicciones = (valor: string) => {
     setProductoSeleccionado(-1);
@@ -197,8 +313,57 @@ export default function CrearPlanilla() {
   const manejarTeclasCodigoPlanilla = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      transporteRef.current?.focus();
+    }
+  };
+
+  // Manejar teclas en campo de transporte
+  const manejarTeclasTransporte = (e: React.KeyboardEvent) => {
+    if (mostrarTransportistas && opcionesTransporte.length > 0) {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setTransportistaSeleccionado(prev => 
+            prev < opcionesTransporte.length - 1 ? prev + 1 : 0
+          );
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setTransportistaSeleccionado(prev => 
+            prev > 0 ? prev - 1 : opcionesTransporte.length - 1
+          );
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (transportistaSeleccionado >= 0 && transportistaSeleccionado < opcionesTransporte.length) {
+            seleccionarTransportista(opcionesTransporte[transportistaSeleccionado]);
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setMostrarTransportistas(false);
+          setTransportistaSeleccionado(-1);
+          break;
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
       observacionesRef.current?.focus();
     }
+  };
+
+  // Seleccionar transportista
+  const seleccionarTransportista = (opcion: { transportista: Transportista; vehiculo?: Vehiculo; displayText: string }) => {
+    setNuevaPlanilla(prev => ({
+      ...prev,
+      transporte: opcion.displayText
+    }));
+    
+    setMostrarTransportistas(false);
+    setTransportistaSeleccionado(-1);
+    setInputBusquedaTransporte('');
+    
+    // Pasar al siguiente campo
+    observacionesRef.current?.focus();
   };
 
   // Manejar teclas en campo de observaciones
@@ -385,6 +550,7 @@ export default function CrearPlanilla() {
         fechaPlanilla: fechaFormateada,
         numeroPlanilla: nuevaPlanilla.codigoPlanilla,
         observaciones: nuevaPlanilla.observaciones,
+        transporte: nuevaPlanilla.transporte,
         detalles: nuevaPlanilla.detalles,
         zonaHoraria: zonaHorariaUsuario
       };
@@ -610,7 +776,7 @@ export default function CrearPlanilla() {
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
             gap: '1rem'
           }}>
             <div>
@@ -669,6 +835,104 @@ export default function CrearPlanilla() {
                   fontSize: '0.875rem'
                 }}
               />
+            </div>
+            <div style={{ position: 'relative' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '0.5rem'
+              }}>
+                Transporte
+              </label>
+              {nuevaPlanilla.transporte ? (
+                <div style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '2px solid #10b981',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
+                  backgroundColor: '#f0fdf4',
+                  color: '#065f46',
+                  fontWeight: '500',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span>{nuevaPlanilla.transporte}</span>
+                  <button
+                    onClick={() => {
+                      setNuevaPlanilla(prev => ({ ...prev, transporte: '' }));
+                      setInputBusquedaTransporte('');
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#dc2626',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      padding: '0.25rem'
+                    }}
+                    title="Limpiar transporte"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <input
+                  ref={transporteRef}
+                  type="text"
+                  placeholder="Buscar transportista o vehículo..."
+                  value={inputBusquedaTransporte}
+                  onChange={(e) => setInputBusquedaTransporte(e.target.value)}
+                  onKeyDown={manejarTeclasTransporte}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              )}
+              {mostrarTransportistas && transportistasFiltrados.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  background: 'white',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '0.5rem',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  zIndex: 1000,
+                  maxHeight: '200px',
+                  overflowY: 'auto'
+                }}>
+                  {opcionesTransporte.map((opcion, index) => (
+                    <div
+                      key={opcion.key}
+                      onClick={() => seleccionarTransportista(opcion)}
+                      style={{
+                        padding: '0.75rem',
+                        cursor: 'pointer',
+                        backgroundColor: index === transportistaSeleccionado ? '#f3f4f6' : 'transparent',
+                        borderBottom: index < opcionesTransporte.length - 1 ? '1px solid #f3f4f6' : 'none'
+                      }}
+                    >
+                      <div style={{ fontWeight: '600', fontSize: '0.875rem' }}>
+                        {opcion.displayText}
+                      </div>
+                      {opcion.transportista.nombreEmpresa && (
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                          {opcion.transportista.nombreEmpresa}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label style={{

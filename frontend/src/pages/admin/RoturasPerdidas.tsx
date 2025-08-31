@@ -98,19 +98,33 @@ export default function RoturasPerdidas() {
 
   const exportarRoturasPerdidas = async (fechaInicio: string, fechaFin: string) => {
     try {
-      const response = await ApiService.exportarRoturasPerdidas(fechaInicio, fechaFin);
+      if (!datosUsuario?.empresaId) {
+        toast.error('Error: No se pudo obtener la información de la empresa');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:8080/api/empresas/${datosUsuario.empresaId}/roturas-perdidas/exportar?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
-      const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Roturas_Perdidas_${fechaInicio}_${fechaFin}.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      toast.success('Reporte exportado exitosamente');
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Roturas_Perdidas_${fechaInicio}_${fechaFin}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        toast.success('Reporte exportado exitosamente');
+      } else {
+        toast.error('Error al exportar el reporte');
+      }
     } catch (error) {
       console.error('Error al exportar roturas y pérdidas:', error);
       toast.error('Error al exportar el reporte');

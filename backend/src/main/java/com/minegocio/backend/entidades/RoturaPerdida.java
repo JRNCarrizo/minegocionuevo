@@ -31,6 +31,9 @@ public class RoturaPerdida {
     @Column(length = 1000)
     private String observaciones;
 
+    @Column(length = 500)
+    private String transporte;
+
     // Relación con empresa
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
@@ -106,6 +109,14 @@ public class RoturaPerdida {
         this.observaciones = observaciones;
     }
 
+    public String getTransporte() {
+        return transporte;
+    }
+
+    public void setTransporte(String transporte) {
+        this.transporte = transporte;
+    }
+
     public Empresa getEmpresa() {
         return empresa;
     }
@@ -178,3 +189,4 @@ public class RoturaPerdida {
         return codigoPersonalizado != null ? codigoPersonalizado : "";
     }
 }
+

@@ -43,6 +43,7 @@ export default function ModalAgregarRoturaPerdida({
   // Estados para el formulario
   const [fecha, setFecha] = useState(obtenerFechaActual());
   const [observaciones, setObservaciones] = useState('');
+  const [transporte, setTransporte] = useState('');
   const [descripcionProducto, setDescripcionProducto] = useState('');
   const [codigoPersonalizado, setCodigoPersonalizado] = useState('');
   const [productoFinalSeleccionado, setProductoFinalSeleccionado] = useState<Producto | null>(null);
@@ -349,6 +350,7 @@ export default function ModalAgregarRoturaPerdida({
         fecha: fechaFormateada,
         cantidad: cantidadFinal,
         observaciones: observaciones.trim() || null,
+        transporte: transporte.trim() || null,
         productoId: productoFinalSeleccionado?.id || null,
         descripcionProducto: !productoFinalSeleccionado ? descripcionProducto.trim() : null,
         codigoPersonalizado: !productoFinalSeleccionado ? codigoPersonalizado.trim() : null,
@@ -371,6 +373,7 @@ export default function ModalAgregarRoturaPerdida({
       setFecha(obtenerFechaActual());
       setCantidadFinal(1);
       setObservaciones('');
+      setTransporte('');
       setProductoFinalSeleccionado(null);
       setDescripcionProducto('');
       setCodigoPersonalizado('');
@@ -860,6 +863,34 @@ export default function ModalAgregarRoturaPerdida({
               </div>
             </div>
           )}
+
+          {/* Transporte */}
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '0.5rem'
+            }}>
+              🚛 Transporte (opcional)
+            </label>
+            <input
+              type="text"
+              value={transporte}
+              onChange={(e) => setTransporte(e.target.value)}
+              placeholder="Información del transportista (opcional)"
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '0.5rem',
+                fontSize: '0.875rem',
+                outline: 'none',
+                transition: 'border-color 0.2s'
+              }}
+            />
+          </div>
 
           {/* Observaciones */}
           <div>

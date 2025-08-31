@@ -10,6 +10,7 @@ public class RoturaPerdidaResponseDTO {
     private String fecha;
     private Integer cantidad;
     private String observaciones;
+    private String transporte;
     private String descripcionProducto;
     private String codigoPersonalizado;
     private String nombreUsuario;
@@ -26,11 +27,12 @@ public class RoturaPerdidaResponseDTO {
     // Constructores
     public RoturaPerdidaResponseDTO() {}
 
-    public RoturaPerdidaResponseDTO(Long id, String fecha, Integer cantidad, String observaciones) {
+    public RoturaPerdidaResponseDTO(Long id, String fecha, Integer cantidad, String observaciones, String transporte) {
         this.id = id;
         this.fecha = fecha;
         this.cantidad = cantidad;
         this.observaciones = observaciones;
+        this.transporte = transporte;
     }
 
     // Getters y Setters
@@ -64,6 +66,14 @@ public class RoturaPerdidaResponseDTO {
 
     public void setObservaciones(String observaciones) {
         this.observaciones = observaciones;
+    }
+
+    public String getTransporte() {
+        return transporte;
+    }
+
+    public void setTransporte(String transporte) {
+        this.transporte = transporte;
     }
 
     public String getDescripcionProducto() {
@@ -146,3 +156,4 @@ public class RoturaPerdidaResponseDTO {
         return codigoPersonalizado != null ? codigoPersonalizado : "";
     }
 }
+

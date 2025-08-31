@@ -67,6 +67,36 @@ export default function StockGeneral() {
     }
   }, [navigate, datosUsuario?.empresaId]);
 
+  // Manejo de teclas para navegación
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Esc: Volver a la sección de sectores
+      if (event.key === 'Escape') {
+        const activeElement = document.activeElement;
+        const isInput = activeElement?.tagName === 'INPUT' || 
+                       activeElement?.tagName === 'TEXTAREA' || 
+                       activeElement?.tagName === 'SELECT';
+        
+        if (isInput) {
+          // Si estás en un input, quitar el foco
+          event.preventDefault();
+          event.stopPropagation();
+          (activeElement as HTMLElement)?.blur();
+        } else {
+          // Si no estás en un input, volver a gestión de sectores
+          event.preventDefault();
+          event.stopPropagation();
+          navigate('/admin/sectores');
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true); // Usar capture phase
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [navigate]);
+
   const consolidarProductos = (items: StockItem[]): StockItem[] => {
     const productosConsolidados = new Map<number, StockItem>();
     
@@ -95,9 +125,10 @@ export default function StockGeneral() {
       }
     });
     
-    console.log('🔍 CONSOLIDACIÓN - Productos originales:', items.length);
-    console.log('🔍 CONSOLIDACIÓN - Productos consolidados:', productosConsolidados.size);
-    console.log('🔍 CONSOLIDACIÓN - Productos resultantes:', Array.from(productosConsolidados.values()));
+    // Log de consolidación solo cuando hay muchos productos
+    if (items.length > 10) {
+      console.log('🔍 CONSOLIDACIÓN - De', items.length, 'a', productosConsolidados.size, 'productos');
+    }
     
     return Array.from(productosConsolidados.values());
   };
@@ -154,10 +185,10 @@ export default function StockGeneral() {
     return cumpleBusqueda && cumpleTipo;
   });
 
-  console.log('🔍 FILTRADO - Filtro actual:', filtroTipo);
-  console.log('🔍 FILTRADO - Datos originales:', stockData.length);
-  console.log('🔍 FILTRADO - Datos filtrados:', datosFiltrados.length);
-  console.log('🔍 FILTRADO - Tipos de datos:', datosFiltrados.map(item => ({ nombre: item.producto.nombre, tipo: item.tipo })));
+  // Logs de debugging solo cuando hay cambios significativos
+  if (stockData.length > 0) {
+    console.log('🔍 FILTRADO - Datos originales:', stockData.length, 'Filtrados:', datosFiltrados.length);
+  }
   
   // Consolidar productos cuando se selecciona "sin_sectorizar"
   const datosConsolidados = filtroTipo === 'sin_sectorizar' 

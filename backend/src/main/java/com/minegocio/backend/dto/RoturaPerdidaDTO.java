@@ -16,6 +16,8 @@ public class RoturaPerdidaDTO {
 
     private String observaciones;
 
+    private String transporte;
+
     // ID del producto (opcional, puede ser null para productos no registrados)
     private Long productoId;
 
@@ -61,6 +63,14 @@ public class RoturaPerdidaDTO {
         this.observaciones = observaciones;
     }
 
+    public String getTransporte() {
+        return transporte;
+    }
+
+    public void setTransporte(String transporte) {
+        this.transporte = transporte;
+    }
+
     public Long getProductoId() {
         return productoId;
     }
@@ -93,3 +103,4 @@ public class RoturaPerdidaDTO {
         this.zonaHoraria = zonaHoraria;
     }
 }
+

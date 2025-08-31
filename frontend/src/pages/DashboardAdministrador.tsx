@@ -416,6 +416,13 @@ export default function DashboardAdministrador() {
       color: '#f59e0b'
     },
     {
+      titulo: 'Gestión de Transportistas',
+      descripcion: 'Administra transportistas y sus vehículos',
+      icono: '🚛',
+      enlace: '/admin/transportistas',
+      color: '#8b5cf6'
+    },
+    {
       titulo: 'Configuración',
       descripcion: 'Personaliza tu tienda',
       icono: '⚙️',

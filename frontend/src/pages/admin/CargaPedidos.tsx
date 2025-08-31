@@ -11,6 +11,7 @@ interface PlanillaPedido {
   id: number;
   numeroPlanilla: string;
   observaciones?: string;
+  transporte?: string;
   fechaPlanilla: string;
   totalProductos: number;
   fechaCreacion: string;
@@ -927,22 +928,52 @@ export default function CargaPedidos() {
                             </div>
                           </div>
                           
-                          {planilla.observaciones && (
+                          {(planilla.transporte || planilla.observaciones) && (
                             <div style={{
-                              background: '#f8fafc',
-                              borderRadius: '0.5rem',
-                              padding: '0.75rem',
+                              display: 'flex',
+                              gap: '1rem',
                               marginBottom: '1rem',
-                              border: '1px solid #e2e8f0'
+                              flexWrap: 'wrap'
                             }}>
-                              <p style={{
-                                color: '#64748b',
-                                fontSize: '0.875rem',
-                                margin: 0,
-                                fontStyle: 'italic'
-                              }}>
-                                💬 {planilla.observaciones}
-                              </p>
+                              {planilla.transporte && (
+                                <div style={{
+                                  background: '#f0f9ff',
+                                  borderRadius: '0.5rem',
+                                  padding: '0.75rem',
+                                  border: '1px solid #bae6fd',
+                                  flex: '1',
+                                  minWidth: '200px'
+                                }}>
+                                  <p style={{
+                                    color: '#0369a1',
+                                    fontSize: '0.875rem',
+                                    margin: 0,
+                                    fontStyle: 'italic'
+                                  }}>
+                                    🚛 {planilla.transporte}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {planilla.observaciones && (
+                                <div style={{
+                                  background: '#f8fafc',
+                                  borderRadius: '0.5rem',
+                                  padding: '0.75rem',
+                                  border: '1px solid #e2e8f0',
+                                  flex: '1',
+                                  minWidth: '200px'
+                                }}>
+                                  <p style={{
+                                    color: '#64748b',
+                                    fontSize: '0.875rem',
+                                    margin: 0,
+                                    fontStyle: 'italic'
+                                  }}>
+                                    💬 {planilla.observaciones}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1163,27 +1194,62 @@ export default function CargaPedidos() {
                     
                   </div>
                   
-                  {planillaSeleccionada.observaciones && (
+                  {(planillaSeleccionada.transporte || planillaSeleccionada.observaciones) && (
                     <div style={{ marginTop: '1rem' }}>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '0.875rem',
-                        fontWeight: '600',
-                        color: '#64748b',
-                        marginBottom: '0.5rem'
-                      }}>
-                        💬 Observaciones
-                      </label>
                       <div style={{
-                        padding: '0.75rem',
-                        background: 'white',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
-                        color: '#1e293b',
-                        fontStyle: 'italic'
+                        display: 'flex',
+                        gap: '1rem',
+                        flexWrap: 'wrap'
                       }}>
-                        {planillaSeleccionada.observaciones}
+                        {planillaSeleccionada.transporte && (
+                          <div style={{ flex: '1', minWidth: '250px' }}>
+                            <label style={{
+                              display: 'block',
+                              fontSize: '0.875rem',
+                              fontWeight: '600',
+                              color: '#0369a1',
+                              marginBottom: '0.5rem'
+                            }}>
+                              🚛 Transporte
+                            </label>
+                            <div style={{
+                              padding: '0.75rem',
+                              background: 'white',
+                              border: '1px solid #bae6fd',
+                              borderRadius: '0.5rem',
+                              fontSize: '0.875rem',
+                              color: '#1e293b',
+                              fontStyle: 'italic'
+                            }}>
+                              {planillaSeleccionada.transporte}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {planillaSeleccionada.observaciones && (
+                          <div style={{ flex: '1', minWidth: '250px' }}>
+                            <label style={{
+                              display: 'block',
+                              fontSize: '0.875rem',
+                              fontWeight: '600',
+                              color: '#64748b',
+                              marginBottom: '0.5rem'
+                            }}>
+                              💬 Observaciones
+                            </label>
+                            <div style={{
+                              padding: '0.75rem',
+                              background: 'white',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '0.5rem',
+                              fontSize: '0.875rem',
+                              color: '#1e293b',
+                              fontStyle: 'italic'
+                            }}>
+                              {planillaSeleccionada.observaciones}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

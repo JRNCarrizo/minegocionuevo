@@ -85,6 +85,7 @@ public class RoturaPerdidaService {
         }
         RoturaPerdida roturaPerdida = new RoturaPerdida(empresa, usuario, fechaPlanilla, dto.getCantidad());
         roturaPerdida.setObservaciones(dto.getObservaciones());
+        roturaPerdida.setTransporte(dto.getTransporte());
 
         // Si se especifica un producto, asociarlo y descontar del stock
         if (dto.getProductoId() != null) {
@@ -532,6 +533,7 @@ public class RoturaPerdidaService {
         dto.setFecha(roturaPerdida.getFecha().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
         dto.setCantidad(roturaPerdida.getCantidad());
         dto.setObservaciones(roturaPerdida.getObservaciones());
+        dto.setTransporte(roturaPerdida.getTransporte());
         dto.setDescripcionProducto(roturaPerdida.getDescripcionProducto());
         dto.setCodigoPersonalizado(roturaPerdida.getCodigoPersonalizado());
         dto.setNombreUsuario(roturaPerdida.getUsuario().getNombre());
@@ -600,3 +602,4 @@ public class RoturaPerdidaService {
         }
     }
 }
+

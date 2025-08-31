@@ -131,6 +131,12 @@ export default function GestionEmpresa() {
   // Efecto para agregar y remover event listeners
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Solo manejar navegación si estamos en la página principal de gestión de empresa
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/admin/gestion-empresa') {
+        return;
+      }
+      
       // Solo manejar navegación si no estamos en un input o textarea
       const target = event.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
@@ -140,10 +146,10 @@ export default function GestionEmpresa() {
       manejarNavegacionTeclado(event);
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true); // Usar capture phase
     
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [indiceSeleccionado, navigate]);
 
@@ -178,16 +184,23 @@ export default function GestionEmpresa() {
   }, [navigate]);
 
   // Manejar tecla Escape para volver al panel principal de admin
+  // SOLO cuando estamos en esta página específica, no en subpáginas
   useEffect(() => {
     const manejarEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      // Solo manejar Escape si estamos en la página principal de gestión de empresa
+      // y no en una subpágina como sectores o stock general
+      const currentPath = window.location.pathname;
+      if (e.key === 'Escape' && currentPath === '/admin/gestion-empresa') {
+        console.log('🔍 GestionEmpresa - Escape detected, navigating to /admin');
+        e.preventDefault();
+        e.stopPropagation();
         navigate('/admin');
       }
     };
 
-    document.addEventListener('keydown', manejarEscape);
+    document.addEventListener('keydown', manejarEscape, true); // Usar capture phase
     return () => {
-      document.removeEventListener('keydown', manejarEscape);
+      document.removeEventListener('keydown', manejarEscape, true);
     };
   }, [navigate]);
 
@@ -272,12 +285,20 @@ export default function GestionEmpresa() {
       gradiente: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
     },
     {
+      titulo: 'Gestión de Transportistas',
+      descripcion: 'Administra transportistas y sus vehículos',
+      icono: '🚛',
+      color: '#8b5cf6',
+      enlace: '/admin/transportistas',
+      gradiente: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
+    },
+    {
       titulo: 'Movimientos del Día',
       descripcion: 'Estadísticas generales de movimientos diarios',
       icono: '📊',
-      color: '#8b5cf6',
+      color: '#10b981',
       enlace: '/admin/movimientos-dia',
-      gradiente: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
+      gradiente: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
     }
   ];
 

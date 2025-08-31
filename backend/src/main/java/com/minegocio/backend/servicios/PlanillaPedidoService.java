@@ -84,6 +84,7 @@ public class PlanillaPedidoService {
         
         PlanillaPedido planilla = new PlanillaPedido(empresa, usuario, fechaPlanilla);
         planilla.setObservaciones(dto.getObservaciones());
+        planilla.setTransporte(dto.getTransporte());
 
         // Generar número de planilla automáticamente si no se proporciona uno
         if (dto.getNumeroPlanilla() != null && !dto.getNumeroPlanilla().isEmpty()) {
@@ -165,6 +166,7 @@ public class PlanillaPedidoService {
                 planilla.getId(),
                 planilla.getNumeroPlanilla(),
                 planilla.getObservaciones(),
+                planilla.getTransporte(),
                 planilla.getFechaPlanilla().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")),
                 planilla.getTotalProductos(),
                 planilla.getFechaCreacion(),
@@ -424,6 +426,14 @@ public class PlanillaPedidoService {
                 sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 3));
             }
 
+            if (planilla.getTransporte() != null && !planilla.getTransporte().isEmpty()) {
+                rowNum++;
+                Row transRow = sheet.createRow(rowNum++);
+                transRow.createCell(0).setCellValue("Transporte:");
+                transRow.createCell(1).setCellValue(planilla.getTransporte());
+                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 3));
+            }
+
             Row infoRow3 = sheet.createRow(rowNum++);
             infoRow3.createCell(0).setCellValue("Fecha:");
             infoRow3.createCell(1).setCellValue(planilla.getFechaPlanilla().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
@@ -512,6 +522,7 @@ public class PlanillaPedidoService {
         dto.setNumeroPlanilla(planilla.getNumeroPlanilla());
         dto.setFechaPlanilla(planilla.getFechaPlanilla().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
         dto.setObservaciones(planilla.getObservaciones());
+        dto.setTransporte(planilla.getTransporte());
         dto.setTotalProductos(planilla.getTotalProductos());
         dto.setFechaCreacion(planilla.getFechaCreacion());
         dto.setFechaActualizacion(planilla.getFechaActualizacion());
@@ -591,3 +602,4 @@ public class PlanillaPedidoService {
         }
     }
 }
+

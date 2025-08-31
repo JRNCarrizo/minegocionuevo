@@ -9,6 +9,7 @@ public class PlanillaPedidoResponseDTO {
     private Long id;
     private String numeroPlanilla;
     private String observaciones;
+    private String transporte;
     private String fechaPlanilla;
     private Integer totalProductos;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -21,12 +22,13 @@ public class PlanillaPedidoResponseDTO {
     public PlanillaPedidoResponseDTO() {}
 
     public PlanillaPedidoResponseDTO(Long id, String numeroPlanilla, String observaciones, 
-                                   String fechaPlanilla, Integer totalProductos, 
+                                   String transporte, String fechaPlanilla, Integer totalProductos, 
                                    LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion,
                                    List<DetallePlanillaPedidoResponseDTO> detalles) {
         this.id = id;
         this.numeroPlanilla = numeroPlanilla;
         this.observaciones = observaciones;
+        this.transporte = transporte;
         this.fechaPlanilla = fechaPlanilla;
         this.totalProductos = totalProductos;
         this.fechaCreacion = fechaCreacion;
@@ -44,6 +46,9 @@ public class PlanillaPedidoResponseDTO {
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
 
+    public String getTransporte() { return transporte; }
+    public void setTransporte(String transporte) { this.transporte = transporte; }
+
     public String getFechaPlanilla() { return fechaPlanilla; }
     public void setFechaPlanilla(String fechaPlanilla) { this.fechaPlanilla = fechaPlanilla; }
 
@@ -59,3 +64,4 @@ public class PlanillaPedidoResponseDTO {
     public List<DetallePlanillaPedidoResponseDTO> getDetalles() { return detalles; }
     public void setDetalles(List<DetallePlanillaPedidoResponseDTO> detalles) { this.detalles = detalles; }
 }
+

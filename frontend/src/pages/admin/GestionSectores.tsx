@@ -90,6 +90,9 @@ export default function GestionSectores() {
   
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [guardando, setGuardando] = useState(false);
+  
+  // Estado para almacenar información de productos por sector
+  const [infoProductosPorSector, setInfoProductosPorSector] = useState<{[key: number]: {productos: number, unidades: number}}>({});
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -102,6 +105,43 @@ export default function GestionSectores() {
       cargarSectores();
     }
   }, [navigate, datosUsuario]);
+
+  // Manejo de teclas para navegación
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Esc: Salir de la sección
+      if (event.key === 'Escape') {
+        const activeElement = document.activeElement;
+        const isInput = activeElement?.tagName === 'INPUT' || 
+                       activeElement?.tagName === 'TEXTAREA' || 
+                       activeElement?.tagName === 'SELECT';
+        
+        if (mostrarModalCrear || mostrarModalEditar || mostrarModalProductos || 
+            mostrarModalDetalle || mostrarModalAsignar || mostrarModalTransferir) {
+          // Si hay un modal abierto, cerrarlo
+          event.preventDefault();
+          event.stopPropagation();
+          cerrarModal();
+        } else if (isInput) {
+          // Si estás en un input pero no hay modal, quitar el foco
+          event.preventDefault();
+          event.stopPropagation();
+          (activeElement as HTMLElement)?.blur();
+        } else {
+          // Si no hay modal ni input, salir de la sección
+          event.preventDefault();
+          event.stopPropagation();
+          navigate('/admin/gestion-empresa');
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true); // Usar capture phase
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [mostrarModalCrear, mostrarModalEditar, mostrarModalProductos, 
+      mostrarModalDetalle, mostrarModalAsignar, mostrarModalTransferir, navigate]);
 
   // Función helper para hacer llamadas a la API con URL base correcta
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
@@ -131,6 +171,9 @@ export default function GestionSectores() {
       if (response.ok) {
         const data = await response.json();
         setSectores(data.data || []);
+        
+        // Cargar información de productos por sector
+        await cargarInfoProductosPorSector();
       } else {
         console.error('❌ Error response:', response.status, response.statusText);
         toast.error('Error al cargar sectores');
@@ -140,6 +183,45 @@ export default function GestionSectores() {
       toast.error('Error al cargar sectores');
     } finally {
       setCargando(false);
+    }
+  };
+
+  const cargarInfoProductosPorSector = async () => {
+    try {
+      console.log('🔍 CARGAR INFO PRODUCTOS - Iniciando...');
+      
+      // Cargar stock general para obtener información de productos por sector
+      const stockResponse = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/stock-general`);
+      
+      if (stockResponse.ok) {
+        const stockData = await stockResponse.json();
+        const stockGeneral = stockData.data || [];
+        
+        console.log('🔍 CARGAR INFO PRODUCTOS - Stock general cargado:', stockGeneral.length, 'items');
+        
+        // Calcular productos y unidades por sector
+        const infoPorSector: {[key: number]: {productos: number, unidades: number}} = {};
+        
+        stockGeneral.forEach((item: any) => {
+          if (item.tipo === 'con_sector' && item.sector) {
+            const sectorId = item.sector.id;
+            
+            if (!infoPorSector[sectorId]) {
+              infoPorSector[sectorId] = { productos: 0, unidades: 0 };
+            }
+            
+            infoPorSector[sectorId].productos += 1;
+            infoPorSector[sectorId].unidades += item.cantidad || 0;
+          }
+        });
+        
+        console.log('🔍 CARGAR INFO PRODUCTOS - Info calculada:', infoPorSector);
+        setInfoProductosPorSector(infoPorSector);
+      } else {
+        console.error('🔍 CARGAR INFO PRODUCTOS - Error al cargar stock general:', stockResponse.status);
+      }
+    } catch (error) {
+      console.error('🔍 CARGAR INFO PRODUCTOS - Error:', error);
     }
   };
 
@@ -779,10 +861,18 @@ export default function GestionSectores() {
                             </span>
                           </div>
                           
+                          {/* Información de productos y unidades */}
                           <div className="info-item">
-                            <span className="icono-info">📅</span>
+                            <span className="icono-info">📦</span>
                             <span className="texto-info">
-                              Creado: {new Date(sector.fechaCreacion).toLocaleDateString()}
+                              Productos: {infoProductosPorSector[sector.id]?.productos || 0}
+                            </span>
+                          </div>
+                          
+                          <div className="info-item">
+                            <span className="icono-info">🔢</span>
+                            <span className="texto-info">
+                              Unidades: {infoProductosPorSector[sector.id]?.unidades?.toLocaleString() || 0}
                             </span>
                           </div>
                         </div>
@@ -877,10 +967,18 @@ export default function GestionSectores() {
                             </span>
                           </div>
                           
+                          {/* Información de productos y unidades */}
                           <div className="info-item">
-                            <span className="icono-info">📅</span>
+                            <span className="icono-info">📦</span>
                             <span className="texto-info">
-                              Creado: {new Date(sector.fechaCreacion).toLocaleDateString()}
+                              Productos: {infoProductosPorSector[sector.id]?.productos || 0}
+                            </span>
+                          </div>
+                          
+                          <div className="info-item">
+                            <span className="icono-info">🔢</span>
+                            <span className="texto-info">
+                              Unidades: {infoProductosPorSector[sector.id]?.unidades?.toLocaleString() || 0}
                             </span>
                           </div>
                         </div>

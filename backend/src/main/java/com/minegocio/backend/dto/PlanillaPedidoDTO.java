@@ -20,6 +20,8 @@ public class PlanillaPedidoDTO {
     
     private String observaciones;
     
+    private String transporte;
+    
     @NotNull(message = "La fecha de la planilla es obligatoria")
     private String fechaPlanilla;
     
@@ -40,10 +42,11 @@ public class PlanillaPedidoDTO {
     // Constructores
     public PlanillaPedidoDTO() {}
 
-    public PlanillaPedidoDTO(String numeroPlanilla, String fechaPlanilla, String observaciones) {
+    public PlanillaPedidoDTO(String numeroPlanilla, String fechaPlanilla, String observaciones, String transporte) {
         this.numeroPlanilla = numeroPlanilla;
         this.fechaPlanilla = fechaPlanilla;
         this.observaciones = observaciones;
+        this.transporte = transporte;
     }
 
     // Getters y Setters
@@ -55,6 +58,9 @@ public class PlanillaPedidoDTO {
 
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+
+    public String getTransporte() { return transporte; }
+    public void setTransporte(String transporte) { this.transporte = transporte; }
 
     public String getFechaPlanilla() { return fechaPlanilla; }
     public void setFechaPlanilla(String fechaPlanilla) { this.fechaPlanilla = fechaPlanilla; }
@@ -80,3 +86,4 @@ public class PlanillaPedidoDTO {
     public String getZonaHoraria() { return zonaHoraria; }
     public void setZonaHoraria(String zonaHoraria) { this.zonaHoraria = zonaHoraria; }
 }
+
