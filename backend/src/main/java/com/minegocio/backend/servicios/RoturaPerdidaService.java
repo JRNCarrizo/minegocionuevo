@@ -65,7 +65,18 @@ public class RoturaPerdidaService {
                 System.out.println("📋 [SERVICE] Fecha string después de remover Z: " + fechaString);
             }
             
-            fechaPlanilla = LocalDateTime.parse(fechaString, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+            // Intentar parsear con diferentes formatos
+            try {
+                fechaPlanilla = LocalDateTime.parse(fechaString, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+            } catch (Exception e1) {
+                try {
+                    // Intentar con formato que incluye milisegundos
+                    fechaPlanilla = LocalDateTime.parse(fechaString, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"));
+                } catch (Exception e2) {
+                    // Intentar con formato ISO estándar
+                    fechaPlanilla = LocalDateTime.parse(fechaString);
+                }
+            }
             System.out.println("📋 [SERVICE] Fecha parseada como LocalDateTime: " + fechaPlanilla);
             System.out.println("📋 [SERVICE] Guardando fecha exacta del usuario (sin conversión UTC)");
         } else {
@@ -169,7 +180,18 @@ public class RoturaPerdidaService {
             if (fechaString.endsWith("Z")) {
                 fechaString = fechaString.substring(0, fechaString.length() - 1);
             }
-            fechaPlanilla = LocalDateTime.parse(fechaString, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+            // Intentar parsear con diferentes formatos
+            try {
+                fechaPlanilla = LocalDateTime.parse(fechaString, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+            } catch (Exception e1) {
+                try {
+                    // Intentar con formato que incluye milisegundos
+                    fechaPlanilla = LocalDateTime.parse(fechaString, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"));
+                } catch (Exception e2) {
+                    // Intentar con formato ISO estándar
+                    fechaPlanilla = LocalDateTime.parse(fechaString);
+                }
+            }
         } else {
             fechaPlanilla = LocalDateTime.now();
         }
