@@ -38,9 +38,27 @@ export const convertirUTCALocal = (fechaUTC: string | Date): Date => {
         console.log('🔍 [DEBUG] Detectado como UTC, convirtiendo a local');
         fecha = new Date(fechaUTC);
       } else {
-        // Es fecha local del usuario, no convertir
-        console.log('🔍 [DEBUG] Detectado como fecha local, no convirtiendo');
-        fecha = new Date(fechaUTC);
+        // Es fecha local del usuario, parsear manualmente para evitar conversión UTC
+        console.log('🔍 [DEBUG] Detectado como fecha local, parseando manualmente');
+        if (fechaUTC.includes('T')) {
+          // Parsear manualmente para evitar conversión UTC automática
+          const partes = fechaUTC.split('T');
+          const fechaParte = partes[0].split('-');
+          const horaParte = partes[1].split(':');
+          
+          const year = parseInt(fechaParte[0]);
+          const month = parseInt(fechaParte[1]) - 1; // Meses van de 0-11
+          const day = parseInt(fechaParte[2]);
+          const hour = parseInt(horaParte[0]);
+          const minute = parseInt(horaParte[1]);
+          const second = parseInt(horaParte[2]) || 0;
+          
+          fecha = new Date(year, month, day, hour, minute, second);
+        } else {
+          // Solo fecha, crear en zona horaria local
+          const [year, month, day] = fechaUTC.split('-').map(Number);
+          fecha = new Date(year, month - 1, day);
+        }
       }
     } else {
       console.log('🔍 [DEBUG] convertirUTCALocal - Input Date:', fechaUTC);
