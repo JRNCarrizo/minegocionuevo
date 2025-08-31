@@ -129,6 +129,11 @@ export const formatearFecha = (
         return 'Fecha inválida';
       }
       
+      console.log('🔍 Array procesado como fecha local:', {
+        year, month, day, hour, minute, second,
+        fechaLocal: fechaLocal.toISOString()
+      });
+      
       // Mostrar en zona horaria local del usuario
       return fechaLocal.toLocaleDateString('es-ES', {
         ...opciones
@@ -262,6 +267,12 @@ export const formatearFechaConHora = (fechaString: any): string => {
         return 'Fecha inválida';
       }
       
+      console.log('🔍 Array procesado como fecha local:', {
+        year, month, day, hour, minute, second,
+        fechaLocal: fechaLocal.toISOString(),
+        zonaHorariaLocal: obtenerZonaHorariaLocal()
+      });
+      
       // Mostrar en zona horaria local del usuario
       return fechaLocal.toLocaleString('es-ES', {
         year: 'numeric',
@@ -298,49 +309,44 @@ export const formatearFechaConHora = (fechaString: any): string => {
       console.log('🔍 Procesando string de fecha local:', fechaString);
       console.log('🔍 String original recibido del backend:', fechaString);
       
-      // IMPORTANTE: Las fechas del backend ya vienen en hora local del usuario
-      // Mostrar directamente sin conversiones de zona horaria
-      if (fechaString.includes('T')) {
-        // Parsear manualmente para mostrar exactamente como viene del backend
-        const partes = fechaString.split('T');
-        const fechaParte = partes[0].split('-');
-        const horaParte = partes[1].split(':');
-        
-        const year = parseInt(fechaParte[0]);
-        const month = parseInt(fechaParte[1]);
-        const day = parseInt(fechaParte[2]);
-        const hour = parseInt(horaParte[0]);
-        const minute = parseInt(horaParte[1]);
-        
-        console.log('🔍 Parseado manual - Year:', year, 'Month:', month, 'Day:', day, 'Hour:', hour, 'Minute:', minute);
-        
-        // Formatear directamente sin usar Date constructor para evitar conversiones
-        const fechaFormateada = `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
-        const horaFormateada = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        
-        const resultado = `${fechaFormateada}, ${horaFormateada}`;
-        console.log('🔍 formatearFechaConHora - Resultado directo (string):', resultado);
-        console.log('🔍 Hora original del backend:', `${hour}:${minute}`);
-        console.log('🔍 Hora formateada final:', horaFormateada);
-        return resultado;
-      } else {
-        // Otros formatos, usar Date constructor
-        const fechaLocal = new Date(fechaString);
-        
-        if (isNaN(fechaLocal.getTime())) {
-          console.log('🔍 Fecha inválida desde string:', fechaString);
-          return 'Fecha inválida';
-        }
-        
-        return fechaLocal.toLocaleString('es-ES', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        });
+      // Si ya tiene formato de fecha (YYYY-MM-DD)
+      if (fechaString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return fechaString;
       }
+      
+      // Si tiene formato ISO con T
+      if (fechaString.includes('T')) {
+        // Convertir de UTC a zona horaria local
+        const fechaUTC = new Date(fechaString);
+        if (!isNaN(fechaUTC.getTime())) {
+          return fechaUTC.toLocaleString('es-ES', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: false 
+          });
+        }
+        return fechaString;
+      }
+      
+      // Otros formatos, usar Date constructor
+      const fechaLocal = new Date(fechaString);
+      
+      if (isNaN(fechaLocal.getTime())) {
+        console.log('🔍 Fecha inválida desde string:', fechaString);
+        return 'Fecha inválida';
+      }
+      
+      return fechaLocal.toLocaleString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
     }
     
     // Si es un objeto Date

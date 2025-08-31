@@ -211,33 +211,28 @@ const HistorialVentasRapidas: React.FC = () => {
       console.log('🔍 [DEBUG] formatearFechaConHora - entrada:', {
         fecha,
         tipo: typeof fecha,
-        incluyeZ: typeof fecha === 'string' ? fecha.includes('Z') : 'N/A'
+        esArray: Array.isArray(fecha)
       });
       
-      // Si la fecha viene como string sin 'Z', tratarla como fecha local
-      if (typeof fecha === 'string' && !fecha.includes('Z')) {
-        // Parsear como fecha local
-        const [datePart, timePart] = fecha.split('T');
-        const [year, month, day] = datePart.split('-');
-        const [hour, minute, second] = timePart.split(':');
+      // Si es null o undefined
+      if (fecha == null) {
+        return 'Fecha no disponible';
+      }
+
+      // Si es un array (formato [year, month, day, hour, minute, second])
+      if (Array.isArray(fecha)) {
+        console.log('🔍 [DEBUG] Procesando como array:', fecha);
+        const [year, month, day, hour, minute, second] = fecha;
+        // Crear fecha local (no UTC) para evitar conversión automática
+        const fechaLocal = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
         
-        // Crear fecha local (los meses van de 0-11)
-        const localDate = new Date(
-          parseInt(year), 
-          parseInt(month) - 1, 
-          parseInt(day), 
-          parseInt(hour), 
-          parseInt(minute), 
-          parseInt(second || '0')
-        );
-        
-        console.log('🔍 [DEBUG] formatearFechaConHora (fecha local):', {
-          fecha,
-          localDate: localDate.toISOString(),
+        console.log('🔍 [DEBUG] Array procesado como fecha local:', {
+          year, month, day, hour, minute, second,
+          fechaLocal: fechaLocal.toISOString(),
           zonaHorariaLocal: Intl.DateTimeFormat().resolvedOptions().timeZone
         });
         
-        return localDate.toLocaleString('es-AR', { 
+        return fechaLocal.toLocaleString('es-AR', { 
           year: 'numeric', 
           month: '2-digit', 
           day: '2-digit', 
@@ -246,26 +241,65 @@ const HistorialVentasRapidas: React.FC = () => {
           hour12: false 
         });
       }
-      
-      // Para otros casos, usar el método estándar
-      const fechaObj = new Date(fecha);
-      if (isNaN(fechaObj.getTime())) {
-        return 'Fecha inválida';
+
+      // Si es un string
+      if (typeof fecha === 'string') {
+        // Si ya tiene formato de fecha (YYYY-MM-DD)
+        if (fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return fecha;
+        }
+        // Si tiene formato ISO con T
+        if (fecha.includes('T')) {
+          const partes = fecha.split('T');
+          if (partes.length >= 1) {
+            // Convertir de UTC a zona horaria local
+            const fechaUTC = new Date(fecha);
+            if (!isNaN(fechaUTC.getTime())) {
+              return fechaUTC.toLocaleString('es-AR', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: false 
+              });
+            }
+            return partes[0];
+          }
+        }
+        // Si es otro formato, intentar parsear
+        if (!Array.isArray(fecha)) {
+          const fechaObj = new Date(fecha);
+          if (!isNaN(fechaObj.getTime())) {
+            return fechaObj.toLocaleString('es-AR', { 
+              year: 'numeric', 
+              month: '2-digit', 
+              day: '2-digit', 
+              hour: '2-digit', 
+              minute: '2-digit', 
+              hour12: false 
+            });
+          }
+        }
       }
-      
-      console.log('🔍 [DEBUG] formatearFechaConHora (estándar):', {
-        fecha,
-        fechaObj: fechaObj.toISOString()
-      });
-      
-      return fechaObj.toLocaleString('es-AR', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit', 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        hour12: false 
-      });
+
+      // Si es un objeto Date o timestamp
+      if (fecha instanceof Date || typeof fecha === 'number') {
+        const fechaObj = new Date(fecha);
+        if (!isNaN(fechaObj.getTime())) {
+          return fechaObj.toLocaleString('es-AR', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: false 
+          });
+        }
+      }
+
+      console.error('Formato de fecha no reconocido:', fecha, 'tipo:', typeof fecha);
+      return 'Fecha inválida';
     } catch (error) {
       console.error('❌ Error en formatearFechaConHora:', error);
       return 'Fecha inválida';
@@ -303,10 +337,21 @@ const HistorialVentasRapidas: React.FC = () => {
       }
       // Si es un array (formato [año, mes, día, hora, minuto, segundo, nanosegundos])
       else if (Array.isArray(fecha)) {
-        // El array viene como [año, mes, día, hora, minuto, segundo, nanosegundos]
-        // Los meses en JavaScript van de 0-11, así que restamos 1 al mes
-        const [year, month, day, hour, minute, second, nanosecond] = fecha;
-        fechaObj = new Date(year, month - 1, day, hour, minute, second);
+        console.log('🔍 Procesando array de fecha:', fecha);
+        const [year, month, day] = fecha;
+        // Crear fecha local (no UTC) para evitar conversión automática
+        const fechaLocal = new Date(year, month - 1, day);
+        
+        console.log('🔍 Array procesado como fecha local:', {
+          year, month, day,
+          fechaLocal: fechaLocal.toISOString()
+        });
+        
+        return fechaLocal.toLocaleDateString('es-AR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
       }
       // Si es un objeto con propiedades de fecha
       else if (typeof fecha === 'object' && fecha !== null) {
@@ -335,13 +380,10 @@ const HistorialVentasRapidas: React.FC = () => {
       
       console.log('✅ Fecha parseada correctamente:', fechaObj);
       
-      return fechaObj.toLocaleString('es-AR', {
+      return fechaObj.toLocaleDateString('es-AR', {
         year: 'numeric',
         month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+        day: '2-digit'
       });
     } catch (error) {
       console.error('❌ Error formateando fecha:', fecha, error);

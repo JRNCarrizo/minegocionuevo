@@ -569,7 +569,10 @@ const GestionEmpresas: React.FC = () => {
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#F59E0B' }}>
-                  {empresa.ultimaConexion ? formatearFechaConHora(empresa.ultimaConexion) : 'N/A'}
+                  {empresa.ultimaConexion ? (() => {
+                    console.log('🔍 [GestionEmpresas] Procesando ultimaConexion:', empresa.ultimaConexion, 'tipo:', typeof empresa.ultimaConexion);
+                    return formatearFechaConHora(empresa.ultimaConexion);
+                  })() : 'N/A'}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-texto-secundario)' }}>Última Conexión</div>
               </div>
@@ -578,7 +581,10 @@ const GestionEmpresas: React.FC = () => {
             {/* Fecha de Registro */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--color-texto-secundario)' }}>
               <MdCalendarToday color="var(--color-texto-secundario)" />
-              <span>Registrada: {formatearFechaConHora(empresa.fechaCreacion)}</span>
+              <span>Registrada: {(() => {
+                console.log('🔍 [GestionEmpresas] Procesando fechaCreacion:', empresa.fechaCreacion, 'tipo:', typeof empresa.fechaCreacion);
+                return formatearFechaConHora(empresa.fechaCreacion);
+              })()}</span>
             </div>
           </div>
         ))}
@@ -649,7 +655,10 @@ const GestionEmpresas: React.FC = () => {
                 <p><strong>Pedidos:</strong> {(selectedEmpresa.totalPedidos || 0).toLocaleString()}</p>
                 <p><strong>Ventas Rápidas:</strong> {(selectedEmpresa.totalVentasRapidas || 0).toLocaleString()}</p>
                 <p><strong>Transacciones:</strong> {(selectedEmpresa.totalTransacciones || 0).toLocaleString()}</p>
-                <p><strong>Última Conexión:</strong> {selectedEmpresa.ultimaConexion ? formatearFechaConHora(selectedEmpresa.ultimaConexion) : 'N/A'}</p>
+                <p><strong>Última Conexión:</strong> {selectedEmpresa.ultimaConexion ? (() => {
+                  console.log('🔍 [GestionEmpresas Modal] Procesando ultimaConexion:', selectedEmpresa.ultimaConexion, 'tipo:', typeof selectedEmpresa.ultimaConexion);
+                  return formatearFechaConHora(selectedEmpresa.ultimaConexion);
+                })() : 'N/A'}</p>
                 <p><strong>Estado:</strong> {selectedEmpresa.estadoSuscripcion}</p>
               </div>
             </div>
