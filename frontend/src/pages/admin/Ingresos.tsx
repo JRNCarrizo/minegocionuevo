@@ -406,16 +406,16 @@ export default function Ingresos() {
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: isMobile ? '6rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
+        padding: isMobile ? '8rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
       }}>
         {/* Header */}
         <div style={{
           background: 'white',
-          borderRadius: '1rem',
-          padding: isMobile ? '1.5rem' : '2rem',
+          borderRadius: '16px',
+          padding: isMobile ? '16px' : '24px',
           marginBottom: '2rem',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
+          border: '2px solid #e2e8f0'
         }}>
           <div style={{
             display: 'flex',
@@ -474,21 +474,26 @@ export default function Ingresos() {
                 background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '0.75rem',
-                padding: '0.75rem 1.5rem',
-                fontSize: '0.875rem',
+                borderRadius: '12px',
+                padding: isMobile ? '12px 16px' : '0.75rem 1.5rem',
+                fontSize: isMobile ? '0.8rem' : '0.875rem',
                 fontWeight: '600',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)'
+                boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)',
+                justifyContent: 'center'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 8px 20px rgba(5, 150, 105, 0.4)';
+                if (!isMobile) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(5, 150, 105, 0.4)';
+                }
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.3)';
+                if (!isMobile) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.3)';
+                }
               }}
             >
               + Nuevo Remito
@@ -609,34 +614,45 @@ export default function Ingresos() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '1rem 1.5rem',
+                      flexDirection: isMobile ? 'column' : 'row',
+                      gap: isMobile ? '12px' : '0',
+                      padding: isMobile ? '16px' : '24px',
                       background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                      borderRadius: '0.75rem',
-                      border: '1px solid #e2e8f0',
+                      borderRadius: '16px',
+                      border: '2px solid #e2e8f0',
                       cursor: 'pointer',
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                     }}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
+                      if (!isMobile) {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                      }
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)';
+                      if (!isMobile) {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                      }
                     }}
                   >
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '1rem'
+                      gap: isMobile ? '8px' : '1rem'
                     }}>
                       <div style={{
-                        fontSize: '1.5rem',
+                        fontSize: isMobile ? '1.25rem' : '1.5rem',
                         color: '#059669'
                       }}>
                         {estaDiaExpandido(grupo.fecha) ? '📅' : '📅'}
                       </div>
                       <div>
                         <h3 style={{
-                          fontSize: '1.125rem',
+                          fontSize: isMobile ? '1rem' : '1.125rem',
                           fontWeight: '600',
                           color: '#1e293b',
                           margin: 0
@@ -644,7 +660,7 @@ export default function Ingresos() {
                           {formatearFechaGrupoConHoy(grupo.fecha)}
                         </h3>
                         <p style={{
-                          fontSize: '0.875rem',
+                          fontSize: isMobile ? '0.75rem' : '0.875rem',
                           color: '#64748b',
                           margin: 0
                         }}>
@@ -672,19 +688,26 @@ export default function Ingresos() {
                         <div
                           key={remito.id}
                           style={{
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '0.75rem',
-                            padding: '1.5rem',
-                            transition: 'all 0.3s ease',
-                            background: 'white'
+                            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                            border: '2px solid #e2e8f0',
+                            borderRadius: '16px',
+                            padding: isMobile ? '16px' : '24px',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                           }}
                           onMouseOver={(e) => {
-                            e.currentTarget.style.borderColor = '#059669';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.1)';
+                            if (!isMobile) {
+                              e.currentTarget.style.borderColor = '#059669';
+                              e.currentTarget.style.boxShadow = '0 4px 16px rgba(5,150,105,0.15)';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                            }
                           }}
                           onMouseOut={(e) => {
-                            e.currentTarget.style.borderColor = '#e2e8f0';
-                            e.currentTarget.style.boxShadow = 'none';
+                            if (!isMobile) {
+                              e.currentTarget.style.borderColor = '#e2e8f0';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                            }
                           }}
                         >
                           <div style={{
@@ -725,8 +748,8 @@ export default function Ingresos() {
                               <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '1rem',
-                                fontSize: '0.875rem',
+                                gap: isMobile ? '8px' : '1rem',
+                                fontSize: isMobile ? '0.75rem' : '0.875rem',
                                 color: '#64748b',
                                 flexWrap: 'wrap'
                               }}>
@@ -744,8 +767,9 @@ export default function Ingresos() {
                             </div>
                             <div style={{
                               display: 'flex',
-                              gap: '0.5rem',
-                              flexDirection: isMobile ? 'column' : 'row'
+                              gap: isMobile ? '6px' : '0.5rem',
+                              flexDirection: 'row',
+                              flexWrap: 'wrap'
                             }}>
                               <button
                                 onClick={() => exportarRemito(remito)}
@@ -754,12 +778,14 @@ export default function Ingresos() {
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '0.5rem',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '0.75rem',
+                                  padding: isMobile ? '6px 10px' : '0.5rem 1rem',
+                                  fontSize: isMobile ? '0.65rem' : '0.75rem',
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '0.25rem'
+                                  gap: '0.25rem',
+                                  justifyContent: 'center',
+                                  minWidth: isMobile ? 'fit-content' : 'auto'
                                 }}
                               >
                                 📄 Exportar
@@ -771,12 +797,14 @@ export default function Ingresos() {
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '0.5rem',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '0.75rem',
+                                  padding: isMobile ? '6px 10px' : '0.5rem 1rem',
+                                  fontSize: isMobile ? '0.65rem' : '0.75rem',
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '0.25rem'
+                                  gap: '0.25rem',
+                                  justifyContent: 'center',
+                                  minWidth: isMobile ? 'fit-content' : 'auto'
                                 }}
                               >
                                 👁️ Ver
@@ -788,8 +816,8 @@ export default function Ingresos() {
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '0.5rem',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '0.75rem',
+                                  padding: isMobile ? '6px 10px' : '0.5rem 1rem',
+                                  fontSize: isMobile ? '0.65rem' : '0.75rem',
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',

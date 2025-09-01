@@ -34,7 +34,7 @@ const formatearFechaSegura = (fecha: any): string => {
         hour12: false 
       });
     }
-
+    
     // Si es un string
     if (typeof fecha === 'string') {
       // Si es un string vacío
@@ -105,18 +105,18 @@ const formatearFechaSegura = (fecha: any): string => {
         fechaObj = new Date(fecha.fechaCreacion);
       } else {
         // Intentar crear Date directamente
-        fechaObj = new Date(fecha);
-      }
-      
+      fechaObj = new Date(fecha);
+    }
+    
       if (!isNaN(fechaObj.getTime())) {
-        return fechaObj.toLocaleString('es-AR', { 
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit', 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          hour12: false 
-        });
+    return fechaObj.toLocaleString('es-AR', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false 
+    });
       }
     }
     

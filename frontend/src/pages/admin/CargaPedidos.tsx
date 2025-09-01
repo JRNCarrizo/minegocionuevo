@@ -709,25 +709,36 @@ export default function CargaPedidos() {
                   <div 
                     style={{
                       background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                      borderRadius: '0.75rem',
-                      padding: '1rem 1.5rem',
+                      borderRadius: '16px',
+                      padding: isMobile ? '16px' : '24px',
                       marginBottom: '1rem',
-                      border: '1px solid #e2e8f0',
+                      border: '2px solid #e2e8f0',
                       cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                     }}
                     onClick={() => alternarExpansionDia(grupo.fecha)}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%)';
+                      if (!isMobile) {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%)';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                      }
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
+                      if (!isMobile) {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                      }
                     }}
                   >
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      flexDirection: isMobile ? 'column' : 'row',
+                      gap: isMobile ? '12px' : '0'
                     }}>
                       <div style={{
                         display: 'flex',
@@ -735,7 +746,7 @@ export default function CargaPedidos() {
                         gap: '0.75rem'
                       }}>
                         <div style={{
-                          fontSize: '1.25rem',
+                          fontSize: isMobile ? '1rem' : '1.25rem',
                           color: '#64748b',
                           transition: 'transform 0.2s ease',
                           transform: estaDiaExpandido(grupo.fecha) ? 'rotate(90deg)' : 'rotate(0deg)'
@@ -744,7 +755,7 @@ export default function CargaPedidos() {
                         </div>
                         <div>
                           <h4 style={{
-                            fontSize: '1.125rem',
+                            fontSize: isMobile ? '1rem' : '1.125rem',
                             fontWeight: '700',
                             color: '#1e293b',
                             margin: 0,
@@ -753,7 +764,7 @@ export default function CargaPedidos() {
                             {formatearFechaGrupoConHoy(grupo.fecha)}
                           </h4>
                           <p style={{
-                            fontSize: '0.875rem',
+                            fontSize: isMobile ? '0.75rem' : '0.875rem',
                             color: '#64748b',
                             margin: '0.25rem 0 0 0'
                           }}>
@@ -763,29 +774,30 @@ export default function CargaPedidos() {
                       </div>
                       <div style={{
                         display: 'flex',
-                        gap: '0.5rem',
-                        alignItems: 'center'
+                        gap: isMobile ? '8px' : '0.5rem',
+                        alignItems: 'center',
+                        flexWrap: 'wrap'
                       }}>
                         <div style={{
                           background: '#10b981',
                           color: 'white',
                           borderRadius: '0.5rem',
-                          padding: '0.5rem 1rem',
-                          fontSize: '0.875rem',
+                          padding: isMobile ? '6px 12px' : '0.5rem 1rem',
+                          fontSize: isMobile ? '0.75rem' : '0.875rem',
                           fontWeight: '600'
                         }}>
                           {grupo.planillas.length} planilla{grupo.planillas.length !== 1 ? 's' : ''}
                         </div>
-                                                 <div style={{
-                           background: '#3b82f6',
-                           color: 'white',
-                           borderRadius: '0.5rem',
-                           padding: '0.5rem 1rem',
-                           fontSize: '0.875rem',
-                           fontWeight: '600'
-                         }}>
-                           {grupo.planillas.reduce((total, p) => total + p.totalProductos, 0)} unidades
-                         </div>
+                        <div style={{
+                          background: '#3b82f6',
+                          color: 'white',
+                          borderRadius: '0.5rem',
+                          padding: isMobile ? '6px 12px' : '0.5rem 1rem',
+                          fontSize: isMobile ? '0.75rem' : '0.875rem',
+                          fontWeight: '600'
+                        }}>
+                          {grupo.planillas.reduce((total, p) => total + p.totalProductos, 0)} unidades
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -800,19 +812,26 @@ export default function CargaPedidos() {
                         <div
                           key={planilla.id}
                           style={{
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '0.75rem',
-                            padding: '1.5rem',
-                            transition: 'all 0.3s ease',
-                            background: 'white'
+                            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                            border: '2px solid #e2e8f0',
+                            borderRadius: '16px',
+                            padding: isMobile ? '16px' : '24px',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                           }}
                           onMouseOver={(e) => {
-                            e.currentTarget.style.borderColor = '#3b82f6';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.1)';
+                            if (!isMobile) {
+                              e.currentTarget.style.borderColor = '#3b82f6';
+                              e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.15)';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                            }
                           }}
                           onMouseOut={(e) => {
-                            e.currentTarget.style.borderColor = '#e2e8f0';
-                            e.currentTarget.style.boxShadow = 'none';
+                            if (!isMobile) {
+                              e.currentTarget.style.borderColor = '#e2e8f0';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                            }
                           }}
                         >
                           <div style={{
@@ -853,26 +872,28 @@ export default function CargaPedidos() {
                               <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '1rem',
-                                fontSize: '0.875rem',
+                                gap: isMobile ? '8px' : '1rem',
+                                fontSize: isMobile ? '0.75rem' : '0.875rem',
                                 color: '#64748b',
                                 flexWrap: 'wrap'
                               }}>
-                                                                 <span>📅 {formatearFechaConHoy(planilla.fechaPlanilla, 'corta')}</span>
-                                                                 <span>📦 <span style={{ 
-                                   color: '#3b82f6', 
-                                   fontWeight: '700'
-                                 }}>
-                                   {planilla.totalProductos}
-                                 </span> unidades</span>
-                                 <span>🛒 {planilla.detalles.length} productos</span>
-                                                                 <span>⏰ {formatearFechaConHoraLocal(planilla.fechaPlanilla)}</span>
+                                <span>📅 {formatearFechaConHoy(planilla.fechaPlanilla, 'corta')}</span>
+                                <span>📦 <span style={{ 
+                                  color: '#3b82f6', 
+                                  fontWeight: '700'
+                                }}>
+                                  {planilla.totalProductos}
+                                </span> unidades</span>
+                                <span>🛒 {planilla.detalles.length} productos</span>
+                                <span>⏰ {formatearFechaConHoraLocal(planilla.fechaPlanilla)}</span>
                               </div>
                             </div>
                             <div style={{
                               display: 'flex',
-                              gap: '0.5rem',
-                              flexDirection: isMobile ? 'column' : 'row'
+                              gap: isMobile ? '6px' : '0.5rem',
+                              flexDirection: 'row',
+                              width: isMobile ? '100%' : 'auto',
+                              flexWrap: 'wrap'
                             }}>
                               <button
                                 onClick={() => exportarPlanilla(planilla)}
@@ -881,12 +902,15 @@ export default function CargaPedidos() {
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '0.5rem',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '0.75rem',
+                                  padding: isMobile ? '6px 10px' : '0.5rem 1rem',
+                                  fontSize: isMobile ? '0.65rem' : '0.75rem',
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '0.25rem'
+                                  gap: '0.25rem',
+                                  justifyContent: 'center',
+                                  width: isMobile ? 'auto' : 'auto',
+                                  minWidth: isMobile ? 'fit-content' : 'auto'
                                 }}
                               >
                                 📄 Exportar
@@ -898,12 +922,15 @@ export default function CargaPedidos() {
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '0.5rem',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '0.75rem',
+                                  padding: isMobile ? '6px 10px' : '0.5rem 1rem',
+                                  fontSize: isMobile ? '0.65rem' : '0.75rem',
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '0.25rem'
+                                  gap: '0.25rem',
+                                  justifyContent: 'center',
+                                  width: isMobile ? 'auto' : 'auto',
+                                  minWidth: isMobile ? 'fit-content' : 'auto'
                                 }}
                               >
                                 👁️ Ver
@@ -915,12 +942,15 @@ export default function CargaPedidos() {
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '0.5rem',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '0.75rem',
+                                  padding: isMobile ? '6px 10px' : '0.5rem 1rem',
+                                  fontSize: isMobile ? '0.65rem' : '0.75rem',
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '0.25rem'
+                                  gap: '0.25rem',
+                                  justifyContent: 'center',
+                                  width: isMobile ? 'auto' : 'auto',
+                                  minWidth: isMobile ? 'fit-content' : 'auto'
                                 }}
                               >
                                 🗑️ Eliminar
@@ -1094,17 +1124,17 @@ export default function CargaPedidos() {
 
               {/* Contenido del Modal */}
               <div style={{ 
-                padding: '2rem',
+                padding: isMobile ? '1rem' : '2rem',
                 overflow: 'auto',
                 flex: 1
               }}>
                 {/* Información General */}
                 <div style={{
                   background: '#f8fafc',
-                  borderRadius: '0.75rem',
-                  padding: '1.5rem',
+                  borderRadius: '16px',
+                  padding: isMobile ? '16px' : '24px',
                   marginBottom: '2rem',
-                  border: '1px solid #e2e8f0'
+                  border: '2px solid #e2e8f0'
                 }}>
                   <h3 style={{
                     fontSize: '1.125rem',
@@ -1117,12 +1147,12 @@ export default function CargaPedidos() {
                                      <div style={{
                      display: 'grid',
                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-                     gap: '1rem'
+                     gap: isMobile ? '12px' : '1rem'
                    }}>
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '0.875rem',
+                        fontSize: isMobile ? '0.75rem' : '0.875rem',
                         fontWeight: '600',
                         color: '#64748b',
                         marginBottom: '0.5rem'
@@ -1130,11 +1160,11 @@ export default function CargaPedidos() {
                         📅 Fecha de Planilla
                       </label>
                       <div style={{
-                        padding: '0.75rem',
+                        padding: isMobile ? '12px' : '0.75rem',
                         background: 'white',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: isMobile ? '0.75rem' : '0.875rem',
                         color: '#1e293b',
                         fontWeight: '500'
                       }}>
@@ -1267,19 +1297,19 @@ export default function CargaPedidos() {
                   </h3>
                   <div style={{
                     background: 'white',
-                    borderRadius: '0.75rem',
-                    border: '1px solid #e2e8f0',
+                    borderRadius: '16px',
+                    border: '2px solid #e2e8f0',
                     overflow: 'hidden'
                   }}>
                     <div style={{
                       background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                      padding: '1rem 1.5rem',
-                      borderBottom: '1px solid #e2e8f0',
+                      padding: isMobile ? '12px 16px' : '1rem 1.5rem',
+                      borderBottom: '2px solid #e2e8f0',
                       display: 'grid',
-                      gridTemplateColumns: '50px 1fr 100px',
-                      gap: '1rem',
+                      gridTemplateColumns: isMobile ? '40px 1fr 80px' : '50px 1fr 100px',
+                      gap: isMobile ? '8px' : '1rem',
                       alignItems: 'center',
-                      fontSize: '0.875rem',
+                      fontSize: isMobile ? '0.75rem' : '0.875rem',
                       fontWeight: '600',
                       color: '#374151'
                     }}>
@@ -1292,11 +1322,11 @@ export default function CargaPedidos() {
                       <div
                         key={index}
                         style={{
-                          padding: '1rem 1.5rem',
-                          borderBottom: index < planillaSeleccionada.detalles.length - 1 ? '1px solid #f1f5f9' : 'none',
+                          padding: isMobile ? '12px 16px' : '1rem 1.5rem',
+                          borderBottom: index < planillaSeleccionada.detalles.length - 1 ? '2px solid #f1f5f9' : 'none',
                           display: 'grid',
-                          gridTemplateColumns: '50px 1fr 100px',
-                          gap: '1rem',
+                          gridTemplateColumns: isMobile ? '40px 1fr 80px' : '50px 1fr 100px',
+                          gap: isMobile ? '8px' : '1rem',
                           alignItems: 'center',
                           background: index % 2 === 0 ? 'white' : '#f8fafc'
                         }}
@@ -1305,12 +1335,12 @@ export default function CargaPedidos() {
                           background: '#3b82f6',
                           color: 'white',
                           borderRadius: '50%',
-                          width: '2rem',
-                          height: '2rem',
+                          width: isMobile ? '1.5rem' : '2rem',
+                          height: isMobile ? '1.5rem' : '2rem',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '0.875rem',
+                          fontSize: isMobile ? '0.7rem' : '0.875rem',
                           fontWeight: '600'
                         }}>
                           {index + 1}

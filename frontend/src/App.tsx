@@ -55,6 +55,7 @@ import MovimientosDia from './pages/admin/MovimientosDia.tsx';
 import LoginDocumento from './pages/LoginDocumento.tsx';
 import GestionSectores from './pages/admin/GestionSectores.tsx';
 import StockGeneral from './pages/admin/StockGeneral.tsx';
+import GestionTransportistas from './pages/admin/GestionTransportistas.tsx';
 
 
 function AppContent() {
@@ -115,6 +116,7 @@ function AppContent() {
           <Route path="/admin/movimientos-dia" element={<MovimientosDia />} />
           <Route path="/admin/sectores" element={<GestionSectores />} />
           <Route path="/admin/stock-general" element={<StockGeneral />} />
+          <Route path="/admin/transportistas" element={<GestionTransportistas />} />
   
           <Route path="/dashboard-super-admin" element={<DashboardSuperAdmin />} />
           <Route path="/super-admin/empresas" element={<GestionEmpresas />} />

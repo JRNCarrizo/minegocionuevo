@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -1111,6 +1112,496 @@ public class MovimientoDiaService {
         int cantidadTotal = productos.stream().mapToInt(MovimientoDiaDTO.ProductoStockDTO::getCantidad).sum();
         
         return new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productos);
+    }
+
+    /**
+     * Exportar movimientos del día a Excel
+     */
+    public byte[] exportarMovimientosDiaExcel(String fechaStr) throws IOException {
+        try {
+            System.out.println("🔍 [EXPORTAR] Iniciando exportación a Excel para fecha: " + fechaStr);
+            
+            // Obtener los movimientos del día
+            MovimientoDiaDTO movimientos = obtenerMovimientosDia(fechaStr);
+            
+            // Crear el workbook de Excel
+            try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+                var sheet = workbook.createSheet("Movimientos del Día");
+                
+                // Crear estilos
+                var headerStyle = workbook.createCellStyle();
+                var headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerFont.setColor(org.apache.poi.ss.usermodel.IndexedColors.WHITE.getIndex());
+                headerStyle.setFont(headerFont);
+                headerStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.BLUE.getIndex());
+                headerStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                headerStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER);
+                headerStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                var dataStyle = workbook.createCellStyle();
+                dataStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                var totalStyle = workbook.createCellStyle();
+                var totalFont = workbook.createFont();
+                totalFont.setBold(true);
+                totalStyle.setFont(totalFont);
+                totalStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_25_PERCENT.getIndex());
+                totalStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                totalStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                // Crear título
+                var titleRow = sheet.createRow(0);
+                var titleCell = titleRow.createCell(0);
+                titleCell.setCellValue("REPORTE DE MOVIMIENTOS DEL DÍA - " + fechaStr);
+                titleCell.setCellStyle(headerStyle);
+                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 7));
+                
+                // Crear encabezados
+                var headerRow = sheet.createRow(2);
+                String[] headers = {
+                    "Producto", "Stock Inicial", "Ingresos", "Retornos", 
+                    "Carga Planillas", "Roturas", "Balance Final", "Observaciones"
+                };
+                
+                for (int i = 0; i < headers.length; i++) {
+                    var cell = headerRow.createCell(i);
+                    cell.setCellValue(headers[i]);
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Obtener todos los productos únicos
+                Set<Long> productosIds = new HashSet<>();
+                Map<Long, String> productosNombres = new HashMap<>();
+                Map<Long, String> productosCodigos = new HashMap<>();
+                
+                // Agregar productos del stock inicial
+                for (var producto : movimientos.getStockInicial().getProductos()) {
+                    productosIds.add(producto.getId());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Agregar productos de ingresos
+                for (var producto : movimientos.getIngresos().getProductos()) {
+                    productosIds.add(producto.getId());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Agregar productos de devoluciones
+                for (var producto : movimientos.getDevoluciones().getProductos()) {
+                    productosIds.add(producto.getId());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Agregar productos de salidas
+                for (var producto : movimientos.getSalidas().getProductos()) {
+                    productosIds.add(producto.getId());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Agregar productos de roturas
+                for (var producto : movimientos.getRoturas().getProductos()) {
+                    productosIds.add(producto.getId());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Crear mapas para facilitar la búsqueda
+                Map<Long, Integer> stockInicial = movimientos.getStockInicial().getProductos().stream()
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                    
+                Map<Long, Integer> ingresos = movimientos.getIngresos().getProductos().stream()
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                    
+                Map<Long, Integer> devoluciones = movimientos.getDevoluciones().getProductos().stream()
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                    
+                Map<Long, Integer> salidas = movimientos.getSalidas().getProductos().stream()
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                    
+                Map<Long, Integer> roturas = movimientos.getRoturas().getProductos().stream()
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                
+                // Llenar datos
+                int rowNum = 3;
+                int totalStockInicial = 0;
+                int totalIngresos = 0;
+                int totalDevoluciones = 0;
+                int totalSalidas = 0;
+                int totalRoturas = 0;
+                int totalBalanceFinal = 0;
+                
+                for (Long productoId : productosIds) {
+                    var row = sheet.createRow(rowNum++);
+                    
+                    // Producto
+                    var cell0 = row.createCell(0);
+                    String nombreProducto = productosNombres.get(productoId);
+                    String codigoProducto = productosCodigos.get(productoId);
+                    cell0.setCellValue(codigoProducto != null ? codigoProducto + " - " + nombreProducto : nombreProducto);
+                    cell0.setCellStyle(dataStyle);
+                    
+                    // Stock Inicial
+                    var cell1 = row.createCell(1);
+                    int stockInicialCantidad = stockInicial.getOrDefault(productoId, 0);
+                    cell1.setCellValue(stockInicialCantidad);
+                    cell1.setCellStyle(dataStyle);
+                    totalStockInicial += stockInicialCantidad;
+                    
+                    // Ingresos
+                    var cell2 = row.createCell(2);
+                    int ingresosCantidad = ingresos.getOrDefault(productoId, 0);
+                    cell2.setCellValue(ingresosCantidad);
+                    cell2.setCellStyle(dataStyle);
+                    totalIngresos += ingresosCantidad;
+                    
+                    // Retornos
+                    var cell3 = row.createCell(3);
+                    int devolucionesCantidad = devoluciones.getOrDefault(productoId, 0);
+                    cell3.setCellValue(devolucionesCantidad);
+                    cell3.setCellStyle(dataStyle);
+                    totalDevoluciones += devolucionesCantidad;
+                    
+                    // Carga Planillas
+                    var cell4 = row.createCell(4);
+                    int salidasCantidad = salidas.getOrDefault(productoId, 0);
+                    cell4.setCellValue(salidasCantidad);
+                    cell4.setCellStyle(dataStyle);
+                    totalSalidas += salidasCantidad;
+                    
+                    // Roturas
+                    var cell5 = row.createCell(5);
+                    int roturasCantidad = roturas.getOrDefault(productoId, 0);
+                    cell5.setCellValue(roturasCantidad);
+                    cell5.setCellStyle(dataStyle);
+                    totalRoturas += roturasCantidad;
+                    
+                    // Balance Final
+                    var cell6 = row.createCell(6);
+                    int balanceFinal = stockInicialCantidad + ingresosCantidad + devolucionesCantidad - salidasCantidad - roturasCantidad;
+                    cell6.setCellValue(balanceFinal);
+                    cell6.setCellStyle(dataStyle);
+                    totalBalanceFinal += balanceFinal;
+                    
+                    // Observaciones
+                    var cell7 = row.createCell(7);
+                    cell7.setCellValue("");
+                    cell7.setCellStyle(dataStyle);
+                }
+                
+                // Fila de totales
+                var totalRow = sheet.createRow(rowNum++);
+                
+                var totalCell0 = totalRow.createCell(0);
+                totalCell0.setCellValue("TOTALES");
+                totalCell0.setCellStyle(totalStyle);
+                
+                var totalCell1 = totalRow.createCell(1);
+                totalCell1.setCellValue(totalStockInicial);
+                totalCell1.setCellStyle(totalStyle);
+                
+                var totalCell2 = totalRow.createCell(2);
+                totalCell2.setCellValue(totalIngresos);
+                totalCell2.setCellStyle(totalStyle);
+                
+                var totalCell3 = totalRow.createCell(3);
+                totalCell3.setCellValue(totalDevoluciones);
+                totalCell3.setCellStyle(totalStyle);
+                
+                var totalCell4 = totalRow.createCell(4);
+                totalCell4.setCellValue(totalSalidas);
+                totalCell4.setCellStyle(totalStyle);
+                
+                var totalCell5 = totalRow.createCell(5);
+                totalCell5.setCellValue(totalRoturas);
+                totalCell5.setCellStyle(totalStyle);
+                
+                var totalCell6 = totalRow.createCell(6);
+                totalCell6.setCellValue(totalBalanceFinal);
+                totalCell6.setCellStyle(totalStyle);
+                
+                var totalCell7 = totalRow.createCell(7);
+                totalCell7.setCellValue("");
+                totalCell7.setCellStyle(totalStyle);
+                
+                // Ajustar ancho de columnas
+                for (int i = 0; i < headers.length; i++) {
+                    sheet.setColumnWidth(i, 4000);
+                }
+                
+                // Convertir a bytes
+                try (var outputStream = new java.io.ByteArrayOutputStream()) {
+                    workbook.write(outputStream);
+                    byte[] excelBytes = outputStream.toByteArray();
+                    
+                    System.out.println("✅ [EXPORTAR] Excel generado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+                    return excelBytes;
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ [EXPORTAR] Error al exportar movimientos a Excel: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException("Error al exportar movimientos a Excel", e);
+        }
+    }
+
+    /**
+     * Exportar movimientos por rango de fechas a Excel
+     */
+    public byte[] exportarMovimientosRangoExcel(String fechaInicioStr, String fechaFinStr) throws IOException {
+        try {
+            System.out.println("🔍 [EXPORTAR] Iniciando exportación a Excel para rango: " + fechaInicioStr + " a " + fechaFinStr);
+            
+            // Obtener los movimientos del rango
+            MovimientoDiaDTO movimientos = obtenerMovimientosRango(fechaInicioStr, fechaFinStr);
+            
+            // Crear el workbook de Excel
+            try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+                var sheet = workbook.createSheet("Movimientos por Rango");
+                
+                // Crear estilos
+                var headerStyle = workbook.createCellStyle();
+                var headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerFont.setColor(org.apache.poi.ss.usermodel.IndexedColors.WHITE.getIndex());
+                headerStyle.setFont(headerFont);
+                headerStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.BLUE.getIndex());
+                headerStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                headerStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER);
+                headerStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                var dataStyle = workbook.createCellStyle();
+                dataStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                var totalStyle = workbook.createCellStyle();
+                var totalFont = workbook.createFont();
+                totalFont.setBold(true);
+                totalStyle.setFont(totalFont);
+                totalStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_25_PERCENT.getIndex());
+                totalStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                totalStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                // Crear título
+                var titleRow = sheet.createRow(0);
+                var titleCell = titleRow.createCell(0);
+                titleCell.setCellValue("REPORTE DE MOVIMIENTOS POR RANGO - " + fechaInicioStr + " a " + fechaFinStr);
+                titleCell.setCellStyle(headerStyle);
+                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 7));
+                
+                // Crear encabezados
+                var headerRow = sheet.createRow(2);
+                String[] headers = {
+                    "Producto", "Stock Inicial", "Ingresos", "Retornos", 
+                    "Carga Planillas", "Roturas", "Balance Final", "Observaciones"
+                };
+                
+                for (int i = 0; i < headers.length; i++) {
+                    var cell = headerRow.createCell(i);
+                    cell.setCellValue(headers[i]);
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Obtener todos los productos únicos
+                Set<Long> productosIds = new HashSet<>();
+                Map<Long, String> productosNombres = new HashMap<>();
+                Map<Long, String> productosCodigos = new HashMap<>();
+                
+                // Agregar productos del stock inicial
+                for (var producto : movimientos.getStockInicial().getProductos()) {
+                    productosIds.add(producto.getId());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Agregar productos de ingresos
+                for (var producto : movimientos.getIngresos().getProductos()) {
+                    productosIds.add(producto.getId());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Agregar productos de devoluciones
+                for (var producto : movimientos.getDevoluciones().getProductos()) {
+                    productosIds.add(producto.getId());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Agregar productos de salidas
+                for (var producto : movimientos.getSalidas().getProductos()) {
+                    productosIds.add(producto.getId());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Agregar productos de roturas
+                for (var producto : movimientos.getRoturas().getProductos()) {
+                    productosIds.add(producto.getId());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Crear mapas para facilitar la búsqueda
+                Map<Long, Integer> stockInicial = movimientos.getStockInicial().getProductos().stream()
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                    
+                Map<Long, Integer> ingresos = movimientos.getIngresos().getProductos().stream()
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                    
+                Map<Long, Integer> devoluciones = movimientos.getDevoluciones().getProductos().stream()
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                    
+                Map<Long, Integer> salidas = movimientos.getSalidas().getProductos().stream()
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                    
+                Map<Long, Integer> roturas = movimientos.getRoturas().getProductos().stream()
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                
+                // Llenar datos
+                int rowNum = 3;
+                int totalStockInicial = 0;
+                int totalIngresos = 0;
+                int totalDevoluciones = 0;
+                int totalSalidas = 0;
+                int totalRoturas = 0;
+                int totalBalanceFinal = 0;
+                
+                for (Long productoId : productosIds) {
+                    var row = sheet.createRow(rowNum++);
+                    
+                    // Producto
+                    var cell0 = row.createCell(0);
+                    String nombreProducto = productosNombres.get(productoId);
+                    String codigoProducto = productosCodigos.get(productoId);
+                    cell0.setCellValue(codigoProducto != null ? codigoProducto + " - " + nombreProducto : nombreProducto);
+                    cell0.setCellStyle(dataStyle);
+                    
+                    // Stock Inicial
+                    var cell1 = row.createCell(1);
+                    int stockInicialCantidad = stockInicial.getOrDefault(productoId, 0);
+                    cell1.setCellValue(stockInicialCantidad);
+                    cell1.setCellStyle(dataStyle);
+                    totalStockInicial += stockInicialCantidad;
+                    
+                    // Ingresos
+                    var cell2 = row.createCell(2);
+                    int ingresosCantidad = ingresos.getOrDefault(productoId, 0);
+                    cell2.setCellValue(ingresosCantidad);
+                    cell2.setCellStyle(dataStyle);
+                    totalIngresos += ingresosCantidad;
+                    
+                    // Retornos
+                    var cell3 = row.createCell(3);
+                    int devolucionesCantidad = devoluciones.getOrDefault(productoId, 0);
+                    cell3.setCellValue(devolucionesCantidad);
+                    cell3.setCellStyle(dataStyle);
+                    totalDevoluciones += devolucionesCantidad;
+                    
+                    // Carga Planillas
+                    var cell4 = row.createCell(4);
+                    int salidasCantidad = salidas.getOrDefault(productoId, 0);
+                    cell4.setCellValue(salidasCantidad);
+                    cell4.setCellStyle(dataStyle);
+                    totalSalidas += salidasCantidad;
+                    
+                    // Roturas
+                    var cell5 = row.createCell(5);
+                    int roturasCantidad = roturas.getOrDefault(productoId, 0);
+                    cell5.setCellValue(roturasCantidad);
+                    cell5.setCellStyle(dataStyle);
+                    totalRoturas += roturasCantidad;
+                    
+                    // Balance Final
+                    var cell6 = row.createCell(6);
+                    int balanceFinal = stockInicialCantidad + ingresosCantidad + devolucionesCantidad - salidasCantidad - roturasCantidad;
+                    cell6.setCellValue(balanceFinal);
+                    cell6.setCellStyle(dataStyle);
+                    totalBalanceFinal += balanceFinal;
+                    
+                    // Observaciones
+                    var cell7 = row.createCell(7);
+                    cell7.setCellValue("");
+                    cell7.setCellStyle(dataStyle);
+                }
+                
+                // Fila de totales
+                var totalRow = sheet.createRow(rowNum++);
+                
+                var totalCell0 = totalRow.createCell(0);
+                totalCell0.setCellValue("TOTALES");
+                totalCell0.setCellStyle(totalStyle);
+                
+                var totalCell1 = totalRow.createCell(1);
+                totalCell1.setCellValue(totalStockInicial);
+                totalCell1.setCellStyle(totalStyle);
+                
+                var totalCell2 = totalRow.createCell(2);
+                totalCell2.setCellValue(totalIngresos);
+                totalCell2.setCellStyle(totalStyle);
+                
+                var totalCell3 = totalRow.createCell(3);
+                totalCell3.setCellValue(totalDevoluciones);
+                totalCell3.setCellStyle(totalStyle);
+                
+                var totalCell4 = totalRow.createCell(4);
+                totalCell4.setCellValue(totalSalidas);
+                totalCell4.setCellStyle(totalStyle);
+                
+                var totalCell5 = totalRow.createCell(5);
+                totalCell5.setCellValue(totalRoturas);
+                totalCell5.setCellStyle(totalStyle);
+                
+                var totalCell6 = totalRow.createCell(6);
+                totalCell6.setCellValue(totalBalanceFinal);
+                totalCell6.setCellStyle(totalStyle);
+                
+                var totalCell7 = totalRow.createCell(7);
+                totalCell7.setCellValue("");
+                totalCell7.setCellStyle(totalStyle);
+                
+                // Ajustar ancho de columnas
+                for (int i = 0; i < headers.length; i++) {
+                    sheet.setColumnWidth(i, 4000);
+                }
+                
+                // Convertir a bytes
+                try (var outputStream = new java.io.ByteArrayOutputStream()) {
+                    workbook.write(outputStream);
+                    byte[] excelBytes = outputStream.toByteArray();
+                    
+                    System.out.println("✅ [EXPORTAR] Excel de rango generado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+                    return excelBytes;
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ [EXPORTAR] Error al exportar movimientos de rango a Excel: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException("Error al exportar movimientos de rango a Excel", e);
+        }
     }
 
     /**

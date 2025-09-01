@@ -394,19 +394,16 @@ export default function DescargaDevoluciones() {
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto',
-        paddingTop: isMobile ? '6rem' : '7rem',
-        paddingBottom: isMobile ? '1rem' : '2rem',
-        paddingLeft: isMobile ? '1rem' : '2rem',
-        paddingRight: isMobile ? '1rem' : '2rem'
+        padding: isMobile ? '8rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
       }}>
         {/* Header */}
         <div style={{
           background: 'white',
-          borderRadius: '1rem',
-          padding: '2rem',
+          borderRadius: '16px',
+          padding: isMobile ? '16px' : '24px',
           marginBottom: '2rem',
           boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
+          border: '2px solid #e2e8f0'
         }}>
           <div style={{
             display: 'flex',
@@ -433,34 +430,39 @@ export default function DescargaDevoluciones() {
               </p>
             </div>
             
-            <button
-              onClick={abrirModalCrear}
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.75rem',
-                padding: '0.75rem 1.5rem',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.3)';
-              }}
-            >
-              ➕ Crear Devolución
-            </button>
+                         <button
+               onClick={abrirModalCrear}
+               style={{
+                 background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                 color: 'white',
+                 border: 'none',
+                 borderRadius: '12px',
+                 padding: isMobile ? '12px 16px' : '0.75rem 1.5rem',
+                 fontSize: isMobile ? '0.8rem' : '1rem',
+                 fontWeight: '600',
+                 cursor: 'pointer',
+                 display: 'flex',
+                 alignItems: 'center',
+                 gap: '0.5rem',
+                 boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                 transition: 'all 0.2s ease',
+                 justifyContent: 'center'
+               }}
+               onMouseEnter={(e) => {
+                 if (!isMobile) {
+                   e.currentTarget.style.transform = 'translateY(-2px)';
+                   e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.4)';
+                 }
+               }}
+               onMouseLeave={(e) => {
+                 if (!isMobile) {
+                   e.currentTarget.style.transform = 'translateY(0)';
+                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.3)';
+                 }
+               }}
+             >
+               ➕ Crear Devolución
+             </button>
           </div>
 
           {/* Filtros */}
@@ -480,19 +482,19 @@ export default function DescargaDevoluciones() {
               }}>
                 📅 Filtrar por fecha
               </label>
-              <input
-                type="date"
-                value={filtroFecha}
-                onChange={(e) => setFiltroFecha(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem',
-                  background: 'white'
-                }}
-              />
+                             <input
+                 type="date"
+                 value={filtroFecha}
+                 onChange={(e) => setFiltroFecha(e.target.value)}
+                 style={{
+                   width: '100%',
+                   padding: isMobile ? '12px' : '0.75rem',
+                   border: '2px solid #d1d5db',
+                   borderRadius: '8px',
+                   fontSize: isMobile ? '0.75rem' : '1rem',
+                   background: 'white'
+                 }}
+               />
             </div>
             
             <div style={{ flex: 1, minWidth: isMobile ? '100%' : '200px' }}>
@@ -505,34 +507,34 @@ export default function DescargaDevoluciones() {
               }}>
                 🔍 Buscar
               </label>
-              <input
-                type="text"
-                placeholder="Buscar por número de planilla o observaciones..."
-                value={filtroBusqueda}
-                onChange={(e) => setFiltroBusqueda(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem',
-                  background: 'white'
-                }}
-              />
+                             <input
+                 type="text"
+                 placeholder="Buscar por número de planilla o observaciones..."
+                 value={filtroBusqueda}
+                 onChange={(e) => setFiltroBusqueda(e.target.value)}
+                 style={{
+                   width: '100%',
+                   padding: isMobile ? '12px' : '0.75rem',
+                   border: '2px solid #d1d5db',
+                   borderRadius: '8px',
+                   fontSize: isMobile ? '0.75rem' : '1rem',
+                   background: 'white'
+                 }}
+               />
             </div>
           </div>
 
 
         </div>
 
-        {/* Lista de planillas */}
-        <div style={{
-          background: 'white',
-          borderRadius: '1rem',
-          padding: '2rem',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
+                 {/* Lista de planillas */}
+         <div style={{
+           background: 'white',
+           borderRadius: '16px',
+           padding: isMobile ? '16px' : '24px',
+           boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+           border: '2px solid #e2e8f0'
+         }}>
           {planillas.length === 0 ? (
             <div style={{
               textAlign: 'center',
@@ -592,35 +594,38 @@ export default function DescargaDevoluciones() {
               
               {gruposPorFecha.map((grupo) => (
                 <div key={grupo.fecha} style={{ marginBottom: '2rem' }}>
-                  <div
-                    onClick={() => alternarExpansionDia(grupo.fecha)}
-                    style={{
-                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                      color: 'white',
-                      padding: '1rem 1.5rem',
-                      borderRadius: '0.75rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '1rem'
-                    }}
-                  >
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem'
-                    }}>
-                      <span style={{ fontSize: '1.25rem' }}>📅</span>
-                      <div>
-                        <div style={{ fontWeight: '600', fontSize: '1.125rem' }}>
-                          {formatearFechaGrupoConHoy(grupo.fecha)}
-                        </div>
-                        <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
-                          {grupo.planillas.length} planillas • {grupo.planillas.reduce((total, p) => total + p.totalProductos, 0)} productos
-                        </div>
-                      </div>
-                    </div>
+                                     <div
+                     onClick={() => alternarExpansionDia(grupo.fecha)}
+                     style={{
+                       background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                       color: 'white',
+                       padding: isMobile ? '16px' : '24px',
+                       borderRadius: '16px',
+                       cursor: 'pointer',
+                       display: 'flex',
+                       justifyContent: 'space-between',
+                       alignItems: 'center',
+                       flexDirection: isMobile ? 'column' : 'row',
+                       gap: isMobile ? '12px' : '0',
+                       marginBottom: '1rem',
+                       boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                     }}
+                   >
+                                         <div style={{
+                       display: 'flex',
+                       alignItems: 'center',
+                       gap: isMobile ? '8px' : '1rem'
+                     }}>
+                       <span style={{ fontSize: isMobile ? '1rem' : '1.25rem' }}>📅</span>
+                       <div>
+                         <div style={{ fontWeight: '600', fontSize: isMobile ? '1rem' : '1.125rem' }}>
+                           {formatearFechaGrupoConHoy(grupo.fecha)}
+                         </div>
+                         <div style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', opacity: 0.9 }}>
+                           {grupo.planillas.length} planillas • {grupo.planillas.reduce((total, p) => total + p.totalProductos, 0)} productos
+                         </div>
+                       </div>
+                     </div>
                                          <span style={{ fontSize: '1.5rem' }}>
                        {estaDiaExpandido(grupo.fecha) ? '▼' : '▶'}
                      </span>
@@ -634,12 +639,28 @@ export default function DescargaDevoluciones() {
                     }}>
                       {grupo.planillas.map((planilla) => (
                         <div key={planilla.id} style={{
-                          background: 'white',
-                          borderRadius: '0.75rem',
-                          border: '1px solid #e2e8f0',
-                          padding: '1.5rem',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-                        }}>
+                          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                          borderRadius: '16px',
+                          border: '2px solid #e2e8f0',
+                          padding: isMobile ? '16px' : '24px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          if (!isMobile) {
+                            e.currentTarget.style.borderColor = '#f59e0b';
+                            e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,158,11,0.15)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (!isMobile) {
+                            e.currentTarget.style.borderColor = '#e2e8f0';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }
+                        }}
+                        >
                           <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
@@ -680,8 +701,8 @@ export default function DescargaDevoluciones() {
                               <div style={{
                                 display: 'flex',
                                 flexWrap: 'wrap',
-                                gap: '1rem',
-                                fontSize: '0.875rem',
+                                gap: isMobile ? '8px' : '1rem',
+                                fontSize: isMobile ? '0.75rem' : '0.875rem',
                                 color: '#64748b'
                               }}>
                                 <span>📦 <span style={{
@@ -696,60 +717,67 @@ export default function DescargaDevoluciones() {
                             </div>
                             <div style={{
                               display: 'flex',
-                              gap: '0.5rem',
-                              flexDirection: isMobile ? 'column' : 'row'
+                              gap: isMobile ? '6px' : '0.5rem',
+                              flexDirection: 'row',
+                              flexWrap: 'wrap'
                             }}>
-                              <button
-                                onClick={() => exportarPlanilla(planilla)}
-                                style={{
-                                  background: '#10b981',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '0.5rem',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '0.75rem',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '0.25rem'
-                                }}
-                              >
-                                📄 Exportar
-                              </button>
-                              <button
-                                onClick={() => setPlanillaSeleccionada(planilla)}
-                                style={{
-                                  background: '#059669',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '0.5rem',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '0.75rem',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '0.25rem'
-                                }}
-                              >
-                                👁️ Ver
-                              </button>
-                              <button
-                                onClick={() => eliminarPlanilla(planilla.id)}
-                                style={{
-                                  background: '#ef4444',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '0.5rem',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '0.75rem',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '0.25rem'
-                                }}
-                              >
-                                🗑️ Eliminar
-                              </button>
+                                                             <button
+                                 onClick={() => exportarPlanilla(planilla)}
+                                 style={{
+                                   background: '#10b981',
+                                   color: 'white',
+                                   border: 'none',
+                                   borderRadius: '0.5rem',
+                                   padding: isMobile ? '6px 10px' : '0.5rem 1rem',
+                                   fontSize: isMobile ? '0.65rem' : '0.75rem',
+                                   cursor: 'pointer',
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: '0.25rem',
+                                   justifyContent: 'center',
+                                   minWidth: isMobile ? 'fit-content' : 'auto'
+                                 }}
+                               >
+                                 📄 Exportar
+                               </button>
+                                                             <button
+                                 onClick={() => setPlanillaSeleccionada(planilla)}
+                                 style={{
+                                   background: '#059669',
+                                   color: 'white',
+                                   border: 'none',
+                                   borderRadius: '0.5rem',
+                                   padding: isMobile ? '6px 10px' : '0.5rem 1rem',
+                                   fontSize: isMobile ? '0.65rem' : '0.75rem',
+                                   cursor: 'pointer',
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: '0.25rem',
+                                   justifyContent: 'center',
+                                   minWidth: isMobile ? 'fit-content' : 'auto'
+                                 }}
+                               >
+                                 👁️ Ver
+                               </button>
+                               <button
+                                 onClick={() => eliminarPlanilla(planilla.id)}
+                                 style={{
+                                   background: '#ef4444',
+                                   color: 'white',
+                                   border: 'none',
+                                   borderRadius: '0.5rem',
+                                   padding: isMobile ? '6px 10px' : '0.5rem 1rem',
+                                   fontSize: isMobile ? '0.65rem' : '0.75rem',
+                                   cursor: 'pointer',
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: '0.25rem',
+                                   justifyContent: 'center',
+                                   minWidth: isMobile ? 'fit-content' : 'auto'
+                                 }}
+                               >
+                                 🗑️ Eliminar
+                               </button>
                             </div>
                           </div>
                           

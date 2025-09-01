@@ -309,16 +309,16 @@ export default function RoturasPerdidas() {
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: isMobile ? '6rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
+        padding: isMobile ? '8rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
       }}>
         {/* Header */}
         <div style={{
           background: 'white',
-          borderRadius: '1rem',
-          padding: isMobile ? '1.5rem' : '2rem',
+          borderRadius: '16px',
+          padding: isMobile ? '16px' : '24px',
           marginBottom: '2rem',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
+          border: '2px solid #e2e8f0'
         }}>
           <div style={{
             display: 'flex',
@@ -374,7 +374,7 @@ export default function RoturasPerdidas() {
             
             <div style={{
               display: 'flex',
-              gap: '0.75rem',
+              gap: isMobile ? '8px' : '0.75rem',
               flexDirection: isMobile ? 'column' : 'row'
             }}>
               <button
@@ -383,15 +383,16 @@ export default function RoturasPerdidas() {
                   background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '0.75rem',
-                  padding: '0.75rem 1.5rem',
-                  fontSize: '0.875rem',
+                  borderRadius: '12px',
+                  padding: isMobile ? '12px 16px' : '0.75rem 1.5rem',
+                  fontSize: isMobile ? '0.8rem' : '0.875rem',
                   fontWeight: '600',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  justifyContent: 'center'
                 }}
               >
                 ➕ Agregar Rotura/Pérdida
@@ -711,11 +712,27 @@ export default function RoturasPerdidas() {
                          ) : (
                            roturasDelDia.map((roturaPerdida, index) => (
                            <div key={roturaPerdida.id} style={{
-                             background: '#f8fafc',
-                             borderRadius: '0.75rem',
-                             padding: '1rem',
-                             marginBottom: index < roturasDelDia.length - 1 ? '0.75rem' : 0,
-                             border: '1px solid #e2e8f0'
+                             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                             borderRadius: '16px',
+                             padding: isMobile ? '16px' : '24px',
+                             marginBottom: index < roturasDelDia.length - 1 ? '12px' : 0,
+                             border: '2px solid #e2e8f0',
+                             transition: 'all 0.2s ease',
+                             boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                           }}
+                           onMouseOver={(e) => {
+                             if (!isMobile) {
+                               e.currentTarget.style.borderColor = '#ef4444';
+                               e.currentTarget.style.boxShadow = '0 4px 16px rgba(239,68,68,0.15)';
+                               e.currentTarget.style.transform = 'translateY(-2px)';
+                             }
+                           }}
+                           onMouseOut={(e) => {
+                             if (!isMobile) {
+                               e.currentTarget.style.borderColor = '#e2e8f0';
+                               e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                               e.currentTarget.style.transform = 'translateY(0)';
+                             }
                            }}>
                              <div style={{
                                display: 'flex',
@@ -767,7 +784,8 @@ export default function RoturasPerdidas() {
                                
                                <div style={{
                                  display: 'flex',
-                                 gap: '0.5rem'
+                                 gap: isMobile ? '6px' : '0.5rem',
+                                 flexWrap: 'wrap'
                                }}>
                                  <button
                                    onClick={() => eliminarRoturaPerdida(roturaPerdida.id)}
@@ -776,12 +794,14 @@ export default function RoturasPerdidas() {
                                      color: 'white',
                                      border: 'none',
                                      borderRadius: '0.5rem',
-                                     padding: '0.5rem',
-                                     fontSize: '0.75rem',
+                                     padding: isMobile ? '6px 10px' : '0.5rem',
+                                     fontSize: isMobile ? '0.65rem' : '0.75rem',
                                      cursor: 'pointer',
                                      display: 'flex',
                                      alignItems: 'center',
-                                     gap: '0.25rem'
+                                     gap: '0.25rem',
+                                     justifyContent: 'center',
+                                     minWidth: isMobile ? 'fit-content' : 'auto'
                                    }}
                                  >
                                    🗑️ Eliminar
@@ -791,13 +811,13 @@ export default function RoturasPerdidas() {
                              
                                                             <div style={{
                                  display: 'grid',
-                                 gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
-                                 gap: '0.75rem'
+                                 gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(200px, 1fr))',
+                                 gap: isMobile ? '12px' : '0.75rem'
                                }}>
                                <div>
                                  <label style={{
                                    display: 'block',
-                                   fontSize: '0.75rem',
+                                   fontSize: isMobile ? '0.65rem' : '0.75rem',
                                    fontWeight: '600',
                                    color: '#64748b',
                                    marginBottom: '0.25rem'
@@ -805,11 +825,11 @@ export default function RoturasPerdidas() {
                                    📊 Cantidad Perdida
                                  </label>
                                  <div style={{
-                                   padding: '0.375rem',
+                                   padding: isMobile ? '6px 8px' : '0.375rem',
                                    background: 'white',
-                                   border: '1px solid #e2e8f0',
-                                   borderRadius: '0.5rem',
-                                   fontSize: '1rem',
+                                   border: '2px solid #e2e8f0',
+                                   borderRadius: '8px',
+                                   fontSize: isMobile ? '0.8rem' : '1rem',
                                    fontWeight: '600',
                                    color: '#ef4444'
                                  }}>
@@ -822,7 +842,7 @@ export default function RoturasPerdidas() {
                                <div>
                                  <label style={{
                                    display: 'block',
-                                   fontSize: '0.75rem',
+                                   fontSize: isMobile ? '0.65rem' : '0.75rem',
                                    fontWeight: '600',
                                    color: '#64748b',
                                    marginBottom: '0.25rem'
@@ -830,11 +850,11 @@ export default function RoturasPerdidas() {
                                    🕒 Fecha de Registro
                                  </label>
                                  <div style={{
-                                   padding: '0.375rem',
+                                   padding: isMobile ? '6px 8px' : '0.375rem',
                                    background: 'white',
-                                   border: '1px solid #e2e8f0',
-                                   borderRadius: '0.5rem',
-                                   fontSize: '0.875rem',
+                                   border: '2px solid #e2e8f0',
+                                   borderRadius: '8px',
+                                   fontSize: isMobile ? '0.8rem' : '0.875rem',
                                    color: '#374151'
                                  }}>
                                    {formatearFechaCorta(roturaPerdida.fechaCreacion)}
@@ -844,14 +864,14 @@ export default function RoturasPerdidas() {
                              
                              {roturaPerdida.observaciones && (
                                <div style={{
-                                 marginTop: '0.75rem',
-                                 padding: '0.75rem',
+                                 marginTop: isMobile ? '12px' : '0.75rem',
+                                 padding: isMobile ? '12px' : '0.75rem',
                                  background: '#fef3c7',
-                                 borderRadius: '0.5rem',
-                                 border: '1px solid #f59e0b'
+                                 borderRadius: '8px',
+                                 border: '2px solid #f59e0b'
                                }}>
                                  <p style={{
-                                   fontSize: '0.875rem',
+                                   fontSize: isMobile ? '0.75rem' : '0.875rem',
                                    color: '#92400e',
                                    margin: 0,
                                    fontStyle: 'italic'
@@ -881,28 +901,44 @@ export default function RoturasPerdidas() {
                        onClick={() => toggleDiaExpandido(fecha)}
                        style={{
                          background: esHoy ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : '#f8fafc',
-                         padding: '1rem 1.5rem',
+                         padding: isMobile ? '16px' : '24px',
                          cursor: 'pointer',
                          display: 'flex',
                          alignItems: 'center',
                          justifyContent: 'space-between',
-                         borderBottom: estaDiaExpandido(fecha) ? '1px solid #e2e8f0' : 'none'
+                         flexDirection: isMobile ? 'column' : 'row',
+                         gap: isMobile ? '12px' : '0',
+                         borderBottom: estaDiaExpandido(fecha) ? '2px solid #e2e8f0' : 'none',
+                         transition: 'all 0.2s ease',
+                         boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                       }}
+                       onMouseOver={(e) => {
+                         if (!isMobile) {
+                           e.currentTarget.style.transform = 'translateY(-1px)';
+                           e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                         }
+                       }}
+                       onMouseOut={(e) => {
+                         if (!isMobile) {
+                           e.currentTarget.style.transform = 'translateY(0)';
+                           e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                         }
                        }}
                      >
                        <div style={{
                          display: 'flex',
                          alignItems: 'center',
-                         gap: '1rem'
+                         gap: isMobile ? '8px' : '1rem'
                        }}>
                          <span style={{
-                           fontSize: '1.25rem',
+                           fontSize: isMobile ? '1rem' : '1.25rem',
                            color: esHoy ? 'white' : '#374151'
                          }}>
                            {esHoy ? '📅' : '📆'}
                          </span>
                          <div>
                            <h3 style={{
-                             fontSize: '1.125rem',
+                             fontSize: isMobile ? '1rem' : '1.125rem',
                              fontWeight: '600',
                              color: esHoy ? 'white' : '#1e293b',
                              margin: 0
@@ -910,7 +946,7 @@ export default function RoturasPerdidas() {
                              {esHoy ? 'Hoy' : formatearFecha(fecha)}
                            </h3>
                            <p style={{
-                             fontSize: '0.875rem',
+                             fontSize: isMobile ? '0.75rem' : '0.875rem',
                              color: esHoy ? 'rgba(255, 255, 255, 0.8)' : '#64748b',
                              margin: '0.25rem 0 0 0'
                            }}>
@@ -922,7 +958,7 @@ export default function RoturasPerdidas() {
                        <div style={{
                          display: 'flex',
                          alignItems: 'center',
-                         gap: '1rem'
+                         gap: isMobile ? '8px' : '1rem'
                        }}>
                          <button
                            onClick={(e) => {
@@ -934,8 +970,8 @@ export default function RoturasPerdidas() {
                              color: 'white',
                              border: 'none',
                              borderRadius: '0.5rem',
-                             padding: '0.5rem 1rem',
-                             fontSize: '0.75rem',
+                             padding: isMobile ? '6px 10px' : '0.5rem 1rem',
+                             fontSize: isMobile ? '0.65rem' : '0.75rem',
                              fontWeight: '600',
                              cursor: 'pointer',
                              display: 'flex',
@@ -947,7 +983,7 @@ export default function RoturasPerdidas() {
                            📄 Exportar
                          </button>
                          <span style={{
-                           fontSize: '1.25rem',
+                           fontSize: isMobile ? '1rem' : '1.25rem',
                            color: esHoy ? 'white' : '#374151',
                            transition: 'transform 0.2s',
                            transform: estaDiaExpandido(fecha) ? 'rotate(180deg)' : 'rotate(0deg)'
@@ -960,7 +996,7 @@ export default function RoturasPerdidas() {
                      {/* Contenido del día */}
                      {estaDiaExpandido(fecha) && (
                       <div style={{
-                        padding: '1.5rem'
+                        padding: isMobile ? '16px' : '24px'
                       }}>
                         {roturasDelDia.length === 0 ? (
                           <div style={{

@@ -362,6 +362,62 @@ export default function MovimientosDia() {
     }, 150);
   };
 
+  const exportarMovimientosExcel = async () => {
+    if (!movimientos || modoRango) return;
+    
+    try {
+      toast.loading('Exportando movimientos a Excel...');
+      
+      const blob = await ApiService.exportarMovimientosDiaExcel(fechaSeleccionada);
+      
+      // Crear URL y descargar archivo
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `movimientos_dia_${fechaSeleccionada}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Excel exportado exitosamente');
+      
+    } catch (error) {
+      console.error('Error al exportar movimientos a Excel:', error);
+      toast.dismiss();
+      toast.error('Error al exportar movimientos a Excel');
+    }
+  };
+
+  const exportarMovimientosRangoExcel = async () => {
+    if (!movimientos || !modoRango) return;
+    
+    try {
+      toast.loading('Exportando movimientos de rango a Excel...');
+      
+      const blob = await ApiService.exportarMovimientosRangoExcel(fechaInicio, fechaFin);
+      
+      // Crear URL y descargar archivo
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `movimientos_rango_${fechaInicio}_a_${fechaFin}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Excel de rango exportado exitosamente');
+      
+    } catch (error) {
+      console.error('Error al exportar movimientos de rango a Excel:', error);
+      toast.dismiss();
+      toast.error('Error al exportar movimientos de rango a Excel');
+    }
+  };
+
   const calcularBalanceFinal = () => {
     if (!movimientos) return 0;
     
@@ -672,12 +728,41 @@ export default function MovimientosDia() {
                 </p>
              </div>
             
-                                                   <div style={{
+                                                               <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              alignItems: 'flex-end'
+            }}>
+              {/* Primera fila: Botón exportar y toggle día/rango */}
+              <div style={{
                 display: 'flex',
-                flexDirection: 'column',
                 gap: '1rem',
-                alignItems: 'flex-end'
+                alignItems: 'center'
               }}>
+                {/* Botón de exportar */}
+                <button
+                  onClick={modoRango ? exportarMovimientosRangoExcel : exportarMovimientosExcel}
+                  disabled={!movimientos || transicionando}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    cursor: !movimientos || transicionando ? 'not-allowed' : 'pointer',
+                    opacity: !movimientos || transicionando ? 0.6 : 1,
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  📊 Exportar Excel
+                </button>
+
                 {/* Toggle entre modo día y modo rango */}
                 <div style={{
                   display: 'flex',
@@ -725,58 +810,59 @@ export default function MovimientosDia() {
                     📊 Rango
                   </button>
                 </div>
+              </div>
 
-                {/* Filtros de fecha */}
-                {!modoRango ? (
+              {/* Segunda fila: Filtros de fecha */}
+              {!modoRango ? (
+                <input
+                  type="date"
+                  value={fechaSeleccionada}
+                  onChange={(e) => setFechaSeleccionada(e.target.value)}
+                  style={{
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    background: 'white',
+                    minWidth: '200px'
+                  }}
+                />
+              ) : (
+                <div style={{
+                  display: 'flex',
+                  gap: '0.5rem',
+                  alignItems: 'center'
+                }}>
                   <input
                     type="date"
-                    value={fechaSeleccionada}
-                    onChange={(e) => setFechaSeleccionada(e.target.value)}
+                    value={fechaInicio}
+                    onChange={(e) => setFechaInicio(e.target.value)}
                     style={{
                       padding: '0.75rem',
                       border: '1px solid #d1d5db',
                       borderRadius: '0.5rem',
                       fontSize: '1rem',
                       background: 'white',
-                      minWidth: '200px'
+                      minWidth: '150px'
                     }}
                   />
-                ) : (
-                  <div style={{
-                    display: 'flex',
-                    gap: '0.5rem',
-                    alignItems: 'center'
-                  }}>
-                    <input
-                      type="date"
-                      value={fechaInicio}
-                      onChange={(e) => setFechaInicio(e.target.value)}
-                      style={{
-                        padding: '0.75rem',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '0.5rem',
-                        fontSize: '1rem',
-                        background: 'white',
-                        minWidth: '150px'
-                      }}
-                    />
-                    <span style={{ color: '#64748b', fontSize: '0.875rem' }}>a</span>
-                    <input
-                      type="date"
-                      value={fechaFin}
-                      onChange={(e) => setFechaFin(e.target.value)}
-                      style={{
-                        padding: '0.75rem',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '0.5rem',
-                        fontSize: '1rem',
-                        background: 'white',
-                        minWidth: '150px'
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+                  <span style={{ color: '#64748b', fontSize: '0.875rem' }}>a</span>
+                  <input
+                    type="date"
+                    value={fechaFin}
+                    onChange={(e) => setFechaFin(e.target.value)}
+                    style={{
+                      padding: '0.75rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.5rem',
+                      fontSize: '1rem',
+                      background: 'white',
+                      minWidth: '150px'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

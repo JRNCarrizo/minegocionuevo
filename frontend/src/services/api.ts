@@ -2042,6 +2042,32 @@ class ApiService {
     }
   }
 
+  // Exportar movimientos del día a Excel
+  async exportarMovimientosDiaExcel(fecha: string): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/movimientos-dia/${fecha}/exportar-excel`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar movimientos del día a Excel:', error);
+      throw error;
+    }
+  }
+
+  // Exportar movimientos por rango de fechas a Excel
+  async exportarMovimientosRangoExcel(fechaInicio: string, fechaFin: string): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/movimientos-dia/rango/exportar-excel?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar movimientos de rango a Excel:', error);
+      throw error;
+    }
+  }
+
 
 
   // Exportar remito de ingreso

@@ -30,7 +30,7 @@ interface Transportista {
 }
 
 const GestionTransportistas: React.FC = () => {
-  const { datosUsuario, cerrarSesion } = useUsuarioActual();
+  const { datosUsuario, cargando: cargandoUsuario, cerrarSesion } = useUsuarioActual();
   const navigate = useNavigate();
 
   // Estados principales
@@ -428,11 +428,24 @@ const GestionTransportistas: React.FC = () => {
 
   // Efectos
   useEffect(() => {
-    console.log('datosUsuario:', datosUsuario);
-    if (datosUsuario?.empresaId) {
-      cargarTransportistas();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('No hay token, redirigiendo a login');
+      navigate('/admin/login');
+      return;
     }
-  }, [datosUsuario]);
+    
+    console.log('datosUsuario:', datosUsuario);
+    console.log('empresaId:', datosUsuario?.empresaId);
+    
+    if (datosUsuario?.empresaId) {
+      console.log('Cargando transportistas...');
+      cargarTransportistas();
+    } else if (datosUsuario && !datosUsuario.empresaId) {
+      console.log('Usuario autenticado pero sin empresaId');
+      toast.error('Error: No se pudo obtener la información de la empresa');
+    }
+  }, [datosUsuario, navigate]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -504,11 +517,11 @@ const GestionTransportistas: React.FC = () => {
   }, [cardSeleccionada, transportistasFiltrados, mostrarModalCrear, mostrarModalEditar, mostrarModalVehiculos]);
 
   // Renderizado
-  if (!datosUsuario) {
+  if (cargandoUsuario || !datosUsuario || !datosUsuario.empresaId) {
     return (
       <div className="pagina-cargando">
         <div className="spinner"></div>
-        <p>Cargando...</p>
+        <p>Cargando datos de usuario...</p>
       </div>
     );
   }

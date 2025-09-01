@@ -851,16 +851,16 @@ const GestionProductos: React.FC = () => {
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
-                  e.currentTarget.style.transform = 'translateY(-8px)';
-                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                  e.currentTarget.style.borderColor = '#667eea';
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = '#667eea';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                  e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
                 }
               }}
             >
@@ -1009,16 +1009,16 @@ const GestionProductos: React.FC = () => {
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
-                  e.currentTarget.style.transform = 'translateY(-8px)';
-                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                  e.currentTarget.style.borderColor = '#8b5cf6';
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = '#8b5cf6';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                  e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
                 }
               }}
             >
@@ -1088,16 +1088,16 @@ const GestionProductos: React.FC = () => {
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
-                  e.currentTarget.style.transform = 'translateY(-8px)';
-                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                  e.currentTarget.style.borderColor = '#f59e0b';
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = '#f59e0b';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                  e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
                 }
               }}
             >
@@ -1167,16 +1167,16 @@ const GestionProductos: React.FC = () => {
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
-                  e.currentTarget.style.transform = 'translateY(-8px)';
-                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                  e.currentTarget.style.borderColor = '#10b981';
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = '#10b981';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                  e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
                 }
               }}
             >
@@ -1254,9 +1254,9 @@ const GestionProductos: React.FC = () => {
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                  e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
                 }
               }}
             >
@@ -2111,31 +2111,31 @@ const GestionProductos: React.FC = () => {
                       className="fila-producto" 
                       data-producto-id={producto.id}
                       style={{
-                        padding: '0 24px',
-                        borderBottom: '1px solid #f1f5f9',
-                        display: 'grid',
-                        gridTemplateColumns: '80px 2fr 1fr 1fr 1fr 1fr 1fr',
-                        gap: '16px',
-                        alignItems: 'center',
-                        transition: 'all 0.2s ease',
-                        cursor: 'pointer',
+                      padding: '0 24px',
+                      borderBottom: '1px solid #f1f5f9',
+                      display: 'grid',
+                      gridTemplateColumns: '80px 2fr 1fr 1fr 1fr 1fr 1fr',
+                      gap: '16px',
+                      alignItems: 'center',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
                         height: '80px',
                         border: isSelected ? '2px solid #000' : 'none',
                         backgroundColor: isSelected ? '#f0f9ff' : 'transparent'
-                      }}
-                      onMouseOver={(e) => {
+                    }}
+                    onMouseOver={(e) => {
                         if (!navegacionActiva) {
-                          e.currentTarget.style.backgroundColor = '#f8fafc';
-                          e.currentTarget.style.transform = 'translateX(4px)';
+                      e.currentTarget.style.backgroundColor = '#f8fafc';
+                      e.currentTarget.style.transform = 'translateX(4px)';
                         }
-                      }}
-                      onMouseOut={(e) => {
+                    }}
+                    onMouseOut={(e) => {
                         if (!navegacionActiva) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.transform = 'translateX(0)';
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.transform = 'translateX(0)';
                         }
-                      }}
-                      >
+                    }}
+                    >
                       <div className="columna-imagen" style={{
                         height: '100%',
                         width: '80px',
@@ -2459,31 +2459,31 @@ const GestionProductos: React.FC = () => {
                       className="tarjeta-producto" 
                       data-producto-id={producto.id}
                       style={{
-                        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                         border: isSelected ? '2px solid #000' : '2px solid #e2e8f0',
-                        borderRadius: '16px',
-                        padding: '0',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer',
-                        position: 'relative',
+                      borderRadius: '16px',
+                      padding: '0',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                      position: 'relative',
                         overflow: 'hidden',
                         backgroundColor: isSelected ? '#f0f9ff' : undefined
-                      }}
-                      onMouseOver={(e) => {
+                    }}
+                    onMouseOver={(e) => {
                         if (!navegacionActiva) {
-                          e.currentTarget.style.borderColor = '#3b82f6';
-                          e.currentTarget.style.transform = 'translateY(-4px)';
-                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(59,130,246,0.15)';
+                      e.currentTarget.style.borderColor = '#3b82f6';
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(59,130,246,0.15)';
                         }
-                      }}
-                      onMouseOut={(e) => {
+                    }}
+                    onMouseOut={(e) => {
                         if (!navegacionActiva) {
-                          e.currentTarget.style.borderColor = '#e2e8f0';
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
                         }
-                      }}
-                      >
+                    }}
+                    >
                       {/* Badges de estado */}
                       <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px', zIndex: 10 }}>
                         {producto.destacado && (
@@ -2749,31 +2749,31 @@ const GestionProductos: React.FC = () => {
                       className="tarjeta-producto" 
                       data-producto-id={producto.id}
                       style={{
-                        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                         border: isSelected ? '2px solid #000' : '2px solid #e2e8f0',
-                        borderRadius: '16px',
-                        padding: '0',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer',
-                        position: 'relative',
+                      borderRadius: '16px',
+                      padding: '0',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                      position: 'relative',
                         overflow: 'hidden',
                         backgroundColor: isSelected ? '#f0f9ff' : undefined
-                      }}
-                      onMouseOver={(e) => {
+                    }}
+                    onMouseOver={(e) => {
                         if (!navegacionActiva) {
-                          e.currentTarget.style.borderColor = '#3b82f6';
-                          e.currentTarget.style.transform = 'translateY(-4px)';
-                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(59,130,246,0.15)';
+                      e.currentTarget.style.borderColor = '#3b82f6';
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(59,130,246,0.15)';
                         }
-                      }}
-                      onMouseOut={(e) => {
+                    }}
+                    onMouseOut={(e) => {
                         if (!navegacionActiva) {
-                          e.currentTarget.style.borderColor = '#e2e8f0';
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
                         }
-                      }}
-                      >
+                    }}
+                    >
                       {/* Badges de estado */}
                       <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px', zIndex: 10 }}>
                         {producto.destacado && (
