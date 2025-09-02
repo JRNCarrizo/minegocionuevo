@@ -343,7 +343,7 @@ const GestionTransportistas: React.FC = () => {
     }
 
     try {
-      const response = await apiCall(`/empresas/${datosUsuario.empresaId}/vehiculos/${vehiculoId}/estado`, {
+      const response = await apiCall(`/empresas/${datosUsuario.empresaId}/transportistas/vehiculos/${vehiculoId}/estado`, {
         method: 'PATCH',
         body: JSON.stringify({ activo })
       });
@@ -615,10 +615,13 @@ const GestionTransportistas: React.FC = () => {
                 </div>
                 
                 <div className="card-content">
+                  <div className="card-icon">
+                    👤
+                  </div>
                   <h3>{transportista.nombreApellido}</h3>
                   <p className="empresa">{transportista.nombreEmpresa || ''}</p>
                   <div className="info-vehiculos">
-                    <span>🚗 {transportista.vehiculos.length} vehículos</span>
+                    <span>🚛 {transportista.vehiculos.length} vehículos</span>
                   </div>
                 </div>
 
@@ -629,8 +632,9 @@ const GestionTransportistas: React.FC = () => {
                       e.stopPropagation();
                       abrirModalEditar(transportista);
                     }}
+                    title="Editar transportista"
                   >
-                    Editar
+                    ✏️
                   </button>
                   <button
                     className={`btn-estado ${transportista.activo ? 'btn-desactivar' : 'btn-activar'}`}
@@ -638,8 +642,9 @@ const GestionTransportistas: React.FC = () => {
                       e.stopPropagation();
                       cambiarEstadoTransportista(transportista.id, !transportista.activo);
                     }}
+                    title={transportista.activo ? 'Desactivar transportista' : 'Activar transportista'}
                   >
-                    {transportista.activo ? 'Desactivar' : 'Activar'}
+                    {transportista.activo ? '⏸️' : '▶️'}
                   </button>
                   <button
                     className="btn-eliminar"
@@ -647,8 +652,9 @@ const GestionTransportistas: React.FC = () => {
                       e.stopPropagation();
                       eliminarTransportista(transportista.id);
                     }}
+                    title="Eliminar transportista"
                   >
-                    Eliminar
+                    🗑️
                   </button>
                 </div>
               </div>
@@ -947,14 +953,15 @@ const GestionTransportistas: React.FC = () => {
                             {vehiculo.activo ? 'Activo' : 'Desactivado'}
                           </div>
                         </div>
-                        <div className="vehiculo-acciones">
-                          <button
-                            className={`btn-estado ${vehiculo.activo ? 'btn-desactivar' : 'btn-activar'}`}
-                            onClick={() => cambiarEstadoVehiculo(vehiculo.id, !vehiculo.activo)}
-                          >
-                            {vehiculo.activo ? 'Desactivar' : 'Activar'}
-                          </button>
-                        </div>
+                                                 <div className="vehiculo-acciones">
+                           <button
+                             className={`btn-estado ${vehiculo.activo ? 'btn-desactivar' : 'btn-activar'}`}
+                             onClick={() => cambiarEstadoVehiculo(vehiculo.id, !vehiculo.activo)}
+                             title={vehiculo.activo ? 'Desactivar vehículo' : 'Activar vehículo'}
+                           >
+                             {vehiculo.activo ? '⏸️' : '▶️'}
+                           </button>
+                         </div>
                       </div>
                     ))}
                   </div>

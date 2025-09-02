@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
@@ -93,6 +93,25 @@ export default function GestionSectores() {
   
   // Estado para almacenar información de productos por sector
   const [infoProductosPorSector, setInfoProductosPorSector] = useState<{[key: number]: {productos: number, unidades: number}}>({});
+  
+  // Estados para navegación por teclado
+  const [modoNavegacion, setModoNavegacion] = useState(false);
+  const [elementoSeleccionado, setElementoSeleccionado] = useState(-1); // -1: botones, 0+: sectores
+
+  // Refs para los campos del formulario de crear sector
+  const nombreInputRef = useRef<HTMLInputElement>(null);
+  const descripcionTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const ubicacionInputRef = useRef<HTMLInputElement>(null);
+
+  // Foco automático en el primer campo cuando se abre el modal de crear
+  useEffect(() => {
+    if (mostrarModalCrear && nombreInputRef.current) {
+      // Pequeño delay para asegurar que el modal esté completamente renderizado
+      setTimeout(() => {
+        nombreInputRef.current?.focus();
+      }, 100);
+    }
+  }, [mostrarModalCrear]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -106,42 +125,7 @@ export default function GestionSectores() {
     }
   }, [navigate, datosUsuario]);
 
-  // Manejo de teclas para navegación
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Esc: Salir de la sección
-      if (event.key === 'Escape') {
-        const activeElement = document.activeElement;
-        const isInput = activeElement?.tagName === 'INPUT' || 
-                       activeElement?.tagName === 'TEXTAREA' || 
-                       activeElement?.tagName === 'SELECT';
-        
-        if (mostrarModalCrear || mostrarModalEditar || mostrarModalProductos || 
-            mostrarModalDetalle || mostrarModalAsignar || mostrarModalTransferir) {
-          // Si hay un modal abierto, cerrarlo
-          event.preventDefault();
-          event.stopPropagation();
-          cerrarModal();
-        } else if (isInput) {
-          // Si estás en un input pero no hay modal, quitar el foco
-          event.preventDefault();
-          event.stopPropagation();
-          (activeElement as HTMLElement)?.blur();
-        } else {
-          // Si no hay modal ni input, salir de la sección
-          event.preventDefault();
-          event.stopPropagation();
-          navigate('/admin/gestion-empresa');
-        }
-      }
-    };
 
-    document.addEventListener('keydown', handleKeyDown, true); // Usar capture phase
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown, true);
-    };
-  }, [mostrarModalCrear, mostrarModalEditar, mostrarModalProductos, 
-      mostrarModalDetalle, mostrarModalAsignar, mostrarModalTransferir, navigate]);
 
   // Función helper para hacer llamadas a la API con URL base correcta
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
@@ -290,6 +274,28 @@ export default function GestionSectores() {
       toast.error('Error al crear sector');
     } finally {
       setGuardando(false);
+    }
+  };
+
+  // Funciones para navegación con Enter en el formulario
+  const handleKeyDownNombre = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      descripcionTextareaRef.current?.focus();
+    }
+  };
+
+  const handleKeyDownDescripcion = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      ubicacionInputRef.current?.focus();
+    }
+  };
+
+  const handleKeyDownUbicacion = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      crearSector();
     }
   };
 
@@ -681,6 +687,121 @@ export default function GestionSectores() {
   const sectoresActivos = sectores.filter(s => s.activo);
   const sectoresInactivos = sectores.filter(s => !s.activo);
 
+  // Manejo de teclas para navegación
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Si hay un modal abierto, solo manejar Escape
+      if (mostrarModalCrear || mostrarModalEditar || mostrarModalProductos || 
+          mostrarModalDetalle || mostrarModalAsignar || mostrarModalTransferir) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          cerrarModal();
+        }
+        return;
+      }
+
+      // Si estás en un input, solo manejar Escape
+      const activeElement = document.activeElement;
+      const isInput = activeElement?.tagName === 'INPUT' || 
+                     activeElement?.tagName === 'TEXTAREA' || 
+                     activeElement?.tagName === 'SELECT';
+      
+      if (isInput) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          (activeElement as HTMLElement)?.blur();
+        }
+        return;
+      }
+
+      switch (event.key) {
+        case 'Enter':
+          event.preventDefault();
+          if (modoNavegacion) {
+            if (elementoSeleccionado >= 0 && elementoSeleccionado <= 2) {
+              // Navegar entre botones de acción
+              if (elementoSeleccionado === 0) {
+                migrarSectores();
+              } else if (elementoSeleccionado === 1) {
+                setMostrarModalCrear(true);
+              } else if (elementoSeleccionado === 2) {
+                navigate('/admin/stock-general');
+              }
+            } else if (elementoSeleccionado >= 3) {
+              // Seleccionar sector
+              const sectoresVisibles = mostrarSectoresInactivos 
+                ? [...sectoresActivos, ...sectoresInactivos]
+                : sectoresActivos;
+              const sectorIndex = elementoSeleccionado - 3;
+              const sectorSeleccionado = sectoresVisibles[sectorIndex];
+              if (sectorSeleccionado) {
+                abrirModalProductos(sectorSeleccionado);
+              }
+            }
+          } else {
+            // Activar modo navegación
+            setModoNavegacion(true);
+            setElementoSeleccionado(0);
+          }
+          break;
+
+        case 'ArrowUp':
+        case 'ArrowDown':
+        case 'ArrowLeft':
+        case 'ArrowRight':
+          if (!modoNavegacion) {
+            setModoNavegacion(true);
+            setElementoSeleccionado(0);
+          }
+          
+          event.preventDefault();
+          const sectoresVisibles = mostrarSectoresInactivos 
+            ? [...sectoresActivos, ...sectoresInactivos]
+            : sectoresActivos;
+          const totalElementos = 3 + sectoresVisibles.length; // 3 botones + sectores
+          
+          let nuevaSeleccion = elementoSeleccionado;
+          
+          if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+            if (elementoSeleccionado <= 0) {
+              nuevaSeleccion = totalElementos - 1;
+            } else {
+              nuevaSeleccion = elementoSeleccionado - 1;
+            }
+          } else {
+            if (elementoSeleccionado >= totalElementos - 1) {
+              nuevaSeleccion = 0;
+            } else {
+              nuevaSeleccion = elementoSeleccionado + 1;
+            }
+          }
+          
+          setElementoSeleccionado(nuevaSeleccion);
+          break;
+
+        case 'Escape':
+          event.preventDefault();
+          if (modoNavegacion) {
+            setModoNavegacion(false);
+            setElementoSeleccionado(0);
+          } else {
+            navigate('/admin/gestion-empresa');
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [mostrarModalCrear, mostrarModalEditar, mostrarModalProductos, 
+      mostrarModalDetalle, mostrarModalAsignar, mostrarModalTransferir, 
+      navigate, modoNavegacion, elementoSeleccionado, sectoresActivos, 
+      sectoresInactivos, mostrarSectoresInactivos, migrarSectores, abrirModalProductos, setMostrarModalCrear]);
+
   if (!datosUsuario) {
     return (
       <div className="pagina-carga">
@@ -712,25 +833,25 @@ export default function GestionSectores() {
         <div className="botones-accion">
           <button
             onClick={migrarSectores}
-            className="boton-migrar"
+            className={`boton-migrar ${modoNavegacion && elementoSeleccionado === 0 ? 'seleccionado' : ''}`}
           >
             <span className="icono-boton">🔄</span>
             Migrar Sectores Existentes
           </button>
           <button
             onClick={() => setMostrarModalCrear(true)}
-            className="boton-crear"
+            className={`boton-crear ${modoNavegacion && elementoSeleccionado === 1 ? 'seleccionado' : ''}`}
           >
             <span className="icono-boton">➕</span>
             Crear Nuevo Sector
           </button>
-                  <button
-          onClick={() => navigate('/admin/stock-general')}
-          className="boton-stock-general"
-        >
-          <span className="icono-boton">📊</span>
-          Ver Stock General
-        </button>
+          <button
+            onClick={() => navigate('/admin/stock-general')}
+            className={`boton-stock-general ${modoNavegacion && elementoSeleccionado === 2 ? 'seleccionado' : ''}`}
+          >
+            <span className="icono-boton">📊</span>
+            Ver Stock General
+          </button>
         </div>
 
 
@@ -822,7 +943,7 @@ export default function GestionSectores() {
                   {sectoresActivos.map((sector, index) => (
                     <div
                       key={sector.id}
-                      className="tarjeta-sector"
+                      className={`tarjeta-sector ${modoNavegacion && elementoSeleccionado === index + 3 ? 'seleccionada' : ''}`}
                       onClick={() => abrirModalProductos(sector)}
                       style={{
                         animationDelay: `${index * 0.1}s`
@@ -928,7 +1049,7 @@ export default function GestionSectores() {
                   {sectoresInactivos.map((sector, index) => (
                     <div
                       key={sector.id}
-                      className="tarjeta-sector tarjeta-inactiva"
+                      className={`tarjeta-sector tarjeta-inactiva ${modoNavegacion && elementoSeleccionado === index + 3 + sectoresActivos.length ? 'seleccionada' : ''}`}
                       onClick={() => abrirModalProductos(sector)}
                       style={{
                         animationDelay: `${index * 0.1}s`
@@ -1162,9 +1283,11 @@ export default function GestionSectores() {
                   Nombre del Sector <span className="requerido">*</span>
                 </label>
                 <input
+                  ref={nombreInputRef}
                   type="text"
                   value={formData.nombre}
                   onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                  onKeyDown={handleKeyDownNombre}
                   className={`input-campo ${errors.nombre ? 'error' : ''}`}
                   placeholder="Ej: Depósito Principal"
                 />
@@ -1178,8 +1301,10 @@ export default function GestionSectores() {
                   Descripción
                 </label>
                 <textarea
+                  ref={descripcionTextareaRef}
                   value={formData.descripcion}
                   onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
+                  onKeyDown={handleKeyDownDescripcion}
                   className={`input-campo ${errors.descripcion ? 'error' : ''}`}
                   placeholder="Descripción del sector"
                   rows={3}
@@ -1194,9 +1319,11 @@ export default function GestionSectores() {
                   Ubicación
                 </label>
                 <input
+                  ref={ubicacionInputRef}
                   type="text"
                   value={formData.ubicacion}
                   onChange={(e) => setFormData({...formData, ubicacion: e.target.value})}
+                  onKeyDown={handleKeyDownUbicacion}
                   className={`input-campo ${errors.ubicacion ? 'error' : ''}`}
                   placeholder="Ej: Planta baja, Pasillo A"
                 />
@@ -1559,10 +1686,10 @@ export default function GestionSectores() {
                               </div>
                               <div className="stock-info-asignacion">
                                 <span className="stock-total">
-                                  Stock total: {producto.stockTotal} {producto.unidadMedida || 'unidades'}
+                                  Stock total: {producto.stockTotal}
                                 </span>
                                 <span className="stock-disponible">
-                                  Disponible: {producto.stockDisponible} {producto.unidadMedida || 'unidades'}
+                                  Disponible: {producto.stockDisponible}
                                 </span>
                               </div>
                             </div>
@@ -1583,9 +1710,6 @@ export default function GestionSectores() {
                                 className="input-cantidad-asignacion"
                                 placeholder="0"
                               />
-                              <span className="unidad-asignacion">
-                                {producto.unidadMedida || 'unidades'}
-                              </span>
                             </div>
                           </div>
                         );

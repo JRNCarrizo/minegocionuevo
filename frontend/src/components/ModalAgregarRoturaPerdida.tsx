@@ -93,6 +93,35 @@ export default function ModalAgregarRoturaPerdida({
     }
   }, [mostrarProductos]);
 
+  // Auto-scroll para mantener visible el elemento seleccionado
+  useEffect(() => {
+    if (productoSeleccionado >= 0 && listaProductosRef.current) {
+      const listaElement = listaProductosRef.current;
+      const elementos = listaElement.children;
+      
+      if (elementos[productoSeleccionado]) {
+        const elementoSeleccionado = elementos[productoSeleccionado] as HTMLElement;
+        const elementoRect = elementoSeleccionado.getBoundingClientRect();
+        const listaRect = listaElement.getBoundingClientRect();
+        
+        // Verificar si el elemento está fuera del área visible
+        if (elementoRect.top < listaRect.top) {
+          // Elemento está arriba del área visible, hacer scroll hacia arriba
+          elementoSeleccionado.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        } else if (elementoRect.bottom > listaRect.bottom) {
+          // Elemento está abajo del área visible, hacer scroll hacia abajo
+          elementoSeleccionado.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'end' 
+          });
+        }
+      }
+    }
+  }, [productoSeleccionado]);
+
   // Efecto para enfocar el campo de cantidad cuando se activa el modo cantidad
   useEffect(() => {
     if (modoCantidad && inputCantidadRef.current) {
@@ -643,14 +672,17 @@ export default function ModalAgregarRoturaPerdida({
                           padding: '0.75rem',
                           cursor: 'pointer',
                           borderBottom: '1px solid #f3f4f6',
-                          transition: 'background-color 0.2s',
-                          background: index === productoSeleccionado ? '#f3f4f6' : 'white'
+                          borderLeft: index === productoSeleccionado ? '3px solid #dc2626' : '3px solid transparent',
+                          transition: 'all 0.2s ease',
+                          background: index === productoSeleccionado ? '#fef2f2' : 'white'
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = '#f9fafb';
+                          if (index !== productoSeleccionado) {
+                            e.currentTarget.style.background = '#f9fafb';
+                          }
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.background = index === productoSeleccionado ? '#f3f4f6' : 'white';
+                          e.currentTarget.style.background = index === productoSeleccionado ? '#fef2f2' : 'white';
                         }}
                       >
                         <p style={{

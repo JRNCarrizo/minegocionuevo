@@ -352,7 +352,7 @@ export default function GestionEmpresa() {
         style={{
           maxWidth: '1200px',
           margin: '0 auto',
-          paddingTop: isMobile ? '6rem' : '7rem',
+          paddingTop: isMobile ? '8rem' : '9rem',
           paddingBottom: isMobile ? '1rem' : '2rem',
           paddingLeft: isMobile ? '1rem' : '2rem',
           paddingRight: isMobile ? '1rem' : '2rem'

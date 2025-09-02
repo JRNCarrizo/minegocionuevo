@@ -964,6 +964,15 @@ export default function GestionPedidos() {
     const manejarTeclaEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
+        
+        // Si el modal de detalles está abierto, solo cerrarlo
+        if (mostrarDetalle) {
+          setMostrarDetalle(false);
+          setPedidoSeleccionado(null);
+          return;
+        }
+        
+        // Si no hay modal abierto, navegar al panel principal
         window.location.href = '/admin';
       }
     };
@@ -972,7 +981,7 @@ export default function GestionPedidos() {
     return () => {
       document.removeEventListener('keydown', manejarTeclaEsc);
     };
-  }, []);
+  }, [mostrarDetalle]);
 
   const cargarEstadisticas = async () => {
     if (!empresaId) return;

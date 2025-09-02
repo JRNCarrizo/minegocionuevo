@@ -5,7 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha, formatearFechaCorta, obtenerFechaActual } from '../../utils/dateUtils';
+import { formatearFecha, formatearFechaCorta, obtenerFechaActual, compararFechas } from '../../utils/dateUtils';
 import ModalAgregarRoturaPerdida from '../../components/ModalAgregarRoturaPerdida';
 
 interface RoturaPerdida {
@@ -37,6 +37,11 @@ export default function RoturasPerdidas() {
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
   const [diasExpandidos, setDiasExpandidos] = useState<Set<string>>(new Set());
   const [mostrarModalAgregar, setMostrarModalAgregar] = useState(false);
+  
+  // Estados para navegación por teclado
+  const [modoNavegacion, setModoNavegacion] = useState(false);
+  const [elementoSeleccionado, setElementoSeleccionado] = useState(-1); // -1: buscador, 0+: pestañas
+  const [pestañaExpandida, setPestañaExpandida] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -213,27 +218,17 @@ export default function RoturasPerdidas() {
     };
   }, []);
 
-  // Manejar tecla Escape para volver a la vista principal
-  useEffect(() => {
-    const manejarEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        navigate('/admin/gestion-empresa');
-      }
-    };
-
-    document.addEventListener('keydown', manejarEscape);
-    return () => {
-      document.removeEventListener('keydown', manejarEscape);
-    };
-  }, [navigate]);
-
   const roturasPerdidasFiltradas = roturasPerdidas.filter(roturaPerdida => {
     // Filtro por rango de fechas
     let cumpleFiltroFecha = true;
-    if (filtroFechaDesde && roturaPerdida.fecha < filtroFechaDesde) {
+    
+    // Extraer solo la fecha (YYYY-MM-DD) sin la hora para comparar correctamente
+    const fechaRotura = roturaPerdida.fecha.split('T')[0];
+    
+    if (filtroFechaDesde && compararFechas(fechaRotura, filtroFechaDesde) < 0) {
       cumpleFiltroFecha = false;
     }
-    if (filtroFechaHasta && roturaPerdida.fecha > filtroFechaHasta) {
+    if (filtroFechaHasta && compararFechas(fechaRotura, filtroFechaHasta) > 0) {
       cumpleFiltroFecha = false;
     }
     
@@ -263,6 +258,91 @@ export default function RoturasPerdidas() {
       }, {} as Record<string, RoturaPerdida[]>);
 
   const fechasOrdenadas = Object.keys(roturasPerdidasPorFecha).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+  // Manejar navegación por teclado
+  useEffect(() => {
+    const manejarTeclado = (e: KeyboardEvent) => {
+      // Si el modal está abierto, no manejar navegación
+      if (mostrarModalAgregar) {
+        if (e.key === 'Escape') {
+          setMostrarModalAgregar(false);
+        }
+        return;
+      }
+
+      switch (e.key) {
+        case 'Enter':
+          e.preventDefault();
+          if (!modoNavegacion) {
+            // Activar modo navegación y abrir modal
+            setModoNavegacion(true);
+            setElementoSeleccionado(-1);
+            setMostrarModalAgregar(true);
+          } else {
+            // En modo navegación, manejar Enter según el elemento seleccionado
+            if (elementoSeleccionado === -1) {
+              // Buscador seleccionado, abrir modal
+              setMostrarModalAgregar(true);
+            } else if (elementoSeleccionado >= 0 && elementoSeleccionado < fechasOrdenadas.length) {
+              // Pestaña seleccionada, expandir/contraer
+              const fecha = fechasOrdenadas[elementoSeleccionado];
+              if (pestañaExpandida === fecha) {
+                setPestañaExpandida(null);
+                setDiasExpandidos(prev => {
+                  const nuevo = new Set(prev);
+                  nuevo.delete(fecha);
+                  return nuevo;
+                });
+              } else {
+                setPestañaExpandida(fecha);
+                setDiasExpandidos(prev => {
+                  const nuevo = new Set(prev);
+                  nuevo.add(fecha);
+                  return nuevo;
+                });
+              }
+            }
+          }
+          break;
+
+        case 'ArrowDown':
+          if (modoNavegacion) {
+            e.preventDefault();
+            setElementoSeleccionado(prev => 
+              prev < fechasOrdenadas.length - 1 ? prev + 1 : 0
+            );
+          }
+          break;
+
+        case 'ArrowUp':
+          if (modoNavegacion) {
+            e.preventDefault();
+            setElementoSeleccionado(prev => 
+              prev > -1 ? prev - 1 : fechasOrdenadas.length - 1
+            );
+          }
+          break;
+
+        case 'Escape':
+          e.preventDefault();
+          if (modoNavegacion) {
+            // Salir del modo navegación
+            setModoNavegacion(false);
+            setElementoSeleccionado(-1);
+            setPestañaExpandida(null);
+          } else {
+            // Salir de la sección
+            navigate('/admin/gestion-empresa');
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', manejarTeclado);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclado);
+    };
+  }, [navigate, mostrarModalAgregar, modoNavegacion, elementoSeleccionado, pestañaExpandida, fechasOrdenadas]);
 
   if (cargando || !datosUsuario) {
     return (
@@ -311,6 +391,66 @@ export default function RoturasPerdidas() {
         margin: '0 auto',
         padding: isMobile ? '8rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
       }}>
+        {/* Indicador de modo navegación */}
+        {modoNavegacion && (
+          <div style={{
+            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+            color: 'white',
+            padding: '1rem',
+            borderRadius: '12px',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem'
+            }}>
+              <span style={{ fontSize: '1.25rem' }}>⌨️</span>
+              <div>
+                <h3 style={{
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  margin: '0 0 0.25rem 0'
+                }}>
+                  Modo Navegación por Teclado
+                </h3>
+                <p style={{
+                  fontSize: '0.875rem',
+                  margin: 0,
+                  opacity: 0.9
+                }}>
+                  Usa ↑↓ para navegar, Enter para seleccionar, ESC para salir
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setModoNavegacion(false);
+                setElementoSeleccionado(-1);
+                setPestañaExpandida(null);
+              }}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                transition: 'background 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+            >
+              Salir
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div style={{
           background: 'white',
@@ -435,11 +575,12 @@ export default function RoturasPerdidas() {
                 style={{
                   width: '100%',
                   padding: '0.75rem',
-                  border: '1px solid #d1d5db',
+                  border: modoNavegacion && elementoSeleccionado === -1 ? '3px solid #3b82f6' : '1px solid #d1d5db',
                   borderRadius: '0.5rem',
                   fontSize: '0.875rem',
                   outline: 'none',
-                  transition: 'border-color 0.2s'
+                  transition: 'border-color 0.2s',
+                  background: modoNavegacion && elementoSeleccionado === -1 ? '#eff6ff' : 'white'
                 }}
               />
               {filtroBusqueda && (
@@ -900,7 +1041,9 @@ export default function RoturasPerdidas() {
                      <div
                        onClick={() => toggleDiaExpandido(fecha)}
                        style={{
-                         background: esHoy ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : '#f8fafc',
+                         background: modoNavegacion && elementoSeleccionado === fechasOrdenadas.indexOf(fecha) 
+                           ? (esHoy ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : '#dbeafe')
+                           : (esHoy ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : '#f8fafc'),
                          padding: isMobile ? '16px' : '24px',
                          cursor: 'pointer',
                          display: 'flex',
@@ -909,8 +1052,11 @@ export default function RoturasPerdidas() {
                          flexDirection: isMobile ? 'column' : 'row',
                          gap: isMobile ? '12px' : '0',
                          borderBottom: estaDiaExpandido(fecha) ? '2px solid #e2e8f0' : 'none',
+                         borderLeft: modoNavegacion && elementoSeleccionado === fechasOrdenadas.indexOf(fecha) ? '4px solid #3b82f6' : 'none',
                          transition: 'all 0.2s ease',
-                         boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                         boxShadow: modoNavegacion && elementoSeleccionado === fechasOrdenadas.indexOf(fecha) 
+                           ? '0 4px 16px rgba(59, 130, 246, 0.3)' 
+                           : '0 2px 8px rgba(0,0,0,0.05)'
                        }}
                        onMouseOver={(e) => {
                          if (!isMobile) {

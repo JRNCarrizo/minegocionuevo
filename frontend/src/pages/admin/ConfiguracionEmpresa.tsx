@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useResponsive } from '../../hooks/useResponsive';
-import { useUsuario } from '../../contexts/UsuarioContext';
+import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import type { Empresa, ApiError } from '../../types';
 
 interface ConfiguracionEmpresa {
@@ -299,7 +299,7 @@ const TabButton = ({
 export default function ConfiguracionEmpresa() {
   const navigate = useNavigate();
   const { isMobile, isTablet } = useResponsive();
-  const { datosUsuario, actualizarEmpresaNombre, cerrarSesion } = useUsuario();
+  const { datosUsuario, actualizarEmpresaNombre, cerrarSesion } = useUsuarioActual();
   const [activeTab, setActiveTab] = useState(0);
   const [configuracion, setConfiguracion] = useState<ConfiguracionEmpresa>({
     nombre: '',
@@ -607,6 +607,11 @@ export default function ConfiguracionEmpresa() {
       }
 
       await ApiService.actualizarEmpresaAdmin(datosEmpresa);
+
+      // Actualizar el nombre de la empresa en el contexto y localStorage
+      if (configuracion.nombre !== configuracionOriginal?.nombre) {
+        actualizarEmpresaNombre(configuracion.nombre);
+      }
 
       toast.success('Configuración guardada exitosamente');
       // Navegar automáticamente al dashboard después de guardar exitosamente

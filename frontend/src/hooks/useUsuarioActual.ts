@@ -9,7 +9,14 @@ interface DatosUsuario {
   empresaNombre: string;
 }
 
-export function useUsuarioActual() {
+interface UseUsuarioActualReturn {
+  datosUsuario: DatosUsuario | null;
+  cargando: boolean;
+  actualizarEmpresaNombre: (nuevoNombre: string) => void;
+  cerrarSesion: () => void;
+}
+
+export function useUsuarioActual(): UseUsuarioActualReturn {
   const navigate = useNavigate();
   const [datosUsuario, setDatosUsuario] = useState<DatosUsuario | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -52,6 +59,24 @@ export function useUsuarioActual() {
     }
   }, [navigate]);
 
+  const actualizarEmpresaNombre = (nuevoNombre: string) => {
+    // Actualizar el estado local
+    setDatosUsuario(prev => prev ? { ...prev, empresaNombre: nuevoNombre } : null);
+    
+    // Actualizar el localStorage
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        user.empresaNombre = nuevoNombre;
+        localStorage.setItem('user', JSON.stringify(user));
+        console.log('✅ Nombre de empresa actualizado en useUsuarioActual y localStorage:', nuevoNombre);
+      } catch (error) {
+        console.error('Error al actualizar localStorage:', error);
+      }
+    }
+  };
+
   const cerrarSesion = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -61,6 +86,7 @@ export function useUsuarioActual() {
   return {
     datosUsuario,
     cargando,
+    actualizarEmpresaNombre,
     cerrarSesion
   };
 }

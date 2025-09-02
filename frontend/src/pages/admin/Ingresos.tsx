@@ -241,10 +241,18 @@ export default function Ingresos() {
     
     return Object.entries(grupos)
       .sort(([fechaA], [fechaB]) => new Date(fechaB).getTime() - new Date(fechaA).getTime())
-      .map(([fecha, remitos]) => ({
-        fecha,
-        remitos: remitos.sort((a, b) => new Date(b.fechaCreacion).getTime() - new Date(a.fechaCreacion).getTime())
-      }));
+      .map(([fecha, remitos]) => {
+        // Calcular totales para el día
+        const totalProductos = remitos.reduce((sum, remito) => sum + remito.detalles.length, 0);
+        const totalUnidades = remitos.reduce((sum, remito) => sum + remito.totalProductos, 0);
+        
+        return {
+          fecha,
+          remitos: remitos.sort((a, b) => new Date(b.fechaCreacion).getTime() - new Date(a.fechaCreacion).getTime()),
+          totalProductos,
+          totalUnidades
+        };
+      });
   };
 
   const gruposPorFecha = agruparRemitosPorFecha();
@@ -617,23 +625,23 @@ export default function Ingresos() {
                       flexDirection: isMobile ? 'column' : 'row',
                       gap: isMobile ? '12px' : '0',
                       padding: isMobile ? '16px' : '24px',
-                      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                      background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
                       borderRadius: '16px',
-                      border: '2px solid #e2e8f0',
+                      border: '2px solid #bbf7d0',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                     }}
                     onMouseOver={(e) => {
                       if (!isMobile) {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)';
                         e.currentTarget.style.transform = 'translateY(-1px)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.15)';
                       }
                     }}
                     onMouseOut={(e) => {
                       if (!isMobile) {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)';
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
                         e.currentTarget.style.transform = 'translateY(0)';
                         e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
                       }
@@ -664,7 +672,7 @@ export default function Ingresos() {
                           color: '#64748b',
                           margin: 0
                         }}>
-                          {grupo.remitos.length} remito{grupo.remitos.length !== 1 ? 's' : ''}
+                          {grupo.remitos.length} remito{grupo.remitos.length !== 1 ? 's' : ''} • {grupo.totalProductos} producto{grupo.totalProductos !== 1 ? 's' : ''} • {grupo.totalUnidades} unidad{grupo.totalUnidades !== 1 ? 'es' : ''}
                         </p>
                       </div>
                     </div>

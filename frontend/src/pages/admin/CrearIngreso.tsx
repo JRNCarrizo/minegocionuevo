@@ -87,6 +87,7 @@ export default function CrearIngreso() {
   const fechaRemitoRef = useRef<HTMLInputElement>(null);
   const observacionesRef = useRef<HTMLTextAreaElement>(null);
   const cantidadTemporalRef = useRef<HTMLInputElement>(null);
+  const listaProductosRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -123,6 +124,39 @@ export default function CrearIngreso() {
       document.removeEventListener('keydown', manejarEscape);
     };
   }, [navigate, mostrarCampoCantidad]);
+
+  // Auto-scroll para mantener visible el elemento seleccionado en la lista de productos
+  useEffect(() => {
+    if (productoSeleccionado >= 0 && listaProductosRef.current) {
+      const listaElement = listaProductosRef.current;
+      const elementos = listaElement.children;
+      
+      if (elementos[productoSeleccionado]) {
+        const elementoSeleccionado = elementos[productoSeleccionado] as HTMLElement;
+        const elementoRect = elementoSeleccionado.getBoundingClientRect();
+        const listaRect = listaElement.getBoundingClientRect();
+        
+        // Verificar si el elemento está fuera del área visible
+        if (elementoRect.top < listaRect.top) {
+          // Elemento está arriba del área visible, hacer scroll hacia arriba
+          // Usar scrollTop en lugar de scrollIntoView para no afectar la posición de la página
+          const scrollOffset = elementoSeleccionado.offsetTop - listaElement.offsetTop;
+          listaElement.scrollTo({
+            top: scrollOffset,
+            behavior: 'smooth'
+          });
+        } else if (elementoRect.bottom > listaRect.bottom) {
+          // Elemento está abajo del área visible, hacer scroll hacia abajo
+          // Calcular la posición para que el elemento quede visible en la parte inferior
+          const scrollOffset = elementoSeleccionado.offsetTop - listaElement.offsetTop - (listaElement.clientHeight - elementoSeleccionado.clientHeight);
+          listaElement.scrollTo({
+            top: scrollOffset,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }
+  }, [productoSeleccionado]);
 
      // Auto-focus en el campo de número de remito al cargar
    useEffect(() => {
@@ -1287,19 +1321,21 @@ export default function CrearIngreso() {
                 
                                    {/* Lista de productos filtrados */}
                    {mostrarProductos && (
-                     <div style={{
-                       position: 'absolute',
-                       top: '100%',
-                       left: 0,
-                       right: 0,
-                       background: 'white',
-                       border: '1px solid #e2e8f0',
-                       borderRadius: '0.5rem',
-                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                       maxHeight: '200px',
-                       overflow: 'auto',
-                       zIndex: 1000
-                     }}>
+                     <div
+                       ref={listaProductosRef}
+                       style={{
+                         position: 'absolute',
+                         top: '100%',
+                         left: 0,
+                         right: 0,
+                         background: 'white',
+                         border: '1px solid #e2e8f0',
+                         borderRadius: '0.5rem',
+                         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                         maxHeight: '280px',
+                         overflow: 'auto',
+                         zIndex: 1000
+                       }}>
                        {productosFiltrados.map((producto, index) => (
                          <div
                            key={producto.id}

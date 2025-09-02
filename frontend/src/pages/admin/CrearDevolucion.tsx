@@ -94,6 +94,8 @@ export default function CrearDevolucion() {
   const observacionesRef = useRef<HTMLTextAreaElement>(null);
   const cantidadTemporalRef = useRef<HTMLInputElement>(null);
   const estadoTemporalRef = useRef<HTMLSelectElement>(null);
+  const listaProductosRef = useRef<HTMLDivElement>(null);
+  const listaTransportistasRef = useRef<HTMLDivElement>(null);
 
   // Estados para transportista
   const [transporte, setTransporte] = useState('');
@@ -379,6 +381,72 @@ export default function CrearDevolucion() {
       cantidadTemporalRef.current.select();
     }
   }, [mostrarCampoCantidad]);
+
+  // Auto-scroll para mantener visible el elemento seleccionado en la lista de productos
+  useEffect(() => {
+    if (productoSeleccionado >= 0 && listaProductosRef.current) {
+      const listaElement = listaProductosRef.current;
+      const elementos = listaElement.children;
+      
+      if (elementos[productoSeleccionado]) {
+        const elementoSeleccionado = elementos[productoSeleccionado] as HTMLElement;
+        const elementoRect = elementoSeleccionado.getBoundingClientRect();
+        const listaRect = listaElement.getBoundingClientRect();
+        
+        // Verificar si el elemento está fuera del área visible
+        if (elementoRect.top < listaRect.top) {
+          // Elemento está arriba del área visible, hacer scroll hacia arriba
+          // Usar scrollTop en lugar de scrollIntoView para no afectar la posición de la página
+          const scrollOffset = elementoSeleccionado.offsetTop - listaElement.offsetTop;
+          listaElement.scrollTo({
+            top: scrollOffset,
+            behavior: 'smooth'
+          });
+        } else if (elementoRect.bottom > listaRect.bottom) {
+          // Elemento está abajo del área visible, hacer scroll hacia abajo
+          // Calcular la posición para que el elemento quede visible en la parte inferior
+          const scrollOffset = elementoSeleccionado.offsetTop - listaElement.offsetTop - (listaElement.clientHeight - elementoSeleccionado.clientHeight);
+          listaElement.scrollTo({
+            top: scrollOffset,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }
+  }, [productoSeleccionado]);
+
+  // Auto-scroll para mantener visible el elemento seleccionado en la lista de transportistas
+  useEffect(() => {
+    if (transportistaSeleccionado >= 0 && listaTransportistasRef.current) {
+      const listaElement = listaTransportistasRef.current;
+      const elementos = listaElement.children;
+      
+      if (elementos[transportistaSeleccionado]) {
+        const elementoSeleccionado = elementos[transportistaSeleccionado] as HTMLElement;
+        const elementoRect = elementoSeleccionado.getBoundingClientRect();
+        const listaRect = listaElement.getBoundingClientRect();
+        
+        // Verificar si el elemento está fuera del área visible
+        if (elementoRect.top < listaRect.top) {
+          // Elemento está arriba del área visible, hacer scroll hacia arriba
+          // Usar scrollTop en lugar de scrollIntoView para no afectar la posición de la página
+          const scrollOffset = elementoSeleccionado.offsetTop - listaElement.offsetTop;
+          listaElement.scrollTo({
+            top: scrollOffset,
+            behavior: 'smooth'
+          });
+        } else if (elementoRect.bottom > listaRect.bottom) {
+          // Elemento está abajo del área visible, hacer scroll hacia abajo
+          // Calcular la posición para que el elemento quede visible en la parte inferior
+          const scrollOffset = elementoSeleccionado.offsetTop - listaElement.offsetTop - (listaElement.clientHeight - elementoSeleccionado.clientHeight);
+          listaElement.scrollTo({
+            top: scrollOffset,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }
+  }, [transportistaSeleccionado]);
 
   // Efecto para enfocar el selector de estado cuando se activa
   useEffect(() => {
@@ -1005,19 +1073,21 @@ export default function CrearDevolucion() {
               
               {/* Dropdown de transportistas */}
               {mostrarTransportistas && opcionesTransporte.length > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  backgroundColor: 'white',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                  zIndex: 1000,
-                  maxHeight: '200px',
-                  overflowY: 'auto'
-                }}>
+                <div
+                  ref={listaTransportistasRef}
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    backgroundColor: 'white',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                    zIndex: 1000,
+                    maxHeight: opcionesTransporte.length <= 3 ? 'auto' : '200px', // Se expande si hay 3 o menos elementos
+                    overflowY: 'auto'
+                  }}>
                   {opcionesTransporte.map((opcion, index) => (
                     <div
                       key={opcion.key}
@@ -1152,7 +1222,9 @@ export default function CrearDevolucion() {
 
                   {/* Lista de productos filtrados */}
                   {mostrarProductos && (
-            <div style={{
+            <div
+              ref={listaProductosRef}
+              style={{
                       position: 'absolute',
                       top: '100%',
                       left: 0,
@@ -1161,7 +1233,7 @@ export default function CrearDevolucion() {
               border: '1px solid #e2e8f0',
                       borderRadius: '0.5rem',
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                      maxHeight: '200px',
+                      maxHeight: '280px',
                       overflow: 'auto',
                       zIndex: 1000
                     }}>

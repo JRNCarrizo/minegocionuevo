@@ -93,6 +93,7 @@ export default function CrearPlanilla() {
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
   const inputCantidadRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
+  const listaTransportistasRef = useRef<HTMLDivElement>(null);
   const codigoPlanillaRef = useRef<HTMLInputElement>(null);
   const transporteRef = useRef<HTMLInputElement>(null);
   const observacionesRef = useRef<HTMLInputElement>(null);
@@ -130,6 +131,26 @@ export default function CrearPlanilla() {
     }
   }, [inputBusqueda, productos]);
 
+  // Efecto para manejar el foco del campo de búsqueda cuando cambia el modo cantidad
+  useEffect(() => {
+    if (!modoCantidad && inputBusquedaRef.current) {
+      // Cuando se sale del modo cantidad, asegurar que el campo de búsqueda reciba el foco
+      const delay = isMobile ? 300 : 100;
+      setTimeout(() => {
+        if (inputBusquedaRef.current) {
+          inputBusquedaRef.current.focus();
+          // En móvil, también hacer scroll hacia el campo de búsqueda
+          if (isMobile) {
+            inputBusquedaRef.current.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+          }
+        }
+      }, delay);
+    }
+  }, [modoCantidad, isMobile]);
+
   // Efecto para filtrar transportistas
   useEffect(() => {
     if (inputBusquedaTransporte.trim()) {
@@ -144,6 +165,9 @@ export default function CrearPlanilla() {
       }> = [];
       
       transportistas.forEach(transportista => {
+        // Solo mostrar transportistas activos
+        if (!transportista.activo) return;
+        
         const vehiculosActivos = transportista.vehiculos.filter(v => v.activo);
         
         // Verificar si la búsqueda coincide con código interno o nombre del transportista
@@ -244,6 +268,72 @@ export default function CrearPlanilla() {
       inputCantidadRef.current.select();
     }
   }, [modoCantidad]);
+
+  // Auto-scroll para mantener visible el elemento seleccionado en la lista de productos
+  useEffect(() => {
+    if (productoSeleccionado >= 0 && listaProductosRef.current) {
+      const listaElement = listaProductosRef.current;
+      const elementos = listaElement.children;
+      
+      if (elementos[productoSeleccionado]) {
+        const elementoSeleccionado = elementos[productoSeleccionado] as HTMLElement;
+        const elementoRect = elementoSeleccionado.getBoundingClientRect();
+        const listaRect = listaElement.getBoundingClientRect();
+        
+        // Verificar si el elemento está fuera del área visible
+        if (elementoRect.top < listaRect.top) {
+          // Elemento está arriba del área visible, hacer scroll hacia arriba
+          // Usar scrollTop en lugar de scrollIntoView para no afectar la posición de la página
+          const scrollOffset = elementoSeleccionado.offsetTop - listaElement.offsetTop;
+          listaElement.scrollTo({
+            top: scrollOffset,
+            behavior: 'smooth'
+          });
+        } else if (elementoRect.bottom > listaRect.bottom) {
+          // Elemento está abajo del área visible, hacer scroll hacia abajo
+          // Calcular la posición para que el elemento quede visible en la parte inferior
+          const scrollOffset = elementoSeleccionado.offsetTop - listaElement.offsetTop - (listaElement.clientHeight - elementoSeleccionado.clientHeight);
+          listaElement.scrollTo({
+            top: scrollOffset,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }
+  }, [productoSeleccionado]);
+
+  // Auto-scroll para mantener visible el elemento seleccionado en la lista de transportistas
+  useEffect(() => {
+    if (transportistaSeleccionado >= 0 && listaTransportistasRef.current) {
+      const listaElement = listaTransportistasRef.current;
+      const elementos = listaElement.children;
+      
+      if (elementos[transportistaSeleccionado]) {
+        const elementoSeleccionado = elementos[transportistaSeleccionado] as HTMLElement;
+        const elementoRect = elementoSeleccionado.getBoundingClientRect();
+        const listaRect = listaElement.getBoundingClientRect();
+        
+        // Verificar si el elemento está fuera del área visible
+        if (elementoRect.top < listaRect.top) {
+          // Elemento está arriba del área visible, hacer scroll hacia arriba
+          // Usar scrollTop en lugar de scrollIntoView para no afectar la posición de la página
+          const scrollOffset = elementoSeleccionado.offsetTop - listaElement.offsetTop;
+          listaElement.scrollTo({
+            top: scrollOffset,
+            behavior: 'smooth'
+          });
+        } else if (elementoRect.bottom > listaRect.bottom) {
+          // Elemento está abajo del área visible, hacer scroll hacia abajo
+          // Calcular la posición para que el elemento quede visible en la parte inferior
+          const scrollOffset = elementoSeleccionado.offsetTop - listaElement.offsetTop - (listaElement.clientHeight - elementoSeleccionado.clientHeight);
+          listaElement.scrollTo({
+            top: scrollOffset,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }
+  }, [transportistaSeleccionado]);
 
   const cargarProductos = async () => {
     try {
@@ -483,10 +573,20 @@ export default function CrearPlanilla() {
     setProductoParaCantidad(null);
     setCantidadTemporal(1);
     
-    // Volver al campo de búsqueda con un pequeño delay para asegurar que el DOM se actualice
+    // Volver al campo de búsqueda con un delay mayor en móvil para asegurar que funcione correctamente
+    const delay = isMobile ? 300 : 100;
     setTimeout(() => {
-      inputBusquedaRef.current?.focus();
-    }, 100);
+      if (inputBusquedaRef.current) {
+        inputBusquedaRef.current.focus();
+        // En móvil, también hacer scroll hacia el campo de búsqueda
+        if (isMobile) {
+          inputBusquedaRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      }
+    }, delay);
   };
 
   // Cancelar modo cantidad
@@ -495,10 +595,20 @@ export default function CrearPlanilla() {
     setProductoParaCantidad(null);
     setCantidadTemporal(1);
     
-    // Volver al campo de búsqueda con un pequeño delay
+    // Volver al campo de búsqueda con un delay mayor en móvil para asegurar que funcione correctamente
+    const delay = isMobile ? 300 : 100;
     setTimeout(() => {
-      inputBusquedaRef.current?.focus();
-    }, 100);
+      if (inputBusquedaRef.current) {
+        inputBusquedaRef.current.focus();
+        // En móvil, también hacer scroll hacia el campo de búsqueda
+        if (isMobile) {
+          inputBusquedaRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      }
+    }, delay);
   };
 
   const crearPlanilla = async () => {
@@ -910,19 +1020,21 @@ export default function CrearPlanilla() {
                 />
               )}
               {mostrarTransportistas && transportistasFiltrados.length > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  background: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '0.5rem',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                  zIndex: 1000,
-                  maxHeight: '200px',
-                  overflowY: 'auto'
-                }}>
+                <div
+                  ref={listaTransportistasRef}
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '0.5rem',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    zIndex: 1000,
+                    maxHeight: opcionesTransporte.length <= 3 ? 'auto' : '120px', // Se expande si hay 3 o menos elementos
+                    overflowY: 'auto'
+                  }}>
                   {opcionesTransporte.map((opcion, index) => (
                     <div
                       key={opcion.key}

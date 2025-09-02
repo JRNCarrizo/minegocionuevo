@@ -268,7 +268,8 @@ export default function CargaPedidos() {
     if (filtroBusqueda) {
       planillasFiltradas = planillasFiltradas.filter(p => 
         p.numeroPlanilla.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
-        (p.observaciones && p.observaciones.toLowerCase().includes(filtroBusqueda.toLowerCase()))
+        (p.observaciones && p.observaciones.toLowerCase().includes(filtroBusqueda.toLowerCase())) ||
+        (p.transporte && p.transporte.toLowerCase().includes(filtroBusqueda.toLowerCase()))
       );
     }
 
@@ -377,7 +378,14 @@ export default function CargaPedidos() {
   useEffect(() => {
     const manejarEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        navigate('/admin');
+        // Si el modal de detalles está abierto, solo cerrarlo
+        if (planillaSeleccionada) {
+          setPlanillaSeleccionada(null);
+          return;
+        }
+        
+        // Si no hay modal abierto, navegar a gestión de empresa
+        navigate('/admin/gestion-empresa');
       }
     };
 
@@ -385,7 +393,7 @@ export default function CargaPedidos() {
     return () => {
       document.removeEventListener('keydown', manejarEscape);
     };
-  }, [navigate]);
+  }, [navigate, planillaSeleccionada]);
 
   const estaDiaExpandido = (fecha: string) => {
     const fechaActual = obtenerFechaActual();
@@ -469,7 +477,7 @@ export default function CargaPedidos() {
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: isMobile ? '6rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
+        padding: isMobile ? '10rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
       }}>
         {/* Header */}
         <div style={{
@@ -616,7 +624,7 @@ export default function CargaPedidos() {
                </label>
               <input
                 type="text"
-                                 placeholder="Buscar por número de planilla o observaciones..."
+                                 placeholder="Buscar por número de planilla, observaciones, transportista o vehículo..."
                                  value={filtroBusqueda}
                  onChange={(e) => setFiltroBusqueda(e.target.value)}
                 style={{
@@ -627,6 +635,14 @@ export default function CargaPedidos() {
                   fontSize: '0.875rem'
                 }}
               />
+              <p style={{
+                fontSize: '0.75rem',
+                color: '#6b7280',
+                margin: '0.25rem 0 0 0',
+                fontStyle: 'italic'
+              }}>
+                💡 Puedes buscar por: número de planilla, observaciones, código de transportista, nombre de transportista, marca/modelo de vehículo o patente
+              </p>
             </div>
           </div>
         </div>
