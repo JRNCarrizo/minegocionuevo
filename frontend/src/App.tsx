@@ -56,6 +56,7 @@ import LoginDocumento from './pages/LoginDocumento.tsx';
 import GestionSectores from './pages/admin/GestionSectores.tsx';
 import StockGeneral from './pages/admin/StockGeneral.tsx';
 import GestionTransportistas from './pages/admin/GestionTransportistas.tsx';
+import RecibirProductos from './pages/admin/RecibirProductos.tsx';
 
 
 function AppContent() {
@@ -115,6 +116,7 @@ function AppContent() {
           <Route path="/admin/crear-devolucion" element={<CrearDevolucion />} />
           <Route path="/admin/movimientos-dia" element={<MovimientosDia />} />
           <Route path="/admin/sectores" element={<GestionSectores />} />
+          <Route path="/admin/sectores/:sectorId/recibir-productos" element={<RecibirProductos />} />
           <Route path="/admin/stock-general" element={<StockGeneral />} />
           <Route path="/admin/transportistas" element={<GestionTransportistas />} />
   

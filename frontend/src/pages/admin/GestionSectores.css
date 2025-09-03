@@ -833,13 +833,23 @@
 }
 
 .modal-detalle,
-.modal-formulario,
-.modal-productos {
+.modal-formulario {
   background: white;
   border-radius: 1.5rem;
   max-width: 600px;
   width: 100%;
   max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  animation: modalSlideIn 0.3s ease;
+}
+
+.modal-productos {
+  background: white;
+  border-radius: 1.5rem;
+  max-width: 1200px;
+  width: 100%;
+  max-height: 95vh;
   overflow-y: auto;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
   animation: modalSlideIn 0.3s ease;
@@ -1076,25 +1086,31 @@
 .tabla-productos {
   overflow-x: auto;
   margin: 1rem 0;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .tabla-productos table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+  table-layout: fixed;
 }
 
 .tabla-productos th {
   background: #f8fafc;
-  padding: 1rem;
+  padding: 1rem 0.75rem;
   text-align: left;
   font-weight: 600;
   color: #374151;
   border-bottom: 2px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .tabla-productos td {
-  padding: 1rem;
+  padding: 0.75rem;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
 }
@@ -1106,6 +1122,38 @@
 .nombre-producto-tabla {
   font-weight: 500;
   color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Definir anchos de columnas específicos */
+.tabla-productos th:nth-child(1),
+.tabla-productos td:nth-child(1) {
+  width: 15%;
+}
+
+.tabla-productos th:nth-child(2),
+.tabla-productos td:nth-child(2) {
+  width: 35%;
+}
+
+.tabla-productos th:nth-child(3),
+.tabla-productos td:nth-child(3) {
+  width: 10%;
+  text-align: center;
+}
+
+.tabla-productos th:nth-child(4),
+.tabla-productos td:nth-child(4) {
+  width: 20%;
+}
+
+.tabla-productos th:nth-child(5),
+.tabla-productos td:nth-child(5) {
+  width: 20%;
+  text-align: center;
 }
 
 .codigo-producto-tabla {
@@ -1130,6 +1178,14 @@
 
 .acciones-producto-tabla {
   text-align: center;
+  vertical-align: middle;
+}
+
+.botones-accion-producto {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
 }
 
 .boton-quitar-producto {
@@ -1164,6 +1220,30 @@
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+/* Estilos para navegación por teclado en tabla de productos */
+.fila-seleccionada {
+  background: #e0f2fe !important;
+  border: 2px solid #0288d1;
+  box-shadow: 0 0 0 2px rgba(2, 136, 209, 0.2);
+}
+
+.fila-seleccionada td {
+  background: #e0f2fe !important;
+}
+
+.accion-seleccionada {
+  transform: scale(1.1) !important;
+  box-shadow: 0 0 0 3px #0288d1 !important;
+  border: 2px solid #0288d1 !important;
+  z-index: 10;
+  position: relative;
+}
+
+/* Estilos para el input de búsqueda cuando está enfocado */
+.campo-busqueda-productos:focus {
+  outline: none;
 }
 
 /* Botones de modal */
@@ -1279,10 +1359,15 @@
   }
   
   .modal-detalle,
-  .modal-formulario,
-  .modal-productos {
+  .modal-formulario {
     margin: 1rem;
     max-height: calc(100vh - 2rem);
+  }
+  
+  .modal-productos {
+    margin: 0.5rem;
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100vh - 1rem);
   }
 }
 
@@ -1290,11 +1375,12 @@
 @media (max-width: 768px) {
   .tabla-productos {
     font-size: 0.8rem;
+    max-height: 50vh;
   }
   
   .tabla-productos th,
   .tabla-productos td {
-    padding: 0.75rem 0.5rem;
+    padding: 0.5rem 0.25rem;
   }
   
   .tabla-productos th:nth-child(4),
@@ -1307,11 +1393,32 @@
     height: 32px;
     font-size: 0.9rem;
   }
+  
+  /* Ajustar anchos de columnas en móvil */
+  .tabla-productos th:nth-child(1),
+  .tabla-productos td:nth-child(1) {
+    width: 20%;
+  }
+  
+  .tabla-productos th:nth-child(2),
+  .tabla-productos td:nth-child(2) {
+    width: 45%;
+  }
+  
+  .tabla-productos th:nth-child(3),
+  .tabla-productos td:nth-child(3) {
+    width: 15%;
+  }
+  
+  .tabla-productos th:nth-child(5),
+  .tabla-productos td:nth-child(5) {
+    width: 20%;
+  }
 }
 
 @media (max-width: 480px) {
-  .tabla-productos th:nth-child(2),
-  .tabla-productos td:nth-child(2) {
+  .tabla-productos th:nth-child(1),
+  .tabla-productos td:nth-child(1) {
     display: none;
   }
   
@@ -1893,20 +2000,22 @@
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: white;
   border: none;
-  border-radius: 0.25rem;
-  width: 32px;
-  height: 32px;
+  border-radius: 0.5rem;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
 }
 
 .boton-transferir-producto:hover {
   background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
 }
 
 .boton-quitar-producto {

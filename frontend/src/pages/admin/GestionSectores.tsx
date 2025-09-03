@@ -97,6 +97,11 @@ export default function GestionSectores() {
   // Estados para navegación por teclado
   const [modoNavegacion, setModoNavegacion] = useState(false);
   const [elementoSeleccionado, setElementoSeleccionado] = useState(-1); // -1: botones, 0+: sectores
+  
+  // Estados para navegación por teclado en modal de productos
+  const [filaSeleccionada, setFilaSeleccionada] = useState(-1);
+  const [accionSeleccionada, setAccionSeleccionada] = useState(-1);
+  const [inputBusquedaRef, setInputBusquedaRef] = useState<HTMLInputElement | null>(null);
 
   // Refs para los campos del formulario de crear sector
   const nombreInputRef = useRef<HTMLInputElement>(null);
@@ -112,6 +117,22 @@ export default function GestionSectores() {
       }, 100);
     }
   }, [mostrarModalCrear]);
+
+  // Resetear navegación y enfocar buscador cuando se abre modal de productos
+  useEffect(() => {
+    if (mostrarModalProductos) {
+      setFilaSeleccionada(-1);
+      setAccionSeleccionada(-1);
+      // Enfocar el buscador automáticamente
+      setTimeout(() => {
+        const inputBusqueda = document.querySelector('.campo-busqueda-productos') as HTMLInputElement;
+        if (inputBusqueda) {
+          inputBusqueda.focus();
+          setInputBusquedaRef(inputBusqueda);
+        }
+      }, 100);
+    }
+  }, [mostrarModalProductos]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -690,8 +711,79 @@ export default function GestionSectores() {
   // Manejo de teclas para navegación
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Si hay un modal abierto, solo manejar Escape
-      if (mostrarModalCrear || mostrarModalEditar || mostrarModalProductos || 
+      // Navegación por teclado en modal de productos
+      if (mostrarModalProductos) {
+        const productosFiltrados = productosEnSector.filter(stock => {
+          if (!filtroBusquedaProductos) return true;
+          const busqueda = filtroBusquedaProductos.toLowerCase();
+          return (
+            stock.producto.nombre.toLowerCase().includes(busqueda) ||
+            (stock.producto.codigoPersonalizado && stock.producto.codigoPersonalizado.toLowerCase().includes(busqueda))
+          );
+        });
+
+        switch (event.key) {
+          case 'Escape':
+            event.preventDefault();
+            event.stopPropagation();
+            cerrarModal();
+            return;
+
+          case 'ArrowDown':
+            event.preventDefault();
+            if (filaSeleccionada < productosFiltrados.length - 1) {
+              setFilaSeleccionada(filaSeleccionada + 1);
+              setAccionSeleccionada(-1); // Reset acción seleccionada
+            }
+            return;
+
+          case 'ArrowUp':
+            event.preventDefault();
+            if (filaSeleccionada > 0) {
+              setFilaSeleccionada(filaSeleccionada - 1);
+              setAccionSeleccionada(-1); // Reset acción seleccionada
+            } else if (filaSeleccionada === 0) {
+              setFilaSeleccionada(-1); // Volver al buscador
+              setAccionSeleccionada(-1);
+              inputBusquedaRef?.focus();
+            }
+            return;
+
+          case 'ArrowRight':
+            event.preventDefault();
+            if (filaSeleccionada >= 0 && accionSeleccionada < 1) {
+              setAccionSeleccionada(accionSeleccionada + 1);
+            }
+            return;
+
+          case 'ArrowLeft':
+            event.preventDefault();
+            if (filaSeleccionada >= 0 && accionSeleccionada > 0) {
+              setAccionSeleccionada(accionSeleccionada - 1);
+            } else if (filaSeleccionada >= 0 && accionSeleccionada === 0) {
+              setAccionSeleccionada(-1); // Volver a la fila
+            }
+            return;
+
+          case 'Enter':
+            event.preventDefault();
+            if (filaSeleccionada >= 0 && accionSeleccionada >= 0 && productosFiltrados[filaSeleccionada]) {
+              const stock = productosFiltrados[filaSeleccionada];
+              if (accionSeleccionada === 0) {
+                // Botón transferir
+                abrirModalTransferirProducto(stock);
+              } else if (accionSeleccionada === 1) {
+                // Botón quitar
+                quitarProductoDelSector(stock.id, stock.producto.nombre);
+              }
+            }
+            return;
+        }
+        return;
+      }
+
+      // Si hay otros modales abiertos, solo manejar Escape
+      if (mostrarModalCrear || mostrarModalEditar || 
           mostrarModalDetalle || mostrarModalAsignar || mostrarModalTransferir) {
         if (event.key === 'Escape') {
           event.preventDefault();
@@ -800,7 +892,9 @@ export default function GestionSectores() {
   }, [mostrarModalCrear, mostrarModalEditar, mostrarModalProductos, 
       mostrarModalDetalle, mostrarModalAsignar, mostrarModalTransferir, 
       navigate, modoNavegacion, elementoSeleccionado, sectoresActivos, 
-      sectoresInactivos, mostrarSectoresInactivos, migrarSectores, abrirModalProductos, setMostrarModalCrear]);
+      sectoresInactivos, mostrarSectoresInactivos, migrarSectores, abrirModalProductos, 
+      setMostrarModalCrear, productosEnSector, filtroBusquedaProductos, filaSeleccionada, 
+      accionSeleccionada, inputBusquedaRef, abrirModalTransferirProducto, quitarProductoDelSector]);
 
   if (!datosUsuario) {
     return (
@@ -1003,12 +1097,12 @@ export default function GestionSectores() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              abrirModalAsignar(sector);
+                              navigate(`/admin/sectores/${sector.id}/recibir-productos`);
                             }}
                             className="boton-accion boton-asignar"
-                            title="Asignar productos"
+                            title="Recibir productos"
                           >
-                            ➕
+                            📦
                           </button>
                           <button
                             onClick={(e) => {
@@ -1470,6 +1564,7 @@ export default function GestionSectores() {
                   value={filtroBusquedaProductos}
                   onChange={(e) => setFiltroBusquedaProductos(e.target.value)}
                   className="campo-busqueda-productos"
+                  ref={(el) => setInputBusquedaRef(el)}
                 />
                 {filtroBusquedaProductos && (
                   <button
@@ -1519,23 +1614,26 @@ export default function GestionSectores() {
                   <table>
                     <thead>
                       <tr>
-                        <th>Producto</th>
                         <th>Código</th>
+                        <th>Producto</th>
                         <th>Cantidad</th>
                         <th>Última Actualización</th>
                         <th>Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {productosFiltrados.map((stock) => (
-                        <tr key={stock.id}>
+                      {productosFiltrados.map((stock, index) => (
+                        <tr 
+                          key={stock.id}
+                          className={filaSeleccionada === index ? 'fila-seleccionada' : ''}
+                        >
+                          <td className="codigo-producto-tabla">
+                            {stock.producto.codigoPersonalizado || '-'}
+                          </td>
                           <td>
                             <div className="nombre-producto-tabla">
                               {stock.producto.nombre}
                             </div>
-                          </td>
-                          <td className="codigo-producto-tabla">
-                            {stock.producto.codigoPersonalizado || '-'}
                           </td>
                           <td>
                             <span className="cantidad-producto-tabla">
@@ -1549,14 +1647,14 @@ export default function GestionSectores() {
                             <div className="botones-accion-producto">
                               <button
                                 onClick={() => abrirModalTransferirProducto(stock)}
-                                className="boton-transferir-producto"
+                                className={`boton-transferir-producto ${filaSeleccionada === index && accionSeleccionada === 0 ? 'accion-seleccionada' : ''}`}
                                 title="Transferir stock"
                               >
                                 🔄
                               </button>
                               <button
                                 onClick={() => quitarProductoDelSector(stock.id, stock.producto.nombre)}
-                                className="boton-quitar-producto"
+                                className={`boton-quitar-producto ${filaSeleccionada === index && accionSeleccionada === 1 ? 'accion-seleccionada' : ''}`}
                                 title="Quitar producto del sector"
                               >
                                 🗑️

@@ -373,6 +373,89 @@ public class SectorService {
     }
     
     /**
+     * Obtener stock detallado de la empresa
+     * Formato requerido por el frontend para RecibirProductos
+     */
+    public List<Map<String, Object>> obtenerStockDetallado(Long empresaId) {
+        System.out.println("🔍 SECTOR SERVICE - Iniciando obtenerStockDetallado para empresa: " + empresaId);
+        
+        Empresa empresa = empresaRepository.findById(empresaId)
+            .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+        
+        List<Map<String, Object>> stockDetallado = new ArrayList<>();
+        
+        // Obtener TODOS los productos de la empresa
+        List<Producto> todosLosProductos = productoRepository.findByEmpresaId(empresaId);
+        System.out.println("🔍 SECTOR SERVICE - Total productos en empresa: " + todosLosProductos.size());
+        
+        // Obtener stock por sectores
+        List<StockPorSector> stockPorSectores = stockPorSectorRepository.findByEmpresaId(empresaId);
+        System.out.println("🔍 SECTOR SERVICE - StockPorSectores encontrados: " + stockPorSectores.size());
+        
+        for (Producto producto : todosLosProductos) {
+            try {
+                // Solo procesar productos activos
+                if (!producto.getActivo()) {
+                    continue;
+                }
+                
+                List<Map<String, Object>> ubicaciones = new ArrayList<>();
+                
+                // Calcular el stock total asignado a sectores para este producto
+                Integer stockAsignado = stockPorSectores.stream()
+                    .filter(stock -> stock.getProducto().getId().equals(producto.getId()))
+                    .mapToInt(StockPorSector::getCantidad)
+                    .sum();
+                
+                // Calcular el stock sin asignar
+                Integer stockTotal = producto.getStock() != null ? producto.getStock() : 0;
+                Integer stockSinAsignar = Math.max(0, stockTotal - stockAsignado);
+                
+                // Agregar ubicación "Sin asignar" si hay stock disponible
+                if (stockSinAsignar > 0) {
+                    Map<String, Object> ubicacionSinAsignar = new HashMap<>();
+                    ubicacionSinAsignar.put("ubicacion", "Sin asignar");
+                    ubicacionSinAsignar.put("cantidad", stockSinAsignar);
+                    ubicacionSinAsignar.put("stockId", producto.getId() + "_sin_asignar");
+                    ubicaciones.add(ubicacionSinAsignar);
+                }
+                
+                // Agregar ubicaciones por sector
+                List<StockPorSector> stockDelProducto = stockPorSectores.stream()
+                    .filter(stock -> stock.getProducto().getId().equals(producto.getId()))
+                    .collect(Collectors.toList());
+                
+                for (StockPorSector stock : stockDelProducto) {
+                    if (stock.getCantidad() > 0) {
+                        Map<String, Object> ubicacion = new HashMap<>();
+                        ubicacion.put("ubicacion", stock.getSector().getNombre());
+                        ubicacion.put("cantidad", stock.getCantidad());
+                        ubicacion.put("stockId", stock.getId().toString());
+                        ubicaciones.add(ubicacion);
+                    }
+                }
+                
+                // Solo agregar productos que tengan ubicaciones con stock
+                if (!ubicaciones.isEmpty()) {
+                    Map<String, Object> productoDetallado = new HashMap<>();
+                    productoDetallado.put("productoId", producto.getId());
+                    productoDetallado.put("productoNombre", producto.getNombre());
+                    productoDetallado.put("codigoPersonalizado", producto.getCodigoPersonalizado());
+                    productoDetallado.put("ubicaciones", ubicaciones);
+                    stockDetallado.add(productoDetallado);
+                }
+                
+            } catch (Exception e) {
+                System.err.println("🔍 SECTOR SERVICE - Error procesando Producto en stock detallado: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        
+        System.out.println("🔍 SECTOR SERVICE - Total productos en stock detallado: " + stockDetallado.size());
+        return stockDetallado;
+    }
+    
+    /**
      * Asignar productos a un sector
      */
     @Transactional
@@ -475,6 +558,137 @@ public class SectorService {
         }
         
         System.out.println("🔍 SECTOR SERVICE - Asignación completada exitosamente");
+    }
+    
+    /**
+     * Recibir productos en un sector (transferir desde otras ubicaciones)
+     */
+    @Transactional
+    public void recibirProductosEnSector(Long sectorId, Long empresaId, List<Map<String, Object>> recepciones) {
+        System.out.println("🔍 SECTOR SERVICE - Iniciando recepción de productos en el sector: " + sectorId);
+        System.out.println("🔍 SECTOR SERVICE - Empresa: " + empresaId);
+        System.out.println("🔍 SECTOR SERVICE - Recepciones: " + recepciones.size());
+        System.out.println("🔍 SECTOR SERVICE - Datos de recepciones: " + recepciones);
+        
+        // Verificar que el sector existe y pertenece a la empresa
+        Sector sector = sectorRepository.findById(sectorId)
+            .orElseThrow(() -> new RuntimeException("Sector no encontrado"));
+        
+        if (!sector.getEmpresa().getId().equals(empresaId)) {
+            throw new RuntimeException("El sector no pertenece a la empresa especificada");
+        }
+        
+        if (!sector.getActivo()) {
+            throw new RuntimeException("No se pueden recibir productos en un sector inactivo");
+        }
+        
+        for (Map<String, Object> recepcion : recepciones) {
+            System.out.println("🔍 SECTOR SERVICE - Procesando recepción: " + recepcion);
+            try {
+                Object productoIdObj = recepcion.get("productoId");
+                Object stockIdObj = recepcion.get("stockId");
+                Object cantidadObj = recepcion.get("cantidad");
+                
+                System.out.println("🔍 SECTOR SERVICE - productoIdObj: " + productoIdObj + " (tipo: " + (productoIdObj != null ? productoIdObj.getClass().getSimpleName() : "null") + ")");
+                System.out.println("🔍 SECTOR SERVICE - stockIdObj: " + stockIdObj + " (tipo: " + (stockIdObj != null ? stockIdObj.getClass().getSimpleName() : "null") + ")");
+                System.out.println("🔍 SECTOR SERVICE - cantidadObj: " + cantidadObj + " (tipo: " + (cantidadObj != null ? cantidadObj.getClass().getSimpleName() : "null") + ")");
+                
+                Long productoId;
+                String stockId;
+                Integer cantidad;
+                
+                if (productoIdObj instanceof Number) {
+                    productoId = ((Number) productoIdObj).longValue();
+                } else {
+                    productoId = Long.valueOf(productoIdObj.toString());
+                }
+                
+                stockId = stockIdObj.toString();
+                
+                if (cantidadObj instanceof Number) {
+                    cantidad = ((Number) cantidadObj).intValue();
+                } else {
+                    cantidad = Integer.valueOf(cantidadObj.toString());
+                }
+                
+                System.out.println("🔍 SECTOR SERVICE - Procesando recepción: Producto " + productoId + ", Stock " + stockId + ", Cantidad " + cantidad);
+                
+                if (cantidad <= 0) {
+                    System.out.println("🔍 SECTOR SERVICE - Cantidad 0 o negativa, saltando producto " + productoId);
+                    continue;
+                }
+                
+                // Verificar que el producto existe y pertenece a la empresa
+                Producto producto = productoRepository.findById(productoId)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productoId));
+                
+                if (!producto.getEmpresa().getId().equals(empresaId)) {
+                    throw new RuntimeException("El producto no pertenece a la empresa especificada: " + productoId);
+                }
+                
+                if (!producto.getActivo()) {
+                    throw new RuntimeException("No se pueden recibir productos inactivos: " + producto.getNombre());
+                }
+                
+                // Buscar el stock de origen
+                StockPorSector stockOrigen = null;
+                
+                // Si el stockId contiene "_sin_asignar", significa que viene del stock general
+                if (stockId.contains("_sin_asignar")) {
+                    // Verificar que hay suficiente stock disponible en el producto
+                    Integer stockDisponible = producto.getStock() != null ? producto.getStock() : 0;
+                    Integer stockAsignado = stockPorSectorRepository.getStockTotalByProductoId(productoId);
+                    Integer stockRealmenteDisponible = stockDisponible - stockAsignado;
+                    
+                    System.out.println("🔍 SECTOR SERVICE - Stock disponible: " + stockDisponible);
+                    System.out.println("🔍 SECTOR SERVICE - Stock ya asignado: " + stockAsignado);
+                    System.out.println("🔍 SECTOR SERVICE - Stock realmente disponible: " + stockRealmenteDisponible);
+                    
+                    if (cantidad > stockRealmenteDisponible) {
+                        throw new RuntimeException("Stock insuficiente para el producto " + producto.getNombre() + 
+                            ". Disponible: " + stockRealmenteDisponible + ", Solicitado: " + cantidad);
+                    }
+                } else {
+                    // Buscar el stock específico
+                    Long stockIdLong = Long.valueOf(stockId);
+                    stockOrigen = stockPorSectorRepository.findById(stockIdLong)
+                        .orElseThrow(() -> new RuntimeException("Stock de origen no encontrado: " + stockId));
+                    
+                    if (stockOrigen.getCantidad() < cantidad) {
+                        throw new RuntimeException("Stock insuficiente en origen para el producto " + producto.getNombre() + 
+                            ". Disponible: " + stockOrigen.getCantidad() + ", Solicitado: " + cantidad);
+                    }
+                    
+                    // Reducir la cantidad en el stock de origen
+                    stockOrigen.setCantidad(stockOrigen.getCantidad() - cantidad);
+                    stockPorSectorRepository.save(stockOrigen);
+                    System.out.println("🔍 SECTOR SERVICE - Stock de origen reducido: " + stockOrigen.getCantidad());
+                }
+                
+                // Buscar si ya existe una asignación para este producto en el sector destino
+                Optional<StockPorSector> stockExistente = stockPorSectorRepository.findByProductoIdAndSectorId(productoId, sectorId);
+                
+                if (stockExistente.isPresent()) {
+                    // Sumar la cantidad a la existente
+                    StockPorSector stock = stockExistente.get();
+                    stock.setCantidad(stock.getCantidad() + cantidad);
+                    stockPorSectorRepository.save(stock);
+                    System.out.println("🔍 SECTOR SERVICE - Stock en destino aumentado: " + stock.getCantidad());
+                } else {
+                    // Crear nueva asignación
+                    StockPorSector nuevoStock = new StockPorSector(producto, sector, cantidad);
+                    stockPorSectorRepository.save(nuevoStock);
+                    System.out.println("🔍 SECTOR SERVICE - Nueva asignación creada en destino: " + cantidad);
+                }
+                
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Formato inválido en recepción: " + recepcion);
+            } catch (Exception e) {
+                throw new RuntimeException("Error procesando recepción: " + e.getMessage());
+            }
+        }
+        
+        System.out.println("🔍 SECTOR SERVICE - Recepción completada exitosamente");
     }
     
     /**

@@ -2,13 +2,13 @@
 .stock-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding-top: 8rem;
+  padding-top: 6rem;
 }
 
 .stock-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0.25rem 1rem;
 }
 
 /* ===== ESTADOS DE CARGA ===== */
@@ -46,7 +46,7 @@
 /* ===== HEADER ===== */
 .stock-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   color: white;
 }
 
@@ -60,13 +60,13 @@
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(10px);
-  margin: 0 auto 1rem;
+  margin: 0 auto 0.5rem;
 }
 
 .header-title {
   font-size: 2rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
@@ -113,7 +113,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .stat-card {
@@ -171,7 +171,7 @@
   background: white;
   border-radius: 16px;
   padding: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 2px solid #e2e8f0;
 }
@@ -244,7 +244,7 @@
 .table-section {
   background: white;
   border-radius: 1.5rem;
-  padding: 2rem;
+  padding: 1rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
@@ -253,8 +253,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
   border-bottom: 2px solid #f1f5f9;
 }
 
@@ -316,7 +316,7 @@
 
 /* ===== TABLA PRINCIPAL ===== */
 .table-wrapper {
-  overflow-x: auto;
+  overflow-x: hidden;
   border-radius: 0.75rem;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
@@ -340,6 +340,33 @@
   color: #374151;
   border-bottom: 2px solid #e2e8f0;
   white-space: nowrap;
+}
+
+/* Definir anchos específicos para las columnas */
+.stock-table th:nth-child(1),
+.stock-table td:nth-child(1) {
+  width: 25%; /* Código */
+  vertical-align: middle;
+}
+
+.stock-table th:nth-child(2),
+.stock-table td:nth-child(2) {
+  width: 20%; /* Producto */
+}
+
+.stock-table th:nth-child(3),
+.stock-table td:nth-child(3) {
+  width: 25%; /* Sector */
+}
+
+.stock-table th:nth-child(4),
+.stock-table td:nth-child(4) {
+  width: 15%; /* Cantidad */
+}
+
+.stock-table th:nth-child(5),
+.stock-table td:nth-child(5) {
+  width: 15%; /* Última Actualización */
 }
 
 .sortable-header {
@@ -378,19 +405,26 @@
   font-weight: 600;
   color: #059669;
   background: #f0fdf4;
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
   border-radius: 0.5rem;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 120px;
+  overflow: visible;
+  text-overflow: clip;
+  max-width: none;
+  font-size: 0.9rem;
+  border: 1px solid #bbf7d0;
+  min-width: 120px;
+  height: auto;
+  margin: auto 0;
 }
 
 .name-cell {
   font-weight: 600;
   color: #1e293b;
-  max-width: 200px;
+  max-width: 250px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -467,43 +501,7 @@
   white-space: nowrap;
 }
 
-.status-cell {
-  text-align: center;
-  white-space: nowrap;
-}
 
-.status-active {
-  color: #059669;
-  font-weight: 600;
-  background: #f0fdf4;
-  padding: 0.5rem 1rem;
-  border-radius: 1rem;
-  display: inline-block;
-  border: 1px solid #bbf7d0;
-  font-size: 0.85rem;
-}
-
-.status-pending {
-  color: #f59e0b;
-  font-weight: 600;
-  background: #fffbeb;
-  padding: 0.5rem 1rem;
-  border-radius: 1rem;
-  display: inline-block;
-  border: 1px solid #fed7aa;
-  font-size: 0.85rem;
-}
-
-.status-consolidated {
-  color: #7c3aed;
-  font-weight: 600;
-  background: #f3f4f6;
-  padding: 0.5rem 1rem;
-  border-radius: 1rem;
-  display: inline-block;
-  border: 1px solid #c7d2fe;
-  font-size: 0.85rem;
-}
 
 /* ===== MEJORAS PARA PRODUCTOS DISTRIBUIDOS ===== */
 .product-name-container {
@@ -551,6 +549,24 @@
 
 .table-row:has(.sector-badge):hover {
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+/* Estilos para navegación por teclado */
+.fila-seleccionada {
+  background: #e0f2fe !important;
+  border: 2px solid #0288d1;
+  box-shadow: 0 0 0 2px rgba(2, 136, 209, 0.2);
+}
+
+.fila-seleccionada td {
+  background: #e0f2fe !important;
+}
+
+/* Mantener el estilo original de la celda del código cuando está seleccionada */
+.fila-seleccionada .code-cell {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+  color: #059669 !important;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -645,11 +661,6 @@
     display: none;
   }
   
-  .stock-table th:nth-child(6),
-  .stock-table td:nth-child(6) {
-    display: none;
-  }
-  
   .product-name-container {
     gap: 0.2rem;
   }
@@ -687,9 +698,7 @@
   }
   
   .stock-table th:nth-child(5),
-  .stock-table td:nth-child(5),
-  .stock-table th:nth-child(6),
-  .stock-table td:nth-child(6) {
+  .stock-table td:nth-child(5) {
     display: none;
   }
   

@@ -1,0 +1,221 @@
+/* Estilos para la página de Recibir Productos */
+
+/* Animación de spin para el loading */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Contenedor principal con margen inferior */
+.recibir-productos-container {
+  min-height: 100vh;
+  padding-bottom: 4rem !important; /* Agregar margen inferior */
+}
+
+/* Margen adicional para el contenido */
+.recibir-productos-container > div {
+  margin-bottom: 2rem;
+}
+
+/* Margen extra para la lista de recepciones */
+.lista-recepciones {
+  margin-bottom: 3rem;
+}
+
+/* Margen para el botón de guardar */
+.boton-guardar {
+  margin-bottom: 2rem;
+}
+
+/* Layout de tres columnas como Cargar Planilla */
+.recibir-productos-container {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 300px !important; /* Tres columnas: buscador, recepción, resumen */
+  gap: 1.5rem !important;
+  min-height: 100vh !important;
+  padding-bottom: 4rem !important;
+  width: 100% !important;
+  max-width: none !important;
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Forzar el layout de tres columnas */
+.recibir-productos-container > div {
+  display: block !important;
+}
+
+/* Asegurar que los paneles se muestren correctamente */
+.panel-busqueda,
+.panel-recepcion,
+.panel-resumen {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Forzar el layout de tres columnas con mayor especificidad */
+div.recibir-productos-container {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 300px !important;
+  gap: 1.5rem !important;
+}
+
+/* Panel del buscador */
+.panel-busqueda {
+  min-height: 600px !important;
+  height: 600px !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-busqueda .card {
+  min-height: 550px !important;
+  height: 550px !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Panel de recepción */
+.panel-recepcion {
+  min-height: 600px !important;
+  height: 600px !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-recepcion .card {
+  min-height: 550px !important;
+  height: 550px !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Panel de resumen (card pequeña a la derecha) */
+.panel-resumen {
+  min-height: 400px !important;
+  height: 400px !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-resumen .card {
+  min-height: 350px !important;
+  height: 350px !important;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem !important;
+}
+
+/* Asegurar que el contenido del buscador tenga espacio suficiente */
+.buscador-avanzado {
+  min-height: 500px !important;
+  height: 500px !important;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Dar más espacio a la lista de productos */
+.lista-productos {
+  min-height: 200px !important;
+  max-height: 300px !important;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Dar más espacio a la lista de ubicaciones */
+.lista-ubicaciones {
+  min-height: 150px !important;
+  max-height: 250px !important;
+  overflow-y: auto;
+}
+
+/* Asegurar que el contenido de recepción tenga la misma altura */
+.contenido-recepcion {
+  min-height: 500px !important;
+  height: 500px !important;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Hacer que la lista de recepciones ocupe el espacio disponible */
+.lista-recepciones {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 300px !important;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .recibir-productos-container {
+    grid-template-columns: 1fr 1fr !important; /* Dos columnas en tablets */
+    gap: 1rem !important;
+  }
+  
+  .panel-resumen {
+    grid-column: 1 / -1 !important; /* El resumen ocupa toda la fila */
+    min-height: 300px !important;
+    height: 300px !important;
+  }
+  
+  .panel-resumen .card {
+    min-height: 250px !important;
+    height: 250px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .recibir-productos-container {
+    grid-template-columns: 1fr !important; /* Una columna en móviles */
+    gap: 1rem !important;
+  }
+  
+  .recibir-productos-container > div {
+    padding: 1rem !important;
+  }
+  
+  .panel-busqueda,
+  .panel-recepcion {
+    min-height: 500px !important;
+    height: 500px !important;
+  }
+  
+  .panel-busqueda .card,
+  .panel-recepcion .card {
+    min-height: 450px !important;
+    height: 450px !important;
+  }
+  
+  .panel-resumen {
+    min-height: 250px !important;
+    height: 250px !important;
+  }
+  
+  .panel-resumen .card {
+    min-height: 200px !important;
+    height: 200px !important;
+  }
+  
+  .header-content h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .header-content p {
+    font-size: 0.9rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .recibir-productos-container {
+    padding: 1rem !important;
+  }
+  
+  .header-content {
+    padding: 1rem !important;
+  }
+  
+  .header-content h1 {
+    font-size: 1.25rem !important;
+  }
+}
