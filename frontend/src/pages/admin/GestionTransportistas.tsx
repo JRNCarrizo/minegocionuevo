@@ -4,6 +4,7 @@ import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { API_CONFIG } from '../../config/api';
 import toast from 'react-hot-toast';
 import './GestionTransportistas.css';
+import NavbarAdmin from '../../components/NavbarAdmin';
 
 // Interfaces
 interface Vehiculo {
@@ -527,140 +528,514 @@ const GestionTransportistas: React.FC = () => {
   }
 
   return (
-    <div className="pagina-admin">
-      <div className="contenido-admin">
-        {/* Header */}
-        <div className="header-admin">
-          <div className="header-content">
-            <div className="header-top">
-              <div className="header-left">
+    <>
+      <NavbarAdmin
+        onCerrarSesion={cerrarSesion}
+        empresaNombre={datosUsuario.empresaNombre}
+        nombreAdministrador={datosUsuario.nombre}
+      />
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}>
+        <div style={{
+          maxWidth: '1600px',
+          margin: '0 auto',
+          padding: '7rem 2rem 2rem 2rem'
+        }}>
+          {/* Header */}
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            marginBottom: '2rem',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+            border: '2px solid #e2e8f0'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'nowrap',
+              gap: '1rem'
+            }}>
+              <div>
                 <button 
-                  className="btn-volver"
                   onClick={() => navigate('/admin/gestion-empresa')}
+                  style={{
+                    background: 'rgba(102, 126, 234, 0.1)',
+                    border: '2px solid rgba(102, 126, 234, 0.2)',
+                    borderRadius: '8px',
+                    color: '#667eea',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '1rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
                 >
                   ← Volver
                 </button>
-                <h1>🚛 Gestión de Transportistas</h1>
-                <p>Administra los transportistas y sus vehículos</p>
+                <h1 style={{
+                  fontSize: '2rem',
+                  fontWeight: '700',
+                  color: '#1e293b',
+                  margin: '0 0 0.5rem 0'
+                }}>
+                  🚛 Gestión de Transportistas
+                </h1>
+                <p style={{
+                  color: '#64748b',
+                  margin: 0,
+                  fontSize: '1rem'
+                }}>
+                  Administra los transportistas y sus vehículos
+                </p>
               </div>
-              <div className="header-right">
-                <button 
-                  className="btn-crear"
-                  onClick={() => setMostrarModalCrear(true)}
-                >
-                  + Crear Transportista
-                </button>
-              </div>
+              
+              <button
+                onClick={() => setMostrarModalCrear(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 12px rgba(79, 172, 254, 0.3)',
+                  transition: 'all 0.2s ease',
+                  justifyContent: 'center',
+                  whiteSpace: 'nowrap',
+                  minWidth: 'fit-content',
+                  flexShrink: 0
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(79, 172, 254, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 172, 254, 0.3)';
+                }}
+              >
+                + Crear Transportista
+              </button>
             </div>
-            
-            {/* Filtros y búsqueda dentro de la card */}
-            <div className="header-filters">
-              <div className="busqueda-container">
+
+            {/* Filtros y búsqueda */}
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              marginTop: '2rem',
+              flexWrap: 'nowrap'
+            }}>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
+                  🔍 Buscar transportistas
+                </label>
                 <input
                   type="text"
                   placeholder="Buscar por código interno, nombre o empresa..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  className="input-busqueda"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    background: 'white',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#667eea';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#d1d5db';
+                    e.target.style.boxShadow = 'none';
+                  }}
                 />
               </div>
-              <div className="filtros">
-                <label className="checkbox-container">
+              
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                paddingTop: '1.5rem'
+              }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  color: '#374151',
+                  fontWeight: '500'
+                }}>
                   <input
                     type="checkbox"
                     checked={filtroActivos}
                     onChange={(e) => setFiltroActivos(e.target.checked)}
+                    style={{
+                      width: '1.2rem',
+                      height: '1.2rem',
+                      accentColor: '#667eea'
+                    }}
                   />
-                  <span className="checkmark"></span>
                   Solo activos
                 </label>
               </div>
             </div>
           </div>
-        </div>
 
-      {/* Contenido principal */}
-
-        {/* Lista de transportistas */}
-        {cargando ? (
-          <div className="cargando-container">
-            <div className="spinner"></div>
-            <p>Cargando transportistas...</p>
-          </div>
-        ) : transportistasFiltrados.length === 0 ? (
-          <div className="sin-datos">
-            <p>No se encontraron transportistas</p>
-            <button 
-              className="btn-crear"
-              onClick={() => setMostrarModalCrear(true)}
-            >
-              Crear primer transportista
-            </button>
-          </div>
-        ) : (
-          <div className="grid-transportistas">
-            {transportistasFiltrados.map((transportista, index) => (
-              <div
-                key={transportista.id}
-                className={`card-transportista ${cardSeleccionada === index ? 'seleccionada' : ''} ${!transportista.activo ? 'inactiva' : ''}`}
-                onClick={() => abrirModalVehiculos(transportista)}
+          {/* Contenido principal */}
+          {cargando ? (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2rem 1rem',
+              textAlign: 'center',
+              background: 'white',
+              borderRadius: '16px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+              border: '2px solid #e2e8f0'
+            }}>
+              <div style={{
+                width: '3rem',
+                height: '3rem',
+                border: '4px solid #e5e7eb',
+                borderTop: '4px solid #667eea',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                marginBottom: '1rem'
+              }}></div>
+              <p>Cargando transportistas...</p>
+            </div>
+          ) : transportistasFiltrados.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '2rem 1rem',
+              color: '#64748b',
+              background: 'white',
+              borderRadius: '16px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+              border: '2px solid #e2e8f0',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <p style={{ fontSize: '1.125rem', marginBottom: '1.5rem' }}>No se encontraron transportistas</p>
+              <button 
+                onClick={() => setMostrarModalCrear(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 12px rgba(79, 172, 254, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(79, 172, 254, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 172, 254, 0.3)';
+                }}
               >
-                <div className="card-header">
-                  <div className="codigo-interno">
-                    {transportista.codigoInterno}
+                Crear primer transportista
+              </button>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, 280px)',
+              gap: '1rem',
+              marginBottom: '2rem',
+              justifyContent: 'center'
+            }}>
+              {transportistasFiltrados.map((transportista, index) => (
+                <div
+                  key={transportista.id}
+                  style={{
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                    borderRadius: '24px',
+                    padding: '1.5rem',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                    border: cardSeleccionada === index ? '2px solid #000000' : '2px solid #e2e8f0',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    minHeight: '180px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    textAlign: 'center',
+                    opacity: !transportista.activo ? 0.7 : 1,
+                    transform: cardSeleccionada === index ? 'translateY(-2px)' : 'none',
+                    boxShadow: cardSeleccionada === index ? '0 0 0 3px rgba(0, 0, 0, 0.3)' : '0 4px 20px rgba(0, 0, 0, 0.08)'
+                  }}
+                  onClick={() => abrirModalVehiculos(transportista)}
+                  onMouseEnter={(e) => {
+                    if (cardSeleccionada !== index) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1)';
+                      e.currentTarget.style.borderColor = '#667eea';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (cardSeleccionada !== index) {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.08)';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                    }
+                  }}
+                >
+                  {!transportista.activo && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: '4px',
+                      background: '#ef4444'
+                    }}></div>
+                  )}
+                  
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginBottom: '1rem',
+                    position: 'relative'
+                  }}>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '20px',
+                      fontSize: '0.8rem',
+                      fontWeight: '600',
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                    }}>
+                      {transportista.codigoInterno}
+                    </div>
+                    <div style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '1rem',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      background: transportista.activo 
+                        ? 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' 
+                        : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                      color: 'white'
+                    }}>
+                      {transportista.activo ? 'Activo' : 'Inactivo'}
+                    </div>
                   </div>
-                  <div className={`estado ${transportista.activo ? 'activo' : 'inactivo'}`}>
-                    {transportista.activo ? 'Activo' : 'Inactivo'}
+                  
+                  <div style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center'
+                  }}>
+                    <div style={{
+                      width: '60px',
+                      height: '60px',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: '1rem',
+                      boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                      fontSize: '1.5rem',
+                      color: 'white'
+                    }}>
+                      👤
+                    </div>
+                    <h3 style={{
+                      fontSize: '1.2rem',
+                      fontWeight: '700',
+                      color: '#1e293b',
+                      margin: '0 0 0.75rem 0',
+                      textAlign: 'center'
+                    }}>
+                      {transportista.nombreApellido}
+                    </h3>
+                    <div style={{
+                      margin: '1rem 0',
+                      padding: '1rem',
+                      background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                      borderRadius: '20px',
+                      border: '1px solid #bae6fd',
+                      textAlign: 'center',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                    }}>
+                      <span style={{
+                        color: '#0369a1',
+                        fontSize: '0.875rem',
+                        fontWeight: '500'
+                      }}>
+                        🚛 {transportista.vehiculos.length} vehículos
+                      </span>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="card-content">
-                  <div className="card-icon">
-                    👤
-                  </div>
-                  <h3>{transportista.nombreApellido}</h3>
-                  <p className="empresa">{transportista.nombreEmpresa || ''}</p>
-                  <div className="info-vehiculos">
-                    <span>🚛 {transportista.vehiculos.length} vehículos</span>
-                  </div>
-                </div>
 
-                <div className="card-actions">
-                  <button
-                    className="btn-editar"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      abrirModalEditar(transportista);
-                    }}
-                    title="Editar transportista"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    className={`btn-estado ${transportista.activo ? 'btn-desactivar' : 'btn-activar'}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      cambiarEstadoTransportista(transportista.id, !transportista.activo);
-                    }}
-                    title={transportista.activo ? 'Desactivar transportista' : 'Activar transportista'}
-                  >
-                    {transportista.activo ? '⏸️' : '▶️'}
-                  </button>
-                  <button
-                    className="btn-eliminar"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      eliminarTransportista(transportista.id);
-                    }}
-                    title="Eliminar transportista"
-                  >
-                    🗑️
-                  </button>
+                  <div style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    marginTop: 'auto',
+                    paddingTop: '1rem',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}>
+                    <button
+                      style={{
+                        width: '45px',
+                        height: '45px',
+                        border: 'none',
+                        borderRadius: '50%',
+                        fontSize: '1.2rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                        margin: '0 0.25rem',
+                        background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                        color: 'white'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        abrirModalEditar(transportista);
+                      }}
+                      title="Editar transportista"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                      }}
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      style={{
+                        width: '45px',
+                        height: '45px',
+                        border: 'none',
+                        borderRadius: '50%',
+                        fontSize: '1.2rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                        margin: '0 0.25rem',
+                        background: transportista.activo 
+                          ? 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+                          : 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                        color: 'white'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        cambiarEstadoTransportista(transportista.id, !transportista.activo);
+                      }}
+                      title={transportista.activo ? 'Desactivar transportista' : 'Activar transportista'}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                      }}
+                    >
+                      {transportista.activo ? '⏸️' : '▶️'}
+                    </button>
+                    <button
+                      style={{
+                        width: '45px',
+                        height: '45px',
+                        border: 'none',
+                        borderRadius: '50%',
+                        fontSize: '1.2rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                        margin: '0 0.25rem',
+                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                        color: 'white'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        eliminarTransportista(transportista.id);
+                      }}
+                      title="Eliminar transportista"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal Crear Transportista */}
@@ -980,7 +1355,7 @@ const GestionTransportistas: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
