@@ -215,10 +215,9 @@ export default function CrearDevolucion() {
       // Verificar si la búsqueda coincide con código interno o nombre del transportista
       const matchCodigo = transportista.codigoInterno.toLowerCase().includes(busqueda);
       const matchNombre = transportista.nombreApellido.toLowerCase().includes(busqueda);
-      const matchEmpresa = transportista.nombreEmpresa && transportista.nombreEmpresa.toLowerCase().includes(busqueda);
       
       // Si coincide con transportista, mostrar todos sus vehículos
-      if (matchCodigo || matchNombre || matchEmpresa) {
+      if (matchCodigo || matchNombre) {
         if (vehiculosActivos.length === 0) {
           // Si no tiene vehículos activos, mostrar solo el transportista
           opciones.push({
@@ -232,7 +231,7 @@ export default function CrearDevolucion() {
             opciones.push({
               transportista,
               vehiculo,
-              displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.marca} ${vehiculo.modelo})`,
+              displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.modelo})`,
               key: `transportista-${transportista.id}-vehiculo-${vehiculo.id}`
             });
           });
@@ -240,15 +239,14 @@ export default function CrearDevolucion() {
       } else {
         // Si no coincide con transportista, buscar vehículos específicos que coincidan
         vehiculosActivos.forEach((vehiculo: any) => {
-          const matchMarca = vehiculo.marca.toLowerCase().includes(busqueda);
           const matchModelo = vehiculo.modelo.toLowerCase().includes(busqueda);
           const matchPatente = vehiculo.patente.toLowerCase().includes(busqueda);
           
-          if (matchMarca || matchModelo || matchPatente) {
+          if (matchModelo || matchPatente) {
             opciones.push({
               transportista,
               vehiculo,
-              displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.marca} ${vehiculo.modelo})`,
+              displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.modelo})`,
               key: `transportista-${transportista.id}-vehiculo-${vehiculo.id}`
             });
           }
@@ -940,7 +938,7 @@ export default function CrearDevolucion() {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 2fr',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 1fr',
             gap: '1rem'
           }}>
             <div>

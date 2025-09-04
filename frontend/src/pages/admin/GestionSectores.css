@@ -682,6 +682,169 @@
   font-style: italic;
 }
 
+/* Estilos especiales para información de productos y unidades */
+.info-item:nth-child(2) .texto-info,
+.info-item:nth-child(3) .texto-info {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #1e293b;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.info-item:nth-child(2) .texto-info:hover,
+.info-item:nth-child(3) .texto-info:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+}
+
+/* Iconos especiales para productos y unidades */
+.info-item:nth-child(2) .icono-info,
+.info-item:nth-child(3) .icono-info {
+  font-size: 1.3rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.info-item:nth-child(2) .icono-info:hover,
+.info-item:nth-child(3) .icono-info:hover {
+  transform: scale(1.15) rotate(5deg);
+  box-shadow: 0 6px 12px rgba(59, 130, 246, 0.5);
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+/* Efecto de brillo en los iconos */
+.info-item:nth-child(2) .icono-info::before,
+.info-item:nth-child(3) .icono-info::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+/* Estilos para destacar los números de productos y unidades */
+.info-item:nth-child(2) .texto-info,
+.info-item:nth-child(3) .texto-info {
+  position: relative;
+}
+
+.info-item:nth-child(2) .texto-info::before,
+.info-item:nth-child(3) .texto-info::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  bottom: -2px;
+  left: -2px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 8px;
+  z-index: -1;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.info-item:nth-child(2) .texto-info:hover::before,
+.info-item:nth-child(3) .texto-info:hover::before {
+  opacity: 1;
+}
+
+/* Efecto de resaltado para los números usando pseudo-elementos */
+.info-item:nth-child(2) .texto-info::after,
+.info-item:nth-child(3) .texto-info::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-radius: 6px;
+  border: 1px solid #93c5fd;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
+  z-index: -1;
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.info-item:nth-child(2) .texto-info:hover::after,
+.info-item:nth-child(3) .texto-info:hover::after {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  opacity: 1;
+  transform: scale(1.02);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+}
+
+/* Estilos adicionales para hacer los números más prominentes */
+.info-item:nth-child(2) .texto-info,
+.info-item:nth-child(3) .texto-info {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #1e293b;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 1;
+}
+
+.info-item:nth-child(2) .texto-info:hover,
+.info-item:nth-child(3) .texto-info:hover {
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Animación sutil para llamar la atención */
+@keyframes highlightPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+}
+
+.info-item:nth-child(2),
+.info-item:nth-child(3) {
+  animation: highlightPulse 3s ease-in-out infinite;
+  animation-delay: calc(var(--animation-order, 0) * 0.5s);
+}
+
+/* Estilos para sectores inactivos también */
+.tarjeta-inactiva .info-item:nth-child(2) .texto-info,
+.tarjeta-inactiva .info-item:nth-child(3) .texto-info {
+  color: #6b7280;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border: 1px solid #d1d5db;
+}
+
+.tarjeta-inactiva .info-item:nth-child(2) .icono-info,
+.tarjeta-inactiva .info-item:nth-child(3) .icono-info {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  box-shadow: 0 3px 6px rgba(107, 114, 128, 0.4);
+}
+
 .botones-accion-sector {
   display: flex;
   gap: 0.5rem;

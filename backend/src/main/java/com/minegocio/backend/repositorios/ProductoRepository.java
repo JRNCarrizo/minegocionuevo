@@ -230,4 +230,34 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      * Cuenta productos activos por empresa
      */
     Long countByEmpresaAndActivoTrue(Empresa empresa);
+
+    /**
+     * Verifica si existe un producto con el mismo nombre en la empresa
+     */
+    boolean existsByEmpresaIdAndNombreIgnoreCase(Long empresaId, String nombre);
+
+    /**
+     * Verifica si existe un producto con el mismo código de barras en la empresa
+     */
+    boolean existsByEmpresaIdAndCodigoBarras(Long empresaId, String codigoBarras);
+
+    /**
+     * Verifica si existe un producto con el mismo código personalizado en la empresa
+     */
+    boolean existsByEmpresaIdAndCodigoPersonalizado(Long empresaId, String codigoPersonalizado);
+
+    /**
+     * Busca un producto existente por nombre en la empresa
+     */
+    Optional<Producto> findByEmpresaIdAndNombreIgnoreCase(Long empresaId, String nombre);
+
+    /**
+     * Busca un producto existente por código de barras en la empresa
+     */
+    Optional<Producto> findByEmpresaIdAndCodigoBarras(Long empresaId, String codigoBarras);
+
+    /**
+     * Busca un producto existente por código personalizado en la empresa
+     */
+    Optional<Producto> findByEmpresaIdAndCodigoPersonalizado(Long empresaId, String codigoPersonalizado);
 }

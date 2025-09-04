@@ -119,14 +119,25 @@ public class ImportacionProductoService {
                     continue;
                 }
 
+                // Verificar si el producto ya existe
+                if (verificarProductoExistente(productoDTO, empresaId)) {
+                    errores.add(Map.of(
+                        "fila", i + 2,
+                        "error", "Producto duplicado: " + productoDTO.getNombre() + 
+                                (productoDTO.getCodigoBarras() != null ? " (Código de barras: " + productoDTO.getCodigoBarras() + ")" : "") +
+                                (productoDTO.getCodigoPersonalizado() != null ? " (Código personalizado: " + productoDTO.getCodigoPersonalizado() + ")" : "")
+                    ));
+                    continue;
+                }
+
                 // Crear el producto
                 Producto producto = new Producto();
                 producto.setNombre(productoDTO.getNombre());
                 producto.setDescripcion(productoDTO.getDescripcion());
-                // Manejar precio opcional - si es null, establecer null (no 0)
-                producto.setPrecio(productoDTO.getPrecio());
-                producto.setStock(productoDTO.getStock());
-                producto.setStockMinimo(productoDTO.getStockMinimo());
+                // Manejar precio - si es null, establecer 0 para evitar problemas con la BD
+                producto.setPrecio(productoDTO.getPrecio() != null ? productoDTO.getPrecio() : BigDecimal.ZERO);
+                producto.setStock(productoDTO.getStock() != null ? productoDTO.getStock() : 0);
+                producto.setStockMinimo(productoDTO.getStockMinimo() != null ? productoDTO.getStockMinimo() : 0);
                 producto.setCategoria(productoDTO.getCategoria());
                 producto.setMarca(productoDTO.getMarca());
                 producto.setSectorAlmacenamiento(productoDTO.getSectorAlmacenamiento());
@@ -340,6 +351,35 @@ public class ImportacionProductoService {
             obtenerValorCelda(row.getCell(9)), // codigoPersonalizado
             obtenerValorCelda(row.getCell(10)) // estado
         );
+    }
+
+    /**
+     * Verifica si un producto ya existe basándose en nombre, código de barras o código personalizado
+     */
+    private boolean verificarProductoExistente(ImportacionProductoDTO productoDTO, Long empresaId) {
+        // Verificar por código de barras (si existe)
+        if (productoDTO.getCodigoBarras() != null && !productoDTO.getCodigoBarras().trim().isEmpty()) {
+            if (productoRepository.existsByEmpresaIdAndCodigoBarras(empresaId, productoDTO.getCodigoBarras().trim())) {
+                System.out.println("❌ Producto duplicado por código de barras: " + productoDTO.getCodigoBarras());
+                return true;
+            }
+        }
+
+        // Verificar por código personalizado (si existe)
+        if (productoDTO.getCodigoPersonalizado() != null && !productoDTO.getCodigoPersonalizado().trim().isEmpty()) {
+            if (productoRepository.existsByEmpresaIdAndCodigoPersonalizado(empresaId, productoDTO.getCodigoPersonalizado().trim())) {
+                System.out.println("❌ Producto duplicado por código personalizado: " + productoDTO.getCodigoPersonalizado());
+                return true;
+            }
+        }
+
+        // Verificar por nombre (siempre verificar)
+        if (productoRepository.existsByEmpresaIdAndNombreIgnoreCase(empresaId, productoDTO.getNombre().trim())) {
+            System.out.println("❌ Producto duplicado por nombre: " + productoDTO.getNombre());
+            return true;
+        }
+
+        return false;
     }
 
     /**
