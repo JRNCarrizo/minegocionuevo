@@ -924,8 +924,12 @@ public class SectorService {
     public void asignarProductosAutomaticamente(Long empresaId) {
         System.out.println("🔍 ASIGNAR PRODUCTOS AUTOMATICAMENTE - Iniciando para empresa: " + empresaId);
         
+        // Primero obtener la empresa
+        Empresa empresa = empresaRepository.findById(empresaId)
+            .orElseThrow(() -> new RuntimeException("Empresa no encontrada con ID: " + empresaId));
+        
         // Obtener todos los productos de la empresa que tienen sectorAlmacenamiento
-        List<Producto> productosConSector = productoRepository.findByEmpresaAndSectorAlmacenamientoIsNotNullAndSectorAlmacenamientoNot(empresaId, "");
+        List<Producto> productosConSector = productoRepository.findByEmpresaAndSectorAlmacenamientoIsNotNullAndSectorAlmacenamientoNot(empresa, "");
         System.out.println("🔍 ASIGNAR PRODUCTOS AUTOMATICAMENTE - Productos con sectorAlmacenamiento: " + productosConSector.size());
         
         // Obtener todos los sectores de la empresa
