@@ -1029,10 +1029,11 @@ export default function CrearPlanilla() {
                     right: 0,
                     background: 'white',
                     border: '1px solid #e5e7eb',
-                    borderRadius: '0.5rem',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    borderTop: 'none',
+                    borderRadius: '0 0 0.5rem 0.5rem',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                     zIndex: 1000,
-                    maxHeight: opcionesTransporte.length <= 3 ? 'auto' : '120px', // Se expande si hay 3 o menos elementos
+                    maxHeight: '200px',
                     overflowY: 'auto'
                   }}>
                   {opcionesTransporte.map((opcion, index) => (
@@ -1042,18 +1043,28 @@ export default function CrearPlanilla() {
                       style={{
                         padding: '0.75rem',
                         cursor: 'pointer',
-                        backgroundColor: index === transportistaSeleccionado ? '#f3f4f6' : 'transparent',
-                        borderBottom: index < opcionesTransporte.length - 1 ? '1px solid #f3f4f6' : 'none'
+                        borderBottom: '1px solid #f3f4f6',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        backgroundColor: index === transportistaSeleccionado ? '#eff6ff' : 'transparent',
+                        borderLeft: index === transportistaSeleccionado ? '3px solid #3b82f6' : 'none'
                       }}
+                      onMouseEnter={() => setTransportistaSeleccionado(index)}
                     >
-                      <div style={{ fontWeight: '600', fontSize: '0.875rem' }}>
-                        {opcion.displayText}
-                      </div>
-                      {opcion.transportista.nombreEmpresa && (
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                          {opcion.transportista.nombreEmpresa}
+                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>🚛</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>
+                          {opcion.displayText}
                         </div>
-                      )}
+                        {opcion.transportista.nombreEmpresa && (
+                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                            {opcion.transportista.nombreEmpresa}
+                          </div>
+                        )}
+                      </div>
+
                     </div>
                   ))}
                 </div>

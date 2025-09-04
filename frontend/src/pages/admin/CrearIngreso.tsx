@@ -88,6 +88,17 @@ export default function CrearIngreso() {
   const observacionesRef = useRef<HTMLTextAreaElement>(null);
   const cantidadTemporalRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
+  
+  // Referencias para los campos del modal de crear producto
+  const nombreProductoRef = useRef<HTMLInputElement>(null);
+  const marcaProductoRef = useRef<HTMLInputElement>(null);
+  const codigoPersonalizadoRef = useRef<HTMLInputElement>(null);
+  const codigoBarrasRef = useRef<HTMLInputElement>(null);
+  const categoriaProductoRef = useRef<HTMLSelectElement>(null);
+  const descripcionProductoRef = useRef<HTMLTextAreaElement>(null);
+  const precioProductoRef = useRef<HTMLInputElement>(null);
+  const unidadProductoRef = useRef<HTMLInputElement>(null);
+  const sectorProductoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -111,6 +122,11 @@ export default function CrearIngreso() {
   useEffect(() => {
     const manejarEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // Si está en el modal de crear producto, cerrarlo
+        if (mostrarModalCrearProducto) {
+          cerrarModalCrearProducto();
+          return;
+        }
         // Si está en el campo de cantidad temporal, no navegar fuera
         if (mostrarCampoCantidad) {
           return;
@@ -123,7 +139,64 @@ export default function CrearIngreso() {
     return () => {
       document.removeEventListener('keydown', manejarEscape);
     };
-  }, [navigate, mostrarCampoCantidad]);
+  }, [navigate, mostrarCampoCantidad, mostrarModalCrearProducto]);
+
+  // Navegación por teclado en el modal de crear producto
+  useEffect(() => {
+    const manejarTeclasModal = (e: KeyboardEvent) => {
+      if (!mostrarModalCrearProducto) return;
+      
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        
+        // Obtener el elemento activo
+        const elementoActivo = document.activeElement as HTMLElement;
+        
+        // Definir el orden de los campos
+        const campos = [
+          nombreProductoRef.current,
+          marcaProductoRef.current,
+          codigoPersonalizadoRef.current,
+          codigoBarrasRef.current,
+          categoriaProductoRef.current,
+          descripcionProductoRef.current,
+          precioProductoRef.current,
+          unidadProductoRef.current,
+          sectorProductoRef.current
+        ];
+        
+        // Encontrar el índice del campo actual
+        const indiceActual = campos.findIndex(campo => campo === elementoActivo);
+        
+        if (indiceActual >= 0 && indiceActual < campos.length - 1) {
+          // Navegar al siguiente campo
+          const siguienteCampo = campos[indiceActual + 1];
+          if (siguienteCampo) {
+            siguienteCampo.focus();
+          }
+        } else if (indiceActual === campos.length - 1) {
+          // Estamos en el último campo, crear el producto
+          crearNuevoProducto();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', manejarTeclasModal);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclasModal);
+    };
+  }, [mostrarModalCrearProducto]);
+
+  // Auto-focus en el primer campo cuando se abre el modal
+  useEffect(() => {
+    if (mostrarModalCrearProducto && nombreProductoRef.current) {
+      setTimeout(() => {
+        if (nombreProductoRef.current) {
+          nombreProductoRef.current.focus();
+        }
+      }, 100);
+    }
+  }, [mostrarModalCrearProducto]);
 
   // Auto-scroll para mantener visible el elemento seleccionado en la lista de productos
   useEffect(() => {
@@ -757,60 +830,10 @@ export default function CrearIngreso() {
       if (response && response.data) {
         const producto = response.data;
         
-        // Si el producto tiene un sector asignado, asignarlo automáticamente al sector
+        // Mostrar mensaje de éxito
         if (nuevoProducto.sectorAlmacenamiento && nuevoProducto.sectorAlmacenamiento.trim()) {
-          try {
-            console.log('🔍 [ASIGNACIÓN AUTOMÁTICA] Asignando producto al sector:', nuevoProducto.sectorAlmacenamiento);
-            
-            // Buscar el sector por nombre para obtener su ID
-            const sectoresResponse = await fetch(`/api/empresas/${datosUsuario!.empresaId}/sectores/todos`, {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json'
-              }
-            });
-            
-            if (sectoresResponse.ok) {
-              const sectoresData = await sectoresResponse.json();
-              const sectorEncontrado = (sectoresData.data || []).find(
-                (sector: any) => sector.nombre === nuevoProducto.sectorAlmacenamiento && sector.activo
-              );
-              
-              if (sectorEncontrado) {
-                // Asignar el producto al sector con cantidad 0 (ya que el stock se agregará cuando se ingrese al remito)
-                const asignacionResponse = await fetch(`/api/empresas/${datosUsuario!.empresaId}/sectores/${sectorEncontrado.id}/asignar-productos`, {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify([{
-                    productoId: producto.id,
-                    cantidad: 0 // Cantidad inicial 0, se actualizará cuando se ingrese al remito
-                  }])
-                });
-                
-                if (asignacionResponse.ok) {
-                  console.log('🔍 [ASIGNACIÓN AUTOMÁTICA] Producto asignado exitosamente al sector');
-                  toast.success(`✅ Producto "${producto.nombre}" creado y asignado al sector "${nuevoProducto.sectorAlmacenamiento}" exitosamente.`);
-                } else {
-                  console.log('🔍 [ASIGNACIÓN AUTOMÁTICA] Error al asignar producto al sector:', asignacionResponse.status);
-                  toast.success(`✅ Producto "${producto.nombre}" creado exitosamente, pero hubo un problema al asignarlo al sector.`);
-                }
-              } else {
-                console.log('🔍 [ASIGNACIÓN AUTOMÁTICA] Sector no encontrado:', nuevoProducto.sectorAlmacenamiento);
-                toast.success(`✅ Producto "${producto.nombre}" creado exitosamente. Ahora puedes buscarlo y agregarlo al remito.`);
-              }
-            } else {
-              console.log('🔍 [ASIGNACIÓN AUTOMÁTICA] Error al obtener sectores:', sectoresResponse.status);
-              toast.success(`✅ Producto "${producto.nombre}" creado exitosamente. Ahora puedes buscarlo y agregarlo al remito.`);
-            }
-          } catch (asignacionError) {
-            console.error('🔍 [ASIGNACIÓN AUTOMÁTICA] Error en asignación automática:', asignacionError);
-            toast.success(`✅ Producto "${producto.nombre}" creado exitosamente. Ahora puedes buscarlo y agregarlo al remito.`);
-          }
+          toast.success(`✅ Producto "${producto.nombre}" creado y asignado al sector "${nuevoProducto.sectorAlmacenamiento}" exitosamente.`);
         } else {
-          // Si no tiene sector asignado, mostrar mensaje normal
           toast.success(`✅ Producto "${producto.nombre}" creado exitosamente. Ahora puedes buscarlo y agregarlo al remito.`);
         }
         
@@ -936,39 +959,9 @@ export default function CrearIngreso() {
 
   const actualizarStockProductos = async () => {
     try {
-      // Actualizar cada producto con su nuevo stock
-      for (const detalle of detalles) {
-        if (detalle.productoId) {
-          // Buscar el producto actual
-          const productoActual = productos.find(p => p.id === detalle.productoId);
-          if (productoActual) {
-            const nuevoStock = productoActual.stock + detalle.cantidad;
-            
-            // Actualizar el stock usando la API real
-            await ApiService.actualizarProducto(datosUsuario!.empresaId, detalle.productoId, {
-              stock: nuevoStock
-            });
-            
-            // Actualizar el producto en la lista local
-            setProductos(prev => prev.map(p => 
-              p.id === detalle.productoId 
-                ? { ...p, stock: nuevoStock }
-                : p
-            ));
-            
-            // Actualizar también en localStorage para persistencia
-            const productosGuardados = JSON.parse(localStorage.getItem('productos') || '[]');
-            const productosActualizados = productosGuardados.map((p: any) => 
-              p.id === detalle.productoId 
-                ? { ...p, stock: nuevoStock }
-                : p
-            );
-            localStorage.setItem('productos', JSON.stringify(productosActualizados));
-            
-            console.log(`✅ Stock actualizado para ${productoActual.nombre}: ${productoActual.stock} + ${detalle.cantidad} = ${nuevoStock}`);
-          }
-        }
-      }
+      // El backend ya maneja la actualización del stock y la sincronización con sectores
+      // No necesitamos actualizar manualmente aquí
+      console.log('✅ El backend manejará la actualización del stock y sincronización con sectores');
     } catch (error) {
       console.error('Error al actualizar stock de productos:', error);
       toast.error('Error al actualizar el stock de los productos');
@@ -1915,6 +1908,7 @@ export default function CrearIngreso() {
                     📝 Nombre del Producto *
                   </label>
                                      <input
+                     ref={nombreProductoRef}
                      type="text"
                      value={nuevoProducto.nombre}
                      onChange={(e) => {
@@ -1980,6 +1974,7 @@ export default function CrearIngreso() {
                     🏷️ Marca
                   </label>
                                      <input
+                     ref={marcaProductoRef}
                      type="text"
                      value={nuevoProducto.marca}
                      onChange={(e) => {
@@ -2045,6 +2040,7 @@ export default function CrearIngreso() {
                    🏷️ Código Personalizado
                  </label>
                  <input
+                   ref={codigoPersonalizadoRef}
                    type="text"
                    value={nuevoProducto.codigoPersonalizado}
                    onChange={(e) => setNuevoProducto(prev => ({ ...prev, codigoPersonalizado: e.target.value }))}
@@ -2072,6 +2068,7 @@ export default function CrearIngreso() {
                  </label>
                  <div style={{ position: 'relative' }}>
                    <input
+                     ref={codigoBarrasRef}
                      type="text"
                      value={nuevoProducto.codigoBarras}
                      onChange={(e) => setNuevoProducto(prev => ({ ...prev, codigoBarras: e.target.value }))}
@@ -2123,6 +2120,7 @@ export default function CrearIngreso() {
                     📂 Categoría
                   </label>
                   <select
+                    ref={categoriaProductoRef}
                     name="categoria"
                     value={nuevoProducto.categoria}
                     onChange={manejarCambioSelect}
@@ -2180,6 +2178,7 @@ export default function CrearIngreso() {
                    📝 Descripción
                  </label>
                  <textarea
+                   ref={descripcionProductoRef}
                    value={nuevoProducto.descripcion}
                    onChange={(e) => setNuevoProducto(prev => ({ ...prev, descripcion: e.target.value }))}
                    placeholder="Descripción del producto"
@@ -2207,6 +2206,7 @@ export default function CrearIngreso() {
                    💰 Precio
                  </label>
                  <input
+                   ref={precioProductoRef}
                    type="number"
                    value={nuevoProducto.precio}
                    onChange={(e) => setNuevoProducto(prev => ({ ...prev, precio: e.target.value }))}
@@ -2235,6 +2235,7 @@ export default function CrearIngreso() {
                    📏 Unidad
                  </label>
                  <input
+                   ref={unidadProductoRef}
                    type="text"
                    value={nuevoProducto.unidad}
                    onChange={(e) => setNuevoProducto(prev => ({ ...prev, unidad: e.target.value }))}
@@ -2293,6 +2294,7 @@ export default function CrearIngreso() {
                    🏪 Sector de Almacenamiento
                  </label>
                  <input
+                   ref={sectorProductoRef}
                    type="text"
                    value={nuevoProducto.sectorAlmacenamiento}
                    onChange={(e) => manejarCambioSectorAlmacenamiento(e.target.value)}

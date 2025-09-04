@@ -55,6 +55,14 @@ public interface StockPorSectorRepository extends JpaRepository<StockPorSector, 
      * Verifica si existe stock de un producto en un sector
      */
     boolean existsByProductoIdAndSectorId(Long productoId, Long sectorId);
+    
+    /**
+     * Obtiene todos los stocks de un producto en sectores de una empresa específica
+     */
+    @Query("SELECT sps FROM StockPorSector sps " +
+           "JOIN sps.sector s " +
+           "WHERE sps.producto.id = :productoId AND s.empresa.id = :empresaId")
+    List<StockPorSector> findByProductoIdAndSectorEmpresaId(@Param("productoId") Long productoId, @Param("empresaId") Long empresaId);
 }
 
 

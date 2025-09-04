@@ -19,8 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.List;
 import java.util.HashMap;
-import com.minegocio.backend.entidades.SuperAdmin;
-import com.minegocio.backend.repositorios.SuperAdminRepository;
+
 
 @RestController
 @RequestMapping("/api/super-admin")
@@ -45,8 +44,7 @@ public class SuperAdminController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private SuperAdminRepository superAdminRepository;
+
 
     /**
      * Endpoint para crear automáticamente un super usuario

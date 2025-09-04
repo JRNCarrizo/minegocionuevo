@@ -7,6 +7,7 @@ import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.RoturaPerdidaRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
+import com.minegocio.backend.servicios.StockSincronizacionService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,9 @@ public class RoturaPerdidaService {
 
     @Autowired
     private ProductoRepository productoRepository;
+    
+    @Autowired
+    private StockSincronizacionService stockSincronizacionService;
 
     /**
      * Crear una nueva rotura o pérdida
@@ -92,9 +96,14 @@ public class RoturaPerdidaService {
             Producto producto = productoRepository.findById(dto.getProductoId())
                     .orElse(null);
             if (producto != null) {
-                // Validar que hay suficiente stock
-                if (producto.getStock() < dto.getCantidad()) {
-                    throw new RuntimeException("Stock insuficiente. Disponible: " + producto.getStock() + " unidades");
+                // Validar que hay suficiente stock total disponible (incluyendo sectores)
+                Integer stockTotalDisponible = stockSincronizacionService.obtenerStockTotalDisponible(
+                    producto.getEmpresa().getId(), 
+                    producto.getId()
+                );
+                
+                if (stockTotalDisponible < dto.getCantidad()) {
+                    throw new RuntimeException("Stock insuficiente. Disponible: " + stockTotalDisponible + " unidades");
                 }
                 
                 // Validar que la cantidad sea positiva
@@ -102,9 +111,13 @@ public class RoturaPerdidaService {
                     throw new RuntimeException("La cantidad debe ser mayor a 0");
                 }
                 
-                // Descontar del stock
-                producto.setStock(producto.getStock() - dto.getCantidad());
-                productoRepository.save(producto);
+                // Descontar del stock usando la estrategia híbrida inteligente directamente
+                stockSincronizacionService.descontarStockInteligente(
+                    producto.getEmpresa().getId(),
+                    producto.getId(),
+                    dto.getCantidad(),
+                    "Rotura/Pérdida desde planilla"
+                );
                 
                 roturaPerdida.setProducto(producto);
                 if (dto.getCodigoPersonalizado() == null) {
@@ -230,11 +243,19 @@ public class RoturaPerdidaService {
         RoturaPerdida roturaPerdida = roturaPerdidaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Rotura/Pérdida no encontrada"));
         
-        // Si tiene un producto asociado, restaurar el stock
+        // Si tiene un producto asociado, restaurar el stock usando sincronización automática
         if (roturaPerdida.getProducto() != null) {
             Producto producto = roturaPerdida.getProducto();
-            producto.setStock(producto.getStock() + roturaPerdida.getCantidad());
-            productoRepository.save(producto);
+            Integer stockAnterior = producto.getStock();
+            Integer nuevoStock = stockAnterior + roturaPerdida.getCantidad();
+            
+            // Usar la sincronización automática que actualiza tanto el producto como los sectores
+            stockSincronizacionService.sincronizarStockConSectores(
+                producto.getEmpresa().getId(),
+                producto.getId(),
+                nuevoStock,
+                "Revertir rotura/pérdida desde planilla"
+            );
         }
         
         roturaPerdidaRepository.deleteById(id);

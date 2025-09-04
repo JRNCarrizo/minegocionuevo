@@ -192,9 +192,15 @@ public class MovimientoDiaService {
             // Calcular stock inicial = stock actual - movimientos del día
             Map<Long, Integer> stockInicial = new HashMap<>(stockActual);
             
-            // Restar ingresos (se sumaron al stock actual)
+            // Restar ingresos SOLO de productos que ya existían al inicio del día
             for (MovimientoDiaDTO.ProductoMovimientoDTO ingreso : ingresos.getProductos()) {
-                stockInicial.merge(ingreso.getId(), -ingreso.getCantidad(), Integer::sum);
+                // Solo restar si el producto ya existía (stock inicial > 0 o el producto ya estaba en la lista)
+                Integer stockInicialProducto = stockInicial.get(ingreso.getId());
+                if (stockInicialProducto != null && stockInicialProducto > 0) {
+                    stockInicial.merge(ingreso.getId(), -ingreso.getCantidad(), Integer::sum);
+                }
+                // Si stockInicialProducto es null o 0, significa que es un producto nuevo
+                // y no debe afectar el stock inicial
             }
             
             // Restar devoluciones (se sumaron al stock actual)

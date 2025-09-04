@@ -19,6 +19,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 /**
  * Servicio para manejar las ventas rápidas desde la caja
@@ -45,6 +46,9 @@ public class VentaRapidaService {
     
     @Autowired
     private HistorialInventarioService historialInventarioService;
+    
+    @Autowired
+    private StockSincronizacionService stockSincronizacionService;
 
     /**
      * Procesa una venta rápida y la guarda en el historial
@@ -96,10 +100,12 @@ public class VentaRapidaService {
             Producto producto = productoRepository.findById(detalleDTO.getProductoId())
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + detalleDTO.getProductoId()));
 
-            // Verificar stock
-            if (producto.getStock() < detalleDTO.getCantidad()) {
+            // Verificar stock total disponible (incluyendo sectores)
+            Map<String, Object> detalleStock = stockSincronizacionService.obtenerDetalleStockDisponible(empresaId, detalleDTO.getProductoId());
+            Integer stockTotalDisponible = (Integer) detalleStock.get("stockTotal");
+            if (stockTotalDisponible < detalleDTO.getCantidad()) {
                 throw new RuntimeException("Stock insuficiente para " + producto.getNombre() + 
-                    ". Disponible: " + producto.getStock() + ", Solicitado: " + detalleDTO.getCantidad());
+                    ". Disponible: " + stockTotalDisponible + ", Solicitado: " + detalleDTO.getCantidad());
             }
 
             // Crear detalle de la venta rápida
@@ -111,9 +117,19 @@ public class VentaRapidaService {
             detalle.setPrecioUnitario(detalleDTO.getPrecioUnitario());
             detalle.setSubtotal(detalleDTO.getSubtotal());
 
-            // Reducir stock del producto
-            producto.reducirStock(detalleDTO.getCantidad());
-            productoRepository.save(producto);
+            // Descontar stock usando la estrategia híbrida inteligente
+            try {
+                Map<String, Object> resultadoDescuento = stockSincronizacionService.descontarStockInteligente(
+                    empresaId, 
+                    detalleDTO.getProductoId(), 
+                    detalleDTO.getCantidad(), 
+                    "Venta rápida - " + ventaRapida.getNumeroComprobante()
+                );
+                System.out.println("✅ STOCK SINCRONIZACIÓN - Stock descontado para venta rápida: " + resultadoDescuento);
+            } catch (Exception e) {
+                System.err.println("❌ STOCK SINCRONIZACIÓN - Error al descontar stock: " + e.getMessage());
+                throw new RuntimeException("Error al procesar el descuento de stock: " + e.getMessage());
+            }
 
             // Registrar la operación de decremento en el historial de inventario
             if (usuarioId != null) {

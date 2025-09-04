@@ -12,6 +12,7 @@ import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.RemitoIngresoRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
+import com.minegocio.backend.servicios.StockSincronizacionService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -44,6 +45,9 @@ public class RemitoIngresoService {
     
     @Autowired
     private UsuarioRepository usuarioRepository;
+    
+    @Autowired
+    private StockSincronizacionService stockSincronizacionService;
     
     // Obtener todos los remitos de una empresa
     public List<RemitoIngresoDTO> obtenerRemitosPorEmpresa(Long empresaId) {
@@ -188,10 +192,24 @@ public class RemitoIngresoService {
                         detalle.setCategoriaProducto(producto.get().getCategoria());
                         detalle.setMarcaProducto(producto.get().getMarca());
                         
-                        // Actualizar el stock del producto
+                        // Actualizar el stock del producto usando el sistema de sincronización
                         Producto productoActualizado = producto.get();
-                        productoActualizado.setStock(productoActualizado.getStock() + detalleDTO.getCantidad());
+                        Integer stockAnterior = productoActualizado.getStock();
+                        Integer nuevoStock = stockAnterior + detalleDTO.getCantidad();
+                        
+                        // Usar el sistema de sincronización para distribuir el stock según el sector asignado
+                        productoActualizado.setStock(nuevoStock);
                         productoRepository.save(productoActualizado);
+                        
+                        // Sincronizar con sectores para distribuir el stock correctamente
+                        stockSincronizacionService.sincronizarStockConSectores(
+                            remitoDTO.getEmpresaId(),
+                            productoActualizado.getId(),
+                            nuevoStock,
+                            "Ingreso de mercadería - Remito: " + remitoDTO.getNumeroRemito()
+                        );
+                        
+                        System.out.println("✅ INGRESO - Stock actualizado y sincronizado: " + stockAnterior + " + " + detalleDTO.getCantidad() + " = " + nuevoStock);
                     } else {
                         throw new RuntimeException("Producto no encontrado con ID: " + detalleDTO.getProductoId());
                     }
@@ -215,13 +233,27 @@ public class RemitoIngresoService {
     public void eliminarRemito(Long id, Long empresaId) {
         Optional<RemitoIngreso> remito = remitoIngresoRepository.findById(id);
         if (remito.isPresent() && remito.get().getEmpresa().getId().equals(empresaId)) {
-            // Restaurar el stock de los productos
+            // Restaurar el stock de los productos usando el sistema de sincronización
             List<DetalleRemitoIngreso> detalles = detalleRemitoIngresoRepository.findByRemitoIngresoIdOrderByFechaCreacionAsc(id);
             for (DetalleRemitoIngreso detalle : detalles) {
                 if (detalle.getProducto() != null) {
                     Producto producto = detalle.getProducto();
-                    producto.setStock(producto.getStock() - detalle.getCantidad());
+                    Integer stockAnterior = producto.getStock();
+                    Integer nuevoStock = stockAnterior - detalle.getCantidad();
+                    
+                    // Usar el sistema de sincronización para restaurar el stock correctamente
+                    producto.setStock(nuevoStock);
                     productoRepository.save(producto);
+                    
+                    // Sincronizar con sectores para distribuir el stock correctamente
+                    stockSincronizacionService.sincronizarStockConSectores(
+                        empresaId,
+                        producto.getId(),
+                        nuevoStock,
+                        "Eliminación de remito de ingreso"
+                    );
+                    
+                    System.out.println("✅ ELIMINACIÓN REMITO - Stock restaurado y sincronizado: " + stockAnterior + " - " + detalle.getCantidad() + " = " + nuevoStock);
                 }
             }
             

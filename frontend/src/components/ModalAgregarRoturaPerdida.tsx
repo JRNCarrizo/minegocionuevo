@@ -162,6 +162,7 @@ export default function ModalAgregarRoturaPerdida({
         return;
       }
       
+      // Volver a usar la función original que funcionaba
       const response = await ApiService.obtenerTodosLosProductos(datosUsuario.empresaId);
       setProductos(response.data || []);
     } catch (error) {

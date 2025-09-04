@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.UUID;
 import java.util.Random;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -56,6 +57,9 @@ public class ProductoService {
     
     @Autowired
     private StockPorSectorRepository stockPorSectorRepository;
+    
+    @Autowired
+    private StockSincronizacionService stockSincronizacionService;
 
     /**
      * Método auxiliar para crear sector automáticamente si no existe
@@ -375,6 +379,23 @@ public class ProductoService {
             System.out.println("🔍 Stock nuevo: " + productoDTO.getStock());
             System.out.println("🔍 Diferencia: " + (productoDTO.getStock() - stockAnterior));
             System.out.println("🔍 Cantidad a registrar: " + Math.abs(productoDTO.getStock() - stockAnterior));
+            
+            // ACTUALIZACIÓN DIRECTA DEL STOCK DEL PRODUCTO (sin afectar sectores)
+            try {
+                System.out.println("🔄 ACTUALIZACIÓN - Actualizando stock del producto principal desde Gestión de Productos");
+                
+                // Cuando se edita un producto, el stock se actualiza directamente
+                // sin afectar el stock en sectores
+                productoActualizado.setStock(productoDTO.getStock());
+                productoRepository.save(productoActualizado);
+                
+                System.out.println("✅ ACTUALIZACIÓN - Stock del producto actualizado a: " + productoDTO.getStock());
+                
+            } catch (Exception e) {
+                System.err.println("❌ ACTUALIZACIÓN - Error al actualizar stock del producto: " + e.getMessage());
+                // No fallar la operación principal si hay error en actualización
+            }
+            
             try {
                 InventarioRequestDTO request = new InventarioRequestDTO();
                 request.setProductoId(id);

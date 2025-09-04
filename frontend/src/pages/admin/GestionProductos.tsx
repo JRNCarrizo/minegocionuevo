@@ -98,6 +98,7 @@ const GestionProductos: React.FC = () => {
   const [mostrarScannerUSB, setMostrarScannerUSB] = useState(false);
   const [mostrarModalSeleccionScanner, setMostrarModalSeleccionScanner] = useState(false);
   const [productoEscaneado, setProductoEscaneado] = useState<Producto | null>(null);
+  const [limpiandoDatos, setLimpiandoDatos] = useState(false);
   const [stockOriginal, setStockOriginal] = useState<number>(0);
   const [cantidadStock, setCantidadStock] = useState<number>(1);
   
@@ -643,6 +644,31 @@ const GestionProductos: React.FC = () => {
       alert('❌ Error al descargar el reporte de stock. Por favor, intenta nuevamente.');
     } finally {
       setCargando(false);
+    }
+  };
+
+  const limpiarDatosInconsistentes = async () => {
+    if (!empresaId) {
+      alert('Error: No se pudo identificar la empresa');
+      return;
+    }
+
+    try {
+      setLimpiandoDatos(true);
+      console.log('🧹 Iniciando limpieza de datos inconsistentes para empresa:', empresaId);
+      
+      const response = await ApiService.limpiarDatosInconsistentes();
+      console.log('✅ Limpieza completada:', response);
+      
+      alert('✅ Limpieza de datos inconsistentes completada exitosamente.\n\nSe han eliminado registros huérfanos y sincronizado el stock.');
+      
+      // Recargar productos después de la limpieza
+      await cargarProductos();
+    } catch (error) {
+      console.error('❌ Error al limpiar datos:', error);
+      alert('❌ Error al limpiar datos inconsistentes. Por favor, intenta nuevamente.');
+    } finally {
+      setLimpiandoDatos(false);
     }
   };
 
@@ -1306,6 +1332,86 @@ const GestionProductos: React.FC = () => {
                 fontWeight: '600'
               }}>
                 {cargando ? '⏳ Descargando...' : 'Descargar reporte →'}
+              </div>
+            </div>
+
+            {/* Tarjeta Limpieza de Datos */}
+            <div 
+              data-card-index="6"
+              onClick={limpiandoDatos ? undefined : limpiarDatosInconsistentes}
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                cursor: limpiandoDatos ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: navegacionActiva && cardSeleccionada === 6 ? '2px solid #000' : '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                animation: 'slideInUp 0.6s ease-out 0.9s both',
+                opacity: limpiandoDatos ? 0.7 : 1,
+                backgroundColor: navegacionActiva && cardSeleccionada === 6 ? '#f0f9ff' : 'white'
+              }}
+              onMouseOver={(e) => {
+                if (!limpiandoDatos && !navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.borderColor = '#ef4444';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!navegacionActiva) {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+                }
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.25rem',
+                  marginRight: '0.75rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}>
+                  🧹
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Limpiar Datos
+                  </h3>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Elimina registros huérfanos e inconsistencias del sistema
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: limpiandoDatos ? '#64748b' : '#ef4444',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                {limpiandoDatos ? '⏳ Limpiando...' : 'Limpiar datos →'}
               </div>
             </div>
           </div>

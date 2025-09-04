@@ -35,6 +35,9 @@ public class SectorService {
     @Autowired
     private EmpresaRepository empresaRepository;
     
+    @Autowired
+    private StockSincronizacionService stockSincronizacionService;
+    
     /**
      * Crear un nuevo sector
      */
@@ -121,8 +124,11 @@ public class SectorService {
             .findByProductoIdAndSectorId(productoId, sectorId);
         
         StockPorSector stockPorSector;
+        Integer stockAnterior = 0;
+        
         if (stockExistente.isPresent()) {
             stockPorSector = stockExistente.get();
+            stockAnterior = stockPorSector.getCantidad();
             stockPorSector.setCantidad(cantidad);
         } else {
             stockPorSector = new StockPorSector(producto, sector, cantidad);
@@ -130,8 +136,26 @@ public class SectorService {
         
         StockPorSector stockGuardado = stockPorSectorRepository.save(stockPorSector);
         
-        // Actualizar el stock total del producto
-        actualizarStockTotalProducto(productoId);
+        // SINCRONIZACIÓN AUTOMÁTICA CON PRODUCTO
+        try {
+            System.out.println("🔄 SINCRONIZACIÓN - Iniciando sincronización automática desde Gestión de Sectores");
+            System.out.println("🔄 SINCRONIZACIÓN - Producto: " + productoId + ", Sector: " + sectorId + ", Cantidad: " + cantidad);
+            
+            // Sincronizar el sector con el producto
+            Map<String, Object> resultadoSincronizacion = stockSincronizacionService.sincronizarSectorConProducto(
+                producto.getEmpresa().getId(),
+                productoId,
+                sectorId,
+                cantidad,
+                "Asignación de stock desde Gestión de Sectores"
+            );
+            
+            System.out.println("✅ SINCRONIZACIÓN - Sector sincronizado exitosamente: " + resultadoSincronizacion);
+            
+        } catch (Exception e) {
+            System.err.println("❌ SINCRONIZACIÓN - Error en sincronización automática: " + e.getMessage());
+            // No fallar la operación principal si hay error en sincronización
+        }
         
         return stockGuardado;
     }
@@ -503,8 +527,9 @@ public class SectorService {
                 
                 System.out.println("🔍 SECTOR SERVICE - Procesando asignación: Producto " + productoId + ", Cantidad " + cantidad);
                 
-                if (cantidad <= 0) {
-                    System.out.println("🔍 SECTOR SERVICE - Cantidad 0 o negativa, saltando producto " + productoId);
+                // Permitir cantidad 0 para asignaciones iniciales (cuando se crea un producto nuevo)
+                if (cantidad < 0) {
+                    System.out.println("🔍 SECTOR SERVICE - Cantidad negativa, saltando producto " + productoId);
                     continue;
                 }
                 
@@ -520,18 +545,22 @@ public class SectorService {
                     throw new RuntimeException("No se pueden asignar productos inactivos: " + producto.getNombre());
                 }
                 
-                // Verificar que hay suficiente stock disponible
-                Integer stockDisponible = producto.getStock() != null ? producto.getStock() : 0;
-                Integer stockAsignado = stockPorSectorRepository.getStockTotalByProductoId(productoId);
-                Integer stockRealmenteDisponible = stockDisponible - stockAsignado;
-                
-                System.out.println("🔍 SECTOR SERVICE - Stock disponible: " + stockDisponible);
-                System.out.println("🔍 SECTOR SERVICE - Stock ya asignado: " + stockAsignado);
-                System.out.println("🔍 SECTOR SERVICE - Stock realmente disponible: " + stockRealmenteDisponible);
-                
-                if (cantidad > stockRealmenteDisponible) {
-                    throw new RuntimeException("Stock insuficiente para el producto " + producto.getNombre() + 
-                        ". Disponible: " + stockRealmenteDisponible + ", Solicitado: " + cantidad);
+                // Verificar que hay suficiente stock disponible (solo si la cantidad es mayor a 0)
+                if (cantidad > 0) {
+                    Integer stockDisponible = producto.getStock() != null ? producto.getStock() : 0;
+                    Integer stockAsignado = stockPorSectorRepository.getStockTotalByProductoId(productoId);
+                    Integer stockRealmenteDisponible = stockDisponible - stockAsignado;
+                    
+                    System.out.println("🔍 SECTOR SERVICE - Stock disponible: " + stockDisponible);
+                    System.out.println("🔍 SECTOR SERVICE - Stock ya asignado: " + stockAsignado);
+                    System.out.println("🔍 SECTOR SERVICE - Stock realmente disponible: " + stockRealmenteDisponible);
+                    
+                    if (cantidad > stockRealmenteDisponible) {
+                        throw new RuntimeException("Stock insuficiente para el producto " + producto.getNombre() + 
+                            ". Disponible: " + stockRealmenteDisponible + ", Solicitado: " + cantidad);
+                    }
+                } else {
+                    System.out.println("🔍 SECTOR SERVICE - Asignación inicial con cantidad 0, no verificando stock");
                 }
                 
                 // Buscar si ya existe una asignación para este producto en este sector

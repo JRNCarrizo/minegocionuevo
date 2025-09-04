@@ -1080,12 +1080,13 @@ export default function CrearDevolucion() {
                     top: '100%',
                     left: 0,
                     right: 0,
-                    backgroundColor: 'white',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                    background: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderTop: 'none',
+                    borderRadius: '0 0 0.5rem 0.5rem',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                     zIndex: 1000,
-                    maxHeight: opcionesTransporte.length <= 3 ? 'auto' : '200px', // Se expande si hay 3 o menos elementos
+                    maxHeight: '200px',
                     overflowY: 'auto'
                   }}>
                   {opcionesTransporte.map((opcion, index) => (
@@ -1095,18 +1096,28 @@ export default function CrearDevolucion() {
                       style={{
                         padding: '0.75rem',
                         cursor: 'pointer',
-                        backgroundColor: transportistaSeleccionado === index ? '#f1f5f9' : 'transparent',
-                        borderBottom: index < opcionesTransporte.length - 1 ? '1px solid #f3f4f6' : 'none'
+                        borderBottom: '1px solid #f3f4f6',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        backgroundColor: transportistaSeleccionado === index ? '#eff6ff' : 'transparent',
+                        borderLeft: transportistaSeleccionado === index ? '3px solid #3b82f6' : 'none'
                       }}
+                      onMouseEnter={() => setTransportistaSeleccionado(index)}
                     >
-                      <div style={{ fontWeight: '600', fontSize: '0.875rem' }}>
-                        {opcion.displayText}
-                      </div>
-                      {opcion.transportista.nombreEmpresa && (
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                          {opcion.transportista.nombreEmpresa}
+                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>🚛</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>
+                          {opcion.displayText}
                         </div>
-                      )}
+                        {opcion.transportista.nombreEmpresa && (
+                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                            {opcion.transportista.nombreEmpresa}
+                          </div>
+                        )}
+                      </div>
+
                     </div>
                   ))}
                 </div>

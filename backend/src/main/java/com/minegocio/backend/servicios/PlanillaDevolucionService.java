@@ -10,6 +10,7 @@ import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.PlanillaDevolucionRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
+import com.minegocio.backend.servicios.StockSincronizacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +48,9 @@ public class PlanillaDevolucionService {
 
     @Autowired
     private ProductoRepository productoRepository;
+    
+    @Autowired
+    private StockSincronizacionService stockSincronizacionService;
 
     /**
      * Crear una nueva planilla de devolución y SUMAR al stock
@@ -158,7 +162,7 @@ public class PlanillaDevolucionService {
     }
 
     /**
-     * SUMAR cantidad al stock de un producto (para devoluciones)
+     * SUMAR cantidad al stock de un producto (para devoluciones) directamente
      */
     private void sumarAlStock(Producto producto, Integer cantidad) {
         if (producto.getStock() != null && cantidad != null) {
@@ -171,10 +175,11 @@ public class PlanillaDevolucionService {
             System.out.println("   Cantidad a sumar: " + cantidad);
             System.out.println("   Nuevo stock: " + nuevoStock);
             
+            // Sumar directamente al stock del producto (sin afectar sectores)
             producto.setStock(nuevoStock);
             productoRepository.save(producto);
             
-            System.out.println("✅ [DEVOLUCION] Stock actualizado exitosamente");
+            System.out.println("✅ [DEVOLUCION] Stock actualizado exitosamente: " + stockAnterior + " + " + cantidad + " = " + nuevoStock);
         }
     }
 
@@ -281,7 +286,7 @@ public class PlanillaDevolucionService {
     }
 
     /**
-     * RESTAR cantidad del stock de un producto (para revertir devoluciones)
+     * RESTAR cantidad del stock de un producto (para revertir devoluciones) directamente
      */
     private void restarDelStock(Producto producto, Integer cantidad) {
         if (producto.getStock() != null && cantidad != null) {
@@ -299,10 +304,11 @@ public class PlanillaDevolucionService {
             System.out.println("   Cantidad a restar: " + cantidad);
             System.out.println("   Nuevo stock: " + nuevoStock);
             
+            // Restar directamente del stock del producto (sin afectar sectores)
             producto.setStock(nuevoStock);
             productoRepository.save(producto);
             
-            System.out.println("✅ [DEVOLUCION] Stock revertido exitosamente");
+            System.out.println("✅ [DEVOLUCION] Stock revertido exitosamente: " + stockAnterior + " - " + cantidad + " = " + nuevoStock);
         }
     }
 

@@ -1,6 +1,11 @@
 package com.minegocio.backend.servicios;
 
-import com.minegocio.backend.dto.*;
+import com.minegocio.backend.dto.DashboardSuperAdminDTO;
+import com.minegocio.backend.dto.EmpresaTopDTO;
+import com.minegocio.backend.dto.DatoTendenciaDTO;
+import com.minegocio.backend.dto.AlertaSuperAdminDTO;
+import com.minegocio.backend.dto.NotificacionSuperAdminDTO;
+import com.minegocio.backend.dto.EmpresaDTO;
 import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Suscripcion;
 import com.minegocio.backend.entidades.Plan;
@@ -412,8 +417,8 @@ public class SuperAdminService {
         }
         
         Long transacciones = (long) (totalTransaccionesVentaRapida + totalTransaccionesPedidos);
-        LocalDateTime ultimaConexion = empresa.getUltimoAcceso() != null ? 
-            empresa.getUltimoAcceso() : empresa.getFechaCreacion();
+        LocalDateTime ultimaConexion = empresa.getFechaActualizacion() != null ? 
+            empresa.getFechaActualizacion() : empresa.getFechaCreacion();
         
         dto.setTotalVentasRapidas(ventasRapidas);
         dto.setTotalTransacciones(transacciones);

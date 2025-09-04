@@ -441,6 +441,26 @@ class ApiService {
     }
   }
 
+  async obtenerDetalleStockDisponible(empresaId: number, productoId: number): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.get(`/empresas/${empresaId}/stock-sincronizacion/detalle-stock/${productoId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener detalle de stock disponible:', error);
+      throw error;
+    }
+  }
+
+  async limpiarDatosInconsistentes(): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.post('/limpieza-datos/limpiar');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al limpiar datos inconsistentes:', error);
+      throw error;
+    }
+  }
+
   async obtenerProductosPorSector(empresaId: number, sector: string, activo?: boolean): Promise<Producto[]> {
     const params = new URLSearchParams();
     params.append('sector', sector);
