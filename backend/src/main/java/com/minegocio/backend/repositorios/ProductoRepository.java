@@ -251,13 +251,5 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      */
     Optional<Producto> findByEmpresaIdAndNombreIgnoreCase(Long empresaId, String nombre);
 
-    /**
-     * Busca un producto existente por código de barras en la empresa
-     */
-    Optional<Producto> findByEmpresaIdAndCodigoBarras(Long empresaId, String codigoBarras);
 
-    /**
-     * Busca un producto existente por código personalizado en la empresa
-     */
-    Optional<Producto> findByEmpresaIdAndCodigoPersonalizado(Long empresaId, String codigoPersonalizado);
 }

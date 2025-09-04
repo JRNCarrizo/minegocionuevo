@@ -9,3 +9,4 @@ COMMENT ON COLUMN empresas.ultimo_acceso IS 'Fecha y hora del último acceso de 
 
 
 
+
