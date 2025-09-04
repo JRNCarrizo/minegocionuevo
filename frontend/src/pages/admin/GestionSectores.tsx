@@ -94,6 +94,12 @@ export default function GestionSectores() {
   // Estado para almacenar información de productos por sector
   const [infoProductosPorSector, setInfoProductosPorSector] = useState<{[key: number]: {productos: number, unidades: number}}>({});
   
+  // Estado para controlar si ya se cargó la información
+  const [infoProductosCargada, setInfoProductosCargada] = useState(false);
+  
+  // Estado para controlar cuando se está recargando la información
+  const [recargandoInfo, setRecargandoInfo] = useState(false);
+  
   // Estados para navegación por teclado
   const [modoNavegacion, setModoNavegacion] = useState(false);
   const [elementoSeleccionado, setElementoSeleccionado] = useState(-1); // -1: botones, 0+: sectores
