@@ -916,4 +916,67 @@ public class SectorService {
         
         System.out.println("🔍 LIMPIAR DUPLICACIONES - Limpieza completada");
     }
+    
+    /**
+     * Asignar automáticamente productos a sectores basándose en el campo sectorAlmacenamiento
+     */
+    @Transactional
+    public void asignarProductosAutomaticamente(Long empresaId) {
+        System.out.println("🔍 ASIGNAR PRODUCTOS AUTOMATICAMENTE - Iniciando para empresa: " + empresaId);
+        
+        // Obtener todos los productos de la empresa que tienen sectorAlmacenamiento
+        List<Producto> productosConSector = productoRepository.findByEmpresaAndSectorAlmacenamientoIsNotNullAndSectorAlmacenamientoNot(empresaId, "");
+        System.out.println("🔍 ASIGNAR PRODUCTOS AUTOMATICAMENTE - Productos con sectorAlmacenamiento: " + productosConSector.size());
+        
+        // Obtener todos los sectores de la empresa
+        List<Sector> sectores = sectorRepository.findByEmpresaIdOrderByNombre(empresaId);
+        System.out.println("🔍 ASIGNAR PRODUCTOS AUTOMATICAMENTE - Sectores disponibles: " + sectores.size());
+        
+        int productosAsignados = 0;
+        
+        for (Producto producto : productosConSector) {
+            try {
+                String sectorAlmacenamiento = producto.getSectorAlmacenamiento();
+                if (sectorAlmacenamiento == null || sectorAlmacenamiento.trim().isEmpty()) {
+                    continue;
+                }
+                
+                // Buscar un sector que coincida con el sectorAlmacenamiento
+                Sector sectorEncontrado = null;
+                for (Sector sector : sectores) {
+                    if (sector.getNombre().equalsIgnoreCase(sectorAlmacenamiento.trim())) {
+                        sectorEncontrado = sector;
+                        break;
+                    }
+                }
+                
+                if (sectorEncontrado != null) {
+                    // Verificar si ya existe una asignación
+                    Optional<StockPorSector> stockExistente = stockPorSectorRepository.findByProductoIdAndSectorId(
+                        producto.getId(), sectorEncontrado.getId());
+                    
+                    if (stockExistente.isPresent()) {
+                        // Actualizar la cantidad existente
+                        StockPorSector stock = stockExistente.get();
+                        stock.setCantidad(producto.getStock() != null ? producto.getStock() : 0);
+                        stockPorSectorRepository.save(stock);
+                        System.out.println("🔍 ASIGNAR PRODUCTOS AUTOMATICAMENTE - Actualizado: " + producto.getNombre() + " en " + sectorEncontrado.getNombre());
+                    } else {
+                        // Crear nueva asignación
+                        StockPorSector nuevoStock = new StockPorSector(producto, sectorEncontrado, 
+                            producto.getStock() != null ? producto.getStock() : 0);
+                        stockPorSectorRepository.save(nuevoStock);
+                        System.out.println("🔍 ASIGNAR PRODUCTOS AUTOMATICAMENTE - Creado: " + producto.getNombre() + " en " + sectorEncontrado.getNombre());
+                    }
+                    productosAsignados++;
+                } else {
+                    System.out.println("🔍 ASIGNAR PRODUCTOS AUTOMATICAMENTE - Sector no encontrado para: " + sectorAlmacenamiento);
+                }
+            } catch (Exception e) {
+                System.err.println("🔍 ASIGNAR PRODUCTOS AUTOMATICAMENTE - Error procesando producto " + producto.getNombre() + ": " + e.getMessage());
+            }
+        }
+        
+        System.out.println("🔍 ASIGNAR PRODUCTOS AUTOMATICAMENTE - Total productos asignados: " + productosAsignados);
+    }
 }

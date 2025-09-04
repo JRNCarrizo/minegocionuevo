@@ -17,6 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import com.minegocio.backend.repositorios.EmpresaRepository;
+import com.minegocio.backend.entidades.Producto;
+import com.minegocio.backend.repositorios.ProductoRepository;
+import com.minegocio.backend.repositorios.StockPorSectorRepository;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/empresas/{empresaId}/sectores")
@@ -34,6 +38,12 @@ public class SectorController {
     
     @Autowired
     private EmpresaRepository empresaRepository;
+    
+    @Autowired
+    private ProductoRepository productoRepository;
+    
+    @Autowired
+    private StockPorSectorRepository stockPorSectorRepository;
     
     // Métodos de conversión
     private SectorDTO convertirASectorDTO(Sector sector) {
@@ -619,6 +629,67 @@ public class SectorController {
             
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Error al limpiar duplicaciones: " + e.getMessage()
+            ));
+        }
+    }
+    
+    /**
+     * DEBUG: Obtener información de debug sobre stock por sector
+     */
+    @GetMapping("/debug-stock")
+    public ResponseEntity<?> obtenerDebugStock(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🔍 DEBUG STOCK - Endpoint llamado para empresa: " + empresaId);
+            
+            // Verificar que la empresa existe
+            if (!empresaRepository.existsById(empresaId)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Empresa no encontrada con ID: " + empresaId
+                ));
+            }
+            
+            Map<String, Object> debugInfo = new HashMap<>();
+            
+            // Obtener todos los sectores
+            List<Sector> sectores = sectorService.obtenerTodosLosSectores(empresaId);
+            debugInfo.put("totalSectores", sectores.size());
+            debugInfo.put("sectores", sectores.stream().map(s -> Map.of(
+                "id", s.getId(),
+                "nombre", s.getNombre(),
+                "activo", s.getActivo()
+            )).collect(Collectors.toList()));
+            
+            // Obtener todos los productos
+            List<Producto> productos = productoRepository.findByEmpresaId(empresaId);
+            debugInfo.put("totalProductos", productos.size());
+            debugInfo.put("productos", productos.stream().map(p -> Map.of(
+                "id", p.getId(),
+                "nombre", p.getNombre(),
+                "stock", p.getStock(),
+                "activo", p.getActivo()
+            )).collect(Collectors.toList()));
+            
+            // Obtener stock por sector
+            List<StockPorSector> stockPorSectores = stockPorSectorRepository.findByEmpresaId(empresaId);
+            debugInfo.put("totalStockPorSector", stockPorSectores.size());
+            debugInfo.put("stockPorSectores", stockPorSectores.stream().map(sps -> Map.of(
+                "id", sps.getId(),
+                "productoId", sps.getProducto().getId(),
+                "productoNombre", sps.getProducto().getNombre(),
+                "sectorId", sps.getSector().getId(),
+                "sectorNombre", sps.getSector().getNombre(),
+                "cantidad", sps.getCantidad()
+            )).collect(Collectors.toList()));
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Información de debug obtenida",
+                "data", debugInfo
+            ));
+        } catch (Exception e) {
+            System.err.println("🔍 DEBUG STOCK - Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Error al obtener información de debug: " + e.getMessage()
             ));
         }
     }

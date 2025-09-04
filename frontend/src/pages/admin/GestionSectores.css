@@ -89,7 +89,8 @@
 
 .boton-migrar,
 .boton-crear,
-.boton-stock-general {
+.boton-stock-general,
+.boton-actualizar {
   display: flex;
   align-items: center;
   gap: 0.5rem;

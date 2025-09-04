@@ -946,6 +946,18 @@ export default function GestionSectores() {
             <span className="icono-boton">📊</span>
             Ver Stock General
           </button>
+          <button
+            onClick={async () => {
+              setCargando(true);
+              await cargarInfoProductosPorSector();
+              setCargando(false);
+              toast.success('Información actualizada');
+            }}
+            className={`boton-actualizar ${modoNavegacion && elementoSeleccionado === 3 ? 'seleccionado' : ''}`}
+          >
+            <span className="icono-boton">🔄</span>
+            Actualizar Información
+          </button>
         </div>
 
 
