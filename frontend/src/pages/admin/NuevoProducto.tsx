@@ -381,46 +381,56 @@ export default function NuevoProducto() {
   }, [empresaId]);
 
   const manejarTecladoSector = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!mostrarSugerenciasSector) return;
+    if (mostrarSugerenciasSector) {
+      const totalOpciones = sectoresFiltrados.length + 
+        (formulario.sectorAlmacenamiento.trim() && 
+         !sectoresFiltrados.includes(formulario.sectorAlmacenamiento.trim()) ? 1 : 0);
 
-    const totalOpciones = sectoresFiltrados.length + 
-      (formulario.sectorAlmacenamiento.trim() && 
-       !sectoresFiltrados.includes(formulario.sectorAlmacenamiento.trim()) ? 1 : 0);
-
-    if (totalOpciones === 0) return;
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSectorSeleccionadoIndex(prev => 
-          prev < totalOpciones - 1 ? prev + 1 : 0
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSectorSeleccionadoIndex(prev => 
-          prev > 0 ? prev - 1 : totalOpciones - 1
-        );
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (sectorSeleccionadoIndex >= 0 && sectorSeleccionadoIndex < sectoresFiltrados.length) {
-          seleccionarSector(sectoresFiltrados[sectorSeleccionadoIndex]);
-        } else if (sectorSeleccionadoIndex === sectoresFiltrados.length && 
-                   formulario.sectorAlmacenamiento.trim() && 
-                   !sectoresFiltrados.includes(formulario.sectorAlmacenamiento.trim())) {
-          // Crear nuevo sector
-          crearNuevoSector(formulario.sectorAlmacenamiento.trim()).then(success => {
-            if (success) {
-              seleccionarSector(formulario.sectorAlmacenamiento.trim());
+      if (totalOpciones > 0) {
+        switch (e.key) {
+          case 'ArrowDown':
+            e.preventDefault();
+            setSectorSeleccionadoIndex(prev => 
+              prev < totalOpciones - 1 ? prev + 1 : 0
+            );
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            setSectorSeleccionadoIndex(prev => 
+              prev > 0 ? prev - 1 : totalOpciones - 1
+            );
+            break;
+          case 'Enter':
+            e.preventDefault();
+            if (sectorSeleccionadoIndex >= 0 && sectorSeleccionadoIndex < sectoresFiltrados.length) {
+              seleccionarSector(sectoresFiltrados[sectorSeleccionadoIndex]);
+            } else if (sectorSeleccionadoIndex === sectoresFiltrados.length && 
+                       formulario.sectorAlmacenamiento.trim() && 
+                       !sectoresFiltrados.includes(formulario.sectorAlmacenamiento.trim())) {
+              // Crear nuevo sector
+              crearNuevoSector(formulario.sectorAlmacenamiento.trim()).then(success => {
+                if (success) {
+                  seleccionarSector(formulario.sectorAlmacenamiento.trim());
+                }
+              });
             }
-          });
+            break;
+          case 'Escape':
+            setMostrarSugerenciasSector(false);
+            setSectorSeleccionadoIndex(-1);
+            break;
         }
-        break;
-      case 'Escape':
-        setMostrarSugerenciasSector(false);
-        setSectorSeleccionadoIndex(-1);
-        break;
+        return;
+      }
+    }
+
+    // Si no hay sugerencias o no se está mostrando sugerencias, manejar navegación normal
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      siguientePaso();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      manejarEscape();
     }
   }, [mostrarSugerenciasSector, sectoresFiltrados, sectorSeleccionadoIndex, seleccionarSector, crearNuevoSector, formulario.sectorAlmacenamiento]);
 
@@ -596,11 +606,66 @@ export default function NuevoProducto() {
   const siguientePaso = () => {
     if (validarPaso(pasoActual)) {
       setPasoActual(pasoActual + 1);
+      
+      // Scroll al principio del formulario y enfocar el primer campo del nuevo paso
+      setTimeout(() => {
+        // Scroll al principio del formulario
+        const formulario = document.querySelector('.tarjeta-formulario');
+        if (formulario) {
+          formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Enfocar el primer campo del nuevo paso
+        const nuevoPaso = pasoActual + 1;
+        if (nuevoPaso === 2) {
+          // Paso 2: Enfocar el campo de stock
+          setTimeout(() => {
+            if (stockRef.current) {
+              stockRef.current.focus();
+            }
+          }, 100);
+        } else if (nuevoPaso === 3) {
+          // Paso 3: No hay campos de texto, pero podemos enfocar el botón de guardar
+          setTimeout(() => {
+            const botonGuardar = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+            if (botonGuardar) {
+              botonGuardar.focus();
+            }
+          }, 100);
+        }
+      }, 50);
     }
   };
 
   const pasoAnterior = () => {
     setPasoActual(pasoActual - 1);
+    
+    // Scroll al principio del formulario y enfocar el primer campo del paso anterior
+    setTimeout(() => {
+      // Scroll al principio del formulario
+      const formulario = document.querySelector('.tarjeta-formulario');
+      if (formulario) {
+        formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      
+      // Enfocar el primer campo del paso anterior
+      const pasoAnterior = pasoActual - 1;
+      if (pasoAnterior === 1) {
+        // Paso 1: Enfocar el campo de nombre
+        setTimeout(() => {
+          if (nombreRef.current) {
+            nombreRef.current.focus();
+          }
+        }, 100);
+      } else if (pasoAnterior === 2) {
+        // Paso 2: Enfocar el campo de stock
+        setTimeout(() => {
+          if (stockRef.current) {
+            stockRef.current.focus();
+          }
+        }, 100);
+      }
+    }, 50);
   };
 
   const validarFormulario = () => {
@@ -642,7 +707,82 @@ export default function NuevoProducto() {
         case 'sectorAlmacenamiento':
           sectorAlmacenamientoRef.current?.focus();
           break;
+        case 'siguientePaso':
+          // Si estamos en el último campo del paso actual, pasar al siguiente paso
+          siguientePaso();
+          break;
+        case 'enviar':
+          // Si estamos en el último campo, enviar el formulario
+          enviarFormulario(e as any);
+          break;
       }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      manejarEscape();
+    }
+  };
+
+  // Manejador de Escape para navegación hacia atrás
+  const manejarEscape = () => {
+    if (pasoActual === 1) {
+      // Si estamos en el primer paso, salir del formulario
+      navigate('/admin/productos');
+    } else {
+      // Si estamos en otros pasos, volver al paso anterior
+      pasoAnterior();
+    }
+  };
+
+  // Manejador de teclado específico para el campo de categoría
+  const manejarTeclasCategoria = (e: React.KeyboardEvent<HTMLSelectElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Si el select está cerrado, expandirlo
+      if (!categoriaRef.current?.matches(':focus')) {
+        if (categoriaRef.current) {
+          categoriaRef.current.focus();
+          // Simular click para abrir las opciones
+          categoriaRef.current.click();
+        }
+      } else {
+        // Si el select está abierto y hay una opción seleccionada, confirmar y pasar al siguiente campo
+        if (categoriaRef.current) {
+          categoriaRef.current.blur();
+          // Pasar al siguiente campo
+          setTimeout(() => {
+            if (descripcionRef.current) {
+              descripcionRef.current.focus();
+            }
+          }, 50);
+        }
+      }
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      // Permitir navegación normal con flechas
+      return; // No prevenir el comportamiento por defecto
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      // Si el select está abierto, cerrarlo
+      if (categoriaRef.current?.matches(':focus')) {
+        categoriaRef.current.blur();
+      } else {
+        // Si está cerrado, usar el comportamiento de Escape general
+        manejarEscape();
+      }
+    }
+  };
+
+  // Manejador de teclado global para el formulario
+  const manejarTecladoGlobal = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      // Si estamos en el Paso 3 (Imágenes), enviar el formulario
+      if (pasoActual === 3) {
+        e.preventDefault();
+        enviarFormulario(e as any);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      manejarEscape();
     }
   };
 
@@ -934,7 +1074,7 @@ export default function NuevoProducto() {
 
           {/* Formulario */}
           <div className="tarjeta-formulario">
-            <form onSubmit={enviarFormulario}>
+            <form onSubmit={enviarFormulario} onKeyDown={manejarTecladoGlobal}>
               {/* Paso 1: Información Básica */}
               {pasoActual === 1 && (
                 <div className="paso-contenido">
@@ -1178,7 +1318,7 @@ export default function NuevoProducto() {
                         name="categoria"
                         value={formulario.categoria}
                         onChange={manejarCambioSelect}
-                        onKeyDown={(e) => manejarEnterCampo(e, 'descripcion')}
+                        onKeyDown={manejarTeclasCategoria}
                         className={`campo-input ${errores.categoria ? 'campo-error' : ''}`}
                       >
                         <option value="">Selecciona una opción</option>
@@ -1258,7 +1398,7 @@ export default function NuevoProducto() {
                           name="unidad"
                           value={formulario.unidad}
                           onChange={manejarCambio}
-                          onKeyDown={(e) => manejarEnterCampo(e, 'stock')}
+                          onKeyDown={(e) => manejarEnterCampo(e, 'siguientePaso')}
                           className={`campo-input ${errores.unidad ? 'campo-error' : ''}`}
                           placeholder="Ej: kg, litro, unidad, par..."
                         />
@@ -1322,7 +1462,7 @@ export default function NuevoProducto() {
                           name="stockMinimo"
                           value={formulario.stockMinimo}
                           onChange={manejarCambio}
-                          onKeyDown={(e) => manejarEnterCampo(e, 'sectorAlmacenamiento')}
+                          onKeyDown={(e) => manejarEnterCampo(e, 'siguientePaso')}
                           className={`campo-input ${errores.stockMinimo ? 'campo-error' : ''}`}
                           placeholder="5"
                           min="0"

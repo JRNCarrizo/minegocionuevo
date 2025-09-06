@@ -3,6 +3,7 @@ package com.minegocio.backend.controladores;
 import com.minegocio.backend.dto.ProductoDTO;
 import com.minegocio.backend.dto.ImportacionProductoDTO;
 import com.minegocio.backend.dto.ResultadoImportacionDTO;
+import com.minegocio.backend.dto.DependenciasProductoDTO;
 import com.minegocio.backend.servicios.ProductoService;
 import com.minegocio.backend.servicios.CloudinaryService;
 import com.minegocio.backend.servicios.LimiteService;
@@ -327,19 +328,132 @@ public class ProductoController {
     }
 
     /**
-     * Elimina un producto (eliminación lógica)
+     * Verifica las dependencias de un producto antes de eliminarlo
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarProducto(
+    @GetMapping("/{id}/dependencias")
+    public ResponseEntity<?> verificarDependenciasProducto(
             @PathVariable Long empresaId,
             @PathVariable Long id) {
         try {
-            productoService.eliminarProducto(empresaId, id);
-            return ResponseEntity.noContent().build();
+            System.out.println("🔍 ENDPOINT DEPENDENCIAS - Producto ID: " + id + ", Empresa ID: " + empresaId);
+            
+            DependenciasProductoDTO dependencias = productoService.verificarDependenciasProducto(empresaId, id);
+            
+            var respuesta = java.util.Map.of(
+                "data", dependencias,
+                "mensaje", "Dependencias verificadas exitosamente"
+            );
+            
+            return ResponseEntity.ok(respuesta);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            System.err.println("❌ Error al verificar dependencias: " + e.getMessage());
+            var error = java.util.Map.of(
+                "error", "Producto no encontrado: " + e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            System.err.println("❌ Error interno al verificar dependencias: " + e.getMessage());
+            e.printStackTrace();
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor: " + e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Elimina un producto (eliminación lógica - desactivación)
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminarProducto(
+            @PathVariable Long empresaId,
+            @PathVariable Long id) {
+        try {
+            System.out.println("🗑️ ENDPOINT ELIMINAR - Producto ID: " + id + ", Empresa ID: " + empresaId);
+            
+            // Verificar dependencias antes de eliminar
+            DependenciasProductoDTO dependencias = productoService.verificarDependenciasProducto(empresaId, id);
+            
+            if (!dependencias.isPuedeDesactivar()) {
+                var error = java.util.Map.of(
+                    "error", "No se puede eliminar el producto",
+                    "razones", dependencias.getRazonesBloqueo(),
+                    "tipoEliminacion", dependencias.getTipoEliminacion()
+                );
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+            }
+            
+            // Realizar eliminación lógica (desactivación)
+            productoService.eliminarProducto(empresaId, id);
+            
+            var respuesta = java.util.Map.of(
+                "mensaje", "Producto desactivado exitosamente",
+                "tipoEliminacion", dependencias.getTipoEliminacion(),
+                "dependencias", dependencias.getDependenciasEncontradas()
+            );
+            
+            return ResponseEntity.ok(respuesta);
+        } catch (RuntimeException e) {
+            System.err.println("❌ Error al eliminar producto: " + e.getMessage());
+            var error = java.util.Map.of(
+                "error", "Producto no encontrado: " + e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        } catch (Exception e) {
+            System.err.println("❌ Error interno al eliminar producto: " + e.getMessage());
+            e.printStackTrace();
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor: " + e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Elimina un producto físicamente (solo si no tiene dependencias)
+     */
+    @DeleteMapping("/{id}/fisico")
+    public ResponseEntity<?> eliminarProductoFisicamente(
+            @PathVariable Long empresaId,
+            @PathVariable Long id) {
+        try {
+            System.out.println("🗑️ ENDPOINT ELIMINAR FÍSICO - Producto ID: " + id + ", Empresa ID: " + empresaId);
+            
+            // Verificar dependencias antes de eliminar
+            DependenciasProductoDTO dependencias = productoService.verificarDependenciasProducto(empresaId, id);
+            
+            if (!dependencias.isPuedeEliminarFisicamente()) {
+                var error = java.util.Map.of(
+                    "error", "No se puede eliminar físicamente el producto",
+                    "razones", dependencias.getRazonesBloqueo(),
+                    "tipoEliminacion", dependencias.getTipoEliminacion(),
+                    "dependencias", dependencias.getDependenciasEncontradas()
+                );
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+            }
+            
+            // Realizar eliminación física
+            productoService.eliminarProductoFisicamente(empresaId, id);
+            
+            var respuesta = java.util.Map.of(
+                "mensaje", "Producto eliminado físicamente exitosamente",
+                "tipoEliminacion", dependencias.getTipoEliminacion()
+            );
+            
+            return ResponseEntity.ok(respuesta);
+        } catch (RuntimeException e) {
+            System.err.println("❌ Error al eliminar producto físicamente: " + e.getMessage());
+            var error = java.util.Map.of(
+                "error", "Producto no encontrado: " + e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        } catch (Exception e) {
+            System.err.println("❌ Error interno al eliminar producto físicamente: " + e.getMessage());
+            e.printStackTrace();
+            var error = java.util.Map.of(
+                "error", "Error interno del servidor: " + e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 

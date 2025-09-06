@@ -450,39 +450,46 @@ const GestionProductos: React.FC = () => {
       return;
     }
 
-    // Confirmar eliminación
-    const confirmar = window.confirm(
-      `¿Estás seguro de que quieres eliminar "${producto.nombre}"?\n\n⚠️ Esta acción marcará el producto como inactivo y:\n` +
-      `• No se mostrará en el catálogo público\n` +
-      `• No aparecerá en búsquedas por escáner\n` +
-      `• No estará disponible para ventas\n\n` +
-      `El producto se puede reactivar más tarde desde la vista de productos inactivos.`
-    );
-    
-    if (!confirmar) {
-      return;
-    }
-
     try {
-      console.log('=== DEBUG ELIMINAR PRODUCTO ===');
-      console.log('EmpresaId:', empresaId);
-      console.log('ProductoId:', producto.id);
-      console.log('Producto:', producto.nombre);
+      console.log('🔍 Verificando dependencias del producto:', producto.nombre);
       
-      // Llamar al endpoint de eliminar
-      await ApiService.eliminarProducto(empresaId, producto.id);
+      // Verificar dependencias primero
+      const dependenciasResponse = await ApiService.verificarDependenciasProducto(empresaId, producto.id);
+      const dependencias = dependenciasResponse.data;
+      
+      if (!dependencias) {
+        throw new Error('No se pudieron verificar las dependencias del producto');
+      }
+      
+      console.log('🔍 Dependencias encontradas:', dependencias);
+      
+      // Mostrar modal inteligente basado en el tipo de eliminación
+      const confirmar = await mostrarModalEliminacionInteligente(producto, dependencias);
+      
+      if (!confirmar) {
+        return;
+      }
+      
+      console.log('🗑️ Eliminando producto:', producto.nombre);
+      
+      // Llamar al endpoint de eliminar apropiado
+      if (dependencias.puedeEliminarFisicamente && confirmar === 'fisico') {
+        await ApiService.eliminarProductoFisicamente(empresaId, producto.id);
+      } else {
+        await ApiService.eliminarProducto(empresaId, producto.id);
+      }
       
       // Actualizar la lista local
       setProductos(productos.filter(p => p.id !== producto.id));
       
-      console.log('Producto eliminado exitosamente');
+      console.log('✅ Producto eliminado exitosamente');
       
       // Mostrar mensaje de éxito
-      alert(`✅ Producto "${producto.nombre}" eliminado exitosamente.\n\nEl producto ha sido marcado como inactivo y:\n` +
-        `• No aparecerá en el catálogo público\n` +
-        `• No será encontrado por el escáner\n` +
-        `• No estará disponible para ventas\n\n` +
-        `Para reactivarlo, ve a la vista de productos inactivos.`);
+      const mensaje = dependencias.puedeEliminarFisicamente && confirmar === 'fisico' 
+        ? `✅ Producto "${producto.nombre}" eliminado definitivamente de la base de datos.`
+        : `✅ Producto "${producto.nombre}" desactivado exitosamente.\n\nEl producto ha sido marcado como inactivo y se puede reactivar más tarde.`;
+      
+      alert(mensaje);
       
     } catch (error) {
       console.error('Error al eliminar producto:', error);
@@ -492,10 +499,218 @@ const GestionProductos: React.FC = () => {
         const axiosError = error as { response?: { status?: number; data?: unknown } };
         console.error('Status del error:', axiosError.response?.status);
         console.error('Data del error:', axiosError.response?.data);
+        
+        // Mostrar error específico si viene del backend
+        if (axiosError.response?.data && typeof axiosError.response.data === 'object') {
+          const errorData = axiosError.response.data as any;
+          if (errorData.error) {
+            alert(`Error: ${errorData.error}`);
+            return;
+          }
+        }
       }
       
       alert('Error al eliminar el producto. Por favor, intenta nuevamente.');
     }
+  };
+
+  const mostrarModalEliminacionInteligente = (producto: Producto, dependencias: any): Promise<string | false> => {
+    return new Promise((resolve) => {
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      `;
+
+      const getModalContent = () => {
+        const { tipoEliminacion, dependenciasEncontradas, razonesBloqueo } = dependencias;
+        
+        if (tipoEliminacion === 'SEGURA') {
+          return `
+            <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+              <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🗑️</div>
+                <h2 style="margin: 0; color: #1f2937; font-size: 1.5rem; font-weight: 600;">Eliminar Producto Definitivamente</h2>
+                <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 1rem;">"${producto.nombre}"</p>
+              </div>
+              
+              <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                  <span style="font-size: 1.25rem; margin-right: 0.5rem;">✅</span>
+                  <strong style="color: #0369a1;">Eliminación Segura</strong>
+                </div>
+                <p style="margin: 0; color: #0369a1; font-size: 0.9rem;">
+                  Este producto no tiene dependencias. Se eliminará completamente de la base de datos.
+                </p>
+              </div>
+              
+              <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button id="cancelar" style="
+                  padding: 0.75rem 1.5rem;
+                  border: 1px solid #d1d5db;
+                  background: white;
+                  color: #374151;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-weight: 500;
+                ">Cancelar</button>
+                <button id="eliminar" style="
+                  padding: 0.75rem 1.5rem;
+                  border: none;
+                  background: #dc2626;
+                  color: white;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-weight: 500;
+                ">Eliminar Definitivamente</button>
+              </div>
+            </div>
+          `;
+        } else if (tipoEliminacion === 'ADVERTENCIA') {
+          return `
+            <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+              <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <h2 style="margin: 0; color: #1f2937; font-size: 1.5rem; font-weight: 600;">Desactivar Producto</h2>
+                <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 1rem;">"${producto.nombre}"</p>
+              </div>
+              
+              <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                  <span style="font-size: 1.25rem; margin-right: 0.5rem;">⚠️</span>
+                  <strong style="color: #92400e;">Eliminación con Advertencia</strong>
+                </div>
+                <p style="margin: 0; color: #92400e; font-size: 0.9rem;">
+                  Este producto tiene dependencias históricas. Se marcará como inactivo pero se conservará el historial.
+                </p>
+              </div>
+              
+              ${dependenciasEncontradas.length > 0 ? `
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.9rem; font-weight: 600;">Dependencias encontradas:</h4>
+                  <ul style="margin: 0; padding-left: 1.5rem; color: #6b7280; font-size: 0.9rem;">
+                    ${dependenciasEncontradas.map((dep: string) => `<li>${dep}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+              
+              <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button id="cancelar" style="
+                  padding: 0.75rem 1.5rem;
+                  border: 1px solid #d1d5db;
+                  background: white;
+                  color: #374151;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-weight: 500;
+                ">Cancelar</button>
+                <button id="desactivar" style="
+                  padding: 0.75rem 1.5rem;
+                  border: none;
+                  background: #f59e0b;
+                  color: white;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-weight: 500;
+                ">Desactivar Producto</button>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+              <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🚫</div>
+                <h2 style="margin: 0; color: #1f2937; font-size: 1.5rem; font-weight: 600;">No se puede eliminar</h2>
+                <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 1rem;">"${producto.nombre}"</p>
+              </div>
+              
+              <div style="background: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                  <span style="font-size: 1.25rem; margin-right: 0.5rem;">🚫</span>
+                  <strong style="color: #dc2626;">Eliminación Bloqueada</strong>
+                </div>
+                <p style="margin: 0; color: #dc2626; font-size: 0.9rem;">
+                  Este producto tiene dependencias críticas y no se puede eliminar.
+                </p>
+              </div>
+              
+              ${razonesBloqueo.length > 0 ? `
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.9rem; font-weight: 600;">Razones:</h4>
+                  <ul style="margin: 0; padding-left: 1.5rem; color: #6b7280; font-size: 0.9rem;">
+                    ${razonesBloqueo.map((razon: string) => `<li>${razon}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+              
+              <div style="display: flex; justify-content: flex-end;">
+                <button id="cancelar" style="
+                  padding: 0.75rem 1.5rem;
+                  border: 1px solid #d1d5db;
+                  background: white;
+                  color: #374151;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-weight: 500;
+                ">Entendido</button>
+              </div>
+            </div>
+          `;
+        }
+      };
+
+      modal.innerHTML = getModalContent();
+      document.body.appendChild(modal);
+
+      const cancelarBtn = modal.querySelector('#cancelar');
+      const eliminarBtn = modal.querySelector('#eliminar');
+      const desactivarBtn = modal.querySelector('#desactivar');
+
+      let cleanup = () => {
+        document.body.removeChild(modal);
+      };
+
+      cancelarBtn?.addEventListener('click', () => {
+        cleanup();
+        resolve(false);
+      });
+
+      eliminarBtn?.addEventListener('click', () => {
+        cleanup();
+        resolve('fisico');
+      });
+
+      desactivarBtn?.addEventListener('click', () => {
+        cleanup();
+        resolve('desactivar');
+      });
+
+      // Cerrar con Escape
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          cleanup();
+          resolve(false);
+        }
+      };
+      document.addEventListener('keydown', handleEscape);
+      
+      // Limpiar event listener cuando se cierre el modal
+      const originalCleanup = cleanup;
+      cleanup = () => {
+        document.removeEventListener('keydown', handleEscape);
+        originalCleanup();
+      };
+    });
   };
 
   const reactivarProducto = async (producto: Producto) => {

@@ -176,20 +176,14 @@ export default function CrearPlanilla() {
         
         // Si coincide con transportista, mostrar todos sus vehículos
         if (matchCodigo || matchNombre) {
-          if (vehiculosActivos.length === 0) {
-            // Si no tiene vehículos activos, mostrar solo el transportista
-            opciones.push({
-              transportista,
-              displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido}`,
-              key: `transportista-${transportista.id}`
-            });
-          } else {
+          // Solo mostrar transportistas que tienen vehículos activos
+          if (vehiculosActivos.length > 0) {
             // Crear una opción por cada vehículo activo del transportista
             vehiculosActivos.forEach(vehiculo => {
               opciones.push({
                 transportista,
                 vehiculo,
-                displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.modelo})`,
+                displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.modelo} - ${vehiculo.patente})`,
                 key: `transportista-${transportista.id}-vehiculo-${vehiculo.id}`
               });
             });
@@ -204,7 +198,7 @@ export default function CrearPlanilla() {
               opciones.push({
                 transportista,
                 vehiculo,
-                displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.modelo})`,
+                displayText: `${transportista.codigoInterno} - ${transportista.nombreApellido} (${vehiculo.modelo} - ${vehiculo.patente})`,
                 key: `transportista-${transportista.id}-vehiculo-${vehiculo.id}`
               });
             }
@@ -424,15 +418,25 @@ export default function CrearPlanilla() {
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setTransportistaSeleccionado(prev => 
-            prev < opcionesTransporte.length - 1 ? prev + 1 : 0
-          );
+          setTransportistaSeleccionado(prev => {
+            const nuevoIndice = prev < opcionesTransporte.length - 1 ? prev + 1 : 0;
+            // Scroll automático para mantener el elemento visible
+            setTimeout(() => {
+              scrollToSelectedItem(nuevoIndice);
+            }, 10);
+            return nuevoIndice;
+          });
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setTransportistaSeleccionado(prev => 
-            prev > 0 ? prev - 1 : opcionesTransporte.length - 1
-          );
+          setTransportistaSeleccionado(prev => {
+            const nuevoIndice = prev > 0 ? prev - 1 : opcionesTransporte.length - 1;
+            // Scroll automático para mantener el elemento visible
+            setTimeout(() => {
+              scrollToSelectedItem(nuevoIndice);
+            }, 10);
+            return nuevoIndice;
+          });
           break;
         case 'Enter':
           e.preventDefault();
@@ -449,6 +453,46 @@ export default function CrearPlanilla() {
     } else if (e.key === 'Enter') {
       e.preventDefault();
       observacionesRef.current?.focus();
+    }
+  };
+
+  // Función para hacer scroll automático al elemento seleccionado
+  const scrollToSelectedItem = (indice: number) => {
+    if (!listaTransportistasRef.current) return;
+    
+    const container = listaTransportistasRef.current;
+    const items = container.querySelectorAll('[data-transportista-index]');
+    const selectedItem = items[indice] as HTMLElement;
+    
+    if (selectedItem) {
+      // Calcular la posición del elemento dentro del contenedor
+      const itemTop = selectedItem.offsetTop;
+      const itemHeight = selectedItem.offsetHeight;
+      const containerHeight = container.clientHeight;
+      const currentScrollTop = container.scrollTop;
+      
+      // Verificar si el elemento está completamente visible
+      const isFullyVisible = itemTop >= currentScrollTop && 
+                            (itemTop + itemHeight) <= (currentScrollTop + containerHeight);
+      
+      if (!isFullyVisible) {
+        // Calcular la nueva posición de scroll
+        let newScrollTop;
+        
+        if (itemTop < currentScrollTop) {
+          // El elemento está arriba, scroll hacia arriba
+          newScrollTop = itemTop;
+        } else {
+          // El elemento está abajo, scroll hacia abajo
+          newScrollTop = itemTop + itemHeight - containerHeight;
+        }
+        
+        // Aplicar el scroll suave
+        container.scrollTo({ 
+          top: Math.max(0, newScrollTop), 
+          behavior: 'smooth' 
+        });
+      }
     }
   };
 
@@ -1037,6 +1081,7 @@ export default function CrearPlanilla() {
                   {opcionesTransporte.map((opcion, index) => (
                     <div
                       key={opcion.key}
+                      data-transportista-index={index}
                       onClick={() => seleccionarTransportista(opcion)}
                       style={{
                         padding: '0.75rem',
@@ -1059,6 +1104,11 @@ export default function CrearPlanilla() {
                         {opcion.transportista.nombreEmpresa && (
                           <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
                             {opcion.transportista.nombreEmpresa}
+                          </div>
+                        )}
+                        {opcion.vehiculo && (
+                          <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: '500' }}>
+                            🚗 Patente: {opcion.vehiculo.patente}
                           </div>
                         )}
                       </div>

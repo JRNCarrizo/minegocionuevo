@@ -294,3 +294,36 @@ export interface ApiError {
   };
   message?: string;
 }
+
+// Interfaz para dependencias de productos
+export interface DependenciasProductoDTO {
+  tienePedidos: boolean;
+  tieneIngresos: boolean;
+  tieneDevoluciones: boolean;
+  tieneStockEnSectores: boolean;
+  tieneRoturas: boolean;
+  tieneHistorial: boolean;
+  tieneVentas: boolean;
+  tieneFavoritos: boolean;
+  tieneInventariosFisicos: boolean;
+  tieneCierresDia: boolean;
+  tieneMensajes: boolean;
+  
+  puedeEliminarFisicamente: boolean;
+  puedeDesactivar: boolean;
+  tipoEliminacion: 'SEGURA' | 'ADVERTENCIA' | 'BLOQUEADA';
+  razonesBloqueo: string[];
+  dependenciasEncontradas: string[];
+  
+  // Contadores específicos
+  cantidadPedidos: number;
+  cantidadIngresos: number;
+  cantidadDevoluciones: number;
+  cantidadSectoresConStock: number;
+  cantidadRoturas: number;
+  cantidadVentas: number;
+  cantidadFavoritos: number;
+  cantidadInventariosFisicos: number;
+  cantidadCierresDia: number;
+  cantidadMensajes: number;
+}

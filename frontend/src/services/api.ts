@@ -10,7 +10,8 @@ import type {
   Cliente, 
   Pedido,
   ApiResponse,
-  PaginatedResponse
+  PaginatedResponse,
+  DependenciasProductoDTO
 } from '../types';
 
 // Interfaces para Movimientos del Día
@@ -398,8 +399,18 @@ class ApiService {
     return response.data;
   }
 
-  async eliminarProducto(empresaId: number, id: number): Promise<ApiResponse<void>> {
+  async verificarDependenciasProducto(empresaId: number, id: number): Promise<ApiResponse<DependenciasProductoDTO>> {
+    const response = await this.api.get(`/empresas/${empresaId}/productos/${id}/dependencias`);
+    return response.data;
+  }
+
+  async eliminarProducto(empresaId: number, id: number): Promise<ApiResponse<any>> {
     const response = await this.api.delete(`/empresas/${empresaId}/productos/${id}`);
+    return response.data;
+  }
+
+  async eliminarProductoFisicamente(empresaId: number, id: number): Promise<ApiResponse<any>> {
+    const response = await this.api.delete(`/empresas/${empresaId}/productos/${id}/fisico`);
     return response.data;
   }
 

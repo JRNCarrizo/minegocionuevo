@@ -169,6 +169,12 @@ export default function CrearIngreso() {
         // Encontrar el índice del campo actual
         const indiceActual = campos.findIndex(campo => campo === elementoActivo);
         
+        // Si estamos en el campo de categoría, no navegar automáticamente
+        if (elementoActivo === categoriaProductoRef.current) {
+          // El manejador de teclado del select se encargará de expandir las opciones
+          return;
+        }
+        
         if (indiceActual >= 0 && indiceActual < campos.length - 1) {
           // Navegar al siguiente campo
           const siguienteCampo = campos[indiceActual + 1];
@@ -177,7 +183,10 @@ export default function CrearIngreso() {
           }
         } else if (indiceActual === campos.length - 1) {
           // Estamos en el último campo, crear el producto
-          crearNuevoProducto();
+          // Primero actualizar el estado con los valores actuales de los campos
+          actualizarEstadoDesdeCampos();
+          // Luego crear el producto con un pequeño delay para asegurar que el estado se actualice
+          setTimeout(() => crearNuevoProducto(), 10);
         }
       }
     };
@@ -785,6 +794,48 @@ export default function CrearIngreso() {
     }));
   };
 
+  // Manejador de teclado específico para el campo de categoría
+  const manejarTeclasCategoria = (e: React.KeyboardEvent<HTMLSelectElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Si el select está cerrado, expandirlo
+      if (!categoriaProductoRef.current?.matches(':focus')) {
+        if (categoriaProductoRef.current) {
+          categoriaProductoRef.current.focus();
+          // Simular click para abrir las opciones
+          categoriaProductoRef.current.click();
+        }
+      } else {
+        // Si el select está abierto y hay una opción seleccionada, confirmar y pasar al siguiente campo
+        if (categoriaProductoRef.current) {
+          categoriaProductoRef.current.blur();
+          // Pasar al siguiente campo
+          setTimeout(() => {
+            if (descripcionProductoRef.current) {
+              descripcionProductoRef.current.focus();
+            }
+          }, 50);
+        }
+      }
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      // Permitir navegación normal con flechas
+      return; // No prevenir el comportamiento por defecto
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      // Cerrar el select y pasar al siguiente campo
+      if (categoriaProductoRef.current) {
+        categoriaProductoRef.current.blur();
+        // Pasar al siguiente campo
+        setTimeout(() => {
+          if (descripcionProductoRef.current) {
+            descripcionProductoRef.current.focus();
+          }
+        }, 50);
+      }
+    }
+  };
+
   const manejarNuevaCategoria = (e: React.KeyboardEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>) => {
     const value = e.currentTarget.value.trim();
     
@@ -801,9 +852,46 @@ export default function CrearIngreso() {
     }
   };
 
+  // Función auxiliar para actualizar el estado desde los campos del formulario
+  const actualizarEstadoDesdeCampos = () => {
+    if (nombreProductoRef.current) {
+      setNuevoProducto(prev => ({ ...prev, nombre: nombreProductoRef.current?.value || '' }));
+    }
+    if (marcaProductoRef.current) {
+      setNuevoProducto(prev => ({ ...prev, marca: marcaProductoRef.current?.value || '' }));
+    }
+    if (codigoPersonalizadoRef.current) {
+      setNuevoProducto(prev => ({ ...prev, codigoPersonalizado: codigoPersonalizadoRef.current?.value || '' }));
+    }
+    if (codigoBarrasRef.current) {
+      setNuevoProducto(prev => ({ ...prev, codigoBarras: codigoBarrasRef.current?.value || '' }));
+    }
+    if (categoriaProductoRef.current) {
+      setNuevoProducto(prev => ({ ...prev, categoria: categoriaProductoRef.current?.value || '' }));
+    }
+    if (descripcionProductoRef.current) {
+      setNuevoProducto(prev => ({ ...prev, descripcion: descripcionProductoRef.current?.value || '' }));
+    }
+    if (precioProductoRef.current) {
+      setNuevoProducto(prev => ({ ...prev, precio: precioProductoRef.current?.value || '0' }));
+    }
+    if (unidadProductoRef.current) {
+      setNuevoProducto(prev => ({ ...prev, unidad: unidadProductoRef.current?.value || '' }));
+    }
+    if (sectorProductoRef.current) {
+      setNuevoProducto(prev => ({ ...prev, sectorAlmacenamiento: sectorProductoRef.current?.value || '' }));
+    }
+  };
+
   const crearNuevoProducto = async () => {
-    if (!nuevoProducto.nombre.trim()) {
+    // Obtener el valor del nombre directamente del campo para evitar problemas de sincronización
+    const nombreActual = nombreProductoRef.current?.value?.trim() || nuevoProducto.nombre.trim();
+    
+    if (!nombreActual) {
       toast.error('El nombre del producto es obligatorio');
+      if (nombreProductoRef.current) {
+        nombreProductoRef.current.focus();
+      }
       return;
     }
 
@@ -811,7 +899,7 @@ export default function CrearIngreso() {
       setGuardandoProducto(true);
       
       const productoData = {
-        nombre: nuevoProducto.nombre,
+        nombre: nombreActual,
         marca: nuevoProducto.marca,
         descripcion: nuevoProducto.descripcion,
         precio: parseFloat(nuevoProducto.precio) || 0,
@@ -2125,6 +2213,7 @@ export default function CrearIngreso() {
                     name="categoria"
                     value={nuevoProducto.categoria}
                     onChange={manejarCambioSelect}
+                    onKeyDown={manejarTeclasCategoria}
                     style={{
                       width: '100%',
                       padding: '0.75rem',

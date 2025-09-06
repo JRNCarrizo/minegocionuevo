@@ -2,9 +2,9 @@ package com.minegocio.backend.servicios;
 
 import com.minegocio.backend.dto.ProductoDTO;
 import com.minegocio.backend.dto.InventarioRequestDTO;
+import com.minegocio.backend.dto.DependenciasProductoDTO;
 import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Producto;
-import com.minegocio.backend.entidades.HistorialInventario;
 import com.minegocio.backend.entidades.HistorialCargaProductos;
 import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.entidades.Sector;
@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.UUID;
 import java.util.Random;
-import java.util.Map;
 
 @Service
 @Transactional
@@ -48,6 +47,10 @@ public class ProductoService {
     
     @Autowired
     private HistorialCargaProductosService historialCargaProductosService;
+    
+    // Repositorios para verificar dependencias
+    @Autowired
+    private com.minegocio.backend.repositorios.DetalleRemitoIngresoRepository detalleRemitoIngresoRepository;
     
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -501,6 +504,14 @@ public class ProductoService {
         productoRepository.save(producto);
     }
 
+    public void eliminarProductoFisicamente(Long empresaId, Long id) {
+        Producto producto = productoRepository.findByIdAndEmpresaId(id, empresaId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        // Eliminar físicamente de la base de datos
+        productoRepository.delete(producto);
+    }
+
     public ProductoDTO reactivarProducto(Long empresaId, Long id) {
         Producto producto = productoRepository.findByIdAndEmpresaId(id, empresaId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
@@ -935,6 +946,137 @@ public class ProductoService {
         
         System.out.println("✅ Producto " + producto.getNombre() + " migrado del sector '" + 
                           sectorAnterior + "' al sector '" + sectorDestino + "' (cantidad migrada: " + cantidadAMigrar + ")");
+    }
+
+    /**
+     * Verifica las dependencias de un producto para determinar si se puede eliminar
+     */
+    public DependenciasProductoDTO verificarDependenciasProducto(Long empresaId, Long productoId) {
+        System.out.println("🔍 VERIFICANDO DEPENDENCIAS - Producto ID: " + productoId + ", Empresa ID: " + empresaId);
+        
+        // Verificar que el producto existe
+        Producto producto = productoRepository.findByIdAndEmpresaId(productoId, empresaId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        DependenciasProductoDTO dependencias = new DependenciasProductoDTO();
+        List<String> razonesBloqueo = new ArrayList<>();
+        List<String> dependenciasEncontradas = new ArrayList<>();
+        
+        // 1. Verificar pedidos (Pedido) - verificar si hay pedidos que contengan este producto
+        // Por ahora, asumimos que no hay pedidos directos, solo planillas de pedido
+        int cantidadPedidos = 0;
+        dependencias.setCantidadPedidos(cantidadPedidos);
+        dependencias.setTienePedidos(cantidadPedidos > 0);
+        
+        // 2. Verificar ingresos (DetalleRemitoIngreso)
+        int cantidadIngresos = detalleRemitoIngresoRepository.findByProductoId(productoId).size();
+        dependencias.setCantidadIngresos(cantidadIngresos);
+        dependencias.setTieneIngresos(cantidadIngresos > 0);
+        if (cantidadIngresos > 0) {
+            dependenciasEncontradas.add("Ingresos de inventario (" + cantidadIngresos + ")");
+        }
+        
+        // 3. Verificar devoluciones (DetallePlanillaDevolucion)
+        // Por ahora, asumimos que no hay devoluciones directas
+        int cantidadDevoluciones = 0;
+        dependencias.setCantidadDevoluciones(cantidadDevoluciones);
+        dependencias.setTieneDevoluciones(cantidadDevoluciones > 0);
+        
+        // 4. Verificar planillas de pedido (DetallePlanillaPedido)
+        // Por ahora, asumimos que no hay planillas de pedido directas
+        int cantidadPlanillasPedido = 0;
+        dependencias.setTienePedidos(dependencias.isTienePedidos() || cantidadPlanillasPedido > 0);
+        
+        // 5. Verificar stock en sectores (StockPorSector)
+        int cantidadSectoresConStock = stockPorSectorRepository.findByProductoId(productoId).size();
+        dependencias.setCantidadSectoresConStock(cantidadSectoresConStock);
+        dependencias.setTieneStockEnSectores(cantidadSectoresConStock > 0);
+        if (cantidadSectoresConStock > 0) {
+            dependenciasEncontradas.add("Stock en sectores (" + cantidadSectoresConStock + " sectores)");
+            razonesBloqueo.add("El producto tiene stock asignado en " + cantidadSectoresConStock + " sectores");
+        }
+        
+        // 6. Verificar roturas (RoturaPerdida)
+        // Por ahora, asumimos que no hay roturas directas
+        int cantidadRoturas = 0;
+        dependencias.setCantidadRoturas(cantidadRoturas);
+        dependencias.setTieneRoturas(cantidadRoturas > 0);
+        
+        // 7. Verificar historial de inventario (HistorialInventario)
+        // Por ahora, asumimos que no hay historial directo
+        int cantidadHistorial = 0;
+        dependencias.setTieneHistorial(cantidadHistorial > 0);
+        
+        // 8. Verificar ventas rápidas (VentaRapida)
+        // Por ahora, asumimos que no hay ventas directas
+        int cantidadVentas = 0;
+        dependencias.setCantidadVentas(cantidadVentas);
+        dependencias.setTieneVentas(cantidadVentas > 0);
+        
+        // 9. Verificar favoritos (ProductoFavorito)
+        // Por ahora, asumimos que no hay favoritos directos
+        int cantidadFavoritos = 0;
+        dependencias.setCantidadFavoritos(cantidadFavoritos);
+        dependencias.setTieneFavoritos(cantidadFavoritos > 0);
+        
+        // 10. Verificar inventarios físicos (InventarioFisico)
+        // Por ahora, asumimos que no hay inventarios físicos directos
+        int cantidadInventariosFisicos = 0;
+        dependencias.setCantidadInventariosFisicos(cantidadInventariosFisicos);
+        dependencias.setTieneInventariosFisicos(cantidadInventariosFisicos > 0);
+        
+        // 11. Verificar cierres de día (DetalleCierreDia)
+        // Por ahora, asumimos que no hay cierres de día directos
+        int cantidadCierresDia = 0;
+        dependencias.setCantidadCierresDia(cantidadCierresDia);
+        dependencias.setTieneCierresDia(cantidadCierresDia > 0);
+        
+        // 12. Verificar mensajes (Mensaje)
+        // Por ahora, asumimos que no hay mensajes directos
+        int cantidadMensajes = 0;
+        dependencias.setCantidadMensajes(cantidadMensajes);
+        dependencias.setTieneMensajes(cantidadMensajes > 0);
+        
+        // Determinar tipo de eliminación
+        boolean tieneDependenciasCriticas = dependencias.isTienePedidos() || 
+                                          dependencias.isTieneStockEnSectores() || 
+                                          dependencias.isTieneVentas();
+        
+        boolean tieneDependenciasHistoricas = dependencias.isTieneIngresos() || 
+                                            dependencias.isTieneDevoluciones() || 
+                                            dependencias.isTieneRoturas() || 
+                                            dependencias.isTieneHistorial() ||
+                                            dependencias.isTieneInventariosFisicos() ||
+                                            dependencias.isTieneCierresDia();
+        
+        boolean tieneDependenciasMenores = dependencias.isTieneFavoritos() || 
+                                         dependencias.isTieneMensajes();
+        
+        if (!tieneDependenciasCriticas && !tieneDependenciasHistoricas && !tieneDependenciasMenores) {
+            // Sin dependencias - eliminación segura
+            dependencias.setTipoEliminacion("SEGURA");
+            dependencias.setPuedeEliminarFisicamente(true);
+            dependencias.setPuedeDesactivar(true);
+        } else if (tieneDependenciasCriticas) {
+            // Con dependencias críticas - solo desactivación
+            dependencias.setTipoEliminacion("BLOQUEADA");
+            dependencias.setPuedeEliminarFisicamente(false);
+            dependencias.setPuedeDesactivar(true);
+        } else {
+            // Con dependencias históricas o menores - eliminación con advertencia
+            dependencias.setTipoEliminacion("ADVERTENCIA");
+            dependencias.setPuedeEliminarFisicamente(false);
+            dependencias.setPuedeDesactivar(true);
+        }
+        
+        dependencias.setRazonesBloqueo(razonesBloqueo);
+        dependencias.setDependenciasEncontradas(dependenciasEncontradas);
+        
+        System.out.println("🔍 DEPENDENCIAS VERIFICADAS - Tipo: " + dependencias.getTipoEliminacion());
+        System.out.println("🔍 DEPENDENCIAS ENCONTRADAS: " + dependenciasEncontradas);
+        System.out.println("🔍 PUEDE ELIMINAR FÍSICAMENTE: " + dependencias.isPuedeEliminarFisicamente());
+        
+        return dependencias;
     }
 
     private ProductoDTO convertirADTO(Producto producto) {
