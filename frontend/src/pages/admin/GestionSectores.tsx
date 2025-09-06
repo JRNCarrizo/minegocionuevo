@@ -100,6 +100,14 @@ export default function GestionSectores() {
   // Estado para controlar cuando se está recargando la información
   const [recargandoInfo, setRecargandoInfo] = useState(false);
   
+  // Estado para controlar cuando se está limpiando stock cero
+  const [limpiandoStockCero, setLimpiandoStockCero] = useState(false);
+  
+  // Estado para el modal de confirmación de eliminación
+  const [mostrarModalConfirmarEliminar, setMostrarModalConfirmarEliminar] = useState(false);
+  const [sectorAEliminar, setSectorAEliminar] = useState<Sector | null>(null);
+  const [eliminandoSector, setEliminandoSector] = useState(false);
+  
   // Estados para navegación por teclado
   const [modoNavegacion, setModoNavegacion] = useState(false);
   const [elementoSeleccionado, setElementoSeleccionado] = useState(-1); // -1: botones, 0+: sectores
@@ -369,6 +377,37 @@ export default function GestionSectores() {
     } catch (error) {
       console.error('Error al cambiar estado del sector:', error);
       toast.error('Error al cambiar estado del sector');
+    }
+  };
+
+  // Función para confirmar eliminación de sector
+  const confirmarEliminarSector = (sector: Sector) => {
+    setSectorAEliminar(sector);
+    setMostrarModalConfirmarEliminar(true);
+  };
+
+  // Función para eliminar sector
+  const eliminarSector = async () => {
+    if (!sectorAEliminar) return;
+    
+    setEliminandoSector(true);
+    try {
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/${sectorAEliminar.id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        toast.success('Sector eliminado correctamente');
+        setMostrarModalConfirmarEliminar(false);
+        setSectorAEliminar(null);
+        cargarSectores();
+      } else {
+        toast.error('Error al eliminar el sector');
+      }
+    } catch (error) {
+      toast.error('Error al eliminar el sector');
+    } finally {
+      setEliminandoSector(false);
     }
   };
 
@@ -710,6 +749,68 @@ export default function GestionSectores() {
     return colores[index % colores.length];
   };
 
+  const sincronizarSectorAlmacenamiento = async () => {
+    try {
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/sincronizar-sector-almacenamiento`, {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        toast.success('Campo sectorAlmacenamiento sincronizado correctamente');
+        await cargarSectores();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Error al sincronizar sectorAlmacenamiento');
+      }
+    } catch (error) {
+      console.error('Error al sincronizar sectorAlmacenamiento:', error);
+      toast.error('Error al sincronizar sectorAlmacenamiento');
+    }
+  };
+
+  const limpiarFiltrosProductos = async () => {
+    try {
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/limpiar-filtros-productos`, {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success('Filtros de productos limpiados correctamente');
+        console.log('🧹 Sectores activos:', data.sectoresActivos);
+        await cargarSectores();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Error al limpiar filtros de productos');
+      }
+    } catch (error) {
+      console.error('Error al limpiar filtros de productos:', error);
+      toast.error('Error al limpiar filtros de productos');
+    }
+  };
+
+  const limpiarStockCero = async () => {
+    setLimpiandoStockCero(true);
+    try {
+      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/limpiar-stock-cero`, {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        toast.success('Productos con stock 0 eliminados correctamente');
+        await cargarSectores();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Error al limpiar stock cero');
+      }
+    } catch (error) {
+      console.error('Error al limpiar stock cero:', error);
+      toast.error('Error al limpiar stock cero');
+    } finally {
+      setLimpiandoStockCero(false);
+    }
+  };
+
   // Filtrar sectores activos e inactivos
   const sectoresActivos = sectores.filter(s => s.activo);
   const sectoresInactivos = sectores.filter(s => !s.activo);
@@ -966,7 +1067,38 @@ export default function GestionSectores() {
           </button>
         </div>
 
-
+        {/* Botones de Sincronización */}
+        <div className="botones-sincronizacion">
+          <button
+            onClick={limpiarStockCero}
+            disabled={limpiandoStockCero}
+            className="boton-sincronizacion boton-limpiar-stock"
+            title="Eliminar productos con stock 0 de todos los sectores"
+          >
+            <span className="icono-boton">
+              {limpiandoStockCero ? '⏳' : '🧹'}
+            </span>
+            {limpiandoStockCero ? 'Limpiando...' : 'Limpiar Stock Cero'}
+          </button>
+          
+          <button
+            onClick={sincronizarSectorAlmacenamiento}
+            className="boton-sincronizacion boton-sincronizar-sector"
+            title="Sincronizar campo sectorAlmacenamiento de todos los productos"
+          >
+            <span className="icono-boton">🔄</span>
+            Sincronizar Sector Almacenamiento
+          </button>
+          
+          <button
+            onClick={limpiarFiltrosProductos}
+            className="boton-sincronizacion boton-limpiar-filtros"
+            title="Limpiar filtros de productos de sectores eliminados"
+          >
+            <span className="icono-boton">🧹</span>
+            Limpiar Filtros de Productos
+          </button>
+        </div>
 
         {/* Estadísticas */}
         <div className="estadisticas-sectores">
@@ -1141,6 +1273,16 @@ export default function GestionSectores() {
                             title="Desactivar"
                           >
                             ❌
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmarEliminarSector(sector);
+                            }}
+                            className="boton-accion boton-eliminar"
+                            title="Eliminar sector"
+                          >
+                            🗑️
                           </button>
                         </div>
                       </div>
@@ -1989,6 +2131,44 @@ export default function GestionSectores() {
                 className="boton-primario"
               >
                 {transferiendo ? 'Transferiendo...' : 'Transferir Stock'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación para eliminar sector */}
+      {mostrarModalConfirmarEliminar && (
+        <div className="modal-overlay">
+          <div className="modal-contenido modal-confirmacion">
+            <div className="modal-header">
+              <h3>🗑️ Confirmar Eliminación</h3>
+            </div>
+            <div className="modal-body">
+              <p>
+                ¿Estás seguro de que quieres eliminar el sector <strong>"{sectorAEliminar?.nombre}"</strong>?
+              </p>
+              <p className="advertencia">
+                ⚠️ Esta acción no se puede deshacer. Se eliminarán todos los registros de stock asociados a este sector.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={() => {
+                  setMostrarModalConfirmarEliminar(false);
+                  setSectorAEliminar(null);
+                }}
+                className="boton-cancelar"
+                disabled={eliminandoSector}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={eliminarSector}
+                className="boton-eliminar"
+                disabled={eliminandoSector}
+              >
+                {eliminandoSector ? '⏳ Eliminando...' : '🗑️ Eliminar Sector'}
               </button>
             </div>
           </div>

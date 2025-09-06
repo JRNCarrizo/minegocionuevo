@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Date;
@@ -137,20 +138,22 @@ public class SectorService {
         StockPorSector stockGuardado = stockPorSectorRepository.save(stockPorSector);
         
         // SINCRONIZACIÓN AUTOMÁTICA CON PRODUCTO
+        // ❌ COMENTADO: StockSincronizacionService modifica el Producto.stock y elimina el stock sin asignar
         try {
-            System.out.println("🔄 SINCRONIZACIÓN - Iniciando sincronización automática desde Gestión de Sectores");
-            System.out.println("🔄 SINCRONIZACIÓN - Producto: " + productoId + ", Sector: " + sectorId + ", Cantidad: " + cantidad);
+            System.out.println("🔄 SINCRONIZACIÓN - Sincronización automática deshabilitada para preservar stock sin asignar");
+            // System.out.println("🔄 SINCRONIZACIÓN - Iniciando sincronización automática desde Gestión de Sectores");
+            // System.out.println("🔄 SINCRONIZACIÓN - Producto: " + productoId + ", Sector: " + sectorId + ", Cantidad: " + cantidad);
             
             // Sincronizar el sector con el producto
-            Map<String, Object> resultadoSincronizacion = stockSincronizacionService.sincronizarSectorConProducto(
-                producto.getEmpresa().getId(),
-                productoId,
-                sectorId,
-                cantidad,
-                "Asignación de stock desde Gestión de Sectores"
-            );
+            // Map<String, Object> resultadoSincronizacion = stockSincronizacionService.sincronizarSectorConProducto(
+            //     producto.getEmpresa().getId(),
+            //     productoId,
+            //     sectorId,
+            //     cantidad,
+            //     "Asignación de stock desde Gestión de Sectores"
+            // );
             
-            System.out.println("✅ SINCRONIZACIÓN - Sector sincronizado exitosamente: " + resultadoSincronizacion);
+            // System.out.println("✅ SINCRONIZACIÓN - Sector sincronizado exitosamente: " + resultadoSincronizacion);
             
         } catch (Exception e) {
             System.err.println("❌ SINCRONIZACIÓN - Error en sincronización automática: " + e.getMessage());
@@ -331,6 +334,13 @@ public class SectorService {
         
         for (StockPorSector stock : stockPorSectores) {
             try {
+                // ✅ SOLO MOSTRAR PRODUCTOS CON CANTIDAD > 0
+                if (stock.getCantidad() == null || stock.getCantidad() <= 0) {
+                    System.out.println("🔍 SECTOR SERVICE - StockPorSector filtrado: " + stock.getProducto().getNombre() + 
+                        " en sector " + stock.getSector().getNombre() + " (cantidad: " + stock.getCantidad() + ")");
+                    continue;
+                }
+                
                 Map<String, Object> item = new HashMap<>();
                 item.put("id", stock.getId()); // ID único para el frontend
                 item.put("producto", Map.of(
@@ -346,6 +356,8 @@ public class SectorService {
                 item.put("fechaActualizacion", stock.getFechaActualizacion() != null ? stock.getFechaActualizacion().toString() : new Date().toString());
                 item.put("tipo", "con_sector");
                 stockGeneral.add(item);
+                System.out.println("🔍 SECTOR SERVICE - Agregado producto con sector: " + stock.getProducto().getNombre() + 
+                    " en sector " + stock.getSector().getNombre() + " (cantidad: " + stock.getCantidad() + ")");
             } catch (Exception e) {
                 System.err.println("🔍 SECTOR SERVICE - Error procesando StockPorSector: " + e.getMessage());
             }
@@ -355,25 +367,36 @@ public class SectorService {
         List<Producto> todosLosProductos = productoRepository.findByEmpresaId(empresaId);
         System.out.println("🔍 SECTOR SERVICE - Total productos en empresa: " + todosLosProductos.size());
         
+        // 🔄 OPTIMIZACIÓN: Crear un Set de IDs de productos que YA están en StockPorSector
+        Set<Long> productosConSector = stockPorSectores.stream()
+            .map(stock -> stock.getProducto().getId())
+            .collect(Collectors.toSet());
+        
+        System.out.println("🔍 SECTOR SERVICE - Productos con sector: " + productosConSector.size());
+        
+        // 🔄 LÓGICA OPTIMIZADA: Solo agregar productos que NO están en StockPorSector
+        // (Los productos CON sectores ya se agregaron en el bucle anterior)
+        int productosProcesados = 0;
+        int productosActivosConStock = 0;
+        int productosSinSector = 0;
+        
         for (Producto producto : todosLosProductos) {
             try {
-                // Calcular el stock total asignado a sectores para este producto
-                Integer stockAsignado = stockPorSectores.stream()
-                    .filter(stock -> stock.getProducto().getId().equals(producto.getId()))
-                    .mapToInt(StockPorSector::getCantidad)
-                    .sum();
+                productosProcesados++;
                 
-                // Calcular el stock sin asignar
-                Integer stockTotal = producto.getStock() != null ? producto.getStock() : 0;
-                Integer stockSinAsignar = Math.max(0, stockTotal - stockAsignado);
+                // Solo procesar productos activos con stock > 0
+                if (!producto.getActivo() || producto.getStock() == null || producto.getStock() <= 0) {
+                    System.out.println("🔍 SECTOR SERVICE - Producto filtrado: " + producto.getNombre() + 
+                        " (activo: " + producto.getActivo() + 
+                        ", stock: " + producto.getStock() + ")");
+                    continue;
+                }
                 
-                System.out.println("🔍 SECTOR SERVICE - Producto: " + producto.getNombre() + 
-                    ", Stock total: " + stockTotal + 
-                    ", Stock asignado: " + stockAsignado + 
-                    ", Stock sin asignar: " + stockSinAsignar);
+                productosActivosConStock++;
                 
-                // Siempre agregar la fila de stock sin asignar si hay stock disponible
-                if (stockSinAsignar > 0) {
+                // ✅ NUEVA LÓGICA: Mostrar productos que NO tienen sectorAlmacenamiento asignado
+                // (independientemente de si están en StockPorSector o no)
+                if (producto.getSectorAlmacenamiento() == null || producto.getSectorAlmacenamiento().trim().isEmpty()) {
                     Map<String, Object> item = new HashMap<>();
                     item.put("id", producto.getId() + "_sin_sector"); // ID único para el frontend
                     item.put("producto", Map.of(
@@ -382,15 +405,22 @@ public class SectorService {
                         "codigoPersonalizado", producto.getCodigoPersonalizado() != null ? producto.getCodigoPersonalizado() : ""
                     ));
                     item.put("sector", null); // Sin sector asignado
-                    item.put("cantidad", stockSinAsignar);
+                    item.put("cantidad", producto.getStock()); // Stock total del producto
                     item.put("fechaActualizacion", producto.getFechaActualizacion() != null ? producto.getFechaActualizacion().toString() : new Date().toString());
                     item.put("tipo", "sin_sector");
                     stockGeneral.add(item);
+                    productosSinSector++;
+                    System.out.println("🔍 SECTOR SERVICE - Agregado producto sin sector: " + producto.getNombre() + " (cantidad: " + producto.getStock() + ")");
+                } else {
+                    System.out.println("🔍 SECTOR SERVICE - Producto ya tiene sector: " + producto.getNombre() + " (cantidad: " + producto.getStock() + ")");
                 }
             } catch (Exception e) {
                 System.err.println("🔍 SECTOR SERVICE - Error procesando Producto: " + e.getMessage());
             }
         }
+        
+        System.out.println("🔍 SECTOR SERVICE - Resumen: " + productosProcesados + " procesados, " + 
+            productosActivosConStock + " activos con stock, " + productosSinSector + " sin sector");
         
         System.out.println("🔍 SECTOR SERVICE - Total items en stock general: " + stockGeneral.size());
         return stockGeneral;
@@ -710,6 +740,14 @@ public class SectorService {
                     System.out.println("🔍 SECTOR SERVICE - Nueva asignación creada en destino: " + cantidad);
                 }
                 
+                // 🔄 SINCRONIZAR: Actualizar el campo sectorAlmacenamiento del producto
+                // Si el producto no tiene sector asignado, asignarle este sector
+                if (producto.getSectorAlmacenamiento() == null || producto.getSectorAlmacenamiento().trim().isEmpty()) {
+                    producto.setSectorAlmacenamiento(sector.getNombre());
+                    productoRepository.save(producto);
+                    System.out.println("🔄 SINCRONIZAR - Producto " + producto.getNombre() + " ahora tiene sector: " + sector.getNombre());
+                }
+                
             } catch (NumberFormatException e) {
                 throw new RuntimeException("Formato inválido en recepción: " + recepcion);
             } catch (Exception e) {
@@ -718,6 +756,12 @@ public class SectorService {
         }
         
         System.out.println("🔍 SECTOR SERVICE - Recepción completada exitosamente");
+        
+        // 🔄 SINCRONIZAR: Actualizar el stock de todos los productos afectados
+        // ❌ COMENTADO: sincronizarStockProductos sobrescribe el stock total con solo el stock asignado
+        // System.out.println("🔄 SINCRONIZAR - Iniciando sincronización de stock de productos...");
+        // sincronizarStockProductos(empresaId);
+        // System.out.println("🔄 SINCRONIZAR - Sincronización completada");
     }
     
     /**
@@ -757,7 +801,28 @@ public class SectorService {
         // Eliminar el registro de stock por sector
         stockPorSectorRepository.delete(stockPorSector);
         
+        // 🔄 SINCRONIZAR: Verificar si el producto ya no tiene stock en ningún sector
+        // Si no tiene stock en ningún sector, limpiar el campo sectorAlmacenamiento
+        Long productoId = stockPorSector.getProducto().getId();
+        List<StockPorSector> stockRestante = stockPorSectorRepository.findByProductoId(productoId);
+        Integer stockTotal = stockRestante.stream()
+            .mapToInt(StockPorSector::getCantidad)
+            .sum();
+        
+        if (stockTotal == 0) {
+            Producto producto = stockPorSector.getProducto();
+            producto.setSectorAlmacenamiento(null);
+            productoRepository.save(producto);
+            System.out.println("🔄 SINCRONIZAR - Producto " + producto.getNombre() + " ya no tiene sector asignado (stock 0)");
+        }
+        
         System.out.println("🔍 SECTOR SERVICE - Producto quitado exitosamente del sector");
+        
+        // 🔄 SINCRONIZAR: Actualizar el stock del producto
+        // ❌ COMENTADO: sincronizarStockProductos sobrescribe el stock total con solo el stock asignado
+        // System.out.println("🔄 SINCRONIZAR - Iniciando sincronización de stock del producto...");
+        // sincronizarStockProductos(empresaId);
+        // System.out.println("🔄 SINCRONIZAR - Sincronización completada");
     }
     
     /**
@@ -982,5 +1047,351 @@ public class SectorService {
         }
         
         System.out.println("🔍 ASIGNAR PRODUCTOS AUTOMATICAMENTE - Total productos asignados: " + productosAsignados);
+    }
+    
+    /**
+     * Limpiar automáticamente productos con stock 0 en todos los sectores
+     * Este método elimina registros de StockPorSector donde la cantidad sea 0
+     */
+    @Transactional
+    public void limpiarStockCero(Long empresaId) {
+        System.out.println("🔍 LIMPIAR STOCK CERO - Iniciando limpieza para empresa: " + empresaId);
+        
+        // Obtener todos los registros de stock por sector de la empresa
+        List<StockPorSector> stocks = stockPorSectorRepository.findByEmpresaId(empresaId);
+        System.out.println("🔍 LIMPIAR STOCK CERO - Total registros a revisar: " + stocks.size());
+        
+        int registrosEliminados = 0;
+        
+        for (StockPorSector stock : stocks) {
+            try {
+                // Si la cantidad es 0 o menor, eliminar el registro
+                if (stock.getCantidad() <= 0) {
+                    System.out.println("🔍 LIMPIAR STOCK CERO - Eliminando producto: " + 
+                        stock.getProducto().getNombre() + 
+                        " del sector: " + stock.getSector().getNombre() + 
+                        " (cantidad: " + stock.getCantidad() + ")");
+                    
+                    stockPorSectorRepository.delete(stock);
+                    registrosEliminados++;
+                }
+            } catch (Exception e) {
+                System.err.println("🔍 LIMPIAR STOCK CERO - Error procesando stock: " + e.getMessage());
+            }
+        }
+        
+        System.out.println("🔍 LIMPIAR STOCK CERO - Limpieza completada. Registros eliminados: " + registrosEliminados);
+        
+        // Sincronizar automáticamente el stock de productos después de la limpieza
+        // ❌ COMENTADO: sincronizarStockProductos sobrescribe el stock total con solo el stock asignado
+        if (registrosEliminados > 0) {
+            System.out.println("🔍 LIMPIAR STOCK CERO - Sincronización automática deshabilitada para preservar stock sin asignar");
+            // System.out.println("🔍 LIMPIAR STOCK CERO - Iniciando sincronización automática...");
+            // sincronizarStockProductos(empresaId);
+            // System.out.println("🔍 LIMPIAR STOCK CERO - Sincronización completada");
+        }
+    }
+    
+    /**
+     * Sincronizar automáticamente el stock de productos con la suma de stock por sectores
+     * Este método asegura que Producto.stock = suma(StockPorSector.cantidad)
+     */
+    @Transactional
+    public void sincronizarStockProductos(Long empresaId) {
+        System.out.println("🔄 SINCRONIZAR STOCK PRODUCTOS - Iniciando sincronización para empresa: " + empresaId);
+        
+        // Obtener todos los productos de la empresa
+        List<Producto> productos = productoRepository.findByEmpresaId(empresaId);
+        
+        for (Producto producto : productos) {
+            try {
+                // Calcular el stock total asignado a sectores para este producto
+                Integer stockAsignado = stockPorSectorRepository.getStockTotalByProductoId(producto.getId());
+                
+                // Actualizar el stock del producto
+                producto.setStock(stockAsignado);
+                productoRepository.save(producto);
+                System.out.println("🔄 SINCRONIZAR STOCK PRODUCTOS - Producto " + producto.getNombre() + " - Stock actualizado: " + producto.getStock());
+            } catch (Exception e) {
+                System.err.println("🔄 SINCRONIZAR STOCK PRODUCTOS - Error sincronizando producto " + producto.getNombre() + ": " + e.getMessage());
+            }
+        }
+        
+        System.out.println("🔄 SINCRONIZAR STOCK PRODUCTOS - Sincronización completada");
+    }
+    
+    /**
+     * Sincronizar el campo sectorAlmacenamiento de todos los productos
+     * Este método asegura que Producto.sectorAlmacenamiento coincida con el sector donde tiene más stock
+     */
+    @Transactional
+    public void sincronizarSectorAlmacenamiento(Long empresaId) {
+        System.out.println("🔄 SINCRONIZAR SECTOR ALMACENAMIENTO - Iniciando sincronización para empresa: " + empresaId);
+        
+        // Obtener todos los productos de la empresa
+        List<Producto> productos = productoRepository.findByEmpresaId(empresaId);
+        int productosActualizados = 0;
+        
+        for (Producto producto : productos) {
+            try {
+                // Obtener el sector donde el producto tiene más stock
+                List<StockPorSector> stockDelProducto = stockPorSectorRepository.findByProductoId(producto.getId());
+                
+                if (stockDelProducto.isEmpty()) {
+                    // Si no tiene stock en ningún sector, limpiar el campo
+                    if (producto.getSectorAlmacenamiento() != null) {
+                        producto.setSectorAlmacenamiento(null);
+                        productoRepository.save(producto);
+                        productosActualizados++;
+                        System.out.println("🔄 SINCRONIZAR SECTOR ALMACENAMIENTO - Producto " + producto.getNombre() + " sin sector (sin stock)");
+                    }
+                } else {
+                    // Encontrar el sector con más stock
+                    StockPorSector sectorConMasStock = stockDelProducto.stream()
+                        .max((s1, s2) -> Integer.compare(s1.getCantidad(), s2.getCantidad()))
+                        .orElse(null);
+                    
+                    if (sectorConMasStock != null && sectorConMasStock.getCantidad() > 0) {
+                        String nombreSector = sectorConMasStock.getSector().getNombre();
+                        
+                        // Actualizar solo si es diferente
+                        if (!nombreSector.equals(producto.getSectorAlmacenamiento())) {
+                            producto.setSectorAlmacenamiento(nombreSector);
+                            productoRepository.save(producto);
+                            productosActualizados++;
+                            System.out.println("🔄 SINCRONIZAR SECTOR ALMACENAMIENTO - Producto " + producto.getNombre() + " ahora en sector: " + nombreSector);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("🔄 SINCRONIZAR SECTOR ALMACENAMIENTO - Error procesando producto " + producto.getNombre() + ": " + e.getMessage());
+            }
+        }
+        
+        System.out.println("🔄 SINCRONIZAR SECTOR ALMACENAMIENTO - Sincronización completada. Productos actualizados: " + productosActualizados);
+    }
+    
+    /**
+     * Limpiar el campo sectorAlmacenamiento de productos que estaban en un sector eliminado
+     * Este método se ejecuta automáticamente cuando se elimina un sector
+     */
+    @Transactional
+    public void limpiarSectorAlmacenamientoDeProductos(Long sectorId, String nombreSector) {
+        System.out.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO - Limpiando productos del sector: " + nombreSector);
+        
+        // Obtener el sector para acceder a la empresa
+        Sector sector = sectorRepository.findById(sectorId).orElse(null);
+        if (sector == null) {
+            System.err.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO - Sector no encontrado: " + sectorId);
+            return;
+        }
+        
+        Long empresaId = sector.getEmpresa().getId();
+        
+        // Buscar todos los productos que tienen este sector en sectorAlmacenamiento
+        // Usar un método más directo para evitar problemas con el repository
+        List<Producto> todosLosProductos = productoRepository.findByEmpresaId(empresaId);
+        List<Producto> productosAfectados = todosLosProductos.stream()
+            .filter(p -> nombreSector.equals(p.getSectorAlmacenamiento()))
+            .collect(Collectors.toList());
+        System.out.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO - Productos encontrados: " + productosAfectados.size());
+        
+        int productosLimpiados = 0;
+        
+        for (Producto producto : productosAfectados) {
+            try {
+                // Verificar si realmente no tiene stock en ningún sector
+                List<StockPorSector> stockDelProducto = stockPorSectorRepository.findByProductoId(producto.getId());
+                
+                if (stockDelProducto.isEmpty()) {
+                    // No tiene stock en ningún sector, limpiar el campo
+                    producto.setSectorAlmacenamiento(null);
+                    productoRepository.save(producto);
+                    productosLimpiados++;
+                    System.out.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO - Producto " + producto.getNombre() + " sin sector (sin stock)");
+                } else {
+                    // Tiene stock en otros sectores, asignarle el sector con más stock
+                    StockPorSector sectorConMasStock = stockDelProducto.stream()
+                        .max((s1, s2) -> Integer.compare(s1.getCantidad(), s2.getCantidad()))
+                        .orElse(null);
+                    
+                    if (sectorConMasStock != null && sectorConMasStock.getCantidad() > 0) {
+                        String nuevoSector = sectorConMasStock.getSector().getNombre();
+                        producto.setSectorAlmacenamiento(nuevoSector);
+                        productoRepository.save(producto);
+                        productosLimpiados++;
+                        System.out.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO - Producto " + producto.getNombre() + " reasignado a: " + nuevoSector);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO - Error procesando producto " + producto.getNombre() + ": " + e.getMessage());
+            }
+        }
+        
+        System.out.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO - Limpieza completada. Productos actualizados: " + productosLimpiados);
+    }
+    
+    /**
+     * Limpiar todos los productos que tengan sectores que ya no existen
+     * Este método es útil para limpiar productos huérfanos
+     */
+    @Transactional
+    public void limpiarProductosConSectoresEliminados(Long empresaId) {
+        System.out.println("🧹 LIMPIAR PRODUCTOS CON SECTORES ELIMINADOS - Iniciando limpieza para empresa: " + empresaId);
+        
+        // Obtener todos los sectores activos de la empresa
+        List<Sector> sectoresActivos = sectorRepository.findByEmpresaIdAndActivoOrderByNombre(empresaId, true);
+        List<String> nombresSectoresActivos = sectoresActivos.stream()
+            .map(Sector::getNombre)
+            .collect(Collectors.toList());
+        
+        System.out.println("🧹 LIMPIAR PRODUCTOS CON SECTORES ELIMINADOS - Sectores activos: " + nombresSectoresActivos);
+        
+        // Obtener todos los productos de la empresa
+        List<Producto> todosLosProductos = productoRepository.findByEmpresaId(empresaId);
+        int productosLimpiados = 0;
+        
+        for (Producto producto : todosLosProductos) {
+            try {
+                if (producto.getSectorAlmacenamiento() != null && 
+                    !nombresSectoresActivos.contains(producto.getSectorAlmacenamiento())) {
+                    
+                    System.out.println("🧹 LIMPIAR PRODUCTOS CON SECTORES ELIMINADOS - Producto " + producto.getNombre() + " tiene sector eliminado: " + producto.getSectorAlmacenamiento());
+                    
+                    // Verificar si realmente no tiene stock en ningún sector
+                    List<StockPorSector> stockDelProducto = stockPorSectorRepository.findByProductoId(producto.getId());
+                    
+                    if (stockDelProducto.isEmpty()) {
+                        // No tiene stock en ningún sector, limpiar el campo
+                        producto.setSectorAlmacenamiento(null);
+                        productoRepository.save(producto);
+                        productosLimpiados++;
+                        System.out.println("🧹 LIMPIAR PRODUCTOS CON SECTORES ELIMINADOS - Producto " + producto.getNombre() + " limpiado (sin stock)");
+                    } else {
+                        // Tiene stock en otros sectores, asignarle el sector con más stock
+                        StockPorSector sectorConMasStock = stockDelProducto.stream()
+                            .max((s1, s2) -> Integer.compare(s1.getCantidad(), s2.getCantidad()))
+                            .orElse(null);
+                        
+                        if (sectorConMasStock != null && sectorConMasStock.getCantidad() > 0) {
+                            String nuevoSector = sectorConMasStock.getSector().getNombre();
+                            producto.setSectorAlmacenamiento(nuevoSector);
+                            productoRepository.save(producto);
+                            productosLimpiados++;
+                            System.out.println("🧹 LIMPIAR PRODUCTOS CON SECTORES ELIMINADOS - Producto " + producto.getNombre() + " reasignado a: " + nuevoSector);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("🧹 LIMPIAR PRODUCTOS CON SECTORES ELIMINADOS - Error procesando producto " + producto.getNombre() + ": " + e.getMessage());
+            }
+        }
+        
+        System.out.println("🧹 LIMPIAR PRODUCTOS CON SECTORES ELIMINADOS - Limpieza completada. Productos actualizados: " + productosLimpiados);
+    }
+    
+    /**
+     * Limpiar el campo sectorAlmacenamiento de productos que estaban en un sector eliminado
+     * Este método se ejecuta automáticamente cuando se elimina un sector
+     * Versión directa que no depende del sector ya eliminado
+     */
+    @Transactional
+    public void limpiarSectorAlmacenamientoDeProductosDirecto(Long empresaId, String nombreSector) {
+        System.out.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO DIRECTO - Limpiando productos del sector: " + nombreSector + " en empresa: " + empresaId);
+        
+        // Buscar todos los productos que tienen este sector en sectorAlmacenamiento
+        List<Producto> todosLosProductos = productoRepository.findByEmpresaId(empresaId);
+        List<Producto> productosAfectados = todosLosProductos.stream()
+            .filter(p -> nombreSector.equals(p.getSectorAlmacenamiento()))
+            .collect(Collectors.toList());
+        
+        System.out.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO DIRECTO - Productos encontrados: " + productosAfectados.size());
+        
+        int productosLimpiados = 0;
+        
+        for (Producto producto : productosAfectados) {
+            try {
+                // Verificar si realmente no tiene stock en ningún sector
+                List<StockPorSector> stockDelProducto = stockPorSectorRepository.findByProductoId(producto.getId());
+                
+                if (stockDelProducto.isEmpty()) {
+                    // No tiene stock en ningún sector, limpiar el campo
+                    producto.setSectorAlmacenamiento(null);
+                    productoRepository.save(producto);
+                    productosLimpiados++;
+                    System.out.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO DIRECTO - Producto " + producto.getNombre() + " sin sector (sin stock)");
+                } else {
+                    // Tiene stock en otros sectores, asignarle el sector con más stock
+                    StockPorSector sectorConMasStock = stockDelProducto.stream()
+                        .max((s1, s2) -> Integer.compare(s1.getCantidad(), s2.getCantidad()))
+                        .orElse(null);
+                    
+                    if (sectorConMasStock != null && sectorConMasStock.getCantidad() > 0) {
+                        String nuevoSector = sectorConMasStock.getSector().getNombre();
+                        producto.setSectorAlmacenamiento(nuevoSector);
+                        productoRepository.save(producto);
+                        productosLimpiados++;
+                        System.out.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO DIRECTO - Producto " + producto.getNombre() + " reasignado a: " + nuevoSector);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO DIRECTO - Error procesando producto " + producto.getNombre() + ": " + e.getMessage());
+            }
+        }
+        
+        System.out.println("🧹 LIMPIAR SECTOR ALMACENAMIENTO DIRECTO - Limpieza completada. Productos actualizados: " + productosLimpiados);
+    }
+    
+    /**
+     * Obtener un sector por su ID
+     */
+    public Sector obtenerSectorPorId(Long sectorId) {
+        return sectorRepository.findById(sectorId).orElse(null);
+    }
+    
+    /**
+     * Eliminar un sector completo
+     * Este método elimina el sector y todos sus registros de stock asociados
+     */
+    @Transactional
+    public void eliminarSector(Long sectorId) {
+        System.out.println("🗑️ SECTOR SERVICE - Eliminando sector: " + sectorId);
+        
+        // Obtener el sector
+        Sector sector = sectorRepository.findById(sectorId)
+            .orElseThrow(() -> new RuntimeException("Sector no encontrado con ID: " + sectorId));
+        
+        System.out.println("🗑️ SECTOR SERVICE - Sector encontrado: " + sector.getNombre());
+        
+        // 🔄 GUARDAR INFORMACIÓN NECESARIA ANTES DE ELIMINAR
+        Long empresaId = sector.getEmpresa().getId();
+        String nombreSector = sector.getNombre();
+        
+        // Eliminar todos los registros de stock asociados a este sector
+        List<StockPorSector> stocksDelSector = stockPorSectorRepository.findBySectorId(sectorId);
+        System.out.println("🗑️ SECTOR SERVICE - Eliminando " + stocksDelSector.size() + " registros de stock");
+        
+        for (StockPorSector stock : stocksDelSector) {
+            try {
+                stockPorSectorRepository.delete(stock);
+                System.out.println("🗑️ SECTOR SERVICE - Stock eliminado para producto: " + stock.getProducto().getNombre());
+            } catch (Exception e) {
+                System.err.println("🗑️ SECTOR SERVICE - Error eliminando stock: " + e.getMessage());
+            }
+        }
+        
+        // Eliminar el sector
+        sectorRepository.delete(sector);
+        System.out.println("🗑️ SECTOR SERVICE - Sector eliminado: " + sector.getNombre());
+        
+        // 🔄 SINCRONIZAR: Limpiar sectorAlmacenamiento de productos que estaban en este sector
+        System.out.println("🔄 SINCRONIZAR - Limpiando sectorAlmacenamiento de productos afectados...");
+        limpiarSectorAlmacenamientoDeProductosDirecto(empresaId, nombreSector);
+        System.out.println("🔄 SINCRONIZAR - Limpieza de sectorAlmacenamiento completada");
+        
+        // 🔄 SINCRONIZACIÓN ADICIONAL: Limpiar todos los productos con sectores eliminados
+        System.out.println("🔄 SINCRONIZACIÓN ADICIONAL - Limpiando productos con sectores eliminados...");
+        limpiarProductosConSectoresEliminados(empresaId);
+        System.out.println("🔄 SINCRONIZACIÓN ADICIONAL - Completada");
     }
 }

@@ -21,6 +21,8 @@ import com.minegocio.backend.entidades.Producto;
 import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.StockPorSectorRepository;
 import java.util.HashMap;
+import java.util.Date;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/empresas/{empresaId}/sectores")
@@ -634,6 +636,98 @@ public class SectorController {
     }
     
     /**
+     * Endpoint para limpiar automáticamente productos con stock 0 en todos los sectores
+     * Este endpoint elimina registros de StockPorSector donde la cantidad sea 0
+     */
+    @PostMapping("/limpiar-stock-cero")
+    public ResponseEntity<?> limpiarStockCero(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🔍 SECTOR CONTROLLER - Limpiando stock cero para empresa: " + empresaId);
+            
+            sectorService.limpiarStockCero(empresaId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Productos con stock 0 eliminados correctamente",
+                "timestamp", new Date()
+            ));
+        } catch (Exception e) {
+            System.err.println("🔍 SECTOR CONTROLLER - Error limpiando stock cero: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "success", false,
+                    "error", "Error limpiando stock cero: " + e.getMessage(),
+                    "timestamp", new Date()
+                ));
+        }
+    }
+    
+    /**
+     * Endpoint para sincronizar el campo sectorAlmacenamiento de todos los productos
+     * Este endpoint asegura que Producto.sectorAlmacenamiento coincida con el sector donde tiene más stock
+     */
+    @PostMapping("/sincronizar-sector-almacenamiento")
+    public ResponseEntity<?> sincronizarSectorAlmacenamiento(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🔄 SECTOR CONTROLLER - Sincronizando sectorAlmacenamiento para empresa: " + empresaId);
+            
+            sectorService.sincronizarSectorAlmacenamiento(empresaId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Campo sectorAlmacenamiento sincronizado correctamente",
+                "timestamp", new Date()
+            ));
+        } catch (Exception e) {
+            System.err.println("🔄 SECTOR CONTROLLER - Error sincronizando sectorAlmacenamiento: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "success", false,
+                    "error", "Error sincronizando sectorAlmacenamiento: " + e.getMessage(),
+                    "timestamp", new Date()
+                ));
+        }
+    }
+    
+    /**
+     * Endpoint para limpiar sectores eliminados de los filtros de productos
+     * Este endpoint elimina referencias a sectores que ya no existen
+     */
+    @PostMapping("/limpiar-filtros-productos")
+    public ResponseEntity<?> limpiarFiltrosProductos(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🧹 SECTOR CONTROLLER - Limpiando filtros de productos para empresa: " + empresaId);
+            
+            // Obtener todos los sectores activos de la empresa
+            List<Sector> sectoresActivos = sectorService.obtenerSectoresActivos(empresaId);
+            List<String> nombresSectoresActivos = sectoresActivos.stream()
+                .map(Sector::getNombre)
+                .collect(Collectors.toList());
+            
+            // Limpiar productos con sectores eliminados
+            sectorService.limpiarProductosConSectoresEliminados(empresaId);
+            
+            // Sincronizar sectorAlmacenamiento (esto limpiará sectores eliminados)
+            sectorService.sincronizarSectorAlmacenamiento(empresaId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Filtros de productos limpiados correctamente",
+                "sectoresActivos", nombresSectoresActivos,
+                "timestamp", new Date()
+            ));
+        } catch (Exception e) {
+            System.err.println("🧹 SECTOR CONTROLLER - Error limpiando filtros de productos: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "success", false,
+                    "error", "Error limpiando filtros de productos: " + e.getMessage(),
+                    "timestamp", new Date()
+                ));
+        }
+    }
+    
+    /**
      * DEBUG: Obtener información de debug sobre stock por sector
      */
     @GetMapping("/debug-stock")
@@ -691,6 +785,56 @@ public class SectorController {
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Error al obtener información de debug: " + e.getMessage()
             ));
+        }
+    }
+    
+    /**
+     * Eliminar un sector completo
+     * Este endpoint elimina el sector y todos sus registros de stock asociados
+     */
+    @DeleteMapping("/{sectorId}")
+    public ResponseEntity<?> eliminarSector(
+            @PathVariable Long empresaId,
+            @PathVariable Long sectorId) {
+        try {
+            System.out.println("🗑️ SECTOR CONTROLLER - Eliminando sector: " + sectorId + " de empresa: " + empresaId);
+            
+            // Verificar que la empresa existe
+            if (!empresaRepository.existsById(empresaId)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Empresa no encontrada con ID: " + empresaId
+                ));
+            }
+            
+            // Verificar que el sector existe y pertenece a la empresa
+            Sector sector = sectorService.obtenerSectorPorId(sectorId);
+            if (sector == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            if (!sector.getEmpresa().getId().equals(empresaId)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "El sector no pertenece a la empresa especificada"
+                ));
+            }
+            
+            // Eliminar el sector (esto también eliminará los registros de stock asociados por CASCADE)
+            sectorService.eliminarSector(sectorId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Sector eliminado correctamente",
+                "timestamp", new Date()
+            ));
+        } catch (Exception e) {
+            System.err.println("🗑️ SECTOR CONTROLLER - Error eliminando sector: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "success", false,
+                    "error", "Error eliminando sector: " + e.getMessage(),
+                    "timestamp", new Date()
+                ));
         }
     }
 }

@@ -34,10 +34,10 @@ export const useBreakpoint = () => {
         newBreakpoint = 'xl';
       }
 
-      console.log('🔍 useBreakpoint - Cambio detectado:', {
-        width: currentWidth,
-        breakpoint: newBreakpoint
-      });
+      // console.log('🔍 useBreakpoint - Cambio detectado:', {
+      //   width: currentWidth,
+      //   breakpoint: newBreakpoint
+      // });
 
       setBreakpoint(newBreakpoint);
     };
@@ -103,13 +103,13 @@ export const useScreenSize = () => {
         isDesktop: width >= breakpoints.lg,
       };
 
-      console.log('🔍 useScreenSize - Cambio detectado:', {
-        width,
-        height,
-        isMobile: newScreenSize.isMobile,
-        isTablet: newScreenSize.isTablet,
-        isDesktop: newScreenSize.isDesktop
-      });
+      // console.log('🔍 useScreenSize - Cambio detectado:', {
+      //   width,
+      //   height,
+      //   isMobile: newScreenSize.isMobile,
+      //   isTablet: newScreenSize.isTablet,
+      //   isDesktop: newScreenSize.isDesktop
+      // });
 
       setScreenSize(newScreenSize);
     };
@@ -228,17 +228,15 @@ export const useResponsive = () => {
   const prefersReducedMotion = usePrefersReducedMotion();
   const prefersDark = usePrefersDarkMode();
 
-  // Log para debugging
-  console.log('🔍 useResponsive - Estado actual:', {
-    breakpoint: breakpoint.breakpoint,
-    width: breakpoint.width,
-    isMobile: screenSize.isMobile,
-    isTablet: screenSize.isTablet,
-    isDesktop: screenSize.isDesktop,
-    orientation: orientation,
-    innerWidth: window.innerWidth,
-    innerHeight: window.innerHeight
-  });
+  // Log para debugging (solo cuando hay cambios significativos)
+  // console.log('🔍 useResponsive - Estado actual:', {
+  //   breakpoint: breakpoint.breakpoint,
+  //   width: breakpoint.width,
+  //   isMobile: screenSize.isMobile,
+  //   isTablet: screenSize.isTablet,
+  //   isDesktop: screenSize.isDesktop,
+  //   orientation: orientation
+  // });
 
   return {
     breakpoint: breakpoint.breakpoint,

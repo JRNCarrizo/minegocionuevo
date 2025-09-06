@@ -316,6 +316,24 @@ public class ProductoService {
         }
         
         if (productoDTO.getSectorAlmacenamiento() != null) {
+            // 🔄 TRANSFERIR STOCK: Verificar si el sector cambió
+            String sectorAnterior = producto.getSectorAlmacenamiento();
+            String sectorNuevo = productoDTO.getSectorAlmacenamiento();
+            
+            if (!sectorNuevo.equals(sectorAnterior)) {
+                System.out.println("🔄 TRANSFERIR STOCK - Cambio de sector detectado:");
+                System.out.println("🔄 TRANSFERIR STOCK - Sector anterior: " + sectorAnterior);
+                System.out.println("🔄 TRANSFERIR STOCK - Sector nuevo: " + sectorNuevo);
+                
+                try {
+                    // Transferir stock del sector anterior al nuevo
+                    transferirStockEntreSectores(empresaId, producto.getId(), sectorAnterior, sectorNuevo);
+                } catch (Exception e) {
+                    System.err.println("❌ TRANSFERIR STOCK - Error al transferir stock: " + e.getMessage());
+                    // No fallar la actualización del producto si hay error en la transferencia
+                }
+            }
+            
             producto.setSectorAlmacenamiento(productoDTO.getSectorAlmacenamiento());
         }
         
@@ -742,6 +760,100 @@ public class ProductoService {
         return !productos.isEmpty();
     }
 
+    /**
+     * Transfiere stock de un sector a otro cuando se edita un producto
+     * Este método se ejecuta automáticamente cuando se cambia el sector de un producto
+     */
+    @Transactional
+    public void transferirStockEntreSectores(Long empresaId, Long productoId, String sectorAnterior, String sectorNuevo) {
+        System.out.println("🔄 TRANSFERIR STOCK ENTRE SECTORES - Iniciando transferencia:");
+        System.out.println("🔄 TRANSFERIR STOCK ENTRE SECTORES - Producto ID: " + productoId);
+        System.out.println("🔄 TRANSFERIR STOCK ENTRE SECTORES - Sector anterior: " + sectorAnterior);
+        System.out.println("🔄 TRANSFERIR STOCK ENTRE SECTORES - Sector nuevo: " + sectorNuevo);
+        
+        // Obtener el producto
+        Producto producto = productoRepository.findByIdAndEmpresaId(productoId, empresaId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        // Buscar el sector anterior si existe
+        final Sector sectorAnteriorEntity;
+        if (sectorAnterior != null && !sectorAnterior.trim().isEmpty()) {
+            sectorAnteriorEntity = sectorRepository.findByNombreAndEmpresaId(sectorAnterior, empresaId).orElse(null);
+        } else {
+            sectorAnteriorEntity = null;
+        }
+        
+        // Buscar o crear el sector nuevo
+        final Sector sectorNuevoEntity;
+        if (sectorNuevo != null && !sectorNuevo.trim().isEmpty()) {
+            Sector sectorTemp = sectorRepository.findByNombreAndEmpresaId(sectorNuevo, empresaId).orElse(null);
+            
+            // Si el sector nuevo no existe, crearlo automáticamente
+            if (sectorTemp == null) {
+                System.out.println("🔄 TRANSFERIR STOCK ENTRE SECTORES - Creando sector nuevo: " + sectorNuevo);
+                sectorTemp = crearSectorAutomaticamente(sectorNuevo, empresaId);
+            }
+            sectorNuevoEntity = sectorTemp;
+        } else {
+            sectorNuevoEntity = null;
+        }
+        
+        // Obtener stock actual del producto en sectores
+        List<StockPorSector> stockActual = stockPorSectorRepository.findByProductoId(productoId);
+        
+        // Calcular cantidad a transferir
+        Integer cantidadATransferir = 0;
+        
+        if (sectorAnteriorEntity != null) {
+            // Buscar stock en el sector anterior
+            StockPorSector stockAnterior = stockActual.stream()
+                    .filter(stock -> stock.getSector().getId().equals(sectorAnteriorEntity.getId()))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (stockAnterior != null) {
+                cantidadATransferir = stockAnterior.getCantidad();
+                System.out.println("🔄 TRANSFERIR STOCK ENTRE SECTORES - Stock encontrado en sector anterior: " + cantidadATransferir);
+                
+                // Eliminar stock del sector anterior
+                stockPorSectorRepository.delete(stockAnterior);
+                System.out.println("🔄 TRANSFERIR STOCK ENTRE SECTORES - Stock eliminado del sector anterior");
+            }
+        }
+        
+        // Si no había stock en el sector anterior, usar el stock total del producto
+        if (cantidadATransferir == 0) {
+            cantidadATransferir = producto.getStock() != null ? producto.getStock() : 0;
+            System.out.println("🔄 TRANSFERIR STOCK ENTRE SECTORES - No había stock en sector anterior, usando stock total: " + cantidadATransferir);
+        }
+        
+        // Asignar stock al sector nuevo
+        if (sectorNuevoEntity != null && cantidadATransferir > 0) {
+            // Verificar si ya existe stock en el sector nuevo
+            StockPorSector stockNuevo = stockActual.stream()
+                    .filter(stock -> stock.getSector().getId().equals(sectorNuevoEntity.getId()))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (stockNuevo != null) {
+                // Actualizar stock existente
+                stockNuevo.setCantidad(stockNuevo.getCantidad() + cantidadATransferir);
+                stockPorSectorRepository.save(stockNuevo);
+                System.out.println("🔄 TRANSFERIR STOCK ENTRE SECTORES - Stock actualizado en sector nuevo: " + stockNuevo.getCantidad());
+            } else {
+                // Crear nuevo stock en el sector nuevo
+                StockPorSector nuevoStock = new StockPorSector();
+                nuevoStock.setProducto(producto);
+                nuevoStock.setSector(sectorNuevoEntity);
+                nuevoStock.setCantidad(cantidadATransferir);
+                stockPorSectorRepository.save(nuevoStock);
+                System.out.println("🔄 TRANSFERIR STOCK ENTRE SECTORES - Stock creado en sector nuevo: " + cantidadATransferir);
+            }
+        }
+        
+        System.out.println("✅ TRANSFERIR STOCK ENTRE SECTORES - Transferencia completada exitosamente");
+    }
+    
     /**
      * Migra el stock de un producto a un nuevo sector
      */
