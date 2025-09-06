@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,9 @@ public class HistorialInventarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+    
+    @Autowired
+    private StockSincronizacionService stockSincronizacionService;
 
     /**
      * Registrar una operación de inventario
@@ -115,8 +119,42 @@ public class HistorialInventarioService {
 
             // Actualizar el stock del producto solo si se solicita
             if (actualizarStock) {
-                producto.setStock(stockNuevo);
-                productoRepository.save(producto);
+                if (tipoOperacion == HistorialInventario.TipoOperacion.INCREMENTO) {
+                    // Para incrementos, usar el sistema de sincronización inteligente
+                    try {
+                        System.out.println("🔍 HISTORIAL INVENTARIO - Usando sincronización inteligente para incremento");
+                        System.out.println("🔍 HISTORIAL INVENTARIO - Producto: " + producto.getNombre());
+                        System.out.println("🔍 HISTORIAL INVENTARIO - Cantidad a incrementar: " + request.getCantidad());
+                        System.out.println("🔍 HISTORIAL INVENTARIO - Stock anterior: " + stockAnterior);
+                        System.out.println("🔍 HISTORIAL INVENTARIO - Estado del producto: " + request.getEstadoProducto());
+                        
+                        // Usar el sistema de sincronización para incrementar stock
+                        Map<String, Object> resultado = stockSincronizacionService.incrementarStockInteligente(
+                            empresaId, 
+                            request.getProductoId(), 
+                            request.getCantidad(), 
+                            "Ingreso de inventario - " + request.getObservacion()
+                        );
+                        
+                        // Obtener el stock actualizado del producto
+                        Producto productoActualizado = productoRepository.findByIdAndEmpresaId(request.getProductoId(), empresaId)
+                                .orElseThrow(() -> new RuntimeException("Producto no encontrado después del incremento"));
+                        
+                        stockNuevo = productoActualizado.getStock();
+                        System.out.println("🔍 HISTORIAL INVENTARIO - Stock nuevo después de sincronización: " + stockNuevo);
+                        System.out.println("🔍 HISTORIAL INVENTARIO - Resultado de sincronización: " + resultado);
+                        
+                    } catch (Exception e) {
+                        System.err.println("❌ HISTORIAL INVENTARIO - Error en sincronización inteligente: " + e.getMessage());
+                        // Fallback: usar el método tradicional
+                        producto.setStock(stockNuevo);
+                        productoRepository.save(producto);
+                    }
+                } else {
+                    // Para otros tipos de operación, usar el método tradicional
+                    producto.setStock(stockNuevo);
+                    productoRepository.save(producto);
+                }
             }
 
             // Crear el registro de historial

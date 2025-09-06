@@ -58,10 +58,33 @@ public class DetalleRemitoIngreso {
     @Column(name = "marca_producto")
     private String marcaProducto;
 
+    // Estado del producto al momento del ingreso
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_producto", nullable = true)
+    private EstadoProducto estadoProducto;
+
     // Timestamp
     @CreationTimestamp
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
+
+    // Enum para estados del producto
+    public enum EstadoProducto {
+        BUEN_ESTADO("Buen Estado"),
+        MAL_ESTADO("Mal Estado"),
+        ROTO("Roto"),
+        DEFECTUOSO("Defectuoso");
+
+        private final String descripcion;
+
+        EstadoProducto(String descripcion) {
+            this.descripcion = descripcion;
+        }
+
+        public String getDescripcion() {
+            return descripcion;
+        }
+    }
 
     // Constructores
     public DetalleRemitoIngreso() {}
@@ -74,6 +97,18 @@ public class DetalleRemitoIngreso {
         this.descripcionProducto = producto.getDescripcion();
         this.categoriaProducto = producto.getCategoria();
         this.marcaProducto = producto.getMarca();
+        this.estadoProducto = EstadoProducto.BUEN_ESTADO; // Por defecto, buen estado
+    }
+
+    public DetalleRemitoIngreso(RemitoIngreso remitoIngreso, Producto producto, Integer cantidad, EstadoProducto estadoProducto) {
+        this.remitoIngreso = remitoIngreso;
+        this.producto = producto;
+        this.cantidad = cantidad;
+        this.nombreProducto = producto.getNombre();
+        this.descripcionProducto = producto.getDescripcion();
+        this.categoriaProducto = producto.getCategoria();
+        this.marcaProducto = producto.getMarca();
+        this.estadoProducto = estadoProducto;
     }
 
     @PrePersist
@@ -187,5 +222,13 @@ public class DetalleRemitoIngreso {
 
     public void setFechaCreacion(LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
+    }
+
+    public EstadoProducto getEstadoProducto() {
+        return estadoProducto;
+    }
+
+    public void setEstadoProducto(EstadoProducto estadoProducto) {
+        this.estadoProducto = estadoProducto;
     }
 }

@@ -25,6 +25,7 @@ interface DetalleRemitoIngreso {
   descripcion: string;
   cantidad: number;
   observaciones?: string;
+  estadoProducto?: string; // "BUEN_ESTADO", "MAL_ESTADO", "ROTO", "DEFECTUOSO"
   fechaCreacion: any;
 }
 
@@ -1105,6 +1106,15 @@ export default function Ingresos() {
                               color: '#64748b'
                             }}>
                               Código: {detalle.codigoPersonalizado}
+                            </div>
+                          )}
+                          {detalle.estadoProducto && detalle.estadoProducto !== 'BUEN_ESTADO' && (
+                            <div style={{
+                              fontSize: '0.75rem',
+                              color: '#dc2626',
+                              fontWeight: '500'
+                            }}>
+                              Estado: {detalle.estadoProducto.replace('_', ' ')}
                             </div>
                           )}
                         </div>

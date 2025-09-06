@@ -11,6 +11,7 @@ public class DetalleRemitoIngresoDTO {
     private String descripcion;
     private Integer cantidad;
     private String observaciones;
+    private String estadoProducto; // "BUEN_ESTADO", "MAL_ESTADO", "ROTO", "DEFECTUOSO"
     
     private LocalDateTime fechaCreacion;
     
@@ -18,7 +19,7 @@ public class DetalleRemitoIngresoDTO {
     public DetalleRemitoIngresoDTO() {}
     
     public DetalleRemitoIngresoDTO(Long id, Long remitoIngresoId, Long productoId, String codigoPersonalizado,
-                                  String descripcion, Integer cantidad, String observaciones, LocalDateTime fechaCreacion) {
+                                  String descripcion, Integer cantidad, String observaciones, String estadoProducto, LocalDateTime fechaCreacion) {
         this.id = id;
         this.remitoIngresoId = remitoIngresoId;
         this.productoId = productoId;
@@ -26,6 +27,7 @@ public class DetalleRemitoIngresoDTO {
         this.descripcion = descripcion;
         this.cantidad = cantidad;
         this.observaciones = observaciones;
+        this.estadoProducto = estadoProducto;
         this.fechaCreacion = fechaCreacion;
     }
     
@@ -92,6 +94,14 @@ public class DetalleRemitoIngresoDTO {
     
     public void setFechaCreacion(LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
+    }
+
+    public String getEstadoProducto() {
+        return estadoProducto;
+    }
+    
+    public void setEstadoProducto(String estadoProducto) {
+        this.estadoProducto = estadoProducto;
     }
 }
 

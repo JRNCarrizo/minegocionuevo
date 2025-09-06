@@ -68,16 +68,33 @@ public class StockSincronizacionService {
 
         Integer cantidadRestante = cantidad;
 
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Iniciando descuento de " + cantidad + " unidades");
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Stock total disponible: " + stockTotalDisponible);
+        
         // 1. PRIMERA PRIORIDAD: Descontar de productos sin sectorizar
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Paso 1: Descontando de productos sin sectorizar...");
         cantidadRestante = descontarDeProductoSinSectorizar(empresaId, productoId, cantidadRestante, resultado);
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Cantidad restante después de sin sectorizar: " + cantidadRestante);
 
         // 2. SEGUNDA PRIORIDAD: Descontar de sectores ordenados por cantidad (menor a mayor)
         if (cantidadRestante > 0) {
+            System.out.println("🔍 STOCK SINCRONIZACIÓN - Paso 2: Descontando de sectores...");
             cantidadRestante = descontarDeSectores(empresaId, productoId, cantidadRestante, resultado);
+            System.out.println("🔍 STOCK SINCRONIZACIÓN - Cantidad restante después de sectores: " + cantidadRestante);
+        } else {
+            System.out.println("🔍 STOCK SINCRONIZACIÓN - No hay cantidad restante para descontar de sectores");
         }
 
         // NO actualizar el stock total del producto aquí porque ya se actualizó en descontarDeProductoSinSectorizar
         // El stock del producto ya refleja el stock sin sectorizar después del descuento
+
+        // 3. LIMPIEZA FINAL: Eliminar registros de StockPorSector con cantidad 0 para este producto
+        limpiarRegistrosStockCero(productoId, empresaId);
+        
+        // 4. LIMPIEZA ADICIONAL: Si el producto quedó en stock 0, limpiar sectorAlmacenamiento
+        if (producto.getStock() != null && producto.getStock() <= 0) {
+            limpiarSectorAlmacenamientoSiStockCero(productoId, empresaId);
+        }
 
         resultado.put("cantidadDescontada", cantidad - cantidadRestante);
         resultado.put("cantidadRestante", cantidadRestante);
@@ -86,6 +103,56 @@ public class StockSincronizacionService {
         System.out.println("✅ STOCK SINCRONIZACIÓN - Descuento completado exitosamente");
         System.out.println("✅ STOCK SINCRONIZACIÓN - Cantidad descontada: " + (cantidad - cantidadRestante));
 
+        return resultado;
+    }
+
+    /**
+     * Incrementa stock de un producto usando la estrategia híbrida inteligente
+     * Los incrementos siempre van al stock sin sectorizar del producto
+     */
+    @Transactional
+    public Map<String, Object> incrementarStockInteligente(Long empresaId, Long productoId, Integer cantidad, String observacion) {
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Iniciando incremento de " + cantidad + " unidades");
+        
+        // Validar que el producto existe
+        Producto producto = productoRepository.findByIdAndEmpresaId(productoId, empresaId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        // Obtener stock actual
+        Integer stockActual = producto.getStock() != null ? producto.getStock() : 0;
+        Integer stockEnSectores = stockPorSectorRepository.findByProductoIdAndSectorEmpresaId(productoId, empresaId)
+                .stream()
+                .mapToInt(stock -> stock.getCantidad() != null ? stock.getCantidad() : 0)
+                .sum();
+        
+        Integer stockSinSectorizar = Math.max(0, stockActual - stockEnSectores);
+        
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Stock actual: " + stockActual);
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Stock en sectores: " + stockEnSectores);
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Stock sin sectorizar: " + stockSinSectorizar);
+        
+        // Incrementar el stock total del producto
+        Integer nuevoStockTotal = stockActual + cantidad;
+        producto.setStock(nuevoStockTotal);
+        productoRepository.save(producto);
+        
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Nuevo stock total: " + nuevoStockTotal);
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Nuevo stock sin sectorizar: " + (stockSinSectorizar + cantidad));
+        
+        // Crear resultado
+        Map<String, Object> resultado = new HashMap<>();
+        resultado.put("productoId", productoId);
+        resultado.put("productoNombre", producto.getNombre());
+        resultado.put("cantidadIncrementada", cantidad);
+        resultado.put("stockAnterior", stockActual);
+        resultado.put("stockNuevo", nuevoStockTotal);
+        resultado.put("stockSinSectorizarAnterior", stockSinSectorizar);
+        resultado.put("stockSinSectorizarNuevo", stockSinSectorizar + cantidad);
+        resultado.put("observacion", observacion);
+        resultado.put("fechaIncremento", LocalDateTime.now());
+        
+        System.out.println("✅ STOCK SINCRONIZACIÓN - Incremento completado exitosamente");
+        
         return resultado;
     }
 
@@ -110,34 +177,53 @@ public class StockSincronizacionService {
 
     /**
      * Descuenta stock del producto sin sectorizar
+     * IMPORTANTE: Solo descuenta del producto.stock si realmente hay stock sin sectorizar
      */
     private Integer descontarDeProductoSinSectorizar(Long empresaId, Long productoId, Integer cantidad, Map<String, Object> resultado) {
         Producto producto = productoRepository.findByIdAndEmpresaId(productoId, empresaId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
-        Integer stockSinSectorizar = producto.getStock() != null ? producto.getStock() : 0;
+        // Calcular el stock realmente sin sectorizar
+        Integer stockTotalProducto = producto.getStock() != null ? producto.getStock() : 0;
+        Integer stockEnSectores = stockPorSectorRepository.findByProductoIdAndSectorEmpresaId(productoId, empresaId)
+                .stream()
+                .mapToInt(stock -> stock.getCantidad() != null ? stock.getCantidad() : 0)
+                .sum();
+        
+        // El stock sin sectorizar es la diferencia entre el stock total y el stock en sectores
+        Integer stockSinSectorizar = Math.max(0, stockTotalProducto - stockEnSectores);
+        
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Stock total producto: " + stockTotalProducto);
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Stock en sectores: " + stockEnSectores);
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Stock sin sectorizar calculado: " + stockSinSectorizar);
         
         if (stockSinSectorizar > 0) {
             Integer cantidadADescontar = Math.min(cantidad, stockSinSectorizar);
             
             // Descontar del producto principal
-            producto.setStock(stockSinSectorizar - cantidadADescontar);
+            Integer nuevoStockTotal = stockTotalProducto - cantidadADescontar;
+            producto.setStock(nuevoStockTotal);
             productoRepository.save(producto);
 
             // Registrar el descuento
             Map<String, Object> descuento = new HashMap<>();
             descuento.put("tipo", "SIN_SECTORIZAR");
             descuento.put("cantidad", cantidadADescontar);
-            descuento.put("stockAnterior", stockSinSectorizar);
-            descuento.put("stockNuevo", stockSinSectorizar - cantidadADescontar);
+            descuento.put("stockAnterior", stockTotalProducto);
+            descuento.put("stockNuevo", nuevoStockTotal);
+            descuento.put("stockSinSectorizarAnterior", stockSinSectorizar);
+            descuento.put("stockSinSectorizarNuevo", stockSinSectorizar - cantidadADescontar);
             
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> descuentos = (List<Map<String, Object>>) resultado.get("descuentos");
             descuentos.add(descuento);
 
             System.out.println("🔍 STOCK SINCRONIZACIÓN - Descontado de sin sectorizar: " + cantidadADescontar);
+            System.out.println("🔍 STOCK SINCRONIZACIÓN - Nuevo stock total: " + nuevoStockTotal);
             
             return cantidad - cantidadADescontar;
+        } else {
+            System.out.println("🔍 STOCK SINCRONIZACIÓN - No hay stock sin sectorizar para descontar");
         }
         
         return cantidad;
@@ -147,12 +233,19 @@ public class StockSincronizacionService {
      * Descuenta stock de sectores ordenados por cantidad (menor a mayor)
      */
     private Integer descontarDeSectores(Long empresaId, Long productoId, Integer cantidad, Map<String, Object> resultado) {
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Descontando de sectores: " + cantidad + " unidades");
+        
         // Obtener todos los sectores con stock del producto, ordenados por cantidad (menor a mayor)
         List<StockPorSector> stockEnSectores = stockPorSectorRepository.findByProductoIdAndSectorEmpresaId(productoId, empresaId)
                 .stream()
                 .filter(stock -> stock.getCantidad() != null && stock.getCantidad() > 0)
                 .sorted(Comparator.comparing(StockPorSector::getCantidad))
                 .collect(Collectors.toList());
+
+        System.out.println("🔍 STOCK SINCRONIZACIÓN - Sectores encontrados con stock: " + stockEnSectores.size());
+        for (StockPorSector stock : stockEnSectores) {
+            System.out.println("🔍 STOCK SINCRONIZACIÓN - Sector: " + stock.getSector().getNombre() + " - Cantidad: " + stock.getCantidad());
+        }
 
         Integer cantidadRestante = cantidad;
 
@@ -163,9 +256,30 @@ public class StockSincronizacionService {
             Integer stockAnterior = stockSector.getCantidad();
 
             // Descontar del sector
-            stockSector.setCantidad(stockAnterior - cantidadADescontar);
-            stockSector.setFechaActualizacion(LocalDateTime.now());
-            stockPorSectorRepository.save(stockSector);
+            Integer nuevaCantidad = stockAnterior - cantidadADescontar;
+            
+            if (nuevaCantidad <= 0) {
+                // Si la cantidad queda en 0 o menos, eliminar el registro
+                stockPorSectorRepository.delete(stockSector);
+                System.out.println("🗑️ STOCK SINCRONIZACIÓN - Eliminado registro de sector con stock 0: " + stockSector.getSector().getNombre());
+            } else {
+                // Si queda stock, actualizar la cantidad
+                stockSector.setCantidad(nuevaCantidad);
+                stockSector.setFechaActualizacion(LocalDateTime.now());
+                stockPorSectorRepository.save(stockSector);
+            }
+            
+            // ACTUALIZAR EL STOCK TOTAL DEL PRODUCTO
+            // Cuando se descuenta de sectores, también hay que actualizar el stock total del producto
+            Producto producto = productoRepository.findByIdAndEmpresaId(productoId, empresaId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            
+            Integer stockTotalAnterior = producto.getStock() != null ? producto.getStock() : 0;
+            Integer nuevoStockTotal = stockTotalAnterior - cantidadADescontar;
+            producto.setStock(nuevoStockTotal);
+            productoRepository.save(producto);
+            
+            System.out.println("🔍 STOCK SINCRONIZACIÓN - Stock total del producto actualizado: " + stockTotalAnterior + " -> " + nuevoStockTotal);
 
             // Registrar el descuento
             Map<String, Object> descuento = new HashMap<>();
@@ -174,7 +288,8 @@ public class StockSincronizacionService {
             descuento.put("sectorNombre", stockSector.getSector().getNombre());
             descuento.put("cantidad", cantidadADescontar);
             descuento.put("stockAnterior", stockAnterior);
-            descuento.put("stockNuevo", stockAnterior - cantidadADescontar);
+            descuento.put("stockNuevo", nuevaCantidad <= 0 ? 0 : nuevaCantidad);
+            descuento.put("registroEliminado", nuevaCantidad <= 0);
 
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> descuentos = (List<Map<String, Object>>) resultado.get("descuentos");
@@ -382,5 +497,68 @@ public class StockSincronizacionService {
         }
 
         return resultado;
+    }
+
+    /**
+     * Limpia registros de StockPorSector con cantidad 0 para un producto específico
+     * Este método se ejecuta automáticamente después de cada descuento de stock
+     */
+    private void limpiarRegistrosStockCero(Long productoId, Long empresaId) {
+        try {
+            System.out.println("🧹 STOCK SINCRONIZACIÓN - Limpiando registros con stock 0 para producto: " + productoId);
+            
+            // Obtener todos los registros de StockPorSector para este producto
+            List<StockPorSector> registrosStock = stockPorSectorRepository.findByProductoIdAndSectorEmpresaId(productoId, empresaId);
+            
+            int registrosEliminados = 0;
+            for (StockPorSector stock : registrosStock) {
+                if (stock.getCantidad() == null || stock.getCantidad() <= 0) {
+                    stockPorSectorRepository.delete(stock);
+                    registrosEliminados++;
+                    System.out.println("🗑️ STOCK SINCRONIZACIÓN - Eliminado registro con stock 0 en sector: " + stock.getSector().getNombre());
+                }
+            }
+            
+            if (registrosEliminados > 0) {
+                System.out.println("✅ STOCK SINCRONIZACIÓN - Limpieza completada. Registros eliminados: " + registrosEliminados);
+            } else {
+                System.out.println("✅ STOCK SINCRONIZACIÓN - No se encontraron registros con stock 0 para limpiar");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ STOCK SINCRONIZACIÓN - Error limpiando registros con stock 0: " + e.getMessage());
+            // No fallar la operación principal si hay error en la limpieza
+        }
+    }
+
+    /**
+     * Limpia el campo sectorAlmacenamiento de un producto si quedó en stock cero
+     * Esto asegura que el producto aparezca correctamente en el stock general
+     */
+    private void limpiarSectorAlmacenamientoSiStockCero(Long productoId, Long empresaId) {
+        try {
+            System.out.println("🧹 STOCK SINCRONIZACIÓN - Limpiando sectorAlmacenamiento para producto con stock cero: " + productoId);
+            
+            Producto producto = productoRepository.findByIdAndEmpresaId(productoId, empresaId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            
+            // Solo limpiar si realmente tiene stock 0 y tiene sectorAlmacenamiento asignado
+            if ((producto.getStock() == null || producto.getStock() <= 0) && 
+                (producto.getSectorAlmacenamiento() != null && !producto.getSectorAlmacenamiento().trim().isEmpty())) {
+                
+                String sectorAnterior = producto.getSectorAlmacenamiento();
+                producto.setSectorAlmacenamiento(null);
+                productoRepository.save(producto);
+                
+                System.out.println("✅ STOCK SINCRONIZACIÓN - sectorAlmacenamiento limpiado para producto: " + producto.getNombre() + 
+                    " (sector anterior: " + sectorAnterior + ")");
+            } else {
+                System.out.println("✅ STOCK SINCRONIZACIÓN - No se requiere limpieza de sectorAlmacenamiento para producto: " + producto.getNombre());
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ STOCK SINCRONIZACIÓN - Error limpiando sectorAlmacenamiento: " + e.getMessage());
+            // No fallar la operación principal si hay error en la limpieza
+        }
     }
 }

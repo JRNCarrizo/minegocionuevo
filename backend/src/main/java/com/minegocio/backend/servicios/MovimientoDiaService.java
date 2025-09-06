@@ -331,22 +331,27 @@ public class MovimientoDiaService {
                 .findByPlanillaDevolucionIdOrderByFechaCreacionAsc(planilla.getId());
             
             for (DetallePlanillaDevolucion detalle : detalles) {
-                Long productoId = detalle.getProducto().getId();
-                
-                if (productosAgrupados.containsKey(productoId)) {
-                    // Sumar cantidad al producto existente
-                    MovimientoDiaDTO.ProductoMovimientoDTO productoExistente = productosAgrupados.get(productoId);
-                    productoExistente.setCantidad(productoExistente.getCantidad() + detalle.getCantidad());
-                } else {
-                    // Crear nuevo producto
-                    productosAgrupados.put(productoId, new MovimientoDiaDTO.ProductoMovimientoDTO(
-                        detalle.getProducto().getId(),
-                        detalle.getProducto().getNombre(),
-                        detalle.getProducto().getCodigoPersonalizado(),
-                        detalle.getCantidad(),
-                        detalle.getFechaCreacion().format(DATETIME_FORMATTER),
-                        null // Sin observaciones
-                    ));
+                // Solo sumar productos en BUEN_ESTADO para los movimientos del día
+                // Si no tiene estado definido (productos existentes), considerarlo como BUEN_ESTADO
+                DetallePlanillaDevolucion.EstadoProducto estado = detalle.getEstadoProducto();
+                if (estado == null || estado == DetallePlanillaDevolucion.EstadoProducto.BUEN_ESTADO) {
+                    Long productoId = detalle.getProducto().getId();
+                    
+                    if (productosAgrupados.containsKey(productoId)) {
+                        // Sumar cantidad al producto existente
+                        MovimientoDiaDTO.ProductoMovimientoDTO productoExistente = productosAgrupados.get(productoId);
+                        productoExistente.setCantidad(productoExistente.getCantidad() + detalle.getCantidad());
+                    } else {
+                        // Crear nuevo producto
+                        productosAgrupados.put(productoId, new MovimientoDiaDTO.ProductoMovimientoDTO(
+                            detalle.getProducto().getId(),
+                            detalle.getProducto().getNombre(),
+                            detalle.getProducto().getCodigoPersonalizado(),
+                            detalle.getCantidad(),
+                            detalle.getFechaCreacion().format(DATETIME_FORMATTER),
+                            null // Sin observaciones
+                        ));
+                    }
                 }
             }
         }
@@ -921,20 +926,25 @@ public class MovimientoDiaService {
         
         for (PlanillaDevolucion devolucion : devoluciones) {
             for (DetallePlanillaDevolucion detalle : devolucion.getDetalles()) {
-                Long productoId = detalle.getProducto().getId();
-                
-                if (productosUnificados.containsKey(productoId)) {
-                    MovimientoDiaDTO.ProductoMovimientoDTO existente = productosUnificados.get(productoId);
-                    existente.setCantidad(existente.getCantidad() + detalle.getCantidad());
-                } else {
-                    productosUnificados.put(productoId, new MovimientoDiaDTO.ProductoMovimientoDTO(
-                        productoId,
-                        detalle.getProducto().getNombre(),
-                        detalle.getProducto().getCodigoPersonalizado(),
-                        detalle.getCantidad(),
-                        devolucion.getFechaPlanilla().format(DATETIME_FORMATTER),
-                        null
-                    ));
+                // Solo sumar productos en BUEN_ESTADO para los movimientos del día
+                // Si no tiene estado definido (productos existentes), considerarlo como BUEN_ESTADO
+                DetallePlanillaDevolucion.EstadoProducto estado = detalle.getEstadoProducto();
+                if (estado == null || estado == DetallePlanillaDevolucion.EstadoProducto.BUEN_ESTADO) {
+                    Long productoId = detalle.getProducto().getId();
+                    
+                    if (productosUnificados.containsKey(productoId)) {
+                        MovimientoDiaDTO.ProductoMovimientoDTO existente = productosUnificados.get(productoId);
+                        existente.setCantidad(existente.getCantidad() + detalle.getCantidad());
+                    } else {
+                        productosUnificados.put(productoId, new MovimientoDiaDTO.ProductoMovimientoDTO(
+                            productoId,
+                            detalle.getProducto().getNombre(),
+                            detalle.getProducto().getCodigoPersonalizado(),
+                            detalle.getCantidad(),
+                            devolucion.getFechaPlanilla().format(DATETIME_FORMATTER),
+                            null
+                        ));
+                    }
                 }
             }
         }

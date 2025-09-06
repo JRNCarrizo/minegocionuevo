@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
-import { useResponsive } from '../../hooks/useResponsive';
 import { API_CONFIG } from '../../config/api';
 import './GestionSectores.css';
 
@@ -50,7 +48,6 @@ interface AsignacionProducto {
 
 export default function GestionSectores() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
-  const { isMobile } = useResponsive();
   const navigate = useNavigate();
   
   const [sectores, setSectores] = useState<Sector[]>([]);
@@ -65,11 +62,9 @@ export default function GestionSectores() {
   const [productosEnSector, setProductosEnSector] = useState<StockPorSector[]>([]);
   const [productosDisponibles, setProductosDisponibles] = useState<ProductoDisponible[]>([]);
   const [asignaciones, setAsignaciones] = useState<AsignacionProducto[]>([]);
-  const [cargandoProductos, setCargandoProductos] = useState(false);
   const [guardandoAsignaciones, setGuardandoAsignaciones] = useState(false);
   const [filtroBusquedaAsignacion, setFiltroBusquedaAsignacion] = useState('');
   const [filtroBusquedaProductos, setFiltroBusquedaProductos] = useState('');
-  const [quitandoProducto, setQuitandoProducto] = useState(false);
   
   // Estados para transferencia de stock
   const [productosConStock, setProductosConStock] = useState<StockPorSector[]>([]);
@@ -94,11 +89,6 @@ export default function GestionSectores() {
   // Estado para almacenar información de productos por sector
   const [infoProductosPorSector, setInfoProductosPorSector] = useState<{[key: number]: {productos: number, unidades: number}}>({});
   
-  // Estado para controlar si ya se cargó la información
-  const [infoProductosCargada, setInfoProductosCargada] = useState(false);
-  
-  // Estado para controlar cuando se está recargando la información
-  const [recargandoInfo, setRecargandoInfo] = useState(false);
   
   // Estado para controlar cuando se está limpiando stock cero
   const [limpiandoStockCero, setLimpiandoStockCero] = useState(false);
@@ -430,94 +420,7 @@ export default function GestionSectores() {
     }
   };
 
-  // Funciones para asignación de productos
-  const cargarProductosDisponibles = async () => {
-    try {
-      setCargandoProductos(true);
-      
-      console.log('🔍 CARGAR PRODUCTOS - Iniciando...');
-      console.log('🔍 CARGAR PRODUCTOS - Empresa ID:', datosUsuario?.empresaId);
-      
-      // Cargar productos
-      const productosResponse = await apiCall(`/empresas/${datosUsuario?.empresaId}/productos`);
-      
-      console.log('🔍 CARGAR PRODUCTOS - Response productos:', productosResponse.status, productosResponse.ok);
-      
-      if (!productosResponse.ok) {
-        console.error('🔍 CARGAR PRODUCTOS - Error en productos:', productosResponse.status);
-        toast.error('Error al cargar productos');
-        return;
-      }
-      
-      const productosData = await productosResponse.json();
-      const productos = productosData.data || [];
-      
-      console.log('🔍 CARGAR PRODUCTOS - Productos cargados:', productos.length);
-      
-      // Cargar stock general para obtener información de asignaciones
-      console.log('🔍 CARGAR PRODUCTOS - Llamando stock general...');
-      const stockResponse = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/stock-general`);
-      
-      console.log('🔍 CARGAR PRODUCTOS - Response stock general:', stockResponse.status, stockResponse.ok);
-      
-      let stockAsignadoPorProducto: { [key: number]: number } = {};
-      
-      if (stockResponse.ok) {
-        const stockData = await stockResponse.json();
-        const stockGeneral = stockData.data || [];
-        
-        console.log('🔍 CARGAR PRODUCTOS - Stock general cargado:', stockGeneral.length, 'items');
-        
-        // Calcular stock asignado por producto
-        stockGeneral.forEach((item: any) => {
-          if (item.tipo === 'con_sector') {
-            const productoId = item.producto.id;
-            stockAsignadoPorProducto[productoId] = (stockAsignadoPorProducto[productoId] || 0) + item.cantidad;
-          }
-        });
-        
-        console.log('🔍 CARGAR PRODUCTOS - Stock asignado calculado:', Object.keys(stockAsignadoPorProducto).length, 'productos');
-      } else {
-        console.error('🔍 CARGAR PRODUCTOS - Error en stock general:', stockResponse.status);
-        const errorText = await stockResponse.text();
-        console.error('🔍 CARGAR PRODUCTOS - Error response:', errorText);
-      }
-      
-      // Filtrar solo productos activos con stock disponible
-      const productosDisponibles = productos
-        .filter((producto: any) => producto.activo && producto.stock > 0)
-        .map((producto: any) => {
-          const stockAsignado = stockAsignadoPorProducto[producto.id] || 0;
-          const stockDisponible = Math.max(0, producto.stock - stockAsignado);
-          
-          return {
-            id: producto.id,
-            nombre: producto.nombre,
-            codigoPersonalizado: producto.codigoPersonalizado,
-            stockTotal: producto.stock,
-            stockAsignado: stockAsignado,
-            stockDisponible: stockDisponible,
-            unidadMedida: producto.unidad
-          };
-        })
-        .filter((producto: any) => producto.stockDisponible > 0); // Solo productos con stock disponible
-        
-      console.log('🔍 CARGAR PRODUCTOS - Productos disponibles finales:', productosDisponibles.length);
-      setProductosDisponibles(productosDisponibles);
-    } catch (error) {
-      console.error('🔍 CARGAR PRODUCTOS - Error general:', error);
-      toast.error('Error al cargar productos disponibles');
-    } finally {
-      setCargandoProductos(false);
-    }
-  };
 
-  const abrirModalAsignar = async (sector: Sector) => {
-    setSectorSeleccionado(sector);
-    await cargarProductosDisponibles();
-    setAsignaciones([]);
-    setMostrarModalAsignar(true);
-  };
 
   const actualizarAsignacion = (productoId: number, cantidad: number) => {
     const nuevaAsignacion = { productoId, cantidad };
@@ -583,8 +486,6 @@ export default function GestionSectores() {
     if (!confirmar) return;
     
     try {
-      setQuitandoProducto(true);
-      
       const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/${sectorSeleccionado.id}/quitar-producto/${stockId}`, {
         method: 'DELETE'
       });
@@ -593,6 +494,8 @@ export default function GestionSectores() {
         toast.success(`Producto "${nombreProducto}" quitado exitosamente del sector`);
         // Recargar los productos del sector
         await cargarProductosEnSector(sectorSeleccionado.id);
+        // Recargar la información de los sectores para actualizar las tarjetas
+        await cargarSectores();
       } else {
         const errorData = await response.json();
         toast.error(errorData.mensaje || 'Error al quitar el producto del sector');
@@ -600,16 +503,9 @@ export default function GestionSectores() {
     } catch (error) {
       console.error('Error al quitar producto del sector:', error);
       toast.error('Error al quitar el producto del sector');
-    } finally {
-      setQuitandoProducto(false);
     }
   };
 
-  const abrirModalDetalle = async (sector: Sector) => {
-    setSectorSeleccionado(sector);
-    await cargarProductosEnSector(sector.id);
-    setMostrarModalDetalle(true);
-  };
 
   const abrirModalEditar = (sector: Sector) => {
     setSectorSeleccionado(sector);
@@ -627,29 +523,6 @@ export default function GestionSectores() {
     setMostrarModalProductos(true);
   };
 
-  const abrirModalTransferir = async (sector: Sector) => {
-    setSectorSeleccionado(sector);
-    setProductoSeleccionado(null);
-    setSectorDestino('');
-    setCantidadTransferir(0);
-    setMostrarModalTransferir(true);
-    
-    // Cargar productos del sector
-    try {
-      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/${sector.id}/productos`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setProductosConStock(data.data || []);
-      } else {
-        console.error('Error al cargar productos del sector');
-        setProductosConStock([]);
-      }
-    } catch (error) {
-      console.error('Error al cargar productos del sector:', error);
-      setProductosConStock([]);
-    }
-  };
 
   const abrirModalTransferirProducto = async (stock: StockPorSector) => {
     // Buscar el sector completo en la lista de sectores
@@ -686,7 +559,6 @@ export default function GestionSectores() {
     setAsignaciones([]);
     setFiltroBusquedaAsignacion('');
     setFiltroBusquedaProductos('');
-    setQuitandoProducto(false);
     setProductosConStock([]);
     setProductoSeleccionado(null);
     setSectorDestino('');
@@ -749,45 +621,6 @@ export default function GestionSectores() {
     return colores[index % colores.length];
   };
 
-  const sincronizarSectorAlmacenamiento = async () => {
-    try {
-      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/sincronizar-sector-almacenamiento`, {
-        method: 'POST'
-      });
-
-      if (response.ok) {
-        toast.success('Campo sectorAlmacenamiento sincronizado correctamente');
-        await cargarSectores();
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || 'Error al sincronizar sectorAlmacenamiento');
-      }
-    } catch (error) {
-      console.error('Error al sincronizar sectorAlmacenamiento:', error);
-      toast.error('Error al sincronizar sectorAlmacenamiento');
-    }
-  };
-
-  const limpiarFiltrosProductos = async () => {
-    try {
-      const response = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/limpiar-filtros-productos`, {
-        method: 'POST'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        toast.success('Filtros de productos limpiados correctamente');
-        console.log('🧹 Sectores activos:', data.sectoresActivos);
-        await cargarSectores();
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || 'Error al limpiar filtros de productos');
-      }
-    } catch (error) {
-      console.error('Error al limpiar filtros de productos:', error);
-      toast.error('Error al limpiar filtros de productos');
-    }
-  };
 
   const limpiarStockCero = async () => {
     setLimpiandoStockCero(true);
@@ -1067,7 +900,7 @@ export default function GestionSectores() {
           </button>
         </div>
 
-        {/* Botones de Sincronización */}
+        {/* Botón de Limpieza */}
         <div className="botones-sincronizacion">
           <button
             onClick={limpiarStockCero}
@@ -1079,24 +912,6 @@ export default function GestionSectores() {
               {limpiandoStockCero ? '⏳' : '🧹'}
             </span>
             {limpiandoStockCero ? 'Limpiando...' : 'Limpiar Stock Cero'}
-          </button>
-          
-          <button
-            onClick={sincronizarSectorAlmacenamiento}
-            className="boton-sincronizacion boton-sincronizar-sector"
-            title="Sincronizar campo sectorAlmacenamiento de todos los productos"
-          >
-            <span className="icono-boton">🔄</span>
-            Sincronizar Sector Almacenamiento
-          </button>
-          
-          <button
-            onClick={limpiarFiltrosProductos}
-            className="boton-sincronizacion boton-limpiar-filtros"
-            title="Limpiar filtros de productos de sectores eliminados"
-          >
-            <span className="icono-boton">🧹</span>
-            Limpiar Filtros de Productos
           </button>
         </div>
 
@@ -1890,7 +1705,7 @@ export default function GestionSectores() {
               </div>
             </div>
             
-            {cargandoProductos ? (
+            {false ? (
               <div className="productos-cargando">
                 <div className="spinner"></div>
                 <p>Cargando productos disponibles...</p>

@@ -186,23 +186,72 @@ Map<String, Object> resultadoDescuento = stockSincronizacionService
     .descontarStockInteligente(empresaId, productoId, cantidad, motivo);
 ```
 
-### **Cargas de Planilla (Pendiente de Integrar)**
-Para integrar con cargas de planilla, agregar en el servicio correspondiente:
+### **Cargas de Planilla (✅ Integrado)**
+Integrado en PlanillaPedidoService.java - ahora usa sincronización inteligente con limpieza automática de registros con stock cero:
 
 ```java
 @Autowired
 private StockSincronizacionService stockSincronizacionService;
 
-// En el método de procesar planilla
-for (DetallePlanilla detalle : detalles) {
-    stockSincronizacionService.descontarStockInteligente(
-        empresaId,
-        detalle.getProductoId(),
-        detalle.getCantidad(),
-        "Carga de planilla - " + planilla.getNumero()
-    );
+// En el método descontarDelStock() de PlanillaPedidoService
+private void descontarDelStock(Producto producto, Integer cantidad) {
+    if (producto.getStock() != null && cantidad != null && cantidad > 0) {
+        try {
+            // Usar el sistema de sincronización inteligente
+            Map<String, Object> resultado = stockSincronizacionService.descontarStockInteligente(
+                producto.getEmpresa().getId(),
+                producto.getId(),
+                cantidad,
+                "Carga de planilla de pedido"
+            );
+        } catch (Exception e) {
+            // Fallback al método tradicional si hay error
+            // ... código de fallback ...
+        }
+    }
 }
 ```
+
+**🔧 Mejoras Implementadas:**
+- ✅ **Cálculo Correcto de Stock Sin Sectorizar**: Calcula correctamente el stock disponible sin sectorizar
+- ✅ **Descuento de Sectores Corregido**: Ahora descuenta correctamente de los sectores cuando no hay stock sin sectorizar
+- ✅ **Actualización de Stock Total**: El stock total del producto se actualiza correctamente cuando se descuenta de sectores
+- ✅ **Limpieza Automática**: Los registros de `StockPorSector` con cantidad 0 se eliminan automáticamente
+- ✅ **Limpieza de sectorAlmacenamiento**: Se limpia automáticamente cuando un producto queda en stock cero
+- ✅ **Stock General Actualizado**: Los productos con stock cero aparecen correctamente en el stock general
+- ✅ **Sincronización Completa**: El stock se actualiza tanto en gestión de productos como en gestión de sectores
+- ✅ **Logging Detallado**: Para debugging y monitoreo de operaciones
+- ✅ **Fallback Seguro**: Si hay error en la sincronización, usa el método tradicional
+
+### **Ingresos de Inventario (✅ Integrado)**
+Integrado en HistorialInventarioService.java - ahora usa sincronización inteligente para incrementos:
+
+```java
+@Autowired
+private StockSincronizacionService stockSincronizacionService;
+
+// En el método registrarOperacionInventario() de HistorialInventarioService
+if (tipoOperacion == HistorialInventario.TipoOperacion.INCREMENTO) {
+    // Para incrementos, usar el sistema de sincronización inteligente
+    Map<String, Object> resultado = stockSincronizacionService.incrementarStockInteligente(
+        empresaId, 
+        request.getProductoId(), 
+        request.getCantidad(), 
+        "Ingreso de inventario - " + request.getObservacion()
+    );
+} else {
+    // Para otros tipos de operación, usar el método tradicional
+    producto.setStock(stockNuevo);
+    productoRepository.save(producto);
+}
+```
+
+**🔧 Características del Incremento Inteligente:**
+- ✅ **Suma Correcta**: Suma al stock existente en lugar de sobrescribir
+- ✅ **Stock Sin Sectorizar**: Los incrementos van al stock sin sectorizar del producto
+- ✅ **Sincronización Completa**: Mantiene consistencia entre gestión de productos y sectores
+- ✅ **Logging Detallado**: Para debugging y monitoreo de operaciones
+- ✅ **Fallback Seguro**: Si hay error en la sincronización, usa el método tradicional
 
 ### **Remitos de Ingreso (Pendiente de Integrar)**
 Para integrar con remitos de ingreso:
@@ -271,6 +320,7 @@ El sistema genera logs detallados para monitoreo:
 | **Gestión de Sectores** | ✅ **COMPLETO** | Sincronización automática con productos |
 | **Venta Rápida** | ✅ **COMPLETO** | Usa stock total (producto + sectores) |
 | **Sistema de Sincronización** | ✅ **COMPLETO** | Estrategia híbrida inteligente |
+| **Cargas de Planilla** | ✅ **COMPLETO** | Sincronización automática con limpieza de stock cero |
 
 ### 🔄 **Flujo de Sincronización:**
 
@@ -295,6 +345,31 @@ Gestión de Productos ←→ Gestión de Sectores ←→ Venta Rápida
 3. **Integrar con roturas y pérdidas**
 4. **Agregar reportes de movimientos de stock**
 5. **Implementar alertas de stock bajo por sector**
+
+## 🧹 **Endpoints de Limpieza de Stock Cero**
+
+### **Limpieza General de Stock Cero**
+```http
+POST /api/empresas/{empresaId}/sectores/limpiar-stock-cero
+```
+Elimina todos los registros de `StockPorSector` con cantidad 0 de la empresa.
+
+### **Limpieza de Stock Cero por Producto**
+```http
+POST /api/empresas/{empresaId}/sectores/limpiar-stock-cero-producto/{productoId}
+```
+Elimina registros de `StockPorSector` con cantidad 0 para un producto específico.
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "message": "Limpieza de stock cero completada para el producto",
+  "productoId": 123,
+  "registrosEliminados": 2,
+  "timestamp": "2024-01-15T10:30:00"
+}
+```
 
 ---
 

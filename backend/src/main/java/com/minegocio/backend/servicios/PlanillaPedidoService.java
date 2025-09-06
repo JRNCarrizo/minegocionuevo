@@ -25,6 +25,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -46,6 +47,9 @@ public class PlanillaPedidoService {
 
     @Autowired
     private ProductoRepository productoRepository;
+    
+    @Autowired
+    private StockSincronizacionService stockSincronizacionService;
 
     /**
      * Crear una nueva planilla de pedido y descontar del stock
@@ -367,17 +371,45 @@ public class PlanillaPedidoService {
     }
 
     /**
-     * Descontar cantidad del stock de un producto
+     * Descontar cantidad del stock de un producto usando sincronización inteligente
+     * Este método utiliza el StockSincronizacionService para descontar stock de manera inteligente
+     * priorizando productos sin sector, luego sectores con menos stock, y finalmente sectores con más stock
      */
     private void descontarDelStock(Producto producto, Integer cantidad) {
-        if (producto.getStock() != null && cantidad != null) {
-            int nuevoStock = producto.getStock() - cantidad;
-            if (nuevoStock < 0) {
-                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() + 
-                    ". Stock disponible: " + producto.getStock() + ", Cantidad solicitada: " + cantidad);
+        if (producto.getStock() != null && cantidad != null && cantidad > 0) {
+            try {
+                System.out.println("🔄 PLANILLA PEDIDO - Iniciando descuento inteligente de stock");
+                System.out.println("🔄 PLANILLA PEDIDO - Producto: " + producto.getNombre() + " (ID: " + producto.getId() + ")");
+                System.out.println("🔄 PLANILLA PEDIDO - Cantidad a descontar: " + cantidad);
+                System.out.println("🔄 PLANILLA PEDIDO - Stock actual: " + producto.getStock());
+                System.out.println("🔄 PLANILLA PEDIDO - Empresa: " + producto.getEmpresa().getId());
+                
+                // Usar el sistema de sincronización inteligente
+                Map<String, Object> resultado = stockSincronizacionService.descontarStockInteligente(
+                    producto.getEmpresa().getId(),
+                    producto.getId(),
+                    cantidad,
+                    "Carga de planilla de pedido"
+                );
+                
+                System.out.println("✅ PLANILLA PEDIDO - Descuento inteligente completado exitosamente");
+                System.out.println("✅ PLANILLA PEDIDO - Resultado: " + resultado);
+                
+            } catch (Exception e) {
+                System.err.println("❌ PLANILLA PEDIDO - Error en descuento inteligente: " + e.getMessage());
+                e.printStackTrace();
+                
+                // Fallback: Si hay error en la sincronización inteligente, usar el método tradicional
+                System.out.println("⚠️ PLANILLA PEDIDO - Usando método tradicional como fallback");
+                int nuevoStock = producto.getStock() - cantidad;
+                if (nuevoStock < 0) {
+                    throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() + 
+                        ". Stock disponible: " + producto.getStock() + ", Cantidad solicitada: " + cantidad);
+                }
+                producto.setStock(nuevoStock);
+                productoRepository.save(producto);
+                System.out.println("⚠️ PLANILLA PEDIDO - Stock actualizado usando método tradicional: " + nuevoStock);
             }
-            producto.setStock(nuevoStock);
-            productoRepository.save(producto);
         }
     }
 

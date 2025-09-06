@@ -15,6 +15,7 @@ interface DetalleRemitoIngreso {
   descripcion: string;
   cantidad: number;
   observaciones?: string;
+  estadoProducto?: string; // "BUEN_ESTADO", "MAL_ESTADO", "ROTO", "DEFECTUOSO"
   fechaCreacion: string;
 }
 

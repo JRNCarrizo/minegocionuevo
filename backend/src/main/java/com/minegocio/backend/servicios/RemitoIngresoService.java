@@ -177,6 +177,19 @@ public class RemitoIngresoService {
                 detalle.setObservaciones(detalleDTO.getObservaciones() != null ? detalleDTO.getObservaciones().trim() : null);
                 detalle.setCodigoPersonalizado(detalleDTO.getCodigoPersonalizado() != null ? detalleDTO.getCodigoPersonalizado().trim() : null);
                 
+                // Establecer el estado del producto (por defecto BUEN_ESTADO si no se especifica)
+                String estadoProducto = detalleDTO.getEstadoProducto();
+                if (estadoProducto == null || estadoProducto.trim().isEmpty()) {
+                    detalle.setEstadoProducto(DetalleRemitoIngreso.EstadoProducto.BUEN_ESTADO);
+                } else {
+                    try {
+                        detalle.setEstadoProducto(DetalleRemitoIngreso.EstadoProducto.valueOf(estadoProducto.toUpperCase()));
+                    } catch (IllegalArgumentException e) {
+                        // Si el estado no es válido, usar BUEN_ESTADO por defecto
+                        detalle.setEstadoProducto(DetalleRemitoIngreso.EstadoProducto.BUEN_ESTADO);
+                    }
+                }
+                
                 // Asociar el producto si existe
                 if (detalleDTO.getProductoId() != null) {
                     Optional<Producto> producto = productoRepository.findById(detalleDTO.getProductoId());
@@ -446,6 +459,7 @@ public class RemitoIngresoService {
                 detalle.getDescripcion(),
                 detalle.getCantidad(),
                 detalle.getObservaciones(),
+                detalle.getEstadoProducto() != null ? detalle.getEstadoProducto().name() : "BUEN_ESTADO",
                 detalle.getFechaCreacion()
         );
     }

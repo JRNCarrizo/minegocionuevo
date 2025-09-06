@@ -35,6 +35,9 @@ public class InventarioRequestDTO {
     @Size(max = 100, message = "El método de entrada no puede exceder 100 caracteres")
     private String metodoEntrada; // "cámara", "manual", "usb"
 
+    // Estado del producto (solo para operaciones de INCREMENTO)
+    private String estadoProducto; // "BUEN_ESTADO", "MAL_ESTADO", "ROTO", "DEFECTUOSO"
+
     // Constructores
     public InventarioRequestDTO() {}
 
@@ -71,4 +74,7 @@ public class InventarioRequestDTO {
 
     public String getMetodoEntrada() { return metodoEntrada; }
     public void setMetodoEntrada(String metodoEntrada) { this.metodoEntrada = metodoEntrada; }
+
+    public String getEstadoProducto() { return estadoProducto; }
+    public void setEstadoProducto(String estadoProducto) { this.estadoProducto = estadoProducto; }
 } 

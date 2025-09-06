@@ -5,6 +5,7 @@ import com.minegocio.backend.dto.StockPorSectorDTO;
 import com.minegocio.backend.entidades.Sector;
 import com.minegocio.backend.entidades.StockPorSector;
 import com.minegocio.backend.servicios.SectorService;
+import com.minegocio.backend.servicios.StockSincronizacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -46,6 +47,9 @@ public class SectorController {
     
     @Autowired
     private StockPorSectorRepository stockPorSectorRepository;
+    
+    @Autowired
+    private StockSincronizacionService stockSincronizacionService;
     
     // Métodos de conversión
     private SectorDTO convertirASectorDTO(Sector sector) {
@@ -553,13 +557,9 @@ public class SectorController {
             System.out.println("🔍 QUITAR PRODUCTO - Sector: " + sectorId);
             System.out.println("🔍 QUITAR PRODUCTO - Stock ID: " + stockId);
             
-            sectorService.quitarProductoDeSector(sectorId, empresaId, stockId);
+            Map<String, Object> resultado = sectorService.quitarProductoDeSector(sectorId, empresaId, stockId);
             
-            return ResponseEntity.ok(Map.of(
-                "mensaje", "Producto quitado exitosamente del sector",
-                "sectorId", sectorId,
-                "stockId", stockId
-            ));
+            return ResponseEntity.ok(resultado);
         } catch (Exception e) {
             System.err.println("🔍 QUITAR PRODUCTO - Error: " + e.getMessage());
             e.printStackTrace();
@@ -657,6 +657,53 @@ public class SectorController {
                 .body(Map.of(
                     "success", false,
                     "error", "Error limpiando stock cero: " + e.getMessage(),
+                    "timestamp", new Date()
+                ));
+        }
+    }
+    
+    /**
+     * Endpoint para limpiar registros de stock cero de un producto específico
+     * Útil para corregir inconsistencias después de cargas de planilla
+     */
+    @PostMapping("/limpiar-stock-cero-producto/{productoId}")
+    public ResponseEntity<?> limpiarStockCeroProducto(@PathVariable Long empresaId, @PathVariable Long productoId) {
+        try {
+            System.out.println("🔍 SECTOR CONTROLLER - Limpiando stock cero para producto: " + productoId + " en empresa: " + empresaId);
+            
+            // Verificar que el producto existe y pertenece a la empresa
+            if (!productoRepository.findByIdAndEmpresaId(productoId, empresaId).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Producto no encontrado o no pertenece a la empresa"
+                ));
+            }
+            
+            // Obtener todos los registros de StockPorSector para este producto
+            List<StockPorSector> registrosStock = stockPorSectorRepository.findByProductoIdAndSectorEmpresaId(productoId, empresaId);
+            
+            int registrosEliminados = 0;
+            for (StockPorSector stock : registrosStock) {
+                if (stock.getCantidad() == null || stock.getCantidad() <= 0) {
+                    stockPorSectorRepository.delete(stock);
+                    registrosEliminados++;
+                    System.out.println("🗑️ SECTOR CONTROLLER - Eliminado registro con stock 0 en sector: " + stock.getSector().getNombre());
+                }
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Limpieza de stock cero completada para el producto",
+                "productoId", productoId,
+                "registrosEliminados", registrosEliminados,
+                "timestamp", new Date()
+            ));
+        } catch (Exception e) {
+            System.err.println("🔍 SECTOR CONTROLLER - Error limpiando stock cero del producto: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "success", false,
+                    "error", "Error limpiando stock cero del producto: " + e.getMessage(),
                     "timestamp", new Date()
                 ));
         }
@@ -835,6 +882,67 @@ public class SectorController {
                     "error", "Error eliminando sector: " + e.getMessage(),
                     "timestamp", new Date()
                 ));
+        }
+    }
+    
+    /**
+     * Endpoint de prueba para debuggear el descuento de stock
+     */
+    @PostMapping("/test-descuento-stock/{productoId}")
+    public ResponseEntity<?> testDescuentoStock(@PathVariable Long empresaId, @PathVariable Long productoId, @RequestParam Integer cantidad) {
+        try {
+            System.out.println("🧪 TEST - Iniciando descuento de prueba para producto: " + productoId + ", cantidad: " + cantidad);
+            
+            // Verificar que el producto existe
+            Producto producto = productoRepository.findByIdAndEmpresaId(productoId, empresaId)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            
+            System.out.println("🧪 TEST - Producto encontrado: " + producto.getNombre());
+            System.out.println("🧪 TEST - Stock actual del producto: " + producto.getStock());
+            
+            // Obtener stock en sectores
+            List<StockPorSector> stockEnSectores = stockPorSectorRepository.findByProductoIdAndSectorEmpresaId(productoId, empresaId);
+            System.out.println("🧪 TEST - Stock en sectores: " + stockEnSectores.size() + " registros");
+            for (StockPorSector stock : stockEnSectores) {
+                System.out.println("🧪 TEST - Sector: " + stock.getSector().getNombre() + " - Cantidad: " + stock.getCantidad());
+            }
+            
+            // Ejecutar el descuento
+            Map<String, Object> resultado = stockSincronizacionService.descontarStockInteligente(
+                empresaId, 
+                productoId, 
+                cantidad, 
+                "Test de descuento"
+            );
+            
+            // Obtener estado final
+            Producto productoFinal = productoRepository.findByIdAndEmpresaId(productoId, empresaId)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            
+            List<StockPorSector> stockEnSectoresFinal = stockPorSectorRepository.findByProductoIdAndSectorEmpresaId(productoId, empresaId);
+            
+            return ResponseEntity.ok(Map.of(
+                    "mensaje", "Test completado",
+                    "productoId", productoId,
+                    "cantidadDescontada", cantidad,
+                    "resultado", resultado,
+                    "estadoFinal", Map.of(
+                            "stockProducto", productoFinal.getStock(),
+                            "stockEnSectores", stockEnSectoresFinal.size(),
+                            "sectores", stockEnSectoresFinal.stream()
+                                    .map(stock -> Map.of(
+                                            "sector", stock.getSector().getNombre(),
+                                            "cantidad", stock.getCantidad()
+                                    ))
+                                    .collect(Collectors.toList())
+                    )
+            ));
+
+        } catch (Exception e) {
+            System.err.println("🧪 TEST - Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error en test: " + e.getMessage()));
         }
     }
 }
