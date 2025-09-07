@@ -383,29 +383,29 @@ public class SectorController {
     @GetMapping("/stock-general")
     public ResponseEntity<?> obtenerStockGeneral(@PathVariable Long empresaId) {
         try {
-            System.out.println("🔍 STOCK GENERAL - Endpoint llamado para empresa: " + empresaId);
-            System.out.println("🔍 STOCK GENERAL - Iniciando proceso...");
-            System.out.println("🔍 STOCK GENERAL - Timestamp: " + new java.util.Date());
+            // System.out.println("🔍 STOCK GENERAL - Endpoint llamado para empresa: " + empresaId);
+            // System.out.println("🔍 STOCK GENERAL - Iniciando proceso...");
+            // System.out.println("🔍 STOCK GENERAL - Timestamp: " + new java.util.Date());
             
             // Verificar que la empresa existe
-            System.out.println("🔍 STOCK GENERAL - Verificando empresa...");
+            // System.out.println("🔍 STOCK GENERAL - Verificando empresa...");
             if (!empresaRepository.existsById(empresaId)) {
                 System.err.println("🔍 STOCK GENERAL - Empresa no encontrada: " + empresaId);
                 return ResponseEntity.badRequest().body(Map.of(
                     "error", "Empresa no encontrada con ID: " + empresaId
                 ));
             }
-            System.out.println("🔍 STOCK GENERAL - Empresa encontrada: " + empresaId);
+            // System.out.println("🔍 STOCK GENERAL - Empresa encontrada: " + empresaId);
             
             List<Map<String, Object>> stockGeneral = sectorService.obtenerStockGeneral(empresaId);
-            System.out.println("🔍 STOCK GENERAL - Datos obtenidos: " + stockGeneral.size() + " items");
+            // System.out.println("🔍 STOCK GENERAL - Datos obtenidos: " + stockGeneral.size() + " items");
             
             // Log de los primeros 3 items para debug
             for (int i = 0; i < Math.min(3, stockGeneral.size()); i++) {
-                System.out.println("🔍 STOCK GENERAL - Item " + i + ": " + stockGeneral.get(i));
+                // System.out.println("🔍 STOCK GENERAL - Item " + i + ": " + stockGeneral.get(i));
             }
             
-            System.out.println("🔍 STOCK GENERAL - Proceso completado exitosamente");
+            // System.out.println("🔍 STOCK GENERAL - Proceso completado exitosamente");
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Stock general obtenido exitosamente",
                 "data", stockGeneral
@@ -426,29 +426,29 @@ public class SectorController {
     @GetMapping("/stock/detallado")
     public ResponseEntity<?> obtenerStockDetallado(@PathVariable Long empresaId) {
         try {
-            System.out.println("🔍 STOCK DETALLADO - Endpoint llamado para empresa: " + empresaId);
-            System.out.println("🔍 STOCK DETALLADO - Iniciando proceso...");
-            System.out.println("🔍 STOCK DETALLADO - Timestamp: " + new java.util.Date());
+            // System.out.println("🔍 STOCK DETALLADO - Endpoint llamado para empresa: " + empresaId);
+            // System.out.println("🔍 STOCK DETALLADO - Iniciando proceso...");
+            // System.out.println("🔍 STOCK DETALLADO - Timestamp: " + new java.util.Date());
             
             // Verificar que la empresa existe
-            System.out.println("🔍 STOCK DETALLADO - Verificando empresa...");
+            // System.out.println("🔍 STOCK DETALLADO - Verificando empresa...");
             if (!empresaRepository.existsById(empresaId)) {
                 System.err.println("🔍 STOCK DETALLADO - Empresa no encontrada: " + empresaId);
                 return ResponseEntity.badRequest().body(Map.of(
                     "error", "Empresa no encontrada con ID: " + empresaId
                 ));
             }
-            System.out.println("🔍 STOCK DETALLADO - Empresa encontrada: " + empresaId);
+            // System.out.println("🔍 STOCK DETALLADO - Empresa encontrada: " + empresaId);
             
             List<Map<String, Object>> stockDetallado = sectorService.obtenerStockDetallado(empresaId);
-            System.out.println("🔍 STOCK DETALLADO - Datos obtenidos: " + stockDetallado.size() + " items");
+            // System.out.println("🔍 STOCK DETALLADO - Datos obtenidos: " + stockDetallado.size() + " items");
             
             // Log de los primeros 3 items para debug
             for (int i = 0; i < Math.min(3, stockDetallado.size()); i++) {
-                System.out.println("🔍 STOCK DETALLADO - Item " + i + ": " + stockDetallado.get(i));
+                // System.out.println("🔍 STOCK DETALLADO - Item " + i + ": " + stockDetallado.get(i));
             }
             
-            System.out.println("🔍 STOCK DETALLADO - Proceso completado exitosamente");
+            // System.out.println("🔍 STOCK DETALLADO - Proceso completado exitosamente");
             return ResponseEntity.ok(stockDetallado);
         } catch (Exception e) {
             System.err.println("🔍 STOCK DETALLADO - Error: " + e.getMessage());
@@ -468,10 +468,10 @@ public class SectorController {
             @PathVariable Long sectorId,
             @RequestBody Map<String, Object> request) {
         try {
-            System.out.println("🔍 ASIGNAR PRODUCTOS - Endpoint llamado");
-            System.out.println("🔍 ASIGNAR PRODUCTOS - Empresa: " + empresaId);
-            System.out.println("🔍 ASIGNAR PRODUCTOS - Sector: " + sectorId);
-            System.out.println("🔍 ASIGNAR PRODUCTOS - Request completo: " + request);
+            // System.out.println("🔍 ASIGNAR PRODUCTOS - Endpoint llamado");
+            // System.out.println("🔍 ASIGNAR PRODUCTOS - Empresa: " + empresaId);
+            // System.out.println("🔍 ASIGNAR PRODUCTOS - Sector: " + sectorId);
+            // System.out.println("🔍 ASIGNAR PRODUCTOS - Request completo: " + request);
             
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> asignaciones = (List<Map<String, Object>>) request.get("asignaciones");
@@ -482,11 +482,11 @@ public class SectorController {
                 ));
             }
             
-            System.out.println("🔍 ASIGNAR PRODUCTOS - Asignaciones recibidas: " + asignaciones.size());
+            // System.out.println("🔍 ASIGNAR PRODUCTOS - Asignaciones recibidas: " + asignaciones.size());
             
             sectorService.asignarProductosASector(sectorId, empresaId, asignaciones);
             
-            System.out.println("🔍 ASIGNAR PRODUCTOS - Asignación completada, devolviendo respuesta");
+            // System.out.println("🔍 ASIGNAR PRODUCTOS - Asignación completada, devolviendo respuesta");
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Productos asignados exitosamente al sector",
@@ -512,9 +512,9 @@ public class SectorController {
             @PathVariable Long sectorId,
             @RequestBody Map<String, Object> request) {
         try {
-            System.out.println("🔍 RECIBIR PRODUCTOS - Endpoint llamado");
-            System.out.println("🔍 RECIBIR PRODUCTOS - Empresa: " + empresaId);
-            System.out.println("🔍 RECIBIR PRODUCTOS - Sector: " + sectorId);
+            // System.out.println("🔍 RECIBIR PRODUCTOS - Endpoint llamado");
+            // System.out.println("🔍 RECIBIR PRODUCTOS - Empresa: " + empresaId);
+            // System.out.println("🔍 RECIBIR PRODUCTOS - Sector: " + sectorId);
             
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> recepciones = (List<Map<String, Object>>) request.get("recepciones");
@@ -525,7 +525,7 @@ public class SectorController {
                 ));
             }
             
-            System.out.println("🔍 RECIBIR PRODUCTOS - Recepciones recibidas: " + recepciones.size());
+            // System.out.println("🔍 RECIBIR PRODUCTOS - Recepciones recibidas: " + recepciones.size());
             
             sectorService.recibirProductosEnSector(sectorId, empresaId, recepciones);
             
@@ -553,10 +553,10 @@ public class SectorController {
             @PathVariable Long sectorId,
             @PathVariable Long stockId) {
         try {
-            System.out.println("🔍 QUITAR PRODUCTO - Endpoint llamado");
-            System.out.println("🔍 QUITAR PRODUCTO - Empresa: " + empresaId);
-            System.out.println("🔍 QUITAR PRODUCTO - Sector: " + sectorId);
-            System.out.println("🔍 QUITAR PRODUCTO - Stock ID: " + stockId);
+            // System.out.println("🔍 QUITAR PRODUCTO - Endpoint llamado");
+            // System.out.println("🔍 QUITAR PRODUCTO - Empresa: " + empresaId);
+            // System.out.println("🔍 QUITAR PRODUCTO - Sector: " + sectorId);
+            // System.out.println("🔍 QUITAR PRODUCTO - Stock ID: " + stockId);
             
             Map<String, Object> resultado = sectorService.quitarProductoDeSector(sectorId, empresaId, stockId);
             
@@ -579,18 +579,18 @@ public class SectorController {
             @PathVariable Long empresaId,
             @RequestBody Map<String, Object> request) {
         try {
-            System.out.println("🔍 TRANSFERIR STOCK - Endpoint llamado");
-            System.out.println("🔍 TRANSFERIR STOCK - Empresa: " + empresaId);
+            // System.out.println("🔍 TRANSFERIR STOCK - Endpoint llamado");
+            // System.out.println("🔍 TRANSFERIR STOCK - Empresa: " + empresaId);
             
             Long productoId = Long.valueOf(request.get("productoId").toString());
             Long sectorOrigenId = Long.valueOf(request.get("sectorOrigenId").toString());
             Long sectorDestinoId = Long.valueOf(request.get("sectorDestinoId").toString());
             Integer cantidad = Integer.valueOf(request.get("cantidad").toString());
             
-            System.out.println("🔍 TRANSFERIR STOCK - Producto: " + productoId);
-            System.out.println("🔍 TRANSFERIR STOCK - Sector Origen: " + sectorOrigenId);
-            System.out.println("🔍 TRANSFERIR STOCK - Sector Destino: " + sectorDestinoId);
-            System.out.println("🔍 TRANSFERIR STOCK - Cantidad: " + cantidad);
+            // System.out.println("🔍 TRANSFERIR STOCK - Producto: " + productoId);
+            // System.out.println("🔍 TRANSFERIR STOCK - Sector Origen: " + sectorOrigenId);
+            // System.out.println("🔍 TRANSFERIR STOCK - Sector Destino: " + sectorDestinoId);
+            // System.out.println("🔍 TRANSFERIR STOCK - Cantidad: " + cantidad);
             
             sectorService.transferirStockEntreSectores(empresaId, productoId, sectorOrigenId, sectorDestinoId, cantidad);
             
@@ -618,7 +618,7 @@ public class SectorController {
     @PostMapping("/limpiar-duplicaciones")
     public ResponseEntity<?> limpiarDuplicacionesStock(@PathVariable Long empresaId) {
         try {
-            System.out.println("🔍 LIMPIAR DUPLICACIONES - Endpoint llamado para empresa: " + empresaId);
+            // System.out.println("🔍 LIMPIAR DUPLICACIONES - Endpoint llamado para empresa: " + empresaId);
             
             sectorService.limpiarDuplicacionesStock(empresaId);
             
@@ -643,7 +643,7 @@ public class SectorController {
     @PostMapping("/limpiar-stock-cero")
     public ResponseEntity<?> limpiarStockCero(@PathVariable Long empresaId) {
         try {
-            System.out.println("🔍 SECTOR CONTROLLER - Limpiando stock cero para empresa: " + empresaId);
+            // System.out.println("🔍 SECTOR CONTROLLER - Limpiando stock cero para empresa: " + empresaId);
             
             sectorService.limpiarStockCero(empresaId);
             
@@ -670,7 +670,7 @@ public class SectorController {
     @PostMapping("/limpiar-stock-cero-producto/{productoId}")
     public ResponseEntity<?> limpiarStockCeroProducto(@PathVariable Long empresaId, @PathVariable Long productoId) {
         try {
-            System.out.println("🔍 SECTOR CONTROLLER - Limpiando stock cero para producto: " + productoId + " en empresa: " + empresaId);
+            // System.out.println("🔍 SECTOR CONTROLLER - Limpiando stock cero para producto: " + productoId + " en empresa: " + empresaId);
             
             // Verificar que el producto existe y pertenece a la empresa
             if (!productoRepository.findByIdAndEmpresaId(productoId, empresaId).isPresent()) {
@@ -781,7 +781,7 @@ public class SectorController {
     @GetMapping("/debug-stock")
     public ResponseEntity<?> obtenerDebugStock(@PathVariable Long empresaId) {
         try {
-            System.out.println("🔍 DEBUG STOCK - Endpoint llamado para empresa: " + empresaId);
+            // System.out.println("🔍 DEBUG STOCK - Endpoint llamado para empresa: " + empresaId);
             
             // Verificar que la empresa existe
             if (!empresaRepository.existsById(empresaId)) {
@@ -842,7 +842,7 @@ public class SectorController {
     @GetMapping("/debug-stock-general")
     public ResponseEntity<?> obtenerDebugStockGeneral(@PathVariable Long empresaId) {
         try {
-            System.out.println("🔍 DEBUG STOCK GENERAL - Endpoint llamado para empresa: " + empresaId);
+            // System.out.println("🔍 DEBUG STOCK GENERAL - Endpoint llamado para empresa: " + empresaId);
             
             // Verificar que la empresa existe
             if (!empresaRepository.existsById(empresaId)) {
@@ -855,7 +855,7 @@ public class SectorController {
             
             // Obtener stock por sector con detalles
             List<StockPorSector> stockPorSectores = stockPorSectorRepository.findByEmpresaId(empresaId);
-            System.out.println("🔍 DEBUG STOCK GENERAL - StockPorSectores encontrados: " + stockPorSectores.size());
+            // System.out.println("🔍 DEBUG STOCK GENERAL - StockPorSectores encontrados: " + stockPorSectores.size());
             
             List<Map<String, Object>> stockDetallado = new ArrayList<>();
             for (StockPorSector stock : stockPorSectores) {

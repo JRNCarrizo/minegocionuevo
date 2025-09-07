@@ -543,7 +543,7 @@ public class PublicoController {
     @GetMapping("/debug/stock-general/{empresaId}")
     public ResponseEntity<?> debugStockGeneralPublico(@PathVariable Long empresaId) {
         try {
-            System.out.println("🔍 DEBUG STOCK GENERAL PÚBLICO - Endpoint llamado para empresa: " + empresaId);
+            // System.out.println("🔍 DEBUG STOCK GENERAL PÚBLICO - Endpoint llamado para empresa: " + empresaId);
             
             // Verificar que la empresa existe
             if (!empresaRepository.existsById(empresaId)) {
@@ -556,7 +556,7 @@ public class PublicoController {
             
             // Obtener stock por sector con detalles
             List<StockPorSector> stockPorSectores = stockPorSectorRepository.findByEmpresaId(empresaId);
-            System.out.println("🔍 DEBUG STOCK GENERAL PÚBLICO - StockPorSectores encontrados: " + stockPorSectores.size());
+            // System.out.println("🔍 DEBUG STOCK GENERAL PÚBLICO - StockPorSectores encontrados: " + stockPorSectores.size());
             
             List<Map<String, Object>> stockDetallado = new ArrayList<>();
             for (StockPorSector stock : stockPorSectores) {

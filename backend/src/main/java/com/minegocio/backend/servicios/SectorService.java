@@ -129,9 +129,9 @@ public class SectorService {
         
         Integer stockSinSectorizar = Math.max(0, stockTotalProducto - stockEnSectores);
         
-        System.out.println("🔍 SECTOR SERVICE - Stock total del producto: " + stockTotalProducto);
-        System.out.println("🔍 SECTOR SERVICE - Stock en sectores: " + stockEnSectores);
-        System.out.println("🔍 SECTOR SERVICE - Stock sin sectorizar: " + stockSinSectorizar);
+        // System.out.println("🔍 SECTOR SERVICE - Stock total del producto: " + stockTotalProducto);
+        // System.out.println("🔍 SECTOR SERVICE - Stock en sectores: " + stockEnSectores);
+        // System.out.println("🔍 SECTOR SERVICE - Stock sin sectorizar: " + stockSinSectorizar);
         
         // Verificar que hay suficiente stock sin sectorizar
         if (stockSinSectorizar < cantidad) {
@@ -150,10 +150,10 @@ public class SectorService {
             stockAnterior = stockPorSector.getCantidad();
             // SUMAR al stock existente en lugar de sobrescribir
             stockPorSector.setCantidad(stockAnterior + cantidad);
-            System.out.println("🔍 SECTOR SERVICE - Sumando " + cantidad + " al stock existente " + stockAnterior + " = " + (stockAnterior + cantidad));
+            // System.out.println("🔍 SECTOR SERVICE - Sumando " + cantidad + " al stock existente " + stockAnterior + " = " + (stockAnterior + cantidad));
         } else {
             stockPorSector = new StockPorSector(producto, sector, cantidad);
-            System.out.println("🔍 SECTOR SERVICE - Creando nueva asignación con " + cantidad + " unidades");
+            // System.out.println("🔍 SECTOR SERVICE - Creando nueva asignación con " + cantidad + " unidades");
         }
         
         StockPorSector stockGuardado = stockPorSectorRepository.save(stockPorSector);
@@ -342,7 +342,6 @@ public class SectorService {
      * Incluye productos con sector asignado y sin sector asignado
      */
     public List<Map<String, Object>> obtenerStockGeneral(Long empresaId) {
-        System.out.println("🔍 SECTOR SERVICE - Iniciando obtenerStockGeneral para empresa: " + empresaId);
         
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
@@ -351,57 +350,32 @@ public class SectorService {
         
         // Obtener productos con sector asignado (nueva estructura)
         List<StockPorSector> stockPorSectores = stockPorSectorRepository.findByEmpresaId(empresaId);
-        System.out.println("🔍 SECTOR SERVICE - StockPorSectores encontrados (consulta original): " + stockPorSectores.size());
-        
-        // Probar consulta alternativa
-        List<StockPorSector> stockPorSectoresAlt = stockPorSectorRepository.findByEmpresaIdAlternativo(empresaId);
-        System.out.println("🔍 SECTOR SERVICE - StockPorSectores encontrados (consulta alternativa): " + stockPorSectoresAlt.size());
-        
-        // Usar la consulta que devuelve más resultados
-        if (stockPorSectoresAlt.size() > stockPorSectores.size()) {
-            System.out.println("🔍 SECTOR SERVICE - Usando consulta alternativa");
-            stockPorSectores = stockPorSectoresAlt;
-        } else {
-            System.out.println("🔍 SECTOR SERVICE - Usando consulta original");
-        }
-        
-        // 🔍 DEBUG SIMPLIFICADO: Solo mostrar cantidad de registros
-        System.out.println("🔍 SECTOR SERVICE - Total registros StockPorSector: " + stockPorSectores.size());
         
         for (StockPorSector stock : stockPorSectores) {
-            try {
-                // ✅ SOLO MOSTRAR PRODUCTOS CON CANTIDAD > 0
-                if (stock.getCantidad() == null || stock.getCantidad() <= 0) {
-                    System.out.println("🔍 SECTOR SERVICE - StockPorSector filtrado: " + stock.getProducto().getNombre() + 
-                        " en sector " + stock.getSector().getNombre() + " (cantidad: " + stock.getCantidad() + ")");
-                    continue;
-                }
-                
-                Map<String, Object> item = new HashMap<>();
-                item.put("id", stock.getId()); // ID único para el frontend
-                item.put("producto", Map.of(
-                    "id", stock.getProducto().getId(),
-                    "nombre", stock.getProducto().getNombre(),
-                    "codigoPersonalizado", stock.getProducto().getCodigoPersonalizado() != null ? stock.getProducto().getCodigoPersonalizado() : ""
-                ));
-                item.put("sector", Map.of(
-                    "id", stock.getSector().getId(),
-                    "nombre", stock.getSector().getNombre()
-                ));
-                item.put("cantidad", stock.getCantidad());
-                item.put("fechaActualizacion", stock.getFechaActualizacion() != null ? stock.getFechaActualizacion().toString() : new Date().toString());
-                item.put("tipo", "con_sector");
-                stockGeneral.add(item);
-                System.out.println("🔍 SECTOR SERVICE - Agregado producto con sector: " + stock.getProducto().getNombre() + 
-                    " en sector " + stock.getSector().getNombre() + " (cantidad: " + stock.getCantidad() + ")");
-            } catch (Exception e) {
-                System.err.println("🔍 SECTOR SERVICE - Error procesando StockPorSector: " + e.getMessage());
+            // Solo mostrar productos con cantidad > 0
+            if (stock.getCantidad() == null || stock.getCantidad() <= 0) {
+                continue;
             }
+            
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", stock.getId()); // ID único para el frontend
+            item.put("producto", Map.of(
+                "id", stock.getProducto().getId(),
+                "nombre", stock.getProducto().getNombre(),
+                "codigoPersonalizado", stock.getProducto().getCodigoPersonalizado() != null ? stock.getProducto().getCodigoPersonalizado() : ""
+            ));
+            item.put("sector", Map.of(
+                "id", stock.getSector().getId(),
+                "nombre", stock.getSector().getNombre()
+            ));
+            item.put("cantidad", stock.getCantidad());
+            item.put("fechaActualizacion", stock.getFechaActualizacion() != null ? stock.getFechaActualizacion().toString() : new Date().toString());
+            item.put("tipo", "con_sector");
+            stockGeneral.add(item);
         }
         
         // Obtener TODOS los productos de la empresa
         List<Producto> todosLosProductos = productoRepository.findByEmpresaId(empresaId);
-        System.out.println("🔍 SECTOR SERVICE - Total productos en empresa: " + todosLosProductos.size());
         
         // 🔄 NUEVA LÓGICA: Calcular stock sin sectorizar para cada producto
         // Un producto puede tener stock tanto en sectores como sin sectorizar
@@ -411,7 +385,6 @@ public class SectorService {
                 Collectors.summingInt(stock -> stock.getCantidad() != null ? stock.getCantidad() : 0)
             ));
         
-        System.out.println("🔍 SECTOR SERVICE - Stock en sectores por producto: " + stockEnSectoresPorProducto);
         
         // 🔄 LÓGICA CORREGIDA: Agregar productos que tienen stock sin sectorizar
         // (Un producto puede aparecer tanto en sectores como sin sectorizar)
@@ -425,9 +398,6 @@ public class SectorService {
                 
                 // Solo procesar productos activos con stock > 0
                 if (!producto.getActivo() || producto.getStock() == null || producto.getStock() <= 0) {
-                    System.out.println("🔍 SECTOR SERVICE - Producto filtrado: " + producto.getNombre() + 
-                        " (activo: " + producto.getActivo() + 
-                        ", stock: " + producto.getStock() + ")");
                     continue;
                 }
                 
@@ -437,10 +407,6 @@ public class SectorService {
                 Integer stockEnSectores = stockEnSectoresPorProducto.getOrDefault(producto.getId(), 0);
                 Integer stockSinSectorizar = Math.max(0, producto.getStock() - stockEnSectores);
                 
-                System.out.println("🔍 SECTOR SERVICE - Producto: " + producto.getNombre() + 
-                    " - Stock total: " + producto.getStock() + 
-                    " - Stock en sectores: " + stockEnSectores + 
-                    " - Stock sin sectorizar: " + stockSinSectorizar);
                 
                 // Mostrar productos que tienen stock sin sectorizar > 0
                 // O que tienen stock 0 (para mostrar productos que quedaron en cero después de cargas de planilla)
@@ -463,25 +429,14 @@ public class SectorService {
                     productosSinSector++;
                     
                     if (tieneStockCero) {
-                        System.out.println("🔍 SECTOR SERVICE - Agregado producto con stock cero: " + producto.getNombre() + " (cantidad: " + producto.getStock() + ")");
-                    } else {
-                        System.out.println("🔍 SECTOR SERVICE - Agregado producto con stock sin sectorizar: " + producto.getNombre() + " (cantidad: " + stockSinSectorizar + ")");
                     }
-                } else {
-                    System.out.println("🔍 SECTOR SERVICE - Producto sin stock sin sectorizar: " + producto.getNombre() + " (stock total: " + producto.getStock() + ", stock en sectores: " + stockEnSectores + ")");
                 }
             } catch (Exception e) {
                 System.err.println("🔍 SECTOR SERVICE - Error procesando Producto: " + e.getMessage());
             }
         }
         
-        System.out.println("🔍 SECTOR SERVICE - Resumen: " + productosProcesados + " procesados, " + 
-            productosActivosConStock + " activos con stock, " + productosSinSector + " sin sector");
         
-        System.out.println("🔍 SECTOR SERVICE - Total items en stock general: " + stockGeneral.size());
-        
-        // 🔍 DEBUG FINAL: Solo mostrar cantidad de items finales
-        System.out.println("🔍 SECTOR SERVICE - Items finales en stock general: " + stockGeneral.size());
         
         return stockGeneral;
     }
@@ -491,7 +446,7 @@ public class SectorService {
      * Formato requerido por el frontend para RecibirProductos
      */
     public List<Map<String, Object>> obtenerStockDetallado(Long empresaId) {
-        System.out.println("🔍 SECTOR SERVICE - Iniciando obtenerStockDetallado para empresa: " + empresaId);
+        // System.out.println("🔍 SECTOR SERVICE - Iniciando obtenerStockDetallado para empresa: " + empresaId);
         
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
@@ -500,11 +455,10 @@ public class SectorService {
         
         // Obtener TODOS los productos de la empresa
         List<Producto> todosLosProductos = productoRepository.findByEmpresaId(empresaId);
-        System.out.println("🔍 SECTOR SERVICE - Total productos en empresa: " + todosLosProductos.size());
         
         // Obtener stock por sectores
         List<StockPorSector> stockPorSectores = stockPorSectorRepository.findByEmpresaId(empresaId);
-        System.out.println("🔍 SECTOR SERVICE - StockPorSectores encontrados: " + stockPorSectores.size());
+        // System.out.println("🔍 SECTOR SERVICE - StockPorSectores encontrados: " + stockPorSectores.size());
         
         for (Producto producto : todosLosProductos) {
             try {
@@ -565,7 +519,7 @@ public class SectorService {
             }
         }
         
-        System.out.println("🔍 SECTOR SERVICE - Total productos en stock detallado: " + stockDetallado.size());
+        // System.out.println("🔍 SECTOR SERVICE - Total productos en stock detallado: " + stockDetallado.size());
         return stockDetallado;
     }
     
@@ -574,10 +528,6 @@ public class SectorService {
      */
     @Transactional
     public void asignarProductosASector(Long sectorId, Long empresaId, List<Map<String, Object>> asignaciones) {
-        System.out.println("🔍 SECTOR SERVICE - Iniciando asignación de productos al sector: " + sectorId);
-        System.out.println("🔍 SECTOR SERVICE - Empresa: " + empresaId);
-        System.out.println("🔍 SECTOR SERVICE - Asignaciones: " + asignaciones.size());
-        System.out.println("🔍 SECTOR SERVICE - Datos de asignaciones: " + asignaciones);
         
         // Verificar que el sector existe y pertenece a la empresa
         Sector sector = sectorRepository.findById(sectorId)
@@ -592,13 +542,13 @@ public class SectorService {
         }
         
         for (Map<String, Object> asignacion : asignaciones) {
-            System.out.println("🔍 SECTOR SERVICE - Procesando asignación: " + asignacion);
+            // System.out.println("🔍 SECTOR SERVICE - Procesando asignación: " + asignacion);
             try {
                 Object productoIdObj = asignacion.get("productoId");
                 Object cantidadObj = asignacion.get("cantidad");
                 
-                System.out.println("🔍 SECTOR SERVICE - productoIdObj: " + productoIdObj + " (tipo: " + (productoIdObj != null ? productoIdObj.getClass().getSimpleName() : "null") + ")");
-                System.out.println("🔍 SECTOR SERVICE - cantidadObj: " + cantidadObj + " (tipo: " + (cantidadObj != null ? cantidadObj.getClass().getSimpleName() : "null") + ")");
+                // System.out.println("🔍 SECTOR SERVICE - productoIdObj: " + productoIdObj + " (tipo: " + (productoIdObj != null ? productoIdObj.getClass().getSimpleName() : "null") + ")");
+                // System.out.println("🔍 SECTOR SERVICE - cantidadObj: " + cantidadObj + " (tipo: " + (cantidadObj != null ? cantidadObj.getClass().getSimpleName() : "null") + ")");
                 
                 Long productoId;
                 Integer cantidad;
@@ -615,11 +565,11 @@ public class SectorService {
                     cantidad = Integer.valueOf(cantidadObj.toString());
                 }
                 
-                System.out.println("🔍 SECTOR SERVICE - Procesando asignación: Producto " + productoId + ", Cantidad " + cantidad);
+                // System.out.println("🔍 SECTOR SERVICE - Procesando asignación: Producto " + productoId + ", Cantidad " + cantidad);
                 
                 // Permitir cantidad 0 para asignaciones iniciales (cuando se crea un producto nuevo)
                 if (cantidad < 0) {
-                    System.out.println("🔍 SECTOR SERVICE - Cantidad negativa, saltando producto " + productoId);
+                    // System.out.println("🔍 SECTOR SERVICE - Cantidad negativa, saltando producto " + productoId);
                     continue;
                 }
                 
@@ -641,16 +591,16 @@ public class SectorService {
                     Integer stockAsignado = stockPorSectorRepository.getStockTotalByProductoId(productoId);
                     Integer stockRealmenteDisponible = stockDisponible - stockAsignado;
                     
-                    System.out.println("🔍 SECTOR SERVICE - Stock disponible: " + stockDisponible);
-                    System.out.println("🔍 SECTOR SERVICE - Stock ya asignado: " + stockAsignado);
-                    System.out.println("🔍 SECTOR SERVICE - Stock realmente disponible: " + stockRealmenteDisponible);
+                    // System.out.println("🔍 SECTOR SERVICE - Stock disponible: " + stockDisponible);
+                    // System.out.println("🔍 SECTOR SERVICE - Stock ya asignado: " + stockAsignado);
+                    // System.out.println("🔍 SECTOR SERVICE - Stock realmente disponible: " + stockRealmenteDisponible);
                     
                     if (cantidad > stockRealmenteDisponible) {
                         throw new RuntimeException("Stock insuficiente para el producto " + producto.getNombre() + 
                             ". Disponible: " + stockRealmenteDisponible + ", Solicitado: " + cantidad);
                     }
                 } else {
-                    System.out.println("🔍 SECTOR SERVICE - Asignación inicial con cantidad 0, no verificando stock");
+                    // System.out.println("🔍 SECTOR SERVICE - Asignación inicial con cantidad 0, no verificando stock");
                 }
                 
                 // Buscar si ya existe una asignación para este producto en este sector
@@ -661,12 +611,12 @@ public class SectorService {
                     StockPorSector stock = stockExistente.get();
                     stock.setCantidad(cantidad);
                     stockPorSectorRepository.save(stock);
-                    System.out.println("🔍 SECTOR SERVICE - Stock reemplazado: " + stock.getCantidad());
+                    // System.out.println("🔍 SECTOR SERVICE - Stock reemplazado: " + stock.getCantidad());
                 } else {
                     // Crear nueva asignación
                     StockPorSector nuevoStock = new StockPorSector(producto, sector, cantidad);
                     StockPorSector stockGuardado = stockPorSectorRepository.save(nuevoStock);
-                    System.out.println("🔍 SECTOR SERVICE - Nueva asignación creada: " + cantidad + " (ID: " + stockGuardado.getId() + ")");
+                    // System.out.println("🔍 SECTOR SERVICE - Nueva asignación creada: " + cantidad + " (ID: " + stockGuardado.getId() + ")");
                 }
                 
             } catch (NumberFormatException e) {
@@ -676,7 +626,7 @@ public class SectorService {
             }
         }
         
-        System.out.println("🔍 SECTOR SERVICE - Asignación completada exitosamente");
+        // System.out.println("🔍 SECTOR SERVICE - Asignación completada exitosamente");
     }
     
     /**
@@ -684,10 +634,10 @@ public class SectorService {
      */
     @Transactional
     public void recibirProductosEnSector(Long sectorId, Long empresaId, List<Map<String, Object>> recepciones) {
-        System.out.println("🔍 SECTOR SERVICE - Iniciando recepción de productos en el sector: " + sectorId);
-        System.out.println("🔍 SECTOR SERVICE - Empresa: " + empresaId);
-        System.out.println("🔍 SECTOR SERVICE - Recepciones: " + recepciones.size());
-        System.out.println("🔍 SECTOR SERVICE - Datos de recepciones: " + recepciones);
+        // System.out.println("🔍 SECTOR SERVICE - Iniciando recepción de productos en el sector: " + sectorId);
+        // System.out.println("🔍 SECTOR SERVICE - Empresa: " + empresaId);
+        // System.out.println("🔍 SECTOR SERVICE - Recepciones: " + recepciones.size());
+        // System.out.println("🔍 SECTOR SERVICE - Datos de recepciones: " + recepciones);
         
         // Verificar que el sector existe y pertenece a la empresa
         Sector sector = sectorRepository.findById(sectorId)
@@ -702,15 +652,15 @@ public class SectorService {
         }
         
         for (Map<String, Object> recepcion : recepciones) {
-            System.out.println("🔍 SECTOR SERVICE - Procesando recepción: " + recepcion);
+            // System.out.println("🔍 SECTOR SERVICE - Procesando recepción: " + recepcion);
             try {
                 Object productoIdObj = recepcion.get("productoId");
                 Object stockIdObj = recepcion.get("stockId");
                 Object cantidadObj = recepcion.get("cantidad");
                 
-                System.out.println("🔍 SECTOR SERVICE - productoIdObj: " + productoIdObj + " (tipo: " + (productoIdObj != null ? productoIdObj.getClass().getSimpleName() : "null") + ")");
-                System.out.println("🔍 SECTOR SERVICE - stockIdObj: " + stockIdObj + " (tipo: " + (stockIdObj != null ? stockIdObj.getClass().getSimpleName() : "null") + ")");
-                System.out.println("🔍 SECTOR SERVICE - cantidadObj: " + cantidadObj + " (tipo: " + (cantidadObj != null ? cantidadObj.getClass().getSimpleName() : "null") + ")");
+                // System.out.println("🔍 SECTOR SERVICE - productoIdObj: " + productoIdObj + " (tipo: " + (productoIdObj != null ? productoIdObj.getClass().getSimpleName() : "null") + ")");
+                // System.out.println("🔍 SECTOR SERVICE - stockIdObj: " + stockIdObj + " (tipo: " + (stockIdObj != null ? stockIdObj.getClass().getSimpleName() : "null") + ")");
+                // System.out.println("🔍 SECTOR SERVICE - cantidadObj: " + cantidadObj + " (tipo: " + (cantidadObj != null ? cantidadObj.getClass().getSimpleName() : "null") + ")");
                 
                 Long productoId;
                 String stockId;
@@ -730,10 +680,10 @@ public class SectorService {
                     cantidad = Integer.valueOf(cantidadObj.toString());
                 }
                 
-                System.out.println("🔍 SECTOR SERVICE - Procesando recepción: Producto " + productoId + ", Stock " + stockId + ", Cantidad " + cantidad);
+                // System.out.println("🔍 SECTOR SERVICE - Procesando recepción: Producto " + productoId + ", Stock " + stockId + ", Cantidad " + cantidad);
                 
                 if (cantidad <= 0) {
-                    System.out.println("🔍 SECTOR SERVICE - Cantidad 0 o negativa, saltando producto " + productoId);
+                    // System.out.println("🔍 SECTOR SERVICE - Cantidad 0 o negativa, saltando producto " + productoId);
                     continue;
                 }
                 
@@ -759,9 +709,9 @@ public class SectorService {
                     Integer stockAsignado = stockPorSectorRepository.getStockTotalByProductoId(productoId);
                     Integer stockRealmenteDisponible = stockDisponible - stockAsignado;
                     
-                    System.out.println("🔍 SECTOR SERVICE - Stock disponible: " + stockDisponible);
-                    System.out.println("🔍 SECTOR SERVICE - Stock ya asignado: " + stockAsignado);
-                    System.out.println("🔍 SECTOR SERVICE - Stock realmente disponible: " + stockRealmenteDisponible);
+                    // System.out.println("🔍 SECTOR SERVICE - Stock disponible: " + stockDisponible);
+                    // System.out.println("🔍 SECTOR SERVICE - Stock ya asignado: " + stockAsignado);
+                    // System.out.println("🔍 SECTOR SERVICE - Stock realmente disponible: " + stockRealmenteDisponible);
                     
                     if (cantidad > stockRealmenteDisponible) {
                         throw new RuntimeException("Stock insuficiente para el producto " + producto.getNombre() + 
@@ -781,7 +731,7 @@ public class SectorService {
                     // Reducir la cantidad en el stock de origen
                     stockOrigen.setCantidad(stockOrigen.getCantidad() - cantidad);
                     stockPorSectorRepository.save(stockOrigen);
-                    System.out.println("🔍 SECTOR SERVICE - Stock de origen reducido: " + stockOrigen.getCantidad());
+                    // System.out.println("🔍 SECTOR SERVICE - Stock de origen reducido: " + stockOrigen.getCantidad());
                 }
                 
                 // Buscar si ya existe una asignación para este producto en el sector destino
@@ -792,12 +742,12 @@ public class SectorService {
                     StockPorSector stock = stockExistente.get();
                     stock.setCantidad(stock.getCantidad() + cantidad);
                     stockPorSectorRepository.save(stock);
-                    System.out.println("🔍 SECTOR SERVICE - Stock en destino aumentado: " + stock.getCantidad());
+                    // System.out.println("🔍 SECTOR SERVICE - Stock en destino aumentado: " + stock.getCantidad());
                 } else {
                     // Crear nueva asignación
                     StockPorSector nuevoStock = new StockPorSector(producto, sector, cantidad);
                     stockPorSectorRepository.save(nuevoStock);
-                    System.out.println("🔍 SECTOR SERVICE - Nueva asignación creada en destino: " + cantidad);
+                    // System.out.println("🔍 SECTOR SERVICE - Nueva asignación creada en destino: " + cantidad);
                 }
                 
                 // 🔄 SINCRONIZAR: Actualizar el campo sectorAlmacenamiento del producto
@@ -815,7 +765,7 @@ public class SectorService {
             }
         }
         
-        System.out.println("🔍 SECTOR SERVICE - Recepción completada exitosamente");
+        // System.out.println("🔍 SECTOR SERVICE - Recepción completada exitosamente");
         
         // 🔄 SINCRONIZAR: Actualizar el stock de todos los productos afectados
         // ❌ COMENTADO: sincronizarStockProductos sobrescribe el stock total con solo el stock asignado
@@ -829,9 +779,9 @@ public class SectorService {
      */
     @Transactional
     public Map<String, Object> quitarProductoDeSector(Long sectorId, Long empresaId, Long stockId) {
-        System.out.println("🔍 SECTOR SERVICE - Iniciando quitar producto del sector: " + sectorId);
-        System.out.println("🔍 SECTOR SERVICE - Empresa: " + empresaId);
-        System.out.println("🔍 SECTOR SERVICE - Stock ID: " + stockId);
+        // System.out.println("🔍 SECTOR SERVICE - Iniciando quitar producto del sector: " + sectorId);
+        // System.out.println("🔍 SECTOR SERVICE - Empresa: " + empresaId);
+        // System.out.println("🔍 SECTOR SERVICE - Stock ID: " + stockId);
         
         // Verificar que el sector existe y pertenece a la empresa
         Sector sector = sectorRepository.findById(sectorId)
@@ -855,8 +805,8 @@ public class SectorService {
             throw new RuntimeException("El producto no pertenece a la empresa especificada");
         }
         
-        System.out.println("🔍 SECTOR SERVICE - Quitando producto: " + stockPorSector.getProducto().getNombre());
-        System.out.println("🔍 SECTOR SERVICE - Cantidad a quitar: " + stockPorSector.getCantidad());
+        // System.out.println("🔍 SECTOR SERVICE - Quitando producto: " + stockPorSector.getProducto().getNombre());
+        // System.out.println("🔍 SECTOR SERVICE - Cantidad a quitar: " + stockPorSector.getCantidad());
         
         // Eliminar el registro de stock por sector
         stockPorSectorRepository.delete(stockPorSector);
@@ -876,7 +826,7 @@ public class SectorService {
             System.out.println("🔄 SINCRONIZAR - Producto " + producto.getNombre() + " ya no tiene sector asignado (stock 0)");
         }
         
-        System.out.println("🔍 SECTOR SERVICE - Producto quitado exitosamente del sector");
+        // System.out.println("🔍 SECTOR SERVICE - Producto quitado exitosamente del sector");
         
         // 🔄 SINCRONIZAR: Actualizar el stock del producto
         // ❌ COMENTADO: sincronizarStockProductos sobrescribe el stock total con solo el stock asignado
