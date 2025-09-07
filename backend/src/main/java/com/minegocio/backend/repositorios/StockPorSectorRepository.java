@@ -31,7 +31,8 @@ public interface StockPorSectorRepository extends JpaRepository<StockPorSector, 
      * Obtiene todos los stocks de productos de una empresa
      */
     @Query("SELECT sps FROM StockPorSector sps " +
-           "JOIN sps.producto p " +
+           "JOIN FETCH sps.producto p " +
+           "JOIN FETCH sps.sector s " +
            "WHERE p.empresa.id = :empresaId")
     List<StockPorSector> findByEmpresaId(@Param("empresaId") Long empresaId);
     
@@ -39,7 +40,8 @@ public interface StockPorSectorRepository extends JpaRepository<StockPorSector, 
      * Obtiene todos los stocks de productos de una empresa (consulta alternativa)
      */
     @Query("SELECT sps FROM StockPorSector sps " +
-           "JOIN sps.sector s " +
+           "JOIN FETCH sps.producto p " +
+           "JOIN FETCH sps.sector s " +
            "WHERE s.empresa.id = :empresaId")
     List<StockPorSector> findByEmpresaIdAlternativo(@Param("empresaId") Long empresaId);
     
