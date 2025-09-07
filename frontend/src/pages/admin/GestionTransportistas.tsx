@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
+import { useResponsive } from '../../hooks/useResponsive';
 import { API_CONFIG } from '../../config/api';
 import toast from 'react-hot-toast';
 import './GestionTransportistas.css';
@@ -32,6 +33,7 @@ interface Transportista {
 
 const GestionTransportistas: React.FC = () => {
   const { datosUsuario, cargando: cargandoUsuario, cerrarSesion } = useUsuarioActual();
+  const { isMobile } = useResponsive();
   const navigate = useNavigate();
 
   // Estados principales
@@ -541,23 +543,24 @@ const GestionTransportistas: React.FC = () => {
         <div style={{
           maxWidth: '1600px',
           margin: '0 auto',
-          padding: '7rem 2rem 2rem 2rem'
+          padding: isMobile ? '8.5rem 1rem 2rem 1rem' : '7rem 2rem 2rem 2rem'
         }}>
           {/* Header */}
           <div style={{
             background: 'white',
             borderRadius: '16px',
-            padding: '24px',
-            marginBottom: '2rem',
+            padding: isMobile ? '16px' : '24px',
+            marginBottom: isMobile ? '1.5rem' : '2rem',
             boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
             border: '2px solid #e2e8f0'
           }}>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'nowrap',
-              gap: '1rem'
+              alignItems: isMobile ? 'flex-start' : 'center',
+              flexWrap: isMobile ? 'wrap' : 'nowrap',
+              gap: isMobile ? '0.75rem' : '1rem',
+              flexDirection: isMobile ? 'column' : 'row'
             }}>
               <div>
                 <button 
@@ -589,7 +592,7 @@ const GestionTransportistas: React.FC = () => {
                   ← Volver
                 </button>
                 <h1 style={{
-                  fontSize: '2rem',
+                  fontSize: isMobile ? '1.5rem' : '2rem',
                   fontWeight: '700',
                   color: '#1e293b',
                   margin: '0 0 0.5rem 0'
@@ -599,7 +602,7 @@ const GestionTransportistas: React.FC = () => {
                 <p style={{
                   color: '#64748b',
                   margin: 0,
-                  fontSize: '1rem'
+                  fontSize: isMobile ? '0.875rem' : '1rem'
                 }}>
                   Administra los transportistas y sus vehículos
                 </p>
@@ -612,8 +615,8 @@ const GestionTransportistas: React.FC = () => {
                   color: 'white',
                   border: 'none',
                   borderRadius: '12px',
-                  padding: '0.75rem 1.5rem',
-                  fontSize: '1rem',
+                  padding: isMobile ? '0.75rem 1rem' : '0.75rem 1.5rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
                   fontWeight: '600',
                   cursor: 'pointer',
                   display: 'flex',
@@ -624,7 +627,8 @@ const GestionTransportistas: React.FC = () => {
                   justifyContent: 'center',
                   whiteSpace: 'nowrap',
                   minWidth: 'fit-content',
-                  flexShrink: 0
+                  flexShrink: 0,
+                  width: isMobile ? '100%' : 'auto'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
@@ -642,11 +646,12 @@ const GestionTransportistas: React.FC = () => {
             {/* Filtros y búsqueda */}
             <div style={{
               display: 'flex',
-              gap: '1rem',
-              marginTop: '2rem',
-              flexWrap: 'nowrap'
+              gap: isMobile ? '0.75rem' : '1rem',
+              marginTop: isMobile ? '1.5rem' : '2rem',
+              flexWrap: isMobile ? 'wrap' : 'nowrap',
+              flexDirection: isMobile ? 'column' : 'row'
             }}>
-              <div style={{ flex: 1, minWidth: '200px' }}>
+              <div style={{ flex: 1, minWidth: isMobile ? '100%' : '200px' }}>
                 <label style={{
                   display: 'block',
                   fontSize: '0.875rem',
@@ -663,12 +668,13 @@ const GestionTransportistas: React.FC = () => {
                   onChange={(e) => setBusqueda(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.75rem',
+                    padding: isMobile ? '0.875rem' : '0.75rem',
                     border: '2px solid #d1d5db',
                     borderRadius: '8px',
-                    fontSize: '1rem',
+                    fontSize: isMobile ? '1rem' : '1rem',
                     background: 'white',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    minHeight: isMobile ? '48px' : 'auto'
                   }}
                   onFocus={(e) => {
                     e.target.style.borderColor = '#667eea';
@@ -685,7 +691,9 @@ const GestionTransportistas: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                paddingTop: '1.5rem'
+                paddingTop: isMobile ? '0' : '1.5rem',
+                width: isMobile ? '100%' : 'auto',
+                justifyContent: isMobile ? 'flex-start' : 'center'
               }}>
                 <label style={{
                   display: 'flex',
@@ -784,9 +792,9 @@ const GestionTransportistas: React.FC = () => {
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, 280px)',
-              gap: '1rem',
-              marginBottom: '2rem',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, 280px)',
+              gap: isMobile ? '0.75rem' : '1rem',
+              marginBottom: isMobile ? '1.5rem' : '2rem',
               justifyContent: 'center'
             }}>
               {transportistasFiltrados.map((transportista, index) => (
@@ -795,13 +803,13 @@ const GestionTransportistas: React.FC = () => {
                   style={{
                     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                     borderRadius: '24px',
-                    padding: '1.5rem',
+                    padding: isMobile ? '1.25rem' : '1.5rem',
                     transition: 'all 0.3s ease',
                     cursor: 'pointer',
                     border: cardSeleccionada === index ? '2px solid #000000' : '2px solid #e2e8f0',
                     position: 'relative',
                     overflow: 'hidden',
-                    minHeight: '180px',
+                    minHeight: isMobile ? '160px' : '180px',
                     display: 'flex',
                     flexDirection: 'column',
                     textAlign: 'center',
@@ -894,7 +902,7 @@ const GestionTransportistas: React.FC = () => {
                       👤
                     </div>
                     <h3 style={{
-                      fontSize: '1.2rem',
+                      fontSize: isMobile ? '1.1rem' : '1.2rem',
                       fontWeight: '700',
                       color: '#1e293b',
                       margin: '0 0 0.75rem 0',
@@ -903,8 +911,8 @@ const GestionTransportistas: React.FC = () => {
                       {transportista.nombreApellido}
                     </h3>
                     <div style={{
-                      margin: '1rem 0',
-                      padding: '1rem',
+                      margin: isMobile ? '0.75rem 0' : '1rem 0',
+                      padding: isMobile ? '0.75rem' : '1rem',
                       background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
                       borderRadius: '20px',
                       border: '1px solid #bae6fd',
@@ -923,19 +931,19 @@ const GestionTransportistas: React.FC = () => {
 
                   <div style={{
                     display: 'flex',
-                    gap: '0.5rem',
+                    gap: isMobile ? '0.75rem' : '0.5rem',
                     marginTop: 'auto',
-                    paddingTop: '1rem',
+                    paddingTop: isMobile ? '0.75rem' : '1rem',
                     justifyContent: 'center',
                     alignItems: 'center'
                   }}>
                     <button
                       style={{
-                        width: '45px',
-                        height: '45px',
+                        width: isMobile ? '50px' : '45px',
+                        height: isMobile ? '50px' : '45px',
                         border: 'none',
                         borderRadius: '50%',
-                        fontSize: '1.2rem',
+                        fontSize: isMobile ? '1.3rem' : '1.2rem',
                         cursor: 'pointer',
                         transition: 'all 0.3s ease',
                         display: 'flex',
@@ -964,11 +972,11 @@ const GestionTransportistas: React.FC = () => {
                     </button>
                     <button
                       style={{
-                        width: '45px',
-                        height: '45px',
+                        width: isMobile ? '50px' : '45px',
+                        height: isMobile ? '50px' : '45px',
                         border: 'none',
                         borderRadius: '50%',
-                        fontSize: '1.2rem',
+                        fontSize: isMobile ? '1.3rem' : '1.2rem',
                         cursor: 'pointer',
                         transition: 'all 0.3s ease',
                         display: 'flex',
@@ -999,11 +1007,11 @@ const GestionTransportistas: React.FC = () => {
                     </button>
                     <button
                       style={{
-                        width: '45px',
-                        height: '45px',
+                        width: isMobile ? '50px' : '45px',
+                        height: isMobile ? '50px' : '45px',
                         border: 'none',
                         borderRadius: '50%',
-                        fontSize: '1.2rem',
+                        fontSize: isMobile ? '1.3rem' : '1.2rem',
                         cursor: 'pointer',
                         transition: 'all 0.3s ease',
                         display: 'flex',

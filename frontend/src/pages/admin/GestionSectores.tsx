@@ -461,7 +461,9 @@ export default function GestionSectores() {
         setMostrarModalAsignar(false);
         setSectorSeleccionado(null);
         setAsignaciones([]);
-        cargarSectores();
+        // Recargar sectores y actualizar información de productos
+        await cargarSectores();
+        await cargarInfoProductosPorSector();
       } else {
         const errorData = await response.json();
         console.error('🔍 ERROR RESPONSE:', errorData);
@@ -496,6 +498,7 @@ export default function GestionSectores() {
         await cargarProductosEnSector(sectorSeleccionado.id);
         // Recargar la información de los sectores para actualizar las tarjetas
         await cargarSectores();
+        await cargarInfoProductosPorSector();
       } else {
         const errorData = await response.json();
         toast.error(errorData.mensaje || 'Error al quitar el producto del sector');
@@ -594,7 +597,8 @@ export default function GestionSectores() {
         const data = await response.json();
         toast.success(data.mensaje || 'Stock transferido exitosamente');
         cerrarModal();
-        cargarSectores();
+        await cargarSectores();
+        await cargarInfoProductosPorSector();
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Error al transferir stock');
@@ -632,6 +636,7 @@ export default function GestionSectores() {
       if (response.ok) {
         toast.success('Productos con stock 0 eliminados correctamente');
         await cargarSectores();
+        await cargarInfoProductosPorSector();
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Error al limpiar stock cero');
