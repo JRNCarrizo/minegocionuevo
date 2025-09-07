@@ -351,7 +351,19 @@ public class SectorService {
         
         // Obtener productos con sector asignado (nueva estructura)
         List<StockPorSector> stockPorSectores = stockPorSectorRepository.findByEmpresaId(empresaId);
-        System.out.println("🔍 SECTOR SERVICE - StockPorSectores encontrados: " + stockPorSectores.size());
+        System.out.println("🔍 SECTOR SERVICE - StockPorSectores encontrados (consulta original): " + stockPorSectores.size());
+        
+        // Probar consulta alternativa
+        List<StockPorSector> stockPorSectoresAlt = stockPorSectorRepository.findByEmpresaIdAlternativo(empresaId);
+        System.out.println("🔍 SECTOR SERVICE - StockPorSectores encontrados (consulta alternativa): " + stockPorSectoresAlt.size());
+        
+        // Usar la consulta que devuelve más resultados
+        if (stockPorSectoresAlt.size() > stockPorSectores.size()) {
+            System.out.println("🔍 SECTOR SERVICE - Usando consulta alternativa");
+            stockPorSectores = stockPorSectoresAlt;
+        } else {
+            System.out.println("🔍 SECTOR SERVICE - Usando consulta original");
+        }
         
         // 🔍 DEBUG SIMPLIFICADO: Solo mostrar cantidad de registros
         System.out.println("🔍 SECTOR SERVICE - Total registros StockPorSector: " + stockPorSectores.size());

@@ -471,6 +471,7 @@ public class SectorController {
             System.out.println("🔍 ASIGNAR PRODUCTOS - Endpoint llamado");
             System.out.println("🔍 ASIGNAR PRODUCTOS - Empresa: " + empresaId);
             System.out.println("🔍 ASIGNAR PRODUCTOS - Sector: " + sectorId);
+            System.out.println("🔍 ASIGNAR PRODUCTOS - Request completo: " + request);
             
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> asignaciones = (List<Map<String, Object>>) request.get("asignaciones");
@@ -484,6 +485,8 @@ public class SectorController {
             System.out.println("🔍 ASIGNAR PRODUCTOS - Asignaciones recibidas: " + asignaciones.size());
             
             sectorService.asignarProductosASector(sectorId, empresaId, asignaciones);
+            
+            System.out.println("🔍 ASIGNAR PRODUCTOS - Asignación completada, devolviendo respuesta");
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Productos asignados exitosamente al sector",
