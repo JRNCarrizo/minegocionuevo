@@ -165,7 +165,9 @@ public class MovimientoDiaService {
                     producto.setId(detalle.getProductoId());
                     producto.setNombre(detalle.getNombreProducto());
                     producto.setCodigoPersonalizado(detalle.getCodigoPersonalizado());
-                    producto.setCantidadInicial(detalle.getCantidad());
+                    Integer cantidad = detalle.getCantidad();
+                    producto.setCantidad(cantidad);
+                    producto.setCantidadInicial(cantidad);
                     producto.setPrecio(null); // Precio no disponible en balance
                     return producto;
                 })
@@ -229,7 +231,9 @@ public class MovimientoDiaService {
                     productoDTO.setId(producto.getId());
                     productoDTO.setNombre(producto.getNombre());
                     productoDTO.setCodigoPersonalizado(producto.getCodigoPersonalizado());
-                    productoDTO.setCantidadInicial(stockInicial.getOrDefault(producto.getId(), 0));
+                    Integer cantidadInicial = stockInicial.getOrDefault(producto.getId(), 0);
+                    productoDTO.setCantidad(cantidadInicial);
+                    productoDTO.setCantidadInicial(cantidadInicial);
                     productoDTO.setPrecio(producto.getPrecio() != null ? producto.getPrecio().doubleValue() : null);
                     return productoDTO;
                 })
@@ -483,27 +487,43 @@ public class MovimientoDiaService {
             MovimientoDiaDTO.MovimientosDTO salidas,
             MovimientoDiaDTO.MovimientosDTO roturas) {
         
+        System.out.println("🔍 [CALCULAR BALANCE FINAL] Stock inicial productos: " + (stockInicial != null && stockInicial.getProductos() != null ? stockInicial.getProductos().size() : "null"));
+        System.out.println("🔍 [CALCULAR BALANCE FINAL] Ingresos productos: " + (ingresos != null && ingresos.getProductos() != null ? ingresos.getProductos().size() : "null"));
+        System.out.println("🔍 [CALCULAR BALANCE FINAL] Devoluciones productos: " + (devoluciones != null && devoluciones.getProductos() != null ? devoluciones.getProductos().size() : "null"));
+        System.out.println("🔍 [CALCULAR BALANCE FINAL] Salidas productos: " + (salidas != null && salidas.getProductos() != null ? salidas.getProductos().size() : "null"));
+        System.out.println("🔍 [CALCULAR BALANCE FINAL] Roturas productos: " + (roturas != null && roturas.getProductos() != null ? roturas.getProductos().size() : "null"));
+        
         // Crear mapa para agrupar productos por ID
         Map<Long, MovimientoDiaDTO.ProductoStockDTO> balanceProductos = new HashMap<>();
         
         // PASO 1: Agregar stock inicial (balance final del día anterior)
         // Este es el stock base que ya incluye todos los movimientos previos
-        for (MovimientoDiaDTO.ProductoStockDTO producto : stockInicial.getProductos()) {
-            balanceProductos.put(producto.getId(), new MovimientoDiaDTO.ProductoStockDTO(
-                producto.getId(),
-                producto.getNombre(),
-                producto.getCodigoPersonalizado(),
-                producto.getCantidad(), // Stock inicial (sin modificaciones)
-                producto.getPrecio(),
-                producto.getCantidad(), // cantidadInicial = stock inicial
-                0, // variacion inicial
-                "SIN_CAMBIOS" // tipoVariacion inicial
-            ));
+        System.out.println("🔍 [CALCULAR BALANCE FINAL] Procesando stock inicial...");
+        if (stockInicial != null && stockInicial.getProductos() != null) {
+            System.out.println("🔍 [CALCULAR BALANCE FINAL] Stock inicial tiene " + stockInicial.getProductos().size() + " productos");
+            for (MovimientoDiaDTO.ProductoStockDTO producto : stockInicial.getProductos()) {
+                System.out.println("  - Producto: " + producto.getNombre() + " | Cantidad: " + producto.getCantidad() + " | CantidadInicial: " + producto.getCantidadInicial());
+                balanceProductos.put(producto.getId(), new MovimientoDiaDTO.ProductoStockDTO(
+                    producto.getId(),
+                    producto.getNombre(),
+                    producto.getCodigoPersonalizado(),
+                    producto.getCantidad(), // Stock inicial (sin modificaciones)
+                    producto.getPrecio(),
+                    producto.getCantidad(), // cantidadInicial = stock inicial
+                    0, // variacion inicial
+                    "SIN_CAMBIOS" // tipoVariacion inicial
+                ));
+            }
+        } else {
+            System.out.println("⚠️ [CALCULAR BALANCE FINAL] Stock inicial es null o vacío");
+            System.out.println("⚠️ [CALCULAR BALANCE FINAL] Esto causará que todos los productos tengan cantidad null");
         }
         
         // PASO 2: Sumar ingresos del día actual
         // Los ingresos se suman al stock inicial para obtener el stock disponible
-        for (MovimientoDiaDTO.ProductoMovimientoDTO producto : ingresos.getProductos()) {
+        if (ingresos != null && ingresos.getProductos() != null) {
+            System.out.println("🔍 [CALCULAR BALANCE FINAL] Procesando " + ingresos.getProductos().size() + " ingresos...");
+            for (MovimientoDiaDTO.ProductoMovimientoDTO producto : ingresos.getProductos()) {
             balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
                 Integer cantidadInicial = balance.getCantidadInicial() != null ? balance.getCantidadInicial() : 0;
                 balance.setCantidad(cantidadInicial + producto.getCantidad());
@@ -522,6 +542,9 @@ public class MovimientoDiaService {
                     "INCREMENTO" // tipoVariacion
                 );
             });
+            }
+        } else {
+            System.out.println("⚠️ [CALCULAR BALANCE FINAL] Ingresos es null o vacío");
         }
         
         // PASO 3: Sumar devoluciones del día actual
@@ -626,6 +649,19 @@ public class MovimientoDiaService {
                              " | Tipo: " + producto.getTipoVariacion());
         }
         
+        // Debug adicional para productos con valores null
+        System.out.println("🔍 [BALANCE FINAL DEBUG] Productos con valores null:");
+        for (MovimientoDiaDTO.ProductoStockDTO producto : productosBalance) {
+            if (producto.getCantidad() == null || producto.getCantidadInicial() == null) {
+                System.out.println("  - ID: " + producto.getId() + 
+                                 " | Nombre: " + producto.getNombre() + 
+                                 " | Cantidad: " + producto.getCantidad() + 
+                                 " | CantidadInicial: " + producto.getCantidadInicial() + 
+                                 " | Variación: " + producto.getVariacion() + 
+                                 " | Tipo: " + producto.getTipoVariacion());
+            }
+        }
+        
         System.out.println("📊 [BALANCE FINAL] Productos con cambios:");
         for (MovimientoDiaDTO.ProductoStockDTO producto : productosBalance) {
             if (!"SIN_CAMBIOS".equals(producto.getTipoVariacion())) {
@@ -703,7 +739,16 @@ public class MovimientoDiaService {
      * Construir Balance Final desde detalles de cierre con cálculo de variaciones
      */
     private MovimientoDiaDTO.StockInicialDTO construirBalanceFinalDesdeCierre(List<DetalleCierreDia> detallesBalance, List<DetalleCierreDia> detallesStockInicial) {
+        System.out.println("🔍 [CONSTRUIR BALANCE FINAL] detallesBalance: " + (detallesBalance != null ? detallesBalance.size() : "null"));
+        System.out.println("🔍 [CONSTRUIR BALANCE FINAL] detallesStockInicial: " + (detallesStockInicial != null ? detallesStockInicial.size() : "null"));
+        
         if (detallesBalance == null) {
+            System.out.println("⚠️ [CONSTRUIR BALANCE FINAL] detallesBalance es null, retornando lista vacía");
+            return new MovimientoDiaDTO.StockInicialDTO(0, new ArrayList<>());
+        }
+        
+        if (detallesBalance.isEmpty()) {
+            System.out.println("⚠️ [CONSTRUIR BALANCE FINAL] detallesBalance está vacío, retornando lista vacía");
             return new MovimientoDiaDTO.StockInicialDTO(0, new ArrayList<>());
         }
         

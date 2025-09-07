@@ -52,6 +52,8 @@ const RecibirProductos: React.FC = () => {
   const [modoCantidad, setModoCantidad] = useState(false);
   const [cantidad, setCantidad] = useState('');
   const [mostrarOpciones, setMostrarOpciones] = useState(false);
+  const [resultadoCalculo, setResultadoCalculo] = useState<number | null>(null);
+  const [errorCalculo, setErrorCalculo] = useState<string | null>(null);
 
   // Referencias para focus
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
@@ -86,6 +88,54 @@ const RecibirProductos: React.FC = () => {
   // Función helper para calcular la cantidad total de stock disponible
   const calcularStockTotal = (producto: StockDetallado): number => {
     return producto.ubicaciones.reduce((total, ubicacion) => total + ubicacion.cantidad, 0);
+  };
+
+  // Función para evaluar expresiones matemáticas de forma segura
+  const evaluarExpresion = (expresion: string): { resultado: number | null; error: string | null } => {
+    try {
+      // Limpiar la expresión de espacios
+      const expresionLimpia = expresion.trim();
+      
+      // Verificar que la expresión no esté vacía
+      if (!expresionLimpia) {
+        return { resultado: null, error: 'Expresión vacía' };
+      }
+
+      // Verificar que solo contenga caracteres permitidos (números, operadores básicos, paréntesis)
+      const caracteresPermitidos = /^[0-9+\-*/().\s]+$/;
+      if (!caracteresPermitidos.test(expresionLimpia)) {
+        return { resultado: null, error: 'Caracteres no permitidos. Solo números y operadores (+, -, *, /, paréntesis)' };
+      }
+
+      // Verificar que no contenga palabras clave peligrosas
+      const palabrasPeligrosas = ['eval', 'function', 'constructor', 'prototype', 'window', 'document', 'global'];
+      const expresionLower = expresionLimpia.toLowerCase();
+      for (const palabra of palabrasPeligrosas) {
+        if (expresionLower.includes(palabra)) {
+          return { resultado: null, error: 'Expresión no permitida' };
+        }
+      }
+
+      // Reemplazar 'x' por '*' para facilitar la escritura (ej: 3x60 -> 3*60)
+      const expresionConMultiplicacion = expresionLimpia.replace(/x/gi, '*');
+
+      // Evaluar la expresión usando Function constructor (más seguro que eval)
+      const resultado = new Function('return ' + expresionConMultiplicacion)();
+      
+      // Verificar que el resultado sea un número válido
+      if (typeof resultado !== 'number' || !isFinite(resultado)) {
+        return { resultado: null, error: 'Resultado no es un número válido' };
+      }
+
+      // Verificar que el resultado sea un entero positivo
+      if (resultado <= 0 || !Number.isInteger(resultado)) {
+        return { resultado: null, error: 'El resultado debe ser un número entero positivo' };
+      }
+
+      return { resultado, error: null };
+    } catch (error) {
+      return { resultado: null, error: 'Expresión inválida' };
+    }
   };
 
   // Cargar información del sector
@@ -198,6 +248,33 @@ const RecibirProductos: React.FC = () => {
       inputCantidadRef.current.select();
     }
   }, [modoCantidad]);
+
+  // Calcular resultado en tiempo real cuando se escribe en el campo de cantidad
+  useEffect(() => {
+    if (!cantidad.trim()) {
+      setResultadoCalculo(null);
+      setErrorCalculo(null);
+      return;
+    }
+
+    // Verificar si la cantidad contiene operadores matemáticos
+    const contieneOperadores = /[+\-*/x()]/.test(cantidad);
+    
+    if (contieneOperadores) {
+      const evaluacion = evaluarExpresion(cantidad);
+      if (evaluacion.error) {
+        setResultadoCalculo(null);
+        setErrorCalculo(evaluacion.error);
+      } else {
+        setResultadoCalculo(evaluacion.resultado);
+        setErrorCalculo(null);
+      }
+    } else {
+      // Si no contiene operadores, limpiar el resultado
+      setResultadoCalculo(null);
+      setErrorCalculo(null);
+    }
+  }, [cantidad]);
 
   // Auto-scroll para la lista de productos
   useEffect(() => {
@@ -362,10 +439,27 @@ const RecibirProductos: React.FC = () => {
       return;
     }
 
-    const cantidadNum = parseInt(cantidad);
-    if (isNaN(cantidadNum) || cantidadNum <= 0) {
-      toast.error('Por favor ingresa una cantidad válida');
-      return;
+    // Evaluar la expresión matemática si contiene operadores
+    let cantidadNum: number;
+    
+    // Verificar si la cantidad contiene operadores matemáticos
+    const contieneOperadores = /[+\-*/x()]/.test(cantidad);
+    
+    if (contieneOperadores) {
+      // Evaluar la expresión matemática
+      const evaluacion = evaluarExpresion(cantidad);
+      if (evaluacion.error) {
+        toast.error(`Error en el cálculo: ${evaluacion.error}`);
+        return;
+      }
+      cantidadNum = evaluacion.resultado!;
+    } else {
+      // Si no contiene operadores, parsear como número normal
+      cantidadNum = parseInt(cantidad);
+      if (isNaN(cantidadNum) || cantidadNum <= 0) {
+        toast.error('Por favor ingresa una cantidad válida');
+        return;
+      }
     }
 
     if (cantidadNum > stockSeleccionado.cantidad) {
@@ -414,6 +508,8 @@ const RecibirProductos: React.FC = () => {
     setUbicacionesFiltradas([]);
     setUbicacionSeleccionadaIndex(-1);
     setProductoSeleccionadoIndex(-1);
+    setResultadoCalculo(null);
+    setErrorCalculo(null);
 
     // Focus en el buscador
     setTimeout(() => {
@@ -429,6 +525,8 @@ const RecibirProductos: React.FC = () => {
     setCantidad('');
     setStockSeleccionado(null);
     setUbicacionSeleccionadaIndex(0);
+    setResultadoCalculo(null);
+    setErrorCalculo(null);
   };
 
   // Remover recepción de la lista
@@ -619,7 +717,7 @@ const RecibirProductos: React.FC = () => {
                   color: '#1e293b',
                   margin: '0 0 0.5rem 0'
                 }}>
-                  📦 Recibir Productos
+                  📦 Recibir Stock
                 </h1>
                 <p style={{
                   color: '#64748b',
@@ -698,7 +796,7 @@ const RecibirProductos: React.FC = () => {
 
                      {/* Campo de cantidad - solo visible cuando modoCantidad es true */}
                      {modoCantidad && stockSeleccionado && (
-                       <div style={{ flex: '0 0 200px' }}>
+                       <div style={{ flex: '0 0 250px' }}>
                          <label style={{
                            display: 'block',
                            fontSize: isMobile ? '0.875rem' : '0.875rem',
@@ -710,12 +808,10 @@ const RecibirProductos: React.FC = () => {
                          </label>
                          <input
                            ref={inputCantidadRef}
-                           type="number"
+                           type="text"
                            value={cantidad}
                            onChange={(e) => setCantidad(e.target.value)}
-                           placeholder="Cantidad..."
-                           min="1"
-                           max={stockSeleccionado.cantidad}
+                           placeholder="Ej: 336, 3*112, 3x60..."
                            style={{
                              width: '100%',
                              padding: isMobile ? '1rem' : '0.75rem',
@@ -734,7 +830,62 @@ const RecibirProductos: React.FC = () => {
                              e.target.style.borderColor = '#d1d5db';
                              e.target.style.boxShadow = 'none';
                            }}
+                           onKeyDown={(e) => {
+                             // Permitir todas las teclas de edición normales
+                             if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
+                               return; // Permitir comportamiento normal
+                             }
+                             
+                             // Permitir Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                             if (e.ctrlKey && (e.key === 'a' || e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+                               return; // Permitir comportamiento normal
+                             }
+                             
+                             // Permitir Enter y Escape
+                             if (e.key === 'Enter' || e.key === 'Escape') {
+                               return; // Permitir comportamiento normal
+                             }
+                           }}
                          />
+                         <div style={{
+                           fontSize: isMobile ? '0.75rem' : '0.75rem',
+                           color: '#64748b',
+                           marginTop: '0.25rem',
+                           lineHeight: '1.2'
+                         }}>
+                           💡 Puedes usar: +, -, *, /, x, paréntesis
+                         </div>
+                         
+                         {/* Mostrar resultado del cálculo en tiempo real */}
+                         {resultadoCalculo !== null && (
+                           <div style={{
+                             fontSize: isMobile ? '0.75rem' : '0.75rem',
+                             color: '#10b981',
+                             marginTop: '0.25rem',
+                             fontWeight: '600',
+                             background: '#f0fdf4',
+                             padding: '0.25rem 0.5rem',
+                             borderRadius: '4px',
+                             border: '1px solid #bbf7d0'
+                           }}>
+                             ✅ Resultado: {resultadoCalculo.toLocaleString()} unidades
+                           </div>
+                         )}
+                         
+                         {errorCalculo && (
+                           <div style={{
+                             fontSize: isMobile ? '0.75rem' : '0.75rem',
+                             color: '#ef4444',
+                             marginTop: '0.25rem',
+                             fontWeight: '600',
+                             background: '#fef2f2',
+                             padding: '0.25rem 0.5rem',
+                             borderRadius: '4px',
+                             border: '1px solid #fecaca'
+                           }}>
+                             ❌ {errorCalculo}
+                           </div>
+                         )}
                        </div>
                      )}
                    </div>

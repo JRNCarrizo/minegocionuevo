@@ -606,13 +606,69 @@ export default function MovimientosDia() {
   };
 
   const renderizarProducto = (producto: any, seccion: string) => {
-    if (seccion === 'balanceFinal') {
+    if (seccion === 'stockInicial') {
+      
+      // Para stock inicial - mostrar solo la cantidad sin variaciones
+      return (
+        <div key={producto.id} style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: isMobile ? '0.6rem' : '0.75rem',
+          background: '#f8fafc',
+          borderRadius: '0.5rem',
+          marginBottom: isMobile ? '0.4rem' : '0.5rem',
+          border: '2px solid #e2e8f0',
+          position: 'relative',
+          transition: 'all 0.2s ease'
+        }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ 
+              fontWeight: '600', 
+              color: '#1e293b',
+              display: 'flex',
+              alignItems: 'center',
+              gap: isMobile ? '0.4rem' : '0.5rem',
+              marginBottom: isMobile ? '0.2rem' : '0.25rem',
+              fontSize: isMobile ? '0.9rem' : '1rem'
+            }}>
+              {producto.codigoPersonalizado && (
+                <span style={{ 
+                  fontSize: isMobile ? '0.8rem' : '0.875rem', 
+                  color: '#64748b',
+                  fontWeight: '500',
+                  fontFamily: 'monospace'
+                }}>
+                  [{producto.codigoPersonalizado}]
+                </span>
+              )}
+              {producto.nombre}
+            </div>
+          </div>
+          <div style={{
+            fontSize: isMobile ? '1.1rem' : '1.25rem',
+            fontWeight: '700',
+            color: '#3b82f6',
+            marginLeft: isMobile ? '0.75rem' : '1rem',
+            minWidth: isMobile ? '3rem' : 'auto',
+            textAlign: 'right'
+          }}>
+            {producto.cantidadInicial !== undefined ? producto.cantidadInicial : (producto.cantidad !== undefined ? producto.cantidad : 'N/A')}
+          </div>
+        </div>
+      );
+    } else if (seccion === 'balanceFinal') {
       // Debug: verificar si los campos están presentes
-      console.log('🔍 [RENDERIZAR PRODUCTO] Producto:', {
+      console.log('🔍 [BALANCE FINAL] Producto completo:', producto);
+      console.log('🔍 [BALANCE FINAL] Campos disponibles:', Object.keys(producto));
+      console.log('🔍 [BALANCE FINAL] Valores:', {
         id: producto.id,
         nombre: producto.nombre,
         cantidad: producto.cantidad,
         cantidadInicial: producto.cantidadInicial,
+        cantidadFinal: producto.cantidadFinal,
+        stockFinal: producto.stockFinal,
+        stockInicial: producto.stockInicial,
         variacion: producto.variacion,
         tipoVariacion: producto.tipoVariacion
       });
@@ -650,10 +706,10 @@ export default function MovimientosDia() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '0.75rem',
+          padding: isMobile ? '0.6rem' : '0.75rem',
           background: backgroundColor,
           borderRadius: '0.5rem',
-          marginBottom: '0.5rem',
+          marginBottom: isMobile ? '0.4rem' : '0.5rem',
           border: `2px solid ${borderColor}`,
           position: 'relative',
           transition: 'all 0.2s ease'
@@ -664,12 +720,13 @@ export default function MovimientosDia() {
                color: '#1e293b',
                display: 'flex',
                alignItems: 'center',
-               gap: '0.5rem',
-               marginBottom: '0.25rem'
+               gap: isMobile ? '0.4rem' : '0.5rem',
+               marginBottom: isMobile ? '0.2rem' : '0.25rem',
+               fontSize: isMobile ? '0.9rem' : '1rem'
              }}>
                {producto.codigoPersonalizado && (
                  <span style={{ 
-                   fontSize: '0.875rem', 
+                   fontSize: isMobile ? '0.8rem' : '0.875rem', 
                    color: '#64748b',
                    fontWeight: '500',
                    fontFamily: 'monospace'
@@ -679,8 +736,8 @@ export default function MovimientosDia() {
                )}
                {producto.nombre}
                <span style={{
-                 fontSize: '0.75rem',
-                 padding: '0.25rem 0.5rem',
+                 fontSize: isMobile ? '0.7rem' : '0.75rem',
+                 padding: isMobile ? '0.2rem 0.4rem' : '0.25rem 0.5rem',
                  borderRadius: '0.25rem',
                  fontWeight: '500',
                  color: producto.tipoVariacion === 'INCREMENTO' ? '#16a34a' : 
@@ -695,11 +752,11 @@ export default function MovimientosDia() {
              </div>
             {producto.cantidadInicial !== undefined && (
               <div style={{ 
-                fontSize: '0.75rem', 
+                fontSize: isMobile ? '0.7rem' : '0.75rem', 
                 color: producto.tipoVariacion !== 'SIN_CAMBIOS' ? '#64748b' : '#9ca3af',
                 fontStyle: 'italic'
               }}>
-                Inicial: {producto.cantidadInicial} → Final: {producto.cantidad}
+                Inicial: {producto.cantidadInicial !== null && producto.cantidadInicial !== undefined ? producto.cantidadInicial : 'Sin datos'} → Final: {producto.cantidad !== null && producto.cantidad !== undefined ? producto.cantidad : (producto.cantidadInicial !== null && producto.cantidadInicial !== undefined ? producto.cantidadInicial : 'Sin datos')}
                 {producto.tipoVariacion !== 'SIN_CAMBIOS' && (
                   <span style={{ 
                     marginLeft: '0.5rem',
@@ -713,12 +770,14 @@ export default function MovimientosDia() {
             )}
           </div>
           <div style={{
-            fontSize: '1.25rem',
+            fontSize: isMobile ? '1.1rem' : '1.25rem',
             fontWeight: '700',
             color: cantidadColor,
-            marginLeft: '1rem'
+            marginLeft: isMobile ? '0.75rem' : '1rem',
+            minWidth: isMobile ? '3rem' : 'auto',
+            textAlign: 'right'
           }}>
-            {producto.cantidad}
+            {producto.cantidad !== null && producto.cantidad !== undefined ? producto.cantidad : (producto.cantidadInicial !== null && producto.cantidadInicial !== undefined ? producto.cantidadInicial : 'Sin datos')}
           </div>
         </div>
       );
@@ -737,25 +796,35 @@ export default function MovimientosDia() {
            display: 'flex',
            justifyContent: 'space-between',
            alignItems: 'center',
-           padding: '0.75rem',
+           padding: isMobile ? '0.6rem' : '0.75rem',
            background: backgroundColor,
            borderRadius: '0.5rem',
-           marginBottom: '0.5rem'
+           marginBottom: isMobile ? '0.4rem' : '0.5rem'
          }}>
-           <div>
-             <div style={{ fontWeight: '600', color: '#1e293b' }}>
+           <div style={{ flex: 1 }}>
+             <div style={{ 
+               fontWeight: '600', 
+               color: '#1e293b',
+               fontSize: isMobile ? '0.9rem' : '1rem'
+             }}>
                {producto.nombre}
              </div>
              {producto.codigoPersonalizado && (
-               <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+               <div style={{ 
+                 fontSize: isMobile ? '0.8rem' : '0.875rem', 
+                 color: '#64748b' 
+               }}>
                  {producto.codigoPersonalizado}
                </div>
              )}
            </div>
            <div style={{
-             fontSize: '1.25rem',
+             fontSize: isMobile ? '1.1rem' : '1.25rem',
              fontWeight: '700',
-             color: color
+             color: color,
+             marginLeft: isMobile ? '0.75rem' : '1rem',
+             minWidth: isMobile ? '3rem' : 'auto',
+             textAlign: 'right'
            }}>
              {esNegativo ? '-' : esPositivo ? '+' : ''}{producto.cantidad}
            </div>
@@ -1645,17 +1714,17 @@ export default function MovimientosDia() {
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000,
-          padding: '1rem'
+          padding: isMobile ? '0.5rem' : '1rem'
         }}
         onClick={cerrarModal}
         >
           <div style={{
             background: 'white',
-            borderRadius: '1rem',
-            padding: '2rem',
-            maxWidth: '600px',
+            borderRadius: isMobile ? '0.75rem' : '1rem',
+            padding: isMobile ? '1rem' : '2rem',
+            maxWidth: isMobile ? '100%' : '600px',
             width: '100%',
-            maxHeight: '80vh',
+            maxHeight: isMobile ? '90vh' : '80vh',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
@@ -1668,31 +1737,31 @@ export default function MovimientosDia() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '1.5rem',
-              paddingBottom: '1rem',
+              marginBottom: isMobile ? '1rem' : '1.5rem',
+              paddingBottom: isMobile ? '0.75rem' : '1rem',
               borderBottom: '1px solid #e2e8f0'
             }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '1rem'
+                gap: isMobile ? '0.75rem' : '1rem'
               }}>
                 <div style={{
-                  width: '3rem',
-                  height: '3rem',
+                  width: isMobile ? '2.5rem' : '3rem',
+                  height: isMobile ? '2.5rem' : '3rem',
                   background: `linear-gradient(135deg, ${obtenerColorModal(modalAbierto)} 0%, ${obtenerColorModal(modalAbierto)}dd 100%)`,
-                  borderRadius: '0.75rem',
+                  borderRadius: isMobile ? '0.5rem' : '0.75rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '1.5rem',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem',
                   color: 'white'
                 }}>
                   {obtenerIconoModal(modalAbierto)}
                 </div>
                 <div style={{ flex: 1 }}>
                   <h2 style={{
-                    fontSize: '1.5rem',
+                    fontSize: isMobile ? '1.25rem' : '1.5rem',
                     fontWeight: '700',
                     color: '#1e293b',
                     margin: 0
@@ -1702,7 +1771,7 @@ export default function MovimientosDia() {
                   <p style={{
                     color: '#64748b',
                     margin: '0.25rem 0 0 0',
-                    fontSize: '1rem'
+                    fontSize: isMobile ? '0.8rem' : '1rem'
                   }}>
                     Detalle de productos
                   </p>
@@ -1722,10 +1791,10 @@ export default function MovimientosDia() {
                     onChange={(e) => setFiltroBusqueda(e.target.value)}
                     style={{
                       width: '100%',
-                      padding: '0.75rem 1rem 0.75rem 2.5rem',
+                      padding: isMobile ? '0.6rem 0.8rem 0.6rem 2rem' : '0.75rem 1rem 0.75rem 2.5rem',
                       border: '2px solid #e2e8f0',
                       borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
+                      fontSize: isMobile ? '0.8rem' : '0.875rem',
                       background: '#f8fafc',
                       color: '#1e293b',
                       outline: 'none',
@@ -1744,11 +1813,11 @@ export default function MovimientosDia() {
                   />
                   <div style={{
                     position: 'absolute',
-                    left: '0.75rem',
+                    left: isMobile ? '0.6rem' : '0.75rem',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     color: '#64748b',
-                    fontSize: '1rem'
+                    fontSize: isMobile ? '0.9rem' : '1rem'
                   }}>
                     🔍
                   </div>
@@ -1757,15 +1826,15 @@ export default function MovimientosDia() {
                       onClick={() => setFiltroBusqueda('')}
                       style={{
                         position: 'absolute',
-                        right: '0.75rem',
+                        right: isMobile ? '0.6rem' : '0.75rem',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         background: 'none',
                         border: 'none',
                         color: '#64748b',
                         cursor: 'pointer',
-                        fontSize: '1rem',
-                        padding: '0.25rem',
+                        fontSize: isMobile ? '0.9rem' : '1rem',
+                        padding: isMobile ? '0.2rem' : '0.25rem',
                         borderRadius: '0.25rem',
                         transition: 'all 0.2s ease'
                       }}
@@ -1788,10 +1857,10 @@ export default function MovimientosDia() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  fontSize: '1.5rem',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem',
                   cursor: 'pointer',
                   color: '#64748b',
-                  padding: '0.5rem',
+                  padding: isMobile ? '0.25rem' : '0.5rem',
                   borderRadius: '0.5rem',
                   transition: 'all 0.2s ease'
                 }}
@@ -1812,15 +1881,15 @@ export default function MovimientosDia() {
             <div style={{
               flex: 1,
               overflowY: 'auto',
-              paddingRight: '0.5rem'
+              paddingRight: isMobile ? '0.25rem' : '0.5rem'
             }}>
               {/* Indicador de resultados filtrados */}
               {(modalAbierto === 'stockInicial' || modalAbierto === 'balanceFinal') && filtroBusqueda.trim() && (
                 <div style={{
-                  padding: '0.5rem 0',
-                  marginBottom: '0.5rem',
+                  padding: isMobile ? '0.4rem 0' : '0.5rem 0',
+                  marginBottom: isMobile ? '0.4rem' : '0.5rem',
                   borderBottom: '1px solid #e2e8f0',
-                  fontSize: '0.875rem',
+                  fontSize: isMobile ? '0.8rem' : '0.875rem',
                   color: '#64748b'
                 }}>
                   {obtenerProductosModal(modalAbierto).length > 0 ? (
@@ -1842,13 +1911,13 @@ export default function MovimientosDia() {
               ) : (
                 <div style={{
                   textAlign: 'center',
-                  padding: '2rem',
+                  padding: isMobile ? '1.5rem' : '2rem',
                   color: '#64748b'
                 }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
+                  <div style={{ fontSize: isMobile ? '2.5rem' : '3rem', marginBottom: isMobile ? '0.75rem' : '1rem' }}>
                     {filtroBusqueda.trim() ? '🔍' : '📭'}
                   </div>
-                  <p style={{ margin: 0, fontSize: '1.125rem' }}>
+                  <p style={{ margin: 0, fontSize: isMobile ? '1rem' : '1.125rem' }}>
                     {filtroBusqueda.trim() 
                       ? `No se encontraron productos para "${filtroBusqueda}"`
                       : 'No hay productos en esta sección'

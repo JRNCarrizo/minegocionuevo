@@ -397,7 +397,7 @@ export default function StockGeneral() {
       <NavbarAdmin onCerrarSesion={cerrarSesion} />
       
       <div className="stock-container" style={{
-        padding: isMobile ? '0.5rem' : '0.25rem 1rem'
+        padding: isMobile ? '4rem 0.5rem 0.5rem 0.5rem' : '0.25rem 1rem'
       }}>
         {/* Header */}
         <div className="stock-header" style={{

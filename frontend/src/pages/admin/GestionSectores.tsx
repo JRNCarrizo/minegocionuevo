@@ -73,6 +73,11 @@ export default function GestionSectores() {
   const [cantidadTransferir, setCantidadTransferir] = useState<number>(0);
   const [transferiendo, setTransferiendo] = useState(false);
   
+  // Estados para calculadora en transferencia
+  const [cantidadTransferirTexto, setCantidadTransferirTexto] = useState<string>('');
+  const [resultadoCalculoTransferir, setResultadoCalculoTransferir] = useState<number | null>(null);
+  const [errorCalculoTransferir, setErrorCalculoTransferir] = useState<string | null>(null);
+  
   // Nuevo estado para mostrar sectores inactivos
   const [mostrarSectoresInactivos, setMostrarSectoresInactivos] = useState(false);
   
@@ -138,6 +143,33 @@ export default function GestionSectores() {
     }
   }, [mostrarModalProductos]);
 
+  // Calcular resultado en tiempo real cuando se escribe en el campo de cantidad de transferencia
+  useEffect(() => {
+    if (!cantidadTransferirTexto.trim()) {
+      setResultadoCalculoTransferir(null);
+      setErrorCalculoTransferir(null);
+      return;
+    }
+
+    // Verificar si la cantidad contiene operadores matemáticos
+    const contieneOperadores = /[+\-*/x()]/.test(cantidadTransferirTexto);
+    
+    if (contieneOperadores) {
+      const evaluacion = evaluarExpresion(cantidadTransferirTexto);
+      if (evaluacion.error) {
+        setResultadoCalculoTransferir(null);
+        setErrorCalculoTransferir(evaluacion.error);
+      } else {
+        setResultadoCalculoTransferir(evaluacion.resultado);
+        setErrorCalculoTransferir(null);
+      }
+    } else {
+      // Si no contiene operadores, limpiar el resultado
+      setResultadoCalculoTransferir(null);
+      setErrorCalculoTransferir(null);
+    }
+  }, [cantidadTransferirTexto]);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -170,6 +202,54 @@ export default function GestionSectores() {
 
     console.log('🌐 API Call:', url); // Debug log
     return fetch(url, defaultOptions);
+  };
+
+  // Función para evaluar expresiones matemáticas de forma segura
+  const evaluarExpresion = (expresion: string): { resultado: number | null; error: string | null } => {
+    try {
+      // Limpiar la expresión de espacios
+      const expresionLimpia = expresion.trim();
+      
+      // Verificar que la expresión no esté vacía
+      if (!expresionLimpia) {
+        return { resultado: null, error: 'Expresión vacía' };
+      }
+
+      // Verificar que solo contenga caracteres permitidos (números, operadores básicos, paréntesis)
+      const caracteresPermitidos = /^[0-9+\-*/().\s]+$/;
+      if (!caracteresPermitidos.test(expresionLimpia)) {
+        return { resultado: null, error: 'Caracteres no permitidos. Solo números y operadores (+, -, *, /, paréntesis)' };
+      }
+
+      // Verificar que no contenga palabras clave peligrosas
+      const palabrasPeligrosas = ['eval', 'function', 'constructor', 'prototype', 'window', 'document', 'global'];
+      const expresionLower = expresionLimpia.toLowerCase();
+      for (const palabra of palabrasPeligrosas) {
+        if (expresionLower.includes(palabra)) {
+          return { resultado: null, error: 'Expresión no permitida' };
+        }
+      }
+
+      // Reemplazar 'x' por '*' para facilitar la escritura (ej: 3x60 -> 3*60)
+      const expresionConMultiplicacion = expresionLimpia.replace(/x/gi, '*');
+
+      // Evaluar la expresión usando Function constructor (más seguro que eval)
+      const resultado = new Function('return ' + expresionConMultiplicacion)();
+      
+      // Verificar que el resultado sea un número válido
+      if (typeof resultado !== 'number' || !isFinite(resultado)) {
+        return { resultado: null, error: 'Resultado no es un número válido' };
+      }
+
+      // Verificar que el resultado sea un entero positivo
+      if (resultado <= 0 || !Number.isInteger(resultado)) {
+        return { resultado: null, error: 'El resultado debe ser un número entero positivo' };
+      }
+
+      return { resultado, error: null };
+    } catch (error) {
+      return { resultado: null, error: 'Expresión inválida' };
+    }
   };
 
   const cargarSectores = async () => {
@@ -536,6 +616,9 @@ export default function GestionSectores() {
     setProductoSeleccionado(stock);
     setSectorDestino('');
     setCantidadTransferir(0);
+    setCantidadTransferirTexto('');
+    setResultadoCalculoTransferir(null);
+    setErrorCalculoTransferir(null);
     setMostrarModalTransferir(true);
   };
 
@@ -566,16 +649,52 @@ export default function GestionSectores() {
     setProductoSeleccionado(null);
     setSectorDestino('');
     setCantidadTransferir(0);
+    setCantidadTransferirTexto('');
+    setResultadoCalculoTransferir(null);
+    setErrorCalculoTransferir(null);
     limpiarFormulario();
   };
 
   const realizarTransferencia = async () => {
-    if (!productoSeleccionado || !sectorDestino || cantidadTransferir <= 0) {
+    if (!productoSeleccionado || !sectorDestino) {
       toast.error('Por favor completa todos los campos');
       return;
     }
 
-    if (cantidadTransferir > productoSeleccionado.cantidad) {
+    // Determinar la cantidad a transferir
+    let cantidadFinal: number;
+    
+    // Si hay texto en el campo de cantidad, evaluar la expresión
+    if (cantidadTransferirTexto.trim()) {
+      // Verificar si la cantidad contiene operadores matemáticos
+      const contieneOperadores = /[+\-*/x()]/.test(cantidadTransferirTexto);
+      
+      if (contieneOperadores) {
+        // Evaluar la expresión matemática
+        const evaluacion = evaluarExpresion(cantidadTransferirTexto);
+        if (evaluacion.error) {
+          toast.error(`Error en el cálculo: ${evaluacion.error}`);
+          return;
+        }
+        cantidadFinal = evaluacion.resultado!;
+      } else {
+        // Si no contiene operadores, parsear como número normal
+        cantidadFinal = parseInt(cantidadTransferirTexto);
+        if (isNaN(cantidadFinal) || cantidadFinal <= 0) {
+          toast.error('Por favor ingresa una cantidad válida');
+          return;
+        }
+      }
+    } else {
+      // Usar la cantidad numérica si no hay texto
+      cantidadFinal = cantidadTransferir;
+      if (cantidadFinal <= 0) {
+        toast.error('Por favor ingresa una cantidad válida');
+        return;
+      }
+    }
+
+    if (cantidadFinal > productoSeleccionado.cantidad) {
       toast.error('La cantidad a transferir no puede ser mayor al stock disponible');
       return;
     }
@@ -589,7 +708,7 @@ export default function GestionSectores() {
           productoId: productoSeleccionado.producto.id,
           sectorOrigenId: sectorSeleccionado?.id,
           sectorDestinoId: sectorDestino,
-          cantidad: cantidadTransferir
+          cantidad: cantidadFinal
         })
       });
 
@@ -1077,7 +1196,7 @@ export default function GestionSectores() {
                               navigate(`/admin/sectores/${sector.id}/recibir-productos`);
                             }}
                             className="boton-accion boton-asignar"
-                            title="Recibir productos"
+                            title="Recibir stock"
                           >
                             📦
                           </button>
@@ -1917,28 +2036,80 @@ export default function GestionSectores() {
                   <label>Cantidad a transferir:</label>
                   <div className="input-cantidad-transferencia">
                     <input
-                      type="number"
-                      min="1"
-                      max={productoSeleccionado?.cantidad || 0}
-                      value={cantidadTransferir || ''}
-                      onChange={(e) => setCantidadTransferir(parseInt(e.target.value) || 0)}
+                      type="text"
+                      value={cantidadTransferirTexto}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setCantidadTransferirTexto(valor);
+                        // También actualizar el valor numérico si es un número simple
+                        const numero = parseInt(valor);
+                        if (!isNaN(numero) && !/[+\-*/x()]/.test(valor)) {
+                          setCantidadTransferir(numero);
+                        } else if (valor === '') {
+                          setCantidadTransferir(0);
+                        }
+                      }}
                       className="input-transferencia"
-                      placeholder="0"
+                      placeholder="Ej: 336, 3*112, 3x60..."
                     />
                     <span className="stock-disponible-transferencia">
                       Máximo: {productoSeleccionado?.cantidad || 0}
                     </span>
+                    
+                    {/* Mostrar resultado del cálculo en tiempo real */}
+                    {resultadoCalculoTransferir !== null && (
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#10b981',
+                        marginTop: '0.25rem',
+                        fontWeight: '600',
+                        background: '#f0fdf4',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        border: '1px solid #bbf7d0'
+                      }}>
+                        ✅ Resultado: {resultadoCalculoTransferir.toLocaleString()} unidades
+                      </div>
+                    )}
+                    
+                    {errorCalculoTransferir && (
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#ef4444',
+                        marginTop: '0.25rem',
+                        fontWeight: '600',
+                        background: '#fef2f2',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        border: '1px solid #fecaca'
+                      }}>
+                        ❌ {errorCalculoTransferir}
+                      </div>
+                    )}
+                    
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#64748b',
+                      marginTop: '0.25rem',
+                      lineHeight: '1.2'
+                    }}>
+                      💡 Puedes usar: +, -, *, /, x, paréntesis
+                    </div>
                   </div>
                 </div>
 
-                {productoSeleccionado && sectorDestino && cantidadTransferir > 0 && (
+                {productoSeleccionado && sectorDestino && cantidadTransferirTexto.trim() && (
                   <div className="resumen-transferencia">
                     <h4>Resumen de Transferencia</h4>
                     <div className="detalles-transferencia">
                       <p><strong>Producto:</strong> {productoSeleccionado.producto.nombre}</p>
                       <p><strong>Desde:</strong> {sectorSeleccionado?.nombre}</p>
                       <p><strong>Hacia:</strong> {sectoresActivos.find(s => s.id === sectorDestino)?.nombre}</p>
-                      <p><strong>Cantidad:</strong> {cantidadTransferir}</p>
+                      <p><strong>Cantidad:</strong> {
+                        resultadoCalculoTransferir 
+                          ? `${cantidadTransferirTexto} = ${resultadoCalculoTransferir}` 
+                          : cantidadTransferirTexto
+                      }</p>
                     </div>
                   </div>
                 )}
@@ -1954,7 +2125,7 @@ export default function GestionSectores() {
               </button>
               <button
                 onClick={realizarTransferencia}
-                disabled={transferiendo || !productoSeleccionado || !sectorDestino || cantidadTransferir <= 0}
+                disabled={transferiendo || !productoSeleccionado || !sectorDestino || !cantidadTransferirTexto.trim()}
                 className="boton-primario"
               >
                 {transferiendo ? 'Transferiendo...' : 'Transferir Stock'}

@@ -49,6 +49,9 @@ export default function CrearDevolucion() {
   const [mostrarCampoCantidad, setMostrarCampoCantidad] = useState(false);
   const [mostrarSelectorEstado, setMostrarSelectorEstado] = useState(false);
   const [cantidadTemporal, setCantidadTemporal] = useState(0);
+  const [cantidadTemporalTexto, setCantidadTemporalTexto] = useState<string>('');
+  const [resultadoCalculoRetorno, setResultadoCalculoRetorno] = useState<number | null>(null);
+  const [errorCalculoRetorno, setErrorCalculoRetorno] = useState<string | null>(null);
   const [estadoTemporal, setEstadoTemporal] = useState('BUEN_ESTADO');
   const [productoSeleccionadoTemporal, setProductoSeleccionadoTemporal] = useState<Producto | null>(null);
   
@@ -71,6 +74,54 @@ export default function CrearDevolucion() {
   const estadoTemporalRef = useRef<HTMLSelectElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
   const listaTransportistasRef = useRef<HTMLDivElement>(null);
+
+  // Función para evaluar expresiones matemáticas de forma segura
+  const evaluarExpresion = (expresion: string): { resultado: number | null; error: string | null } => {
+    try {
+      // Limpiar la expresión de espacios
+      const expresionLimpia = expresion.trim();
+      
+      // Verificar que la expresión no esté vacía
+      if (!expresionLimpia) {
+        return { resultado: null, error: 'Expresión vacía' };
+      }
+
+      // Verificar que solo contenga caracteres permitidos (números, operadores básicos, paréntesis)
+      const caracteresPermitidos = /^[0-9+\-*/().\s]+$/;
+      if (!caracteresPermitidos.test(expresionLimpia)) {
+        return { resultado: null, error: 'Caracteres no permitidos. Solo números y operadores (+, -, *, /, paréntesis)' };
+      }
+
+      // Verificar que no contenga palabras clave peligrosas
+      const palabrasPeligrosas = ['eval', 'function', 'constructor', 'prototype', 'window', 'document', 'global'];
+      const expresionLower = expresionLimpia.toLowerCase();
+      for (const palabra of palabrasPeligrosas) {
+        if (expresionLower.includes(palabra)) {
+          return { resultado: null, error: 'Expresión no permitida' };
+        }
+      }
+
+      // Reemplazar 'x' por '*' para facilitar la escritura (ej: 3x60 -> 3*60)
+      const expresionConMultiplicacion = expresionLimpia.replace(/x/gi, '*');
+
+      // Evaluar la expresión usando Function constructor (más seguro que eval)
+      const resultado = new Function('return ' + expresionConMultiplicacion)();
+      
+      // Verificar que el resultado sea un número válido
+      if (typeof resultado !== 'number' || !isFinite(resultado)) {
+        return { resultado: null, error: 'Resultado no es un número válido' };
+      }
+
+      // Verificar que el resultado sea un entero positivo
+      if (resultado <= 0 || !Number.isInteger(resultado)) {
+        return { resultado: null, error: 'El resultado debe ser un número entero positivo' };
+      }
+
+      return { resultado, error: null };
+    } catch (error) {
+      return { resultado: null, error: 'Expresión inválida' };
+    }
+  };
 
   // Estados para transportista
   const [transporte, setTransporte] = useState('');
@@ -372,6 +423,33 @@ export default function CrearDevolucion() {
     }
   }, [mostrarCampoCantidad]);
 
+  // Calcular resultado en tiempo real cuando se escribe en el campo de cantidad
+  useEffect(() => {
+    if (!cantidadTemporalTexto.trim()) {
+      setResultadoCalculoRetorno(null);
+      setErrorCalculoRetorno(null);
+      return;
+    }
+
+    // Verificar si la cantidad contiene operadores matemáticos
+    const contieneOperadores = /[+\-*/x()]/.test(cantidadTemporalTexto);
+    
+    if (contieneOperadores) {
+      const evaluacion = evaluarExpresion(cantidadTemporalTexto);
+      if (evaluacion.error) {
+        setResultadoCalculoRetorno(null);
+        setErrorCalculoRetorno(evaluacion.error);
+      } else {
+        setResultadoCalculoRetorno(evaluacion.resultado);
+        setErrorCalculoRetorno(null);
+      }
+    } else {
+      // Si no contiene operadores, limpiar el resultado
+      setResultadoCalculoRetorno(null);
+      setErrorCalculoRetorno(null);
+    }
+  }, [cantidadTemporalTexto]);
+
   // Auto-scroll para mantener visible el elemento seleccionado en la lista de productos
   useEffect(() => {
     if (productoSeleccionado >= 0 && listaProductosRef.current) {
@@ -508,6 +586,9 @@ export default function CrearDevolucion() {
   const seleccionarProducto = (producto: Producto) => {
     setProductoSeleccionadoTemporal(producto);
     setCantidadTemporal(1);
+    setCantidadTemporalTexto('1');
+    setResultadoCalculoRetorno(null);
+    setErrorCalculoRetorno(null);
     setEstadoTemporal('BUEN_ESTADO');
     setMostrarCampoCantidad(true);
     setMostrarProductos(false);
@@ -519,10 +600,45 @@ export default function CrearDevolucion() {
   // const confirmarCantidad = () => { ... }
 
   const activarSelectorEstado = () => {
-    if (!productoSeleccionadoTemporal || cantidadTemporal <= 0) {
-      toast.error('Por favor ingrese una cantidad válida');
+    if (!productoSeleccionadoTemporal) {
+      toast.error('Por favor seleccione un producto');
       return;
     }
+
+    // Determinar la cantidad final
+    let cantidadFinal: number;
+    
+    // Si hay texto en el campo de cantidad, evaluar la expresión
+    if (cantidadTemporalTexto.trim()) {
+      // Verificar si la cantidad contiene operadores matemáticos
+      const contieneOperadores = /[+\-*/x()]/.test(cantidadTemporalTexto);
+      
+      if (contieneOperadores) {
+        // Evaluar la expresión matemática
+        const evaluacion = evaluarExpresion(cantidadTemporalTexto);
+        if (evaluacion.error) {
+          toast.error(`Error en el cálculo: ${evaluacion.error}`);
+          return;
+        }
+        cantidadFinal = evaluacion.resultado!;
+      } else {
+        // Si no contiene operadores, parsear como número normal
+        cantidadFinal = parseInt(cantidadTemporalTexto);
+        if (isNaN(cantidadFinal) || cantidadFinal <= 0) {
+          toast.error('Por favor ingrese una cantidad válida');
+          return;
+        }
+      }
+    } else {
+      // Usar la cantidad numérica si no hay texto
+      cantidadFinal = cantidadTemporal;
+      if (cantidadFinal <= 0) {
+        toast.error('Por favor ingrese una cantidad válida');
+        return;
+      }
+    }
+
+    setCantidadTemporal(cantidadFinal);
     setMostrarCampoCantidad(false);
     setMostrarSelectorEstado(true);
   };
@@ -532,6 +648,9 @@ export default function CrearDevolucion() {
     setMostrarSelectorEstado(false);
     setProductoSeleccionadoTemporal(null);
     setCantidadTemporal(1);
+    setCantidadTemporalTexto('');
+    setResultadoCalculoRetorno(null);
+    setErrorCalculoRetorno(null);
     setEstadoTemporal('BUEN_ESTADO');
     
     // Volver al campo de búsqueda
@@ -591,6 +710,9 @@ export default function CrearDevolucion() {
     setMostrarSelectorEstado(false);
     setProductoSeleccionadoTemporal(null);
     setCantidadTemporal(1);
+    setCantidadTemporalTexto('');
+    setResultadoCalculoRetorno(null);
+    setErrorCalculoRetorno(null);
     setEstadoTemporal('BUEN_ESTADO');
     
     // Volver al campo de búsqueda
@@ -776,7 +898,7 @@ export default function CrearDevolucion() {
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: isMobile ? '6rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
+        padding: isMobile ? '8rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
       }}>
         {/* Header */}
         <div style={{
@@ -1302,14 +1424,20 @@ export default function CrearDevolucion() {
                     <input
                       ref={cantidadTemporalRef}
                       type="text"
-                      value={cantidadTemporal}
+                      value={cantidadTemporalTexto || cantidadTemporal || ''}
                       onChange={(e) => {
                         const valor = e.target.value;
-                        if (valor === '' || /^\d+$/.test(valor)) {
-                          setCantidadTemporal(valor === '' ? 0 : parseInt(valor));
+                        setCantidadTemporalTexto(valor);
+                        // También actualizar el valor numérico si es un número simple
+                        const numero = parseInt(valor);
+                        if (!isNaN(numero) && !/[+\-*/x()]/.test(valor)) {
+                          setCantidadTemporal(numero);
+                        } else if (valor === '') {
+                          setCantidadTemporal(0);
                         }
                       }}
                       onKeyDown={manejarTeclasCantidad}
+                      placeholder="Ej: 336, 3*112, 3x60..."
                       style={{
                         width: '100%',
                         padding: isMobile ? '1rem' : '0.75rem',
@@ -1319,6 +1447,46 @@ export default function CrearDevolucion() {
                         minHeight: isMobile ? '48px' : 'auto'
                       }}
                     />
+                    
+                    {/* Mostrar resultado del cálculo en tiempo real */}
+                    {resultadoCalculoRetorno !== null && (
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#10b981',
+                        marginTop: '0.25rem',
+                        fontWeight: '600',
+                        background: '#f0fdf4',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        border: '1px solid #bbf7d0'
+                      }}>
+                        ✅ Resultado: {resultadoCalculoRetorno.toLocaleString()} unidades
+                      </div>
+                    )}
+                    
+                    {errorCalculoRetorno && (
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#ef4444',
+                        marginTop: '0.25rem',
+                        fontWeight: '600',
+                        background: '#fef2f2',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        border: '1px solid #fecaca'
+                      }}>
+                        ❌ {errorCalculoRetorno}
+                      </div>
+                    )}
+                    
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#64748b',
+                      marginTop: '0.25rem',
+                      lineHeight: '1.2'
+                    }}>
+                      💡 Puedes usar: +, -, *, /, x, paréntesis
+                    </div>
                   </div>
                 )}
 

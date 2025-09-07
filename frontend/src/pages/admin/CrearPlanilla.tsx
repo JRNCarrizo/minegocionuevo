@@ -816,7 +816,7 @@ export default function CrearPlanilla() {
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: `${isMobile ? '6rem' : '7rem'} ${isMobile ? '1rem' : '2rem'} ${isMobile ? '1rem' : '2rem'} ${isMobile ? '1rem' : '2rem'}`
+        padding: `${isMobile ? '8rem' : '7rem'} ${isMobile ? '1rem' : '2rem'} ${isMobile ? '1rem' : '2rem'} ${isMobile ? '1rem' : '2rem'}`
       }}>
         {/* Header */}
         <div style={{

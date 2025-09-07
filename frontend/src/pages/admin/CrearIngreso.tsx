@@ -49,6 +49,9 @@ export default function CrearIngreso() {
   const [guardando, setGuardando] = useState(false);
   const [mostrarCampoCantidad, setMostrarCampoCantidad] = useState(false);
   const [cantidadTemporal, setCantidadTemporal] = useState(0);
+  const [cantidadTemporalTexto, setCantidadTemporalTexto] = useState<string>('');
+  const [resultadoCalculoIngreso, setResultadoCalculoIngreso] = useState<number | null>(null);
+  const [errorCalculoIngreso, setErrorCalculoIngreso] = useState<string | null>(null);
   const [productoSeleccionadoTemporal, setProductoSeleccionadoTemporal] = useState<Producto | null>(null);
   const [mostrarModalCrearProducto, setMostrarModalCrearProducto] = useState(false);
   const [nuevoProducto, setNuevoProducto] = useState({
@@ -89,6 +92,54 @@ export default function CrearIngreso() {
   const observacionesRef = useRef<HTMLTextAreaElement>(null);
   const cantidadTemporalRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
+
+  // Función para evaluar expresiones matemáticas de forma segura
+  const evaluarExpresion = (expresion: string): { resultado: number | null; error: string | null } => {
+    try {
+      // Limpiar la expresión de espacios
+      const expresionLimpia = expresion.trim();
+      
+      // Verificar que la expresión no esté vacía
+      if (!expresionLimpia) {
+        return { resultado: null, error: 'Expresión vacía' };
+      }
+
+      // Verificar que solo contenga caracteres permitidos (números, operadores básicos, paréntesis)
+      const caracteresPermitidos = /^[0-9+\-*/().\s]+$/;
+      if (!caracteresPermitidos.test(expresionLimpia)) {
+        return { resultado: null, error: 'Caracteres no permitidos. Solo números y operadores (+, -, *, /, paréntesis)' };
+      }
+
+      // Verificar que no contenga palabras clave peligrosas
+      const palabrasPeligrosas = ['eval', 'function', 'constructor', 'prototype', 'window', 'document', 'global'];
+      const expresionLower = expresionLimpia.toLowerCase();
+      for (const palabra of palabrasPeligrosas) {
+        if (expresionLower.includes(palabra)) {
+          return { resultado: null, error: 'Expresión no permitida' };
+        }
+      }
+
+      // Reemplazar 'x' por '*' para facilitar la escritura (ej: 3x60 -> 3*60)
+      const expresionConMultiplicacion = expresionLimpia.replace(/x/gi, '*');
+
+      // Evaluar la expresión usando Function constructor (más seguro que eval)
+      const resultado = new Function('return ' + expresionConMultiplicacion)();
+      
+      // Verificar que el resultado sea un número válido
+      if (typeof resultado !== 'number' || !isFinite(resultado)) {
+        return { resultado: null, error: 'Resultado no es un número válido' };
+      }
+
+      // Verificar que el resultado sea un entero positivo
+      if (resultado <= 0 || !Number.isInteger(resultado)) {
+        return { resultado: null, error: 'El resultado debe ser un número entero positivo' };
+      }
+
+      return { resultado, error: null };
+    } catch (error) {
+      return { resultado: null, error: 'Expresión inválida' };
+    }
+  };
   
   // Referencias para los campos del modal de crear producto
   const nombreProductoRef = useRef<HTMLInputElement>(null);
@@ -255,6 +306,33 @@ export default function CrearIngreso() {
      }
    }, [datosUsuario]);
 
+  // Calcular resultado en tiempo real cuando se escribe en el campo de cantidad
+  useEffect(() => {
+    if (!cantidadTemporalTexto.trim()) {
+      setResultadoCalculoIngreso(null);
+      setErrorCalculoIngreso(null);
+      return;
+    }
+
+    // Verificar si la cantidad contiene operadores matemáticos
+    const contieneOperadores = /[+\-*/x()]/.test(cantidadTemporalTexto);
+    
+    if (contieneOperadores) {
+      const evaluacion = evaluarExpresion(cantidadTemporalTexto);
+      if (evaluacion.error) {
+        setResultadoCalculoIngreso(null);
+        setErrorCalculoIngreso(evaluacion.error);
+      } else {
+        setResultadoCalculoIngreso(evaluacion.resultado);
+        setErrorCalculoIngreso(null);
+      }
+    } else {
+      // Si no contiene operadores, limpiar el resultado
+      setResultadoCalculoIngreso(null);
+      setErrorCalculoIngreso(null);
+    }
+  }, [cantidadTemporalTexto]);
+
     
 
   const inicializarRemito = () => {
@@ -382,6 +460,9 @@ export default function CrearIngreso() {
     // Guardar el producto seleccionado y mostrar el campo de cantidad
     setProductoSeleccionadoTemporal(producto);
     setCantidadTemporal(0);
+    setCantidadTemporalTexto('');
+    setResultadoCalculoIngreso(null);
+    setErrorCalculoIngreso(null);
     setMostrarCampoCantidad(true);
     setInputBusqueda('');
     setMostrarProductos(false);
@@ -404,32 +485,65 @@ export default function CrearIngreso() {
 
 
   const confirmarCantidad = () => {
-    if (productoSeleccionadoTemporal) {
-      // Validar que la cantidad no sea 0
-      if (cantidadTemporal <= 0) {
+    if (!productoSeleccionadoTemporal) {
+      toast.error('Por favor seleccione un producto');
+      return;
+    }
+
+    // Determinar la cantidad final
+    let cantidadFinal: number;
+    
+    // Si hay texto en el campo de cantidad, evaluar la expresión
+    if (cantidadTemporalTexto.trim()) {
+      // Verificar si la cantidad contiene operadores matemáticos
+      const contieneOperadores = /[+\-*/x()]/.test(cantidadTemporalTexto);
+      
+      if (contieneOperadores) {
+        // Evaluar la expresión matemática
+        const evaluacion = evaluarExpresion(cantidadTemporalTexto);
+        if (evaluacion.error) {
+          toast.error(`Error en el cálculo: ${evaluacion.error}`);
+          return;
+        }
+        cantidadFinal = evaluacion.resultado!;
+      } else {
+        // Si no contiene operadores, parsear como número normal
+        cantidadFinal = parseInt(cantidadTemporalTexto);
+        if (isNaN(cantidadFinal) || cantidadFinal <= 0) {
+          toast.error('❌ La cantidad debe ser mayor a 0 para agregar el producto al remito');
+          return;
+        }
+      }
+    } else {
+      // Usar la cantidad numérica si no hay texto
+      cantidadFinal = cantidadTemporal;
+      if (cantidadFinal <= 0) {
         toast.error('❌ La cantidad debe ser mayor a 0 para agregar el producto al remito');
         return;
       }
+    }
 
-      const nuevoDetalle: DetalleRemitoIngreso = {
-        id: Date.now(),
-        productoId: productoSeleccionadoTemporal.id,
-        codigoPersonalizado: productoSeleccionadoTemporal.codigoPersonalizado,
-        descripcion: productoSeleccionadoTemporal.nombre,
-        cantidad: cantidadTemporal,
-        observaciones: '',
-        fechaCreacion: new Date().toISOString()
-      };
+    const nuevoDetalle: DetalleRemitoIngreso = {
+      id: Date.now(),
+      productoId: productoSeleccionadoTemporal.id,
+      codigoPersonalizado: productoSeleccionadoTemporal.codigoPersonalizado,
+      descripcion: productoSeleccionadoTemporal.nombre,
+      cantidad: cantidadFinal,
+      observaciones: '',
+      fechaCreacion: new Date().toISOString()
+    };
 
-      setDetalles(prev => [...prev, nuevoDetalle]);
-      setMostrarCampoCantidad(false);
-      setProductoSeleccionadoTemporal(null);
-      setCantidadTemporal(0);
-      
-      // Volver el focus al buscador
-      if (inputBusquedaRef.current) {
-        inputBusquedaRef.current.focus();
-      }
+    setDetalles(prev => [...prev, nuevoDetalle]);
+    setMostrarCampoCantidad(false);
+    setProductoSeleccionadoTemporal(null);
+    setCantidadTemporal(0);
+    setCantidadTemporalTexto('');
+    setResultadoCalculoIngreso(null);
+    setErrorCalculoIngreso(null);
+    
+    // Volver el focus al buscador
+    if (inputBusquedaRef.current) {
+      inputBusquedaRef.current.focus();
     }
   };
 
@@ -444,6 +558,9 @@ export default function CrearIngreso() {
       setMostrarCampoCantidad(false);
       setProductoSeleccionadoTemporal(null);
       setCantidadTemporal(0);
+      setCantidadTemporalTexto('');
+      setResultadoCalculoIngreso(null);
+      setErrorCalculoIngreso(null);
       setInputBusqueda('');
       
       // Volver el focus al buscador
@@ -1069,7 +1186,7 @@ export default function CrearIngreso() {
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: isMobile ? '6rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
+        padding: isMobile ? '8rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
       }}>
         {/* Header */}
         <div style={{
@@ -1437,14 +1554,20 @@ export default function CrearIngreso() {
                                            <input
                         ref={cantidadTemporalRef}
                         type="text"
-                        value={cantidadTemporal}
+                        value={cantidadTemporalTexto || cantidadTemporal || ''}
                         onChange={(e) => {
                           const valor = e.target.value;
-                          if (valor === '' || /^\d+$/.test(valor)) {
-                            setCantidadTemporal(valor === '' ? 0 : parseInt(valor));
+                          setCantidadTemporalTexto(valor);
+                          // También actualizar el valor numérico si es un número simple
+                          const numero = parseInt(valor);
+                          if (!isNaN(numero) && !/[+\-*/x()]/.test(valor)) {
+                            setCantidadTemporal(numero);
+                          } else if (valor === '') {
+                            setCantidadTemporal(0);
                           }
                         }}
                         onKeyDown={manejarEnterCantidadTemporal}
+                        placeholder="Ej: 336, 3*112, 3x60..."
                         style={{
                           width: '100%',
                           padding: isMobile ? '1rem' : '0.75rem',
@@ -1454,6 +1577,46 @@ export default function CrearIngreso() {
                           minHeight: isMobile ? '48px' : 'auto'
                         }}
                       />
+                      
+                      {/* Mostrar resultado del cálculo en tiempo real */}
+                      {resultadoCalculoIngreso !== null && (
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: '#10b981',
+                          marginTop: '0.25rem',
+                          fontWeight: '600',
+                          background: '#f0fdf4',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '4px',
+                          border: '1px solid #bbf7d0'
+                        }}>
+                          ✅ Resultado: {resultadoCalculoIngreso.toLocaleString()} unidades
+                        </div>
+                      )}
+                      
+                      {errorCalculoIngreso && (
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: '#ef4444',
+                          marginTop: '0.25rem',
+                          fontWeight: '600',
+                          background: '#fef2f2',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '4px',
+                          border: '1px solid #fecaca'
+                        }}>
+                          ❌ {errorCalculoIngreso}
+                        </div>
+                      )}
+                      
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#64748b',
+                        marginTop: '0.25rem',
+                        lineHeight: '1.2'
+                      }}>
+                        💡 Puedes usar: +, -, *, /, x, paréntesis
+                      </div>
                    </div>
                  )}
                </div>
