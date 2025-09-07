@@ -1627,6 +1627,72 @@ public class ProductoController {
     }
 
     /**
+     * Sincroniza el stock de todos los productos con sus sectores
+     */
+    @PostMapping("/sincronizar-todo-stock")
+    public ResponseEntity<?> sincronizarTodoStock(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🔄 SINCRONIZACIÓN MASIVA - Iniciando sincronización para empresa ID: " + empresaId);
+            
+            List<ProductoDTO> productos = productoService.obtenerTodosLosProductosIncluirInactivos(empresaId);
+            java.util.List<java.util.Map<String, Object>> productosCorregidos = new java.util.ArrayList<>();
+            int totalProductos = productos.size();
+            int productosConInconsistencias = 0;
+            int productosSincronizados = 0;
+            
+            for (ProductoDTO producto : productos) {
+                try {
+                    // Obtener stock actual en sectores
+                    List<StockPorSector> stockEnSectores = stockPorSectorRepository.findByProductoId(producto.getId());
+                    Integer stockTotalEnSectores = stockEnSectores.stream()
+                            .mapToInt(StockPorSector::getCantidad)
+                            .sum();
+                    
+                    Integer diferencia = producto.getStock() - stockTotalEnSectores;
+                    
+                    if (diferencia != 0) {
+                        productosConInconsistencias++;
+                        // Sincronizar el stock
+                        productoService.sincronizarStockConSectores(empresaId, producto.getId(), stockTotalEnSectores, producto.getStock());
+                        
+                        productosCorregidos.add(java.util.Map.of(
+                            "productoId", producto.getId(),
+                            "productoNombre", producto.getNombre(),
+                            "stockAnterior", stockTotalEnSectores,
+                            "stockNuevo", producto.getStock(),
+                            "diferencia", diferencia
+                        ));
+                        
+                        productosSincronizados++;
+                    }
+                } catch (Exception e) {
+                    System.err.println("❌ SINCRONIZACIÓN MASIVA - Error en producto " + producto.getId() + ": " + e.getMessage());
+                }
+            }
+            
+            System.out.println("✅ SINCRONIZACIÓN MASIVA - Completada: " + productosSincronizados + " productos corregidos de " + totalProductos);
+            
+            return ResponseEntity.ok(java.util.Map.of(
+                "mensaje", "Sincronización masiva completada",
+                "totalProductos", totalProductos,
+                "productosConInconsistencias", productosConInconsistencias,
+                "productosSincronizados", productosSincronizados,
+                "productosYaSincronizados", totalProductos - productosConInconsistencias,
+                "productosCorregidos", productosCorregidos
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ SINCRONIZACIÓN MASIVA - Error: " + e.getMessage());
+            e.printStackTrace();
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of(
+                "error", "Error al sincronizar stock masivamente",
+                "mensaje", e.getMessage()
+            ));
+        }
+    }
+
+    /**
      * Diagnostica inconsistencias de stock en todos los productos
      */
     @GetMapping("/diagnostico-stock")

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import BarcodeScanner from '../../components/BarcodeScanner';
@@ -112,6 +113,11 @@ const GestionProductos: React.FC = () => {
   // Estados para navegación por teclado
   const [cardSeleccionada, setCardSeleccionada] = useState<number>(-1);
   const [navegacionActiva, setNavegacionActiva] = useState(false);
+  
+  // Estados para sincronización de stock
+  const [sincronizandoStock, setSincronizandoStock] = useState(false);
+  const [mostrarModalSincronizacion, setMostrarModalSincronizacion] = useState(false);
+  const [resultadoSincronizacion, setResultadoSincronizacion] = useState<any>(null);
   
   // Estados para paginación (TODO: implementar cuando sea necesario)
   // const [paginaActual, setPaginaActual] = useState(0);
@@ -887,6 +893,35 @@ const GestionProductos: React.FC = () => {
     }
   };
 
+  // Función para sincronizar todo el stock
+  const sincronizarTodoStock = async () => {
+    if (!empresaId) {
+      toast.error('Error: No se pudo identificar la empresa');
+      return;
+    }
+
+    try {
+      setSincronizandoStock(true);
+      console.log('🔄 Iniciando sincronización masiva de stock para empresa:', empresaId);
+      
+      const response = await ApiService.sincronizarTodoStock(empresaId);
+      console.log('✅ Sincronización completada:', response);
+      
+      setResultadoSincronizacion(response);
+      setMostrarModalSincronizacion(true);
+      
+      toast.success(`Sincronización completada: ${response.productosSincronizados} productos corregidos`);
+      
+      // Recargar productos después de la sincronización
+      await cargarProductos();
+    } catch (error) {
+      console.error('❌ Error al sincronizar stock:', error);
+      toast.error('Error al sincronizar el stock. Por favor, intenta nuevamente.');
+    } finally {
+      setSincronizandoStock(false);
+    }
+  };
+
   const manejarEscaneoStock = async (codigoBarras: string) => {
     console.log("📦 Código escaneado para agregar stock:", codigoBarras);
     
@@ -1627,6 +1662,85 @@ const GestionProductos: React.FC = () => {
                 fontWeight: '600'
               }}>
                 {limpiandoDatos ? '⏳ Limpiando...' : 'Limpiar datos →'}
+              </div>
+            </div>
+
+            {/* Tarjeta Sincronización de Stock */}
+            <div 
+              data-card-index="7"
+              onClick={sincronizandoStock ? undefined : sincronizarTodoStock}
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                cursor: sincronizandoStock ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: navegacionActiva && cardSeleccionada === 7 ? '2px solid #000' : '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                animation: 'slideInUp 0.6s ease-out 0.8s both',
+                backgroundColor: navegacionActiva && cardSeleccionada === 7 ? '#f0f9ff' : 'white'
+              }}
+              onMouseOver={(e) => {
+                if (!navegacionActiva && !sincronizandoStock) {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.borderColor = '#3b82f6';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!navegacionActiva) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                }
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.25rem',
+                  marginRight: '0.75rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}>
+                  🔄
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Sincronizar Stock
+                  </h3>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Corrige inconsistencias entre productos y sectores
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: sincronizandoStock ? '#64748b' : '#3b82f6',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                {sincronizandoStock ? '⏳ Sincronizando...' : 'Sincronizar todo →'}
               </div>
             </div>
           </div>
@@ -4810,6 +4924,265 @@ const GestionProductos: React.FC = () => {
           onCerrar={cerrarImportacion}
           onImportacionCompletada={onImportacionCompletada}
         />
+      )}
+
+      {/* Modal de Resultado de Sincronización */}
+      {mostrarModalSincronizacion && resultadoSincronizacion && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{
+                margin: 0,
+                fontSize: '24px',
+                fontWeight: '700',
+                color: '#1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '20px'
+                }}>
+                  ✅
+                </div>
+                Sincronización Completada
+              </h2>
+              <button
+                onClick={() => setMostrarModalSincronizacion(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f1f5f9';
+                  e.currentTarget.style.color = '#1e293b';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.color = '#64748b';
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{
+              background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+              border: '1px solid #bae6fd',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '20px'
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '16px',
+                marginBottom: '16px'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: '32px',
+                    fontWeight: '700',
+                    color: '#1e293b',
+                    marginBottom: '4px'
+                  }}>
+                    {resultadoSincronizacion.totalProductos}
+                  </div>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#64748b',
+                    fontWeight: '500'
+                  }}>
+                    Total Productos
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: '32px',
+                    fontWeight: '700',
+                    color: '#059669',
+                    marginBottom: '4px'
+                  }}>
+                    {resultadoSincronizacion.productosSincronizados}
+                  </div>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#64748b',
+                    fontWeight: '500'
+                  }}>
+                    Corregidos
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: '32px',
+                    fontWeight: '700',
+                    color: '#3b82f6',
+                    marginBottom: '4px'
+                  }}>
+                    {resultadoSincronizacion.productosYaSincronizados}
+                  </div>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#64748b',
+                    fontWeight: '500'
+                  }}>
+                    Ya Sincronizados
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{
+                background: 'white',
+                borderRadius: '8px',
+                padding: '12px',
+                border: '1px solid #e2e8f0'
+              }}>
+                <p style={{
+                  margin: 0,
+                  fontSize: '14px',
+                  color: '#64748b',
+                  textAlign: 'center'
+                }}>
+                  {resultadoSincronizacion.productosSincronizados > 0 
+                    ? `Se corrigieron ${resultadoSincronizacion.productosSincronizados} productos con inconsistencias de stock.`
+                    : 'Todos los productos ya estaban sincronizados correctamente.'
+                  }
+                </p>
+              </div>
+            </div>
+
+            {resultadoSincronizacion.productosCorregidos && resultadoSincronizacion.productosCorregidos.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{
+                  margin: '0 0 12px 0',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#1e293b'
+                }}>
+                  Productos Corregidos:
+                </h3>
+                <div style={{
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px'
+                }}>
+                  {resultadoSincronizacion.productosCorregidos.map((producto: any, index: number) => (
+                    <div key={index} style={{
+                      padding: '12px',
+                      borderBottom: index < resultadoSincronizacion.productosCorregidos.length - 1 ? '1px solid #f1f5f9' : 'none',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div>
+                        <div style={{
+                          fontWeight: '600',
+                          color: '#1e293b',
+                          marginBottom: '2px'
+                        }}>
+                          {producto.productoNombre}
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#64748b'
+                        }}>
+                          ID: {producto.productoId}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          color: '#059669'
+                        }}>
+                          {producto.stockAnterior} → {producto.stockNuevo}
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#64748b'
+                        }}>
+                          +{producto.diferencia}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px'
+            }}>
+              <button
+                onClick={() => setMostrarModalSincronizacion(false)}
+                style={{
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(59, 130, 246, 0.3)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

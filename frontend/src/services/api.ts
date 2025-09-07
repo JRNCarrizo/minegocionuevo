@@ -2312,6 +2312,28 @@ class ApiService {
       throw error;
     }
   }
+
+  // Sincronizar todo el stock
+  async sincronizarTodoStock(empresaId: number): Promise<any> {
+    try {
+      const response = await this.api.post(`/empresas/${empresaId}/productos/sincronizar-todo-stock`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al sincronizar stock:', error);
+      throw error;
+    }
+  }
+
+  // Diagnosticar stock
+  async diagnosticarStock(empresaId: number): Promise<any> {
+    try {
+      const response = await this.api.get(`/empresas/${empresaId}/productos/diagnostico-stock`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al diagnosticar stock:', error);
+      throw error;
+    }
+  }
 }
 
 export default new ApiService();
