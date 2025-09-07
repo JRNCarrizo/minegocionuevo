@@ -25,7 +25,7 @@ import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/empresas/{empresaId}/sectores")
-@CrossOrigin(origins = {"http://localhost:5173", "http://*.localhost:5173", "https://*.localhost:5173", "https://negocio360-frontend.onrender.com", "https://www.negocio360.org"}, allowedHeaders = "*")
+@CrossOrigin(origins = {"http://localhost:5173", "http://*.localhost:5173", "https://*.localhost:5173", "https://negocio360-frontend.onrender.com", "https://www.negocio360.org", "https://negocio360-backend.onrender.com", "https://minegocio-backend-production.up.railway.app"}, allowedHeaders = "*")
 public class SectorController {
     
     @PostConstruct

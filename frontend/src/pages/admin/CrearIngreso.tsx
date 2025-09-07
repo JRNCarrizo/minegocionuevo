@@ -503,23 +503,15 @@ export default function CrearIngreso() {
 
   const cargarSectoresAlmacenamiento = async () => {
     try {
-      // Cargar sectores desde la gestión de sectores
-      const response = await fetch(`/api/empresas/${datosUsuario!.empresaId}/sectores/todos`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
+      // Cargar sectores desde la gestión de sectores usando ApiService
+      const response = await ApiService.obtenerSectores(datosUsuario!.empresaId);
+      if (response.data) {
         // Extraer solo los nombres de los sectores activos
-        const sectoresActivos = (data.data || [])
+        const sectoresActivos = (response.data || [])
           .filter((sector: any) => sector.activo)
           .map((sector: any) => sector.nombre);
         setSectoresAlmacenamiento(sectoresActivos);
-      } else {
-        console.error('Error al cargar sectores:', response.status);
+        console.log('✅ Sectores cargados en CrearIngreso:', sectoresActivos);
       }
     } catch (error) {
       console.error('Error al cargar sectores de almacenamiento:', error);

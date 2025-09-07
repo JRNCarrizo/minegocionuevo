@@ -452,6 +452,16 @@ class ApiService {
     }
   }
 
+  async obtenerSectores(empresaId: number): Promise<ApiResponse<any[]>> {
+    const response = await this.api.get(`/empresas/${empresaId}/sectores/todos`);
+    return response.data;
+  }
+
+  async obtenerTransportistas(empresaId: number): Promise<ApiResponse<any[]>> {
+    const response = await this.api.get(`/empresas/${empresaId}/transportistas`);
+    return response.data;
+  }
+
   async obtenerDetalleStockDisponible(empresaId: number, productoId: number): Promise<ApiResponse<any>> {
     try {
       const response = await this.api.get(`/empresas/${empresaId}/stock-sincronizacion/detalle-stock/${productoId}`);

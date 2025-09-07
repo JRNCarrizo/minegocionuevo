@@ -28,7 +28,7 @@ import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = {"http://localhost:5173", "https://negocio360-frontend.onrender.com", "https://www.negocio360.org"}, allowedHeaders = "*")
+@CrossOrigin(origins = {"http://localhost:5173", "https://negocio360-frontend.onrender.com", "https://www.negocio360.org", "https://negocio360-backend.onrender.com", "https://minegocio-backend-production.up.railway.app"}, allowedHeaders = "*")
 public class AdminController {
 
     @Autowired

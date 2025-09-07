@@ -90,16 +90,10 @@ export default function CrearDevolucion() {
     if (!datosUsuario?.empresaId) return;
     
     try {
-      const response = await fetch(`http://localhost:8080/api/empresas/${datosUsuario.empresaId}/transportistas`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setTransportistas(data.data || []);
+      const response = await ApiService.obtenerTransportistas(datosUsuario.empresaId);
+      if (response.data) {
+        setTransportistas(response.data || []);
+        console.log('✅ Transportistas cargados en CrearDevolucion:', response.data);
       }
     } catch (error) {
       console.error('Error al cargar transportistas:', error);
