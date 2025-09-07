@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha, formatearFechaCorta } from '../../utils/dateUtils';
+import { formatearFecha } from '../../utils/dateUtils';
 
 interface MovimientoDia {
   fecha: string;
@@ -61,6 +61,7 @@ export default function MovimientosDia() {
   const [cargando, setCargando] = useState(false);
   const [modalAbierto, setModalAbierto] = useState<string | null>(null);
   const [transicionando, setTransicionando] = useState<boolean>(false);
+  const [filtroBusqueda, setFiltroBusqueda] = useState<string>('');
   
   // Estado para navegación por teclado
   const [indiceSeleccionado, setIndiceSeleccionado] = useState(0);
@@ -149,7 +150,7 @@ export default function MovimientosDia() {
   };
 
   // Función para obtener estilos de la card con efecto de escala cuando está seleccionada
-  const obtenerEstilosCard = (index: number, esSeleccionada: boolean) => {
+  const obtenerEstilosCard = (_index: number, esSeleccionada: boolean) => {
     const baseStyles = {
       background: 'white',
       borderRadius: '1rem',
@@ -336,6 +337,7 @@ export default function MovimientosDia() {
 
   const cerrarModal = () => {
     setModalAbierto(null);
+    setFiltroBusqueda(''); // Limpiar filtro al cerrar modal
   };
 
   const cambiarModoDia = () => {
@@ -418,6 +420,118 @@ export default function MovimientosDia() {
     }
   };
 
+  const exportarIngresosDiaExcel = async () => {
+    if (!movimientos || modoRango) return;
+    
+    try {
+      toast.loading('Exportando ingresos a Excel...');
+      
+      const blob = await ApiService.exportarIngresosDiaExcel(fechaSeleccionada);
+      
+      // Crear URL y descargar archivo
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ingresos_dia_${fechaSeleccionada}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Excel de ingresos exportado exitosamente');
+      
+    } catch (error) {
+      console.error('Error al exportar ingresos a Excel:', error);
+      toast.dismiss();
+      toast.error('Error al exportar ingresos a Excel');
+    }
+  };
+
+  const exportarPlanillasDiaExcel = async () => {
+    if (!movimientos || modoRango) return;
+    
+    try {
+      toast.loading('Exportando planillas a Excel...');
+      
+      const blob = await ApiService.exportarPlanillasDiaExcel(fechaSeleccionada);
+      
+      // Crear URL y descargar archivo
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `planillas_dia_${fechaSeleccionada}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Excel de planillas exportado exitosamente');
+      
+    } catch (error) {
+      console.error('Error al exportar planillas a Excel:', error);
+      toast.dismiss();
+      toast.error('Error al exportar planillas a Excel');
+    }
+  };
+
+  const exportarDevolucionesDiaExcel = async () => {
+    if (!movimientos || modoRango) return;
+    
+    try {
+      toast.loading('Exportando devoluciones a Excel...');
+      
+      const blob = await ApiService.exportarDevolucionesDiaExcel(fechaSeleccionada);
+      
+      // Crear URL y descargar archivo
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `devoluciones_dia_${fechaSeleccionada}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Excel de devoluciones exportado exitosamente');
+      
+    } catch (error) {
+      console.error('Error al exportar devoluciones a Excel:', error);
+      toast.dismiss();
+      toast.error('Error al exportar devoluciones a Excel');
+    }
+  };
+
+  const exportarStockInicialExcel = async () => {
+    if (!movimientos || modoRango) return;
+    
+    try {
+      toast.loading('Exportando stock inicial a Excel...');
+      
+      const blob = await ApiService.exportarStockInicialExcel(fechaSeleccionada);
+      
+      // Crear URL y descargar archivo
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stock_inicial_${fechaSeleccionada}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Excel de stock inicial exportado exitosamente');
+      
+    } catch (error) {
+      console.error('Error al exportar stock inicial a Excel:', error);
+      toast.dismiss();
+      toast.error('Error al exportar stock inicial a Excel');
+    }
+  };
+
   const calcularBalanceFinal = () => {
     if (!movimientos) return 0;
     
@@ -443,15 +557,28 @@ export default function MovimientosDia() {
   const obtenerProductosModal = (seccion: string) => {
     if (!movimientos) return [];
     
+    let productos = [];
     switch (seccion) {
-      case 'stockInicial': return movimientos.stockInicial.productos;
-      case 'salidas': return movimientos.salidas.productos;
-      case 'ingresos': return movimientos.ingresos.productos;
-      case 'roturas': return movimientos.roturas.productos;
-      case 'devoluciones': return movimientos.devoluciones.productos;
-      case 'balanceFinal': return movimientos.balanceFinal.productos;
+      case 'stockInicial': productos = movimientos.stockInicial.productos; break;
+      case 'salidas': productos = movimientos.salidas.productos; break;
+      case 'ingresos': productos = movimientos.ingresos.productos; break;
+      case 'roturas': productos = movimientos.roturas.productos; break;
+      case 'devoluciones': productos = movimientos.devoluciones.productos; break;
+      case 'balanceFinal': productos = movimientos.balanceFinal.productos; break;
       default: return [];
     }
+    
+    // Aplicar filtro de búsqueda si está activo
+    if (filtroBusqueda.trim()) {
+      const filtro = filtroBusqueda.toLowerCase().trim();
+      return productos.filter((producto: any) => {
+        const nombre = (producto.nombre || '').toLowerCase();
+        const codigo = (producto.codigoPersonalizado || '').toLowerCase();
+        return nombre.includes(filtro) || codigo.includes(filtro);
+      });
+    }
+    
+    return productos;
   };
 
   const obtenerColorModal = (seccion: string) => {
@@ -878,7 +1005,10 @@ export default function MovimientosDia() {
                          {/* Stock Inicial */}
              <div
                data-card-index="0"
-               style={obtenerEstilosCard(0, indiceSeleccionado === 0)}
+               style={{
+                 ...obtenerEstilosCard(0, indiceSeleccionado === 0),
+                 position: 'relative'
+               }}
                onClick={() => {
                  setIndiceSeleccionado(0);
                  abrirModal('stockInicial');
@@ -940,12 +1070,59 @@ export default function MovimientosDia() {
                    </p>
                  </div>
                </div>
+               
+               {/* Botón de exportación específico para stock inicial */}
+               {!modoRango && (
+                 <button
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     exportarStockInicialExcel();
+                   }}
+                   disabled={!movimientos || transicionando}
+                   style={{
+                     position: 'absolute',
+                     bottom: '1rem',
+                     right: '1rem',
+                     padding: '0.5rem',
+                     background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                     color: 'white',
+                     border: 'none',
+                     borderRadius: '0.5rem',
+                     fontSize: '0.75rem',
+                     fontWeight: '600',
+                     cursor: !movimientos || transicionando ? 'not-allowed' : 'pointer',
+                     opacity: !movimientos || transicionando ? 0.6 : 1,
+                     transition: 'all 0.2s ease',
+                     display: 'flex',
+                     alignItems: 'center',
+                     gap: '0.25rem',
+                     boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)'
+                   }}
+                   onMouseOver={(e) => {
+                     if (!isMobile && movimientos && !transicionando) {
+                       e.currentTarget.style.transform = 'scale(1.05)';
+                       e.currentTarget.style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.4)';
+                     }
+                   }}
+                   onMouseOut={(e) => {
+                     if (!isMobile) {
+                       e.currentTarget.style.transform = 'scale(1)';
+                       e.currentTarget.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.3)';
+                     }
+                   }}
+                 >
+                   📊 Exportar
+                 </button>
+               )}
              </div>
 
              {/* Ingresos */}
              <div
                data-card-index="1"
-               style={obtenerEstilosCard(1, indiceSeleccionado === 1)}
+               style={{
+                 ...obtenerEstilosCard(1, indiceSeleccionado === 1),
+                 position: 'relative'
+               }}
                onClick={() => {
                  setIndiceSeleccionado(1);
                  abrirModal('ingresos');
@@ -986,7 +1163,7 @@ export default function MovimientosDia() {
                  }}>
                    📥
                  </div>
-                 <div>
+                 <div style={{ flex: 1 }}>
                    <h3 style={{
                      fontSize: '1.125rem',
                      fontWeight: '600',
@@ -1005,12 +1182,59 @@ export default function MovimientosDia() {
                    </p>
                  </div>
                </div>
+               
+               {/* Botón de exportación específico para ingresos */}
+               {!modoRango && (
+                 <button
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     exportarIngresosDiaExcel();
+                   }}
+                   disabled={!movimientos || transicionando}
+                   style={{
+                     position: 'absolute',
+                     bottom: '1rem',
+                     right: '1rem',
+                     padding: '0.5rem',
+                     background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                     color: 'white',
+                     border: 'none',
+                     borderRadius: '0.5rem',
+                     fontSize: '0.75rem',
+                     fontWeight: '600',
+                     cursor: !movimientos || transicionando ? 'not-allowed' : 'pointer',
+                     opacity: !movimientos || transicionando ? 0.6 : 1,
+                     transition: 'all 0.2s ease',
+                     display: 'flex',
+                     alignItems: 'center',
+                     gap: '0.25rem',
+                     boxShadow: '0 2px 4px rgba(5, 150, 105, 0.3)'
+                   }}
+                   onMouseOver={(e) => {
+                     if (!isMobile && movimientos && !transicionando) {
+                       e.currentTarget.style.transform = 'scale(1.05)';
+                       e.currentTarget.style.boxShadow = '0 4px 8px rgba(5, 150, 105, 0.4)';
+                     }
+                   }}
+                   onMouseOut={(e) => {
+                     if (!isMobile) {
+                       e.currentTarget.style.transform = 'scale(1)';
+                       e.currentTarget.style.boxShadow = '0 2px 4px rgba(5, 150, 105, 0.3)';
+                     }
+                   }}
+                 >
+                   📊 Exportar
+                 </button>
+               )}
              </div>
 
              {/* Retornos y Devoluciones */}
              <div
                data-card-index="2"
-               style={obtenerEstilosCard(2, indiceSeleccionado === 2)}
+               style={{
+                 ...obtenerEstilosCard(2, indiceSeleccionado === 2),
+                 position: 'relative'
+               }}
                onClick={() => {
                  setIndiceSeleccionado(2);
                  abrirModal('devoluciones');
@@ -1051,7 +1275,7 @@ export default function MovimientosDia() {
                  }}>
                    🔄
                  </div>
-                 <div>
+                 <div style={{ flex: 1 }}>
                    <h3 style={{
                      fontSize: '1.125rem',
                      fontWeight: '600',
@@ -1070,12 +1294,59 @@ export default function MovimientosDia() {
                    </p>
                  </div>
                </div>
+               
+               {/* Botón de exportación específico para devoluciones */}
+               {!modoRango && (
+                 <button
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     exportarDevolucionesDiaExcel();
+                   }}
+                   disabled={!movimientos || transicionando}
+                   style={{
+                     position: 'absolute',
+                     bottom: '1rem',
+                     right: '1rem',
+                     padding: '0.5rem',
+                     background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                     color: 'white',
+                     border: 'none',
+                     borderRadius: '0.5rem',
+                     fontSize: '0.75rem',
+                     fontWeight: '600',
+                     cursor: !movimientos || transicionando ? 'not-allowed' : 'pointer',
+                     opacity: !movimientos || transicionando ? 0.6 : 1,
+                     transition: 'all 0.2s ease',
+                     display: 'flex',
+                     alignItems: 'center',
+                     gap: '0.25rem',
+                     boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)'
+                   }}
+                   onMouseOver={(e) => {
+                     if (!isMobile && movimientos && !transicionando) {
+                       e.currentTarget.style.transform = 'scale(1.05)';
+                       e.currentTarget.style.boxShadow = '0 4px 8px rgba(245, 158, 11, 0.4)';
+                     }
+                   }}
+                   onMouseOut={(e) => {
+                     if (!isMobile) {
+                       e.currentTarget.style.transform = 'scale(1)';
+                       e.currentTarget.style.boxShadow = '0 2px 4px rgba(245, 158, 11, 0.3)';
+                     }
+                   }}
+                 >
+                   📊 Exportar
+                 </button>
+               )}
              </div>
 
              {/* Carga de Planillas (Salidas) */}
              <div
                data-card-index="3"
-               style={obtenerEstilosCard(3, indiceSeleccionado === 3)}
+               style={{
+                 ...obtenerEstilosCard(3, indiceSeleccionado === 3),
+                 position: 'relative'
+               }}
                onClick={() => {
                  setIndiceSeleccionado(3);
                  abrirModal('salidas');
@@ -1116,7 +1387,7 @@ export default function MovimientosDia() {
                  }}>
                    📤
                  </div>
-                 <div>
+                 <div style={{ flex: 1 }}>
                    <h3 style={{
                      fontSize: '1.125rem',
                      fontWeight: '600',
@@ -1135,6 +1406,50 @@ export default function MovimientosDia() {
                    </p>
                  </div>
                </div>
+               
+               {/* Botón de exportación específico para planillas */}
+               {!modoRango && (
+                 <button
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     exportarPlanillasDiaExcel();
+                   }}
+                   disabled={!movimientos || transicionando}
+                   style={{
+                     position: 'absolute',
+                     bottom: '1rem',
+                     right: '1rem',
+                     padding: '0.5rem',
+                     background: 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)',
+                     color: 'white',
+                     border: 'none',
+                     borderRadius: '0.5rem',
+                     fontSize: '0.75rem',
+                     fontWeight: '600',
+                     cursor: !movimientos || transicionando ? 'not-allowed' : 'pointer',
+                     opacity: !movimientos || transicionando ? 0.6 : 1,
+                     transition: 'all 0.2s ease',
+                     display: 'flex',
+                     alignItems: 'center',
+                     gap: '0.25rem',
+                     boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)'
+                   }}
+                   onMouseOver={(e) => {
+                     if (!isMobile && movimientos && !transicionando) {
+                       e.currentTarget.style.transform = 'scale(1.05)';
+                       e.currentTarget.style.boxShadow = '0 4px 8px rgba(239, 68, 68, 0.4)';
+                     }
+                   }}
+                   onMouseOut={(e) => {
+                     if (!isMobile) {
+                       e.currentTarget.style.transform = 'scale(1)';
+                       e.currentTarget.style.boxShadow = '0 2px 4px rgba(239, 68, 68, 0.3)';
+                     }
+                   }}
+                 >
+                   📊 Exportar
+                 </button>
+               )}
              </div>
 
              {/* Roturas y Pérdidas */}
@@ -1375,7 +1690,7 @@ export default function MovimientosDia() {
                 }}>
                   {obtenerIconoModal(modalAbierto)}
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <h2 style={{
                     fontSize: '1.5rem',
                     fontWeight: '700',
@@ -1393,6 +1708,81 @@ export default function MovimientosDia() {
                   </p>
                 </div>
               </div>
+              
+              {/* Buscador solo para Stock Inicial y Balance Final */}
+              {(modalAbierto === 'stockInicial' || modalAbierto === 'balanceFinal') && (
+                <div style={{
+                  marginTop: '1rem',
+                  position: 'relative'
+                }}>
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre o código..."
+                    value={filtroBusqueda}
+                    onChange={(e) => setFiltroBusqueda(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem 0.75rem 2.5rem',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
+                      background: '#f8fafc',
+                      color: '#1e293b',
+                      outline: 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = obtenerColorModal(modalAbierto);
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = `0 0 0 3px ${obtenerColorModal(modalAbierto)}20`;
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.background = '#f8fafc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    left: '0.75rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#64748b',
+                    fontSize: '1rem'
+                  }}>
+                    🔍
+                  </div>
+                  {filtroBusqueda && (
+                    <button
+                      onClick={() => setFiltroBusqueda('')}
+                      style={{
+                        position: 'absolute',
+                        right: '0.75rem',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        color: '#64748b',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        padding: '0.25rem',
+                        borderRadius: '0.25rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#f1f5f9';
+                        e.currentTarget.style.color = '#ef4444';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'none';
+                        e.currentTarget.style.color = '#64748b';
+                      }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              )}
               <button
                 onClick={cerrarModal}
                 style={{
@@ -1424,6 +1814,27 @@ export default function MovimientosDia() {
               overflowY: 'auto',
               paddingRight: '0.5rem'
             }}>
+              {/* Indicador de resultados filtrados */}
+              {(modalAbierto === 'stockInicial' || modalAbierto === 'balanceFinal') && filtroBusqueda.trim() && (
+                <div style={{
+                  padding: '0.5rem 0',
+                  marginBottom: '0.5rem',
+                  borderBottom: '1px solid #e2e8f0',
+                  fontSize: '0.875rem',
+                  color: '#64748b'
+                }}>
+                  {obtenerProductosModal(modalAbierto).length > 0 ? (
+                    <span>
+                      {obtenerProductosModal(modalAbierto).length} producto{obtenerProductosModal(modalAbierto).length !== 1 ? 's' : ''} encontrado{obtenerProductosModal(modalAbierto).length !== 1 ? 's' : ''} para "{filtroBusqueda}"
+                    </span>
+                  ) : (
+                    <span style={{ color: '#ef4444' }}>
+                      No se encontraron productos para "{filtroBusqueda}"
+                    </span>
+                  )}
+                </div>
+              )}
+              
               {obtenerProductosModal(modalAbierto).length > 0 ? (
                 obtenerProductosModal(modalAbierto).map(producto => 
                   renderizarProducto(producto, modalAbierto)
@@ -1435,10 +1846,13 @@ export default function MovimientosDia() {
                   color: '#64748b'
                 }}>
                   <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
-                    📭
+                    {filtroBusqueda.trim() ? '🔍' : '📭'}
                   </div>
                   <p style={{ margin: 0, fontSize: '1.125rem' }}>
-                    No hay productos en esta sección
+                    {filtroBusqueda.trim() 
+                      ? `No se encontraron productos para "${filtroBusqueda}"`
+                      : 'No hay productos en esta sección'
+                    }
                   </p>
                 </div>
               )}

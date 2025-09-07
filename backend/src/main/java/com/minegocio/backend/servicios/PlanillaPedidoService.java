@@ -496,6 +496,34 @@ public class PlanillaPedidoService {
                 transRow.createCell(0).setCellValue("Transporte:");
                 transRow.createCell(1).setCellValue(planilla.getTransporte());
                 sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 3));
+                
+                // Extraer y mostrar patente por separado si está disponible
+                String transporte = planilla.getTransporte();
+                if (transporte.contains(" - ") && transporte.contains("(") && transporte.contains(")")) {
+                    try {
+                        // Buscar patente en el formato: "texto (modelo - patente)"
+                        String[] partes = transporte.split("\\(");
+                        if (partes.length > 1) {
+                            String parteInterna = partes[1].replace(")", "");
+                            if (parteInterna.contains(" - ")) {
+                                String[] subPartes = parteInterna.split(" - ");
+                                if (subPartes.length > 1) {
+                                    String patente = subPartes[1].trim();
+                                    if (!patente.isEmpty()) {
+                                        rowNum++;
+                                        Row patenteRow = sheet.createRow(rowNum++);
+                                        patenteRow.createCell(0).setCellValue("Patente:");
+                                        patenteRow.createCell(1).setCellValue(patente);
+                                        sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(rowNum-1, rowNum-1, 1, 3));
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Si hay error al extraer patente, continuar sin mostrar error
+                        System.out.println("⚠️ Error al extraer patente del transporte: " + e.getMessage());
+                    }
+                }
             }
 
             Row infoRow3 = sheet.createRow(rowNum++);

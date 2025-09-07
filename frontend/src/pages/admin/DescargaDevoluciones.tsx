@@ -796,9 +796,29 @@ export default function DescargaDevoluciones() {
                                 fontStyle: 'italic'
                               }}>
                                 {planilla.transporte && (
-                                  <span style={{ marginRight: '1rem' }}>
-                                    🚛 {planilla.transporte}
-                                  </span>
+                                  <div style={{ marginRight: '1rem' }}>
+                                    <span style={{ display: 'block' }}>
+                                      🚛 {planilla.transporte}
+                                    </span>
+                                    {(() => {
+                                      // Extraer patente del texto de transporte
+                                      const patenteMatch = planilla.transporte?.match(/\(([^)]* - ([^)]+))\)/);
+                                      if (patenteMatch && patenteMatch[2]) {
+                                        return (
+                                          <span style={{
+                                            color: '#059669',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600',
+                                            display: 'block',
+                                            marginTop: '0.25rem'
+                                          }}>
+                                            🚗 Patente: {patenteMatch[2]}
+                                          </span>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
+                                  </div>
                                 )}
                                 {planilla.observaciones && (
                                   <span>
@@ -986,6 +1006,30 @@ export default function DescargaDevoluciones() {
                     {planillaSeleccionada.transporte && (
                       <div style={{ marginBottom: '0.5rem' }}>
                         🚛 <strong>Transporte:</strong> {planillaSeleccionada.transporte}
+                        {(() => {
+                          // Extraer patente del texto de transporte
+                          const patenteMatch = planillaSeleccionada.transporte?.match(/\(([^)]* - ([^)]+))\)/);
+                          if (patenteMatch && patenteMatch[2]) {
+                            return (
+                              <div style={{
+                                marginTop: '0.5rem',
+                                padding: '0.5rem',
+                                background: '#f0fdf4',
+                                border: '1px solid #bbf7d0',
+                                borderRadius: '0.375rem'
+                              }}>
+                                <span style={{
+                                  color: '#059669',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '600'
+                                }}>
+                                  🚗 Patente: {patenteMatch[2]}
+                                </span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     )}
                     {planillaSeleccionada.observaciones && (

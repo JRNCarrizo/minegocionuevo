@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
 @RestController
@@ -107,6 +108,138 @@ public class MovimientoDiaController {
             System.err.println("❌ [CONTROLLER] Error al exportar movimientos de rango a Excel: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Exportar ingresos del día a Excel con estructura específica
+     * Incluye: código personalizado, productos iniciales, cantidades, remitos por día
+     */
+    @GetMapping("/{fecha}/exportar-ingresos-excel")
+    public ResponseEntity<byte[]> exportarIngresosDiaExcel(@PathVariable String fecha) {
+        try {
+            System.out.println("🔍 [CONTROLLER] Exportando ingresos a Excel para fecha: " + fecha);
+            byte[] excelBytes = movimientoDiaService.exportarIngresosDiaExcel(fecha);
+            
+            String nombreArchivo = "ingresos_dia_" + fecha + ".xlsx";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", nombreArchivo);
+            headers.setContentLength(excelBytes.length);
+            
+            System.out.println("✅ [CONTROLLER] Excel de ingresos exportado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelBytes);
+                    
+        } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER] Error al exportar ingresos a Excel: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Exportar planillas del día a Excel con estructura específica
+     * Incluye: código personalizado, productos, cantidades, planillas por día
+     */
+    @GetMapping("/{fecha}/exportar-planillas-excel")
+    public ResponseEntity<byte[]> exportarPlanillasDiaExcel(@PathVariable String fecha) {
+        try {
+            System.out.println("🔍 [CONTROLLER] Exportando planillas a Excel para fecha: " + fecha);
+            byte[] excelBytes = movimientoDiaService.exportarPlanillasDiaExcel(fecha);
+            
+            String nombreArchivo = "planillas_dia_" + fecha + ".xlsx";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", nombreArchivo);
+            headers.setContentLength(excelBytes.length);
+            
+            System.out.println("✅ [CONTROLLER] Excel de planillas exportado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelBytes);
+                    
+        } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER] Error al exportar planillas a Excel: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Exportar devoluciones del día a Excel con estructura específica
+     * Incluye: código personalizado, productos, cantidades, planillas de devolución por día
+     */
+    @GetMapping("/{fecha}/exportar-devoluciones-excel")
+    public ResponseEntity<byte[]> exportarDevolucionesDiaExcel(@PathVariable String fecha) {
+        try {
+            System.out.println("🔍 [CONTROLLER] Exportando devoluciones a Excel para fecha: " + fecha);
+            byte[] excelBytes = movimientoDiaService.exportarDevolucionesDiaExcel(fecha);
+            
+            String nombreArchivo = "devoluciones_dia_" + fecha + ".xlsx";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", nombreArchivo);
+            headers.setContentLength(excelBytes.length);
+            
+            System.out.println("✅ [CONTROLLER] Excel de devoluciones exportado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelBytes);
+                    
+        } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER] Error al exportar devoluciones a Excel: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Exportar stock inicial del día a Excel
+     * Incluye: código personalizado, descripción, cantidad inicial, total
+     */
+    @GetMapping("/{fecha}/exportar-stock-inicial-excel")
+    public ResponseEntity<byte[]> exportarStockInicialExcel(@PathVariable String fecha) {
+        try {
+            System.out.println("🔍 [CONTROLLER] Exportando stock inicial a Excel para fecha: " + fecha);
+            
+            // Validar formato de fecha
+            if (fecha == null || fecha.trim().isEmpty()) {
+                System.err.println("❌ [CONTROLLER] Fecha vacía o nula");
+                return ResponseEntity.badRequest().build();
+            }
+            
+            byte[] excelBytes = movimientoDiaService.exportarStockInicialExcel(fecha);
+            
+            if (excelBytes == null || excelBytes.length == 0) {
+                System.err.println("❌ [CONTROLLER] Excel generado está vacío");
+                return ResponseEntity.badRequest().build();
+            }
+            
+            String nombreArchivo = "stock_inicial_" + fecha + ".xlsx";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", nombreArchivo);
+            headers.setContentLength(excelBytes.length);
+            
+            System.out.println("✅ [CONTROLLER] Excel de stock inicial exportado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelBytes);
+                    
+        } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER] Error al exportar stock inicial a Excel: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

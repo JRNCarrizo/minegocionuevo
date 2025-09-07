@@ -998,6 +998,23 @@ export default function CargaPedidos() {
                                   }}>
                                     🚛 {planilla.transporte}
                                   </p>
+                                  {(() => {
+                                    // Extraer patente del texto de transporte
+                                    const patenteMatch = planilla.transporte?.match(/\(([^)]* - ([^)]+))\)/);
+                                    if (patenteMatch && patenteMatch[2]) {
+                                      return (
+                                        <p style={{
+                                          color: '#059669',
+                                          fontSize: '0.75rem',
+                                          margin: '0.25rem 0 0 0',
+                                          fontWeight: '600'
+                                        }}>
+                                          🚗 Patente: {patenteMatch[2]}
+                                        </p>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
                               )}
                               
@@ -1268,6 +1285,31 @@ export default function CargaPedidos() {
                               fontStyle: 'italic'
                             }}>
                               {planillaSeleccionada.transporte}
+                              {(() => {
+                                // Extraer patente del texto de transporte
+                                const patenteMatch = planillaSeleccionada.transporte?.match(/\(([^)]* - ([^)]+))\)/);
+                                if (patenteMatch && patenteMatch[2]) {
+                                  return (
+                                    <div style={{
+                                      marginTop: '0.5rem',
+                                      padding: '0.5rem',
+                                      background: '#f0fdf4',
+                                      border: '1px solid #bbf7d0',
+                                      borderRadius: '0.375rem'
+                                    }}>
+                                      <p style={{
+                                        color: '#059669',
+                                        fontSize: '0.75rem',
+                                        margin: 0,
+                                        fontWeight: '600'
+                                      }}>
+                                        🚗 Patente: {patenteMatch[2]}
+                                      </p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                           </div>
                         )}

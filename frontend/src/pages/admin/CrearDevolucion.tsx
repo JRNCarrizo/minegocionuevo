@@ -1304,15 +1304,23 @@ export default function CrearDevolucion() {
                             padding: '0.75rem',
                       cursor: 'pointer',
                             borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
-                            background: index === productoSeleccionado ? '#f1f5f9' : 'white',
-                            fontSize: '0.875rem'
+                            background: index === productoSeleccionado ? '#3b82f6' : 'white',
+                            color: index === productoSeleccionado ? 'white' : '#1e293b',
+                            fontSize: '0.875rem',
+                            transition: 'all 0.2s ease'
                           }}
                           onMouseOver={() => setProductoSeleccionado(index)}
                         >
-                          <div style={{ fontWeight: '600', color: '#1e293b' }}>
+                          <div style={{ 
+                            fontWeight: '600', 
+                            color: index === productoSeleccionado ? 'white' : '#1e293b' 
+                          }}>
                       {producto.nombre}
                     </div>
-                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                          <div style={{ 
+                            fontSize: '0.75rem', 
+                            color: index === productoSeleccionado ? '#e2e8f0' : '#64748b' 
+                          }}>
                             {producto.codigoPersonalizado && `Código: ${producto.codigoPersonalizado}`}
                             {producto.codigoBarras && ` • Barras: ${producto.codigoBarras}`}
                             {` • Stock: ${producto.stock}`}

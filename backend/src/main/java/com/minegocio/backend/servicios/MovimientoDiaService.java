@@ -11,11 +11,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @Service
 public class MovimientoDiaService {
@@ -31,7 +35,7 @@ public class MovimientoDiaService {
     
     @Autowired
     private PlanillaPedidoRepository planillaPedidoRepository;
-    
+
     @Autowired
     private PlanillaDevolucionRepository planillaDevolucionRepository;
     
@@ -161,13 +165,13 @@ public class MovimientoDiaService {
                     producto.setId(detalle.getProductoId());
                     producto.setNombre(detalle.getNombreProducto());
                     producto.setCodigoPersonalizado(detalle.getCodigoPersonalizado());
-                    producto.setCantidad(detalle.getCantidad());
+                    producto.setCantidadInicial(detalle.getCantidad());
                     producto.setPrecio(null); // Precio no disponible en balance
                     return producto;
                 })
                 .collect(Collectors.toList());
             
-            int cantidadTotal = productos.stream().mapToInt(MovimientoDiaDTO.ProductoStockDTO::getCantidad).sum();
+            int cantidadTotal = productos.stream().mapToInt(p -> p.getCantidadInicial() != null ? p.getCantidadInicial() : 0).sum();
             
             System.out.println("📊 [STOCK INICIAL] Balance final del día anterior - Total: " + cantidadTotal);
             
@@ -225,13 +229,13 @@ public class MovimientoDiaService {
                     productoDTO.setId(producto.getId());
                     productoDTO.setNombre(producto.getNombre());
                     productoDTO.setCodigoPersonalizado(producto.getCodigoPersonalizado());
-                    productoDTO.setCantidad(stockInicial.getOrDefault(producto.getId(), 0));
+                    productoDTO.setCantidadInicial(stockInicial.getOrDefault(producto.getId(), 0));
                     productoDTO.setPrecio(producto.getPrecio() != null ? producto.getPrecio().doubleValue() : null);
                     return productoDTO;
                 })
                 .collect(Collectors.toList());
             
-            int cantidadTotal = productosDTO.stream().mapToInt(MovimientoDiaDTO.ProductoStockDTO::getCantidad).sum();
+            int cantidadTotal = productosDTO.stream().mapToInt(p -> p.getCantidadInicial() != null ? p.getCantidadInicial() : 0).sum();
             
             System.out.println("📊 [STOCK INICIAL] Stock actual menos movimientos - Total: " + cantidadTotal);
             
@@ -248,13 +252,13 @@ public class MovimientoDiaService {
                     productoDTO.setId(producto.getId());
                     productoDTO.setNombre(producto.getNombre());
                     productoDTO.setCodigoPersonalizado(producto.getCodigoPersonalizado());
-                    productoDTO.setCantidad(producto.getStock());
+                    productoDTO.setCantidadInicial(producto.getStock());
                     productoDTO.setPrecio(producto.getPrecio() != null ? producto.getPrecio().doubleValue() : null);
                     return productoDTO;
                 })
                 .collect(Collectors.toList());
             
-            int cantidadTotal = productosDTO.stream().mapToInt(MovimientoDiaDTO.ProductoStockDTO::getCantidad).sum();
+            int cantidadTotal = productosDTO.stream().mapToInt(p -> p.getCantidadInicial() != null ? p.getCantidadInicial() : 0).sum();
             
             System.out.println("📊 [STOCK INICIAL] Stock actual para día futuro - Total: " + cantidadTotal);
             
@@ -501,7 +505,8 @@ public class MovimientoDiaService {
         // Los ingresos se suman al stock inicial para obtener el stock disponible
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : ingresos.getProductos()) {
             balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
-                balance.setCantidad(balance.getCantidad() + producto.getCantidad());
+                Integer cantidadInicial = balance.getCantidadInicial() != null ? balance.getCantidadInicial() : 0;
+                balance.setCantidad(cantidadInicial + producto.getCantidad());
                 return balance;
             });
             // Si el producto no existe en el balance, agregarlo
@@ -523,7 +528,8 @@ public class MovimientoDiaService {
         // Las devoluciones se suman al stock (productos que regresan)
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : devoluciones.getProductos()) {
             balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
-                balance.setCantidad(balance.getCantidad() + producto.getCantidad());
+                Integer cantidadActual = balance.getCantidad() != null ? balance.getCantidad() : 0;
+                balance.setCantidad(cantidadActual + producto.getCantidad());
                 return balance;
             });
             // Si el producto no existe en el balance, agregarlo
@@ -545,7 +551,8 @@ public class MovimientoDiaService {
         // Las salidas se restan del stock (productos que salen)
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : salidas.getProductos()) {
             balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
-                balance.setCantidad(balance.getCantidad() - producto.getCantidad());
+                Integer cantidadActual = balance.getCantidad() != null ? balance.getCantidad() : 0;
+                balance.setCantidad(cantidadActual - producto.getCantidad());
                 return balance;
             });
             // Si el producto no existe en el balance, agregarlo
@@ -567,7 +574,8 @@ public class MovimientoDiaService {
         // Las roturas se restan del stock (productos perdidos/deteriorados)
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : roturas.getProductos()) {
             balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
-                balance.setCantidad(balance.getCantidad() - producto.getCantidad());
+                Integer cantidadActual = balance.getCantidad() != null ? balance.getCantidad() : 0;
+                balance.setCantidad(cantidadActual - producto.getCantidad());
                 return balance;
             });
             // Si el producto no existe en el balance, agregarlo
@@ -590,7 +598,9 @@ public class MovimientoDiaService {
         for (MovimientoDiaDTO.ProductoStockDTO producto : balanceProductos.values()) {
             // Solo recalcular variación si no se estableció previamente (productos que ya estaban en stock inicial)
             if (producto.getTipoVariacion() == null || producto.getTipoVariacion().equals("SIN_CAMBIOS")) {
-                int variacion = producto.getCantidad() - producto.getCantidadInicial();
+                Integer cantidadFinal = producto.getCantidad() != null ? producto.getCantidad() : 0;
+                Integer cantidadInicial = producto.getCantidadInicial() != null ? producto.getCantidadInicial() : 0;
+                int variacion = cantidadFinal - cantidadInicial;
                 producto.setVariacion(variacion);
                 
                 if (variacion > 0) {
@@ -604,7 +614,7 @@ public class MovimientoDiaService {
         }
         
         List<MovimientoDiaDTO.ProductoStockDTO> productosBalance = new ArrayList<>(balanceProductos.values());
-        int cantidadTotal = productosBalance.stream().mapToInt(MovimientoDiaDTO.ProductoStockDTO::getCantidad).sum();
+        int cantidadTotal = productosBalance.stream().mapToInt(p -> p.getCantidad() != null ? p.getCantidad() : 0).sum();
         
         // Log para debug
         System.out.println("📊 [BALANCE FINAL] Todos los productos:");
@@ -1045,9 +1055,9 @@ public class MovimientoDiaService {
                 producto.getId(),
                 producto.getNombre(),
                 producto.getCodigoPersonalizado(),
-                producto.getCantidad(),
+                producto.getCantidadInicial() != null ? producto.getCantidadInicial() : 0,
                 producto.getPrecio(),
-                producto.getCantidad(), // cantidadInicial
+                producto.getCantidadInicial() != null ? producto.getCantidadInicial() : 0, // cantidadInicial
                 0, // variacion
                 "SIN_CAMBIOS" // tipoVariacion
             ));
@@ -1057,7 +1067,8 @@ public class MovimientoDiaService {
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : ingresos.getProductos()) {
             if (balanceProductos.containsKey(producto.getId())) {
                 MovimientoDiaDTO.ProductoStockDTO existente = balanceProductos.get(producto.getId());
-                existente.setCantidad(existente.getCantidad() + producto.getCantidad());
+                Integer cantidadActual = existente.getCantidad() != null ? existente.getCantidad() : 0;
+                existente.setCantidad(cantidadActual + producto.getCantidad());
             } else {
                 balanceProductos.put(producto.getId(), new MovimientoDiaDTO.ProductoStockDTO(
                     producto.getId(),
@@ -1076,7 +1087,8 @@ public class MovimientoDiaService {
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : devoluciones.getProductos()) {
             if (balanceProductos.containsKey(producto.getId())) {
                 MovimientoDiaDTO.ProductoStockDTO existente = balanceProductos.get(producto.getId());
-                existente.setCantidad(existente.getCantidad() + producto.getCantidad());
+                Integer cantidadActual = existente.getCantidad() != null ? existente.getCantidad() : 0;
+                existente.setCantidad(cantidadActual + producto.getCantidad());
             } else {
                 balanceProductos.put(producto.getId(), new MovimientoDiaDTO.ProductoStockDTO(
                     producto.getId(),
@@ -1095,7 +1107,8 @@ public class MovimientoDiaService {
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : salidas.getProductos()) {
             if (balanceProductos.containsKey(producto.getId())) {
                 MovimientoDiaDTO.ProductoStockDTO existente = balanceProductos.get(producto.getId());
-                existente.setCantidad(existente.getCantidad() - producto.getCantidad());
+                Integer cantidadActual = existente.getCantidad() != null ? existente.getCantidad() : 0;
+                existente.setCantidad(cantidadActual - producto.getCantidad());
             }
         }
         
@@ -1103,14 +1116,15 @@ public class MovimientoDiaService {
         for (MovimientoDiaDTO.ProductoMovimientoDTO producto : roturas.getProductos()) {
             if (balanceProductos.containsKey(producto.getId())) {
                 MovimientoDiaDTO.ProductoStockDTO existente = balanceProductos.get(producto.getId());
-                existente.setCantidad(existente.getCantidad() - producto.getCantidad());
+                Integer cantidadActual = existente.getCantidad() != null ? existente.getCantidad() : 0;
+                existente.setCantidad(cantidadActual - producto.getCantidad());
             }
         }
         
         // Calcular variaciones
         for (MovimientoDiaDTO.ProductoStockDTO producto : balanceProductos.values()) {
-            int cantidadInicial = producto.getCantidadInicial();
-            int cantidadFinal = producto.getCantidad();
+            Integer cantidadInicial = producto.getCantidadInicial() != null ? producto.getCantidadInicial() : 0;
+            Integer cantidadFinal = producto.getCantidad() != null ? producto.getCantidad() : 0;
             int variacion = cantidadFinal - cantidadInicial;
             
             producto.setVariacion(variacion);
@@ -1125,7 +1139,7 @@ public class MovimientoDiaService {
         }
         
         List<MovimientoDiaDTO.ProductoStockDTO> productos = new ArrayList<>(balanceProductos.values());
-        int cantidadTotal = productos.stream().mapToInt(MovimientoDiaDTO.ProductoStockDTO::getCantidad).sum();
+        int cantidadTotal = productos.stream().mapToInt(p -> p.getCantidad() != null ? p.getCantidad() : 0).sum();
         
         return new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productos);
     }
@@ -1237,7 +1251,7 @@ public class MovimientoDiaService {
                 
                 // Crear mapas para facilitar la búsqueda
                 Map<Long, Integer> stockInicial = movimientos.getStockInicial().getProductos().stream()
-                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidadInicial() != null ? p.getCantidadInicial() : 0));
                     
                 Map<Long, Integer> ingresos = movimientos.getIngresos().getProductos().stream()
                     .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
@@ -1482,7 +1496,7 @@ public class MovimientoDiaService {
                 
                 // Crear mapas para facilitar la búsqueda
                 Map<Long, Integer> stockInicial = movimientos.getStockInicial().getProductos().stream()
-                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
+                    .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidadInicial() != null ? p.getCantidadInicial() : 0));
                     
                 Map<Long, Integer> ingresos = movimientos.getIngresos().getProductos().stream()
                     .collect(Collectors.toMap(p -> p.getId(), p -> p.getCantidad()));
@@ -1617,6 +1631,820 @@ public class MovimientoDiaService {
             System.err.println("❌ [EXPORTAR] Error al exportar movimientos de rango a Excel: " + e.getMessage());
             e.printStackTrace();
             throw new IOException("Error al exportar movimientos de rango a Excel", e);
+        }
+    }
+
+    /**
+     * Exportar ingresos del día a Excel con estructura específica
+     * Incluye: código personalizado, productos iniciales, cantidades, remitos por día
+     */
+    public byte[] exportarIngresosDiaExcel(String fechaStr) throws IOException {
+        try {
+            Long empresaId = obtenerEmpresaId();
+            LocalDate fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
+            
+            System.out.println("🔍 [EXPORTAR INGRESOS] Exportando ingresos para empresa: " + empresaId + ", fecha: " + fecha);
+            
+            // Obtener movimientos del día
+            MovimientoDiaDTO movimientos = obtenerMovimientosDia(fechaStr);
+            
+            // Obtener remitos de ingreso del día
+            LocalDateTime inicioDia = fecha.atStartOfDay();
+            LocalDateTime finDia = fecha.atTime(23, 59, 59);
+            
+            List<RemitoIngreso> remitosDelDia = remitoIngresoRepository.findByRangoFechasAndEmpresaId(
+                inicioDia, finDia, empresaId);
+            
+            System.out.println("📋 [EXPORTAR INGRESOS] Remitos encontrados: " + remitosDelDia.size());
+            
+            // Crear workbook
+            try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+                var sheet = workbook.createSheet("Ingresos del Día");
+                
+                // Estilos
+                var headerStyle = workbook.createCellStyle();
+                var headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerFont.setFontHeightInPoints((short) 12);
+                headerStyle.setFont(headerFont);
+                headerStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.LIGHT_GREEN.getIndex());
+                headerStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                headerStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                var dataStyle = workbook.createCellStyle();
+                dataStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                var totalStyle = workbook.createCellStyle();
+                var totalFont = workbook.createFont();
+                totalFont.setBold(true);
+                totalStyle.setFont(totalFont);
+                totalStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.LIGHT_YELLOW.getIndex());
+                totalStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                totalStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                // Crear estructura de encabezados como en la imagen
+                // Primera fila: "N° de Remito" como encabezado principal
+                var headerRow1 = sheet.createRow(0);
+                var headerRow2 = sheet.createRow(1);
+                var headerRow3 = sheet.createRow(2);
+                
+                // Primera fila - encabezado principal
+                var cell0_1 = headerRow1.createCell(0);
+                cell0_1.setCellValue("Código");
+                cell0_1.setCellStyle(headerStyle);
+                
+                var cell1_1 = headerRow1.createCell(1);
+                cell1_1.setCellValue("Descripción");
+                cell1_1.setCellStyle(headerStyle);
+                
+                // Encabezado principal "N° de Remito" que abarca todas las columnas de remitos
+                if (remitosDelDia.size() > 0) {
+                    var cell2_1 = headerRow1.createCell(2);
+                    cell2_1.setCellValue("N° de Remito");
+                    cell2_1.setCellStyle(headerStyle);
+                    
+                    // Combinar celdas para el encabezado principal si hay múltiples remitos
+                    if (remitosDelDia.size() > 1) {
+                        sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 2, 1 + remitosDelDia.size()));
+                    }
+                }
+                
+                // Segunda fila - números de remito
+                var cell0_2 = headerRow2.createCell(0);
+                cell0_2.setCellValue("");
+                cell0_2.setCellStyle(headerStyle);
+                
+                var cell1_2 = headerRow2.createCell(1);
+                cell1_2.setCellValue("");
+                cell1_2.setCellStyle(headerStyle);
+                
+                // Números de remito en la segunda fila
+                for (int i = 0; i < remitosDelDia.size(); i++) {
+                    var cell = headerRow2.createCell(2 + i);
+                    cell.setCellValue(remitosDelDia.get(i).getNumeroRemito());
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Tercera fila - nombres de proveedor/empresa
+                var cell0_3 = headerRow3.createCell(0);
+                cell0_3.setCellValue("");
+                cell0_3.setCellStyle(headerStyle);
+                
+                var cell1_3 = headerRow3.createCell(1);
+                cell1_3.setCellValue("");
+                cell1_3.setCellStyle(headerStyle);
+                
+                // Nombres de transporte/proveedor en la tercera fila (usando observaciones de la planilla)
+                for (int i = 0; i < remitosDelDia.size(); i++) {
+                    var cell = headerRow3.createCell(2 + i);
+                    String nombreTransporte = remitosDelDia.get(i).getObservaciones() != null && !remitosDelDia.get(i).getObservaciones().isEmpty() 
+                        ? remitosDelDia.get(i).getObservaciones() 
+                        : ""; // Sin valor por defecto, solo lo que está en observaciones
+                    cell.setCellValue(nombreTransporte);
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Crear mapa de productos con sus cantidades iniciales
+                Map<Long, Integer> productosIniciales = new HashMap<>();
+                Map<Long, String> productosNombres = new HashMap<>();
+                Map<Long, String> productosCodigos = new HashMap<>();
+                
+                for (var producto : movimientos.getStockInicial().getProductos()) {
+                    productosIniciales.put(producto.getId(), producto.getCantidad());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Crear mapa de productos por remito
+                Map<Long, Map<Long, Integer>> productosPorRemito = new HashMap<>();
+                for (RemitoIngreso remito : remitosDelDia) {
+                    Map<Long, Integer> productosRemito = new HashMap<>();
+                    for (DetalleRemitoIngreso detalle : remito.getDetalles()) {
+                        if (detalle.getProducto() != null && detalle.getProducto().getId() != null) {
+                            Long productoId = detalle.getProducto().getId();
+                            productosRemito.put(productoId, 
+                                productosRemito.getOrDefault(productoId, 0) + detalle.getCantidad());
+                        }
+                    }
+                    productosPorRemito.put(remito.getId(), productosRemito);
+                }
+                
+                // Obtener todos los productos únicos
+                Set<Long> todosLosProductos = new HashSet<>(productosIniciales.keySet());
+                for (Map<Long, Integer> productosRemito : productosPorRemito.values()) {
+                    todosLosProductos.addAll(productosRemito.keySet());
+                }
+                
+                // Crear filas de datos (empezando desde la fila 3, ya que tenemos 3 filas de encabezado)
+                int rowNum = 3;
+                Map<Long, Integer> totalesPorRemito = new HashMap<>();
+                
+                for (Long productoId : todosLosProductos) {
+                    var row = sheet.createRow(rowNum++);
+                    
+                    // Código personalizado
+                    var cell0 = row.createCell(0);
+                    String codigo = productosCodigos.get(productoId);
+                    cell0.setCellValue(codigo != null ? codigo : "");
+                    cell0.setCellStyle(dataStyle);
+                    
+                    // Nombre del producto
+                    var cell1 = row.createCell(1);
+                    String nombre = productosNombres.get(productoId);
+                    cell1.setCellValue(nombre != null ? nombre : "Producto ID: " + productoId);
+                    cell1.setCellStyle(dataStyle);
+                    
+                    // Cantidades por remito (sin columna de cantidad inicial, como en la imagen)
+                    int colIndex = 2;
+                    for (RemitoIngreso remito : remitosDelDia) {
+                        var cell = row.createCell(colIndex++);
+                        Map<Long, Integer> productosRemito = productosPorRemito.get(remito.getId());
+                        int cantidadRemito = productosRemito.getOrDefault(productoId, 0);
+                        cell.setCellValue(cantidadRemito);
+                        cell.setCellStyle(dataStyle);
+                        
+                        // Acumular total por remito
+                        totalesPorRemito.put(remito.getId(), 
+                            totalesPorRemito.getOrDefault(remito.getId(), 0) + cantidadRemito);
+                    }
+                }
+                
+                // Fila de totales
+                var totalRow = sheet.createRow(rowNum++);
+                
+                var totalCell0 = totalRow.createCell(0);
+                totalCell0.setCellValue("TOTALES");
+                totalCell0.setCellStyle(totalStyle);
+                
+                var totalCell1 = totalRow.createCell(1);
+                totalCell1.setCellValue("");
+                totalCell1.setCellStyle(totalStyle);
+                
+                // Totales por remito (sin columna de cantidad inicial)
+                int colIndex = 2;
+                for (RemitoIngreso remito : remitosDelDia) {
+                    var cell = totalRow.createCell(colIndex++);
+                    int totalRemito = totalesPorRemito.getOrDefault(remito.getId(), 0);
+                    cell.setCellValue(totalRemito);
+                    cell.setCellStyle(totalStyle);
+                }
+                
+                // Ajustar ancho de columnas
+                int totalColumns = 2 + remitosDelDia.size(); // Código + Descripción + columnas de remitos
+                for (int i = 0; i < totalColumns; i++) {
+                    sheet.setColumnWidth(i, 4000);
+                }
+                
+                // Convertir a bytes
+                try (var outputStream = new java.io.ByteArrayOutputStream()) {
+                    workbook.write(outputStream);
+                    byte[] excelBytes = outputStream.toByteArray();
+                    
+                    System.out.println("✅ [EXPORTAR INGRESOS] Excel de ingresos generado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+                    return excelBytes;
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ [EXPORTAR INGRESOS] Error al exportar ingresos a Excel: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException("Error al exportar ingresos a Excel", e);
+        }
+    }
+
+    /**
+     * Exportar planillas del día a Excel con estructura específica
+     * Incluye: código personalizado, productos, cantidades, planillas por día
+     */
+    public byte[] exportarPlanillasDiaExcel(String fechaStr) throws IOException {
+        try {
+            Long empresaId = obtenerEmpresaId();
+            LocalDate fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
+            
+            System.out.println("🔍 [EXPORTAR PLANILLAS] Exportando planillas para empresa: " + empresaId + ", fecha: " + fecha);
+            
+            // Obtener movimientos del día
+            MovimientoDiaDTO movimientos = obtenerMovimientosDia(fechaStr);
+            
+            // Obtener planillas del día
+            LocalDateTime inicioDia = fecha.atStartOfDay();
+            LocalDateTime finDia = fecha.atTime(23, 59, 59);
+            
+            List<PlanillaPedido> planillasDelDia = planillaPedidoRepository.findByEmpresaIdAndFechaPlanillaBetweenOrderByFechaCreacionDesc(
+                empresaId, inicioDia, finDia);
+            
+            System.out.println("📋 [EXPORTAR PLANILLAS] Planillas encontradas: " + planillasDelDia.size());
+            
+            // Crear workbook
+            try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+                var sheet = workbook.createSheet("Planillas del Día");
+                
+                // Estilos
+                var headerStyle = workbook.createCellStyle();
+                var headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerFont.setFontHeightInPoints((short) 12);
+                headerStyle.setFont(headerFont);
+                headerStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.LIGHT_GREEN.getIndex());
+                headerStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                headerStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                var dataStyle = workbook.createCellStyle();
+                dataStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                var totalStyle = workbook.createCellStyle();
+                var totalFont = workbook.createFont();
+                totalFont.setBold(true);
+                totalStyle.setFont(totalFont);
+                totalStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.LIGHT_YELLOW.getIndex());
+                totalStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                totalStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                // Crear estructura de encabezados (3 filas: encabezado, números de planilla, patentes)
+                var headerRow1 = sheet.createRow(0);
+                var headerRow2 = sheet.createRow(1);
+                var headerRow3 = sheet.createRow(2);
+                
+                // Primera fila - encabezado principal
+                var cell0_1 = headerRow1.createCell(0);
+                cell0_1.setCellValue("Código");
+                cell0_1.setCellStyle(headerStyle);
+                
+                var cell1_1 = headerRow1.createCell(1);
+                cell1_1.setCellValue("Descripción");
+                cell1_1.setCellStyle(headerStyle);
+                
+                // Encabezado principal "N° de Planilla" que abarca todas las columnas de planillas
+                if (planillasDelDia.size() > 0) {
+                    var cell2_1 = headerRow1.createCell(2);
+                    cell2_1.setCellValue("N° de Planilla");
+                    cell2_1.setCellStyle(headerStyle);
+                    
+                    // Combinar celdas para el encabezado principal si hay múltiples planillas
+                    if (planillasDelDia.size() > 1) {
+                        sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 2, 2 + planillasDelDia.size() - 1));
+                    }
+                }
+                
+                // Segunda fila - números de planilla
+                var cell0_2 = headerRow2.createCell(0);
+                cell0_2.setCellValue("");
+                cell0_2.setCellStyle(headerStyle);
+                
+                var cell1_2 = headerRow2.createCell(1);
+                cell1_2.setCellValue("");
+                cell1_2.setCellStyle(headerStyle);
+                
+                // Números de planilla en la segunda fila
+                for (int i = 0; i < planillasDelDia.size(); i++) {
+                    var cell = headerRow2.createCell(2 + i);
+                    cell.setCellValue(planillasDelDia.get(i).getNumeroPlanilla());
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Tercera fila - patentes de vehículos
+                var cell0_3 = headerRow3.createCell(0);
+                cell0_3.setCellValue("");
+                cell0_3.setCellStyle(headerStyle);
+                
+                var cell1_3 = headerRow3.createCell(1);
+                cell1_3.setCellValue("");
+                cell1_3.setCellStyle(headerStyle);
+                
+                // Patentes en la tercera fila
+                for (int i = 0; i < planillasDelDia.size(); i++) {
+                    var cell = headerRow3.createCell(2 + i);
+                    String patente = planillasDelDia.get(i).getTransporte();
+                    cell.setCellValue(patente != null && !patente.trim().isEmpty() ? patente : "");
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Crear mapa de productos con sus cantidades iniciales
+                Map<Long, Integer> productosIniciales = new HashMap<>();
+                Map<Long, String> productosNombres = new HashMap<>();
+                Map<Long, String> productosCodigos = new HashMap<>();
+                
+                for (var producto : movimientos.getStockInicial().getProductos()) {
+                    productosIniciales.put(producto.getId(), producto.getCantidad());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Crear mapa de productos por planilla
+                Map<Long, Map<Long, Integer>> productosPorPlanilla = new HashMap<>();
+                for (PlanillaPedido planilla : planillasDelDia) {
+                    Map<Long, Integer> productosPlanilla = new HashMap<>();
+                    for (DetallePlanillaPedido detalle : planilla.getDetalles()) {
+                        if (detalle.getProducto() != null && detalle.getProducto().getId() != null) {
+                            Long productoId = detalle.getProducto().getId();
+                            productosPlanilla.put(productoId, 
+                                productosPlanilla.getOrDefault(productoId, 0) + detalle.getCantidad());
+                        }
+                    }
+                    productosPorPlanilla.put(planilla.getId(), productosPlanilla);
+                }
+                
+                // Obtener todos los productos únicos
+                Set<Long> todosLosProductos = new HashSet<>(productosIniciales.keySet());
+                for (Map<Long, Integer> productosPlanilla : productosPorPlanilla.values()) {
+                    todosLosProductos.addAll(productosPlanilla.keySet());
+                }
+                
+                // Crear filas de datos (empezando desde la fila 3, ya que tenemos 3 filas de encabezado)
+                int rowNum = 3;
+                Map<Long, Integer> totalesPorPlanilla = new HashMap<>();
+                
+                for (Long productoId : todosLosProductos) {
+                    var row = sheet.createRow(rowNum++);
+                    
+                    // Código personalizado
+                    var cell0 = row.createCell(0);
+                    String codigo = productosCodigos.get(productoId);
+                    cell0.setCellValue(codigo != null ? codigo : "");
+                    cell0.setCellStyle(dataStyle);
+                    
+                    // Nombre del producto
+                    var cell1 = row.createCell(1);
+                    String nombre = productosNombres.get(productoId);
+                    cell1.setCellValue(nombre != null ? nombre : "Producto ID: " + productoId);
+                    cell1.setCellStyle(dataStyle);
+                    
+                    // Cantidades por planilla
+                    int colIndex = 2;
+                    for (PlanillaPedido planilla : planillasDelDia) {
+                        var cell = row.createCell(colIndex++);
+                        Map<Long, Integer> productosPlanilla = productosPorPlanilla.get(planilla.getId());
+                        int cantidadPlanilla = productosPlanilla.getOrDefault(productoId, 0);
+                        cell.setCellValue(cantidadPlanilla);
+                        cell.setCellStyle(dataStyle);
+                        
+                        // Acumular total por planilla
+                        totalesPorPlanilla.put(planilla.getId(), 
+                            totalesPorPlanilla.getOrDefault(planilla.getId(), 0) + cantidadPlanilla);
+                    }
+                }
+                
+                // Fila de totales
+                var totalRow = sheet.createRow(rowNum++);
+                
+                var totalCell0 = totalRow.createCell(0);
+                totalCell0.setCellValue("TOTALES");
+                totalCell0.setCellStyle(totalStyle);
+                
+                var totalCell1 = totalRow.createCell(1);
+                totalCell1.setCellValue("");
+                totalCell1.setCellStyle(totalStyle);
+                
+                // Totales por planilla
+                int colIndex = 2;
+                for (PlanillaPedido planilla : planillasDelDia) {
+                    var cell = totalRow.createCell(colIndex++);
+                    int totalPlanilla = totalesPorPlanilla.getOrDefault(planilla.getId(), 0);
+                    cell.setCellValue(totalPlanilla);
+                    cell.setCellStyle(totalStyle);
+                }
+                
+                // Ajustar ancho de columnas
+                int totalColumns = 2 + planillasDelDia.size(); // Código + Descripción + columnas de planillas
+                for (int i = 0; i < totalColumns; i++) {
+                    sheet.setColumnWidth(i, 4000);
+                }
+                
+                // Convertir a bytes
+                try (var outputStream = new java.io.ByteArrayOutputStream()) {
+                    workbook.write(outputStream);
+                    byte[] excelBytes = outputStream.toByteArray();
+                    
+                    System.out.println("✅ [EXPORTAR PLANILLAS] Excel de planillas generado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+                    return excelBytes;
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ [EXPORTAR PLANILLAS] Error al exportar planillas a Excel: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException("Error al exportar planillas a Excel", e);
+        }
+    }
+
+    /**
+     * Exportar devoluciones del día a Excel con estructura específica
+     * Incluye: código personalizado, productos, cantidades, planillas de devolución por día
+     */
+    public byte[] exportarDevolucionesDiaExcel(String fechaStr) throws IOException {
+        try {
+            Long empresaId = obtenerEmpresaId();
+            LocalDate fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
+            
+            System.out.println("🔍 [EXPORTAR DEVOLUCIONES] Exportando devoluciones para empresa: " + empresaId + ", fecha: " + fecha);
+            
+            // Obtener movimientos del día
+            MovimientoDiaDTO movimientos = obtenerMovimientosDia(fechaStr);
+            
+            // Obtener planillas de devolución del día
+            LocalDateTime inicioDia = fecha.atStartOfDay();
+            LocalDateTime finDia = fecha.atTime(23, 59, 59);
+            
+            List<PlanillaDevolucion> devolucionesDelDia = planillaDevolucionRepository.findByEmpresaIdAndFechaPlanillaBetweenOrderByFechaCreacionDesc(
+                empresaId, inicioDia, finDia);
+            
+            System.out.println("📋 [EXPORTAR DEVOLUCIONES] Devoluciones encontradas: " + devolucionesDelDia.size());
+            
+            // Crear workbook
+            try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+                var sheet = workbook.createSheet("Devoluciones del Día");
+                
+                // Estilos
+                var headerStyle = workbook.createCellStyle();
+                var headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerFont.setFontHeightInPoints((short) 12);
+                headerStyle.setFont(headerFont);
+                headerStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.LIGHT_GREEN.getIndex());
+                headerStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                headerStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                headerStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                var dataStyle = workbook.createCellStyle();
+                dataStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                dataStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                var totalStyle = workbook.createCellStyle();
+                var totalFont = workbook.createFont();
+                totalFont.setBold(true);
+                totalStyle.setFont(totalFont);
+                totalStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.LIGHT_YELLOW.getIndex());
+                totalStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                totalStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                totalStyle.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+                
+                // Crear estructura de encabezados (solo 2 filas, sin observaciones)
+                var headerRow1 = sheet.createRow(0);
+                var headerRow2 = sheet.createRow(1);
+                
+                // Primera fila - encabezado principal
+                var cell0_1 = headerRow1.createCell(0);
+                cell0_1.setCellValue("Código");
+                cell0_1.setCellStyle(headerStyle);
+                
+                var cell1_1 = headerRow1.createCell(1);
+                cell1_1.setCellValue("Descripción");
+                cell1_1.setCellStyle(headerStyle);
+                
+                // Encabezado principal "N° de Planilla" que abarca todas las columnas de devoluciones
+                if (devolucionesDelDia.size() > 0) {
+                    var cell2_1 = headerRow1.createCell(2);
+                    cell2_1.setCellValue("N° de Planilla");
+                    cell2_1.setCellStyle(headerStyle);
+                    
+                    // Combinar celdas para el encabezado principal si hay múltiples devoluciones
+                    if (devolucionesDelDia.size() > 1) {
+                        sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 2, 1 + devolucionesDelDia.size()));
+                    }
+                }
+                
+                // Segunda fila - números de planilla de devolución
+                var cell0_2 = headerRow2.createCell(0);
+                cell0_2.setCellValue("");
+                cell0_2.setCellStyle(headerStyle);
+                
+                var cell1_2 = headerRow2.createCell(1);
+                cell1_2.setCellValue("");
+                cell1_2.setCellStyle(headerStyle);
+                
+                // Números de planilla de devolución en la segunda fila
+                for (int i = 0; i < devolucionesDelDia.size(); i++) {
+                    var cell = headerRow2.createCell(2 + i);
+                    String numeroPlanilla = devolucionesDelDia.get(i).getNumeroPlanilla();
+                    cell.setCellValue(numeroPlanilla != null ? numeroPlanilla : "Sin N°");
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Crear mapa de productos con sus cantidades iniciales
+                Map<Long, Integer> productosIniciales = new HashMap<>();
+                Map<Long, String> productosNombres = new HashMap<>();
+                Map<Long, String> productosCodigos = new HashMap<>();
+                
+                for (var producto : movimientos.getStockInicial().getProductos()) {
+                    productosIniciales.put(producto.getId(), producto.getCantidad());
+                    productosNombres.put(producto.getId(), producto.getNombre());
+                    productosCodigos.put(producto.getId(), producto.getCodigoPersonalizado());
+                }
+                
+                // Crear mapa de productos por devolución
+                Map<Long, Map<Long, Integer>> productosPorDevolucion = new HashMap<>();
+                for (PlanillaDevolucion devolucion : devolucionesDelDia) {
+                    Map<Long, Integer> productosDevolucion = new HashMap<>();
+                    for (DetallePlanillaDevolucion detalle : devolucion.getDetalles()) {
+                        if (detalle.getProducto() != null && detalle.getProducto().getId() != null) {
+                            Long productoId = detalle.getProducto().getId();
+                            productosDevolucion.put(productoId, 
+                                productosDevolucion.getOrDefault(productoId, 0) + detalle.getCantidad());
+                        }
+                    }
+                    productosPorDevolucion.put(devolucion.getId(), productosDevolucion);
+                }
+                
+                // Obtener todos los productos únicos
+                Set<Long> todosLosProductos = new HashSet<>(productosIniciales.keySet());
+                for (Map<Long, Integer> productosDevolucion : productosPorDevolucion.values()) {
+                    todosLosProductos.addAll(productosDevolucion.keySet());
+                }
+                
+                // Crear filas de datos (empezando desde la fila 2, ya que tenemos 2 filas de encabezado)
+                int rowNum = 2;
+                Map<Long, Integer> totalesPorDevolucion = new HashMap<>();
+                
+                for (Long productoId : todosLosProductos) {
+                    var row = sheet.createRow(rowNum++);
+                    
+                    // Código personalizado
+                    var cell0 = row.createCell(0);
+                    String codigo = productosCodigos.get(productoId);
+                    cell0.setCellValue(codigo != null ? codigo : "");
+                    cell0.setCellStyle(dataStyle);
+                    
+                    // Nombre del producto
+                    var cell1 = row.createCell(1);
+                    String nombre = productosNombres.get(productoId);
+                    cell1.setCellValue(nombre != null ? nombre : "Producto ID: " + productoId);
+                    cell1.setCellStyle(dataStyle);
+                    
+                    // Cantidades por devolución
+                    int colIndex = 2;
+                    for (PlanillaDevolucion devolucion : devolucionesDelDia) {
+                        var cell = row.createCell(colIndex++);
+                        Map<Long, Integer> productosDevolucion = productosPorDevolucion.get(devolucion.getId());
+                        int cantidadDevolucion = productosDevolucion.getOrDefault(productoId, 0);
+                        cell.setCellValue(cantidadDevolucion);
+                        cell.setCellStyle(dataStyle);
+                        
+                        // Acumular total por devolución
+                        totalesPorDevolucion.put(devolucion.getId(), 
+                            totalesPorDevolucion.getOrDefault(devolucion.getId(), 0) + cantidadDevolucion);
+                    }
+                }
+                
+                // Fila de totales
+                var totalRow = sheet.createRow(rowNum++);
+                
+                var totalCell0 = totalRow.createCell(0);
+                totalCell0.setCellValue("TOTALES");
+                totalCell0.setCellStyle(totalStyle);
+                
+                var totalCell1 = totalRow.createCell(1);
+                totalCell1.setCellValue("");
+                totalCell1.setCellStyle(totalStyle);
+                
+                // Totales por devolución
+                int colIndex = 2;
+                for (PlanillaDevolucion devolucion : devolucionesDelDia) {
+                    var cell = totalRow.createCell(colIndex++);
+                    int totalDevolucion = totalesPorDevolucion.getOrDefault(devolucion.getId(), 0);
+                    cell.setCellValue(totalDevolucion);
+                    cell.setCellStyle(totalStyle);
+                }
+                
+                // Ajustar ancho de columnas
+                int totalColumns = 2 + devolucionesDelDia.size(); // Código + Descripción + columnas de devoluciones
+                for (int i = 0; i < totalColumns; i++) {
+                    sheet.setColumnWidth(i, 4000);
+                }
+                
+                // Convertir a bytes
+                try (var outputStream = new java.io.ByteArrayOutputStream()) {
+                    workbook.write(outputStream);
+                    byte[] excelBytes = outputStream.toByteArray();
+                    
+                    System.out.println("✅ [EXPORTAR DEVOLUCIONES] Excel de devoluciones generado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+                    return excelBytes;
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ [EXPORTAR DEVOLUCIONES] Error al exportar devoluciones a Excel: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException("Error al exportar devoluciones a Excel", e);
+        }
+    }
+
+    /**
+     * Exportar stock inicial del día a Excel
+     * Incluye: código personalizado, descripción, cantidad inicial, total
+     */
+    public byte[] exportarStockInicialExcel(String fechaStr) throws IOException {
+        System.out.println("🔍 [SERVICE] Exportando stock inicial a Excel para fecha: " + fechaStr);
+        
+        // Obtener movimientos del día
+        MovimientoDiaDTO movimientos;
+        try {
+            System.out.println("🔍 [SERVICE] Llamando a obtenerMovimientosDia con fecha: " + fechaStr);
+            movimientos = obtenerMovimientosDia(fechaStr);
+            System.out.println("🔍 [SERVICE] Movimientos obtenidos: " + (movimientos != null ? "SÍ" : "NO"));
+            
+            if (movimientos == null) {
+                System.out.println("⚠️ [SERVICE] No hay movimientos para la fecha: " + fechaStr);
+                throw new RuntimeException("No hay movimientos disponibles para la fecha especificada");
+            }
+            
+            System.out.println("🔍 [SERVICE] Fecha en movimientos: " + movimientos.getFecha());
+            System.out.println("🔍 [SERVICE] Stock inicial: " + (movimientos.getStockInicial() != null ? "NO NULL" : "NULL"));
+            
+            if (movimientos.getStockInicial() == null) {
+                System.out.println("⚠️ [SERVICE] Stock inicial es null para la fecha: " + fechaStr);
+            } else {
+                System.out.println("🔍 [SERVICE] Cantidad total stock inicial: " + movimientos.getStockInicial().getCantidadTotal());
+                if (movimientos.getStockInicial().getProductos() == null) {
+                    System.out.println("⚠️ [SERVICE] Productos de stock inicial es null para la fecha: " + fechaStr);
+                } else {
+                    System.out.println("🔍 [SERVICE] Productos de stock inicial: " + movimientos.getStockInicial().getProductos().size());
+                }
+            }
+            
+            if (movimientos.getStockInicial() == null || movimientos.getStockInicial().getProductos() == null || movimientos.getStockInicial().getProductos().isEmpty()) {
+                System.out.println("⚠️ [SERVICE] No hay stock inicial para exportar en la fecha: " + fechaStr + ", generando Excel vacío");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ [SERVICE] Error al obtener movimientos: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException("Error al obtener movimientos del día: " + e.getMessage(), e);
+        }
+        
+        // Crear workbook de Excel
+        try (Workbook workbook = new XSSFWorkbook()) {
+            System.out.println("🔍 [SERVICE] Creando workbook de Excel");
+            Sheet sheet = workbook.createSheet("Stock Inicial");
+            System.out.println("🔍 [SERVICE] Sheet creado: " + sheet.getSheetName());
+            
+            // Crear estilos
+            System.out.println("🔍 [SERVICE] Creando estilos");
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+            
+            CellStyle dataStyle = workbook.createCellStyle();
+            dataStyle.setBorderTop(BorderStyle.THIN);
+            dataStyle.setBorderBottom(BorderStyle.THIN);
+            dataStyle.setBorderLeft(BorderStyle.THIN);
+            dataStyle.setBorderRight(BorderStyle.THIN);
+            
+            // Título principal
+            Row titleRow = sheet.createRow(0);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue("STOCK INICIAL - " + fechaStr);
+            titleCell.setCellStyle(headerStyle);
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 3));
+            
+            // Información de la fecha
+            Row fechaRow = sheet.createRow(1);
+            fechaRow.createCell(0).setCellValue("Fecha:");
+            fechaRow.createCell(1).setCellValue(fechaStr);
+            sheet.addMergedRegion(new CellRangeAddress(1, 1, 1, 3));
+            
+            // Línea en blanco
+            int rowNum = 2;
+            
+            // Encabezados de la tabla
+            Row headerRow = sheet.createRow(rowNum++);
+            String[] headers = {"Código", "Descripción", "Cantidad Inicial"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+            
+            // Datos de productos
+            List<MovimientoDiaDTO.ProductoStockDTO> productos = movimientos.getStockInicial() != null ? movimientos.getStockInicial().getProductos() : new ArrayList<>();
+            int totalCantidad = 0;
+            
+            if (productos.isEmpty()) {
+                // Si no hay productos, agregar una fila indicando que no hay datos
+                Row noDataRow = sheet.createRow(rowNum++);
+                Cell noDataCell = noDataRow.createCell(0);
+                noDataCell.setCellValue("No hay productos en stock inicial para esta fecha");
+                noDataCell.setCellStyle(dataStyle);
+                sheet.addMergedRegion(new CellRangeAddress(rowNum-1, rowNum-1, 0, 2));
+            } else {
+                for (MovimientoDiaDTO.ProductoStockDTO producto : productos) {
+                    Row dataRow = sheet.createRow(rowNum++);
+                    
+                    // Código personalizado
+                    Cell codigoCell = dataRow.createCell(0);
+                    codigoCell.setCellValue(producto.getCodigoPersonalizado() != null ? producto.getCodigoPersonalizado() : "");
+                    codigoCell.setCellStyle(dataStyle);
+                    
+                    // Descripción
+                    Cell descripcionCell = dataRow.createCell(1);
+                    descripcionCell.setCellValue(producto.getNombre());
+                    descripcionCell.setCellStyle(dataStyle);
+                    
+                    // Cantidad inicial
+                    Cell cantidadCell = dataRow.createCell(2);
+                    Integer cantidadInicial = producto.getCantidadInicial();
+                    cantidadCell.setCellValue(cantidadInicial != null ? cantidadInicial : 0);
+                    cantidadCell.setCellStyle(dataStyle);
+                    
+                    totalCantidad += (cantidadInicial != null ? cantidadInicial : 0);
+                }
+            }
+            
+            // Fila de total
+            Row totalRow = sheet.createRow(rowNum++);
+            Cell totalLabelCell = totalRow.createCell(0);
+            totalLabelCell.setCellValue("TOTAL:");
+            totalLabelCell.setCellStyle(headerStyle);
+            
+            Cell totalValueCell = totalRow.createCell(2);
+            totalValueCell.setCellValue(totalCantidad);
+            totalValueCell.setCellStyle(headerStyle);
+            
+            // Ajustar ancho de columnas
+            sheet.autoSizeColumn(0); // Código
+            sheet.autoSizeColumn(1); // Descripción
+            sheet.autoSizeColumn(2); // Cantidad
+            
+            // Convertir a bytes
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            byte[] workbookBytes = outputStream.toByteArray();
+            
+            System.out.println("✅ [SERVICE] Excel de stock inicial generado exitosamente. Tamaño: " + workbookBytes.length + " bytes");
+            System.out.println("📊 [SERVICE] Productos exportados: " + productos.size() + ", Total cantidad: " + totalCantidad);
+            
+            return workbookBytes;
         }
     }
 

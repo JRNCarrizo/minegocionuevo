@@ -2086,6 +2086,58 @@ class ApiService {
     }
   }
 
+  // Exportar ingresos del día a Excel
+  async exportarIngresosDiaExcel(fecha: string): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/movimientos-dia/${fecha}/exportar-ingresos-excel`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar ingresos del día a Excel:', error);
+      throw error;
+    }
+  }
+
+  // Exportar planillas del día a Excel
+  async exportarPlanillasDiaExcel(fecha: string): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/movimientos-dia/${fecha}/exportar-planillas-excel`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar planillas del día a Excel:', error);
+      throw error;
+    }
+  }
+
+  // Exportar devoluciones del día a Excel
+  async exportarDevolucionesDiaExcel(fecha: string): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/movimientos-dia/${fecha}/exportar-devoluciones-excel`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar devoluciones del día a Excel:', error);
+      throw error;
+    }
+  }
+
+  // Exportar stock inicial del día a Excel
+  async exportarStockInicialExcel(fecha: string): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/movimientos-dia/${fecha}/exportar-stock-inicial-excel`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar stock inicial a Excel:', error);
+      throw error;
+    }
+  }
+
   // Exportar movimientos por rango de fechas a Excel
   async exportarMovimientosRangoExcel(fechaInicio: string, fechaFin: string): Promise<Blob> {
     try {
