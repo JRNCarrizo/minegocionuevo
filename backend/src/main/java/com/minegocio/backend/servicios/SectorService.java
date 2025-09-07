@@ -353,6 +353,17 @@ public class SectorService {
         List<StockPorSector> stockPorSectores = stockPorSectorRepository.findByEmpresaId(empresaId);
         System.out.println("🔍 SECTOR SERVICE - StockPorSectores encontrados: " + stockPorSectores.size());
         
+        // 🔍 DEBUG DETALLADO: Mostrar todos los registros encontrados
+        for (int i = 0; i < stockPorSectores.size(); i++) {
+            StockPorSector stock = stockPorSectores.get(i);
+            System.out.println("🔍 SECTOR SERVICE - Registro " + i + ": " + 
+                "Producto: " + stock.getProducto().getNombre() + 
+                ", Sector: " + stock.getSector().getNombre() + 
+                ", Cantidad: " + stock.getCantidad() + 
+                ", CantidadNull: " + (stock.getCantidad() == null) +
+                ", CantidadMayorCero: " + (stock.getCantidad() != null && stock.getCantidad() > 0));
+        }
+        
         for (StockPorSector stock : stockPorSectores) {
             try {
                 // ✅ SOLO MOSTRAR PRODUCTOS CON CANTIDAD > 0
@@ -464,6 +475,13 @@ public class SectorService {
             productosActivosConStock + " activos con stock, " + productosSinSector + " sin sector");
         
         System.out.println("🔍 SECTOR SERVICE - Total items en stock general: " + stockGeneral.size());
+        
+        // 🔍 DEBUG FINAL: Mostrar todos los items que se van a devolver
+        for (int i = 0; i < stockGeneral.size(); i++) {
+            Map<String, Object> item = stockGeneral.get(i);
+            System.out.println("🔍 SECTOR SERVICE - Item final " + i + ": " + item);
+        }
+        
         return stockGeneral;
     }
     
