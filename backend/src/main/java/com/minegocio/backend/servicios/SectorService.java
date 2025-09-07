@@ -653,8 +653,8 @@ public class SectorService {
                 } else {
                     // Crear nueva asignación
                     StockPorSector nuevoStock = new StockPorSector(producto, sector, cantidad);
-                    stockPorSectorRepository.save(nuevoStock);
-                    System.out.println("🔍 SECTOR SERVICE - Nueva asignación creada: " + cantidad);
+                    StockPorSector stockGuardado = stockPorSectorRepository.save(nuevoStock);
+                    System.out.println("🔍 SECTOR SERVICE - Nueva asignación creada: " + cantidad + " (ID: " + stockGuardado.getId() + ")");
                 }
                 
             } catch (NumberFormatException e) {
