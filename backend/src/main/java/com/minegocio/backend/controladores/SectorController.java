@@ -836,6 +836,72 @@ public class SectorController {
     }
     
     /**
+     * DEBUG: Obtener información específica del stock general
+     */
+    @GetMapping("/debug-stock-general")
+    public ResponseEntity<?> obtenerDebugStockGeneral(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🔍 DEBUG STOCK GENERAL - Endpoint llamado para empresa: " + empresaId);
+            
+            // Verificar que la empresa existe
+            if (!empresaRepository.existsById(empresaId)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Empresa no encontrada con ID: " + empresaId
+                ));
+            }
+            
+            Map<String, Object> debugInfo = new HashMap<>();
+            
+            // Obtener stock por sector con detalles
+            List<StockPorSector> stockPorSectores = stockPorSectorRepository.findByEmpresaId(empresaId);
+            System.out.println("🔍 DEBUG STOCK GENERAL - StockPorSectores encontrados: " + stockPorSectores.size());
+            
+            List<Map<String, Object>> stockDetallado = new ArrayList<>();
+            for (StockPorSector stock : stockPorSectores) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("id", stock.getId());
+                item.put("productoId", stock.getProducto().getId());
+                item.put("productoNombre", stock.getProducto().getNombre());
+                item.put("sectorId", stock.getSector().getId());
+                item.put("sectorNombre", stock.getSector().getNombre());
+                item.put("cantidad", stock.getCantidad());
+                item.put("cantidadNull", stock.getCantidad() == null);
+                item.put("cantidadCero", stock.getCantidad() != null && stock.getCantidad() == 0);
+                item.put("cantidadMayorCero", stock.getCantidad() != null && stock.getCantidad() > 0);
+                stockDetallado.add(item);
+            }
+            
+            debugInfo.put("totalStockPorSector", stockPorSectores.size());
+            debugInfo.put("stockDetallado", stockDetallado);
+            
+            // Contar por tipo
+            long stockConCantidadNull = stockPorSectores.stream().filter(s -> s.getCantidad() == null).count();
+            long stockConCantidadCero = stockPorSectores.stream().filter(s -> s.getCantidad() != null && s.getCantidad() == 0).count();
+            long stockConCantidadMayorCero = stockPorSectores.stream().filter(s -> s.getCantidad() != null && s.getCantidad() > 0).count();
+            
+            debugInfo.put("stockConCantidadNull", stockConCantidadNull);
+            debugInfo.put("stockConCantidadCero", stockConCantidadCero);
+            debugInfo.put("stockConCantidadMayorCero", stockConCantidadMayorCero);
+            
+            // Probar el método obtenerStockGeneral
+            List<Map<String, Object>> stockGeneral = sectorService.obtenerStockGeneral(empresaId);
+            debugInfo.put("stockGeneralResultado", stockGeneral.size());
+            debugInfo.put("stockGeneralItems", stockGeneral);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Información de debug del stock general obtenida",
+                "data", debugInfo
+            ));
+        } catch (Exception e) {
+            System.err.println("🔍 DEBUG STOCK GENERAL - Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Error al obtener información de debug del stock general: " + e.getMessage()
+            ));
+        }
+    }
+    
+    /**
      * Eliminar un sector completo
      * Este endpoint elimina el sector y todos sus registros de stock asociados
      */
