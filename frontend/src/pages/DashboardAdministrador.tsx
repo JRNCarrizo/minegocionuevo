@@ -5,12 +5,16 @@ import ApiService from '../services/api';
 import NavbarAdmin from '../components/NavbarAdmin';
 import { useUsuarioActual } from '../hooks/useUsuarioActual';
 import { useResponsive } from '../hooks/useResponsive';
+import { usePermissions } from '../hooks/usePermissions';
 import type { Notificacion, Cliente, Pedido } from '../types';
 
 export default function DashboardAdministrador() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile, isTablet, width } = useResponsive();
+  const { hasPermission } = usePermissions();
   const navigate = useNavigate();
+  
+  // TODOS los hooks deben ir antes del return condicional
   const [isResponsiveReady, setIsResponsiveReady] = useState(false);
   
   // Estado para navegación por teclado
@@ -46,6 +50,230 @@ export default function DashboardAdministrador() {
 
   // Referencia para el contenedor principal
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // TODOS los useEffect deben ir antes del return condicional
+  // Efecto para agregar y remover event listeners
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Solo manejar navegación si no estamos en un input o textarea
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        return;
+      }
+      
+      manejarNavegacionTeclado(event);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [indiceSeleccionado]);
+
+  // Efecto para hacer scroll a la card seleccionada
+  useEffect(() => {
+    if (containerRef.current) {
+      const cards = containerRef.current.querySelectorAll('[data-card-index]');
+      const cardSeleccionada = cards[indiceSeleccionado] as HTMLElement;
+      if (cardSeleccionada) {
+        cardSeleccionada.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'center'
+        });
+      }
+    }
+  }, [indiceSeleccionado]);
+
+  useEffect(() => {
+    const cargarEstadisticas = async () => {
+      // Verificar si tenemos datos del usuario
+      if (!datosUsuario?.empresaId) {
+        console.log('🔍 Dashboard - No hay empresaId, saltando carga de estadísticas');
+        setCargandoEstadisticas(false);
+        return;
+      }
+
+      try {
+        console.log('🔍 Dashboard - Cargando estadísticas para empresa:', datosUsuario.empresaId);
+        console.log('🔍 Dashboard - Usuario rol:', datosUsuario.rol);
+        
+        // Inicializar estadísticas con valores por defecto
+        let estadisticasTemp = {
+          productos: 0,
+          clientes: 0,
+          pedidos: 0,
+          ventas: 0
+        };
+
+        // Solo cargar productos si tiene permiso
+        if (hasPermission('PRODUCTOS')) {
+          try {
+            const productosRes = await ApiService.obtenerProductos(datosUsuario.empresaId);
+            estadisticasTemp.productos = Array.isArray(productosRes) ? productosRes.length : (productosRes?.content?.length || 0);
+            console.log('🔍 Dashboard - Productos cargados:', estadisticasTemp.productos);
+          } catch (error) {
+            console.error('Error cargando productos:', error);
+            estadisticasTemp.productos = 0;
+          }
+        } else {
+          console.log('🔍 Dashboard - Usuario no tiene permiso para PRODUCTOS');
+        }
+
+        // Solo cargar clientes si tiene permiso
+        if (hasPermission('CLIENTES')) {
+          try {
+            const clientesRes = await ApiService.obtenerClientes(datosUsuario.empresaId);
+            estadisticasTemp.clientes = clientesRes?.totalElements || 0;
+            console.log('🔍 Dashboard - Clientes cargados:', estadisticasTemp.clientes);
+          } catch (error) {
+            console.error('Error cargando clientes:', error);
+            estadisticasTemp.clientes = 0;
+          }
+        } else {
+          console.log('🔍 Dashboard - Usuario no tiene permiso para CLIENTES');
+        }
+
+        // Solo cargar pedidos si tiene permiso
+        if (hasPermission('PEDIDOS')) {
+          try {
+            const pedidosRes = await ApiService.obtenerPedidos(datosUsuario.empresaId);
+            estadisticasTemp.pedidos = pedidosRes?.totalElements || 0;
+            console.log('🔍 Dashboard - Pedidos cargados:', estadisticasTemp.pedidos);
+          } catch (error) {
+            console.error('Error cargando pedidos:', error);
+            estadisticasTemp.pedidos = 0;
+          }
+        } else {
+          console.log('🔍 Dashboard - Usuario no tiene permiso para PEDIDOS');
+        }
+
+        console.log('🔍 Dashboard - Estadísticas finales:', estadisticasTemp);
+        setEstadisticas(estadisticasTemp);
+      } catch (error) {
+        console.error('Error cargando estadísticas:', error);
+        // No mostrar toast de error para usuarios sin permisos
+        if (datosUsuario?.rol === 'ADMINISTRADOR') {
+          toast.error('Error al cargar estadísticas');
+        }
+      } finally {
+        setCargandoEstadisticas(false);
+      }
+    };
+
+    cargarEstadisticas();
+  }, [datosUsuario?.empresaId, datosUsuario?.rol]);
+
+  // Cargar información de suscripción
+  useEffect(() => {
+    const cargarSuscripcion = async () => {
+      try {
+        if (datosUsuario?.empresaId) {
+          const response = await ApiService.getMiSuscripcion();
+          setSuscripcion(response);
+        }
+      } catch (error) {
+        console.error('Error cargando suscripción:', error);
+      } finally {
+        setCargandoSuscripcion(false);
+      }
+    };
+
+    cargarSuscripcion();
+  }, [datosUsuario?.empresaId]);
+
+  // Manejar cuando el responsive está listo
+  useEffect(() => {
+    if (width > 0) {
+      console.log('🔍 Dashboard - Responsive listo:', { width, isMobile, isTablet });
+      setIsResponsiveReady(true);
+    }
+  }, [width, isMobile, isTablet]);
+
+  // Función para cargar contadores de elementos nuevos
+  const cargarContadoresNuevos = async () => {
+    if (!datosUsuario?.empresaId) {
+      console.log('🔍 [CONTADORES] No hay empresaId, saltando carga de contadores');
+      return;
+    }
+
+    try {
+      const empresaId = datosUsuario.empresaId;
+      console.log('🔍 [CONTADORES] Cargando contadores para empresa:', empresaId);
+      console.log('🔍 [CONTADORES] Usuario rol:', datosUsuario.rol);
+      
+      // Obtener IDs de elementos vistos desde localStorage
+      const clientesVistos = JSON.parse(localStorage.getItem(`clientesVistos_${empresaId}`) || '[]');
+      const pedidosVistos = JSON.parse(localStorage.getItem(`pedidosVistos_${empresaId}`) || '[]');
+      
+      console.log('🔍 [CONTADORES] Clientes vistos:', clientesVistos);
+      console.log('🔍 [CONTADORES] Pedidos vistos:', pedidosVistos);
+      
+      // Solo cargar contadores si el usuario tiene permisos para esas secciones
+      // Cargar clientes nuevos (no vistos) - solo si tiene permiso
+      if (hasPermission('CLIENTES')) {
+        try {
+          const responseClientes = await ApiService.obtenerClientesPaginado(empresaId, 0, 1000);
+          console.log('🔍 [CONTADORES] Respuesta clientes:', responseClientes);
+          const clientesNuevos = responseClientes.content?.filter((cliente: Cliente) => 
+            !clientesVistos.includes(cliente.id)
+          ).length || 0;
+          console.log('🔍 [CONTADORES] Clientes nuevos:', clientesNuevos);
+          setClientesNuevos(clientesNuevos);
+        } catch (error) {
+          console.error('Error al cargar clientes nuevos:', error);
+          setClientesNuevos(0);
+        }
+      } else {
+        console.log('🔍 [CONTADORES] Usuario no tiene permiso para CLIENTES, saltando contador');
+        setClientesNuevos(0);
+      }
+      
+      // Cargar pedidos nuevos (no vistos) - solo si tiene permiso
+      if (hasPermission('PEDIDOS')) {
+        try {
+          const responsePedidos = await ApiService.obtenerPedidos(empresaId, 0, 1000);
+          console.log('🔍 [CONTADORES] Respuesta pedidos:', responsePedidos);
+          const pedidosNuevos = responsePedidos.content?.filter((pedido: Pedido) => 
+            !pedidosVistos.includes(pedido.id)
+          ).length || 0;
+          console.log('🔍 [CONTADORES] Pedidos nuevos:', pedidosNuevos);
+          setPedidosNuevos(pedidosNuevos);
+        } catch (error) {
+          console.error('Error al cargar pedidos nuevos:', error);
+          setPedidosNuevos(0);
+        }
+      } else {
+        console.log('🔍 [CONTADORES] Usuario no tiene permiso para PEDIDOS, saltando contador');
+        setPedidosNuevos(0);
+      }
+    } catch (error) {
+      console.error('Error al cargar contadores nuevos:', error);
+    }
+  };
+
+  // Cargar contadores de elementos nuevos cuando cambie el usuario
+  useEffect(() => {
+    if (datosUsuario?.empresaId) {
+      cargarContadoresNuevos();
+    }
+  }, [datosUsuario?.empresaId]);
+
+  // Recargar contadores cuando la página vuelva a estar visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && datosUsuario?.empresaId) {
+        cargarContadoresNuevos();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [datosUsuario?.empresaId]);
+
+  
+  // Log temporal para debug
+  console.log('🔍 [DASHBOARD] Usuario actual:', datosUsuario);
+  console.log('🔍 [DASHBOARD] hasPermission PRODUCTOS:', hasPermission('PRODUCTOS'));
+  console.log('🔍 [DASHBOARD] Contadores - Clientes nuevos:', clientesNuevos, 'Pedidos nuevos:', pedidosNuevos);
 
   // Función para obtener todas las cards navegables
   const obtenerCardsNavegables = () => {
@@ -100,40 +328,6 @@ export default function DashboardAdministrador() {
     }
   };
 
-  // Efecto para agregar y remover event listeners
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Solo manejar navegación si no estamos en un input o textarea
-      const target = event.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
-        return;
-      }
-      
-      manejarNavegacionTeclado(event);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [indiceSeleccionado, navigate]);
-
-  // Efecto para hacer scroll a la card seleccionada
-  useEffect(() => {
-    if (containerRef.current) {
-      const cards = containerRef.current.querySelectorAll('[data-card-index]');
-      const cardSeleccionada = cards[indiceSeleccionado] as HTMLElement;
-      
-      if (cardSeleccionada) {
-        cardSeleccionada.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'nearest'
-        });
-      }
-    }
-  }, [indiceSeleccionado]);
 
   // Función para obtener estilos de card basados en la selección (manteniendo estilos originales)
   const obtenerEstilosCard = (index: number, esSeleccionada: boolean) => {
@@ -190,66 +384,6 @@ export default function DashboardAdministrador() {
     };
   };
 
-  useEffect(() => {
-    const cargarEstadisticas = async () => {
-      // Verificar si tenemos datos del usuario
-      if (!datosUsuario?.empresaId) {
-        return;
-      }
-
-      try {
-        setCargandoEstadisticas(true);
-        const empresaId = datosUsuario.empresaId;
-
-        // Cargar productos reales
-        console.log('Dashboard - Cargando productos para empresaId:', empresaId);
-        const responseProductos = await ApiService.obtenerTodosLosProductos(empresaId);
-        console.log('Dashboard - Respuesta completa de productos:', responseProductos);
-        
-        // La respuesta ahora es directamente un array de productos
-        const cantidadProductos = Array.isArray(responseProductos) ? responseProductos.length : 0;
-        console.log('Dashboard - Cantidad de productos:', cantidadProductos);
-
-        // Cargar clientes reales
-        const responseClientes = await ApiService.obtenerClientesPaginado(empresaId, 0, 1);
-        const cantidadClientes = responseClientes.totalElements || 0;
-
-        // Cargar pedidos reales
-        const responsePedidos = await ApiService.obtenerPedidos(empresaId, 0, 1);
-        const cantidadPedidos = responsePedidos.totalElements || 0;
-        
-        // Cargar ventas reales
-        let totalVentas = 0;
-        try {
-          const responseVentas = await ApiService.obtenerEstadisticasVentas();
-          totalVentas = responseVentas.data?.totalVentas || 0;
-        } catch (error) {
-          console.error('Error al cargar estadísticas de ventas:', error);
-          totalVentas = 0;
-        }
-        
-        setEstadisticas({
-          productos: cantidadProductos,
-          clientes: cantidadClientes,
-          pedidos: cantidadPedidos,
-          ventas: totalVentas
-        });
-      } catch (error) {
-        console.error('Error al cargar estadísticas:', error);
-        // En caso de error, mantener los valores por defecto
-        setEstadisticas({
-          productos: 0,
-          clientes: 0,
-          pedidos: 0,
-          ventas: 0
-        });
-      } finally {
-        setCargandoEstadisticas(false);
-      }
-    };
-
-    cargarEstadisticas();
-  }, [datosUsuario?.empresaId]);
 
   // Cargar información de suscripción
   useEffect(() => {
@@ -314,25 +448,36 @@ export default function DashboardAdministrador() {
   useEffect(() => {
     const cargarNotificaciones = async () => {
       if (!datosUsuario?.empresaId) {
+        setCargandoNotificaciones(false);
         return;
       }
 
       try {
         setCargandoNotificaciones(true);
+        console.log('🔍 [NOTIFICACIONES] Cargando notificaciones para empresa:', datosUsuario.empresaId);
+        console.log('🔍 [NOTIFICACIONES] Usuario rol:', datosUsuario.rol);
+        
         const response = await ApiService.obtenerNotificacionesRecientes(datosUsuario.empresaId);
         if (response.data) {
           setNotificaciones(response.data);
+        } else if (Array.isArray(response)) {
+          setNotificaciones(response);
         }
+        console.log('🔍 [NOTIFICACIONES] Notificaciones cargadas exitosamente');
       } catch (error) {
         console.error('Error al cargar notificaciones:', error);
         setNotificaciones([]);
+        // No mostrar toast de error para usuarios sin permisos
+        if (datosUsuario?.rol === 'ADMINISTRADOR') {
+          toast.error('Error al cargar notificaciones');
+        }
       } finally {
         setCargandoNotificaciones(false);
       }
     };
 
     cargarNotificaciones();
-  }, [datosUsuario?.empresaId]);
+  }, [datosUsuario?.empresaId, datosUsuario?.rol]);
 
   const cerrarSesionConToast = () => {
     cerrarSesion();
@@ -372,35 +517,37 @@ export default function DashboardAdministrador() {
   ];
 
   const accionesRapidas = [
-
     {
       titulo: 'Configura tu tienda',
       descripcion: 'Tu tienda online',
       icono: '⚙️',
       enlace: '/admin/configuracion',
-      color: '#6b7280'
+      color: '#6b7280',
+      permiso: 'CONFIGURACION'
     },
     {
       titulo: 'Gestión de Administradores',
       descripcion: 'Asigna y gestiona administradores de la empresa',
       icono: '👥',
       enlace: '/admin/administradores',
-      color: '#059669'
+      color: '#059669',
+      permiso: 'GESTION_ADMINISTRADORES'
     },
     {
       titulo: 'Gestión de Empresa',
       descripcion: 'Administra la información y configuración de tu empresa',
       icono: '🏢',
       enlace: '/admin/gestion-empresa',
-      color: '#f59e0b'
+      color: '#f59e0b',
+      permiso: 'GESTION_EMPRESA'
     },
-
     {
       titulo: 'Consumo y Suscripciones',
       descripcion: 'Monitorea uso de recursos y gestiona tu suscripción',
       icono: '📊',
       enlace: '/admin/consumo-suscripciones',
-      color: '#3b82f6'
+      color: '#3b82f6',
+      permiso: 'CONSUMO_SUSCRIPCIONES'
     }
   ];
 
@@ -409,6 +556,186 @@ export default function DashboardAdministrador() {
       localStorage.setItem('mostrarVentas', (!prev).toString());
       return !prev;
     });
+  };
+
+  // Función para renderizar una card con o sin acceso
+  const renderCard = (config: {
+    enlace: string;
+    titulo: string;
+    descripcion: string;
+    icono: string;
+    color: string;
+    gradiente: string;
+    permiso: string;
+    cardIndex: number;
+    animationDelay: string;
+    onClick?: () => void;
+    contadorNuevos?: number;
+  }) => {
+    const tieneAcceso = hasPermission(config.permiso);
+    
+    const cardContent = (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        height: '100%',
+        position: 'relative'
+      }}>
+        {/* Candadito si no tiene acceso */}
+        {!tieneAcceso && (
+          <div style={{
+            position: 'absolute',
+            top: isMobile ? '0.5rem' : '1rem',
+            right: isMobile ? '0.5rem' : '1rem',
+            background: 'rgba(239, 68, 68, 0.9)',
+            color: 'white',
+            borderRadius: '50%',
+            width: isMobile ? '1.5rem' : '2rem',
+            height: isMobile ? '1.5rem' : '2rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: isMobile ? '0.75rem' : '0.875rem',
+            zIndex: 10,
+            boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)'
+          }}>
+            🔒
+          </div>
+        )}
+        
+        {/* Contador de elementos nuevos */}
+        {tieneAcceso && config.contadorNuevos !== undefined && config.contadorNuevos > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: isMobile ? '0.5rem' : '1rem',
+            right: isMobile ? '0.5rem' : '1rem',
+            background: '#ef4444',
+            color: 'white',
+            borderRadius: '50%',
+            width: isMobile ? '1.5rem' : '2rem',
+            height: isMobile ? '1.5rem' : '2rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: isMobile ? '0.75rem' : '0.875rem',
+            fontWeight: '600',
+            boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+            animation: 'pulse 2s infinite',
+            zIndex: 10
+          }}>
+            {config.contadorNuevos > 99 ? '99+' : config.contadorNuevos}
+          </div>
+        )}
+        
+        <div style={{
+          width: '4rem',
+          height: '4rem',
+          background: tieneAcceso ? config.gradiente : 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)',
+          borderRadius: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '2rem',
+          boxShadow: tieneAcceso ? `0 4px 12px ${config.color}30` : '0 4px 12px rgba(156, 163, 175, 0.3)',
+          marginBottom: '1rem',
+          opacity: tieneAcceso ? 1 : 0.6
+        }}>
+          {config.icono}
+        </div>
+        <h3 style={{
+          fontSize: '1rem',
+          fontWeight: '600',
+          color: tieneAcceso ? '#1e293b' : '#6b7280',
+          margin: '0 0 0.5rem 0'
+        }}>
+          {config.titulo}
+        </h3>
+        <p style={{
+          fontSize: '0.875rem',
+          color: tieneAcceso ? '#64748b' : '#9ca3af',
+          margin: 0
+        }}>
+          {tieneAcceso ? config.descripcion : 'Sin acceso'}
+        </p>
+      </div>
+    );
+
+    if (tieneAcceso) {
+      return (
+        <Link 
+          to={config.enlace}
+          data-card-index={config.cardIndex.toString()}
+          style={{
+            background: 'white',
+            borderRadius: isMobile ? '0.75rem' : '1rem',
+            padding: isMobile ? '1rem' : '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            border: '1px solid #e2e8f0',
+            textDecoration: 'none',
+            color: 'inherit',
+            transition: 'all 0.3s ease',
+            display: 'block',
+            animation: `slideInUp 0.6s ease-out ${config.animationDelay} both`,
+            position: 'relative'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-8px)';
+            e.currentTarget.style.boxShadow = `0 20px 40px ${config.color}15`;
+            e.currentTarget.style.borderColor = config.color;
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+            e.currentTarget.style.borderColor = '#e2e8f0';
+          }}
+          onClick={() => {
+            if (config.onClick) config.onClick();
+            setIndiceSeleccionado(config.cardIndex);
+          }}
+        >
+          {/* Indicador de selección por teclado */}
+          <div style={obtenerEstilosIndicador(indiceSeleccionado === config.cardIndex, config.cardIndex)} />
+          {cardContent}
+        </Link>
+      );
+    } else {
+      return (
+        <div 
+          data-card-index={config.cardIndex.toString()}
+          style={{
+            background: 'white',
+            borderRadius: isMobile ? '0.75rem' : '1rem',
+            padding: isMobile ? '1rem' : '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            border: '1px solid #e2e8f0',
+            transition: 'all 0.3s ease',
+            display: 'block',
+            animation: `slideInUp 0.6s ease-out ${config.animationDelay} both`,
+            position: 'relative',
+            cursor: 'not-allowed',
+            opacity: 0.7
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            toast.error('No tienes permisos para acceder a esta sección');
+          }}
+        >
+          {/* Indicador de selección por teclado */}
+          <div style={obtenerEstilosIndicador(indiceSeleccionado === config.cardIndex, config.cardIndex)} />
+          {cardContent}
+        </div>
+      );
+    }
   };
 
   const formatearTiempoTranscurrido = (fecha: any) => {
@@ -542,6 +869,8 @@ export default function DashboardAdministrador() {
       const notificacionesResponse = await ApiService.obtenerNotificacionesRecientes(datosUsuario!.empresaId);
       if (notificacionesResponse.data) {
         setNotificaciones(notificacionesResponse.data);
+      } else if (Array.isArray(notificacionesResponse)) {
+        setNotificaciones(notificacionesResponse);
       }
       
       // También limpiar la lista de todas las notificaciones si está cargada
@@ -549,6 +878,8 @@ export default function DashboardAdministrador() {
         const todasResponse = await ApiService.obtenerNotificaciones(datosUsuario!.empresaId, 0, 50);
         if (todasResponse.data) {
           setTodasLasNotificaciones(todasResponse.data.content || todasResponse.data);
+        } else if (Array.isArray(todasResponse)) {
+          setTodasLasNotificaciones(todasResponse);
         }
       }
     } catch (error) {
@@ -569,6 +900,9 @@ export default function DashboardAdministrador() {
       if (response.data) {
         setTodasLasNotificaciones(response.data.content || response.data);
         setMostrarTodas(true);
+      } else if (Array.isArray(response)) {
+        setTodasLasNotificaciones(response);
+        setMostrarTodas(true);
       }
     } catch (error) {
       console.error('Error al cargar todas las notificaciones:', error);
@@ -582,48 +916,9 @@ export default function DashboardAdministrador() {
     setMostrarTodas(false);
   };
 
-  // Función para cargar contadores de elementos nuevos
-  const cargarContadoresNuevos = async () => {
-    if (!datosUsuario?.empresaId) return;
-
-    try {
-      const empresaId = datosUsuario.empresaId;
-      
-      // Obtener IDs de elementos vistos desde localStorage
-      const clientesVistos = JSON.parse(localStorage.getItem(`clientesVistos_${empresaId}`) || '[]');
-      const pedidosVistos = JSON.parse(localStorage.getItem(`pedidosVistos_${empresaId}`) || '[]');
-      
-      // Cargar clientes nuevos (no vistos)
-      try {
-        const responseClientes = await ApiService.obtenerClientesPaginado(empresaId, 0, 1000);
-        const clientesNuevos = responseClientes.content?.filter((cliente: Cliente) => 
-          !clientesVistos.includes(cliente.id)
-        ).length || 0;
-        setClientesNuevos(clientesNuevos);
-      } catch (error) {
-        console.error('Error al cargar clientes nuevos:', error);
-        setClientesNuevos(0);
-      }
-      
-      // Cargar pedidos nuevos (no vistos)
-      try {
-        const responsePedidos = await ApiService.obtenerPedidos(empresaId, 0, 1000);
-        const pedidosNuevos = responsePedidos.content?.filter((pedido: Pedido) => 
-          !pedidosVistos.includes(pedido.id)
-        ).length || 0;
-        setPedidosNuevos(pedidosNuevos);
-      } catch (error) {
-        console.error('Error al cargar pedidos nuevos:', error);
-        setPedidosNuevos(0);
-      }
-    } catch (error) {
-      console.error('Error al cargar contadores nuevos:', error);
-    }
-  };
-
   // Función para limpiar contador de clientes nuevos
   const limpiarContadorClientes = async () => {
-    if (!datosUsuario?.empresaId) return;
+    if (!datosUsuario?.empresaId || !hasPermission('CLIENTES')) return;
     
     try {
       const empresaId = datosUsuario.empresaId;
@@ -638,7 +933,7 @@ export default function DashboardAdministrador() {
 
   // Función para limpiar contador de pedidos nuevos
   const limpiarContadorPedidos = async () => {
-    if (!datosUsuario?.empresaId) return;
+    if (!datosUsuario?.empresaId || !hasPermission('PEDIDOS')) return;
     
     try {
       const empresaId = datosUsuario.empresaId;
@@ -653,7 +948,7 @@ export default function DashboardAdministrador() {
 
   // Función para agregar un nuevo cliente al contador
   const agregarClienteNuevo = (clienteId: number) => {
-    if (!datosUsuario?.empresaId) return;
+    if (!datosUsuario?.empresaId || !hasPermission('CLIENTES')) return;
     
     const empresaId = datosUsuario.empresaId;
     const clientesVistos = JSON.parse(localStorage.getItem(`clientesVistos_${empresaId}`) || '[]');
@@ -664,7 +959,7 @@ export default function DashboardAdministrador() {
 
   // Función para agregar un nuevo pedido al contador
   const agregarPedidoNuevo = (pedidoId: number) => {
-    if (!datosUsuario?.empresaId) return;
+    if (!datosUsuario?.empresaId || !hasPermission('PEDIDOS')) return;
     
     const empresaId = datosUsuario.empresaId;
     const pedidosVistos = JSON.parse(localStorage.getItem(`pedidosVistos_${empresaId}`) || '[]');
@@ -831,419 +1126,86 @@ export default function DashboardAdministrador() {
           marginBottom: isMobile ? '2rem' : '3rem'
         }}>
           {/* Card Productos */}
-          <Link 
-            to="/admin/productos"
-            data-card-index="0"
-            style={{
-              background: 'white',
-              borderRadius: isMobile ? '0.75rem' : '1rem',
-              padding: isMobile ? '1rem' : '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              border: '1px solid #e2e8f0',
-              textDecoration: 'none',
-              color: 'inherit',
-              transition: 'all 0.3s ease',
-              display: 'block',
-              animation: 'slideInUp 0.6s ease-out 0.1s both',
-              position: 'relative'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-8px)';
-              e.currentTarget.style.boxShadow = '0 20px 40px rgba(59, 130, 246, 0.15)';
-              e.currentTarget.style.borderColor = '#3b82f6';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
-            onClick={() => setIndiceSeleccionado(0)}
-          >
-            {/* Indicador de selección por teclado */}
-            <div style={obtenerEstilosIndicador(indiceSeleccionado === 0, 0)} />
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-              height: '100%'
-            }}>
-              <div style={{
-                width: '4rem',
-                height: '4rem',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                borderRadius: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '2rem',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                marginBottom: '1rem'
-              }}>
-                📦
-              </div>
-              <h3 style={{
-                fontSize: '1rem',
-                fontWeight: '600',
-                color: '#1e293b',
-                margin: '0 0 0.5rem 0'
-              }}>
-                Productos
-              </h3>
-              <p style={{
-                fontSize: '0.875rem',
-                color: '#64748b',
-                margin: 0
-              }}>
-                Gestionar productos
-              </p>
-            </div>
-          </Link>
+          {renderCard({
+            enlace: '/admin/productos',
+            titulo: 'Productos',
+            descripcion: 'Gestionar productos',
+            icono: '📦',
+            color: '#3b82f6',
+            gradiente: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+            permiso: 'PRODUCTOS',
+            cardIndex: 0,
+            animationDelay: '0.1s'
+          })}
 
           {/* Card Clientes */}
-          <Link 
-            to="/admin/clientes"
-            data-card-index="1"
-            style={{
-              background: 'white',
-              borderRadius: isMobile ? '0.75rem' : '1rem',
-              padding: isMobile ? '1rem' : '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              border: '1px solid #e2e8f0',
-              textDecoration: 'none',
-              color: 'inherit',
-              transition: 'all 0.3s ease',
-              display: 'block',
-              animation: 'slideInUp 0.6s ease-out 0.2s both',
-              position: 'relative'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-8px)';
-              e.currentTarget.style.boxShadow = '0 20px 40px rgba(16, 185, 129, 0.15)';
-              e.currentTarget.style.borderColor = '#10b981';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
-            onClick={(e) => {
-              limpiarContadorClientes();
-              setIndiceSeleccionado(1);
-            }}
-          >
-            {/* Indicador de selección por teclado */}
-            <div style={obtenerEstilosIndicador(indiceSeleccionado === 1, 1)} />
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-              height: '100%'
-            }}>
-              {/* Indicador de clientes nuevos */}
-              {clientesNuevos > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: isMobile ? '0.5rem' : '1rem',
-                  right: isMobile ? '0.5rem' : '1rem',
-                  background: '#ef4444',
-                  color: 'white',
-                  borderRadius: '50%',
-                  width: isMobile ? '1.5rem' : '2rem',
-                  height: isMobile ? '1.5rem' : '2rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  fontWeight: '600',
-                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
-                  animation: 'pulse 2s infinite',
-                  zIndex: 10
-                }}>
-                  {clientesNuevos > 99 ? '99+' : clientesNuevos}
-                </div>
-              )}
-              <div style={{
-                width: '4rem',
-                height: '4rem',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                borderRadius: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '2rem',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
-                marginBottom: '1rem'
-              }}>
-                👥
-              </div>
-              <h3 style={{
-                fontSize: '1rem',
-                fontWeight: '600',
-                color: '#1e293b',
-                margin: '0 0 0.5rem 0'
-              }}>
-                Clientes
-              </h3>
-              <p style={{
-                fontSize: '0.875rem',
-                color: '#64748b',
-                margin: 0
-              }}>
-                Gestionar clientes
-              </p>
-            </div>
-          </Link>
+          {renderCard({
+            enlace: '/admin/clientes',
+            titulo: 'Clientes',
+            descripcion: 'Gestionar clientes',
+            icono: '👥',
+            color: '#10b981',
+            gradiente: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            permiso: 'CLIENTES',
+            cardIndex: 1,
+            animationDelay: '0.2s',
+            onClick: limpiarContadorClientes,
+            contadorNuevos: clientesNuevos
+          })}
 
           {/* Card Pedidos */}
-          <Link 
-            to="/admin/pedidos"
-            data-card-index="2"
-            style={{
-              background: 'white',
-              borderRadius: isMobile ? '0.75rem' : '1rem',
-              padding: isMobile ? '1rem' : '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              border: '1px solid #e2e8f0',
-              textDecoration: 'none',
-              color: 'inherit',
-              transition: 'all 0.3s ease',
-              display: 'block',
-              animation: 'slideInUp 0.6s ease-out 0.3s both',
-              position: 'relative'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-8px)';
-              e.currentTarget.style.boxShadow = '0 20px 40px rgba(245, 158, 11, 0.15)';
-              e.currentTarget.style.borderColor = '#f59e0b';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
-            onClick={(e) => {
-              limpiarContadorPedidos();
-              setIndiceSeleccionado(2);
-            }}
-          >
-            {/* Indicador de selección por teclado */}
-            <div style={obtenerEstilosIndicador(indiceSeleccionado === 2, 2)} />
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-              height: '100%'
-            }}>
-              {/* Indicador de pedidos nuevos */}
-              {pedidosNuevos > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: isMobile ? '0.5rem' : '1rem',
-                  right: isMobile ? '0.5rem' : '1rem',
-                  background: '#ef4444',
-                  color: 'white',
-                  borderRadius: '50%',
-                  width: isMobile ? '1.5rem' : '2rem',
-                  height: isMobile ? '1.5rem' : '2rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  fontWeight: '600',
-                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
-                  animation: 'pulse 2s infinite',
-                  zIndex: 10
-                }}>
-                  {pedidosNuevos > 99 ? '99+' : pedidosNuevos}
-                </div>
-              )}
-              <div style={{
-                width: '4rem',
-                height: '4rem',
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                borderRadius: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '2rem',
-                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
-                marginBottom: '1rem'
-              }}>
-                📋
-              </div>
-              <h3 style={{
-                fontSize: '1rem',
-                fontWeight: '600',
-                color: '#1e293b',
-                margin: '0 0 0.5rem 0'
-              }}>
-                Pedidos
-              </h3>
-              <p style={{
-                fontSize: '0.875rem',
-                color: '#64748b',
-                margin: 0
-              }}>
-                Gestionar pedidos
-              </p>
-            </div>
-          </Link>
+          {renderCard({
+            enlace: '/admin/pedidos',
+            titulo: 'Pedidos',
+            descripcion: 'Gestionar pedidos',
+            icono: '📋',
+            color: '#f59e0b',
+            gradiente: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+            permiso: 'PEDIDOS',
+            cardIndex: 2,
+            animationDelay: '0.3s',
+            onClick: limpiarContadorPedidos,
+            contadorNuevos: pedidosNuevos
+          })}
 
           {/* Card Venta Rápida */}
-          <Link 
-            to="/admin/caja-rapida"
-            data-card-index="3"
-            style={{
-              background: 'white',
-              borderRadius: isMobile ? '0.75rem' : '1rem',
-              padding: isMobile ? '1rem' : '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              border: '1px solid #e2e8f0',
-              textDecoration: 'none',
-              color: 'inherit',
-              transition: 'all 0.3s ease',
-              display: 'block',
-              animation: 'slideInUp 0.6s ease-out 0.4s both',
-              position: 'relative'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-8px)';
-              e.currentTarget.style.boxShadow = '0 20px 40px rgba(139, 92, 246, 0.15)';
-              e.currentTarget.style.borderColor = '#8b5cf6';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
-            onClick={() => setIndiceSeleccionado(3)}
-          >
-            {/* Indicador de selección por teclado */}
-            <div style={obtenerEstilosIndicador(indiceSeleccionado === 3, 3)} />
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-              height: '100%'
-            }}>
-              <div style={{
-                width: '4rem',
-                height: '4rem',
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                borderRadius: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '2rem',
-                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
-                marginBottom: '1rem'
-              }}>
-                💰
-              </div>
-              <h3 style={{
-                fontSize: '1rem',
-                fontWeight: '600',
-                color: '#1e293b',
-                margin: '0 0 0.5rem 0'
-              }}>
-                Venta Rápida
-              </h3>
-              <p style={{
-                fontSize: '0.875rem',
-                color: '#64748b',
-                margin: 0
-              }}>
-                Caja mostrador
-              </p>
-            </div>
-          </Link>
+          {renderCard({
+            enlace: '/admin/caja-rapida',
+            titulo: 'Venta Rápida',
+            descripcion: 'Caja mostrador',
+            icono: '💰',
+            color: '#8b5cf6',
+            gradiente: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+            permiso: 'CAJA_RAPIDA',
+            cardIndex: 3,
+            animationDelay: '0.4s'
+          })}
 
           {/* Card Estadísticas */}
-          <Link 
-            to="/admin/estadisticas"
-            data-card-index="4"
-            style={{
-              background: 'white',
-              borderRadius: isMobile ? '0.75rem' : '1rem',
-              padding: isMobile ? '1.5rem' : '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              border: '1px solid #e2e8f0',
-              textDecoration: 'none',
-              color: 'inherit',
-              transition: 'all 0.3s ease',
-              display: 'block',
-              animation: 'slideInUp 0.6s ease-out 0.5s both',
-              position: 'relative'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-8px)';
-              e.currentTarget.style.boxShadow = '0 20px 40px rgba(236, 72, 153, 0.15)';
-              e.currentTarget.style.borderColor = '#ec4899';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
-            onClick={() => setIndiceSeleccionado(4)}
-          >
-            {/* Indicador de selección por teclado */}
-            <div style={obtenerEstilosIndicador(indiceSeleccionado === 4, 4)} />
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-              height: '100%'
-            }}>
-              <div style={{
-                width: '4rem',
-                height: '4rem',
-                background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
-                borderRadius: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '2rem',
-                boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)',
-                marginBottom: '1rem'
-              }}>
-                📊
-              </div>
-              <h3 style={{
-                fontSize: '1rem',
-                fontWeight: '600',
-                color: '#1e293b',
-                margin: '0 0 0.5rem 0'
-              }}>
-                Estadísticas
-              </h3>
-              <p style={{
-                fontSize: '0.875rem',
-                color: '#64748b',
-                margin: 0
-              }}>
-                Ver reportes
-              </p>
-            </div>
-          </Link>
+          {renderCard({
+            enlace: '/admin/estadisticas',
+            titulo: 'Estadísticas',
+            descripcion: 'Ver reportes',
+            icono: '📊',
+            color: '#ec4899',
+            gradiente: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+            permiso: 'ESTADISTICAS',
+            cardIndex: 4,
+            animationDelay: '0.5s'
+          })}
         </div>
 
 
 
         {/* Funciones Avanzadas */}
-        <div style={{
+            <div style={{
           marginBottom: '3rem',
           animation: 'slideInUp 0.6s ease-out 0.3s both'
         }}>
           <h2 style={{
             fontSize: '1.875rem',
-            fontWeight: '600',
-            color: '#1e293b',
+                fontWeight: '600',
+                color: '#1e293b',
             marginBottom: '1.5rem',
             textAlign: 'center'
           }}>
@@ -1256,87 +1218,156 @@ export default function DashboardAdministrador() {
           }}>
             {accionesRapidas.map((accion, index) => {
               const cardIndex = index + 5; // Las acciones rápidas empiezan en el índice 5
+              const tieneAcceso = hasPermission(accion.permiso || '');
+              
+              const cardContent = (
+                <div style={{ position: 'relative' }}>
+                  {/* Candadito si no tiene acceso */}
+                  {!tieneAcceso && (
+                <div style={{
+                  position: 'absolute',
+                  top: isMobile ? '0.5rem' : '1rem',
+                  right: isMobile ? '0.5rem' : '1rem',
+                      background: 'rgba(239, 68, 68, 0.9)',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: isMobile ? '1.5rem' : '2rem',
+                  height: isMobile ? '1.5rem' : '2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                      zIndex: 10,
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)'
+                    }}>
+                      🔒
+                </div>
+              )}
+                  
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+                    marginBottom: '1.5rem'
+            }}>
+                <div style={{
+                      width: '3rem',
+                      height: '3rem',
+                      background: tieneAcceso ? `linear-gradient(135deg, ${accion.color} 0%, ${accion.color}dd 100%)` : 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)',
+                borderRadius: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                      fontSize: '1.5rem',
+                      marginRight: '1rem',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                      opacity: tieneAcceso ? 1 : 0.6
+                    }}>
+                      {accion.icono}
+              </div>
+                    <div>
+              <h3 style={{
+                        fontSize: '1.25rem',
+                fontWeight: '600',
+                        color: tieneAcceso ? '#1e293b' : '#6b7280',
+                        marginBottom: '0.25rem'
+              }}>
+                        {accion.titulo}
+              </h3>
+              <p style={{
+                fontSize: '0.875rem',
+                        color: tieneAcceso ? '#64748b' : '#9ca3af',
+                        margin: 0,
+                        lineHeight: '1.5'
+              }}>
+                        {tieneAcceso ? accion.descripcion : 'Sin acceso'}
+              </p>
+            </div>
+                  </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+                    color: tieneAcceso ? accion.color : '#9ca3af',
+                fontSize: '0.875rem',
+                    fontWeight: '600'
+              }}>
+                    {tieneAcceso ? `Ir a ${accion.titulo.toLowerCase()} →` : 'Sin acceso'}
+            </div>
+                </div>
+              );
+
+              if (tieneAcceso) {
+                return (
+          <Link 
+                    key={index}
+                    to={accion.enlace}
+                    data-card-index={cardIndex.toString()}
+            style={{
+              background: 'white',
+              borderRadius: isMobile ? '0.75rem' : '1rem',
+              padding: isMobile ? '1.5rem' : '2rem',
+              textDecoration: 'none',
+              color: 'inherit',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                      border: '1px solid #e2e8f0',
+              transition: 'all 0.3s ease',
+              display: 'block',
+                      animation: `slideInUp 0.6s ease-out ${(index + 4) * 0.1}s both`,
+              position: 'relative'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+                      e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                      e.currentTarget.style.borderColor = accion.color;
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
+                    onClick={() => setIndiceSeleccionado(cardIndex)}
+          >
+            {/* Indicador de selección por teclado */}
+                    <div style={obtenerEstilosIndicador(indiceSeleccionado === cardIndex, cardIndex)} />
+                    {cardContent}
+          </Link>
+                );
+              } else {
               return (
-                <Link 
+                  <div 
                   key={index}
-                  to={accion.enlace}
                   data-card-index={cardIndex.toString()}
                   style={{
                     background: 'white',
                     borderRadius: isMobile ? '0.75rem' : '1rem',
                     padding: isMobile ? '1.5rem' : '2rem',
-                    textDecoration: 'none',
-                    color: 'inherit',
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                     border: '1px solid #e2e8f0',
                     transition: 'all 0.3s ease',
                     display: 'block',
                     animation: `slideInUp 0.6s ease-out ${(index + 4) * 0.1}s both`,
-                    position: 'relative'
+                      position: 'relative',
+                      cursor: 'not-allowed',
+                      opacity: 0.7
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-8px)';
-                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
-                    e.currentTarget.style.borderColor = accion.color;
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.1)';
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                    e.currentTarget.style.borderColor = '#e2e8f0';
                   }}
-                  onClick={() => setIndiceSeleccionado(cardIndex)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toast.error('No tienes permisos para acceder a esta sección');
+                    }}
                 >
                   {/* Indicador de selección por teclado */}
                   <div style={obtenerEstilosIndicador(indiceSeleccionado === cardIndex, cardIndex)} />
-                                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginBottom: '1.5rem'
-                  }}>
-                    <div style={{
-                      width: '3rem',
-                      height: '3rem',
-                      background: `linear-gradient(135deg, ${accion.color} 0%, ${accion.color}dd 100%)`,
-                      borderRadius: '1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.5rem',
-                      marginRight: '1rem',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                    }}>
-                      {accion.icono}
+                    {cardContent}
                     </div>
-                    <div>
-                      <h3 style={{
-                        fontSize: '1.25rem',
-                        fontWeight: '600',
-                        color: '#1e293b',
-                        marginBottom: '0.25rem'
-                      }}>
-                        {accion.titulo}
-                      </h3>
-                      <p style={{
-                        fontSize: '0.875rem',
-                        color: '#64748b',
-                        margin: 0,
-                        lineHeight: '1.5'
-                      }}>
-                        {accion.descripcion}
-                      </p>
-                    </div>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    color: accion.color,
-                    fontSize: '0.875rem',
-                    fontWeight: '600'
-                  }}>
-                    Ir a {accion.titulo.toLowerCase()} →
-                  </div>
-                </Link>
-              );
+                );
+              }
             })}
           </div>
         </div>
@@ -1369,7 +1400,7 @@ export default function DashboardAdministrador() {
             }}>
               Actividad Reciente
             </h2>
-            {notificaciones.length > 0 && (
+            {Array.isArray(notificaciones) && notificaciones.length > 0 && (
               <div style={{ 
                 display: 'flex', 
                 gap: isMobile ? '0.5rem' : '0.5rem', 
@@ -1551,7 +1582,7 @@ export default function DashboardAdministrador() {
                 animation: 'spin 1s linear infinite'
               }} />
             </div>
-          ) : notificaciones.length === 0 ? (
+          ) : !Array.isArray(notificaciones) || notificaciones.length === 0 ? (
             <div style={{
               textAlign: 'center',
               padding: '2rem',
@@ -1563,7 +1594,7 @@ export default function DashboardAdministrador() {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '0.75rem' : '1rem' }}>
-              {(mostrarTodas ? todasLasNotificaciones : notificaciones.slice(0, 5)).map((notificacion, index) => (
+              {(mostrarTodas ? todasLasNotificaciones : (Array.isArray(notificaciones) ? notificaciones.slice(0, 5) : [])).map((notificacion, index) => (
                 <div 
                   key={notificacion.id}
                   style={{
@@ -1756,7 +1787,7 @@ export default function DashboardAdministrador() {
                 </div>
               ))}
               
-              {!mostrarTodas && notificaciones.length > 5 && (
+              {!mostrarTodas && Array.isArray(notificaciones) && notificaciones.length > 5 && (
                 <div style={{
                   textAlign: 'center',
                   padding: isMobile ? '0.75rem' : '1rem'
@@ -1808,7 +1839,7 @@ export default function DashboardAdministrador() {
                         e.currentTarget.style.transform = 'translateY(0)';
                       }}
                     >
-                      Ver todas las notificaciones ({notificaciones.length} total)
+                      Ver todas las notificaciones ({Array.isArray(notificaciones) ? notificaciones.length : 0} total)
                     </button>
                   )}
                 </div>

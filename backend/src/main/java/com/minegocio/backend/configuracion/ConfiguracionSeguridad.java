@@ -101,19 +101,33 @@ public class ConfiguracionSeguridad {
                 auth.requestMatchers("/api/suscripciones/mi-consumo").authenticated();
                 
                 // Endpoints que requieren autenticación
-                auth.requestMatchers("/api/empresas/*/sectores/stock-general").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
-                auth.requestMatchers("/api/empresas/*/sectores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
+                // Permitir acceso a stock general para usuarios ASIGNADO también (para gestión de sectores)
+                auth.requestMatchers("/api/empresas/*/sectores/stock-general").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
+                // Permitir acceso a sectores para usuarios ASIGNADO también (para gestión de sectores)
+                auth.requestMatchers("/api/empresas/*/sectores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
                 auth.requestMatchers("/api/empresas/*/stock-sincronizacion/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
                 auth.requestMatchers("/api/limpieza-datos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
-                auth.requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
-                auth.requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
+                // Permitir acceso a endpoints de empresas para usuarios ASIGNADO también
+                auth.requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
+                // Permitir acceso a admin para usuarios ASIGNADO también (para gestión de empresa)
+                auth.requestMatchers("/api/admin/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
                 auth.requestMatchers("/api/super-admin/**").hasAnyRole("SUPER_ADMIN", "ADMINISTRADOR");
-                auth.requestMatchers("/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
-                auth.requestMatchers("/api/notificaciones/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
-                auth.requestMatchers("/api/historial-carga-productos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
-                auth.requestMatchers("/api/planillas-pedidos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
-                auth.requestMatchers("/api/roturas-perdidas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
-                auth.requestMatchers("/api/remitos-ingreso/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN");
+                // Permitir acceso a administradores para usuarios ASIGNADO también (para gestión de permisos)
+                auth.requestMatchers("/api/administradores/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
+                // Permitir acceso a notificaciones para usuarios ASIGNADO también
+                auth.requestMatchers("/api/notificaciones/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
+                // Permitir acceso a permisos para usuarios ASIGNADO también
+                auth.requestMatchers("/api/permisos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
+                // Permitir acceso a historial de carga de productos para usuarios ASIGNADO también
+                auth.requestMatchers("/api/historial-carga-productos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
+                // Permitir acceso a planillas de pedidos para usuarios ASIGNADO también (para carga de planillas)
+                auth.requestMatchers("/api/planillas-pedidos/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
+                // Permitir acceso a roturas y pérdidas para usuarios ASIGNADO también
+                auth.requestMatchers("/api/roturas-perdidas/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
+                // Permitir acceso a remitos de ingreso para usuarios ASIGNADO también (para ingresos)
+                auth.requestMatchers("/api/remitos-ingreso/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
+                // Permitir acceso a devoluciones para usuarios ASIGNADO también (para gestión de retornos)
+                auth.requestMatchers("/api/devoluciones/**").hasAnyRole("ADMINISTRADOR", "SUPER_ADMIN", "ASIGNADO");
                 
                 // Cualquier otra solicitud requiere autenticación
                 auth.anyRequest().authenticated();

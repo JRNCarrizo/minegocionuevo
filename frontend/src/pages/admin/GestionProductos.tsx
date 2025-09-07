@@ -6,6 +6,7 @@ import NavbarAdmin from '../../components/NavbarAdmin';
 import BarcodeScanner from '../../components/BarcodeScanner';
 import ImportacionProductos from '../../components/ImportacionProductos';
 import { useResponsive } from '../../hooks/useResponsive';
+import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import type { Producto } from '../../types';
 import '../../styles/gestion-productos.css';
 
@@ -32,6 +33,7 @@ type VistaProducto = 'lista' | 'intermedia' | 'cuadricula';
 const GestionProductos: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
+  const { datosUsuario } = useUsuarioActual();
   const [productos, setProductos] = useState<Producto[]>([]);
 
   // Función para reproducir el sonido "pi"
@@ -168,10 +170,12 @@ const GestionProductos: React.FC = () => {
       setCargando(true);
       setError('');
       
-      console.log('Cargando productos para empresa:', empresaId);
+      console.log('🔍 [PRODUCTOS] Cargando productos para empresa:', empresaId);
+      console.log('🔍 [PRODUCTOS] Datos del usuario:', datosUsuario);
+      console.log('🔍 [PRODUCTOS] EmpresaId del usuario:', datosUsuario?.empresaId);
       
       // Siempre cargar todos los productos (activos e inactivos) para filtrar localmente
-      console.log('Obteniendo todos los productos (activos e inactivos)');
+      console.log('🔍 [PRODUCTOS] Obteniendo todos los productos (activos e inactivos)');
       const response = await ApiService.obtenerTodosLosProductosIncluirInactivos(empresaId);
       const productos = response.data || [];
 

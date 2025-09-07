@@ -5,6 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
+import { usePermissions } from '../../hooks/usePermissions';
 
 interface Empresa {
   id: number;
@@ -24,6 +25,7 @@ interface Empresa {
 export default function GestionEmpresa() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile, isTablet } = useResponsive();
+  const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   
   // Estado para navegación por teclado
@@ -245,12 +247,13 @@ export default function GestionEmpresa() {
 
   const cardsGestion = [
     {
-              titulo: 'Carga de Planillas',
+      titulo: 'Carga de Planillas',
       descripcion: 'Gestiona los pedidos realizados',
       icono: '📦',
       color: '#3b82f6',
       enlace: '/admin/carga-pedidos',
-      gradiente: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
+      gradiente: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+      permiso: 'CARGA_PLANILLAS'
     },
     {
       titulo: 'Roturas y Pérdidas',
@@ -258,7 +261,8 @@ export default function GestionEmpresa() {
       icono: '💔',
       color: '#ef4444',
       enlace: '/admin/roturas-perdidas',
-      gradiente: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+      gradiente: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      permiso: 'ROTURAS_PERDIDAS'
     },
     {
       titulo: 'Ingresos',
@@ -266,7 +270,8 @@ export default function GestionEmpresa() {
       icono: '📥',
       color: '#059669',
       enlace: '/admin/ingresos',
-      gradiente: 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+      gradiente: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+      permiso: 'INGRESOS'
     },
     {
       titulo: 'Gestión de Retornos',
@@ -274,7 +279,8 @@ export default function GestionEmpresa() {
       icono: '🔄',
       color: '#f59e0b',
       enlace: '/admin/descarga-devoluciones',
-      gradiente: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+      gradiente: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      permiso: 'GESTION_RETORNOS'
     },
     {
       titulo: 'Gestión de Sectores',
@@ -282,7 +288,8 @@ export default function GestionEmpresa() {
       icono: '🏢',
       color: '#06b6d4',
       enlace: '/admin/sectores',
-      gradiente: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
+      gradiente: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+      permiso: 'GESTION_SECTORES'
     },
     {
       titulo: 'Gestión de Transportistas',
@@ -290,7 +297,8 @@ export default function GestionEmpresa() {
       icono: '🚛',
       color: '#8b5cf6',
       enlace: '/admin/transportistas',
-      gradiente: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
+      gradiente: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+      permiso: 'GESTION_TRANSPORTISTAS'
     },
     {
       titulo: 'Movimientos del Día',
@@ -298,7 +306,8 @@ export default function GestionEmpresa() {
       icono: '📊',
       color: '#10b981',
       enlace: '/admin/movimientos-dia',
-      gradiente: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+      gradiente: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      permiso: 'MOVIMIENTOS_DIA'
     }
   ];
 
@@ -478,87 +487,154 @@ export default function GestionEmpresa() {
           gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
           gap: isMobile ? '1rem' : '1.5rem'
         }}>
-                     {cardsGestion.map((card, index) => (
-             <div
-               key={index}
-               data-card-index={index.toString()}
-               style={obtenerEstilosCard(index, indiceSeleccionado === index)}
-                             onMouseOver={(e) => {
-                 // Solo aplicar hover si no está seleccionada por teclado
-                 if (indiceSeleccionado !== index) {
-                   e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                   e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
-                   e.currentTarget.style.borderColor = card.color;
-                 }
-               }}
-               onMouseOut={(e) => {
-                 // Solo resetear si no está seleccionada por teclado
-                 if (indiceSeleccionado !== index) {
-                   e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                   e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                   e.currentTarget.style.borderColor = '#e2e8f0';
-                 }
-               }}
-              onClick={() => {
-                setIndiceSeleccionado(index);
-                if (card.enlace) {
-                  navigate(card.enlace);
-                } else {
-                  toast.success(`Funcionalidad de ${card.titulo} en desarrollo`);
-                }
-              }}
-            >
-              {/* Indicador de selección por teclado */}
-              <div style={obtenerEstilosIndicador(indiceSeleccionado === index, index)} />
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: '1.5rem'
-              }}>
-                <div style={{
-                  width: '3rem',
-                  height: '3rem',
-                  background: card.gradiente,
-                  borderRadius: '1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  marginRight: '1rem',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                }}>
-                  {card.icono}
-                </div>
-                <div>
-                  <h3 style={{
-                    fontSize: '1.25rem',
-                    fontWeight: '600',
-                    color: '#1e293b',
-                    marginBottom: '0.25rem'
-                  }}>
-                    {card.titulo}
-                  </h3>
-                  <p style={{
-                    fontSize: '0.875rem',
-                    color: '#64748b',
-                    margin: 0,
-                    lineHeight: '1.5'
-                  }}>
-                    {card.descripcion}
-                  </p>
-                </div>
-              </div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                color: card.color,
-                fontSize: '0.875rem',
-                fontWeight: '600'
-              }}>
-                Ir a {card.titulo.toLowerCase()} →
-              </div>
-            </div>
-          ))}
+                     {cardsGestion.map((card, index) => {
+               const tieneAcceso = hasPermission(card.permiso);
+               
+               const cardContent = (
+                 <div style={{ position: 'relative' }}>
+                   {/* Candadito si no tiene acceso */}
+                   {!tieneAcceso && (
+                     <div style={{
+                       position: 'absolute',
+                       top: isMobile ? '0.5rem' : '1rem',
+                       right: isMobile ? '0.5rem' : '1rem',
+                       background: 'rgba(239, 68, 68, 0.9)',
+                       color: 'white',
+                       borderRadius: '50%',
+                       width: isMobile ? '1.5rem' : '2rem',
+                       height: isMobile ? '1.5rem' : '2rem',
+                       display: 'flex',
+                       alignItems: 'center',
+                       justifyContent: 'center',
+                       fontSize: isMobile ? '0.75rem' : '0.875rem',
+                       zIndex: 10,
+                       boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)'
+                     }}>
+                       🔒
+                     </div>
+                   )}
+                   
+                   <div style={{
+                     display: 'flex',
+                     alignItems: 'center',
+                     marginBottom: '1.5rem'
+                   }}>
+                     <div style={{
+                       width: '3rem',
+                       height: '3rem',
+                       background: tieneAcceso ? card.gradiente : 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)',
+                       borderRadius: '1rem',
+                       display: 'flex',
+                       alignItems: 'center',
+                       justifyContent: 'center',
+                       fontSize: '1.5rem',
+                       marginRight: '1rem',
+                       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                       opacity: tieneAcceso ? 1 : 0.6
+                     }}>
+                       {card.icono}
+                     </div>
+                     <div>
+                       <h3 style={{
+                         fontSize: '1.25rem',
+                         fontWeight: '600',
+                         color: tieneAcceso ? '#1e293b' : '#6b7280',
+                         marginBottom: '0.25rem'
+                       }}>
+                         {card.titulo}
+                       </h3>
+                       <p style={{
+                         fontSize: '0.875rem',
+                         color: tieneAcceso ? '#64748b' : '#9ca3af',
+                         margin: 0,
+                         lineHeight: '1.5'
+                       }}>
+                         {tieneAcceso ? card.descripcion : 'Sin acceso'}
+                       </p>
+                     </div>
+                   </div>
+                   <div style={{
+                     display: 'flex',
+                     alignItems: 'center',
+                     color: tieneAcceso ? card.color : '#9ca3af',
+                     fontSize: '0.875rem',
+                     fontWeight: '600'
+                   }}>
+                     {tieneAcceso ? `Ir a ${card.titulo.toLowerCase()} →` : 'Sin acceso'}
+                   </div>
+                 </div>
+               );
+
+               if (tieneAcceso) {
+                 return (
+                   <div
+                     key={index}
+                     data-card-index={index.toString()}
+                     style={obtenerEstilosCard(index, indiceSeleccionado === index)}
+                     onMouseOver={(e) => {
+                       // Solo aplicar hover si no está seleccionada por teclado
+                       if (indiceSeleccionado !== index) {
+                         e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+                         e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
+                         e.currentTarget.style.borderColor = card.color;
+                       }
+                     }}
+                     onMouseOut={(e) => {
+                       // Solo resetear si no está seleccionada por teclado
+                       if (indiceSeleccionado !== index) {
+                         e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                         e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                         e.currentTarget.style.borderColor = '#e2e8f0';
+                       }
+                     }}
+                     onClick={() => {
+                       setIndiceSeleccionado(index);
+                       if (card.enlace) {
+                         navigate(card.enlace);
+                       } else {
+                         toast.success(`Funcionalidad de ${card.titulo} en desarrollo`);
+                       }
+                     }}
+                   >
+                     {/* Indicador de selección por teclado */}
+                     <div style={obtenerEstilosIndicador(indiceSeleccionado === index, index)} />
+                     {cardContent}
+                   </div>
+                 );
+               } else {
+                 return (
+                   <div
+                     key={index}
+                     data-card-index={index.toString()}
+                     style={{
+                       ...obtenerEstilosCard(index, indiceSeleccionado === index),
+                       cursor: 'not-allowed',
+                       opacity: 0.7
+                     }}
+                     onMouseOver={(e) => {
+                       if (indiceSeleccionado !== index) {
+                         e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
+                         e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.1)';
+                       }
+                     }}
+                     onMouseOut={(e) => {
+                       if (indiceSeleccionado !== index) {
+                         e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                         e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                       }
+                     }}
+                     onClick={(e) => {
+                       e.preventDefault();
+                       toast.error('No tienes permisos para acceder a esta sección');
+                     }}
+                   >
+                     {/* Indicador de selección por teclado */}
+                     <div style={obtenerEstilosIndicador(indiceSeleccionado === index, index)} />
+                     {cardContent}
+                   </div>
+                 );
+               }
+             })}
         </div>
 
         {/* Información de la Empresa (Reducida) */}

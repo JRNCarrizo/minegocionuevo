@@ -4,6 +4,7 @@ import './estilos/principal.css';
 import { useSubdominio } from './hooks/useSubdominio';
 import { CartProvider } from './hooks/useCart';
 import { UsuarioProvider } from './contexts/UsuarioContext';
+import { PermissionsProvider } from './hooks/usePermissions';
 import PaginaRegistro from './pages/PaginaRegistro.tsx';
 import PaginaPrincipal from './pages/PaginaPrincipal.tsx';
 import LoginAdministrador from './pages/LoginAdministrador.tsx';
@@ -177,7 +178,9 @@ function App() {
           />
           
           <UsuarioProvider>
-            <AppContent />
+            <PermissionsProvider>
+              <AppContent />
+            </PermissionsProvider>
           </UsuarioProvider>
         </div>
       </CartProvider>

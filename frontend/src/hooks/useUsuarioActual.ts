@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface DatosUsuario {
+  id: number;
   nombre: string;
   apellidos: string;
   email: string;
   empresaId: number;
   empresaNombre: string;
+  rol: 'ADMINISTRADOR' | 'ASIGNADO';
 }
 
 interface UseUsuarioActualReturn {
@@ -25,18 +27,74 @@ export function useUsuarioActual(): UseUsuarioActualReturn {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
     
+    console.log('=== DEBUG USUARIO ACTUAL ===');
+    console.log('Token encontrado:', !!token);
+    console.log('User encontrado:', !!userStr);
+    console.log('Ruta actual:', window.location.pathname);
+    
+    // Solo redirigir si no estamos en una página de login o registro
+    const esPaginaLogin = window.location.pathname.includes('/login') || 
+                         window.location.pathname.includes('/recuperar') ||
+                         window.location.pathname.includes('/reset') ||
+                         window.location.pathname.includes('/verificar-email') ||
+                         window.location.pathname.includes('/registro');
+    
+    // También considerar la página principal como no protegida
+    const esPaginaPrincipal = window.location.pathname === '/';
+    
     if (!token || !userStr) {
-      navigate('/admin/login');
+      if (!esPaginaLogin && !esPaginaPrincipal) {
+        console.log('No hay token o user, redirigiendo al login');
+        navigate('/admin/login');
+      } else {
+        console.log('En página de login/principal, no redirigiendo');
+      }
       return;
     }
 
     try {
       const user = JSON.parse(userStr);
       
+      // Extraer el ID del JWT token si no está en localStorage
+      let userId = user.id;
+      if (!userId && token) {
+        try {
+          const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+          userId = tokenPayload.userId;
+          console.log('🔍 [USUARIO] ID extraído del JWT token:', userId);
+          
+          // Verificar si el token está expirado
+          const currentTime = Math.floor(Date.now() / 1000);
+          const tokenExp = tokenPayload.exp;
+          console.log('🔍 [USUARIO] Token exp:', tokenExp);
+          console.log('🔍 [USUARIO] Tiempo actual:', currentTime);
+          console.log('🔍 [USUARIO] Token expirado?', currentTime > tokenExp);
+          
+          if (currentTime > tokenExp) {
+            console.log('❌ [USUARIO] Token expirado, limpiando sesión');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            navigate('/admin/login');
+            return;
+          }
+        } catch (tokenError) {
+          console.error('Error al decodificar JWT token:', tokenError);
+          console.log('❌ [USUARIO] Token inválido, limpiando sesión');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/admin/login');
+          return;
+        }
+      }
+      
       console.log('=== DEBUG USUARIO ACTUAL ===');
       console.log('Datos del usuario en localStorage:', user);
+      console.log('ID del localStorage:', user.id);
+      console.log('ID del JWT token:', userId);
+      console.log('ID final a usar:', userId);
       console.log('Nombre:', user.nombre);
       console.log('Apellidos:', user.apellidos);
+      console.log('Rol:', user.rol);
       console.log('EmpresaNombre:', user.empresaNombre);
       
       // Formatear el nombre para mostrar en el navbar
@@ -45,11 +103,13 @@ export function useUsuarioActual(): UseUsuarioActualReturn {
         : user.nombre || 'Usuario';
       
       setDatosUsuario({
+        id: userId,
         nombre: nombreCompleto,
         apellidos: user.apellidos || '',
         email: user.email || '',
         empresaId: user.empresaId || 0,
-        empresaNombre: user.empresaNombre || 'Tu Empresa'
+        empresaNombre: user.empresaNombre || 'Tu Empresa',
+        rol: user.rol || 'ASIGNADO'
       });
     } catch (error) {
       console.error('Error al parsear datos del usuario:', error);

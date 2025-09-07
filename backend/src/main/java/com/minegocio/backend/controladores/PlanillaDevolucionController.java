@@ -24,7 +24,7 @@ public class PlanillaDevolucionController {
     private PlanillaDevolucionService planillaDevolucionService;
 
     /**
-     * Validar que el usuario tenga rol de administrador
+     * Validar que el usuario tenga rol de administrador o asignado
      */
     private boolean esAdministrador(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -35,7 +35,8 @@ public class PlanillaDevolucionController {
         String rol = usuarioPrincipal.getUsuario().getRol().name();
         return rol != null && 
                (rol.equals("ADMINISTRADOR") || 
-                rol.equals("SUPER_ADMIN"));
+                rol.equals("SUPER_ADMIN") ||
+                rol.equals("ASIGNADO"));
     }
 
     /**
@@ -53,7 +54,7 @@ public class PlanillaDevolucionController {
             // Validar rol de administrador
             if (!esAdministrador(authentication)) {
                 return ResponseEntity.status(403).body(Map.of(
-                    "error", "Usuario no autorizado. Verifique que esté logueado con un rol de administrador."
+                    "error", "Usuario no autorizado. Verifique que tenga permisos para acceder a esta funcionalidad."
                 ));
             }
 
@@ -101,7 +102,7 @@ public class PlanillaDevolucionController {
             // Validar rol de administrador
             if (!esAdministrador(authentication)) {
                 return ResponseEntity.status(403).body(Map.of(
-                    "error", "Usuario no autorizado. Verifique que esté logueado con un rol de administrador."
+                    "error", "Usuario no autorizado. Verifique que tenga permisos para acceder a esta funcionalidad."
                 ));
             }
 
@@ -136,7 +137,7 @@ public class PlanillaDevolucionController {
 
             if (!esAdministrador(authentication)) {
                 return ResponseEntity.status(403).body(Map.of(
-                    "error", "Usuario no autorizado. Verifique que esté logueado con un rol de administrador."
+                    "error", "Usuario no autorizado. Verifique que tenga permisos para acceder a esta funcionalidad."
                 ));
             }
 
@@ -171,7 +172,7 @@ public class PlanillaDevolucionController {
 
             if (!esAdministrador(authentication)) {
                 return ResponseEntity.status(403).body(Map.of(
-                    "error", "Usuario no autorizado. Verifique que esté logueado con un rol de administrador."
+                    "error", "Usuario no autorizado. Verifique que tenga permisos para acceder a esta funcionalidad."
                 ));
             }
 

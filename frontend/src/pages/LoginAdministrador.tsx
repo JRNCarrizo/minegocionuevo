@@ -35,18 +35,28 @@ export default function LoginAdministrador() {
       console.log('🎯 Roles en la respuesta:', response.roles);
       console.log('🎯 Tipo de roles:', typeof response.roles);
       console.log('🎯 Primer rol:', response.roles?.[0]);
+      console.log('🎯 Rol completo:', response.roles);
       
       // Extraer información del usuario de la respuesta
+      console.log('🔍 [LOGIN] Respuesta completa del backend:', response);
+      console.log('🔍 [LOGIN] response.roles:', response.roles);
+      console.log('🔍 [LOGIN] response.roles[0]:', response.roles?.[0]);
+      console.log('🔍 [LOGIN] Tipo de response.roles:', typeof response.roles);
+      console.log('🔍 [LOGIN] Es array?:', Array.isArray(response.roles));
+      
       const user = {
         id: 1, // TODO: obtener del JWT o respuesta
         nombre: response.nombre || 'Usuario',
         apellidos: response.apellidos || '',
         email: response.email,
-        rol: response.roles?.[0] || 'ADMIN',
+        rol: response.roles?.[0] || 'ADMINISTRADOR',
         empresaId: response.empresaId,
         empresaNombre: response.empresaNombre,
         empresaSubdominio: response.empresaSubdominio
       };
+      
+      console.log('🔍 [LOGIN] Usuario procesado:', user);
+      console.log('🔍 [LOGIN] Rol final del usuario:', user.rol);
       
       // Guardar token y usuario
       localStorage.setItem('token', response.token);

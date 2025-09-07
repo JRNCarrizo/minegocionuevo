@@ -92,7 +92,7 @@ public class Usuario {
 
     // Enum para roles
     public enum RolUsuario {
-        ADMINISTRADOR, EMPLEADO, SUPER_ADMIN
+        ADMINISTRADOR, ASIGNADO, SUPER_ADMIN
     }
 
     // Métodos de utilidad

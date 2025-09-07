@@ -710,14 +710,22 @@ public class ProductoController {
             // Verificar autenticación
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("❌ [PRODUCTOS] Usuario no autenticado");
                 return ResponseEntity.status(401).build();
             }
 
             UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
             Long usuarioEmpresaId = usuarioPrincipal.getEmpresaId();
             
+            System.out.println("🔍 [PRODUCTOS] Debug permisos:");
+            System.out.println("🔍 [PRODUCTOS] EmpresaId de la URL: " + empresaId);
+            System.out.println("🔍 [PRODUCTOS] EmpresaId del usuario: " + usuarioEmpresaId);
+            System.out.println("🔍 [PRODUCTOS] Usuario ID: " + usuarioPrincipal.getId());
+            System.out.println("🔍 [PRODUCTOS] Usuario rol: " + usuarioPrincipal.getAuthorities());
+            
             // Verificar que el usuario pertenece a la empresa
             if (usuarioEmpresaId == null || !usuarioEmpresaId.equals(empresaId)) {
+                System.out.println("❌ [PRODUCTOS] Usuario no pertenece a la empresa. URL: " + empresaId + ", Usuario: " + usuarioEmpresaId);
                 return ResponseEntity.status(403).build();
             }
 

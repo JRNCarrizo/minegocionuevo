@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { useUsuario } from '../../contexts/UsuarioContext';
+import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { API_CONFIG } from '../../config/api';
@@ -25,7 +25,7 @@ interface StockItem {
 }
 
 export default function StockGeneral() {
-  const { datosUsuario, cerrarSesion } = useUsuario();
+  const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
   
@@ -84,9 +84,14 @@ export default function StockGeneral() {
     const cleanEndpoint = endpoint.startsWith('/api') ? endpoint.substring(4) : endpoint;
     const url = `${baseUrl}${cleanEndpoint}`;
     
+    // Obtener el token correcto del usuario actual
+    const token = localStorage.getItem('token');
+    console.log('🔍 STOCK GENERAL - Token obtenido:', token ? 'Presente' : 'Ausente');
+    console.log('🔍 STOCK GENERAL - URL completa:', url);
+    
     const defaultOptions: RequestInit = {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         ...options.headers
       },

@@ -58,7 +58,7 @@ export interface Usuario {
   apellidos: string;
   email: string;
   telefono?: string;
-  rol: 'ADMINISTRADOR' | 'EMPLEADO';
+  rol: 'ADMINISTRADOR' | 'ASIGNADO';
   activo: boolean;
   emailVerificado: boolean;
   fechaCreacion: string;

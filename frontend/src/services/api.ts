@@ -210,17 +210,30 @@ class ApiService {
         console.log('🔍 Interceptor de respuesta - Error detectado:', error.response?.status, error.response?.data);
 
         if (error.response?.status === 401) {
-          // Token expirado o inválido
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('clienteToken');
-          localStorage.removeItem('clienteInfo');
+          const errorMessage = error.response?.data?.error || '';
           
-          // Redirigir según el tipo de usuario
-          if (window.location.pathname.startsWith('/admin')) {
-            window.location.href = '/admin/login';
+          // Solo limpiar sesión si es un error de token expirado o inválido
+          // No limpiar si es un error de permisos específicos
+          if (errorMessage.includes('Token expirado') || 
+              errorMessage.includes('Token inválido') || 
+              errorMessage.includes('JWT') ||
+              errorMessage.includes('autenticación') ||
+              errorMessage === 'Unauthorized') {
+            
+            console.log('🔍 Token expirado o inválido, limpiando sesión');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('clienteToken');
+            localStorage.removeItem('clienteInfo');
+            
+            // Redirigir según el tipo de usuario
+            if (window.location.pathname.startsWith('/admin')) {
+              window.location.href = '/admin/login';
+            } else {
+              window.location.href = '/login';
+            }
           } else {
-            window.location.href = '/login';
+            console.log('🔍 Error 401 pero no es de token, manteniendo sesión');
           }
         }
         return Promise.reject(error);
@@ -1583,6 +1596,38 @@ class ApiService {
       return response.data;
     } catch (error) {
       console.error('Error eliminando administrador:', error);
+      throw error;
+    }
+  }
+
+  // Métodos para gestión de permisos
+
+  async obtenerPermisosUsuario(usuarioId: number): Promise<any> {
+    try {
+      const response = await this.api.get(`/permisos/usuario/${usuarioId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo permisos:', error);
+      throw error;
+    }
+  }
+
+  async actualizarPermisosUsuario(usuarioId: number, permisos: Record<string, boolean>): Promise<any> {
+    try {
+      const response = await this.api.put(`/permisos/usuario/${usuarioId}`, permisos);
+      return response.data;
+    } catch (error) {
+      console.error('Error actualizando permisos:', error);
+      throw error;
+    }
+  }
+
+  async obtenerFuncionalidades(): Promise<any> {
+    try {
+      const response = await this.api.get('/permisos/funcionalidades');
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo funcionalidades:', error);
       throw error;
     }
   }

@@ -60,7 +60,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     /**
      * Busca administradores de una empresa
      */
-    @Query("SELECT u FROM Usuario u WHERE u.empresa = :empresa AND u.rol = 'ADMINISTRADOR' AND u.activo = true")
+    @Query("SELECT u FROM Usuario u WHERE u.empresa = :empresa AND (u.rol = 'ADMINISTRADOR' OR u.rol = 'ASIGNADO') AND u.activo = true")
     List<Usuario> findAdministradoresPorEmpresa(@Param("empresa") Empresa empresa);
 
     /**
@@ -108,7 +108,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     /**
      * Busca todos los administradores de una empresa (sin filtro de activo)
      */
-    @Query("SELECT u FROM Usuario u WHERE u.empresa = :empresa AND u.rol = 'ADMINISTRADOR' ORDER BY u.fechaCreacion ASC")
+    @Query("SELECT u FROM Usuario u WHERE u.empresa = :empresa AND (u.rol = 'ADMINISTRADOR' OR u.rol = 'ASIGNADO') ORDER BY u.fechaCreacion ASC")
     List<Usuario> findAllAdministradoresByEmpresa(@Param("empresa") Empresa empresa);
 
     /**

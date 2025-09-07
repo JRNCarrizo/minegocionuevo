@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
+import GestionPermisosModal from '../../components/GestionPermisosModal';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import '../../styles/gestion-administradores.css';
 
@@ -38,6 +39,8 @@ export default function GestionAdministradores() {
     telefono: ''
   });
   const [procesando, setProcesando] = useState(false);
+  const [mostrarModalPermisos, setMostrarModalPermisos] = useState(false);
+  const [administradorSeleccionado, setAdministradorSeleccionado] = useState<Administrador | null>(null);
 
   useEffect(() => {
     cargarAdministradores();
@@ -187,6 +190,16 @@ export default function GestionAdministradores() {
       return `${emailEmpresa}@${dominio}`;
     }
     return email;
+  };
+
+  const abrirModalPermisos = (admin: Administrador) => {
+    setAdministradorSeleccionado(admin);
+    setMostrarModalPermisos(true);
+  };
+
+  const cerrarModalPermisos = () => {
+    setMostrarModalPermisos(false);
+    setAdministradorSeleccionado(null);
   };
 
   return (
@@ -426,6 +439,13 @@ export default function GestionAdministradores() {
                               ) : (
                                 <>
                                   <button
+                                    onClick={() => abrirModalPermisos(admin)}
+                                    className="boton-accion permisos"
+                                    title={`Gestionar permisos de ${admin.nombre} ${admin.apellido}`}
+                                  >
+                                    🔐 Permisos
+                                  </button>
+                                  <button
                                     onClick={() => toggleEstadoAdministrador(admin)}
                                     className={`boton-accion ${admin.activo ? 'desactivar' : 'activar'}`}
                                     title={admin.activo ? 'Desactivar administrador' : 'Reactivar administrador'}
@@ -453,6 +473,14 @@ export default function GestionAdministradores() {
           </div>
         </div>
       </div>
+
+      {/* Modal de gestión de permisos */}
+      <GestionPermisosModal
+        administrador={administradorSeleccionado}
+        isOpen={mostrarModalPermisos}
+        onClose={cerrarModalPermisos}
+        onPermisosActualizados={cargarAdministradores}
+      />
     </div>
   );
 }
