@@ -9,9 +9,6 @@ import com.minegocio.backend.servicios.StockSincronizacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.Authentication;
-import com.minegocio.backend.seguridad.UsuarioPrincipal;
 import jakarta.annotation.PostConstruct;
 
 import java.util.List;
@@ -23,6 +20,7 @@ import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.StockPorSectorRepository;
 import java.util.HashMap;
 import java.util.Date;
+import java.util.ArrayList;
 import org.springframework.http.HttpStatus;
 
 @RestController
