@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.time.LocalDate;
 import com.minegocio.backend.servicios.EmpresaService;
+import com.minegocio.backend.entidades.StockPorSector;
+import com.minegocio.backend.repositorios.StockPorSectorRepository;
 import java.io.IOException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
@@ -73,6 +75,9 @@ public class ProductoController {
 
     @Autowired
     private EmpresaService empresaService;
+
+    @Autowired
+    private StockPorSectorRepository stockPorSectorRepository;
 
     /**
      * Obtiene todos los productos de una empresa
@@ -1561,6 +1566,121 @@ public class ProductoController {
             response.setContentType("application/json");
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.getWriter().write("{\"error\": \"Error al generar reporte de stock: " + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Sincroniza el stock de un producto específico con sus sectores
+     */
+    @PostMapping("/{id}/sincronizar-stock")
+    public ResponseEntity<?> sincronizarStockProducto(
+            @PathVariable Long empresaId,
+            @PathVariable Long id) {
+        try {
+            System.out.println("🔄 SINCRONIZACIÓN MANUAL - Iniciando sincronización para producto ID: " + id);
+            
+            // Obtener el producto
+            ProductoDTO producto = productoService.obtenerProductoPorIdSinFiltro(id, empresaId)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            
+            // Obtener stock actual en sectores
+            List<StockPorSector> stockEnSectores = stockPorSectorRepository.findByProductoId(id);
+            Integer stockTotalEnSectores = stockEnSectores.stream()
+                    .mapToInt(StockPorSector::getCantidad)
+                    .sum();
+            
+            System.out.println("🔄 SINCRONIZACIÓN MANUAL - Stock del producto: " + producto.getStock());
+            System.out.println("🔄 SINCRONIZACIÓN MANUAL - Stock en sectores: " + stockTotalEnSectores);
+            
+            // Calcular la diferencia
+            Integer diferencia = producto.getStock() - stockTotalEnSectores;
+            System.out.println("🔄 SINCRONIZACIÓN MANUAL - Diferencia: " + diferencia);
+            
+            if (diferencia != 0) {
+                // Sincronizar el stock
+                productoService.sincronizarStockConSectores(empresaId, id, stockTotalEnSectores, producto.getStock());
+                
+                return ResponseEntity.ok(java.util.Map.of(
+                    "mensaje", "Stock sincronizado exitosamente",
+                    "productoId", id,
+                    "stockAnterior", stockTotalEnSectores,
+                    "stockNuevo", producto.getStock(),
+                    "diferencia", diferencia
+                ));
+            } else {
+                return ResponseEntity.ok(java.util.Map.of(
+                    "mensaje", "El stock ya está sincronizado",
+                    "productoId", id,
+                    "stock", producto.getStock()
+                ));
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ SINCRONIZACIÓN MANUAL - Error: " + e.getMessage());
+            e.printStackTrace();
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of(
+                "error", "Error al sincronizar stock",
+                "mensaje", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Diagnostica inconsistencias de stock en todos los productos
+     */
+    @GetMapping("/diagnostico-stock")
+    public ResponseEntity<?> diagnosticarStock(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🔍 DIAGNÓSTICO STOCK - Iniciando diagnóstico para empresa ID: " + empresaId);
+            
+            List<ProductoDTO> productos = productoService.obtenerTodosLosProductosIncluirInactivos(empresaId);
+            java.util.List<java.util.Map<String, Object>> inconsistencias = new java.util.ArrayList<>();
+            int totalProductos = productos.size();
+            int productosConInconsistencias = 0;
+            
+            for (ProductoDTO producto : productos) {
+                try {
+                    // Obtener stock actual en sectores
+                    List<StockPorSector> stockEnSectores = stockPorSectorRepository.findByProductoId(producto.getId());
+                    Integer stockTotalEnSectores = stockEnSectores.stream()
+                            .mapToInt(StockPorSector::getCantidad)
+                            .sum();
+                    
+                    Integer diferencia = producto.getStock() - stockTotalEnSectores;
+                    
+                    if (diferencia != 0) {
+                        productosConInconsistencias++;
+                        inconsistencias.add(java.util.Map.of(
+                            "productoId", producto.getId(),
+                            "productoNombre", producto.getNombre(),
+                            "stockProducto", producto.getStock(),
+                            "stockSectores", stockTotalEnSectores,
+                            "diferencia", diferencia,
+                            "sectorAsignado", producto.getSectorAlmacenamiento()
+                        ));
+                    }
+                } catch (Exception e) {
+                    System.err.println("❌ DIAGNÓSTICO STOCK - Error en producto " + producto.getId() + ": " + e.getMessage());
+                }
+            }
+            
+            return ResponseEntity.ok(java.util.Map.of(
+                "mensaje", "Diagnóstico completado",
+                "totalProductos", totalProductos,
+                "productosConInconsistencias", productosConInconsistencias,
+                "productosSincronizados", totalProductos - productosConInconsistencias,
+                "inconsistencias", inconsistencias
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ DIAGNÓSTICO STOCK - Error: " + e.getMessage());
+            e.printStackTrace();
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of(
+                "error", "Error al diagnosticar stock",
+                "mensaje", e.getMessage()
+            ));
         }
     }
 }

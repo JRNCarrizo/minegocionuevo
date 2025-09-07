@@ -396,13 +396,25 @@ export default function StockGeneral() {
     <div className="stock-page">
       <NavbarAdmin onCerrarSesion={cerrarSesion} />
       
-      <div className="stock-container">
+      <div className="stock-container" style={{
+        padding: isMobile ? '0.5rem' : '0.25rem 1rem'
+      }}>
         {/* Header */}
-        <div className="stock-header">
+        <div className="stock-header" style={{
+          marginBottom: isMobile ? '1.5rem' : '1rem'
+        }}>
           <div className="header-content">
-            <div className="header-icon">📊</div>
-            <h1 className="header-title">Stock General</h1>
-            <p className="header-description">
+            <div className="header-icon" style={{
+              width: isMobile ? '60px' : '80px',
+              height: isMobile ? '60px' : '80px',
+              fontSize: isMobile ? '2rem' : '3rem'
+            }}>📊</div>
+            <h1 className="header-title" style={{
+              fontSize: isMobile ? '1.75rem' : '2rem'
+            }}>Stock General</h1>
+            <p className="header-description" style={{
+              fontSize: isMobile ? '0.9rem' : '1rem'
+            }}>
               Vista completa del inventario de tu empresa con búsqueda avanzada
             </p>
           </div>
@@ -411,43 +423,108 @@ export default function StockGeneral() {
 
 
         {/* Estadísticas */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon">📦</div>
+        <div className="stats-grid" style={{
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: isMobile ? '0.75rem' : '1rem',
+          marginBottom: isMobile ? '1.5rem' : '2rem'
+        }}>
+          <div className="stat-card" style={{
+            padding: isMobile ? '1rem' : '1.5rem',
+            flexDirection: isMobile ? 'column' : 'row',
+            textAlign: isMobile ? 'center' : 'left',
+            gap: isMobile ? '0.5rem' : '1rem'
+          }}>
+            <div className="stat-icon" style={{
+              width: isMobile ? '40px' : '50px',
+              height: isMobile ? '40px' : '50px',
+              fontSize: isMobile ? '1.25rem' : '1.5rem'
+            }}>📦</div>
             <div className="stat-content">
-              <div className="stat-number">{estadisticas.totalProductos}</div>
-              <div className="stat-label">Total Productos</div>
+              <div className="stat-number" style={{
+                fontSize: isMobile ? '1.25rem' : '1.5rem'
+              }}>{estadisticas.totalProductos}</div>
+              <div className="stat-label" style={{
+                fontSize: isMobile ? '0.8rem' : '0.9rem'
+              }}>Total Productos</div>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon">🏢</div>
+          <div className="stat-card" style={{
+            padding: isMobile ? '1rem' : '1.5rem',
+            flexDirection: isMobile ? 'column' : 'row',
+            textAlign: isMobile ? 'center' : 'left',
+            gap: isMobile ? '0.5rem' : '1rem'
+          }}>
+            <div className="stat-icon" style={{
+              width: isMobile ? '40px' : '50px',
+              height: isMobile ? '40px' : '50px',
+              fontSize: isMobile ? '1.25rem' : '1.5rem'
+            }}>🏢</div>
             <div className="stat-content">
-              <div className="stat-number">{estadisticas.productosConSector}</div>
-              <div className="stat-label">Con sector</div>
+              <div className="stat-number" style={{
+                fontSize: isMobile ? '1.25rem' : '1.5rem'
+              }}>{estadisticas.productosConSector}</div>
+              <div className="stat-label" style={{
+                fontSize: isMobile ? '0.8rem' : '0.9rem'
+              }}>Con sector</div>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon">⚠️</div>
+          <div className="stat-card" style={{
+            padding: isMobile ? '1rem' : '1.5rem',
+            flexDirection: isMobile ? 'column' : 'row',
+            textAlign: isMobile ? 'center' : 'left',
+            gap: isMobile ? '0.5rem' : '1rem'
+          }}>
+            <div className="stat-icon" style={{
+              width: isMobile ? '40px' : '50px',
+              height: isMobile ? '40px' : '50px',
+              fontSize: isMobile ? '1.25rem' : '1.5rem'
+            }}>⚠️</div>
             <div className="stat-content">
-              <div className="stat-number">{estadisticas.productosSinSector}</div>
-              <div className="stat-label">Sin sector</div>
+              <div className="stat-number" style={{
+                fontSize: isMobile ? '1.25rem' : '1.5rem'
+              }}>{estadisticas.productosSinSector}</div>
+              <div className="stat-label" style={{
+                fontSize: isMobile ? '0.8rem' : '0.9rem'
+              }}>Sin sector</div>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon">🔢</div>
+          <div className="stat-card" style={{
+            padding: isMobile ? '1rem' : '1.5rem',
+            flexDirection: isMobile ? 'column' : 'row',
+            textAlign: isMobile ? 'center' : 'left',
+            gap: isMobile ? '0.5rem' : '1rem'
+          }}>
+            <div className="stat-icon" style={{
+              width: isMobile ? '40px' : '50px',
+              height: isMobile ? '40px' : '50px',
+              fontSize: isMobile ? '1.25rem' : '1.5rem'
+            }}>🔢</div>
             <div className="stat-content">
-              <div className="stat-number">{estadisticas.totalUnidades}</div>
-              <div className="stat-label">Total Unidades</div>
+              <div className="stat-number" style={{
+                fontSize: isMobile ? '1.25rem' : '1.5rem'
+              }}>{estadisticas.totalUnidades}</div>
+              <div className="stat-label" style={{
+                fontSize: isMobile ? '0.8rem' : '0.9rem'
+              }}>Total Unidades</div>
             </div>
           </div>
         </div>
 
         {/* Filtros */}
-        <div className="filters-section">
-          <div className="filters-container">
+        <div className="filters-section" style={{
+          padding: isMobile ? '1rem' : '1.5rem',
+          marginBottom: isMobile ? '1rem' : '1.5rem'
+        }}>
+          <div className="filters-container" style={{
+            gridTemplateColumns: isMobile ? '1fr' : '1fr auto',
+            gap: isMobile ? '1rem' : '1rem'
+          }}>
             <div className="search-group">
               <div className="search-input-wrapper">
-                <span className="search-icon">🔍</span>
+                <span className="search-icon" style={{
+                  left: isMobile ? '0.75rem' : '1rem',
+                  fontSize: isMobile ? '1rem' : '1.1rem'
+                }}>🔍</span>
                 <input
                   type="text"
                   placeholder="Buscar por nombre o código..."
@@ -455,6 +532,11 @@ export default function StockGeneral() {
                   onChange={(e) => setFiltroBusqueda(e.target.value)}
                   className="search-input"
                   ref={(el) => setInputBusquedaRef(el)}
+                  style={{
+                    padding: isMobile ? '0.75rem 1rem 0.75rem 2.5rem' : '1rem 1.5rem 1rem 3rem',
+                    fontSize: isMobile ? '0.9rem' : '1rem',
+                    minHeight: isMobile ? '44px' : '48px'
+                  }}
                 />
               </div>
             </div>
@@ -464,6 +546,11 @@ export default function StockGeneral() {
                 value={filtroTipo}
                 onChange={(e) => setFiltroTipo(e.target.value as any)}
                 className="filter-select"
+                style={{
+                  padding: isMobile ? '0.75rem 1rem' : '1rem 1.5rem',
+                  fontSize: isMobile ? '0.9rem' : '1rem',
+                  minHeight: isMobile ? '44px' : '48px'
+                }}
               >
                 <option value="todos">Todos los productos</option>
                 <option value="con_sector">Con sector asignado</option>
@@ -475,9 +562,18 @@ export default function StockGeneral() {
         </div>
 
         {/* Tabla */}
-        <div className="table-section">
-          <div className="table-header">
-            <h3>Productos ({datosOrdenados.length})</h3>
+        <div className="table-section" style={{
+          padding: isMobile ? '0.75rem' : '1rem'
+        }}>
+          <div className="table-header" style={{
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '1rem' : '0',
+            alignItems: isMobile ? 'stretch' : 'center'
+          }}>
+            <h3 style={{
+              fontSize: isMobile ? '1.1rem' : '1.25rem',
+              textAlign: isMobile ? 'center' : 'left'
+            }}>Productos ({datosOrdenados.length})</h3>
           </div>
 
           {datosOrdenados.length === 0 ? (
@@ -487,23 +583,44 @@ export default function StockGeneral() {
               <p>Intenta ajustar los filtros de búsqueda</p>
             </div>
           ) : (
-            <div className="table-wrapper">
-              <table className="stock-table">
+            <div className="table-wrapper" style={{
+              maxHeight: isMobile ? '60vh' : '70vh',
+              overflowX: 'auto',
+              overflowY: 'auto'
+            }}>
+              <table className="stock-table" style={{
+                minWidth: isMobile ? '600px' : '100%'
+              }}>
                 <thead>
                   <tr>
-                    <th onClick={() => cambiarOrden('codigo')} className="sortable-header">
+                    <th onClick={() => cambiarOrden('codigo')} className="sortable-header" style={{
+                      padding: isMobile ? '0.75rem 0.5rem' : '1.25rem 1rem',
+                      fontSize: isMobile ? '0.8rem' : '0.95rem'
+                    }}>
                       Código {ordenarPor === 'codigo' && (ordenAscendente ? '↑' : '↓')}
                     </th>
-                    <th onClick={() => cambiarOrden('nombre')} className="sortable-header">
+                    <th onClick={() => cambiarOrden('nombre')} className="sortable-header" style={{
+                      padding: isMobile ? '0.75rem 0.5rem' : '1.25rem 1rem',
+                      fontSize: isMobile ? '0.8rem' : '0.95rem'
+                    }}>
                       Producto {ordenarPor === 'nombre' && (ordenAscendente ? '↑' : '↓')}
                     </th>
-                    <th onClick={() => cambiarOrden('sector')} className="sortable-header">
+                    <th onClick={() => cambiarOrden('sector')} className="sortable-header" style={{
+                      padding: isMobile ? '0.75rem 0.5rem' : '1.25rem 1rem',
+                      fontSize: isMobile ? '0.8rem' : '0.95rem'
+                    }}>
                       Sector {ordenarPor === 'sector' && (ordenAscendente ? '↑' : '↓')}
                     </th>
-                    <th onClick={() => cambiarOrden('cantidad')} className="sortable-header">
+                    <th onClick={() => cambiarOrden('cantidad')} className="sortable-header" style={{
+                      padding: isMobile ? '0.75rem 0.5rem' : '1.25rem 1rem',
+                      fontSize: isMobile ? '0.8rem' : '0.95rem'
+                    }}>
                       Cantidad {ordenarPor === 'cantidad' && (ordenAscendente ? '↑' : '↓')}
                     </th>
-                    <th>Última Actualización</th>
+                    <th style={{
+                      padding: isMobile ? '0.75rem 0.5rem' : '1.25rem 1rem',
+                      fontSize: isMobile ? '0.8rem' : '0.95rem'
+                    }}>Última Actualización</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -511,14 +628,26 @@ export default function StockGeneral() {
                     <tr 
                       key={item.id} 
                       className={`table-row ${filaSeleccionada === index ? 'fila-seleccionada' : ''}`}
+                      style={{
+                        padding: isMobile ? '0.5rem 0.25rem' : '1.25rem 1rem'
+                      }}
                     >
-                      <td className="code-cell">{item.producto.codigoPersonalizado || 'Sin código'}</td>
-                      <td className="name-cell">
+                      <td className="code-cell" style={{
+                        padding: isMobile ? '0.5rem 0.25rem' : '1.25rem 1rem',
+                        fontSize: isMobile ? '0.8rem' : '0.9rem'
+                      }}>{item.producto.codigoPersonalizado || 'Sin código'}</td>
+                      <td className="name-cell" style={{
+                        padding: isMobile ? '0.5rem 0.25rem' : '1.25rem 1rem',
+                        fontSize: isMobile ? '0.8rem' : '0.9rem'
+                      }}>
                         <div className="product-name-container">
                           <span className="product-name">{item.producto.nombre}</span>
                         </div>
                       </td>
-                      <td className="sector-cell">
+                      <td className="sector-cell" style={{
+                        padding: isMobile ? '0.5rem 0.25rem' : '1.25rem 1rem',
+                        fontSize: isMobile ? '0.8rem' : '0.9rem'
+                      }}>
                         {filtroTipo === 'sin_sectorizar' ? (
                           <span className="consolidated-badge">Consolidado</span>
                         ) : item.sector ? (
@@ -527,11 +656,17 @@ export default function StockGeneral() {
                           <span className="no-sector-badge">Sin sector</span>
                         )}
                       </td>
-                      <td className="quantity-cell">
+                      <td className="quantity-cell" style={{
+                        padding: isMobile ? '0.5rem 0.25rem' : '1.25rem 1rem',
+                        fontSize: isMobile ? '0.8rem' : '0.9rem'
+                      }}>
                         <span className="quantity-number">{item.cantidad}</span>
                         <span className="quantity-unit">{item.producto.unidadMedida || 'unidades'}</span>
                       </td>
-                      <td className="date-cell">
+                      <td className="date-cell" style={{
+                        padding: isMobile ? '0.5rem 0.25rem' : '1.25rem 1rem',
+                        fontSize: isMobile ? '0.8rem' : '0.9rem'
+                      }}>
                         {new Date(item.fechaActualizacion).toLocaleDateString()}
                       </td>
                     </tr>

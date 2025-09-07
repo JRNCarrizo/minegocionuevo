@@ -752,21 +752,28 @@ export default function GestionSectores() {
         case 'Enter':
           event.preventDefault();
           if (modoNavegacion) {
-            if (elementoSeleccionado >= 0 && elementoSeleccionado <= 2) {
+            if (elementoSeleccionado >= 0 && elementoSeleccionado <= 3) {
               // Navegar entre botones de acción
               if (elementoSeleccionado === 0) {
-                migrarSectores();
+                navigate('/admin/stock-general');
               } else if (elementoSeleccionado === 1) {
                 setMostrarModalCrear(true);
               } else if (elementoSeleccionado === 2) {
-                navigate('/admin/stock-general');
+                migrarSectores();
+              } else if (elementoSeleccionado === 3) {
+                // Actualizar información
+                setCargando(true);
+                cargarInfoProductosPorSector().then(() => {
+                  setCargando(false);
+                  toast.success('Información actualizada');
+                });
               }
-            } else if (elementoSeleccionado >= 3) {
+            } else if (elementoSeleccionado >= 4) {
               // Seleccionar sector
               const sectoresVisibles = mostrarSectoresInactivos 
                 ? [...sectoresActivos, ...sectoresInactivos]
                 : sectoresActivos;
-              const sectorIndex = elementoSeleccionado - 3;
+              const sectorIndex = elementoSeleccionado - 4;
               const sectorSeleccionado = sectoresVisibles[sectorIndex];
               if (sectorSeleccionado) {
                 abrirModalProductos(sectorSeleccionado);
@@ -792,7 +799,7 @@ export default function GestionSectores() {
           const sectoresVisibles = mostrarSectoresInactivos 
             ? [...sectoresActivos, ...sectoresInactivos]
             : sectoresActivos;
-          const totalElementos = 3 + sectoresVisibles.length; // 3 botones + sectores
+          const totalElementos = 4 + sectoresVisibles.length; // 4 botones + sectores
           
           let nuevaSeleccion = elementoSeleccionado;
           
@@ -866,11 +873,11 @@ export default function GestionSectores() {
         {/* Botones de Acción */}
         <div className="botones-accion">
           <button
-            onClick={migrarSectores}
-            className={`boton-migrar ${modoNavegacion && elementoSeleccionado === 0 ? 'seleccionado' : ''}`}
+            onClick={() => navigate('/admin/stock-general')}
+            className={`boton-stock-general ${modoNavegacion && elementoSeleccionado === 0 ? 'seleccionado' : ''}`}
           >
-            <span className="icono-boton">🔄</span>
-            Migrar Sectores Existentes
+            <span className="icono-boton">📊</span>
+            Ver Stock General
           </button>
           <button
             onClick={() => setMostrarModalCrear(true)}
@@ -880,11 +887,11 @@ export default function GestionSectores() {
             Crear Nuevo Sector
           </button>
           <button
-            onClick={() => navigate('/admin/stock-general')}
-            className={`boton-stock-general ${modoNavegacion && elementoSeleccionado === 2 ? 'seleccionado' : ''}`}
+            onClick={migrarSectores}
+            className={`boton-migrar ${modoNavegacion && elementoSeleccionado === 2 ? 'seleccionado' : ''}`}
           >
-            <span className="icono-boton">📊</span>
-            Ver Stock General
+            <span className="icono-boton">🔄</span>
+            Migrar Sectores Existentes
           </button>
           <button
             onClick={async () => {
@@ -1002,7 +1009,7 @@ export default function GestionSectores() {
                   {sectoresActivos.map((sector, index) => (
                     <div
                       key={sector.id}
-                      className={`tarjeta-sector ${modoNavegacion && elementoSeleccionado === index + 3 ? 'seleccionada' : ''}`}
+                      className={`tarjeta-sector ${modoNavegacion && elementoSeleccionado === index + 4 ? 'seleccionada' : ''}`}
                       onClick={() => abrirModalProductos(sector)}
                       style={{
                         animationDelay: `${index * 0.1}s`
@@ -1118,7 +1125,7 @@ export default function GestionSectores() {
                   {sectoresInactivos.map((sector, index) => (
                     <div
                       key={sector.id}
-                      className={`tarjeta-sector tarjeta-inactiva ${modoNavegacion && elementoSeleccionado === index + 3 + sectoresActivos.length ? 'seleccionada' : ''}`}
+                      className={`tarjeta-sector tarjeta-inactiva ${modoNavegacion && elementoSeleccionado === index + 4 + sectoresActivos.length ? 'seleccionada' : ''}`}
                       onClick={() => abrirModalProductos(sector)}
                       style={{
                         animationDelay: `${index * 0.1}s`

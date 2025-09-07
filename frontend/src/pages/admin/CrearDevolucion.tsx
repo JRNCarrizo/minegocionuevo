@@ -5,7 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha, formatearFechaCorta, formatearFechaConHora, obtenerFechaActual } from '../../utils/dateUtils';
+import { obtenerFechaActual } from '../../utils/dateUtils';
 import BarcodeScanner from '../../components/BarcodeScanner';
 
 interface DetallePlanillaPedido {
@@ -51,31 +51,6 @@ export default function CrearDevolucion() {
   const [cantidadTemporal, setCantidadTemporal] = useState(0);
   const [estadoTemporal, setEstadoTemporal] = useState('BUEN_ESTADO');
   const [productoSeleccionadoTemporal, setProductoSeleccionadoTemporal] = useState<Producto | null>(null);
-  const [mostrarModalCrearProducto, setMostrarModalCrearProducto] = useState(false);
-  const [nuevoProducto, setNuevoProducto] = useState({
-    nombre: '',
-    marca: '',
-    descripcion: '',
-    precio: '0',
-    unidad: '',
-    categoria: '',
-    sectorAlmacenamiento: '',
-    codigoPersonalizado: '',
-    codigoBarras: '',
-    imagenes: [] as string[]
-  });
-  const [guardandoProducto, setGuardandoProducto] = useState(false);
-  const [categorias, setCategorias] = useState<string[]>([]);
-  const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
-  const [nuevaCategoria, setNuevaCategoria] = useState('');
-  const [nombresExistentes, setNombresExistentes] = useState<string[]>([]);
-  const [marcasExistentes, setMarcasExistentes] = useState<string[]>([]);
-  const [mostrarSugerenciasNombre, setMostrarSugerenciasNombre] = useState(false);
-  const [mostrarSugerenciasMarca, setMostrarSugerenciasMarca] = useState(false);
-  const [sugerenciasNombre, setSugerenciasNombre] = useState<string[]>([]);
-  const [sugerenciasMarca, setSugerenciasMarca] = useState<string[]>([]);
-  const [sugerenciaSeleccionadaNombre, setSugerenciaSeleccionadaNombre] = useState(-1);
-  const [sugerenciaSeleccionadaMarca, setSugerenciaSeleccionadaMarca] = useState(-1);
   
 
   
@@ -100,7 +75,6 @@ export default function CrearDevolucion() {
   // Estados para transportista
   const [transporte, setTransporte] = useState('');
   const [transportistas, setTransportistas] = useState<any[]>([]);
-  const [transportistasFiltrados, setTransportistasFiltrados] = useState<any[]>([]);
   const [mostrarTransportistas, setMostrarTransportistas] = useState(false);
   const [transportistaSeleccionado, setTransportistaSeleccionado] = useState(-1);
   const [inputBusquedaTransporte, setInputBusquedaTransporte] = useState('');
@@ -241,7 +215,6 @@ export default function CrearDevolucion() {
   // Filtrar transportistas cuando cambia la búsqueda
   useEffect(() => {
     if (!inputBusquedaTransporte.trim()) {
-      setTransportistasFiltrados(transportistas);
       setOpcionesTransporte([]);
       setMostrarTransportistas(false);
       return;
@@ -299,9 +272,6 @@ export default function CrearDevolucion() {
     });
 
     setOpcionesTransporte(opciones);
-    setTransportistasFiltrados(transportistas.filter(t => 
-      opciones.some(opcion => opcion.transportista.id === t.id)
-    ));
     setMostrarTransportistas(opciones.length > 0);
   }, [inputBusquedaTransporte, transportistas]);
 
@@ -314,7 +284,6 @@ export default function CrearDevolucion() {
     
     if (datosUsuario) {
       cargarProductos();
-      cargarCategorias();
       // Solo inicializar si no hay datos de la planilla
       if (!numeroPlanilla && detalles.length === 0) {
         inicializarPlanilla();
@@ -368,27 +337,12 @@ export default function CrearDevolucion() {
       const response = await ApiService.obtenerTodosLosProductos(datosUsuario.empresaId);
       setProductos(response.data || []);
       
-      // Extraer nombres y marcas existentes para sugerencias
-      const nombres = [...new Set(response.data?.map(p => p.nombre) || [])];
-      const marcas = [...new Set(response.data?.map(p => p.marca).filter((marca): marca is string => Boolean(marca)) || [])];
-      setNombresExistentes(nombres);
-      setMarcasExistentes(marcas);
     } catch (error) {
       console.error('Error al cargar productos:', error);
       toast.error('Error al cargar los productos');
     }
   };
 
-  const cargarCategorias = async () => {
-    try {
-      if (!datosUsuario?.empresaId) return;
-      
-      const response = await ApiService.obtenerCategorias(datosUsuario.empresaId);
-      setCategorias(response.data || []);
-    } catch (error) {
-      console.error('Error al cargar categorías:', error);
-    }
-  };
 
   // Efecto para filtrar productos
   useEffect(() => {
@@ -666,11 +620,6 @@ export default function CrearDevolucion() {
     ));
   };
 
-  const actualizarObservaciones = (index: number, observaciones: string) => {
-    setDetalles(prev => prev.map((detalle, i) => 
-      i === index ? { ...detalle, observaciones } : detalle
-    ));
-  };
 
   const actualizarEstadoProducto = (index: number, estadoProducto: string) => {
     setDetalles(prev => prev.map((detalle, i) => 
@@ -787,9 +736,6 @@ export default function CrearDevolucion() {
     return detalles.reduce((total, detalle) => total + detalle.cantidad, 0);
   };
 
-  const calcularTotalProductos = () => {
-    return detalles.length;
-  };
 
   if (!datosUsuario) {
     return (
@@ -988,10 +934,10 @@ export default function CrearDevolucion() {
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '1rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#64748b',
-                marginBottom: '0.5rem'
+                marginBottom: isMobile ? '0.75rem' : '0.5rem'
               }}>
                 📅 Fecha de la Planilla
               </label>
@@ -1003,10 +949,11 @@ export default function CrearDevolucion() {
                 max={obtenerFechaActual()}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: isMobile ? '1rem' : '0.75rem',
                   border: '2px solid #e2e8f0',
                   borderRadius: '0.5rem',
-                  fontSize: '0.875rem'
+                  fontSize: isMobile ? '1rem' : '0.875rem',
+                  minHeight: isMobile ? '48px' : 'auto'
                 }}
               />
             </div>
@@ -1014,10 +961,10 @@ export default function CrearDevolucion() {
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '1rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#64748b',
-                marginBottom: '0.5rem'
+                marginBottom: isMobile ? '0.75rem' : '0.5rem'
               }}>
                 📄 Número de Planilla
               </label>
@@ -1039,10 +986,11 @@ export default function CrearDevolucion() {
                  placeholder="Opcional"
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: isMobile ? '1rem' : '0.75rem',
                    border: '2px solid #e2e8f0',
                   borderRadius: '0.5rem',
-                   fontSize: '0.875rem'
+                   fontSize: isMobile ? '1rem' : '0.875rem',
+                   minHeight: isMobile ? '48px' : 'auto'
                 }}
               />
             </div>
@@ -1050,26 +998,27 @@ export default function CrearDevolucion() {
             <div style={{ position: 'relative' }}>
               <label style={{
                 display: 'block',
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '1rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#64748b',
-                marginBottom: '0.5rem'
+                marginBottom: isMobile ? '0.75rem' : '0.5rem'
               }}>
                 🚛 Transporte (Opcional)
               </label>
               {transporte ? (
                 <div style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: isMobile ? '1rem' : '0.75rem',
                   border: '2px solid #10b981',
                   borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
+                  fontSize: isMobile ? '1rem' : '0.875rem',
                   backgroundColor: '#f0fdf4',
                   color: '#065f46',
                   fontWeight: '500',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  minHeight: isMobile ? '48px' : 'auto'
                 }}>
                   <span>{transporte}</span>
                   <button
@@ -1105,10 +1054,11 @@ export default function CrearDevolucion() {
                   placeholder="Buscar transportista por código, nombre o vehículo..."
                   style={{
                     width: '100%',
-                    padding: '0.75rem',
+                    padding: isMobile ? '1rem' : '0.75rem',
                     border: '2px solid #e2e8f0',
                     borderRadius: '0.5rem',
-                    fontSize: '0.875rem'
+                    fontSize: isMobile ? '1rem' : '0.875rem',
+                    minHeight: isMobile ? '48px' : 'auto'
                   }}
                 />
               )}
@@ -1137,30 +1087,31 @@ export default function CrearDevolucion() {
                       data-transportista-index={index}
                       onClick={() => seleccionarTransportista(opcion)}
                       style={{
-                        padding: '0.75rem',
+                        padding: isMobile ? '1rem' : '0.75rem',
                         cursor: 'pointer',
                         borderBottom: '1px solid #f3f4f6',
                         transition: 'all 0.2s ease',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem',
+                        gap: isMobile ? '0.75rem' : '0.5rem',
                         backgroundColor: transportistaSeleccionado === index ? '#eff6ff' : 'transparent',
-                        borderLeft: transportistaSeleccionado === index ? '3px solid #3b82f6' : 'none'
+                        borderLeft: transportistaSeleccionado === index ? '3px solid #3b82f6' : 'none',
+                        minHeight: isMobile ? '60px' : 'auto'
                       }}
                       onMouseEnter={() => setTransportistaSeleccionado(index)}
                     >
-                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>🚛</span>
+                      <span style={{ fontSize: isMobile ? '1.25rem' : '0.875rem', color: '#6b7280' }}>🚛</span>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>
+                        <div style={{ fontWeight: '500', fontSize: isMobile ? '1rem' : '0.875rem', lineHeight: '1.3' }}>
                           {opcion.displayText}
                         </div>
                         {opcion.transportista.nombreEmpresa && (
-                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                          <div style={{ fontSize: isMobile ? '0.8rem' : '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
                             {opcion.transportista.nombreEmpresa}
                           </div>
                         )}
                         {opcion.vehiculo && (
-                          <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: '500' }}>
+                          <div style={{ fontSize: isMobile ? '0.8rem' : '0.75rem', color: '#059669', fontWeight: '500', marginTop: '0.25rem' }}>
                             🚗 Patente: {opcion.vehiculo.patente}
                           </div>
                         )}
@@ -1175,10 +1126,10 @@ export default function CrearDevolucion() {
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '1rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#64748b',
-                marginBottom: '0.5rem'
+                marginBottom: isMobile ? '0.75rem' : '0.5rem'
               }}>
                 💬 Observaciones / Motivo
               </label>
@@ -1207,11 +1158,12 @@ export default function CrearDevolucion() {
                  rows={1}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: isMobile ? '1rem' : '0.75rem',
                    border: '2px solid #e2e8f0',
                   borderRadius: '0.5rem',
-                   fontSize: '0.875rem',
-                   resize: 'none'
+                   fontSize: isMobile ? '1rem' : '0.875rem',
+                   resize: 'none',
+                   minHeight: isMobile ? '48px' : 'auto'
                 }}
               />
             </div>
@@ -1249,10 +1201,10 @@ export default function CrearDevolucion() {
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
                 display: 'block',
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '1rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#64748b',
-                marginBottom: '0.5rem'
+                marginBottom: isMobile ? '0.75rem' : '0.5rem'
               }}>
                 🔍 Buscar Producto
               </label>
@@ -1272,10 +1224,11 @@ export default function CrearDevolucion() {
                     onKeyDown={manejarTeclas}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: isMobile ? '1rem' : '0.75rem',
                       border: '2px solid #e2e8f0',
                   borderRadius: '0.5rem',
-                      fontSize: '0.875rem'
+                      fontSize: isMobile ? '1rem' : '0.875rem',
+                      minHeight: isMobile ? '48px' : 'auto'
                 }}
               />
 
@@ -1301,29 +1254,38 @@ export default function CrearDevolucion() {
                     key={producto.id}
                           onClick={() => seleccionarProducto(producto)}
                     style={{
-                            padding: '0.75rem',
+                            padding: isMobile ? '0.75rem' : '0.75rem',
                       cursor: 'pointer',
                             borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
                             background: index === productoSeleccionado ? '#3b82f6' : 'white',
                             color: index === productoSeleccionado ? 'white' : '#1e293b',
-                            fontSize: '0.875rem',
-                            transition: 'all 0.2s ease'
+                            fontSize: isMobile ? '1rem' : '0.875rem',
+                            transition: 'all 0.2s ease',
+                            minHeight: isMobile ? '60px' : 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: isMobile ? '1rem' : '0.5rem'
                           }}
                           onMouseOver={() => setProductoSeleccionado(index)}
                         >
-                          <div style={{ 
-                            fontWeight: '600', 
-                            color: index === productoSeleccionado ? 'white' : '#1e293b' 
-                          }}>
-                      {producto.nombre}
-                    </div>
-                          <div style={{ 
-                            fontSize: '0.75rem', 
-                            color: index === productoSeleccionado ? '#e2e8f0' : '#64748b' 
-                          }}>
-                            {producto.codigoPersonalizado && `Código: ${producto.codigoPersonalizado}`}
-                            {producto.codigoBarras && ` • Barras: ${producto.codigoBarras}`}
-                            {` • Stock: ${producto.stock}`}
+                          <div style={{ flex: 1 }}>
+                            <div style={{ 
+                              fontWeight: '600', 
+                              color: index === productoSeleccionado ? 'white' : '#1e293b',
+                              fontSize: isMobile ? '0.95rem' : '0.875rem',
+                              lineHeight: '1.3'
+                            }}>
+                              {producto.nombre}
+                            </div>
+                            <div style={{ 
+                              fontSize: isMobile ? '0.8rem' : '0.75rem', 
+                              color: index === productoSeleccionado ? '#e2e8f0' : '#64748b',
+                              marginTop: '0.25rem'
+                            }}>
+                              {producto.codigoPersonalizado && `Código: ${producto.codigoPersonalizado}`}
+                              {producto.codigoBarras && ` • Barras: ${producto.codigoBarras}`}
+                              {` • Stock: ${producto.stock}`}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -1336,10 +1298,10 @@ export default function CrearDevolucion() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '0.75rem',
+                      fontSize: isMobile ? '0.875rem' : '0.75rem',
                       fontWeight: '600',
                       color: '#64748b',
-                      marginBottom: '0.25rem'
+                      marginBottom: isMobile ? '0.5rem' : '0.25rem'
                     }}>
                       Cantidad
                     </label>
@@ -1356,10 +1318,11 @@ export default function CrearDevolucion() {
                       onKeyDown={manejarTeclasCantidad}
                       style={{
                         width: '100%',
-                        padding: '0.75rem',
+                        padding: isMobile ? '1rem' : '0.75rem',
                         border: '2px solid #e2e8f0',
                         borderRadius: '0.5rem',
-                        fontSize: '0.875rem'
+                        fontSize: isMobile ? '1rem' : '0.875rem',
+                        minHeight: isMobile ? '48px' : 'auto'
                       }}
                     />
                   </div>
@@ -1370,10 +1333,10 @@ export default function CrearDevolucion() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '0.75rem',
+                      fontSize: isMobile ? '0.875rem' : '0.75rem',
                       fontWeight: '600',
                       color: '#64748b',
-                      marginBottom: '0.25rem'
+                      marginBottom: isMobile ? '0.5rem' : '0.25rem'
                     }}>
                       Estado
                     </label>
@@ -1384,11 +1347,12 @@ export default function CrearDevolucion() {
                       onKeyDown={manejarTeclasEstado}
                       style={{
                         width: '100%',
-                        padding: '0.75rem',
+                        padding: isMobile ? '1rem' : '0.75rem',
                         border: '2px solid #e2e8f0',
                         borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
-                        backgroundColor: 'white'
+                        fontSize: isMobile ? '1rem' : '0.875rem',
+                        backgroundColor: 'white',
+                        minHeight: isMobile ? '48px' : 'auto'
                       }}
                     >
                       {estadosProducto.map(estado => (
@@ -1403,35 +1367,62 @@ export default function CrearDevolucion() {
 
               {/* Vista previa del producto seleccionado */}
               {(mostrarCampoCantidad || mostrarSelectorEstado) && productoSeleccionadoTemporal && (
-                <div style={{
-                  background: 'white',
-                  borderRadius: '0.5rem',
-                  padding: '0.75rem',
-                  border: '2px solid #3b82f6',
-                  marginTop: '0.5rem',
-                  fontSize: '0.75rem'
-                }}>
-                  <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                <div 
+                  onClick={isMobile ? (mostrarCampoCantidad ? activarSelectorEstado : confirmarProducto) : undefined}
+                  style={{
+                    background: isMobile ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                    borderRadius: '0.5rem',
+                    padding: isMobile ? '1rem' : '0.75rem',
+                    border: isMobile ? 'none' : '2px solid #3b82f6',
+                    marginTop: '0.5rem',
+                    fontSize: isMobile ? '0.875rem' : '0.75rem',
+                    cursor: isMobile ? 'pointer' : 'default',
+                    color: isMobile ? 'white' : 'inherit',
+                    boxShadow: isMobile ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none',
+                    transition: isMobile ? 'all 0.3s ease' : 'none'
+                  }}
+                  onMouseEnter={isMobile ? (e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
+                  } : undefined}
+                  onMouseLeave={isMobile ? (e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                  } : undefined}
+                >
+                  <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                     <strong>Producto:</strong> {productoSeleccionadoTemporal.nombre}
                   </div>
                   {productoSeleccionadoTemporal.codigoPersonalizado && (
-                    <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                    <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                       <strong>Código:</strong> {productoSeleccionadoTemporal.codigoPersonalizado}
                     </div>
                   )}
-                  <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                  <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                     <strong>Stock actual:</strong> {productoSeleccionadoTemporal.stock}
                   </div>
-                  <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                  <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                     <strong>Cantidad:</strong> {cantidadTemporal}
                   </div>
                   {mostrarSelectorEstado && (
-                    <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                    <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                       <strong>Estado:</strong> {estadosProducto.find(e => e.value === estadoTemporal)?.label}
                     </div>
                   )}
-                  <div style={{ color: '#3b82f6', fontWeight: '600' }}>
-                    {mostrarCampoCantidad ? '💡 Enter para continuar • Escape para cancelar' : '💡 Enter para agregar • Escape para cancelar'}
+                  <div style={{ 
+                    fontWeight: '600', 
+                    fontSize: isMobile ? '0.9rem' : '0.75rem',
+                    textAlign: isMobile ? 'center' : 'left',
+                    marginTop: isMobile ? '0.5rem' : '0',
+                    padding: isMobile ? '0.5rem' : '0',
+                    background: isMobile ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                    borderRadius: isMobile ? '0.25rem' : '0'
+                  }}>
+                    {isMobile ? (
+                      mostrarCampoCantidad ? '👆 TOCA PARA CONTINUAR' : '👆 TOCA PARA AGREGAR'
+                    ) : (
+                      mostrarCampoCantidad ? '💡 Enter para continuar • Escape para cancelar' : '💡 Enter para agregar • Escape para cancelar'
+                    )}
                   </div>
                 </div>
               )}
@@ -1504,14 +1495,15 @@ export default function CrearDevolucion() {
                   <div
                     key={detalle.id}
                   style={{
-                      padding: '0.75rem',
+                      padding: isMobile ? '1rem' : '0.75rem',
                       borderBottom: index < detalles.length - 1 ? '1px solid #f1f5f9' : 'none',
-                      background: index % 2 === 0 ? 'white' : '#f8fafc'
+                      background: index % 2 === 0 ? 'white' : '#f8fafc',
+                      minHeight: isMobile ? '70px' : 'auto'
                   }}
                 >
                   <div style={{
                     display: 'grid',
-                      gridTemplateColumns: isMobile ? '1fr' : '1fr auto auto auto',
+                      gridTemplateColumns: isMobile ? '1fr' : '1fr auto',
                       gap: '0.75rem',
                     alignItems: 'center'
                   }}>
@@ -1519,106 +1511,117 @@ export default function CrearDevolucion() {
                       <div style={{
                         fontWeight: '600',
                         color: '#1e293b',
-                          fontSize: '0.875rem',
-                          lineHeight: '1.2'
+                          fontSize: isMobile ? '1rem' : '0.875rem',
+                          lineHeight: '1.3'
                       }}>
                         {detalle.descripcion}
                       </div>
                       {detalle.codigoPersonalizado && (
                         <div style={{
-                            fontSize: '0.7rem', 
+                            fontSize: isMobile ? '0.8rem' : '0.7rem', 
                             color: '#64748b',
-                            marginTop: '0.125rem'
+                            marginTop: '0.25rem'
                         }}>
                           Código: {detalle.codigoPersonalizado}
                         </div>
                       )}
                     </div>
-                    <div>
-                      <label style={{
-                          display: 'block',
-                          fontSize: '0.7rem',
-                        fontWeight: '600',
-                          color: '#64748b',
-                          marginBottom: '0.125rem'
-                      }}>
-                        Cantidad
-                      </label>
-                        <input
-                          type="text"
-                          value={detalle.cantidad}
-                          onChange={(e) => {
-                            const valor = e.target.value;
-                            if (valor === '' || /^\d+$/.test(valor)) {
-                              const nuevaCantidad = valor === '' ? 0 : parseInt(valor);
-                              actualizarCantidad(index, nuevaCantidad);
-                            }
-                          }}
-                          style={{
-                            width: '60px',
-                            padding: '0.25rem',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '0.25rem',
-                            fontSize: '0.8rem',
-                            textAlign: 'center',
-                            background: '#f8fafc',
-                            color: '#1e293b',
-                            fontWeight: '500',
-                            minHeight: '1.5rem'
-                          }}
-                        />
-                      </div>
+                    
+                    {/* Cantidad, Estado y Botón eliminar en la misma línea */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: isMobile ? '0.75rem' : '0.5rem',
+                      flexShrink: 0
+                    }}>
                       <div>
                         <label style={{
-                          display: 'block',
-                          fontSize: '0.7rem',
+                            display: 'block',
+                            fontSize: isMobile ? '0.8rem' : '0.7rem',
                           fontWeight: '600',
-                          color: '#64748b',
-                          marginBottom: '0.125rem'
+                            color: '#64748b',
+                            marginBottom: isMobile ? '0.25rem' : '0.125rem'
                         }}>
-                          Estado
+                          Cantidad
                         </label>
-                        <select
-                          value={detalle.estadoProducto}
-                          onChange={(e) => actualizarEstadoProducto(index, e.target.value)}
-                          style={{
-                            padding: '0.25rem',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '0.25rem',
-                            fontSize: '0.7rem',
-                            background: '#f8fafc',
-                            color: '#1e293b',
-                            fontWeight: '500',
-                            minHeight: '1.5rem',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          {estadosProducto.map(estado => (
-                            <option key={estado.value} value={estado.value}>
-                              {estado.label}
-                            </option>
-                          ))}
-                        </select>
+                          <input
+                            type="text"
+                            value={detalle.cantidad}
+                            onChange={(e) => {
+                              const valor = e.target.value;
+                              if (valor === '' || /^\d+$/.test(valor)) {
+                                const nuevaCantidad = valor === '' ? 0 : parseInt(valor);
+                                actualizarCantidad(index, nuevaCantidad);
+                              }
+                            }}
+                            style={{
+                              width: isMobile ? '80px' : '60px',
+                              padding: isMobile ? '0.5rem' : '0.25rem',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '0.25rem',
+                              fontSize: isMobile ? '1rem' : '0.8rem',
+                              textAlign: 'center',
+                              background: '#f8fafc',
+                              color: '#1e293b',
+                              fontWeight: '500',
+                              minHeight: isMobile ? '2rem' : '1.5rem'
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{
+                            display: 'block',
+                            fontSize: isMobile ? '0.8rem' : '0.7rem',
+                            fontWeight: '600',
+                            color: '#64748b',
+                            marginBottom: isMobile ? '0.25rem' : '0.125rem'
+                          }}>
+                            Estado
+                          </label>
+                          <select
+                            value={detalle.estadoProducto}
+                            onChange={(e) => actualizarEstadoProducto(index, e.target.value)}
+                            style={{
+                              padding: isMobile ? '0.5rem' : '0.25rem',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '0.25rem',
+                              fontSize: isMobile ? '0.8rem' : '0.7rem',
+                              background: '#f8fafc',
+                              color: '#1e293b',
+                              fontWeight: '500',
+                              minHeight: isMobile ? '2rem' : '1.5rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {estadosProducto.map(estado => (
+                              <option key={estado.value} value={estado.value}>
+                                {estado.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                          <button
+                          onClick={() => removerDetalle(index)}
+                            style={{
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '0.25rem',
+                            padding: isMobile ? '0.5rem' : '0.375rem',
+                            fontSize: isMobile ? '0.875rem' : '0.7rem',
+                            cursor: 'pointer',
+                              width: isMobile ? '2.5rem' : '2rem',
+                              height: isMobile ? '2.5rem' : '2rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              alignSelf: 'flex-end',
+                              marginTop: isMobile ? '1.5rem' : '1.25rem'
+                            }}
+                          >
+                          🗑️
+                          </button>
                       </div>
-                        <button
-                        onClick={() => removerDetalle(index)}
-                          style={{
-                            background: '#ef4444',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '0.25rem',
-                          padding: '0.375rem',
-                          fontSize: '0.7rem',
-                          cursor: 'pointer',
-                            width: '2rem',
-                            height: '2rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                        🗑️
-                        </button>
                     </div>
                   </div>
                 ))}

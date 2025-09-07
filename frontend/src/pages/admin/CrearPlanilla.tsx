@@ -46,7 +46,7 @@ interface Vehiculo {
 
 export default function CrearPlanilla() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
-  const { isMobile, isTablet } = useResponsive();
+  const { isMobile } = useResponsive();
   const navigate = useNavigate();
   
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -370,7 +370,7 @@ export default function CrearPlanilla() {
   };
 
   // Función para mostrar predicciones mientras escribes
-  const mostrarPredicciones = (valor: string) => {
+  const mostrarPredicciones = () => {
     setProductoSeleccionado(-1);
   };
 
@@ -585,7 +585,7 @@ export default function CrearPlanilla() {
     }
 
     if (cantidadTemporal <= 0) {
-      toast.error('La cantidad debe ser mayor a 0');
+      toast.error('Por favor ingrese una cantidad válida');
       return;
     }
 
@@ -758,25 +758,6 @@ export default function CrearPlanilla() {
     }));
   };
 
-  // Función para aumentar cantidad
-  const aumentarCantidad = (index: number) => {
-    setNuevaPlanilla(prev => ({
-      ...prev,
-      detalles: prev.detalles.map((detalle, i) => 
-        i === index ? { ...detalle, cantidad: detalle.cantidad + 1 } : detalle
-      )
-    }));
-  };
-
-  // Función para disminuir cantidad
-  const disminuirCantidad = (index: number) => {
-    setNuevaPlanilla(prev => ({
-      ...prev,
-      detalles: prev.detalles.map((detalle, i) => 
-        i === index ? { ...detalle, cantidad: Math.max(1, detalle.cantidad - 1) } : detalle
-      )
-    }));
-  };
 
   // Calcular total de unidades
   const totalUnidades = nuevaPlanilla.detalles.reduce((total, detalle) => total + detalle.cantidad, 0);
@@ -947,10 +928,10 @@ export default function CrearPlanilla() {
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '1rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#374151',
-                marginBottom: '0.5rem'
+                marginBottom: isMobile ? '0.75rem' : '0.5rem'
               }}>
                 Fecha de Planilla *
               </label>
@@ -963,20 +944,21 @@ export default function CrearPlanilla() {
                 }))}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: isMobile ? '1rem' : '0.75rem',
                   border: '2px solid #e5e7eb',
                   borderRadius: '0.5rem',
-                  fontSize: '0.875rem'
+                  fontSize: isMobile ? '1rem' : '0.875rem',
+                  minHeight: isMobile ? '48px' : 'auto'
                 }}
               />
             </div>
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '1rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#374151',
-                marginBottom: '0.5rem'
+                marginBottom: isMobile ? '0.75rem' : '0.5rem'
               }}>
                 Código de Planilla (8 dígitos)
               </label>
@@ -994,36 +976,38 @@ export default function CrearPlanilla() {
                 onKeyDown={manejarTeclasCodigoPlanilla}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: isMobile ? '1rem' : '0.75rem',
                   border: '2px solid #e5e7eb',
                   borderRadius: '0.5rem',
-                  fontSize: '0.875rem'
+                  fontSize: isMobile ? '1rem' : '0.875rem',
+                  minHeight: isMobile ? '48px' : 'auto'
                 }}
               />
             </div>
             <div style={{ position: 'relative' }}>
               <label style={{
                 display: 'block',
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '1rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#374151',
-                marginBottom: '0.5rem'
+                marginBottom: isMobile ? '0.75rem' : '0.5rem'
               }}>
                 Transporte
               </label>
               {nuevaPlanilla.transporte ? (
                 <div style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: isMobile ? '1rem' : '0.75rem',
                   border: '2px solid #10b981',
                   borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
+                  fontSize: isMobile ? '1rem' : '0.875rem',
                   backgroundColor: '#f0fdf4',
                   color: '#065f46',
                   fontWeight: '500',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  minHeight: isMobile ? '48px' : 'auto'
                 }}>
                   <span>{nuevaPlanilla.transporte}</span>
                   <button
@@ -1054,10 +1038,11 @@ export default function CrearPlanilla() {
                   onKeyDown={manejarTeclasTransporte}
                   style={{
                     width: '100%',
-                    padding: '0.75rem',
+                    padding: isMobile ? '1rem' : '0.75rem',
                     border: '2px solid #e5e7eb',
                     borderRadius: '0.5rem',
-                    fontSize: '0.875rem'
+                    fontSize: isMobile ? '1rem' : '0.875rem',
+                    minHeight: isMobile ? '48px' : 'auto'
                   }}
                 />
               )}
@@ -1084,30 +1069,31 @@ export default function CrearPlanilla() {
                       data-transportista-index={index}
                       onClick={() => seleccionarTransportista(opcion)}
                       style={{
-                        padding: '0.75rem',
+                        padding: isMobile ? '1rem' : '0.75rem',
                         cursor: 'pointer',
                         borderBottom: '1px solid #f3f4f6',
                         transition: 'all 0.2s ease',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem',
+                        gap: isMobile ? '0.75rem' : '0.5rem',
                         backgroundColor: index === transportistaSeleccionado ? '#eff6ff' : 'transparent',
-                        borderLeft: index === transportistaSeleccionado ? '3px solid #3b82f6' : 'none'
+                        borderLeft: index === transportistaSeleccionado ? '3px solid #3b82f6' : 'none',
+                        minHeight: isMobile ? '60px' : 'auto'
                       }}
                       onMouseEnter={() => setTransportistaSeleccionado(index)}
                     >
-                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>🚛</span>
+                      <span style={{ fontSize: isMobile ? '1.25rem' : '0.875rem', color: '#6b7280' }}>🚛</span>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>
+                        <div style={{ fontWeight: '500', fontSize: isMobile ? '1rem' : '0.875rem', lineHeight: '1.3' }}>
                           {opcion.displayText}
                         </div>
                         {opcion.transportista.nombreEmpresa && (
-                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                          <div style={{ fontSize: isMobile ? '0.875rem' : '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
                             {opcion.transportista.nombreEmpresa}
                           </div>
                         )}
                         {opcion.vehiculo && (
-                          <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: '500' }}>
+                          <div style={{ fontSize: isMobile ? '0.875rem' : '0.75rem', color: '#059669', fontWeight: '500', marginTop: '0.25rem' }}>
                             🚗 Patente: {opcion.vehiculo.patente}
                           </div>
                         )}
@@ -1121,10 +1107,10 @@ export default function CrearPlanilla() {
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '1rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#374151',
-                marginBottom: '0.5rem'
+                marginBottom: isMobile ? '0.75rem' : '0.5rem'
               }}>
                 Observaciones
               </label>
@@ -1140,10 +1126,11 @@ export default function CrearPlanilla() {
                 onKeyDown={manejarTeclasObservaciones}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: isMobile ? '1rem' : '0.75rem',
                   border: '2px solid #e5e7eb',
                   borderRadius: '0.5rem',
-                  fontSize: '0.875rem'
+                  fontSize: isMobile ? '1rem' : '0.875rem',
+                  minHeight: isMobile ? '48px' : 'auto'
                 }}
               />
             </div>
@@ -1194,19 +1181,20 @@ export default function CrearPlanilla() {
                     onChange={(e) => {
                       if (!modoCantidad) {
                         setInputBusqueda(e.target.value);
-                        mostrarPredicciones(e.target.value);
+                        mostrarPredicciones();
                       }
                     }}
                     onKeyDown={manejarTeclas}
                     disabled={modoCantidad}
                     style={{
                       width: '100%',
-                      padding: '0.75rem',
+                      padding: isMobile ? '1rem' : '0.75rem',
                       border: '2px solid #e5e7eb',
                       borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
+                      fontSize: isMobile ? '1rem' : '0.875rem',
                       background: modoCantidad ? '#f3f4f6' : 'white',
-                      color: modoCantidad ? '#6b7280' : '#1e293b'
+                      color: modoCantidad ? '#6b7280' : '#1e293b',
+                      minHeight: isMobile ? '48px' : 'auto'
                     }}
                   />
                   
@@ -1235,17 +1223,18 @@ export default function CrearPlanilla() {
                           key={producto.id}
                           onClick={() => stockDisponible > 0 ? seleccionarProducto(producto) : null}
                           style={{
-                            padding: '0.5rem',
+                            padding: isMobile ? '0.75rem' : '0.5rem',
                             cursor: stockDisponible > 0 ? 'pointer' : 'not-allowed',
                             borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
                             background: index === productoSeleccionado ? '#3b82f6' : stockDisponible > 0 ? 'white' : '#f3f4f6',
                             color: index === productoSeleccionado ? 'white' : stockDisponible > 0 ? '#1e293b' : '#9ca3af',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.75rem',
+                            gap: isMobile ? '1rem' : '0.75rem',
                             borderRadius: index === productoSeleccionado ? '0.375rem' : '0',
                             boxShadow: index === productoSeleccionado ? '0 2px 4px rgba(59, 130, 246, 0.3)' : 'none',
-                            opacity: stockDisponible > 0 ? 1 : 0.6
+                            opacity: stockDisponible > 0 ? 1 : 0.6,
+                            minHeight: isMobile ? '60px' : 'auto'
                           }}
                           onMouseEnter={() => stockDisponible > 0 ? setProductoSeleccionado(index) : null}
                         >
@@ -1253,8 +1242,8 @@ export default function CrearPlanilla() {
                             <div style={{
                               fontWeight: '600',
                               color: index === productoSeleccionado ? 'white' : '#1e293b',
-                              fontSize: '0.8rem',
-                              lineHeight: '1.2'
+                              fontSize: isMobile ? '0.95rem' : '0.8rem',
+                              lineHeight: '1.3'
                             }}>
                               {producto.codigoPersonalizado ? (
                                 <>
@@ -1273,8 +1262,8 @@ export default function CrearPlanilla() {
                             </div>
                             <div style={{
                               color: index === productoSeleccionado ? '#e2e8f0' : '#64748b',
-                              fontSize: '0.7rem',
-                              marginTop: '0.125rem'
+                              fontSize: isMobile ? '0.8rem' : '0.7rem',
+                              marginTop: '0.25rem'
                             }}>
                               Stock disponible: {obtenerStockDisponible(producto)}
                             </div>
@@ -1295,17 +1284,28 @@ export default function CrearPlanilla() {
                       min="1"
                       max={productoParaCantidad ? obtenerStockDisponible(productoParaCantidad) : 999}
                       value={cantidadTemporal}
-                      onChange={(e) => setCantidadTemporal(Math.max(1, parseInt(e.target.value) || 1))}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        if (valor === '') {
+                          setCantidadTemporal(0);
+                        } else {
+                          const numero = parseInt(valor);
+                          if (!isNaN(numero) && numero > 0) {
+                            setCantidadTemporal(numero);
+                          }
+                        }
+                      }}
                       onKeyDown={manejarTeclasCantidad}
                       style={{
                         width: '100%',
-                        padding: '0.75rem',
+                        padding: isMobile ? '1rem' : '0.75rem',
                         border: '2px solid #3b82f6',
                         borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
+                        fontSize: isMobile ? '1.125rem' : '0.875rem',
                         textAlign: 'center',
                         fontWeight: '600',
-                        background: 'white'
+                        background: 'white',
+                        minHeight: isMobile ? '48px' : 'auto'
                       }}
                     />
                   </div>
@@ -1314,22 +1314,45 @@ export default function CrearPlanilla() {
 
               {/* Información del producto seleccionado */}
               {modoCantidad && productoParaCantidad && (
-                <div style={{
-                  background: 'white',
-                  borderRadius: '0.5rem',
-                  padding: '0.75rem',
-                  border: '2px solid #3b82f6',
-                  marginTop: '0.5rem',
-                  fontSize: '0.75rem'
-                }}>
-                  <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                <div 
+                  onClick={isMobile ? confirmarCantidad : undefined}
+                  style={{
+                    background: isMobile ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                    borderRadius: '0.5rem',
+                    padding: isMobile ? '1rem' : '0.75rem',
+                    border: isMobile ? 'none' : '2px solid #3b82f6',
+                    marginTop: '0.5rem',
+                    fontSize: isMobile ? '0.875rem' : '0.75rem',
+                    cursor: isMobile ? 'pointer' : 'default',
+                    color: isMobile ? 'white' : 'inherit',
+                    boxShadow: isMobile ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none',
+                    transition: isMobile ? 'all 0.3s ease' : 'none'
+                  }}
+                  onMouseEnter={isMobile ? (e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
+                  } : undefined}
+                  onMouseLeave={isMobile ? (e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                  } : undefined}
+                >
+                  <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                     <strong>Producto:</strong> {productoParaCantidad.nombre}
                   </div>
-                  <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                  <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                     <strong>Stock disponible:</strong> {obtenerStockDisponible(productoParaCantidad)}
                   </div>
-                  <div style={{ color: '#3b82f6', fontWeight: '600' }}>
-                    💡 Enter para agregar • Escape para cancelar • ↑↓ para cambiar cantidad
+                  <div style={{ 
+                    fontWeight: '600', 
+                    fontSize: isMobile ? '0.9rem' : '0.75rem',
+                    textAlign: isMobile ? 'center' : 'left',
+                    marginTop: isMobile ? '0.5rem' : '0',
+                    padding: isMobile ? '0.5rem' : '0',
+                    background: isMobile ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                    borderRadius: isMobile ? '0.25rem' : '0'
+                  }}>
+                    {isMobile ? '👆 TOCA PARA AGREGAR' : '💡 Enter para agregar • Escape para cancelar • ↑↓ para cambiar cantidad'}
                   </div>
                 </div>
               )}
@@ -1340,37 +1363,37 @@ export default function CrearPlanilla() {
               <div style={{
                 background: 'white',
                 borderRadius: '0.5rem',
-                padding: '1rem',
+                padding: isMobile ? '1.25rem' : '1rem',
                 border: '2px solid #3b82f6',
                 marginTop: '1rem'
               }}>
                 <h4 style={{
-                  fontSize: '0.875rem',
+                  fontSize: isMobile ? '1rem' : '0.875rem',
                   fontWeight: '600',
                   color: '#1e293b',
-                  margin: '0 0 0.5rem 0'
+                  margin: '0 0 0.75rem 0'
                 }}>
                   📦 Último Producto
                 </h4>
                 <div style={{
-                  fontSize: '0.75rem',
+                  fontSize: isMobile ? '0.875rem' : '0.75rem',
                   color: '#64748b'
                 }}>
                   {ultimoProductoSeleccionado.codigoPersonalizado && (
-                    <div style={{ marginBottom: '0.25rem' }}>
+                    <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                       <strong>Código:</strong> {ultimoProductoSeleccionado.codigoPersonalizado}
                     </div>
                   )}
-                  <div style={{ marginBottom: '0.25rem' }}>
+                  <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                     <strong>Nombre:</strong> {ultimoProductoSeleccionado.nombre}
                   </div>
-                  <div style={{ marginBottom: '0.25rem' }}>
+                  <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                     <strong>Stock disponible:</strong> {obtenerStockDisponible(ultimoProductoSeleccionado)}
                   </div>
                   <div style={{
                     color: '#3b82f6',
                     fontWeight: '600',
-                    fontSize: '0.875rem'
+                    fontSize: isMobile ? '1rem' : '0.875rem'
                   }}>
                     <strong>Cantidad agregada:</strong> {ultimaCantidadAgregada}
                   </div>
@@ -1420,11 +1443,12 @@ export default function CrearPlanilla() {
                     <div
                       key={index}
                       style={{
-                        padding: '0.75rem 1rem',
+                        padding: isMobile ? '1rem' : '0.75rem 1rem',
                         borderBottom: index < nuevaPlanilla.detalles.length - 1 ? '1px solid #f1f5f9' : 'none',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.75rem'
+                        gap: isMobile ? '1rem' : '0.75rem',
+                        minHeight: isMobile ? '70px' : 'auto'
                       }}
                     >
                       {/* Número */}
@@ -1432,12 +1456,12 @@ export default function CrearPlanilla() {
                         background: '#3b82f6',
                         color: 'white',
                         borderRadius: '50%',
-                        width: '1.5rem',
-                        height: '1.5rem',
+                        width: isMobile ? '2rem' : '1.5rem',
+                        height: isMobile ? '2rem' : '1.5rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '0.75rem',
+                        fontSize: isMobile ? '0.875rem' : '0.75rem',
                         fontWeight: '600',
                         flexShrink: 0
                       }}>
@@ -1449,9 +1473,9 @@ export default function CrearPlanilla() {
                         <div style={{
                           fontWeight: '600',
                           color: '#1e293b',
-                          fontSize: '0.875rem',
-                          marginBottom: '0.125rem',
-                          lineHeight: '1.2'
+                          fontSize: isMobile ? '1rem' : '0.875rem',
+                          marginBottom: isMobile ? '0.25rem' : '0.125rem',
+                          lineHeight: '1.3'
                         }}>
                           {detalle.numeroPersonalizado ? (
                             <>
@@ -1467,59 +1491,59 @@ export default function CrearPlanilla() {
                         </div>
                       </div>
 
-                      {/* Cantidad */}
+                      {/* Cantidad y Botón eliminar en la misma línea */}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.375rem',
+                        gap: isMobile ? '0.75rem' : '0.5rem',
                         flexShrink: 0
                       }}>
-                                                 <input
-                           type="text"
-                           value={detalle.cantidad}
-                           onChange={(e) => {
-                             const valor = e.target.value;
-                             if (valor === '' || /^\d+$/.test(valor)) {
-                               const nuevaCantidad = valor === '' ? 0 : parseInt(valor);
-                               setNuevaPlanilla(prev => ({
-                                 ...prev,
-                                 detalles: prev.detalles.map((d, i) => 
-                                   i === index ? { ...d, cantidad: nuevaCantidad } : d
-                                 )
-                               }));
-                             }
-                           }}
-                           style={{
-                             width: '60px',
-                             padding: '0.25rem',
-                             border: '1px solid #e2e8f0',
-                             borderRadius: '0.25rem',
-                             fontSize: '0.8rem',
-                             textAlign: 'center',
-                             background: '#f8fafc',
-                             color: '#1e293b',
-                             fontWeight: '500',
-                             minHeight: '1.5rem'
-                           }}
-                         />
+                        <input
+                          type="text"
+                          value={detalle.cantidad}
+                          onChange={(e) => {
+                            const valor = e.target.value;
+                            if (valor === '' || /^\d+$/.test(valor)) {
+                              const nuevaCantidad = valor === '' ? 0 : parseInt(valor);
+                              setNuevaPlanilla(prev => ({
+                                ...prev,
+                                detalles: prev.detalles.map((d, i) => 
+                                  i === index ? { ...d, cantidad: nuevaCantidad } : d
+                                )
+                              }));
+                            }
+                          }}
+                          style={{
+                            width: isMobile ? '80px' : '60px',
+                            padding: isMobile ? '0.5rem' : '0.25rem',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '0.25rem',
+                            fontSize: isMobile ? '1rem' : '0.8rem',
+                            textAlign: 'center',
+                            background: '#f8fafc',
+                            color: '#1e293b',
+                            fontWeight: '500',
+                            minHeight: isMobile ? '2rem' : '1.5rem'
+                          }}
+                        />
+                        <button
+                          onClick={() => removerDetalle(index)}
+                          style={{
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '0.25rem',
+                            padding: isMobile ? '0.5rem' : '0.375rem',
+                            fontSize: isMobile ? '0.875rem' : '0.7rem',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            minHeight: isMobile ? '2rem' : 'auto',
+                            minWidth: isMobile ? '2rem' : 'auto'
+                          }}
+                        >
+                          🗑️
+                        </button>
                       </div>
-
-                      {/* Botón eliminar */}
-                      <button
-                        onClick={() => removerDetalle(index)}
-                        style={{
-                          background: '#ef4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '0.25rem',
-                          padding: '0.375rem',
-                          fontSize: '0.7rem',
-                          cursor: 'pointer',
-                          flexShrink: 0
-                        }}
-                      >
-                        🗑️
-                      </button>
                     </div>
                   ))}
                 </div>

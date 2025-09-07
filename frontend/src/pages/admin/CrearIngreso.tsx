@@ -5,7 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha, formatearFechaCorta, formatearFechaConHora, obtenerFechaActual } from '../../utils/dateUtils';
+import { obtenerFechaActual } from '../../utils/dateUtils';
 import BarcodeScanner from '../../components/BarcodeScanner';
 
 interface DetalleRemitoIngreso {
@@ -297,17 +297,6 @@ export default function CrearIngreso() {
     }
   };
 
-  const generarNumeroRemito = () => {
-    const fecha = new Date();
-    const año = fecha.getFullYear();
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const hora = String(fecha.getHours()).padStart(2, '0');
-    const minuto = String(fecha.getMinutes()).padStart(2, '0');
-    const segundo = String(fecha.getSeconds()).padStart(2, '0');
-    
-    return `${año}${mes}${dia}-${hora}${minuto}${segundo}`;
-  };
 
   const buscarProductos = (valor: string) => {
     setInputBusqueda(valor);
@@ -413,15 +402,6 @@ export default function CrearIngreso() {
     ));
   };
 
-  const manejarEnterCantidad = (e: React.KeyboardEvent, index: number) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      // Volver el focus al buscador después de actualizar la cantidad
-      if (inputBusquedaRef.current) {
-        inputBusquedaRef.current.focus();
-      }
-    }
-  };
 
   const confirmarCantidad = () => {
     if (productoSeleccionadoTemporal) {
@@ -1046,17 +1026,6 @@ export default function CrearIngreso() {
 
 
 
-  const actualizarStockProductos = async () => {
-    try {
-      // El backend ya maneja la actualización del stock y la sincronización con sectores
-      // No necesitamos actualizar manualmente aquí
-      console.log('✅ El backend manejará la actualización del stock y sincronización con sectores');
-    } catch (error) {
-      console.error('Error al actualizar stock de productos:', error);
-      toast.error('Error al actualizar el stock de los productos');
-      throw error; // Re-lanzar el error para que se maneje en guardarRemito
-    }
-  };
 
   const manejarScan = (codigo: string) => {
     setInputBusqueda(codigo);
@@ -1260,10 +1229,10 @@ export default function CrearIngreso() {
              <div>
                <label style={{
                  display: 'block',
-                 fontSize: '0.875rem',
+                 fontSize: isMobile ? '1rem' : '0.875rem',
                  fontWeight: '600',
                  color: '#64748b',
-                 marginBottom: '0.5rem'
+                 marginBottom: isMobile ? '0.75rem' : '0.5rem'
                }}>
                  📅 Fecha del Remito
                </label>
@@ -1275,10 +1244,11 @@ export default function CrearIngreso() {
                  onKeyDown={(e) => manejarEnterCampo(e, 'numeroRemito')}
                  style={{
                    width: '100%',
-                   padding: '0.75rem',
+                   padding: isMobile ? '1rem' : '0.75rem',
                    border: '2px solid #e2e8f0',
                    borderRadius: '0.5rem',
-                   fontSize: '0.875rem'
+                   fontSize: isMobile ? '1rem' : '0.875rem',
+                   minHeight: isMobile ? '48px' : 'auto'
                  }}
                />
              </div>
@@ -1286,10 +1256,10 @@ export default function CrearIngreso() {
              <div>
                <label style={{
                  display: 'block',
-                 fontSize: '0.875rem',
+                 fontSize: isMobile ? '1rem' : '0.875rem',
                  fontWeight: '600',
                  color: '#64748b',
-                 marginBottom: '0.5rem'
+                 marginBottom: isMobile ? '0.75rem' : '0.5rem'
                }}>
                  📄 Número de Remito
                </label>
@@ -1302,10 +1272,11 @@ export default function CrearIngreso() {
                  placeholder="0000-00000000"
                  style={{
                    width: '100%',
-                   padding: '0.75rem',
+                   padding: isMobile ? '1rem' : '0.75rem',
                    border: '2px solid #e2e8f0',
                    borderRadius: '0.5rem',
-                   fontSize: '0.875rem'
+                   fontSize: isMobile ? '1rem' : '0.875rem',
+                   minHeight: isMobile ? '48px' : 'auto'
                  }}
                />
              </div>
@@ -1313,10 +1284,10 @@ export default function CrearIngreso() {
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '1rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#64748b',
-                marginBottom: '0.5rem'
+                marginBottom: isMobile ? '0.75rem' : '0.5rem'
               }}>
                 💬 Observaciones
               </label>
@@ -1329,11 +1300,12 @@ export default function CrearIngreso() {
                 rows={1}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: isMobile ? '1rem' : '0.75rem',
                   border: '2px solid #e2e8f0',
                   borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
-                  resize: 'none'
+                  fontSize: isMobile ? '1rem' : '0.875rem',
+                  resize: 'none',
+                  minHeight: isMobile ? '48px' : 'auto'
                 }}
               />
             </div>
@@ -1371,10 +1343,10 @@ export default function CrearIngreso() {
              <div style={{ marginBottom: '1.5rem' }}>
                <label style={{
                  display: 'block',
-                 fontSize: '0.875rem',
+                 fontSize: isMobile ? '1rem' : '0.875rem',
                  fontWeight: '600',
                  color: '#64748b',
-                 marginBottom: '0.5rem'
+                 marginBottom: isMobile ? '0.75rem' : '0.5rem'
                }}>
                  🔍 Buscar Producto
                </label>
@@ -1394,10 +1366,11 @@ export default function CrearIngreso() {
                      onKeyDown={manejarTeclas}
                      style={{
                        width: '100%',
-                       padding: '0.75rem',
+                       padding: isMobile ? '1rem' : '0.75rem',
                        border: '2px solid #e2e8f0',
                        borderRadius: '0.5rem',
-                       fontSize: '0.875rem'
+                       fontSize: isMobile ? '1rem' : '0.875rem',
+                       minHeight: isMobile ? '48px' : 'auto'
                      }}
                    />
                 
@@ -1423,25 +1396,29 @@ export default function CrearIngreso() {
                            key={producto.id}
                            onClick={() => agregarProducto(producto)}
                            style={{
-                             padding: '0.75rem',
+                             padding: isMobile ? '1rem' : '0.75rem',
                              cursor: 'pointer',
                              borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
                              background: index === productoSeleccionado ? '#3b82f6' : 'white',
                              color: index === productoSeleccionado ? 'white' : '#1e293b',
-                             fontSize: '0.875rem',
-                             transition: 'all 0.2s ease'
+                             fontSize: isMobile ? '1rem' : '0.875rem',
+                             transition: 'all 0.2s ease',
+                             minHeight: isMobile ? '60px' : 'auto'
                            }}
                            onMouseOver={() => setProductoSeleccionado(index)}
                          >
                            <div style={{ 
                              fontWeight: '600', 
-                             color: index === productoSeleccionado ? 'white' : '#1e293b' 
+                             color: index === productoSeleccionado ? 'white' : '#1e293b',
+                             fontSize: isMobile ? '1rem' : '0.875rem',
+                             lineHeight: '1.3'
                            }}>
                              {producto.nombre}
                            </div>
                            <div style={{ 
-                             fontSize: '0.75rem', 
-                             color: index === productoSeleccionado ? '#e2e8f0' : '#64748b' 
+                             fontSize: isMobile ? '0.875rem' : '0.75rem', 
+                             color: index === productoSeleccionado ? '#e2e8f0' : '#64748b',
+                             marginTop: '0.25rem'
                            }}>
                              {producto.codigoPersonalizado && `Código: ${producto.codigoPersonalizado}`}
                              {producto.codigoBarras && ` • Barras: ${producto.codigoBarras}`}
@@ -1458,10 +1435,10 @@ export default function CrearIngreso() {
                    <div>
                      <label style={{
                        display: 'block',
-                       fontSize: '0.75rem',
+                       fontSize: isMobile ? '0.875rem' : '0.75rem',
                        fontWeight: '600',
                        color: '#64748b',
-                       marginBottom: '0.25rem'
+                       marginBottom: isMobile ? '0.5rem' : '0.25rem'
                      }}>
                        Cantidad
                      </label>
@@ -1478,10 +1455,11 @@ export default function CrearIngreso() {
                         onKeyDown={manejarEnterCantidadTemporal}
                         style={{
                           width: '100%',
-                          padding: '0.75rem',
+                          padding: isMobile ? '1rem' : '0.75rem',
                           border: '2px solid #e2e8f0',
                           borderRadius: '0.5rem',
-                          fontSize: '0.875rem'
+                          fontSize: isMobile ? '1rem' : '0.875rem',
+                          minHeight: isMobile ? '48px' : 'auto'
                         }}
                       />
                    </div>
@@ -1490,27 +1468,50 @@ export default function CrearIngreso() {
 
                {/* Vista previa del producto seleccionado */}
                {mostrarCampoCantidad && productoSeleccionadoTemporal && (
-                 <div style={{
-                   background: 'white',
-                   borderRadius: '0.5rem',
-                   padding: '0.75rem',
-                   border: '2px solid #3b82f6',
-                   marginTop: '0.5rem',
-                   fontSize: '0.75rem'
-                 }}>
-                   <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                 <div 
+                   onClick={isMobile ? confirmarCantidad : undefined}
+                   style={{
+                     background: isMobile ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'white',
+                     borderRadius: '0.5rem',
+                     padding: isMobile ? '1rem' : '0.75rem',
+                     border: isMobile ? 'none' : '2px solid #3b82f6',
+                     marginTop: '0.5rem',
+                     fontSize: isMobile ? '0.875rem' : '0.75rem',
+                     cursor: isMobile ? 'pointer' : 'default',
+                     color: isMobile ? 'white' : 'inherit',
+                     boxShadow: isMobile ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none',
+                     transition: isMobile ? 'all 0.3s ease' : 'none'
+                   }}
+                   onMouseEnter={isMobile ? (e) => {
+                     e.currentTarget.style.transform = 'translateY(-2px)';
+                     e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
+                   } : undefined}
+                   onMouseLeave={isMobile ? (e) => {
+                     e.currentTarget.style.transform = 'translateY(0)';
+                     e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                   } : undefined}
+                 >
+                   <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                      <strong>Producto:</strong> {productoSeleccionadoTemporal.nombre}
                    </div>
                    {productoSeleccionadoTemporal.codigoPersonalizado && (
-                     <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                     <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                        <strong>Código:</strong> {productoSeleccionadoTemporal.codigoPersonalizado}
                      </div>
                    )}
-                   <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                   <div style={{ marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                      <strong>Stock actual:</strong> {productoSeleccionadoTemporal.stock}
                    </div>
-                   <div style={{ color: '#3b82f6', fontWeight: '600' }}>
-                     💡 Enter para agregar • Escape para cancelar
+                   <div style={{ 
+                     fontWeight: '600', 
+                     fontSize: isMobile ? '0.9rem' : '0.75rem',
+                     textAlign: isMobile ? 'center' : 'left',
+                     marginTop: isMobile ? '0.5rem' : '0',
+                     padding: isMobile ? '0.5rem' : '0',
+                     background: isMobile ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                     borderRadius: isMobile ? '0.25rem' : '0'
+                   }}>
+                     {isMobile ? '👆 TOCA PARA AGREGAR' : '💡 Enter para agregar • Escape para cancelar'}
                    </div>
                  </div>
                )}
@@ -1627,14 +1628,15 @@ export default function CrearIngreso() {
                                        <div
                       key={detalle.id}
                       style={{
-                        padding: '0.75rem',
+                        padding: isMobile ? '1rem' : '0.75rem',
                         borderBottom: index < detalles.length - 1 ? '1px solid #f1f5f9' : 'none',
-                        background: index % 2 === 0 ? 'white' : '#f8fafc'
+                        background: index % 2 === 0 ? 'white' : '#f8fafc',
+                        minHeight: isMobile ? '70px' : 'auto'
                       }}
                     >
                                              <div style={{
                          display: 'grid',
-                         gridTemplateColumns: isMobile ? '1fr' : '1fr auto auto',
+                         gridTemplateColumns: isMobile ? '1fr' : '1fr auto',
                          gap: '0.75rem',
                          alignItems: 'center'
                        }}>
@@ -1642,32 +1644,40 @@ export default function CrearIngreso() {
                            <div style={{ 
                              fontWeight: '600', 
                              color: '#1e293b',
-                             fontSize: '0.875rem',
-                             lineHeight: '1.2'
+                             fontSize: isMobile ? '1rem' : '0.875rem',
+                             lineHeight: '1.3'
                            }}>
                              {detalle.descripcion}
                            </div>
                            {detalle.codigoPersonalizado && (
                              <div style={{ 
-                               fontSize: '0.7rem', 
+                               fontSize: isMobile ? '0.8rem' : '0.7rem', 
                                color: '#64748b',
-                               marginTop: '0.125rem'
+                               marginTop: '0.25rem'
                              }}>
                                Código: {detalle.codigoPersonalizado}
                              </div>
                            )}
                          </div>
-                                                   <div>
-                            <label style={{
-                              display: 'block',
-                              fontSize: '0.7rem',
-                              fontWeight: '600',
-                              color: '#64748b',
-                              marginBottom: '0.125rem'
-                            }}>
-                              Cantidad
-                            </label>
-                                                         <input
+                         
+                         {/* Cantidad y Botón eliminar en la misma línea */}
+                         <div style={{
+                           display: 'flex',
+                           alignItems: 'center',
+                           gap: isMobile ? '0.75rem' : '0.5rem',
+                           flexShrink: 0
+                         }}>
+                           <div>
+                             <label style={{
+                               display: 'block',
+                               fontSize: isMobile ? '0.8rem' : '0.7rem',
+                               fontWeight: '600',
+                               color: '#64748b',
+                               marginBottom: isMobile ? '0.25rem' : '0.125rem'
+                             }}>
+                               Cantidad
+                             </label>
+                             <input
                                type="text"
                                value={detalle.cantidad}
                                onChange={(e) => {
@@ -1678,38 +1688,41 @@ export default function CrearIngreso() {
                                  }
                                }}
                                style={{
-                                 width: '60px',
-                                 padding: '0.25rem',
+                                 width: isMobile ? '80px' : '60px',
+                                 padding: isMobile ? '0.5rem' : '0.25rem',
                                  border: '1px solid #e2e8f0',
                                  borderRadius: '0.25rem',
-                                 fontSize: '0.8rem',
+                                 fontSize: isMobile ? '1rem' : '0.8rem',
                                  textAlign: 'center',
                                  background: '#f8fafc',
                                  color: '#1e293b',
                                  fontWeight: '500',
-                                 minHeight: '1.5rem'
+                                 minHeight: isMobile ? '2rem' : '1.5rem'
                                }}
                              />
-                          </div>
-                         <button
-                           onClick={() => eliminarDetalle(index)}
-                           style={{
-                             background: '#ef4444',
-                             color: 'white',
-                             border: 'none',
-                             borderRadius: '0.25rem',
-                             padding: '0.375rem',
-                             fontSize: '0.7rem',
-                             cursor: 'pointer',
-                             width: '2rem',
-                             height: '2rem',
-                             display: 'flex',
-                             alignItems: 'center',
-                             justifyContent: 'center'
-                           }}
-                         >
-                           🗑️
-                         </button>
+                           </div>
+                           <button
+                             onClick={() => eliminarDetalle(index)}
+                             style={{
+                               background: '#ef4444',
+                               color: 'white',
+                               border: 'none',
+                               borderRadius: '0.25rem',
+                               padding: isMobile ? '0.5rem' : '0.375rem',
+                               fontSize: isMobile ? '0.875rem' : '0.7rem',
+                               cursor: 'pointer',
+                               width: isMobile ? '2.5rem' : '2rem',
+                               height: isMobile ? '2.5rem' : '2rem',
+                               display: 'flex',
+                               alignItems: 'center',
+                               justifyContent: 'center',
+                               alignSelf: 'flex-end',
+                               marginTop: isMobile ? '1.5rem' : '1.25rem'
+                             }}
+                           >
+                             🗑️
+                           </button>
+                         </div>
                        </div>
                     </div>
                  ))}
@@ -1997,10 +2010,10 @@ export default function CrearIngreso() {
                 <div style={{ position: 'relative' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '0.875rem',
+                    fontSize: isMobile ? '1rem' : '0.875rem',
                     fontWeight: '600',
                     color: '#64748b',
-                    marginBottom: '0.5rem'
+                    marginBottom: isMobile ? '0.75rem' : '0.5rem'
                   }}>
                     📝 Nombre del Producto *
                   </label>
@@ -2018,10 +2031,11 @@ export default function CrearIngreso() {
                      placeholder="Nombre del producto"
                      style={{
                        width: '100%',
-                       padding: '0.75rem',
+                       padding: isMobile ? '1rem' : '0.75rem',
                        border: '2px solid #e2e8f0',
                        borderRadius: '0.5rem',
-                       fontSize: '0.875rem'
+                       fontSize: isMobile ? '1rem' : '0.875rem',
+                       minHeight: isMobile ? '48px' : 'auto'
                      }}
                    />
                   {mostrarSugerenciasNombre && (
@@ -2043,11 +2057,12 @@ export default function CrearIngreso() {
                            key={index}
                            onClick={() => seleccionarSugerenciaNombre(nombre)}
                            style={{
-                             padding: '0.75rem',
+                             padding: isMobile ? '1rem' : '0.75rem',
                              cursor: 'pointer',
                              borderBottom: index < sugerenciasNombre.length - 1 ? '1px solid #f1f5f9' : 'none',
-                             fontSize: '0.875rem',
-                             background: index === sugerenciaSeleccionadaNombre ? '#f1f5f9' : 'white'
+                             fontSize: isMobile ? '1rem' : '0.875rem',
+                             background: index === sugerenciaSeleccionadaNombre ? '#f1f5f9' : 'white',
+                             minHeight: isMobile ? '50px' : 'auto'
                            }}
                            onMouseOver={() => setSugerenciaSeleccionadaNombre(index)}
                            onMouseOut={() => setSugerenciaSeleccionadaNombre(-1)}
@@ -2063,10 +2078,10 @@ export default function CrearIngreso() {
                 <div style={{ position: 'relative' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '0.875rem',
+                    fontSize: isMobile ? '1rem' : '0.875rem',
                     fontWeight: '600',
                     color: '#64748b',
-                    marginBottom: '0.5rem'
+                    marginBottom: isMobile ? '0.75rem' : '0.5rem'
                   }}>
                     🏷️ Marca
                   </label>
@@ -2084,10 +2099,11 @@ export default function CrearIngreso() {
                      placeholder="Marca del producto"
                      style={{
                        width: '100%',
-                       padding: '0.75rem',
+                       padding: isMobile ? '1rem' : '0.75rem',
                        border: '2px solid #e2e8f0',
                        borderRadius: '0.5rem',
-                       fontSize: '0.875rem'
+                       fontSize: isMobile ? '1rem' : '0.875rem',
+                       minHeight: isMobile ? '48px' : 'auto'
                      }}
                    />
                   {mostrarSugerenciasMarca && (
@@ -2109,11 +2125,12 @@ export default function CrearIngreso() {
                            key={index}
                            onClick={() => seleccionarSugerenciaMarca(marca)}
                            style={{
-                             padding: '0.75rem',
+                             padding: isMobile ? '1rem' : '0.75rem',
                              cursor: 'pointer',
                              borderBottom: index < sugerenciasMarca.length - 1 ? '1px solid #f1f5f9' : 'none',
-                             fontSize: '0.875rem',
-                             background: index === sugerenciaSeleccionadaMarca ? '#f1f5f9' : 'white'
+                             fontSize: isMobile ? '1rem' : '0.875rem',
+                             background: index === sugerenciaSeleccionadaMarca ? '#f1f5f9' : 'white',
+                             minHeight: isMobile ? '50px' : 'auto'
                            }}
                            onMouseOver={() => setSugerenciaSeleccionadaMarca(index)}
                            onMouseOut={() => setSugerenciaSeleccionadaMarca(-1)}

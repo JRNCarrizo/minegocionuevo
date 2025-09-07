@@ -15,6 +15,7 @@ import com.minegocio.backend.repositorios.UsuarioRepository;
 import com.minegocio.backend.repositorios.SectorRepository;
 import com.minegocio.backend.repositorios.StockPorSectorRepository;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -276,7 +277,7 @@ public class ProductoService {
         Producto producto = productoRepository.findByIdAndEmpresaId(id, empresaId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
-        // Guardar stock anterior para el historial
+        // Guardar stock anterior para el historial y sincronización
         Integer stockAnterior = producto.getStock();
 
         // Solo actualizar campos que no son null
@@ -295,10 +296,20 @@ public class ProductoService {
         
         if (productoDTO.getStock() != null) {
             System.out.println("🔍 === DEBUG ACTUALIZACIÓN STOCK ===");
-            System.out.println("🔍 Stock anterior: " + producto.getStock());
+            System.out.println("🔍 Stock anterior: " + stockAnterior);
             System.out.println("🔍 Stock nuevo recibido: " + productoDTO.getStock());
             System.out.println("🔍 Stock nuevo a establecer: " + productoDTO.getStock());
+            
             producto.setStock(productoDTO.getStock());
+            
+            // 🔄 SINCRONIZAR STOCK: Actualizar stock en sectores cuando se edita el stock del producto
+            try {
+                sincronizarStockConSectores(empresaId, producto.getId(), stockAnterior, productoDTO.getStock());
+            } catch (Exception e) {
+                System.err.println("❌ SINCRONIZACIÓN STOCK - Error al sincronizar stock con sectores: " + e.getMessage());
+                // No fallar la actualización del producto si hay error en la sincronización
+            }
+            
             System.out.println("🔍 Stock establecido: " + producto.getStock());
         }
         
@@ -1102,5 +1113,106 @@ public class ProductoService {
         dto.setFechaCreacion(producto.getFechaCreacion());
         dto.setFechaActualizacion(producto.getFechaActualizacion());
         return dto;
+    }
+    
+    /**
+     * Sincroniza el stock del producto con el stock de los sectores
+     * Este método se ejecuta automáticamente cuando se edita el stock de un producto
+     */
+    @Transactional
+    public void sincronizarStockConSectores(Long empresaId, Long productoId, Integer stockAnterior, Integer stockNuevo) {
+        System.out.println("🔄 SINCRONIZACIÓN STOCK - Iniciando sincronización:");
+        System.out.println("🔄 SINCRONIZACIÓN STOCK - Producto ID: " + productoId);
+        System.out.println("🔄 SINCRONIZACIÓN STOCK - Stock anterior: " + stockAnterior);
+        System.out.println("🔄 SINCRONIZACIÓN STOCK - Stock nuevo: " + stockNuevo);
+        
+        // Obtener el producto
+        Producto producto = productoRepository.findByIdAndEmpresaId(productoId, empresaId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        // Calcular la diferencia de stock
+        Integer diferenciaStock = stockNuevo - stockAnterior;
+        System.out.println("🔄 SINCRONIZACIÓN STOCK - Diferencia de stock: " + diferenciaStock);
+        
+        if (diferenciaStock == 0) {
+            System.out.println("🔄 SINCRONIZACIÓN STOCK - No hay diferencia de stock, no se requiere sincronización");
+            return;
+        }
+        
+        // Obtener stock actual en sectores
+        List<StockPorSector> stockEnSectores = stockPorSectorRepository.findByProductoId(productoId);
+        Integer stockTotalEnSectores = stockEnSectores.stream()
+                .mapToInt(StockPorSector::getCantidad)
+                .sum();
+        
+        System.out.println("🔄 SINCRONIZACIÓN STOCK - Stock total en sectores: " + stockTotalEnSectores);
+        
+        if (diferenciaStock > 0) {
+            // INCREMENTO: Agregar stock a sectores
+            System.out.println("🔄 SINCRONIZACIÓN STOCK - Incremento detectado, agregando stock a sectores");
+            
+            if (producto.getSectorAlmacenamiento() != null && !producto.getSectorAlmacenamiento().trim().isEmpty()) {
+                // Agregar al sector asignado al producto
+                Sector sector = sectorRepository.findByNombreAndEmpresaId(producto.getSectorAlmacenamiento(), empresaId)
+                        .orElse(null);
+                
+                if (sector != null) {
+                    // Buscar stock existente en el sector
+                    StockPorSector stockExistente = stockEnSectores.stream()
+                            .filter(stock -> stock.getSector().getId().equals(sector.getId()))
+                            .findFirst()
+                            .orElse(null);
+                    
+                    if (stockExistente != null) {
+                        // Actualizar stock existente
+                        stockExistente.setCantidad(stockExistente.getCantidad() + diferenciaStock);
+                        stockPorSectorRepository.save(stockExistente);
+                        System.out.println("🔄 SINCRONIZACIÓN STOCK - Stock actualizado en sector " + sector.getNombre() + ": " + stockExistente.getCantidad());
+                    } else {
+                        // Crear nuevo stock en el sector
+                        StockPorSector nuevoStock = new StockPorSector();
+                        nuevoStock.setProducto(producto);
+                        nuevoStock.setSector(sector);
+                        nuevoStock.setCantidad(diferenciaStock);
+                        stockPorSectorRepository.save(nuevoStock);
+                        System.out.println("🔄 SINCRONIZACIÓN STOCK - Stock creado en sector " + sector.getNombre() + ": " + diferenciaStock);
+                    }
+                }
+            } else {
+                // Si no hay sector asignado, el stock se mantiene como "sin sectorizar"
+                System.out.println("🔄 SINCRONIZACIÓN STOCK - No hay sector asignado, stock se mantiene sin sectorizar");
+            }
+        } else {
+            // DECREMENTO: Descontar stock de sectores
+            System.out.println("🔄 SINCRONIZACIÓN STOCK - Decremento detectado, descontando stock de sectores");
+            
+            Integer cantidadADescontar = Math.abs(diferenciaStock);
+            
+            // Descontar de sectores en orden (menor cantidad primero)
+            List<StockPorSector> sectoresOrdenados = stockEnSectores.stream()
+                    .sorted((s1, s2) -> Integer.compare(s1.getCantidad(), s2.getCantidad()))
+                    .collect(Collectors.toList());
+            
+            for (StockPorSector stockSector : sectoresOrdenados) {
+                if (cantidadADescontar <= 0) break;
+                
+                Integer cantidadEnSector = stockSector.getCantidad();
+                Integer cantidadADescontarDeEsteSector = Math.min(cantidadADescontar, cantidadEnSector);
+                
+                stockSector.setCantidad(cantidadEnSector - cantidadADescontarDeEsteSector);
+                cantidadADescontar -= cantidadADescontarDeEsteSector;
+                
+                if (stockSector.getCantidad() <= 0) {
+                    // Eliminar registro si queda en 0
+                    stockPorSectorRepository.delete(stockSector);
+                    System.out.println("🔄 SINCRONIZACIÓN STOCK - Stock eliminado del sector " + stockSector.getSector().getNombre());
+                } else {
+                    stockPorSectorRepository.save(stockSector);
+                    System.out.println("🔄 SINCRONIZACIÓN STOCK - Stock actualizado en sector " + stockSector.getSector().getNombre() + ": " + stockSector.getCantidad());
+                }
+            }
+        }
+        
+        System.out.println("✅ SINCRONIZACIÓN STOCK - Sincronización completada exitosamente");
     }
 }

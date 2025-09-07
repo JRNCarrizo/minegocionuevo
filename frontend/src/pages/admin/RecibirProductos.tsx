@@ -1,17 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
+import { useResponsive } from '../../hooks/useResponsive';
 import { API_CONFIG } from '../../config/api';
 import toast from 'react-hot-toast';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import './RecibirProductos.css';
-
-interface Producto {
-  id: number;
-  nombre: string;
-  codigoPersonalizado?: string;
-  unidadMedida?: string;
-}
 
 interface StockDetallado {
   productoId: number;
@@ -36,6 +30,7 @@ interface RecepcionProducto {
 const RecibirProductos: React.FC = () => {
   const { sectorId } = useParams<{ sectorId: string }>();
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
+  const { isMobile } = useResponsive();
   const navigate = useNavigate();
 
   // Estados principales
@@ -56,7 +51,6 @@ const RecibirProductos: React.FC = () => {
   const [stockSeleccionado, setStockSeleccionado] = useState<any>(null);
   const [modoCantidad, setModoCantidad] = useState(false);
   const [cantidad, setCantidad] = useState('');
-  const [scrollRealizado, setScrollRealizado] = useState(false);
   const [mostrarOpciones, setMostrarOpciones] = useState(false);
 
   // Referencias para focus
@@ -196,12 +190,6 @@ const RecibirProductos: React.FC = () => {
     }
   }, [focusBuscador, cargandoSector, cargandoStock]);
 
-  // Resetear scrollRealizado cuando se carga la página por primera vez
-  useEffect(() => {
-    if (!cargandoSector && !cargandoStock) {
-      setScrollRealizado(false);
-    }
-  }, [cargandoSector, cargandoStock]);
 
   // Auto-focus en el campo de cantidad cuando se activa
   useEffect(() => {
@@ -326,7 +314,6 @@ const RecibirProductos: React.FC = () => {
       if (event.key === 'Enter' && !filtroBusqueda.trim()) {
         event.preventDefault();
         setFocusBuscador(true);
-        setScrollRealizado(false);
         // Hacer scroll automático
         setTimeout(() => {
           window.scrollBy({
@@ -427,7 +414,6 @@ const RecibirProductos: React.FC = () => {
     setUbicacionesFiltradas([]);
     setUbicacionSeleccionadaIndex(-1);
     setProductoSeleccionadoIndex(-1);
-    setScrollRealizado(false);
 
     // Focus en el buscador
     setTimeout(() => {
@@ -502,7 +488,7 @@ const RecibirProductos: React.FC = () => {
       console.log('🔍 empresaId:', datosUsuario.empresaId);
       console.log('🔍 sectorId:', sectorId);
       
-      const response = await apiCall(`/empresas/${datosUsuario.empresaId}/sectores/${sectorId}/recibir-productos`, {
+      await apiCall(`/empresas/${datosUsuario.empresaId}/sectores/${sectorId}/recibir-productos`, {
         method: 'POST',
         body: JSON.stringify(requestBody)
       });
@@ -579,14 +565,14 @@ const RecibirProductos: React.FC = () => {
         <div style={{
           width: '100%',
           margin: '0 auto',
-          padding: '7rem 2rem 2rem 2rem'
+          padding: isMobile ? '8.5rem 1rem 2rem 1rem' : '7rem 2rem 2rem 2rem'
         }}>
           {/* Header */}
           <div style={{
             background: 'white',
             borderRadius: '16px',
-            padding: '24px',
-            marginBottom: '2rem',
+            padding: isMobile ? '1rem' : '24px',
+            marginBottom: isMobile ? '1rem' : '2rem',
             boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
             border: '2px solid #e2e8f0'
           }}>
@@ -605,15 +591,16 @@ const RecibirProductos: React.FC = () => {
                     border: '2px solid rgba(102, 126, 234, 0.2)',
                     borderRadius: '8px',
                     color: '#667eea',
-                    padding: '0.5rem 1rem',
-                    fontSize: '0.875rem',
+                    padding: isMobile ? '0.75rem 1rem' : '0.5rem 1rem',
+                    fontSize: isMobile ? '1rem' : '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    marginBottom: '1rem',
-                    transition: 'all 0.2s ease'
+                    marginBottom: isMobile ? '0.75rem' : '1rem',
+                    transition: 'all 0.2s ease',
+                    minHeight: isMobile ? '48px' : 'auto'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)';
@@ -627,7 +614,7 @@ const RecibirProductos: React.FC = () => {
                   ← Volver
                 </button>
                 <h1 style={{
-                  fontSize: '2rem',
+                  fontSize: isMobile ? '1.5rem' : '2rem',
                   fontWeight: '700',
                   color: '#1e293b',
                   margin: '0 0 0.5rem 0'
@@ -637,7 +624,7 @@ const RecibirProductos: React.FC = () => {
                 <p style={{
                   color: '#64748b',
                   margin: 0,
-                  fontSize: '1rem'
+                  fontSize: isMobile ? '0.9rem' : '1rem'
                 }}>
                   Sector: {sector?.nombre}
                 </p>
@@ -656,7 +643,7 @@ const RecibirProductos: React.FC = () => {
                 border: '2px solid #e2e8f0'
               }}>
                 <h2 style={{
-                  fontSize: '1.5rem',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem',
                   fontWeight: '600',
                   color: '#1e293b',
                   margin: '0 0 1.5rem 0'
@@ -675,10 +662,10 @@ const RecibirProductos: React.FC = () => {
                      <div style={{ flex: 1 }}>
                        <label style={{
                          display: 'block',
-                         fontSize: '0.875rem',
+                         fontSize: isMobile ? '1rem' : '0.875rem',
                          fontWeight: '600',
                          color: '#374151',
-                         marginBottom: '0.5rem'
+                         marginBottom: isMobile ? '0.75rem' : '0.5rem'
                        }}>
                          Buscar por nombre o código:
                        </label>
@@ -690,12 +677,13 @@ const RecibirProductos: React.FC = () => {
                          placeholder="Escribe el nombre o código del producto..."
                          style={{
                            width: '100%',
-                           padding: '0.75rem',
+                           padding: isMobile ? '1rem' : '0.75rem',
                            border: '2px solid #d1d5db',
                            borderRadius: '8px',
-                           fontSize: '1rem',
+                           fontSize: isMobile ? '1rem' : '1rem',
                            background: 'white',
-                           transition: 'all 0.2s ease'
+                           transition: 'all 0.2s ease',
+                           minHeight: isMobile ? '48px' : 'auto'
                          }}
                          onFocus={(e) => {
                            e.target.style.borderColor = '#667eea';
@@ -713,10 +701,10 @@ const RecibirProductos: React.FC = () => {
                        <div style={{ flex: '0 0 200px' }}>
                          <label style={{
                            display: 'block',
-                           fontSize: '0.875rem',
+                           fontSize: isMobile ? '0.875rem' : '0.875rem',
                            fontWeight: '600',
                            color: '#374151',
-                           marginBottom: '0.5rem'
+                           marginBottom: isMobile ? '0.5rem' : '0.5rem'
                          }}>
                            Cantidad:
                          </label>
@@ -730,12 +718,13 @@ const RecibirProductos: React.FC = () => {
                            max={stockSeleccionado.cantidad}
                            style={{
                              width: '100%',
-                             padding: '0.75rem',
+                             padding: isMobile ? '1rem' : '0.75rem',
                              border: '2px solid #d1d5db',
                              borderRadius: '8px',
-                             fontSize: '1rem',
+                             fontSize: isMobile ? '1rem' : '1rem',
                              background: 'white',
-                             transition: 'all 0.2s ease'
+                             transition: 'all 0.2s ease',
+                             minHeight: isMobile ? '48px' : 'auto'
                            }}
                            onFocus={(e) => {
                              e.target.style.borderColor = '#667eea';
@@ -755,16 +744,16 @@ const RecibirProductos: React.FC = () => {
                      <>
                        <div style={{
                          background: '#f8fafc',
-                         padding: '0.75rem',
+                         padding: isMobile ? '1rem' : '0.75rem',
                          borderRadius: '8px',
                          border: '2px solid #e2e8f0',
-                         marginTop: '0.75rem',
-                         fontSize: '0.875rem'
+                         marginTop: isMobile ? '1rem' : '0.75rem',
+                         fontSize: isMobile ? '0.875rem' : '0.875rem'
                        }}>
-                         <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                         <div style={{ fontWeight: '600', marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                            {productoSeleccionado?.productoNombre}
                          </div>
-                         <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>
+                         <div style={{ color: '#64748b', marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                            Desde: {stockSeleccionado.ubicacion}
                          </div>
                          <div style={{ color: '#64748b' }}>
@@ -775,22 +764,23 @@ const RecibirProductos: React.FC = () => {
                        {/* Botones de confirmar y cancelar */}
                        <div style={{
                          display: 'flex',
-                         gap: '0.5rem',
-                         marginTop: '0.75rem'
+                         gap: isMobile ? '0.75rem' : '0.5rem',
+                         marginTop: isMobile ? '1rem' : '0.75rem'
                        }}>
                          <button
                            onClick={confirmarRecepcion}
                            style={{
                              flex: 1,
-                             padding: '0.75rem',
+                             padding: isMobile ? '1rem' : '0.75rem',
                              background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
                              color: 'white',
                              border: 'none',
                              borderRadius: '8px',
-                             fontSize: '1rem',
+                             fontSize: isMobile ? '1rem' : '1rem',
                              fontWeight: '600',
                              cursor: 'pointer',
-                             transition: 'all 0.2s ease'
+                             transition: 'all 0.2s ease',
+                             minHeight: isMobile ? '48px' : 'auto'
                            }}
                            onMouseEnter={(e) => {
                              e.currentTarget.style.transform = 'translateY(-2px)';
@@ -806,15 +796,16 @@ const RecibirProductos: React.FC = () => {
                          <button
                            onClick={cancelarCantidad}
                            style={{
-                             padding: '0.75rem 1rem',
+                             padding: isMobile ? '1rem' : '0.75rem 1rem',
                              background: '#f1f5f9',
                              color: '#374151',
                              border: 'none',
                              borderRadius: '8px',
-                             fontSize: '1rem',
+                             fontSize: isMobile ? '1rem' : '1rem',
                              fontWeight: '600',
                              cursor: 'pointer',
-                             transition: 'all 0.2s ease'
+                             transition: 'all 0.2s ease',
+                             minHeight: isMobile ? '48px' : 'auto'
                            }}
                            onMouseEnter={(e) => {
                              e.currentTarget.style.background = '#e2e8f0';
@@ -886,14 +877,14 @@ const RecibirProductos: React.FC = () => {
                     transition: 'all 0.2s ease-in-out'
                   }}>
                     <div style={{
-                      padding: '0.5rem',
+                      padding: isMobile ? '0.75rem' : '0.5rem',
                       borderBottom: '1px solid #e2e8f0',
                       background: '#f8fafc',
                       borderTopLeftRadius: '6px',
                       borderTopRightRadius: '6px'
                     }}>
                       <span style={{
-                        fontSize: '0.875rem',
+                        fontSize: isMobile ? '1rem' : '0.875rem',
                         fontWeight: '600',
                         color: '#374151'
                       }}>
@@ -905,12 +896,13 @@ const RecibirProductos: React.FC = () => {
                         <div
                           key={producto.productoId}
                           style={{
-                            padding: '0.75rem',
+                            padding: isMobile ? '1rem' : '0.75rem',
                             borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
                             cursor: 'pointer',
                             transition: 'all 0.15s ease',
                             background: productoSeleccionadoIndex === index ? '#667eea' : 'white',
-                            color: productoSeleccionadoIndex === index ? 'white' : '#1e293b'
+                            color: productoSeleccionadoIndex === index ? 'white' : '#1e293b',
+                            minHeight: isMobile ? '70px' : 'auto'
                           }}
                           onClick={() => seleccionarProducto(producto)}
                           onMouseEnter={(e) => {
@@ -928,19 +920,24 @@ const RecibirProductos: React.FC = () => {
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'flex-start',
-                            marginBottom: '0.25rem'
+                            marginBottom: isMobile ? '0.5rem' : '0.25rem'
                           }}>
-                            <div style={{ fontWeight: '600', flex: 1 }}>
+                            <div style={{ 
+                              fontWeight: '600', 
+                              flex: 1,
+                              fontSize: isMobile ? '1rem' : 'inherit',
+                              lineHeight: isMobile ? '1.3' : 'inherit'
+                            }}>
                               {producto.productoNombre}
                             </div>
                             <div style={{
                               display: 'flex',
-                              gap: '0.5rem',
+                              gap: isMobile ? '0.75rem' : '0.5rem',
                               alignItems: 'center'
                             }}>
                               <div style={{
-                                fontSize: '0.75rem',
-                                padding: '0.25rem 0.5rem',
+                                fontSize: isMobile ? '0.8rem' : '0.75rem',
+                                padding: isMobile ? '0.5rem' : '0.25rem 0.5rem',
                                 background: productoSeleccionadoIndex === index ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
                                 borderRadius: '4px',
                                 color: productoSeleccionadoIndex === index ? 'white' : '#64748b'
@@ -948,8 +945,8 @@ const RecibirProductos: React.FC = () => {
                                 {producto.ubicaciones.length} ubic.
                               </div>
                               <div style={{
-                                fontSize: '0.75rem',
-                                padding: '0.25rem 0.5rem',
+                                fontSize: isMobile ? '0.8rem' : '0.75rem',
+                                padding: isMobile ? '0.5rem' : '0.25rem 0.5rem',
                                 background: productoSeleccionadoIndex === index ? 'rgba(255,255,255,0.2)' : '#10b981',
                                 borderRadius: '4px',
                                 color: productoSeleccionadoIndex === index ? 'white' : 'white',
@@ -961,9 +958,10 @@ const RecibirProductos: React.FC = () => {
                           </div>
                           {producto.codigoPersonalizado && (
                             <div style={{
-                              fontSize: '0.75rem',
+                              fontSize: isMobile ? '0.8rem' : '0.75rem',
                               opacity: 0.8,
-                              color: productoSeleccionadoIndex === index ? 'rgba(255,255,255,0.8)' : '#64748b'
+                              color: productoSeleccionadoIndex === index ? 'rgba(255,255,255,0.8)' : '#64748b',
+                              marginTop: isMobile ? '0.25rem' : '0'
                             }}>
                               📋 {producto.codigoPersonalizado}
                             </div>
@@ -991,14 +989,14 @@ const RecibirProductos: React.FC = () => {
                     transition: 'all 0.2s ease-in-out'
                   }}>
                     <div style={{
-                      padding: '0.5rem',
+                      padding: isMobile ? '0.75rem' : '0.5rem',
                       borderBottom: '1px solid #e2e8f0',
                       background: '#f8fafc',
                       borderTopLeftRadius: '6px',
                       borderTopRightRadius: '6px'
                     }}>
                       <span style={{
-                        fontSize: '0.875rem',
+                        fontSize: isMobile ? '1rem' : '0.875rem',
                         fontWeight: '600',
                         color: '#374151'
                       }}>
@@ -1010,12 +1008,13 @@ const RecibirProductos: React.FC = () => {
                         <div
                           key={ubicacion.stockId}
                           style={{
-                            padding: '0.75rem',
+                            padding: isMobile ? '1rem' : '0.75rem',
                             borderBottom: index < ubicacionesFiltradas.length - 1 ? '1px solid #f1f5f9' : 'none',
                             cursor: 'pointer',
                             transition: 'all 0.15s ease',
                             background: ubicacionSeleccionadaIndex === index ? '#667eea' : 'white',
-                            color: ubicacionSeleccionadaIndex === index ? 'white' : '#1e293b'
+                            color: ubicacionSeleccionadaIndex === index ? 'white' : '#1e293b',
+                            minHeight: isMobile ? '60px' : 'auto'
                           }}
                           onClick={() => seleccionarUbicacion(ubicacion)}
                           onMouseEnter={(e) => {
@@ -1034,12 +1033,16 @@ const RecibirProductos: React.FC = () => {
                             justifyContent: 'space-between',
                             alignItems: 'center'
                           }}>
-                            <div style={{ fontWeight: '600' }}>
+                            <div style={{ 
+                              fontWeight: '600',
+                              fontSize: isMobile ? '1rem' : 'inherit',
+                              lineHeight: isMobile ? '1.3' : 'inherit'
+                            }}>
                               📍 {ubicacion.ubicacion}
                             </div>
                             <div style={{
-                              fontSize: '0.875rem',
-                              padding: '0.25rem 0.5rem',
+                              fontSize: isMobile ? '0.8rem' : '0.875rem',
+                              padding: isMobile ? '0.5rem' : '0.25rem 0.5rem',
                               background: ubicacionSeleccionadaIndex === index ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
                               borderRadius: '4px',
                               color: ubicacionSeleccionadaIndex === index ? 'white' : '#64748b',
@@ -1068,7 +1071,7 @@ const RecibirProductos: React.FC = () => {
                 border: '2px solid #e2e8f0'
               }}>
                 <h2 style={{
-                  fontSize: '1.5rem',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem',
                   fontWeight: '600',
                   color: '#1e293b',
                   margin: '0 0 1.5rem 0'
@@ -1096,32 +1099,49 @@ const RecibirProductos: React.FC = () => {
                       <div
                         key={index}
                         style={{
-                          padding: '1rem',
+                          padding: isMobile ? '1rem' : '1rem',
                           border: '2px solid #e2e8f0',
                           borderRadius: '8px',
-                          marginBottom: '0.75rem',
-                          background: '#f8fafc'
+                          marginBottom: isMobile ? '1rem' : '0.75rem',
+                          background: '#f8fafc',
+                          minHeight: isMobile ? '70px' : 'auto'
                         }}
                       >
                         <div style={{
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'flex-start',
-                          marginBottom: '0.5rem'
+                          marginBottom: isMobile ? '0.75rem' : '0.5rem'
                         }}>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                            <div style={{ 
+                              fontWeight: '600', 
+                              marginBottom: isMobile ? '0.5rem' : '0.25rem',
+                              fontSize: isMobile ? '1rem' : 'inherit',
+                              lineHeight: isMobile ? '1.3' : 'inherit'
+                            }}>
                               {recepcion.productoNombre}
                             </div>
                             {recepcion.codigoPersonalizado && (
-                              <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                              <div style={{ 
+                                fontSize: isMobile ? '0.8rem' : '0.875rem', 
+                                color: '#64748b', 
+                                marginBottom: isMobile ? '0.5rem' : '0.25rem' 
+                              }}>
                                 Código: {recepcion.codigoPersonalizado}
                               </div>
                             )}
-                            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                            <div style={{ 
+                              fontSize: isMobile ? '0.8rem' : '0.875rem', 
+                              color: '#64748b', 
+                              marginBottom: isMobile ? '0.5rem' : '0.25rem' 
+                            }}>
                               Desde: {recepcion.ubicacion}
                             </div>
-                            <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                            <div style={{ 
+                              fontSize: isMobile ? '0.8rem' : '0.875rem', 
+                              color: '#64748b' 
+                            }}>
                               Cantidad: {recepcion.cantidad}
                             </div>
                           </div>
@@ -1132,10 +1152,12 @@ const RecibirProductos: React.FC = () => {
                               color: 'white',
                               border: 'none',
                               borderRadius: '4px',
-                              padding: '0.25rem 0.5rem',
-                              fontSize: '0.75rem',
+                              padding: isMobile ? '0.5rem' : '0.25rem 0.5rem',
+                              fontSize: isMobile ? '0.875rem' : '0.75rem',
                               cursor: 'pointer',
-                              transition: 'all 0.2s ease'
+                              transition: 'all 0.2s ease',
+                              minHeight: isMobile ? '2rem' : 'auto',
+                              minWidth: isMobile ? '2rem' : 'auto'
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.background = '#dc2626';
@@ -1164,7 +1186,7 @@ const RecibirProductos: React.FC = () => {
                 border: '2px solid #e2e8f0'
               }}>
                 <h2 style={{
-                  fontSize: '1.25rem',
+                  fontSize: isMobile ? '1.5rem' : '1.25rem',
                   fontWeight: '600',
                   color: '#1e293b',
                   margin: '0 0 1.5rem 0'
@@ -1177,15 +1199,23 @@ const RecibirProductos: React.FC = () => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '1rem',
-                    padding: '0.75rem',
+                    marginBottom: isMobile ? '1.5rem' : '1rem',
+                    padding: isMobile ? '1rem' : '0.75rem',
                     background: '#f8fafc',
                     borderRadius: '8px'
                   }}>
-                    <span style={{ fontWeight: '600', color: '#374151' }}>
+                    <span style={{ 
+                      fontWeight: '600', 
+                      color: '#374151',
+                      fontSize: isMobile ? '1rem' : 'inherit'
+                    }}>
                       Productos:
                     </span>
-                    <span style={{ fontWeight: '700', color: '#667eea', fontSize: '1.25rem' }}>
+                    <span style={{ 
+                      fontWeight: '700', 
+                      color: '#667eea', 
+                      fontSize: isMobile ? '1.5rem' : '1.25rem' 
+                    }}>
                       {recepciones.length}
                     </span>
                   </div>
@@ -1193,14 +1223,22 @@ const RecibirProductos: React.FC = () => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    padding: '0.75rem',
+                    padding: isMobile ? '1rem' : '0.75rem',
                     background: '#f8fafc',
                     borderRadius: '8px'
                   }}>
-                    <span style={{ fontWeight: '600', color: '#374151' }}>
+                    <span style={{ 
+                      fontWeight: '600', 
+                      color: '#374151',
+                      fontSize: isMobile ? '1rem' : 'inherit'
+                    }}>
                       Unidades:
                     </span>
-                    <span style={{ fontWeight: '700', color: '#667eea', fontSize: '1.25rem' }}>
+                    <span style={{ 
+                      fontWeight: '700', 
+                      color: '#667eea', 
+                      fontSize: isMobile ? '1.5rem' : '1.25rem' 
+                    }}>
                       {recepciones.reduce((sum, r) => sum + r.cantidad, 0)}
                     </span>
                   </div>
@@ -1211,15 +1249,16 @@ const RecibirProductos: React.FC = () => {
                   disabled={guardando || recepciones.length === 0}
                   style={{
                     width: '100%',
-                    padding: '1rem',
+                    padding: isMobile ? '1.25rem' : '1rem',
                     background: guardando || recepciones.length === 0 ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     color: 'white',
                     border: 'none',
                     borderRadius: '8px',
-                    fontSize: '1rem',
+                    fontSize: isMobile ? '1.125rem' : '1rem',
                     fontWeight: '600',
                     cursor: guardando || recepciones.length === 0 ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    minHeight: isMobile ? '56px' : 'auto'
                   }}
                   onMouseEnter={(e) => {
                     if (!guardando && recepciones.length > 0) {

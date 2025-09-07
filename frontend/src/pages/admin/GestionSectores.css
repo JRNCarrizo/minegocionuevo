@@ -126,9 +126,14 @@
   background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
 }
 
+.boton-actualizar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
 .boton-migrar:hover,
 .boton-crear:hover,
-.boton-stock-general:hover {
+.boton-stock-general:hover,
+.boton-actualizar:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
@@ -136,7 +141,8 @@
 /* Estilos para navegación por teclado */
 .boton-migrar.seleccionado,
 .boton-crear.seleccionado,
-.boton-stock-general.seleccionado {
+.boton-stock-general.seleccionado,
+.boton-actualizar.seleccionado {
   border: 3px solid #000000;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);
   transform: translateY(-2px);
@@ -1537,13 +1543,16 @@
   
   .boton-migrar,
   .boton-crear,
-  .boton-stock-general {
-    padding: 0.6rem 1rem;
+  .boton-stock-general,
+  .boton-actualizar {
+    padding: 0.75rem 1rem;
     font-size: 0.9rem;
-    flex: 0 1 auto;
+    flex: 1;
     min-width: 0;
     justify-content: center;
     white-space: nowrap;
+    min-height: 48px;
+    width: 100%;
   }
   
   .estadisticas-sectores {
@@ -1653,6 +1662,21 @@
 }
 
 @media (max-width: 480px) {
+  .botones-accion {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .boton-migrar,
+  .boton-crear,
+  .boton-stock-general,
+  .boton-actualizar {
+    padding: 1rem;
+    font-size: 1rem;
+    min-height: 56px;
+    width: 100%;
+  }
+  
   .contenido-tarjeta-sector {
     min-height: 160px;
     padding: 1rem;
