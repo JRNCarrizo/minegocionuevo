@@ -302,13 +302,18 @@ public class ProductoService {
             
             producto.setStock(productoDTO.getStock());
             
-            // 🔄 SINCRONIZAR STOCK: Actualizar stock en sectores cuando se edita el stock del producto
+            // 🔄 SINCRONIZACIÓN TEMPORALMENTE DESHABILITADA
+            // La sincronización automática está causando problemas cuando se asigna stock a sectores
+            // TODO: Implementar lógica más inteligente para determinar cuándo sincronizar
+            /*
             try {
                 sincronizarStockConSectores(empresaId, producto.getId(), stockAnterior, productoDTO.getStock());
             } catch (Exception e) {
                 System.err.println("❌ SINCRONIZACIÓN STOCK - Error al sincronizar stock con sectores: " + e.getMessage());
                 // No fallar la actualización del producto si hay error en la sincronización
             }
+            */
+            System.out.println("ℹ️ SINCRONIZACIÓN STOCK - Sincronización automática temporalmente deshabilitada");
             
             System.out.println("🔍 Stock establecido: " + producto.getStock());
         }
