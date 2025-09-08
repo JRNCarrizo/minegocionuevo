@@ -2500,7 +2500,63 @@ public class MovimientoDiaService {
      * Exportar reporte completo del día a Excel con 5 pestañas
      * Pestañas: Ingresos, Planillas, Retornos, Pérdidas, Stock
      */
+    @Transactional(readOnly = true)
     public byte[] exportarReporteCompletoExcel(String fechaStr) {
+        // VERSIÓN SIMPLIFICADA PARA DEBUG EN PRODUCCIÓN
+        return exportarReporteCompletoExcelSimple(fechaStr);
+    }
+    
+    /**
+     * Versión simplificada del reporte para debug
+     */
+    @Transactional(readOnly = true)
+    private byte[] exportarReporteCompletoExcelSimple(String fechaStr) {
+        try {
+            System.out.println("🔍 [SERVICE] Generando reporte SIMPLE para fecha: " + fechaStr);
+            
+            // Crear workbook simple
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Prueba");
+            
+            // Datos básicos
+            Row row1 = sheet.createRow(0);
+            row1.createCell(0).setCellValue("Fecha");
+            row1.createCell(1).setCellValue(fechaStr);
+            
+            Row row2 = sheet.createRow(1);
+            row2.createCell(0).setCellValue("Empresa ID");
+            row2.createCell(1).setCellValue(obtenerEmpresaId());
+            
+            Row row3 = sheet.createRow(2);
+            row3.createCell(0).setCellValue("Estado");
+            row3.createCell(1).setCellValue("FUNCIONANDO");
+            
+            // Autoajustar
+            sheet.autoSizeColumn(0);
+            sheet.autoSizeColumn(1);
+            
+            // Convertir a bytes
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            
+            byte[] excelBytes = outputStream.toByteArray();
+            outputStream.close();
+            
+            System.out.println("✅ [SERVICE] Reporte SIMPLE generado. Tamaño: " + excelBytes.length + " bytes");
+            return excelBytes;
+            
+        } catch (Exception e) {
+            System.err.println("❌ [SERVICE] Error en reporte SIMPLE: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Versión completa del reporte (temporalmente deshabilitada)
+     */
+    public byte[] exportarReporteCompletoExcelCompleto(String fechaStr) {
         try {
             System.out.println("🔍 [SERVICE] Generando reporte completo para fecha: " + fechaStr);
             System.out.println("🔍 [SERVICE] Empresa ID: " + obtenerEmpresaId());
