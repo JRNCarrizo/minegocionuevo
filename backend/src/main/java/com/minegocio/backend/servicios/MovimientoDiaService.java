@@ -2358,6 +2358,10 @@ public class MovimientoDiaService {
      */
     @Transactional(readOnly = true)
     public byte[] exportarStockInicialExcel(String fechaStr) throws IOException {
+        // Configurar sistema para modo headless ANTES de cualquier operación
+        System.setProperty("java.awt.headless", "true");
+        System.setProperty("sun.java2d.headless", "true");
+        
         System.out.println("🔍 [SERVICE] Exportando stock inicial a Excel para fecha: " + fechaStr);
         
         // Obtener movimientos del día
@@ -2498,14 +2502,15 @@ public class MovimientoDiaService {
             sheet.autoSizeColumn(2); // Cantidad
             
             // Convertir a bytes
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            workbook.write(outputStream);
-            byte[] workbookBytes = outputStream.toByteArray();
-            
-            System.out.println("✅ [SERVICE] Excel de stock inicial generado exitosamente. Tamaño: " + workbookBytes.length + " bytes");
-            System.out.println("📊 [SERVICE] Productos exportados: " + productos.size() + ", Total cantidad: " + totalCantidad);
-            
-            return workbookBytes;
+            try (var outputStream = new java.io.ByteArrayOutputStream()) {
+                workbook.write(outputStream);
+                byte[] workbookBytes = outputStream.toByteArray();
+                
+                System.out.println("✅ [SERVICE] Excel de stock inicial generado exitosamente. Tamaño: " + workbookBytes.length + " bytes");
+                System.out.println("📊 [SERVICE] Productos exportados: " + productos.size() + ", Total cantidad: " + totalCantidad);
+                
+                return workbookBytes;
+            }
         }
     }
 
@@ -2552,15 +2557,15 @@ public class MovimientoDiaService {
             sheet.autoSizeColumn(1);
             
             // Convertir a bytes
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            workbook.write(outputStream);
-            workbook.close();
-            
-            byte[] excelBytes = outputStream.toByteArray();
-            outputStream.close();
-            
-            System.out.println("✅ [SERVICE] Reporte SIMPLE generado. Tamaño: " + excelBytes.length + " bytes");
-            return excelBytes;
+            try (var outputStream = new java.io.ByteArrayOutputStream()) {
+                workbook.write(outputStream);
+                byte[] excelBytes = outputStream.toByteArray();
+                
+                System.out.println("✅ [SERVICE] Reporte SIMPLE generado. Tamaño: " + excelBytes.length + " bytes");
+                return excelBytes;
+            } finally {
+                workbook.close();
+            }
             
         } catch (Exception e) {
             System.err.println("❌ [SERVICE] Error en reporte SIMPLE: " + e.getMessage());
@@ -2633,15 +2638,14 @@ public class MovimientoDiaService {
             crearPestanaStock(workbook, movimientos, fechaStr, headerStyle, dataStyle, titleStyle);
             
                 // Convertir a bytes
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                workbook.write(outputStream);
-                
-                byte[] excelBytes = outputStream.toByteArray();
-                outputStream.close();
-                
-                System.out.println("✅ [SERVICE] Reporte completo generado exitosamente. Tamaño: " + excelBytes.length + " bytes");
-                
-                return excelBytes;
+                try (var outputStream = new java.io.ByteArrayOutputStream()) {
+                    workbook.write(outputStream);
+                    byte[] excelBytes = outputStream.toByteArray();
+                    
+                    System.out.println("✅ [SERVICE] Reporte completo generado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+                    
+                    return excelBytes;
+                }
             }
             
         } catch (Exception e) {
