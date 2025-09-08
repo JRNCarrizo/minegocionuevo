@@ -2638,7 +2638,18 @@ public class MovimientoDiaService {
         int obsColIndex = 3;
         for (RemitoIngreso remito : remitos) {
             Cell obsCell = obsRow.createCell(obsColIndex++);
-            obsCell.setCellValue(remito.getObservaciones() != null ? remito.getObservaciones() : "");
+            String observacion = "";
+            try {
+                // Usar reflexión para obtener el campo observaciones
+                java.lang.reflect.Field field = remito.getClass().getDeclaredField("observaciones");
+                field.setAccessible(true);
+                Object value = field.get(remito);
+                observacion = value != null ? value.toString() : "";
+            } catch (Exception e) {
+                System.err.println("Error al obtener observaciones del remito: " + e.getMessage());
+                observacion = "";
+            }
+            obsCell.setCellValue(observacion);
             obsCell.setCellStyle(headerStyle);
         }
         
