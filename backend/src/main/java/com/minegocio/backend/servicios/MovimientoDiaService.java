@@ -32,6 +32,11 @@ public class MovimientoDiaService {
         System.setProperty("sun.java2d.noddraw", "true");
         System.setProperty("sun.java2d.d3d", "false");
         System.setProperty("sun.java2d.opengl", "false");
+        System.setProperty("sun.java2d.pmoffscreen", "false");
+        System.setProperty("sun.java2d.xrender", "false");
+        
+        // Configuración adicional para Apache POI
+        System.setProperty("org.apache.poi.util.POILogger", "org.apache.poi.util.NullLogger");
     }
     
     @Autowired
@@ -2361,6 +2366,15 @@ public class MovimientoDiaService {
         // Configurar sistema para modo headless ANTES de cualquier operación
         System.setProperty("java.awt.headless", "true");
         System.setProperty("sun.java2d.headless", "true");
+        System.setProperty("java.awt.graphicsenv", "sun.awt.X11GraphicsEnvironment");
+        System.setProperty("sun.java2d.noddraw", "true");
+        System.setProperty("sun.java2d.d3d", "false");
+        System.setProperty("sun.java2d.opengl", "false");
+        System.setProperty("sun.java2d.pmoffscreen", "false");
+        System.setProperty("sun.java2d.xrender", "false");
+        
+        // Configuración adicional para Apache POI
+        System.setProperty("org.apache.poi.util.POILogger", "org.apache.poi.util.NullLogger");
         
         System.out.println("🔍 [SERVICE] Exportando stock inicial a Excel para fecha: " + fechaStr);
         
@@ -2399,8 +2413,11 @@ public class MovimientoDiaService {
             throw new IOException("Error al obtener movimientos del día: " + e.getMessage(), e);
         }
         
-        // Crear workbook de Excel
-        try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+        // Crear workbook de Excel con inicialización segura
+        org.apache.poi.xssf.usermodel.XSSFWorkbook workbook = null;
+        try {
+            // Inicialización diferida y segura
+            workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
             System.out.println("🔍 [SERVICE] Creando workbook de Excel");
             Sheet sheet = workbook.createSheet("Stock Inicial");
             System.out.println("🔍 [SERVICE] Sheet creado: " + sheet.getSheetName());
@@ -2511,6 +2528,14 @@ public class MovimientoDiaService {
                 
                 return workbookBytes;
             }
+        } finally {
+            if (workbook != null) {
+                try {
+                    workbook.close();
+                } catch (Exception e) {
+                    System.err.println("⚠️ [SERVICE] Error al cerrar workbook: " + e.getMessage());
+                }
+            }
         }
     }
 
@@ -2582,6 +2607,15 @@ public class MovimientoDiaService {
         // Configurar sistema para modo headless ANTES de cualquier operación
         System.setProperty("java.awt.headless", "true");
         System.setProperty("sun.java2d.headless", "true");
+        System.setProperty("java.awt.graphicsenv", "sun.awt.X11GraphicsEnvironment");
+        System.setProperty("sun.java2d.noddraw", "true");
+        System.setProperty("sun.java2d.d3d", "false");
+        System.setProperty("sun.java2d.opengl", "false");
+        System.setProperty("sun.java2d.pmoffscreen", "false");
+        System.setProperty("sun.java2d.xrender", "false");
+        
+        // Configuración adicional para Apache POI
+        System.setProperty("org.apache.poi.util.POILogger", "org.apache.poi.util.NullLogger");
         
         try {
             
@@ -2592,8 +2626,11 @@ public class MovimientoDiaService {
             MovimientoDiaDTO movimientos = obtenerMovimientosDia(fechaStr);
             System.out.println("🔍 [SERVICE] Movimientos obtenidos: " + (movimientos != null ? "SÍ" : "NO"));
             
-            // Crear workbook con try-with-resources
-            try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+            // Crear workbook con try-with-resources y inicialización segura
+            org.apache.poi.xssf.usermodel.XSSFWorkbook workbook = null;
+            try {
+                // Inicialización diferida y segura
+                workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
             
             // Crear estilos
             CellStyle headerStyle = workbook.createCellStyle();
@@ -2645,6 +2682,14 @@ public class MovimientoDiaService {
                     System.out.println("✅ [SERVICE] Reporte completo generado exitosamente. Tamaño: " + excelBytes.length + " bytes");
                     
                     return excelBytes;
+                }
+            } finally {
+                if (workbook != null) {
+                    try {
+                        workbook.close();
+                    } catch (Exception e) {
+                        System.err.println("⚠️ [SERVICE] Error al cerrar workbook: " + e.getMessage());
+                    }
                 }
             }
             
