@@ -2572,8 +2572,8 @@ public class MovimientoDiaService {
             MovimientoDiaDTO movimientos = obtenerMovimientosDia(fechaStr);
             System.out.println("🔍 [SERVICE] Movimientos obtenidos: " + (movimientos != null ? "SÍ" : "NO"));
             
-            // Crear workbook
-            Workbook workbook = new XSSFWorkbook();
+            // Crear workbook con try-with-resources
+            try (Workbook workbook = new XSSFWorkbook()) {
             
             // Crear estilos
             CellStyle headerStyle = workbook.createCellStyle();
@@ -2617,15 +2617,17 @@ public class MovimientoDiaService {
             // 5. PESTAÑA STOCK
             crearPestanaStock(workbook, movimientos, fechaStr, headerStyle, dataStyle, titleStyle);
             
-            // Convertir a bytes
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            workbook.write(outputStream);
-            workbook.close();
-            
-            byte[] excelBytes = outputStream.toByteArray();
-            System.out.println("✅ [SERVICE] Reporte completo generado exitosamente. Tamaño: " + excelBytes.length + " bytes");
-            
-            return excelBytes;
+                // Convertir a bytes
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                workbook.write(outputStream);
+                
+                byte[] excelBytes = outputStream.toByteArray();
+                outputStream.close();
+                
+                System.out.println("✅ [SERVICE] Reporte completo generado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+                
+                return excelBytes;
+            }
             
         } catch (Exception e) {
             System.err.println("❌ [SERVICE] Error al generar reporte completo: " + e.getMessage());
