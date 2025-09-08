@@ -27,6 +27,11 @@ public class MovimientoDiaService {
     // Configurar sistema para modo headless al inicializar la clase
     static {
         System.setProperty("java.awt.headless", "true");
+        System.setProperty("java.awt.graphicsenv", "sun.awt.X11GraphicsEnvironment");
+        System.setProperty("sun.java2d.headless", "true");
+        System.setProperty("sun.java2d.noddraw", "true");
+        System.setProperty("sun.java2d.d3d", "false");
+        System.setProperty("sun.java2d.opengl", "false");
     }
     
     @Autowired
@@ -2391,7 +2396,7 @@ public class MovimientoDiaService {
         }
         
         // Crear workbook de Excel
-        try (Workbook workbook = new XSSFWorkbook()) {
+        try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
             System.out.println("🔍 [SERVICE] Creando workbook de Excel");
             Sheet sheet = workbook.createSheet("Stock Inicial");
             System.out.println("🔍 [SERVICE] Sheet creado: " + sheet.getSheetName());
@@ -2526,7 +2531,7 @@ public class MovimientoDiaService {
             System.out.println("🔍 [SERVICE] Generando reporte SIMPLE para fecha: " + fechaStr);
             
             // Crear workbook simple
-            Workbook workbook = new XSSFWorkbook();
+            var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
             Sheet sheet = workbook.createSheet("Prueba");
             
             // Datos básicos
@@ -2571,6 +2576,7 @@ public class MovimientoDiaService {
     public byte[] exportarReporteCompletoExcelCompleto(String fechaStr) {
         // Configurar sistema para modo headless ANTES de cualquier operación
         System.setProperty("java.awt.headless", "true");
+        System.setProperty("sun.java2d.headless", "true");
         
         try {
             
@@ -2582,7 +2588,7 @@ public class MovimientoDiaService {
             System.out.println("🔍 [SERVICE] Movimientos obtenidos: " + (movimientos != null ? "SÍ" : "NO"));
             
             // Crear workbook con try-with-resources
-            try (Workbook workbook = new XSSFWorkbook()) {
+            try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
             
             // Crear estilos
             CellStyle headerStyle = workbook.createCellStyle();
