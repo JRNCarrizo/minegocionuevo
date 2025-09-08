@@ -24,6 +24,11 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 @Service
 public class MovimientoDiaService {
     
+    // Configurar sistema para modo headless al inicializar la clase
+    static {
+        System.setProperty("java.awt.headless", "true");
+    }
+    
     @Autowired
     private CierreDiaRepository cierreDiaRepository;
     
@@ -2564,9 +2569,10 @@ public class MovimientoDiaService {
      */
     @Transactional(readOnly = true)
     public byte[] exportarReporteCompletoExcelCompleto(String fechaStr) {
+        // Configurar sistema para modo headless ANTES de cualquier operación
+        System.setProperty("java.awt.headless", "true");
+        
         try {
-            // Configurar sistema para modo headless (sin interfaz gráfica)
-            System.setProperty("java.awt.headless", "true");
             
             System.out.println("🔍 [SERVICE] Generando reporte completo para fecha: " + fechaStr);
             System.out.println("🔍 [SERVICE] Empresa ID: " + obtenerEmpresaId());
