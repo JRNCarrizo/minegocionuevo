@@ -2565,6 +2565,9 @@ public class MovimientoDiaService {
     @Transactional(readOnly = true)
     public byte[] exportarReporteCompletoExcelCompleto(String fechaStr) {
         try {
+            // Configurar sistema para modo headless (sin interfaz gráfica)
+            System.setProperty("java.awt.headless", "true");
+            
             System.out.println("🔍 [SERVICE] Generando reporte completo para fecha: " + fechaStr);
             System.out.println("🔍 [SERVICE] Empresa ID: " + obtenerEmpresaId());
             
