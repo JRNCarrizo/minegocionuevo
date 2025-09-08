@@ -2378,6 +2378,20 @@ public class MovimientoDiaService {
         
         System.out.println("🔍 [SERVICE] Exportando stock inicial a Excel para fecha: " + fechaStr);
         
+        try {
+            return exportarStockInicialExcelCompleto(fechaStr);
+        } catch (Exception e) {
+            System.err.println("❌ [SERVICE] Error en stock inicial Excel, usando versión CSV: " + e.getMessage());
+            // Fallback a CSV
+            return exportarStockInicialCSV(fechaStr);
+        }
+    }
+    
+    /**
+     * Versión completa del stock inicial a Excel
+     */
+    private byte[] exportarStockInicialExcelCompleto(String fechaStr) throws IOException {
+        
         // Obtener movimientos del día
         MovimientoDiaDTO movimientos;
         try {
@@ -2538,6 +2552,44 @@ public class MovimientoDiaService {
             }
         }
     }
+    
+    /**
+     * Versión CSV del stock inicial como fallback
+     */
+    private byte[] exportarStockInicialCSV(String fechaStr) {
+        try {
+            System.out.println("🔍 [SERVICE] Generando stock inicial CSV para fecha: " + fechaStr);
+            
+            StringBuilder csv = new StringBuilder();
+            csv.append("STOCK INICIAL - ").append(fechaStr).append("\n");
+            csv.append("Empresa ID,").append(obtenerEmpresaId()).append("\n");
+            csv.append("Fecha,").append(fechaStr).append("\n");
+            csv.append("Estado,FUNCIONANDO (CSV)\n");
+            csv.append("\n");
+            
+            // Obtener movimientos del día
+            MovimientoDiaDTO movimientos = obtenerMovimientosDia(fechaStr);
+            if (movimientos != null && movimientos.getStockInicial() != null && movimientos.getStockInicial().getProductos() != null) {
+                csv.append("Código,Descripción,Cantidad\n");
+                for (var producto : movimientos.getStockInicial().getProductos()) {
+                    csv.append(producto.getCodigoPersonalizado()).append(",");
+                    csv.append(producto.getNombre()).append(",");
+                    csv.append(producto.getCantidad()).append("\n");
+                }
+            } else {
+                csv.append("No hay stock inicial para esta fecha\n");
+            }
+            
+            byte[] csvBytes = csv.toString().getBytes("UTF-8");
+            System.out.println("✅ [SERVICE] Stock inicial CSV generado. Tamaño: " + csvBytes.length + " bytes");
+            return csvBytes;
+            
+        } catch (Exception e) {
+            System.err.println("❌ [SERVICE] Error en stock inicial CSV: " + e.getMessage());
+            e.printStackTrace();
+            return "Error generando stock inicial".getBytes();
+        }
+    }
 
     /**
      * Obtener empresa ID del contexto de seguridad
@@ -2549,7 +2601,19 @@ public class MovimientoDiaService {
     @Transactional(readOnly = true)
     public byte[] exportarReporteCompletoExcel(String fechaStr) {
         // VERSIÓN COMPLETA CON 5 PESTAÑAS
-        return exportarReporteCompletoExcelCompleto(fechaStr);
+        try {
+            return exportarReporteCompletoExcelCompleto(fechaStr);
+        } catch (Exception e) {
+            System.err.println("❌ [SERVICE] Error en reporte completo, usando versión simple: " + e.getMessage());
+            // Fallback a versión simple si falla la completa
+            try {
+                return exportarReporteCompletoExcelSimple(fechaStr);
+            } catch (Exception e2) {
+                System.err.println("❌ [SERVICE] Error en reporte simple, usando versión CSV: " + e2.getMessage());
+                // Fallback final a CSV
+                return exportarReporteCompletoCSV(fechaStr);
+            }
+        }
     }
     
     /**
@@ -2560,42 +2624,120 @@ public class MovimientoDiaService {
         try {
             System.out.println("🔍 [SERVICE] Generando reporte SIMPLE para fecha: " + fechaStr);
             
-            // Crear workbook simple
-            var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
-            Sheet sheet = workbook.createSheet("Prueba");
-            
-            // Datos básicos
-            Row row1 = sheet.createRow(0);
-            row1.createCell(0).setCellValue("Fecha");
-            row1.createCell(1).setCellValue(fechaStr);
-            
-            Row row2 = sheet.createRow(1);
-            row2.createCell(0).setCellValue("Empresa ID");
-            row2.createCell(1).setCellValue(obtenerEmpresaId());
-            
-            Row row3 = sheet.createRow(2);
-            row3.createCell(0).setCellValue("Estado");
-            row3.createCell(1).setCellValue("FUNCIONANDO");
-            
-            // Autoajustar
-            sheet.autoSizeColumn(0);
-            sheet.autoSizeColumn(1);
-            
-            // Convertir a bytes
-            try (var outputStream = new java.io.ByteArrayOutputStream()) {
-                workbook.write(outputStream);
-                byte[] excelBytes = outputStream.toByteArray();
+            // Crear workbook simple con inicialización diferida
+            org.apache.poi.xssf.usermodel.XSSFWorkbook workbook = null;
+            try {
+                // Inicialización diferida y segura
+                workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+                Sheet sheet = workbook.createSheet("Prueba");
                 
-                System.out.println("✅ [SERVICE] Reporte SIMPLE generado. Tamaño: " + excelBytes.length + " bytes");
-                return excelBytes;
+                // Datos básicos
+                Row row1 = sheet.createRow(0);
+                row1.createCell(0).setCellValue("Fecha");
+                row1.createCell(1).setCellValue(fechaStr);
+                
+                Row row2 = sheet.createRow(1);
+                row2.createCell(0).setCellValue("Empresa ID");
+                row2.createCell(1).setCellValue(obtenerEmpresaId());
+                
+                Row row3 = sheet.createRow(2);
+                row3.createCell(0).setCellValue("Estado");
+                row3.createCell(1).setCellValue("FUNCIONANDO");
+                
+                // Autoajustar
+                sheet.autoSizeColumn(0);
+                sheet.autoSizeColumn(1);
+                
+                // Convertir a bytes
+                try (var outputStream = new java.io.ByteArrayOutputStream()) {
+                    workbook.write(outputStream);
+                    byte[] excelBytes = outputStream.toByteArray();
+                    
+                    System.out.println("✅ [SERVICE] Reporte SIMPLE generado. Tamaño: " + excelBytes.length + " bytes");
+                    return excelBytes;
+                }
             } finally {
-                workbook.close();
+                if (workbook != null) {
+                    try {
+                        workbook.close();
+                    } catch (Exception e) {
+                        System.err.println("⚠️ [SERVICE] Error al cerrar workbook: " + e.getMessage());
+                    }
+                }
             }
             
         } catch (Exception e) {
             System.err.println("❌ [SERVICE] Error en reporte SIMPLE: " + e.getMessage());
             e.printStackTrace();
             return null;
+        }
+    }
+    
+    /**
+     * Versión CSV del reporte como fallback final
+     */
+    @Transactional(readOnly = true)
+    private byte[] exportarReporteCompletoCSV(String fechaStr) {
+        try {
+            System.out.println("🔍 [SERVICE] Generando reporte CSV para fecha: " + fechaStr);
+            
+            StringBuilder csv = new StringBuilder();
+            csv.append("REPORTE COMPLETO - ").append(fechaStr).append("\n");
+            csv.append("Empresa ID,").append(obtenerEmpresaId()).append("\n");
+            csv.append("Fecha,").append(fechaStr).append("\n");
+            csv.append("Estado,FUNCIONANDO (CSV)\n");
+            csv.append("\n");
+            
+            // Obtener movimientos del día
+            MovimientoDiaDTO movimientos = obtenerMovimientosDia(fechaStr);
+            if (movimientos != null) {
+                csv.append("=== INGRESOS ===\n");
+                if (movimientos.getIngresos() != null && movimientos.getIngresos().getProductos() != null && !movimientos.getIngresos().getProductos().isEmpty()) {
+                    csv.append("Código,Descripción,Cantidad\n");
+                    for (var ingreso : movimientos.getIngresos().getProductos()) {
+                        csv.append(ingreso.getCodigoPersonalizado()).append(",");
+                        csv.append(ingreso.getNombre()).append(",");
+                        csv.append(ingreso.getCantidad()).append("\n");
+                    }
+                } else {
+                    csv.append("No hay ingresos para esta fecha\n");
+                }
+                
+                csv.append("\n=== SALIDAS ===\n");
+                if (movimientos.getSalidas() != null && movimientos.getSalidas().getProductos() != null && !movimientos.getSalidas().getProductos().isEmpty()) {
+                    csv.append("Código,Descripción,Cantidad\n");
+                    for (var salida : movimientos.getSalidas().getProductos()) {
+                        csv.append(salida.getCodigoPersonalizado()).append(",");
+                        csv.append(salida.getNombre()).append(",");
+                        csv.append(salida.getCantidad()).append("\n");
+                    }
+                } else {
+                    csv.append("No hay salidas para esta fecha\n");
+                }
+                
+                csv.append("\n=== STOCK INICIAL ===\n");
+                if (movimientos.getStockInicial() != null && movimientos.getStockInicial().getProductos() != null) {
+                    csv.append("Código,Descripción,Cantidad\n");
+                    for (var producto : movimientos.getStockInicial().getProductos()) {
+                        csv.append(producto.getCodigoPersonalizado()).append(",");
+                        csv.append(producto.getNombre()).append(",");
+                        csv.append(producto.getCantidad()).append("\n");
+                    }
+                } else {
+                    csv.append("No hay stock inicial para esta fecha\n");
+                }
+            } else {
+                csv.append("No hay movimientos para esta fecha\n");
+            }
+            
+            byte[] csvBytes = csv.toString().getBytes("UTF-8");
+            System.out.println("✅ [SERVICE] Reporte CSV generado. Tamaño: " + csvBytes.length + " bytes");
+            return csvBytes;
+            
+        } catch (Exception e) {
+            System.err.println("❌ [SERVICE] Error en reporte CSV: " + e.getMessage());
+            e.printStackTrace();
+            return "Error generando reporte".getBytes();
         }
     }
     
