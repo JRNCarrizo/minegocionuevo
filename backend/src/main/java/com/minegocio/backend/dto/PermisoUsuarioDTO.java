@@ -36,3 +36,5 @@ public class PermisoUsuarioDTO {
     public void setPermisos(Map<String, Boolean> permisos) { this.permisos = permisos; }
 }
 
+
+

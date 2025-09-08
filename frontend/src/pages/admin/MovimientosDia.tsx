@@ -532,6 +532,34 @@ export default function MovimientosDia() {
     }
   };
 
+  const exportarReporteCompletoExcel = async () => {
+    if (!movimientos || modoRango) return;
+    
+    try {
+      toast.loading('Generando reporte completo con 5 pestañas...');
+      
+      const blob = await ApiService.exportarReporteCompletoExcel(fechaSeleccionada);
+      
+      // Crear URL y descargar archivo
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte_completo_${fechaSeleccionada}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Reporte completo exportado exitosamente');
+      
+    } catch (error) {
+      console.error('Error al exportar reporte completo a Excel:', error);
+      toast.dismiss();
+      toast.error('Error al exportar reporte completo a Excel');
+    }
+  };
+
   const calcularBalanceFinal = () => {
     if (!movimientos) return 0;
     
@@ -922,6 +950,24 @@ export default function MovimientosDia() {
                       : 'Balance diario de inventario y movimientos'
                   }
                 </p>
+                {!modoRango && movimientos && (
+                  <div style={{
+                    marginTop: '0.5rem',
+                    padding: '0.75rem',
+                    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                    borderRadius: '0.5rem',
+                    border: '1px solid #0ea5e9',
+                    fontSize: '0.875rem',
+                    color: '#0c4a6e'
+                  }}>
+                    <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                      📋 Reporte Completo disponible
+                    </div>
+                    <div style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
+                      Incluye 5 pestañas: Ingresos (con remitos), Planillas, Retornos, Pérdidas y Stock (con fórmulas automáticas para diferencias)
+                    </div>
+                  </div>
+                )}
              </div>
             
                                                                <div style={{
@@ -930,13 +976,51 @@ export default function MovimientosDia() {
               gap: '1rem',
               alignItems: 'flex-end'
             }}>
-              {/* Primera fila: Botón exportar y toggle día/rango */}
+              {/* Primera fila: Botones de exportar y toggle día/rango */}
               <div style={{
                 display: 'flex',
                 gap: '1rem',
-                alignItems: 'center'
+                alignItems: 'center',
+                flexWrap: 'wrap'
               }}>
-                {/* Botón de exportar */}
+                {/* Botón de reporte completo - DESTACADO */}
+                <button
+                  onClick={exportarReporteCompletoExcel}
+                  disabled={!movimientos || transicionando || modoRango}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '700',
+                    cursor: !movimientos || transicionando || modoRango ? 'not-allowed' : 'pointer',
+                    opacity: !movimientos || transicionando || modoRango ? 0.6 : 1,
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)',
+                    border: '2px solid rgba(255, 255, 255, 0.2)'
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isMobile && movimientos && !transicionando && !modoRango) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(124, 58, 237, 0.4)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isMobile) {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(124, 58, 237, 0.3)';
+                    }
+                  }}
+                >
+                  📋 Reporte Completo (5 Pestañas)
+                </button>
+
+                {/* Botón de exportar general */}
                 <button
                   onClick={modoRango ? exportarMovimientosRangoExcel : exportarMovimientosExcel}
                   disabled={!movimientos || transicionando}

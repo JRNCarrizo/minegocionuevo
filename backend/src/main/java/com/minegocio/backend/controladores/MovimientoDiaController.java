@@ -243,4 +243,46 @@ public class MovimientoDiaController {
         }
     }
 
+    /**
+     * Exportar reporte completo del día a Excel con 5 pestañas
+     * Pestañas: Ingresos, Planillas, Retornos, Pérdidas, Stock
+     */
+    @GetMapping("/{fecha}/exportar-reporte-completo-excel")
+    public ResponseEntity<byte[]> exportarReporteCompletoExcel(@PathVariable String fecha) {
+        try {
+            System.out.println("🔍 [CONTROLLER] Exportando reporte completo a Excel para fecha: " + fecha);
+            
+            // Validar formato de fecha
+            if (fecha == null || fecha.trim().isEmpty()) {
+                System.err.println("❌ [CONTROLLER] Fecha vacía o nula");
+                return ResponseEntity.badRequest().build();
+            }
+            
+            byte[] excelBytes = movimientoDiaService.exportarReporteCompletoExcel(fecha);
+            
+            if (excelBytes == null || excelBytes.length == 0) {
+                System.err.println("❌ [CONTROLLER] Excel generado está vacío");
+                return ResponseEntity.badRequest().build();
+            }
+            
+            String nombreArchivo = "reporte_completo_" + fecha + ".xlsx";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", nombreArchivo);
+            headers.setContentLength(excelBytes.length);
+            
+            System.out.println("✅ [CONTROLLER] Reporte completo exportado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelBytes);
+                    
+        } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER] Error al exportar reporte completo a Excel: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }

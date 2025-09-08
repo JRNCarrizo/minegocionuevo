@@ -40,11 +40,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const stored = localStorage.getItem('cart');
       if (stored) {
         const newItems = JSON.parse(stored);
+
+
         setItems(newItems);
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
+
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 

@@ -2193,6 +2193,19 @@ class ApiService {
     }
   }
 
+  // Exportar reporte completo del día a Excel con 5 pestañas
+  async exportarReporteCompletoExcel(fecha: string): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/movimientos-dia/${fecha}/exportar-reporte-completo-excel`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar reporte completo a Excel:', error);
+      throw error;
+    }
+  }
+
   // Exportar movimientos por rango de fechas a Excel
   async exportarMovimientosRangoExcel(fechaInicio: string, fechaFin: string): Promise<Blob> {
     try {

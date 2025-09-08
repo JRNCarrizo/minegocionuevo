@@ -1,4 +1,4 @@
-package com.minegocio.backend.entidades;
+ package com.minegocio.backend.entidades;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;

@@ -2496,6 +2496,670 @@ public class MovimientoDiaService {
     /**
      * Obtener empresa ID del contexto de seguridad
      */
+    /**
+     * Exportar reporte completo del día a Excel con 5 pestañas
+     * Pestañas: Ingresos, Planillas, Retornos, Pérdidas, Stock
+     */
+    public byte[] exportarReporteCompletoExcel(String fechaStr) {
+        try {
+            System.out.println("🔍 [SERVICE] Generando reporte completo para fecha: " + fechaStr);
+            
+            // Obtener datos de movimientos
+            MovimientoDiaDTO movimientos = obtenerMovimientosDia(fechaStr);
+            
+            // Crear workbook
+            Workbook workbook = new XSSFWorkbook();
+            
+            // Crear estilos
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setFontHeightInPoints((short) 12);
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+            
+            CellStyle dataStyle = workbook.createCellStyle();
+            dataStyle.setBorderTop(BorderStyle.THIN);
+            dataStyle.setBorderBottom(BorderStyle.THIN);
+            dataStyle.setBorderLeft(BorderStyle.THIN);
+            dataStyle.setBorderRight(BorderStyle.THIN);
+            
+            CellStyle titleStyle = workbook.createCellStyle();
+            Font titleFont = workbook.createFont();
+            titleFont.setBold(true);
+            titleFont.setFontHeightInPoints((short) 14);
+            titleStyle.setFont(titleFont);
+            titleStyle.setAlignment(HorizontalAlignment.CENTER);
+            
+            // 1. PESTAÑA INGRESOS
+            crearPestanaIngresos(workbook, movimientos, fechaStr, headerStyle, dataStyle, titleStyle);
+            
+            // 2. PESTAÑA PLANILLAS
+            crearPestanaPlanillas(workbook, movimientos, fechaStr, headerStyle, dataStyle, titleStyle);
+            
+            // 3. PESTAÑA RETORNOS
+            crearPestanaRetornos(workbook, movimientos, fechaStr, headerStyle, dataStyle, titleStyle);
+            
+            // 4. PESTAÑA PÉRDIDAS
+            crearPestanaPerdidas(workbook, movimientos, fechaStr, headerStyle, dataStyle, titleStyle);
+            
+            // 5. PESTAÑA STOCK
+            crearPestanaStock(workbook, movimientos, fechaStr, headerStyle, dataStyle, titleStyle);
+            
+            // Convertir a bytes
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            
+            byte[] excelBytes = outputStream.toByteArray();
+            System.out.println("✅ [SERVICE] Reporte completo generado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+            
+            return excelBytes;
+            
+        } catch (Exception e) {
+            System.err.println("❌ [SERVICE] Error al generar reporte completo: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al generar reporte completo", e);
+        }
+    }
+    
+    /**
+     * Crear pestaña de Ingresos
+     */
+    private void crearPestanaIngresos(Workbook workbook, MovimientoDiaDTO movimientos, String fechaStr, 
+                                    CellStyle headerStyle, CellStyle dataStyle, CellStyle titleStyle) {
+        Sheet sheet = workbook.createSheet("Ingresos");
+        
+        // Título
+        Row titleRow = sheet.createRow(0);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("INGRESOS - " + fechaStr);
+        titleCell.setCellStyle(titleStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 10));
+        
+        // Obtener remitos de ingresos del día
+        List<RemitoIngreso> remitos = remitoIngresoRepository.findByRangoFechasAndEmpresaId(
+            LocalDate.parse(fechaStr).atStartOfDay(),
+            LocalDate.parse(fechaStr).atTime(23, 59, 59),
+            obtenerEmpresaId()
+        );
+        
+        // Obtener todos los productos únicos
+        Set<Producto> productosUnicos = new HashSet<>();
+        for (RemitoIngreso remito : remitos) {
+            List<DetalleRemitoIngreso> detalles = detalleRemitoIngresoRepository.findByRemitoIngresoIdOrderByFechaCreacionAsc(remito.getId());
+            for (DetalleRemitoIngreso detalle : detalles) {
+                productosUnicos.add(detalle.getProducto());
+            }
+        }
+        
+        // Agregar productos del stock inicial que no estén en remitos
+        if (movimientos.getStockInicial() != null && movimientos.getStockInicial().getProductos() != null) {
+            for (MovimientoDiaDTO.ProductoStockDTO productoStock : movimientos.getStockInicial().getProductos()) {
+                Producto producto = productoRepository.findById(productoStock.getId()).orElse(null);
+                if (producto != null) {
+                    productosUnicos.add(producto);
+                }
+            }
+        }
+        
+        // Crear encabezados
+        Row headerRow = sheet.createRow(2);
+        headerRow.createCell(0).setCellValue("Código");
+        headerRow.createCell(1).setCellValue("Descripción");
+        headerRow.createCell(2).setCellValue("Cantidad Inicial");
+        
+        // Encabezados de remitos
+        int colIndex = 3;
+        for (RemitoIngreso remito : remitos) {
+            Cell remitoCell = headerRow.createCell(colIndex++);
+            remitoCell.setCellValue(remito.getNumeroRemito());
+            remitoCell.setCellStyle(headerStyle);
+        }
+        
+        // Aplicar estilos a encabezados
+        for (int i = 0; i < colIndex; i++) {
+            headerRow.getCell(i).setCellStyle(headerStyle);
+        }
+        
+        // Fila de observaciones (transporte) - debajo de los números de remito
+        Row obsRow = sheet.createRow(3);
+        obsRow.createCell(0).setCellValue("");
+        obsRow.createCell(1).setCellValue("");
+        obsRow.createCell(2).setCellValue("");
+        
+        // Observaciones de remitos (transporte)
+        int obsColIndex = 3;
+        for (RemitoIngreso remito : remitos) {
+            Cell obsCell = obsRow.createCell(obsColIndex++);
+            obsCell.setCellValue(remito.getObservaciones() != null ? remito.getObservaciones() : "");
+            obsCell.setCellStyle(headerStyle);
+        }
+        
+        // Datos de productos
+        int rowIndex = 4;
+        for (Producto producto : productosUnicos) {
+            Row dataRow = sheet.createRow(rowIndex++);
+            
+            // Código personalizado
+            dataRow.createCell(0).setCellValue(producto.getCodigoPersonalizado() != null ? producto.getCodigoPersonalizado() : "");
+            
+            // Descripción
+            dataRow.createCell(1).setCellValue(producto.getNombre());
+            
+            // Cantidad inicial
+            int cantidadInicial = 0;
+            if (movimientos.getStockInicial() != null && movimientos.getStockInicial().getProductos() != null) {
+                for (MovimientoDiaDTO.ProductoStockDTO productoStock : movimientos.getStockInicial().getProductos()) {
+                    if (productoStock.getId().equals(producto.getId())) {
+                        cantidadInicial = productoStock.getCantidadInicial() != null ? productoStock.getCantidadInicial() : 0;
+                        break;
+                    }
+                }
+            }
+            dataRow.createCell(2).setCellValue(cantidadInicial);
+            
+            // Cantidades por remito
+            colIndex = 3;
+            for (RemitoIngreso remito : remitos) {
+                int cantidad = 0;
+                List<DetalleRemitoIngreso> detalles = detalleRemitoIngresoRepository.findByRemitoIngresoIdOrderByFechaCreacionAsc(remito.getId());
+                for (DetalleRemitoIngreso detalle : detalles) {
+                    if (detalle.getProducto().getId().equals(producto.getId())) {
+                        cantidad += detalle.getCantidad();
+                    }
+                }
+                dataRow.createCell(colIndex++).setCellValue(cantidad);
+            }
+            
+            // Aplicar estilos a la fila
+            for (int i = 0; i < colIndex; i++) {
+                if (dataRow.getCell(i) != null) {
+                    dataRow.getCell(i).setCellStyle(dataStyle);
+                }
+            }
+        }
+        
+        // Autoajustar columnas
+        for (int i = 0; i < colIndex; i++) {
+            sheet.autoSizeColumn(i);
+        }
+    }
+    
+    /**
+     * Crear pestaña de Planillas
+     */
+    private void crearPestanaPlanillas(Workbook workbook, MovimientoDiaDTO movimientos, String fechaStr, 
+                                     CellStyle headerStyle, CellStyle dataStyle, CellStyle titleStyle) {
+        Sheet sheet = workbook.createSheet("Planillas");
+        
+        // Título
+        Row titleRow = sheet.createRow(0);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("PLANILLAS - " + fechaStr);
+        titleCell.setCellStyle(titleStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 10));
+        
+        // Obtener planillas del día
+        List<PlanillaPedido> planillas = planillaPedidoRepository.findByEmpresaIdAndFechaPlanillaBetweenOrderByFechaCreacionDesc(
+            obtenerEmpresaId(), 
+            LocalDate.parse(fechaStr).atStartOfDay(),
+            LocalDate.parse(fechaStr).atTime(23, 59, 59)
+        );
+        
+        // Obtener TODOS los productos de la empresa (no solo los que tienen movimientos)
+        List<Producto> todosLosProductos = productoRepository.findByEmpresaIdAndActivoTrue(obtenerEmpresaId());
+        // Ordenar por código personalizado
+        todosLosProductos.sort((p1, p2) -> {
+            String codigo1 = p1.getCodigoPersonalizado() != null ? p1.getCodigoPersonalizado() : "";
+            String codigo2 = p2.getCodigoPersonalizado() != null ? p2.getCodigoPersonalizado() : "";
+            return codigo1.compareTo(codigo2);
+        });
+        
+        // Crear encabezados
+        Row headerRow = sheet.createRow(2);
+        headerRow.createCell(0).setCellValue("Código");
+        headerRow.createCell(1).setCellValue("Descripción");
+        
+        // Encabezados de planillas
+        int colIndex = 2;
+        for (PlanillaPedido planilla : planillas) {
+            Cell planillaCell = headerRow.createCell(colIndex++);
+            planillaCell.setCellValue(planilla.getNumeroPlanilla());
+            planillaCell.setCellStyle(headerStyle);
+        }
+        
+        // Aplicar estilos a encabezados
+        for (int i = 0; i < colIndex; i++) {
+            headerRow.getCell(i).setCellStyle(headerStyle);
+        }
+        
+        // Datos de TODOS los productos
+        int rowIndex = 3;
+        for (Producto producto : todosLosProductos) {
+            Row dataRow = sheet.createRow(rowIndex++);
+            
+            // Código personalizado
+            dataRow.createCell(0).setCellValue(producto.getCodigoPersonalizado() != null ? producto.getCodigoPersonalizado() : "");
+            
+            // Descripción
+            dataRow.createCell(1).setCellValue(producto.getNombre());
+            
+            // Cantidades por planilla (solo se llenan si el producto tuvo movimientos)
+            colIndex = 2;
+            for (PlanillaPedido planilla : planillas) {
+                int cantidad = 0;
+                List<DetallePlanillaPedido> detalles = detallePlanillaPedidoRepository.findByPlanillaPedidoIdOrderByFechaCreacionAsc(planilla.getId());
+                for (DetallePlanillaPedido detalle : detalles) {
+                    if (detalle.getProducto().getId().equals(producto.getId())) {
+                        cantidad += detalle.getCantidad();
+                    }
+                }
+                // Solo mostrar cantidad si es mayor a 0, sino dejar vacío
+                if (cantidad > 0) {
+                    dataRow.createCell(colIndex).setCellValue(cantidad);
+                } else {
+                    dataRow.createCell(colIndex).setCellValue("");
+                }
+                colIndex++;
+            }
+            
+            // Aplicar estilos a la fila
+            for (int i = 0; i < colIndex; i++) {
+                if (dataRow.getCell(i) != null) {
+                    dataRow.getCell(i).setCellStyle(dataStyle);
+                }
+            }
+        }
+        
+        // Agregar fila de totales
+        Row totalRow = sheet.createRow(rowIndex);
+        totalRow.createCell(0).setCellValue("TOTALES:");
+        totalRow.createCell(1).setCellValue("");
+        
+        // Totales por planilla
+        colIndex = 2;
+        for (int i = 0; i < planillas.size(); i++) {
+            Cell totalCell = totalRow.createCell(colIndex++);
+            String totalFormula = "SUM(" + getColumnLetter(colIndex - 1) + "3:" + getColumnLetter(colIndex - 1) + (rowIndex - 1) + ")";
+            totalCell.setCellFormula(totalFormula);
+        }
+        
+        // Estilo para la fila de totales
+        CellStyle totalStyle = workbook.createCellStyle();
+        Font totalFont = workbook.createFont();
+        totalFont.setBold(true);
+        totalStyle.setFont(totalFont);
+        totalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        totalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        totalStyle.setBorderTop(BorderStyle.THICK);
+        totalStyle.setBorderBottom(BorderStyle.THICK);
+        totalStyle.setBorderLeft(BorderStyle.THIN);
+        totalStyle.setBorderRight(BorderStyle.THIN);
+        
+        for (int i = 0; i < colIndex; i++) {
+            if (totalRow.getCell(i) != null) {
+                totalRow.getCell(i).setCellStyle(totalStyle);
+            }
+        }
+        
+        // Autoajustar columnas
+        for (int i = 0; i < colIndex; i++) {
+            sheet.autoSizeColumn(i);
+        }
+        
+        // Congelar paneles para mantener encabezados visibles
+        sheet.createFreezePane(0, 3);
+    }
+    
+    /**
+     * Crear pestaña de Retornos
+     */
+    private void crearPestanaRetornos(Workbook workbook, MovimientoDiaDTO movimientos, String fechaStr, 
+                                    CellStyle headerStyle, CellStyle dataStyle, CellStyle titleStyle) {
+        Sheet sheet = workbook.createSheet("Retornos");
+        
+        // Título
+        Row titleRow = sheet.createRow(0);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("RETORNOS - " + fechaStr);
+        titleCell.setCellStyle(titleStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 10));
+        
+        // Obtener planillas de devolución del día
+        List<PlanillaDevolucion> planillas = planillaDevolucionRepository.findByEmpresaIdAndFechaPlanillaBetweenOrderByFechaCreacionDesc(
+            obtenerEmpresaId(), 
+            LocalDate.parse(fechaStr).atStartOfDay(),
+            LocalDate.parse(fechaStr).atTime(23, 59, 59)
+        );
+        
+        // Obtener TODOS los productos de la empresa (no solo los que tienen movimientos)
+        List<Producto> todosLosProductos = productoRepository.findByEmpresaIdAndActivoTrue(obtenerEmpresaId());
+        // Ordenar por código personalizado
+        todosLosProductos.sort((p1, p2) -> {
+            String codigo1 = p1.getCodigoPersonalizado() != null ? p1.getCodigoPersonalizado() : "";
+            String codigo2 = p2.getCodigoPersonalizado() != null ? p2.getCodigoPersonalizado() : "";
+            return codigo1.compareTo(codigo2);
+        });
+        
+        // Crear encabezados
+        Row headerRow = sheet.createRow(2);
+        headerRow.createCell(0).setCellValue("Código");
+        headerRow.createCell(1).setCellValue("Descripción");
+        
+        // Encabezados de planillas de devolución
+        int colIndex = 2;
+        for (PlanillaDevolucion planilla : planillas) {
+            Cell planillaCell = headerRow.createCell(colIndex++);
+            planillaCell.setCellValue(planilla.getNumeroPlanilla());
+            planillaCell.setCellStyle(headerStyle);
+        }
+        
+        // Aplicar estilos a encabezados
+        for (int i = 0; i < colIndex; i++) {
+            headerRow.getCell(i).setCellStyle(headerStyle);
+        }
+        
+        // Datos de TODOS los productos
+        int rowIndex = 3;
+        for (Producto producto : todosLosProductos) {
+            Row dataRow = sheet.createRow(rowIndex++);
+            
+            // Código personalizado
+            dataRow.createCell(0).setCellValue(producto.getCodigoPersonalizado() != null ? producto.getCodigoPersonalizado() : "");
+            
+            // Descripción
+            dataRow.createCell(1).setCellValue(producto.getNombre());
+            
+            // Cantidades por planilla de devolución (solo se llenan si el producto tuvo movimientos)
+            colIndex = 2;
+            for (PlanillaDevolucion planilla : planillas) {
+                int cantidad = 0;
+                List<DetallePlanillaDevolucion> detalles = detallePlanillaDevolucionRepository.findByPlanillaDevolucionIdOrderByFechaCreacionAsc(planilla.getId());
+                for (DetallePlanillaDevolucion detalle : detalles) {
+                    if (detalle.getProducto().getId().equals(producto.getId())) {
+                        cantidad += detalle.getCantidad();
+                    }
+                }
+                // Solo mostrar cantidad si es mayor a 0, sino dejar vacío
+                if (cantidad > 0) {
+                    dataRow.createCell(colIndex).setCellValue(cantidad);
+                } else {
+                    dataRow.createCell(colIndex).setCellValue("");
+                }
+                colIndex++;
+            }
+            
+            // Aplicar estilos a la fila
+            for (int i = 0; i < colIndex; i++) {
+                if (dataRow.getCell(i) != null) {
+                    dataRow.getCell(i).setCellStyle(dataStyle);
+                }
+            }
+        }
+        
+        // Agregar fila de totales
+        Row totalRow = sheet.createRow(rowIndex);
+        totalRow.createCell(0).setCellValue("TOTALES:");
+        totalRow.createCell(1).setCellValue("");
+        
+        // Totales por planilla de devolución
+        colIndex = 2;
+        for (int i = 0; i < planillas.size(); i++) {
+            Cell totalCell = totalRow.createCell(colIndex++);
+            String totalFormula = "SUM(" + getColumnLetter(colIndex - 1) + "3:" + getColumnLetter(colIndex - 1) + (rowIndex - 1) + ")";
+            totalCell.setCellFormula(totalFormula);
+        }
+        
+        // Estilo para la fila de totales
+        CellStyle totalStyle = workbook.createCellStyle();
+        Font totalFont = workbook.createFont();
+        totalFont.setBold(true);
+        totalStyle.setFont(totalFont);
+        totalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        totalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        totalStyle.setBorderTop(BorderStyle.THICK);
+        totalStyle.setBorderBottom(BorderStyle.THICK);
+        totalStyle.setBorderLeft(BorderStyle.THIN);
+        totalStyle.setBorderRight(BorderStyle.THIN);
+        
+        for (int i = 0; i < colIndex; i++) {
+            if (totalRow.getCell(i) != null) {
+                totalRow.getCell(i).setCellStyle(totalStyle);
+            }
+        }
+        
+        // Autoajustar columnas
+        for (int i = 0; i < colIndex; i++) {
+            sheet.autoSizeColumn(i);
+        }
+        
+        // Congelar paneles para mantener encabezados visibles
+        sheet.createFreezePane(0, 3);
+    }
+    
+    /**
+     * Crear pestaña de Pérdidas
+     */
+    private void crearPestanaPerdidas(Workbook workbook, MovimientoDiaDTO movimientos, String fechaStr, 
+                                    CellStyle headerStyle, CellStyle dataStyle, CellStyle titleStyle) {
+        Sheet sheet = workbook.createSheet("Pérdidas");
+        
+        // Título
+        Row titleRow = sheet.createRow(0);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("PÉRDIDAS - " + fechaStr);
+        titleCell.setCellStyle(titleStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 3));
+        
+        // Obtener roturas y pérdidas del día
+        List<RoturaPerdida> perdidas = roturaPerdidaRepository.findByEmpresaIdAndFechaBetweenOrderByFechaCreacionDesc(
+            obtenerEmpresaId(), 
+            LocalDate.parse(fechaStr).atStartOfDay(),
+            LocalDate.parse(fechaStr).atTime(23, 59, 59)
+        );
+        
+        // Crear encabezados
+        Row headerRow = sheet.createRow(2);
+        headerRow.createCell(0).setCellValue("Código");
+        headerRow.createCell(1).setCellValue("Descripción");
+        headerRow.createCell(2).setCellValue("Cantidad Pérdida");
+        headerRow.createCell(3).setCellValue("Observación");
+        
+        // Aplicar estilos a encabezados
+        for (int i = 0; i < 4; i++) {
+            headerRow.getCell(i).setCellStyle(headerStyle);
+        }
+        
+        // Datos de pérdidas
+        int rowIndex = 3;
+        for (RoturaPerdida perdida : perdidas) {
+            Row dataRow = sheet.createRow(rowIndex++);
+            
+            // Código personalizado
+            dataRow.createCell(0).setCellValue(perdida.getProducto().getCodigoPersonalizado() != null ? 
+                perdida.getProducto().getCodigoPersonalizado() : "");
+            
+            // Descripción
+            dataRow.createCell(1).setCellValue(perdida.getProducto().getNombre());
+            
+            // Cantidad pérdida
+            dataRow.createCell(2).setCellValue(perdida.getCantidad());
+            
+            // Observación
+            dataRow.createCell(3).setCellValue(perdida.getObservaciones() != null ? perdida.getObservaciones() : "");
+            
+            // Aplicar estilos a la fila
+            for (int i = 0; i < 4; i++) {
+                if (dataRow.getCell(i) != null) {
+                    dataRow.getCell(i).setCellStyle(dataStyle);
+                }
+            }
+        }
+        
+        // Autoajustar columnas
+        for (int i = 0; i < 4; i++) {
+            sheet.autoSizeColumn(i);
+        }
+    }
+    
+    /**
+     * Crear pestaña de Stock
+     */
+    private void crearPestanaStock(Workbook workbook, MovimientoDiaDTO movimientos, String fechaStr, 
+                                 CellStyle headerStyle, CellStyle dataStyle, CellStyle titleStyle) {
+        Sheet sheet = workbook.createSheet("Stock");
+        
+        // Título
+        Row titleRow = sheet.createRow(0);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("STOCK - " + fechaStr);
+        titleCell.setCellStyle(titleStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 5));
+        
+        // Información sobre el uso de fórmulas
+        Row infoRow = sheet.createRow(1);
+        Cell infoCell = infoRow.createCell(0);
+        infoCell.setCellValue("💡 Ingrese el recuento real en la columna 'Recuento de Hoy' - la diferencia se calculará automáticamente");
+        CellStyle infoStyle = workbook.createCellStyle();
+        Font infoFont = workbook.createFont();
+        infoFont.setItalic(true);
+        infoFont.setFontHeightInPoints((short) 10);
+        infoStyle.setFont(infoFont);
+        infoStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+        infoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        infoCell.setCellStyle(infoStyle);
+        sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 4));
+        
+        // Crear encabezados
+        Row headerRow = sheet.createRow(2);
+        headerRow.createCell(0).setCellValue("Código");
+        headerRow.createCell(1).setCellValue("Descripción");
+        headerRow.createCell(2).setCellValue("Saldo de Cuenta");
+        headerRow.createCell(3).setCellValue("Recuento de Hoy");
+        headerRow.createCell(4).setCellValue("Diferencia");
+        
+        // Aplicar estilos a encabezados
+        for (int i = 0; i < 5; i++) {
+            headerRow.getCell(i).setCellStyle(headerStyle);
+        }
+        
+        // Obtener productos del balance final
+        List<MovimientoDiaDTO.ProductoStockDTO> productos = new ArrayList<>();
+        if (movimientos.getBalanceFinal() != null && movimientos.getBalanceFinal().getProductos() != null) {
+            productos = movimientos.getBalanceFinal().getProductos();
+        }
+        
+        // Datos de stock
+        int rowIndex = 3;
+        for (MovimientoDiaDTO.ProductoStockDTO productoStock : productos) {
+            Row dataRow = sheet.createRow(rowIndex++);
+            
+            // Código personalizado
+            dataRow.createCell(0).setCellValue(productoStock.getCodigoPersonalizado() != null ? 
+                productoStock.getCodigoPersonalizado() : "");
+            
+            // Descripción
+            dataRow.createCell(1).setCellValue(productoStock.getNombre());
+            
+            // Saldo de cuenta (cantidad final) - Columna C
+            int saldoCuenta = productoStock.getCantidad() != null ? productoStock.getCantidad() : 0;
+            Cell saldoCell = dataRow.createCell(2);
+            saldoCell.setCellValue(saldoCuenta);
+            saldoCell.setCellStyle(dataStyle);
+            
+            // Recuento de hoy (por defecto 0, se puede modificar manualmente) - Columna D
+            Cell recuentoCell = dataRow.createCell(3);
+            recuentoCell.setCellValue(0);
+            CellStyle recuentoStyle = workbook.createCellStyle();
+            recuentoStyle.cloneStyleFrom(dataStyle);
+            recuentoStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+            recuentoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            recuentoCell.setCellStyle(recuentoStyle);
+            
+            // Diferencia (recuento - saldo) - Columna E con FÓRMULA
+            Cell diferenciaCell = dataRow.createCell(4);
+            // Fórmula: =D3-C3 (Recuento - Saldo de Cuenta)
+            String formula = "D" + rowIndex + "-C" + rowIndex;
+            diferenciaCell.setCellFormula(formula);
+            
+            // Estilo para la celda de diferencia
+            CellStyle diferenciaStyle = workbook.createCellStyle();
+            diferenciaStyle.cloneStyleFrom(dataStyle);
+            diferenciaStyle.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.getIndex());
+            diferenciaStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            diferenciaCell.setCellStyle(diferenciaStyle);
+            
+            // Aplicar estilos a las celdas de texto
+            dataRow.getCell(0).setCellStyle(dataStyle);
+            dataRow.getCell(1).setCellStyle(dataStyle);
+        }
+        
+        // Agregar fila de totales
+        Row totalRow = sheet.createRow(rowIndex);
+        totalRow.createCell(0).setCellValue("TOTALES:");
+        totalRow.createCell(1).setCellValue("");
+        
+        // Total de saldo de cuenta
+        Cell totalSaldoCell = totalRow.createCell(2);
+        String totalSaldoFormula = "SUM(C3:C" + (rowIndex - 1) + ")";
+        totalSaldoCell.setCellFormula(totalSaldoFormula);
+        
+        // Total de recuento
+        Cell totalRecuentoCell = totalRow.createCell(3);
+        String totalRecuentoFormula = "SUM(D3:D" + (rowIndex - 1) + ")";
+        totalRecuentoCell.setCellFormula(totalRecuentoFormula);
+        
+        // Total de diferencia
+        Cell totalDiferenciaCell = totalRow.createCell(4);
+        String totalDiferenciaFormula = "SUM(E3:E" + (rowIndex - 1) + ")";
+        totalDiferenciaCell.setCellFormula(totalDiferenciaFormula);
+        
+        // Estilo para la fila de totales
+        CellStyle totalStyle = workbook.createCellStyle();
+        Font totalFont = workbook.createFont();
+        totalFont.setBold(true);
+        totalStyle.setFont(totalFont);
+        totalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        totalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        totalStyle.setBorderTop(BorderStyle.THICK);
+        totalStyle.setBorderBottom(BorderStyle.THICK);
+        totalStyle.setBorderLeft(BorderStyle.THIN);
+        totalStyle.setBorderRight(BorderStyle.THIN);
+        
+        for (int i = 0; i < 5; i++) {
+            if (totalRow.getCell(i) != null) {
+                totalRow.getCell(i).setCellStyle(totalStyle);
+            }
+        }
+        
+        // Autoajustar columnas
+        for (int i = 0; i < 5; i++) {
+            sheet.autoSizeColumn(i);
+        }
+        
+        // Congelar paneles para mantener encabezados visibles
+        sheet.createFreezePane(0, 3);
+    }
+
+    /**
+     * Método auxiliar para obtener la letra de la columna en Excel
+     */
+    private String getColumnLetter(int columnIndex) {
+        StringBuilder columnLetter = new StringBuilder();
+        while (columnIndex >= 0) {
+            columnLetter.insert(0, (char) ('A' + (columnIndex % 26)));
+            columnIndex = (columnIndex / 26) - 1;
+        }
+        return columnLetter.toString();
+    }
+
     private Long obtenerEmpresaId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof UsuarioPrincipal) {

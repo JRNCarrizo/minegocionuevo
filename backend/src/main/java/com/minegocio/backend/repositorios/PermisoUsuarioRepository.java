@@ -49,3 +49,5 @@ public interface PermisoUsuarioRepository extends JpaRepository<PermisoUsuario, 
     long countByUsuario(Usuario usuario);
 }
 
+
+
