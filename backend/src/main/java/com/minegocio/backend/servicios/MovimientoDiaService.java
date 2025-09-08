@@ -2503,9 +2503,11 @@ public class MovimientoDiaService {
     public byte[] exportarReporteCompletoExcel(String fechaStr) {
         try {
             System.out.println("🔍 [SERVICE] Generando reporte completo para fecha: " + fechaStr);
+            System.out.println("🔍 [SERVICE] Empresa ID: " + obtenerEmpresaId());
             
             // Obtener datos de movimientos
             MovimientoDiaDTO movimientos = obtenerMovimientosDia(fechaStr);
+            System.out.println("🔍 [SERVICE] Movimientos obtenidos: " + (movimientos != null ? "SÍ" : "NO"));
             
             // Crear workbook
             Workbook workbook = new XSSFWorkbook();
@@ -2574,21 +2576,25 @@ public class MovimientoDiaService {
      */
     private void crearPestanaIngresos(Workbook workbook, MovimientoDiaDTO movimientos, String fechaStr, 
                                     CellStyle headerStyle, CellStyle dataStyle, CellStyle titleStyle) {
-        Sheet sheet = workbook.createSheet("Ingresos");
-        
-        // Título
-        Row titleRow = sheet.createRow(0);
-        Cell titleCell = titleRow.createCell(0);
-        titleCell.setCellValue("INGRESOS - " + fechaStr);
-        titleCell.setCellStyle(titleStyle);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 10));
-        
-        // Obtener remitos de ingresos del día
-        List<RemitoIngreso> remitos = remitoIngresoRepository.findByRangoFechasAndEmpresaId(
-            LocalDate.parse(fechaStr).atStartOfDay(),
-            LocalDate.parse(fechaStr).atTime(23, 59, 59),
-            obtenerEmpresaId()
-        );
+        try {
+            System.out.println("🔍 [INGRESOS] Iniciando creación de pestaña Ingresos");
+            Sheet sheet = workbook.createSheet("Ingresos");
+            
+            // Título
+            Row titleRow = sheet.createRow(0);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue("INGRESOS - " + fechaStr);
+            titleCell.setCellStyle(titleStyle);
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 10));
+            
+            // Obtener remitos de ingresos del día
+            System.out.println("🔍 [INGRESOS] Obteniendo remitos para fecha: " + fechaStr);
+            List<RemitoIngreso> remitos = remitoIngresoRepository.findByRangoFechasAndEmpresaId(
+                LocalDate.parse(fechaStr).atStartOfDay(),
+                LocalDate.parse(fechaStr).atTime(23, 59, 59),
+                obtenerEmpresaId()
+            );
+            System.out.println("🔍 [INGRESOS] Remitos encontrados: " + remitos.size());
         
         // Obtener todos los productos únicos
         Set<Producto> productosUnicos = new HashSet<>();
@@ -2635,18 +2641,24 @@ public class MovimientoDiaService {
         obsRow.createCell(2).setCellValue("");
         
         // Observaciones de remitos (transporte)
+        System.out.println("🔍 [INGRESOS] Procesando observaciones de " + remitos.size() + " remitos");
         int obsColIndex = 3;
         for (RemitoIngreso remito : remitos) {
             Cell obsCell = obsRow.createCell(obsColIndex++);
             String observacion = "";
             try {
-                // Usar reflexión para obtener el campo observaciones
-                java.lang.reflect.Field field = remito.getClass().getDeclaredField("observaciones");
-                field.setAccessible(true);
-                Object value = field.get(remito);
-                observacion = value != null ? value.toString() : "";
+                System.out.println("🔍 [INGRESOS] Procesando remito: " + remito.getNumeroRemito());
+                // Intentar obtener observaciones de diferentes formas
+                if (remito.getObservaciones() != null) {
+                    observacion = remito.getObservaciones();
+                    System.out.println("🔍 [INGRESOS] Observación encontrada: " + observacion);
+                } else {
+                    observacion = "";
+                    System.out.println("🔍 [INGRESOS] Sin observación para remito: " + remito.getNumeroRemito());
+                }
             } catch (Exception e) {
-                System.err.println("Error al obtener observaciones del remito: " + e.getMessage());
+                System.err.println("❌ [INGRESOS] Error al obtener observaciones del remito " + remito.getNumeroRemito() + ": " + e.getMessage());
+                e.printStackTrace();
                 observacion = "";
             }
             obsCell.setCellValue(observacion);
@@ -2700,6 +2712,14 @@ public class MovimientoDiaService {
         // Autoajustar columnas
         for (int i = 0; i < colIndex; i++) {
             sheet.autoSizeColumn(i);
+        }
+        
+        System.out.println("✅ [INGRESOS] Pestaña Ingresos creada exitosamente");
+        
+        } catch (Exception e) {
+            System.err.println("❌ [INGRESOS] Error al crear pestaña Ingresos: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
     }
     
