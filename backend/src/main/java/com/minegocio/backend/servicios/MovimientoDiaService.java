@@ -1192,6 +1192,7 @@ public class MovimientoDiaService {
     /**
      * Exportar movimientos del día a Excel
      */
+    @Transactional(readOnly = true)
     public byte[] exportarMovimientosDiaExcel(String fechaStr) throws IOException {
         try {
             System.out.println("🔍 [EXPORTAR] Iniciando exportación a Excel para fecha: " + fechaStr);
@@ -1437,6 +1438,7 @@ public class MovimientoDiaService {
     /**
      * Exportar movimientos por rango de fechas a Excel
      */
+    @Transactional(readOnly = true)
     public byte[] exportarMovimientosRangoExcel(String fechaInicioStr, String fechaFinStr) throws IOException {
         try {
             System.out.println("🔍 [EXPORTAR] Iniciando exportación a Excel para rango: " + fechaInicioStr + " a " + fechaFinStr);
@@ -1683,6 +1685,7 @@ public class MovimientoDiaService {
      * Exportar ingresos del día a Excel con estructura específica
      * Incluye: código personalizado, productos iniciales, cantidades, remitos por día
      */
+    @Transactional(readOnly = true)
     public byte[] exportarIngresosDiaExcel(String fechaStr) throws IOException {
         try {
             Long empresaId = obtenerEmpresaId();
@@ -1910,6 +1913,7 @@ public class MovimientoDiaService {
      * Exportar planillas del día a Excel con estructura específica
      * Incluye: código personalizado, productos, cantidades, planillas por día
      */
+    @Transactional(readOnly = true)
     public byte[] exportarPlanillasDiaExcel(String fechaStr) throws IOException {
         try {
             Long empresaId = obtenerEmpresaId();
@@ -2134,6 +2138,7 @@ public class MovimientoDiaService {
      * Exportar devoluciones del día a Excel con estructura específica
      * Incluye: código personalizado, productos, cantidades, planillas de devolución por día
      */
+    @Transactional(readOnly = true)
     public byte[] exportarDevolucionesDiaExcel(String fechaStr) throws IOException {
         try {
             Long empresaId = obtenerEmpresaId();
@@ -2341,6 +2346,7 @@ public class MovimientoDiaService {
      * Exportar stock inicial del día a Excel
      * Incluye: código personalizado, descripción, cantidad inicial, total
      */
+    @Transactional(readOnly = true)
     public byte[] exportarStockInicialExcel(String fechaStr) throws IOException {
         System.out.println("🔍 [SERVICE] Exportando stock inicial a Excel para fecha: " + fechaStr);
         
@@ -2556,6 +2562,7 @@ public class MovimientoDiaService {
     /**
      * Versión completa del reporte (temporalmente deshabilitada)
      */
+    @Transactional(readOnly = true)
     public byte[] exportarReporteCompletoExcelCompleto(String fechaStr) {
         try {
             System.out.println("🔍 [SERVICE] Generando reporte completo para fecha: " + fechaStr);
