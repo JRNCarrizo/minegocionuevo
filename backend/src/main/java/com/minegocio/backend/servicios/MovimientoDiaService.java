@@ -2508,8 +2508,8 @@ public class MovimientoDiaService {
      */
     @Transactional(readOnly = true)
     public byte[] exportarReporteCompletoExcel(String fechaStr) {
-        // VERSIÓN SIMPLIFICADA PARA DEBUG EN PRODUCCIÓN
-        return exportarReporteCompletoExcelSimple(fechaStr);
+        // VERSIÓN COMPLETA CON 5 PESTAÑAS
+        return exportarReporteCompletoExcelCompleto(fechaStr);
     }
     
     /**
