@@ -2364,17 +2364,7 @@ public class MovimientoDiaService {
     @Transactional(readOnly = true)
     public byte[] exportarStockInicialExcel(String fechaStr) throws IOException {
         // Configurar sistema para modo headless ANTES de cualquier operación
-        System.setProperty("java.awt.headless", "true");
-        System.setProperty("sun.java2d.headless", "true");
-        System.setProperty("java.awt.graphicsenv", "sun.awt.X11GraphicsEnvironment");
-        System.setProperty("sun.java2d.noddraw", "true");
-        System.setProperty("sun.java2d.d3d", "false");
-        System.setProperty("sun.java2d.opengl", "false");
-        System.setProperty("sun.java2d.pmoffscreen", "false");
-        System.setProperty("sun.java2d.xrender", "false");
-        
-        // Configuración adicional para Apache POI
-        System.setProperty("org.apache.poi.util.POILogger", "org.apache.poi.util.NullLogger");
+        configurarModoHeadless();
         
         System.out.println("🔍 [SERVICE] Exportando stock inicial a Excel para fecha: " + fechaStr);
         
@@ -2527,10 +2517,8 @@ public class MovimientoDiaService {
             totalValueCell.setCellValue(totalCantidad);
             totalValueCell.setCellStyle(headerStyle);
             
-            // Ajustar ancho de columnas
-            sheet.autoSizeColumn(0); // Código
-            sheet.autoSizeColumn(1); // Descripción
-            sheet.autoSizeColumn(2); // Cantidad
+            // Establecer anchos de columnas fijos (evita errores de fuentes en headless)
+            establecerAnchosColumnas(sheet, 15, 30, 12); // Código, Descripción, Cantidad
             
             // Convertir a bytes
             try (var outputStream = new java.io.ByteArrayOutputStream()) {
@@ -2644,9 +2632,8 @@ public class MovimientoDiaService {
                 row3.createCell(0).setCellValue("Estado");
                 row3.createCell(1).setCellValue("FUNCIONANDO");
                 
-                // Autoajustar
-                sheet.autoSizeColumn(0);
-                sheet.autoSizeColumn(1);
+                // Establecer anchos de columnas fijos
+                establecerAnchosColumnas(sheet, 20, 15);
                 
                 // Convertir a bytes
                 try (var outputStream = new java.io.ByteArrayOutputStream()) {
@@ -2747,17 +2734,7 @@ public class MovimientoDiaService {
     @Transactional(readOnly = true)
     public byte[] exportarReporteCompletoExcelCompleto(String fechaStr) {
         // Configurar sistema para modo headless ANTES de cualquier operación
-        System.setProperty("java.awt.headless", "true");
-        System.setProperty("sun.java2d.headless", "true");
-        System.setProperty("java.awt.graphicsenv", "sun.awt.X11GraphicsEnvironment");
-        System.setProperty("sun.java2d.noddraw", "true");
-        System.setProperty("sun.java2d.d3d", "false");
-        System.setProperty("sun.java2d.opengl", "false");
-        System.setProperty("sun.java2d.pmoffscreen", "false");
-        System.setProperty("sun.java2d.xrender", "false");
-        
-        // Configuración adicional para Apache POI
-        System.setProperty("org.apache.poi.util.POILogger", "org.apache.poi.util.NullLogger");
+        configurarModoHeadless();
         
         try {
             
@@ -2980,10 +2957,8 @@ public class MovimientoDiaService {
             }
         }
         
-        // Autoajustar columnas
-        for (int i = 0; i < colIndex; i++) {
-            sheet.autoSizeColumn(i);
-        }
+        // Establecer anchos de columnas fijos (evita errores de fuentes en headless)
+        establecerAnchosColumnas(sheet, 15, 30, 12, 15, 15); // Ajustar según número de columnas
         
         System.out.println("✅ [INGRESOS] Pestaña Ingresos creada exitosamente");
         
@@ -3111,10 +3086,8 @@ public class MovimientoDiaService {
             }
         }
         
-        // Autoajustar columnas
-        for (int i = 0; i < colIndex; i++) {
-            sheet.autoSizeColumn(i);
-        }
+        // Establecer anchos de columnas fijos (evita errores de fuentes en headless)
+        establecerAnchosColumnas(sheet, 15, 30, 12, 15, 15); // Ajustar según número de columnas
         
         // Congelar paneles para mantener encabezados visibles
         sheet.createFreezePane(0, 3);
@@ -3237,10 +3210,8 @@ public class MovimientoDiaService {
             }
         }
         
-        // Autoajustar columnas
-        for (int i = 0; i < colIndex; i++) {
-            sheet.autoSizeColumn(i);
-        }
+        // Establecer anchos de columnas fijos (evita errores de fuentes en headless)
+        establecerAnchosColumnas(sheet, 15, 30, 12, 15, 15); // Ajustar según número de columnas
         
         // Congelar paneles para mantener encabezados visibles
         sheet.createFreezePane(0, 3);
@@ -3305,10 +3276,8 @@ public class MovimientoDiaService {
             }
         }
         
-        // Autoajustar columnas
-        for (int i = 0; i < 4; i++) {
-            sheet.autoSizeColumn(i);
-        }
+        // Establecer anchos de columnas fijos (evita errores de fuentes en headless)
+        establecerAnchosColumnas(sheet, 15, 30, 12, 15);
     }
     
     /**
@@ -3441,10 +3410,8 @@ public class MovimientoDiaService {
             }
         }
         
-        // Autoajustar columnas
-        for (int i = 0; i < 5; i++) {
-            sheet.autoSizeColumn(i);
-        }
+        // Establecer anchos de columnas fijos (evita errores de fuentes en headless)
+        establecerAnchosColumnas(sheet, 15, 30, 12, 15, 15);
         
         // Congelar paneles para mantener encabezados visibles
         sheet.createFreezePane(0, 3);
@@ -3469,5 +3436,50 @@ public class MovimientoDiaService {
             return usuarioPrincipal.getEmpresaId();
         }
         throw new RuntimeException("No se pudo obtener el ID de la empresa");
+    }
+    
+    /**
+     * Configura el sistema para modo headless de manera robusta
+     * Evita errores de fuentes en entornos de servidor sin interfaz gráfica
+     */
+    private void configurarModoHeadless() {
+        try {
+            // Configuración básica de headless
+            System.setProperty("java.awt.headless", "true");
+            System.setProperty("sun.java2d.headless", "true");
+            
+            // Configuración específica para evitar errores de fuentes
+            System.setProperty("java.awt.graphicsenv", "sun.awt.HeadlessGraphicsEnvironment");
+            System.setProperty("sun.java2d.noddraw", "true");
+            System.setProperty("sun.java2d.d3d", "false");
+            System.setProperty("sun.java2d.opengl", "false");
+            System.setProperty("sun.java2d.pmoffscreen", "false");
+            System.setProperty("sun.java2d.xrender", "false");
+            
+            // Configuración adicional para Apache POI
+            System.setProperty("org.apache.poi.util.POILogger", "org.apache.poi.util.NullLogger");
+            
+            // Configuración para evitar problemas con fuentes
+            System.setProperty("java.awt.fonts", "");
+            System.setProperty("sun.java2d.fontpath", "");
+            
+            System.out.println("✅ [SERVICE] Sistema configurado para modo headless");
+        } catch (Exception e) {
+            System.err.println("⚠️ [SERVICE] Error configurando modo headless: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Establece anchos de columna fijos en lugar de autoSizeColumn
+     * Evita errores de fuentes en entornos headless
+     */
+    private void establecerAnchosColumnas(Sheet sheet, int... anchos) {
+        try {
+            for (int i = 0; i < anchos.length; i++) {
+                sheet.setColumnWidth(i, anchos[i] * 256); // POI usa unidades de 1/256 de carácter
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ [SERVICE] Error estableciendo anchos de columna: " + e.getMessage());
+        }
     }
 }

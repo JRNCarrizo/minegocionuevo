@@ -24,5 +24,5 @@ RUN ./mvnw clean package -DskipTests
 # Expose port 8080
 EXPOSE 8080
 
-# Run the application
-CMD ["java", "-jar", "target/backend-0.0.1-SNAPSHOT.jar"] 
+# Run the application with headless configuration for Excel generation
+CMD ["java", "-Djava.awt.headless=true", "-Dsun.java2d.headless=true", "-Djava.awt.graphicsenv=sun.awt.HeadlessGraphicsEnvironment", "-jar", "target/backend-0.0.1-SNAPSHOT.jar"] 

@@ -5,13 +5,14 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "java -Dspring.profiles.active=railway -jar target/backend-0.0.1-SNAPSHOT.jar",
+    "startCommand": "java -Djava.awt.headless=true -Dsun.java2d.headless=true -Djava.awt.graphicsenv=sun.awt.HeadlessGraphicsEnvironment -Dspring.profiles.active=railway -jar target/backend-0.0.1-SNAPSHOT.jar",
     "healthcheckPath": "/api/publico/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE"
   },
   "variables": {
     "SPRING_PROFILES_ACTIVE": "railway",
-    "PORT": "8080"
+    "PORT": "8080",
+    "JAVA_OPTS": "-Djava.awt.headless=true -Dsun.java2d.headless=true -Djava.awt.graphicsenv=sun.awt.HeadlessGraphicsEnvironment"
   }
 } 
