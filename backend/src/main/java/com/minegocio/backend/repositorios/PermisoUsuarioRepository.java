@@ -52,3 +52,4 @@ public interface PermisoUsuarioRepository extends JpaRepository<PermisoUsuario, 
 
 
 
+
