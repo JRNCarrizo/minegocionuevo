@@ -74,6 +74,9 @@ export default function CrearPlanilla() {
   const [inputBusqueda, setInputBusqueda] = useState('');
   const [productoParaCantidad, setProductoParaCantidad] = useState<Producto | null>(null);
   const [cantidadTemporal, setCantidadTemporal] = useState(1);
+  const [cantidadTemporalTexto, setCantidadTemporalTexto] = useState<string>('');
+  const [resultadoCalculoPlanilla, setResultadoCalculoPlanilla] = useState<number | null>(null);
+  const [errorCalculoPlanilla, setErrorCalculoPlanilla] = useState<string | null>(null);
   const [modoCantidad, setModoCantidad] = useState(false);
 
   // Estados para búsqueda de transportistas
@@ -97,6 +100,54 @@ export default function CrearPlanilla() {
   const codigoPlanillaRef = useRef<HTMLInputElement>(null);
   const transporteRef = useRef<HTMLInputElement>(null);
   const observacionesRef = useRef<HTMLInputElement>(null);
+
+  // Función para evaluar expresiones matemáticas de forma segura
+  const evaluarExpresion = (expresion: string): { resultado: number | null; error: string | null } => {
+    try {
+      // Limpiar la expresión de espacios
+      const expresionLimpia = expresion.trim();
+      
+      // Verificar que la expresión no esté vacía
+      if (!expresionLimpia) {
+        return { resultado: null, error: 'Expresión vacía' };
+      }
+
+      // Verificar que solo contenga caracteres permitidos (números, operadores básicos, paréntesis)
+      const caracteresPermitidos = /^[0-9+\-*/().\s]+$/;
+      if (!caracteresPermitidos.test(expresionLimpia)) {
+        return { resultado: null, error: 'Caracteres no permitidos. Solo números y operadores (+, -, *, /, paréntesis)' };
+      }
+
+      // Verificar que no contenga palabras clave peligrosas
+      const palabrasPeligrosas = ['eval', 'function', 'constructor', 'prototype', 'window', 'document', 'global'];
+      const expresionLower = expresionLimpia.toLowerCase();
+      for (const palabra of palabrasPeligrosas) {
+        if (expresionLower.includes(palabra)) {
+          return { resultado: null, error: 'Expresión no permitida' };
+        }
+      }
+
+      // Reemplazar 'x' por '*' para facilitar la escritura (ej: 3x60 -> 3*60)
+      const expresionConMultiplicacion = expresionLimpia.replace(/x/gi, '*');
+
+      // Evaluar la expresión usando Function constructor (más seguro que eval)
+      const resultado = new Function('return ' + expresionConMultiplicacion)();
+      
+      // Verificar que el resultado sea un número válido
+      if (typeof resultado !== 'number' || !isFinite(resultado)) {
+        return { resultado: null, error: 'Resultado no es un número válido' };
+      }
+
+      // Verificar que el resultado sea un entero positivo
+      if (resultado <= 0 || !Number.isInteger(resultado)) {
+        return { resultado: null, error: 'El resultado debe ser un número entero positivo' };
+      }
+
+      return { resultado, error: null };
+    } catch (error) {
+      return { resultado: null, error: 'Expresión inválida' };
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -150,6 +201,33 @@ export default function CrearPlanilla() {
       }, delay);
     }
   }, [modoCantidad, isMobile]);
+
+  // Calcular resultado en tiempo real cuando se escribe en el campo de cantidad
+  useEffect(() => {
+    if (!cantidadTemporalTexto.trim()) {
+      setResultadoCalculoPlanilla(null);
+      setErrorCalculoPlanilla(null);
+      return;
+    }
+
+    // Verificar si la cantidad contiene operadores matemáticos
+    const contieneOperadores = /[+\-*/x()]/.test(cantidadTemporalTexto);
+    
+    if (contieneOperadores) {
+      const evaluacion = evaluarExpresion(cantidadTemporalTexto);
+      if (evaluacion.error) {
+        setResultadoCalculoPlanilla(null);
+        setErrorCalculoPlanilla(evaluacion.error);
+      } else {
+        setResultadoCalculoPlanilla(evaluacion.resultado);
+        setErrorCalculoPlanilla(null);
+      }
+    } else {
+      // Si no contiene operadores, limpiar el resultado
+      setResultadoCalculoPlanilla(null);
+      setErrorCalculoPlanilla(null);
+    }
+  }, [cantidadTemporalTexto]);
 
   // Efecto para filtrar transportistas
   useEffect(() => {
@@ -576,16 +654,44 @@ export default function CrearPlanilla() {
   const confirmarCantidad = () => {
     if (!productoParaCantidad) return;
 
+    // Determinar la cantidad final
+    let cantidadFinal: number;
+    
+    // Si hay texto en el campo de cantidad, evaluar la expresión
+    if (cantidadTemporalTexto.trim()) {
+      // Verificar si la cantidad contiene operadores matemáticos
+      const contieneOperadores = /[+\-*/x()]/.test(cantidadTemporalTexto);
+      
+      if (contieneOperadores) {
+        // Evaluar la expresión matemática
+        const evaluacion = evaluarExpresion(cantidadTemporalTexto);
+        if (evaluacion.error) {
+          toast.error(`Error en el cálculo: ${evaluacion.error}`);
+          return;
+        }
+        cantidadFinal = evaluacion.resultado!;
+      } else {
+        // Si no contiene operadores, parsear como número normal
+        cantidadFinal = parseInt(cantidadTemporalTexto);
+        if (isNaN(cantidadFinal) || cantidadFinal <= 0) {
+          toast.error('❌ La cantidad debe ser mayor a 0 para agregar el producto a la planilla');
+          return;
+        }
+      }
+    } else {
+      // Usar la cantidad numérica si no hay texto
+      cantidadFinal = cantidadTemporal;
+      if (cantidadFinal <= 0) {
+        toast.error('❌ La cantidad debe ser mayor a 0 para agregar el producto a la planilla');
+        return;
+      }
+    }
+
     // Validar stock disponible
     const stockDisponible = obtenerStockDisponible(productoParaCantidad);
     
-    if (cantidadTemporal > stockDisponible) {
+    if (cantidadFinal > stockDisponible) {
       toast.error(`Stock insuficiente. Disponible: ${stockDisponible} unidades`);
-      return;
-    }
-
-    if (cantidadTemporal <= 0) {
-      toast.error('Por favor ingrese una cantidad válida');
       return;
     }
 
@@ -594,7 +700,7 @@ export default function CrearPlanilla() {
       productoId: productoParaCantidad.id,
       numeroPersonalizado: productoParaCantidad.codigoPersonalizado || undefined,
       descripcion: productoParaCantidad.nombre,
-      cantidad: cantidadTemporal,
+      cantidad: cantidadFinal,
       observaciones: undefined,
       fechaCreacion: new Date().toISOString()
     };
@@ -606,14 +712,17 @@ export default function CrearPlanilla() {
 
     // Actualizar el último producto seleccionado con la cantidad agregada
     setUltimoProductoSeleccionado(productoParaCantidad);
-    setUltimaCantidadAgregada(cantidadTemporal);
+    setUltimaCantidadAgregada(cantidadFinal);
 
-    toast.success(`${productoParaCantidad.nombre} agregado (${cantidadTemporal})`);
+    toast.success(`${productoParaCantidad.nombre} agregado (${cantidadFinal})`);
     
     // Resetear estado
     setModoCantidad(false);
     setProductoParaCantidad(null);
     setCantidadTemporal(1);
+    setCantidadTemporalTexto('');
+    setResultadoCalculoPlanilla(null);
+    setErrorCalculoPlanilla(null);
     
     // Volver al campo de búsqueda con un delay mayor en móvil para asegurar que funcione correctamente
     const delay = isMobile ? 300 : 100;
@@ -1280,19 +1389,18 @@ export default function CrearPlanilla() {
                   <div>
                     <input
                       ref={inputCantidadRef}
-                      type="number"
-                      min="1"
-                      max={productoParaCantidad ? obtenerStockDisponible(productoParaCantidad) : 999}
-                      value={cantidadTemporal}
+                      type="text"
+                      placeholder="Cantidad o cálculo..."
+                      value={cantidadTemporalTexto || cantidadTemporal || ''}
                       onChange={(e) => {
                         const valor = e.target.value;
-                        if (valor === '') {
+                        setCantidadTemporalTexto(valor);
+                        // También actualizar el valor numérico si es un número simple
+                        const numero = parseInt(valor);
+                        if (!isNaN(numero) && !/[+\-*/x()]/.test(valor)) {
+                          setCantidadTemporal(numero);
+                        } else if (valor === '') {
                           setCantidadTemporal(0);
-                        } else {
-                          const numero = parseInt(valor);
-                          if (!isNaN(numero) && numero > 0) {
-                            setCantidadTemporal(numero);
-                          }
                         }
                       }}
                       onKeyDown={manejarTeclasCantidad}
@@ -1308,6 +1416,46 @@ export default function CrearPlanilla() {
                         minHeight: isMobile ? '48px' : 'auto'
                       }}
                     />
+                    
+                    {/* Mostrar resultado del cálculo en tiempo real */}
+                    {resultadoCalculoPlanilla !== null && (
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#10b981',
+                        marginTop: '0.25rem',
+                        fontWeight: '600',
+                        background: '#f0fdf4',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        border: '1px solid #bbf7d0'
+                      }}>
+                        ✅ Resultado: {resultadoCalculoPlanilla.toLocaleString()} unidades
+                      </div>
+                    )}
+                    
+                    {errorCalculoPlanilla && (
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#ef4444',
+                        marginTop: '0.25rem',
+                        fontWeight: '600',
+                        background: '#fef2f2',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        border: '1px solid #fecaca'
+                      }}>
+                        ❌ {errorCalculoPlanilla}
+                      </div>
+                    )}
+                    
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#64748b',
+                      marginTop: '0.25rem',
+                      lineHeight: '1.2'
+                    }}>
+                      💡 Puedes usar: +, -, *, /, x, paréntesis
+                    </div>
                   </div>
                 )}
               </div>
