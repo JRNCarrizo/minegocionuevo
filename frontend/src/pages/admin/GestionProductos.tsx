@@ -298,8 +298,8 @@ const GestionProductos: React.FC = () => {
         return true;
       });
 
-      // Definir las cards de acciones rápidas (6 cards)
-      const totalAccionesRapidas = 6;
+      // Definir las cards de acciones rápidas (9 cards)
+      const totalAccionesRapidas = 9;
       const totalCards = totalAccionesRapidas + productosFiltrados.length;
 
       switch (event.key) {
@@ -834,6 +834,11 @@ const GestionProductos: React.FC = () => {
     setMostrarImportacion(false);
     // Recargar productos después de la importación
     cargarProductos();
+  };
+
+  // Función para ir a importación de inventario
+  const irAImportacionInventario = () => {
+    navigate('/admin/importacion-inventario');
   };
 
   // Función para descargar reporte de stock
@@ -1509,9 +1514,88 @@ const GestionProductos: React.FC = () => {
               </div>
             </div>
 
-            {/* Tarjeta Reporte de Stock */}
+            {/* Tarjeta Importación de Inventario */}
             <div 
               data-card-index="5"
+              onClick={irAImportacionInventario}
+              style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                border: navegacionActiva && cardSeleccionada === 5 ? '2px solid #000' : '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+                animation: 'slideInUp 0.6s ease-out 0.8s both',
+                backgroundColor: navegacionActiva && cardSeleccionada === 5 ? '#f0f9ff' : 'white'
+              }}
+              onMouseOver={(e) => {
+                if (!navegacionActiva) {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = '#8b5cf6';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!navegacionActiva) {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+                }
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.25rem',
+                  marginRight: '0.75rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}>
+                  📊
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Importación de Inventario
+                  </h3>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#64748b',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Importa tu Excel de inventario para actualizar cantidades
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: '#8b5cf6',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                Importar inventario →
+              </div>
+            </div>
+
+            {/* Tarjeta Reporte de Stock */}
+            <div 
+              data-card-index="6"
               onClick={cargando ? undefined : descargarReporteStock}
               style={{
                 background: 'white',
@@ -1591,7 +1675,7 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Limpieza de Datos */}
             <div 
-              data-card-index="6"
+              data-card-index="7"
               onClick={limpiandoDatos ? undefined : limpiarDatosInconsistentes}
               style={{
                 background: 'white',
@@ -1671,7 +1755,7 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Sincronización de Stock */}
             <div 
-              data-card-index="7"
+              data-card-index="8"
               onClick={sincronizandoStock ? undefined : sincronizarTodoStock}
               style={{
                 background: 'white',

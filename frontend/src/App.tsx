@@ -13,6 +13,7 @@ import NuevaPassword from './pages/NuevaPassword.tsx';
 import DashboardAdministrador from './pages/DashboardAdministrador.tsx';
 import NuevoProducto from './pages/admin/NuevoProducto.tsx';
 import GestionProductos from './pages/admin/GestionProductos.tsx';
+import ImportacionInventario from './pages/admin/ImportacionInventario.tsx';
 import DetalleProducto from './pages/admin/DetalleProducto.tsx';
 import EditarProducto from './pages/admin/EditarProducto.tsx';
 import GestionPedidos from './pages/admin/GestionPedidos.tsx';
@@ -93,6 +94,7 @@ function AppContent() {
           <Route path="/admin/login-documento" element={<LoginDocumento />} />
           <Route path="/admin/dashboard" element={<DashboardAdministrador />} />
           <Route path="/admin/productos" element={<GestionProductos />} />
+          <Route path="/admin/importacion-inventario" element={<ImportacionInventario />} />
           <Route path="/admin/productos/nuevo" element={<NuevoProducto />} />
           <Route path="/admin/productos/editar/:id" element={<EditarProducto />} />
           <Route path="/admin/productos/:id" element={<DetalleProducto />} />

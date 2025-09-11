@@ -50,6 +50,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findByEmpresaAndDestacadoTrueAndActivoTrue(Empresa empresa);
 
     /**
+     * Busca producto por código personalizado, empresa y activo
+     */
+    Optional<Producto> findByCodigoPersonalizadoAndEmpresaIdAndActivoTrue(String codigoPersonalizado, Long empresaId);
+
+    /**
      * Busca productos con stock bajo (menor o igual al stock mínimo)
      */
     @Query("SELECT p FROM Producto p WHERE p.empresa = :empresa AND p.stock <= p.stockMinimo AND p.activo = true")

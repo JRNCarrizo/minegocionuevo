@@ -74,6 +74,9 @@ public class ProductoController {
     private PlantillaCargaMasivaService plantillaCargaMasivaService;
 
     @Autowired
+    private com.minegocio.backend.servicios.ImportacionInventarioService importacionInventarioService;
+
+    @Autowired
     private EmpresaService empresaService;
 
     @Autowired
@@ -1755,6 +1758,70 @@ public class ProductoController {
                 "error", "Error al diagnosticar stock",
                 "mensaje", e.getMessage()
             ));
+        }
+    }
+
+    /**
+     * Valida un archivo Excel de inventario de la empresa
+     * Busca la pestaña "Stock" y valida los datos
+     */
+    @PostMapping("/validar-inventario")
+    public ResponseEntity<?> validarArchivoInventario(
+            @PathVariable Long empresaId,
+            @RequestParam("archivo") MultipartFile archivo) {
+        try {
+            System.out.println("🔍 [INVENTARIO] Validando archivo de inventario para empresa: " + empresaId);
+            System.out.println("🔍 [INVENTARIO] Archivo: " + archivo.getOriginalFilename() + " (" + archivo.getSize() + " bytes)");
+
+            // Validar tipo de archivo
+            if (!archivo.getOriginalFilename().toLowerCase().endsWith(".xlsx")) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Solo se permiten archivos Excel (.xlsx)"));
+            }
+
+            // Validar tamaño del archivo (máximo 10MB)
+            if (archivo.getSize() > 10 * 1024 * 1024) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "El archivo no puede ser mayor a 10MB"));
+            }
+
+            // Procesar el archivo
+            Map<String, Object> resultado = importacionInventarioService.procesarArchivoInventario(archivo, empresaId);
+            
+            System.out.println("✅ [INVENTARIO] Archivo procesado: " + resultado.get("mensaje"));
+            
+            return ResponseEntity.ok(resultado);
+
+        } catch (Exception e) {
+            System.err.println("❌ [INVENTARIO] Error al validar archivo: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al validar el archivo: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Importa el inventario validado a la base de datos
+     */
+    @PostMapping("/importar-inventario")
+    public ResponseEntity<?> importarInventario(
+            @PathVariable Long empresaId,
+            @RequestBody List<Map<String, Object>> productos) {
+        try {
+            System.out.println("🔍 [INVENTARIO] Importando inventario para empresa: " + empresaId);
+            System.out.println("🔍 [INVENTARIO] Productos a importar: " + productos.size());
+
+            Map<String, Object> resultado = importacionInventarioService.importarInventario(productos, empresaId);
+            
+            System.out.println("✅ [INVENTARIO] Importación completada: " + resultado.get("mensaje"));
+            
+            return ResponseEntity.ok(resultado);
+
+        } catch (Exception e) {
+            System.err.println("❌ [INVENTARIO] Error al importar inventario: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al importar el inventario: " + e.getMessage()));
         }
     }
 }

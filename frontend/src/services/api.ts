@@ -2402,6 +2402,34 @@ class ApiService {
       throw error;
     }
   }
+
+  // Métodos de importación de inventario
+  async validarArchivoInventario(empresaId: number, archivo: File): Promise<ApiResponse<any>> {
+    try {
+      const formData = new FormData();
+      formData.append('archivo', archivo);
+      
+      const response = await this.api.post(`/empresas/${empresaId}/productos/validar-inventario`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al validar archivo de inventario:', error);
+      throw error;
+    }
+  }
+
+  async importarInventario(empresaId: number, productos: any[]): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.post(`/empresas/${empresaId}/productos/importar-inventario`, productos);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al importar inventario:', error);
+      throw error;
+    }
+  }
 }
 
 export default new ApiService();

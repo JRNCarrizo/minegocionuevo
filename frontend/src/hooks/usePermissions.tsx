@@ -18,6 +18,10 @@ interface PermissionsProviderProps {
 export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
   console.log('🔍 [PERMISSIONS] PermissionsProvider renderizando...');
   
+  // SIEMPRE llamar useUsuarioActual (regla de Hooks)
+  const { datosUsuario } = useUsuarioActual();
+  const [permissions, setPermissions] = useState<Record<string, boolean>>({});
+  
   // Solo usar useUsuarioActual si no estamos en páginas públicas
   // Las páginas administrativas (/admin/*) NO son públicas
   const esPaginaPublica = (window.location.pathname === '/' && !window.location.pathname.includes('/admin')) || 
@@ -28,8 +32,6 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
                          window.location.pathname.includes('/verificar-email') ||
                          window.location.pathname.includes('/publico');
   
-  const { datosUsuario } = esPaginaPublica ? { datosUsuario: null } : useUsuarioActual();
-  const [permissions, setPermissions] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(!esPaginaPublica);
 
   // Cargar permisos cuando cambien los datos del usuario
@@ -44,7 +46,8 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
       return;
     }
     
-    if (datosUsuario) {
+    // Solo procesar datosUsuario si no es página pública
+    if (datosUsuario && !esPaginaPublica) {
       console.log('🔍 [PERMISSIONS] Cargando permisos para usuario:', datosUsuario.rol);
       
       // Si es administrador o super admin, no necesitamos cargar permisos del backend
