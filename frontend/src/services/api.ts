@@ -208,6 +208,8 @@ class ApiService {
       (response) => response,
       (error) => {
         console.log('🔍 Interceptor de respuesta - Error detectado:', error.response?.status, error.response?.data);
+        console.log('🔍 URL de la petición:', error.config?.url);
+        console.log('🔍 Ruta actual:', window.location.pathname);
 
         if (error.response?.status === 401) {
           const errorMessage = error.response?.data?.error || '';
@@ -220,7 +222,7 @@ class ApiService {
               errorMessage.includes('autenticación') ||
               errorMessage === 'Unauthorized') {
             
-            console.log('🔍 Token expirado o inválido, limpiando sesión');
+            console.log('🚨 [INTERCEPTOR] Token expirado o inválido, limpiando sesión y redirigiendo desde:', window.location.pathname);
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             localStorage.removeItem('clienteToken');
@@ -228,8 +230,10 @@ class ApiService {
             
             // Redirigir según el tipo de usuario
             if (window.location.pathname.startsWith('/admin')) {
+              console.log('🚨 [INTERCEPTOR] Redirigiendo a /admin/login');
               window.location.href = '/admin/login';
             } else {
+              console.log('🚨 [INTERCEPTOR] Redirigiendo a /login');
               window.location.href = '/login';
             }
           } else {

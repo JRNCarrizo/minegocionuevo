@@ -19,8 +19,8 @@ La funcionalidad busca automáticamente la pestaña **"Stock"** en el archivo Ex
 |---------|-------------|-----|
 | **Producto** | Código personalizado del producto | Identificador único para buscar/crear productos |
 | **Descripción** | Nombre/descripción del producto | Nombre del producto (para nuevos productos) |
-| **Movimiento** | Cantidad en stock | Cantidad a establecer en el inventario (prioridad alta) |
-| **Stock** | Cantidad en stock | Cantidad a establecer en el inventario (si no hay Movimiento) |
+| **Stock** | Cantidad en stock | Cantidad a establecer en el inventario (prioridad alta) |
+| **Movimiento** | Cantidad en stock | Cantidad a establecer en el inventario (si no hay Stock) |
 
 ### 🔄 Proceso de Importación
 

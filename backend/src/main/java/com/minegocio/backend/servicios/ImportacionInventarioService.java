@@ -96,17 +96,18 @@ public class ImportacionInventarioService {
             // Debug: mostrar columnas detectadas
             System.out.println("🔍 [INVENTARIO] Columnas detectadas: " + columnas);
             
-            // Determinar qué columna usar para la cantidad
-            String columnaCantidad = "movimiento";
-            if (!columnas.containsKey("movimiento") && columnas.containsKey("stock")) {
+            // Determinar qué columna usar para la cantidad (prioridad: Stock > Movimiento)
+            String columnaCantidad = "stock";
+            if (columnas.containsKey("stock")) {
                 columnaCantidad = "stock";
                 System.out.println("🔍 [INVENTARIO] Usando columna 'Stock' para cantidad");
             } else if (columnas.containsKey("movimiento")) {
+                columnaCantidad = "movimiento";
                 System.out.println("🔍 [INVENTARIO] Usando columna 'Movimiento' para cantidad");
-            } else if (!columnas.containsKey("movimiento") && !columnas.containsKey("stock")) {
+            } else {
                 return Map.of(
                     "exito", false,
-                    "mensaje", "No se encontró columna de cantidad. Se necesita 'Movimiento' o 'Stock'",
+                    "mensaje", "No se encontró columna de cantidad. Se necesita 'Stock' o 'Movimiento'",
                     "totalRegistros", 0,
                     "productosActualizados", 0,
                     "productosCreados", 0,
@@ -204,7 +205,6 @@ public class ImportacionInventarioService {
     /**
      * Importa los productos procesados a la base de datos
      */
-    @Transactional
     public Map<String, Object> importarInventario(List<Map<String, Object>> productos, Long empresaId) {
         List<Map<String, Object>> errores = new ArrayList<>();
         int productosActualizados = 0;
@@ -217,38 +217,38 @@ public class ImportacionInventarioService {
             for (Map<String, Object> productoData : productos) {
                 try {
                     String codigoPersonalizado = (String) productoData.get("codigoPersonalizado");
-                    String descripcion = (String) productoData.get("descripcion");
                     Integer cantidad = (Integer) productoData.get("cantidad");
+                    
+                    // Validaciones básicas
+                    if (codigoPersonalizado == null || codigoPersonalizado.trim().isEmpty()) {
+                        errores.add(Map.of(
+                            "codigoPersonalizado", codigoPersonalizado,
+                            "error", "Código personalizado vacío"
+                        ));
+                        continue;
+                    }
+                    
+                    if (cantidad == null || cantidad < 0) {
+                        errores.add(Map.of(
+                            "codigoPersonalizado", codigoPersonalizado,
+                            "error", "Cantidad inválida: " + cantidad
+                        ));
+                        continue;
+                    }
 
-                    // Buscar producto existente por código personalizado
-                    List<Producto> productosExistentes = productoRepository.findAll().stream()
-                        .filter(p -> p.getCodigoPersonalizado() != null && 
-                                   p.getCodigoPersonalizado().equals(codigoPersonalizado) &&
-                                   p.getEmpresa().getId().equals(empresaId) &&
-                                   p.getActivo())
-                        .toList();
-                    Optional<Producto> productoExistente = productosExistentes.isEmpty() ? 
-                        Optional.empty() : Optional.of(productosExistentes.get(0));
-
-                    if (productoExistente.isPresent()) {
-                        // Actualizar producto existente
-                        Producto producto = productoExistente.get();
-                        producto.setStock(cantidad);
-                        productoRepository.save(producto);
-                        productosActualizados++;
+                    // Procesar producto individualmente con transacción
+                    Map<String, Object> resultado = procesarProductoIndividual(productoData, empresa);
+                    if ((Boolean) resultado.get("exito")) {
+                        if ((Boolean) resultado.get("actualizado")) {
+                            productosActualizados++;
+                        } else {
+                            productosCreados++;
+                        }
                     } else {
-                        // Crear nuevo producto
-                        Producto nuevoProducto = new Producto();
-                        nuevoProducto.setNombre(descripcion != null ? descripcion : "Producto " + codigoPersonalizado);
-                        nuevoProducto.setDescripcion(descripcion);
-                        nuevoProducto.setCodigoPersonalizado(codigoPersonalizado);
-                        nuevoProducto.setStock(cantidad);
-                        nuevoProducto.setPrecio(BigDecimal.ZERO);
-                        nuevoProducto.setStockMinimo(0);
-                        nuevoProducto.setActivo(true);
-                        nuevoProducto.setEmpresa(empresa);
-                        productoRepository.save(nuevoProducto);
-                        productosCreados++;
+                        errores.add(Map.of(
+                            "codigoPersonalizado", codigoPersonalizado,
+                            "error", (String) resultado.get("error")
+                        ));
                     }
                 } catch (Exception e) {
                     errores.add(Map.of(
@@ -270,13 +270,55 @@ public class ImportacionInventarioService {
             );
 
         } catch (Exception e) {
+            System.err.println("❌ [INVENTARIO] Error durante la importación: " + e.getMessage());
+            e.printStackTrace();
+            // No lanzar la excepción para evitar rollback silencioso
             return Map.of(
                 "exito", false,
                 "mensaje", "Error durante la importación: " + e.getMessage(),
-                "productosActualizados", 0,
-                "productosCreados", 0,
-                "errores", Arrays.asList(Map.of("error", e.getMessage()))
+                "productosActualizados", productosActualizados,
+                "productosCreados", productosCreados,
+                "errores", errores.isEmpty() ? Arrays.asList(Map.of("error", e.getMessage())) : errores
             );
+        }
+    }
+
+    /**
+     * Procesa un producto individual con transacción
+     */
+    @Transactional
+    public Map<String, Object> procesarProductoIndividual(Map<String, Object> productoData, Empresa empresa) {
+        try {
+            String codigoPersonalizado = (String) productoData.get("codigoPersonalizado");
+            String descripcion = (String) productoData.get("descripcion");
+            Integer cantidad = (Integer) productoData.get("cantidad");
+
+            // Buscar producto existente por código personalizado
+            Optional<Producto> productoExistente = productoRepository
+                .findByCodigoPersonalizadoAndEmpresaIdAndActivoTrue(codigoPersonalizado, empresa.getId());
+
+            if (productoExistente.isPresent()) {
+                // Actualizar producto existente
+                Producto producto = productoExistente.get();
+                producto.setStock(cantidad);
+                productoRepository.save(producto);
+                return Map.of("exito", true, "actualizado", true);
+            } else {
+                // Crear nuevo producto
+                Producto nuevoProducto = new Producto();
+                nuevoProducto.setNombre(descripcion != null ? descripcion : "Producto " + codigoPersonalizado);
+                nuevoProducto.setDescripcion(descripcion);
+                nuevoProducto.setCodigoPersonalizado(codigoPersonalizado);
+                nuevoProducto.setStock(cantidad);
+                nuevoProducto.setPrecio(BigDecimal.ZERO);
+                nuevoProducto.setStockMinimo(0);
+                nuevoProducto.setActivo(true);
+                nuevoProducto.setEmpresa(empresa);
+                productoRepository.save(nuevoProducto);
+                return Map.of("exito", true, "actualizado", false);
+            }
+        } catch (Exception e) {
+            return Map.of("exito", false, "error", e.getMessage());
         }
     }
 
@@ -320,13 +362,13 @@ public class ImportacionInventarioService {
                 else if ((valor.contains("descripcion") || valor.contains("descripción")) && !columnas.containsKey("descripcion")) {
                     columnas.put("descripcion", i);
                 } 
-                // Mapear columna de movimiento (prioridad alta)
-                else if (valor.contains("movimiento") && !columnas.containsKey("movimiento")) {
-                    columnas.put("movimiento", i);
-                } 
-                // Mapear columna de stock (prioridad baja)
+                // Mapear columna de stock (prioridad alta)
                 else if (valor.contains("stock") && !columnas.containsKey("stock")) {
                     columnas.put("stock", i);
+                } 
+                // Mapear columna de movimiento (prioridad baja)
+                else if (valor.contains("movimiento") && !columnas.containsKey("movimiento")) {
+                    columnas.put("movimiento", i);
                 }
             }
         }

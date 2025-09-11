@@ -98,38 +98,36 @@ export default function ImportacionInventario() {
   const importarInventario = async () => {
     if (!resultadoValidacion?.resultados || !datosUsuario?.empresaId) return;
 
+    console.log('🚀 [DEBUG] Iniciando importación de inventario...');
     setImportando(true);
     try {
       const response = await ApiService.importarInventario(datosUsuario.empresaId, resultadoValidacion.resultados);
       
+      console.log('📊 [DEBUG] Respuesta de importación:', response);
+      
       if (response.exito) {
+        console.log('✅ [DEBUG] Importación exitosa, mostrando toast...');
         toast.success(`✅ Importación completada: ${response.productosActualizados} productos actualizados, ${response.productosCreados} productos creados`);
         
-        // Mostrar mensaje de éxito y opciones
+        console.log('⏰ [DEBUG] Programando navegación en 1.5 segundos...');
+        // Después de una importación exitosa, regresar automáticamente a gestión de productos
         setTimeout(() => {
-          const confirmar = window.confirm(
-            `🎉 ¡Importación exitosa!\n\n` +
-            `• ${response.productosActualizados} productos actualizados\n` +
-            `• ${response.productosCreados} productos creados\n\n` +
-            `¿Deseas ir a la gestión de productos para ver los resultados?`
-          );
-          
-          if (confirmar) {
-            // Usar window.location en lugar de navigate para evitar problemas de sesión
-            window.location.href = '/admin/gestion-productos';
-          } else {
-            // Limpiar el formulario para permitir otra importación
-            resetearFormulario();
-          }
-        }, 1000);
+          console.log('🔄 [DEBUG] Ejecutando navegación a gestión de productos...');
+          // Limpiar el formulario primero
+          resetearFormulario();
+          // Regresar a la gestión de productos usando window.location para evitar problemas de navegación
+          window.location.href = '/admin/gestion-productos';
+        }, 1500);
         
       } else {
+        console.log('❌ [DEBUG] Importación falló:', response.mensaje);
         toast.error(response.mensaje || 'Error al importar el inventario');
       }
     } catch (error: any) {
-      console.error('Error al importar inventario:', error);
+      console.error('💥 [DEBUG] Error al importar inventario:', error);
       toast.error(error.response?.data?.error || 'Error al importar el inventario');
     } finally {
+      console.log('🏁 [DEBUG] Finalizando proceso de importación...');
       setImportando(false);
     }
   };
@@ -150,10 +148,9 @@ export default function ImportacionInventario() {
       padding: isMobile ? '1rem' : '2rem'
     }}>
       <NavbarAdmin 
-        datosUsuario={datosUsuario} 
-        cerrarSesion={cerrarSesion}
-        mostrarBotonRegresar={true}
-        onRegresar={() => navigate('/admin/gestion-productos')}
+        onCerrarSesion={cerrarSesion}
+        empresaNombre={datosUsuario?.empresaNombre}
+        nombreAdministrador={datosUsuario?.nombre}
       />
 
       <div style={{
@@ -161,6 +158,39 @@ export default function ImportacionInventario() {
         margin: '0 auto',
         marginTop: isMobile ? '1rem' : '2rem'
       }}>
+        {/* Botón de regreso */}
+        <div style={{
+          marginBottom: '1rem'
+        }}>
+          <button
+            onClick={() => window.location.href = '/admin/gestion-productos'}
+            style={{
+              background: 'rgba(255, 255, 255, 0.9)',
+              border: '1px solid #e2e8f0',
+              borderRadius: '0.5rem',
+              padding: '0.5rem 1rem',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              color: '#374151',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 1)';
+              e.currentTarget.style.borderColor = '#cbd5e1';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
+          >
+            ← Regresar a Gestión de Productos
+          </button>
+        </div>
+
         {/* Título */}
         <div style={{
           background: 'white',
@@ -236,7 +266,7 @@ export default function ImportacionInventario() {
                 <li>El archivo debe tener una pestaña llamada <strong>"Stock"</strong></li>
                 <li>Columna <strong>"Producto"</strong>: Código personalizado</li>
                 <li>Columna <strong>"Descripción"</strong>: Nombre del producto</li>
-                <li>Columna <strong>"Movimiento"</strong>: Cantidad en stock</li>
+                <li>Columna <strong>"Stock"</strong>: Cantidad en stock</li>
               </ul>
             </div>
             

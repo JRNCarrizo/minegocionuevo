@@ -31,6 +31,7 @@ export function useUsuarioActual(): UseUsuarioActualReturn {
     console.log('Token encontrado:', !!token);
     console.log('User encontrado:', !!userStr);
     console.log('Ruta actual:', window.location.pathname);
+    console.log('Timestamp:', new Date().toISOString());
     
     // Solo redirigir si no estamos en una página de login o registro
     const esPaginaLogin = window.location.pathname.includes('/login') || 
@@ -44,10 +45,10 @@ export function useUsuarioActual(): UseUsuarioActualReturn {
     
     if (!token || !userStr) {
       if (!esPaginaLogin && !esPaginaPrincipal) {
-        console.log('No hay token o user, redirigiendo al login');
+        console.log('🚨 [USUARIO] No hay token o user, redirigiendo al login desde:', window.location.pathname);
         navigate('/admin/login');
       } else {
-        console.log('En página de login/principal, no redirigiendo');
+        console.log('✅ [USUARIO] En página de login/principal, no redirigiendo');
       }
       return;
     }
@@ -71,7 +72,7 @@ export function useUsuarioActual(): UseUsuarioActualReturn {
           console.log('🔍 [USUARIO] Token expirado?', currentTime > tokenExp);
           
           if (currentTime > tokenExp) {
-            console.log('❌ [USUARIO] Token expirado, limpiando sesión');
+            console.log('🚨 [USUARIO] Token expirado, limpiando sesión y redirigiendo desde:', window.location.pathname);
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             navigate('/admin/login');
@@ -79,7 +80,7 @@ export function useUsuarioActual(): UseUsuarioActualReturn {
           }
         } catch (tokenError) {
           console.error('Error al decodificar JWT token:', tokenError);
-          console.log('❌ [USUARIO] Token inválido, limpiando sesión');
+          console.log('🚨 [USUARIO] Token inválido, limpiando sesión y redirigiendo desde:', window.location.pathname);
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           navigate('/admin/login');

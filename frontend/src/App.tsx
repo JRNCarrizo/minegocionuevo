@@ -94,6 +94,7 @@ function AppContent() {
           <Route path="/admin/login-documento" element={<LoginDocumento />} />
           <Route path="/admin/dashboard" element={<DashboardAdministrador />} />
           <Route path="/admin/productos" element={<GestionProductos />} />
+          <Route path="/admin/gestion-productos" element={<GestionProductos />} />
           <Route path="/admin/importacion-inventario" element={<ImportacionInventario />} />
           <Route path="/admin/productos/nuevo" element={<NuevoProducto />} />
           <Route path="/admin/productos/editar/:id" element={<EditarProducto />} />

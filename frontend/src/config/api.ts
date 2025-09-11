@@ -14,6 +14,11 @@ export const API_CONFIG = {
   
   // Función para obtener la URL base según el entorno
   getBaseUrl(): string {
+    // Si estamos en modo desarrollo, usar localhost:8080
+    if (import.meta.env.MODE === 'development') {
+      return this.DEVELOPMENT.BASE_URL;
+    }
+    
     // Si estamos en desarrollo local (localhost o subdominios de localhost), usar localhost:8080
     if (window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost')) {
       return this.DEVELOPMENT.BASE_URL;
@@ -30,6 +35,11 @@ export const API_CONFIG = {
   
   // Función para obtener la URL de super admin según el entorno
   getSuperAdminUrl(): string {
+    // Si estamos en modo desarrollo, usar localhost:8080
+    if (import.meta.env.MODE === 'development') {
+      return this.DEVELOPMENT.SUPER_ADMIN_URL;
+    }
+    
     // Si estamos en desarrollo local (localhost o subdominios de localhost), usar localhost:8080
     if (window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost')) {
       return this.DEVELOPMENT.SUPER_ADMIN_URL;
@@ -49,4 +59,6 @@ export const API_CONFIG = {
 console.log('🌐 API Config - Base URL:', API_CONFIG.getBaseUrl());
 console.log('🌐 API Config - Super Admin URL:', API_CONFIG.getSuperAdminUrl());
 console.log('🌐 API Config - Hostname:', window.location.hostname);
-console.log('🌐 API Config - Environment:', import.meta.env.MODE); 
+console.log('🌐 API Config - Environment:', import.meta.env.MODE);
+console.log('🌐 API Config - VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('🌐 API Config - Full URL:', window.location.href); 

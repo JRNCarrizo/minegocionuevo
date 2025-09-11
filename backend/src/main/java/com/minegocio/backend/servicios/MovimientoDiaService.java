@@ -2583,12 +2583,12 @@ public class MovimientoDiaService {
      * Obtener empresa ID del contexto de seguridad
      */
     /**
-     * Exportar reporte completo del día a Excel con 5 pestañas
-     * Pestañas: Ingresos, Planillas, Retornos, Pérdidas, Stock
+     * Exportar reporte completo del día a Excel con 6 pestañas
+     * Pestañas: Ingresos, Planillas, Retornos, Pérdidas, Inventario, Stock Final
      */
     @Transactional(readOnly = true)
     public byte[] exportarReporteCompletoExcel(String fechaStr) {
-        // VERSIÓN COMPLETA CON 5 PESTAÑAS
+        // VERSIÓN COMPLETA CON 6 PESTAÑAS
         try {
             return exportarReporteCompletoExcelCompleto(fechaStr);
         } catch (Exception e) {
@@ -2790,8 +2790,11 @@ public class MovimientoDiaService {
             // 4. PESTAÑA PÉRDIDAS
             crearPestanaPerdidas(workbook, movimientos, fechaStr, headerStyle, dataStyle, titleStyle);
             
-            // 5. PESTAÑA STOCK
+            // 5. PESTAÑA INVENTARIO (antes Stock)
             crearPestanaStock(workbook, movimientos, fechaStr, headerStyle, dataStyle, titleStyle);
+            
+            // 6. PESTAÑA STOCK FINAL (nueva)
+            crearPestanaStockFinal(workbook, movimientos, fechaStr, headerStyle, dataStyle, titleStyle);
             
                 // Convertir a bytes
                 try (var outputStream = new java.io.ByteArrayOutputStream()) {
@@ -3281,16 +3284,16 @@ public class MovimientoDiaService {
     }
     
     /**
-     * Crear pestaña de Stock
+     * Crear pestaña de Inventario
      */
     private void crearPestanaStock(Workbook workbook, MovimientoDiaDTO movimientos, String fechaStr, 
                                  CellStyle headerStyle, CellStyle dataStyle, CellStyle titleStyle) {
-        Sheet sheet = workbook.createSheet("Stock");
+        Sheet sheet = workbook.createSheet("Inventario");
         
         // Título
         Row titleRow = sheet.createRow(0);
         Cell titleCell = titleRow.createCell(0);
-        titleCell.setCellValue("STOCK - " + fechaStr);
+        titleCell.setCellValue("INVENTARIO - " + fechaStr);
         titleCell.setCellStyle(titleStyle);
         sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 5));
         
@@ -3412,6 +3415,117 @@ public class MovimientoDiaService {
         
         // Establecer anchos de columnas fijos (evita errores de fuentes en headless)
         establecerAnchosColumnas(sheet, 15, 30, 12, 15, 15);
+        
+        // Congelar paneles para mantener encabezados visibles
+        sheet.createFreezePane(0, 3);
+    }
+
+    /**
+     * Crear pestaña de Stock Final (formato compatible con importación)
+     */
+    private void crearPestanaStockFinal(Workbook workbook, MovimientoDiaDTO movimientos, String fechaStr, 
+                                      CellStyle headerStyle, CellStyle dataStyle, CellStyle titleStyle) {
+        Sheet sheet = workbook.createSheet("Stock Final");
+        
+        // Título
+        Row titleRow = sheet.createRow(0);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("STOCK FINAL - " + fechaStr);
+        titleCell.setCellStyle(titleStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 3));
+        
+        // Información sobre el uso
+        Row infoRow = sheet.createRow(1);
+        Cell infoCell = infoRow.createCell(0);
+        infoCell.setCellValue("💡 Esta pestaña contiene el stock real después del recuento físico - Formato compatible con importación");
+        CellStyle infoStyle = workbook.createCellStyle();
+        Font infoFont = workbook.createFont();
+        infoFont.setItalic(true);
+        infoFont.setFontHeightInPoints((short) 10);
+        infoStyle.setFont(infoFont);
+        infoStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+        infoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        infoCell.setCellStyle(infoStyle);
+        sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 3));
+        
+        // Crear encabezados (formato de importación simplificado)
+        Row headerRow = sheet.createRow(2);
+        headerRow.createCell(0).setCellValue("Producto");
+        headerRow.createCell(1).setCellValue("Descripción");
+        headerRow.createCell(2).setCellValue("Stock");
+        
+        // Aplicar estilos a encabezados
+        for (int i = 0; i < 3; i++) {
+            headerRow.getCell(i).setCellStyle(headerStyle);
+        }
+        
+        // Obtener productos del balance final
+        List<MovimientoDiaDTO.ProductoStockDTO> productos = new ArrayList<>();
+        if (movimientos.getBalanceFinal() != null && movimientos.getBalanceFinal().getProductos() != null) {
+            productos = movimientos.getBalanceFinal().getProductos();
+        }
+        
+        // Datos de stock final
+        int rowIndex = 3;
+        for (MovimientoDiaDTO.ProductoStockDTO productoStock : productos) {
+            Row dataRow = sheet.createRow(rowIndex++);
+            
+            // Producto (Código personalizado)
+            dataRow.createCell(0).setCellValue(productoStock.getCodigoPersonalizado() != null ? 
+                productoStock.getCodigoPersonalizado() : "");
+            
+            // Descripción
+            dataRow.createCell(1).setCellValue(productoStock.getNombre());
+            
+            // Stock (conectado dinámicamente con la pestaña Inventario)
+            // Fórmula que toma el valor de "Recuento de Hoy" de la pestaña Inventario
+            Cell stockCell = dataRow.createCell(2);
+            // Fórmula: =Inventario!D{rowIndex} (columna D = "Recuento de Hoy" en pestaña Inventario)
+            String formula = "Inventario!D" + rowIndex;
+            stockCell.setCellFormula(formula);
+            
+            // Estilo para la celda de stock (conectada dinámicamente)
+            CellStyle stockStyle = workbook.createCellStyle();
+            stockStyle.cloneStyleFrom(dataStyle);
+            stockStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+            stockStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            stockCell.setCellStyle(stockStyle);
+            
+            // Aplicar estilos a las celdas de texto
+            dataRow.getCell(0).setCellStyle(dataStyle);
+            dataRow.getCell(1).setCellStyle(dataStyle);
+        }
+        
+        // Agregar fila de totales
+        Row totalRow = sheet.createRow(rowIndex);
+        totalRow.createCell(0).setCellValue("TOTALES:");
+        totalRow.createCell(1).setCellValue("");
+        
+        // Total de stock (conectado dinámicamente)
+        Cell totalStockCell = totalRow.createCell(2);
+        String totalStockFormula = "SUM(C3:C" + (rowIndex - 1) + ")";
+        totalStockCell.setCellFormula(totalStockFormula);
+        
+        // Estilo para la fila de totales
+        CellStyle totalStyle = workbook.createCellStyle();
+        Font totalFont = workbook.createFont();
+        totalFont.setBold(true);
+        totalStyle.setFont(totalFont);
+        totalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        totalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        totalStyle.setBorderTop(BorderStyle.THICK);
+        totalStyle.setBorderBottom(BorderStyle.THICK);
+        totalStyle.setBorderLeft(BorderStyle.THIN);
+        totalStyle.setBorderRight(BorderStyle.THIN);
+        
+        for (int i = 0; i < 3; i++) {
+            if (totalRow.getCell(i) != null) {
+                totalRow.getCell(i).setCellStyle(totalStyle);
+            }
+        }
+        
+        // Establecer anchos de columnas fijos
+        establecerAnchosColumnas(sheet, 15, 30, 15);
         
         // Congelar paneles para mantener encabezados visibles
         sheet.createFreezePane(0, 3);
