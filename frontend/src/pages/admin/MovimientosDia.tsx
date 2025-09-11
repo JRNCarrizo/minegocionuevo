@@ -536,7 +536,7 @@ export default function MovimientosDia() {
     if (!movimientos || modoRango) return;
     
     try {
-      toast.loading('Generando reporte completo con 5 pestañas...');
+      toast.loading('Generando reporte completo...');
       
       const blob = await ApiService.exportarReporteCompletoExcel(fechaSeleccionada);
       
@@ -950,24 +950,6 @@ export default function MovimientosDia() {
                       : 'Balance diario de inventario y movimientos'
                   }
                 </p>
-                {!modoRango && movimientos && (
-                  <div style={{
-                    marginTop: '0.5rem',
-                    padding: '0.75rem',
-                    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                    borderRadius: '0.5rem',
-                    border: '1px solid #0ea5e9',
-                    fontSize: '0.875rem',
-                    color: '#0c4a6e'
-                  }}>
-                    <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
-                      📋 Reporte Completo disponible
-                    </div>
-                    <div style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
-                      Incluye 5 pestañas: Ingresos (con remitos), Planillas, Retornos, Pérdidas y Stock (con fórmulas automáticas para diferencias)
-                    </div>
-                  </div>
-                )}
              </div>
             
                                                                <div style={{
@@ -1017,7 +999,7 @@ export default function MovimientosDia() {
                     }
                   }}
                 >
-                  📋 Reporte Completo (5 Pestañas)
+                  📋 Reporte Completo
                 </button>
 
                 {/* Botón de exportar general */}
@@ -1040,7 +1022,7 @@ export default function MovimientosDia() {
                     gap: '0.5rem'
                   }}
                 >
-                  📊 Exportar Excel
+                  📊 Exportar Resumen
                 </button>
 
                 {/* Toggle entre modo día y modo rango */}
