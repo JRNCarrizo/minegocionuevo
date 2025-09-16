@@ -41,6 +41,9 @@ export default function DescargaDevoluciones() {
   const [filtroFecha, setFiltroFecha] = useState('');
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
   const [diasExpandidos, setDiasExpandidos] = useState<Set<string>>(new Set());
+  const [productosPerdidos, setProductosPerdidos] = useState<any[]>([]);
+  const [cargandoProductosPerdidos, setCargandoProductosPerdidos] = useState(false);
+  const [modalProductosPerdidos, setModalProductosPerdidos] = useState<string | null>(null);
 
   // Función helper para convertir fechaPlanilla a string de fecha
   const obtenerFechaPlanillaString = (fechaPlanilla: any): string => {
@@ -145,10 +148,23 @@ export default function DescargaDevoluciones() {
     };
   }, [navigate]);
 
-  // Manejar tecla Escape para volver a la vista principal
+  // Manejar tecla Escape para cerrar modales o volver a la vista principal
   useEffect(() => {
     const manejarEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // Si hay un modal de productos perdidos abierto, cerrarlo
+        if (modalProductosPerdidos) {
+          setModalProductosPerdidos(null);
+          return;
+        }
+        
+        // Si hay una planilla seleccionada (modal de detalle), cerrarla
+        if (planillaSeleccionada) {
+          setPlanillaSeleccionada(null);
+          return;
+        }
+        
+        // Si no hay modales abiertos, volver a la vista principal
         navigate('/admin/gestion-empresa');
       }
     };
@@ -157,7 +173,7 @@ export default function DescargaDevoluciones() {
     return () => {
       document.removeEventListener('keydown', manejarEscape);
     };
-  }, [navigate]);
+  }, [navigate, modalProductosPerdidos, planillaSeleccionada]);
 
   const cargarDatos = async () => {
     try {
@@ -331,6 +347,22 @@ export default function DescargaDevoluciones() {
     } catch (error) {
       console.error('Error al exportar planilla:', error);
       toast.error('Error al exportar la planilla');
+    }
+  };
+
+  const obtenerProductosPerdidos = async (fecha: string) => {
+    try {
+      setCargandoProductosPerdidos(true);
+      const productos = await ApiService.obtenerProductosPerdidos(fecha);
+      // Filtrar solo productos de devoluciones
+      const productosDevoluciones = productos.filter(p => p.tipo === 'DEVOLUCION');
+      setProductosPerdidos(productosDevoluciones);
+      setModalProductosPerdidos(fecha);
+    } catch (error) {
+      console.error('Error al obtener productos perdidos:', error);
+      toast.error('Error al obtener productos perdidos');
+    } finally {
+      setCargandoProductosPerdidos(false);
     }
   };
 
@@ -594,41 +626,90 @@ export default function DescargaDevoluciones() {
               
               {gruposPorFecha.map((grupo) => (
                 <div key={grupo.fecha} style={{ marginBottom: '2rem' }}>
-                                     <div
-                     onClick={() => alternarExpansionDia(grupo.fecha)}
-                     style={{
-                       background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                       color: 'white',
-                       padding: isMobile ? '16px' : '24px',
-                       borderRadius: '16px',
-                       cursor: 'pointer',
-                       display: 'flex',
-                       justifyContent: 'space-between',
-                       alignItems: 'center',
-                       flexDirection: isMobile ? 'column' : 'row',
-                       gap: isMobile ? '12px' : '0',
-                       marginBottom: '1rem',
-                       boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                     }}
-                   >
-                                         <div style={{
-                       display: 'flex',
-                       alignItems: 'center',
-                       gap: isMobile ? '8px' : '1rem'
-                     }}>
-                       <span style={{ fontSize: isMobile ? '1rem' : '1.25rem' }}>📅</span>
-                       <div>
-                         <div style={{ fontWeight: '600', fontSize: isMobile ? '1rem' : '1.125rem' }}>
-                           {formatearFechaGrupoConHoy(grupo.fecha)}
-                         </div>
-                         <div style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', opacity: 0.9 }}>
-                           {grupo.planillas.length} planillas • {grupo.planillas.reduce((total, p) => total + p.totalProductos, 0)} productos
+                   <div style={{
+                     background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                     color: 'white',
+                     padding: isMobile ? '16px' : '24px',
+                     borderRadius: '16px',
+                     marginBottom: '1rem',
+                     boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                   }}>
+                     {/* Header del día */}
+                     <div
+                       onClick={() => alternarExpansionDia(grupo.fecha)}
+                       style={{
+                         cursor: 'pointer',
+                         display: 'flex',
+                         justifyContent: 'space-between',
+                         alignItems: 'center',
+                         flexDirection: isMobile ? 'column' : 'row',
+                         gap: isMobile ? '12px' : '0',
+                         marginBottom: isMobile ? '12px' : '0'
+                       }}
+                     >
+                       <div style={{
+                         display: 'flex',
+                         alignItems: 'center',
+                         gap: isMobile ? '8px' : '1rem'
+                       }}>
+                         <span style={{ fontSize: isMobile ? '1rem' : '1.25rem' }}>📅</span>
+                         <div>
+                           <div style={{ fontWeight: '600', fontSize: isMobile ? '1rem' : '1.125rem' }}>
+                             {formatearFechaGrupoConHoy(grupo.fecha)}
+                           </div>
+                           <div style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', opacity: 0.9 }}>
+                             {grupo.planillas.length} planillas • {grupo.planillas.reduce((total, p) => total + p.totalProductos, 0)} productos
+                           </div>
                          </div>
                        </div>
+                       <span style={{ fontSize: '1.5rem' }}>
+                         {estaDiaExpandido(grupo.fecha) ? '▼' : '▶'}
+                       </span>
                      </div>
-                                         <span style={{ fontSize: '1.5rem' }}>
-                       {estaDiaExpandido(grupo.fecha) ? '▼' : '▶'}
-                     </span>
+                     
+                     {/* Botón para ver productos perdidos */}
+                     <div style={{
+                       display: 'flex',
+                       justifyContent: 'flex-end',
+                       marginTop: isMobile ? '8px' : '0'
+                     }}>
+                       <button
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           obtenerProductosPerdidos(grupo.fecha);
+                         }}
+                         disabled={cargandoProductosPerdidos}
+                         style={{
+                           padding: '0.5rem 1rem',
+                           background: 'rgba(255, 255, 255, 0.2)',
+                           color: 'white',
+                           border: '1px solid rgba(255, 255, 255, 0.3)',
+                           borderRadius: '0.5rem',
+                           fontSize: '0.875rem',
+                           fontWeight: '600',
+                           cursor: cargandoProductosPerdidos ? 'not-allowed' : 'pointer',
+                           opacity: cargandoProductosPerdidos ? 0.6 : 1,
+                           transition: 'all 0.2s ease',
+                           display: 'flex',
+                           alignItems: 'center',
+                           gap: '0.5rem'
+                         }}
+                         onMouseOver={(e) => {
+                           if (!cargandoProductosPerdidos) {
+                             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                           }
+                         }}
+                         onMouseOut={(e) => {
+                           if (!cargandoProductosPerdidos) {
+                             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                           }
+                         }}
+                       >
+                         {cargandoProductosPerdidos ? '⏳' : '💔'} Ver Productos Perdidos
+                       </button>
+                     </div>
                    </div>
                    
                    {estaDiaExpandido(grupo.fecha) && (
@@ -1193,6 +1274,236 @@ export default function DescargaDevoluciones() {
           </div>
         </div>
       )}
+
+      {/* Modal de Productos Perdidos */}
+      {modalProductosPerdidos && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: isMobile ? '1rem' : '2rem'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '1rem',
+            width: '100%',
+            maxWidth: isMobile ? '100%' : '800px',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            animation: 'modalSlideIn 0.3s ease-out'
+          }}>
+            {/* Header del modal */}
+            <div style={{
+              padding: isMobile ? '1rem' : '1.5rem',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+              color: 'white',
+              borderRadius: '1rem 1rem 0 0'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem'
+              }}>
+                <div style={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>🔄</div>
+                <div>
+                  <h2 style={{
+                    margin: 0,
+                    fontSize: isMobile ? '1.125rem' : '1.25rem',
+                    fontWeight: '700'
+                  }}>
+                    Productos Perdidos en Devoluciones - {formatearFecha(modalProductosPerdidos)}
+                  </h2>
+                  <p style={{
+                    margin: 0,
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    opacity: 0.9
+                  }}>
+                    Productos en mal estado, rotos o defectuosos de devoluciones
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setModalProductosPerdidos(null)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  color: 'white',
+                  fontSize: '1.5rem',
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Contenido del modal */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: isMobile ? '1rem' : '1.5rem'
+            }}>
+              {productosPerdidos.length > 0 ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem'
+                }}>
+                  {productosPerdidos.map((producto, index) => (
+                    <div key={index} style={{
+                      background: '#fffbeb',
+                      border: '1px solid #fbbf24',
+                      borderRadius: '0.75rem',
+                      padding: isMobile ? '1rem' : '1.25rem',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '0.75rem'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontSize: isMobile ? '1rem' : '1.125rem',
+                            fontWeight: '600',
+                            color: '#1e293b',
+                            marginBottom: '0.25rem'
+                          }}>
+                            {producto.nombre}
+                          </div>
+                          <div style={{
+                            fontSize: isMobile ? '0.875rem' : '1rem',
+                            color: '#64748b',
+                            marginBottom: '0.5rem'
+                          }}>
+                            Código: {producto.codigoPersonalizado || 'N/A'}
+                          </div>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-end',
+                          gap: '0.25rem'
+                        }}>
+                          <div style={{
+                            fontSize: isMobile ? '1.25rem' : '1.5rem',
+                            fontWeight: '700',
+                            color: '#dc2626'
+                          }}>
+                            -{producto.cantidad}
+                          </div>
+                          <div style={{
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '0.375rem',
+                            fontSize: isMobile ? '0.75rem' : '0.875rem',
+                            fontWeight: '600',
+                            color: 'white',
+                            background: producto.estado === 'ROTO' ? '#ef4444' :
+                                       producto.estado === 'MAL_ESTADO' ? '#f59e0b' :
+                                       producto.estado === 'DEFECTUOSO' ? '#dc2626' : '#6b7280'
+                          }}>
+                            {producto.estadoDescripcion}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: isMobile ? '0.8rem' : '0.875rem',
+                        color: '#64748b'
+                      }}>
+                        <div>
+                          <span style={{ fontWeight: '600' }}>Planilla:</span> {producto.numeroDocumento}
+                        </div>
+                        <div>
+                          {formatearFechaConHora(producto.fechaCreacion)}
+                        </div>
+                      </div>
+                      
+                      {producto.observaciones && (
+                        <div style={{
+                          marginTop: '0.75rem',
+                          padding: '0.75rem',
+                          background: '#fef3c7',
+                          borderRadius: '0.5rem',
+                          fontSize: isMobile ? '0.8rem' : '0.875rem',
+                          color: '#92400e'
+                        }}>
+                          <span style={{ fontWeight: '600' }}>Observaciones:</span> {producto.observaciones}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: isMobile ? '2rem' : '3rem',
+                  color: '#64748b'
+                }}>
+                  <div style={{ fontSize: isMobile ? '3rem' : '4rem', marginBottom: '1rem' }}>
+                    ✅
+                  </div>
+                  <h3 style={{
+                    margin: '0 0 0.5rem 0',
+                    fontSize: isMobile ? '1.125rem' : '1.25rem',
+                    fontWeight: '600'
+                  }}>
+                    ¡Excelente!
+                  </h3>
+                  <p style={{
+                    margin: 0,
+                    fontSize: isMobile ? '1rem' : '1.125rem'
+                  }}>
+                    No se registraron productos perdidos en devoluciones para esta fecha
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }

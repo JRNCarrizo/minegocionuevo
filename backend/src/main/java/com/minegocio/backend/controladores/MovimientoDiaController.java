@@ -244,6 +244,22 @@ public class MovimientoDiaController {
     }
 
     /**
+     * Obtener productos perdidos del día (ROTO, MAL_ESTADO, DEFECTUOSO)
+     */
+    @GetMapping("/{fecha}/productos-perdidos")
+    public ResponseEntity<?> obtenerProductosPerdidos(@PathVariable String fecha) {
+        try {
+            System.out.println("🔍 [CONTROLLER] Obteniendo productos perdidos para fecha: " + fecha);
+            var productosPerdidos = movimientoDiaService.obtenerProductosPerdidos(fecha);
+            return ResponseEntity.ok(productosPerdidos);
+        } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER] Error al obtener productos perdidos: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
      * Exportar reporte completo del día a Excel con 5 pestañas
      * Pestañas: Ingresos, Planillas, Retornos, Pérdidas, Stock
      */

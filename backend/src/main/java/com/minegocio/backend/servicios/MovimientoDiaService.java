@@ -3575,6 +3575,107 @@ public class MovimientoDiaService {
     }
 
     /**
+     * Obtener productos perdidos del día (ROTO, MAL_ESTADO, DEFECTUOSO)
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> obtenerProductosPerdidos(String fechaStr) {
+        try {
+            System.out.println("🔍 [PRODUCTOS PERDIDOS] Obteniendo productos perdidos para fecha: " + fechaStr);
+            
+            Long empresaId = obtenerEmpresaId();
+            LocalDate fecha = LocalDate.parse(fechaStr);
+            LocalDateTime fechaInicio = fecha.atStartOfDay();
+            LocalDateTime fechaFin = fecha.atTime(23, 59, 59, 999999999);
+            
+            List<Map<String, Object>> productosPerdidos = new ArrayList<>();
+            
+            // 1. Obtener productos perdidos de remitos de ingreso
+            List<RemitoIngreso> remitos = remitoIngresoRepository.findByRangoFechasAndEmpresaId(fechaInicio, fechaFin, empresaId);
+            for (RemitoIngreso remito : remitos) {
+                List<DetalleRemitoIngreso> detalles = detalleRemitoIngresoRepository.findByRemitoIngresoIdOrderByFechaCreacionAsc(remito.getId());
+                for (DetalleRemitoIngreso detalle : detalles) {
+                    if (detalle.getEstadoProducto() != null && 
+                        (detalle.getEstadoProducto() == DetalleRemitoIngreso.EstadoProducto.ROTO ||
+                         detalle.getEstadoProducto() == DetalleRemitoIngreso.EstadoProducto.MAL_ESTADO ||
+                         detalle.getEstadoProducto() == DetalleRemitoIngreso.EstadoProducto.DEFECTUOSO)) {
+                        
+                        Map<String, Object> productoPerdido = new HashMap<>();
+                        productoPerdido.put("tipo", "INGRESO");
+                        productoPerdido.put("numeroDocumento", remito.getNumeroRemito());
+                        productoPerdido.put("productoId", detalle.getProducto().getId());
+                        productoPerdido.put("codigoPersonalizado", detalle.getProducto().getCodigoPersonalizado());
+                        productoPerdido.put("nombre", detalle.getProducto().getNombre());
+                        productoPerdido.put("cantidad", detalle.getCantidad());
+                        productoPerdido.put("estado", detalle.getEstadoProducto().name());
+                        productoPerdido.put("estadoDescripcion", detalle.getEstadoProducto().getDescripcion());
+                        productoPerdido.put("observaciones", detalle.getObservaciones());
+                        productoPerdido.put("fechaCreacion", detalle.getFechaCreacion());
+                        productosPerdidos.add(productoPerdido);
+                    }
+                }
+            }
+            
+            // 2. Obtener productos perdidos de planillas de devolución
+            List<PlanillaDevolucion> devoluciones = planillaDevolucionRepository.findByEmpresaIdAndFechaPlanillaBetweenOrderByFechaCreacionDesc(empresaId, fechaInicio, fechaFin);
+            for (PlanillaDevolucion devolucion : devoluciones) {
+                List<DetallePlanillaDevolucion> detalles = detallePlanillaDevolucionRepository.findByPlanillaDevolucionIdOrderByFechaCreacionAsc(devolucion.getId());
+                for (DetallePlanillaDevolucion detalle : detalles) {
+                    if (detalle.getEstadoProducto() != null && 
+                        (detalle.getEstadoProducto() == DetallePlanillaDevolucion.EstadoProducto.ROTO ||
+                         detalle.getEstadoProducto() == DetallePlanillaDevolucion.EstadoProducto.MAL_ESTADO ||
+                         detalle.getEstadoProducto() == DetallePlanillaDevolucion.EstadoProducto.DEFECTUOSO)) {
+                        
+                        Map<String, Object> productoPerdido = new HashMap<>();
+                        productoPerdido.put("tipo", "DEVOLUCION");
+                        productoPerdido.put("numeroDocumento", devolucion.getNumeroPlanilla());
+                        productoPerdido.put("productoId", detalle.getProducto().getId());
+                        productoPerdido.put("codigoPersonalizado", detalle.getProducto().getCodigoPersonalizado());
+                        productoPerdido.put("nombre", detalle.getProducto().getNombre());
+                        productoPerdido.put("cantidad", detalle.getCantidad());
+                        productoPerdido.put("estado", detalle.getEstadoProducto().name());
+                        productoPerdido.put("estadoDescripcion", detalle.getEstadoProducto().getDescripcion());
+                        productoPerdido.put("observaciones", detalle.getObservaciones());
+                        productoPerdido.put("fechaCreacion", detalle.getFechaCreacion());
+                        productosPerdidos.add(productoPerdido);
+                    }
+                }
+            }
+            
+            // 3. Obtener productos perdidos de roturas registradas
+            List<RoturaPerdida> roturas = roturaPerdidaRepository.findByEmpresaIdAndFechaBetweenOrderByFechaCreacionDesc(empresaId, fechaInicio, fechaFin);
+            for (RoturaPerdida rotura : roturas) {
+                Map<String, Object> productoPerdido = new HashMap<>();
+                productoPerdido.put("tipo", "ROTURA");
+                productoPerdido.put("numeroDocumento", "ROT-" + rotura.getId());
+                productoPerdido.put("productoId", rotura.getProducto().getId());
+                productoPerdido.put("codigoPersonalizado", rotura.getProducto().getCodigoPersonalizado());
+                productoPerdido.put("nombre", rotura.getProducto().getNombre());
+                productoPerdido.put("cantidad", rotura.getCantidad());
+                productoPerdido.put("estado", "ROTURA");
+                productoPerdido.put("estadoDescripcion", "Rotura/Pérdida");
+                productoPerdido.put("observaciones", rotura.getObservaciones());
+                productoPerdido.put("fechaCreacion", rotura.getFechaCreacion());
+                productosPerdidos.add(productoPerdido);
+            }
+            
+            // Ordenar por fecha de creación (más recientes primero)
+            productosPerdidos.sort((a, b) -> {
+                LocalDateTime fechaA = (LocalDateTime) a.get("fechaCreacion");
+                LocalDateTime fechaB = (LocalDateTime) b.get("fechaCreacion");
+                return fechaB.compareTo(fechaA);
+            });
+            
+            System.out.println("✅ [PRODUCTOS PERDIDOS] Encontrados " + productosPerdidos.size() + " productos perdidos");
+            return productosPerdidos;
+            
+        } catch (Exception e) {
+            System.err.println("❌ [PRODUCTOS PERDIDOS] Error al obtener productos perdidos: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al obtener productos perdidos", e);
+        }
+    }
+
+    /**
      * Método auxiliar para obtener la letra de la columna en Excel
      */
     private String getColumnLetter(int columnIndex) {

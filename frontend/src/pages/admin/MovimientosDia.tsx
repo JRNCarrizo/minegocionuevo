@@ -5,7 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha } from '../../utils/dateUtils';
+import { formatearFecha, formatearFechaConHora } from '../../utils/dateUtils';
 
 interface MovimientoDia {
   fecha: string;
@@ -62,6 +62,8 @@ export default function MovimientosDia() {
   const [modalAbierto, setModalAbierto] = useState<string | null>(null);
   const [transicionando, setTransicionando] = useState<boolean>(false);
   const [filtroBusqueda, setFiltroBusqueda] = useState<string>('');
+  const [productosPerdidos, setProductosPerdidos] = useState<any[]>([]);
+  const [cargandoProductosPerdidos, setCargandoProductosPerdidos] = useState(false);
   
   // Estado para navegación por teclado
   const [indiceSeleccionado, setIndiceSeleccionado] = useState(0);
@@ -557,6 +559,25 @@ export default function MovimientosDia() {
       console.error('Error al exportar reporte completo a Excel:', error);
       toast.dismiss();
       toast.error('Error al exportar reporte completo a Excel');
+    }
+  };
+
+
+  const obtenerProductosPerdidosDevoluciones = async () => {
+    if (!fechaSeleccionada) return;
+    
+    try {
+      setCargandoProductosPerdidos(true);
+      const productos = await ApiService.obtenerProductosPerdidos(fechaSeleccionada);
+      // Filtrar solo productos de devoluciones
+      const productosDevoluciones = productos.filter(p => p.tipo === 'DEVOLUCION');
+      setProductosPerdidos(productosDevoluciones);
+      setModalAbierto('productosPerdidosDevoluciones');
+    } catch (error) {
+      console.error('Error al obtener productos perdidos de devoluciones:', error);
+      toast.error('Error al obtener productos perdidos de devoluciones');
+    } finally {
+      setCargandoProductosPerdidos(false);
     }
   };
 
@@ -1521,48 +1542,93 @@ export default function MovimientosDia() {
                  </div>
                </div>
                
-               {/* Botón de exportación específico para devoluciones */}
+               {/* Botones de exportación y ver productos perdidos */}
                {!modoRango && (
-                 <button
-                   onClick={(e) => {
-                     e.stopPropagation();
-                     exportarDevolucionesDiaExcel();
-                   }}
-                   disabled={!movimientos || transicionando}
-                   style={{
-                     position: 'absolute',
-                     bottom: '1rem',
-                     right: '1rem',
-                     padding: '0.5rem',
-                     background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                     color: 'white',
-                     border: 'none',
-                     borderRadius: '0.5rem',
-                     fontSize: '0.75rem',
-                     fontWeight: '600',
-                     cursor: !movimientos || transicionando ? 'not-allowed' : 'pointer',
-                     opacity: !movimientos || transicionando ? 0.6 : 1,
-                     transition: 'all 0.2s ease',
-                     display: 'flex',
-                     alignItems: 'center',
-                     gap: '0.25rem',
-                     boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)'
-                   }}
-                   onMouseOver={(e) => {
-                     if (!isMobile && movimientos && !transicionando) {
-                       e.currentTarget.style.transform = 'scale(1.05)';
-                       e.currentTarget.style.boxShadow = '0 4px 8px rgba(245, 158, 11, 0.4)';
-                     }
-                   }}
-                   onMouseOut={(e) => {
-                     if (!isMobile) {
-                       e.currentTarget.style.transform = 'scale(1)';
-                       e.currentTarget.style.boxShadow = '0 2px 4px rgba(245, 158, 11, 0.3)';
-                     }
-                   }}
-                 >
-                   📊 Exportar
-                 </button>
+                 <div style={{
+                   position: 'absolute',
+                   bottom: '1rem',
+                   right: '1rem',
+                   display: 'flex',
+                   gap: '0.5rem'
+                 }}>
+                   {/* Botón para ver productos perdidos */}
+                   <button
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       obtenerProductosPerdidosDevoluciones();
+                     }}
+                     disabled={!movimientos || transicionando || cargandoProductosPerdidos}
+                     style={{
+                       padding: '0.5rem',
+                       background: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)',
+                       color: 'white',
+                       border: 'none',
+                       borderRadius: '0.375rem',
+                       fontSize: '0.75rem',
+                       fontWeight: '600',
+                       cursor: !movimientos || transicionando || cargandoProductosPerdidos ? 'not-allowed' : 'pointer',
+                       opacity: !movimientos || transicionando || cargandoProductosPerdidos ? 0.6 : 1,
+                       transition: 'all 0.2s ease',
+                       display: 'flex',
+                       alignItems: 'center',
+                       gap: '0.25rem',
+                       boxShadow: '0 2px 4px rgba(124, 58, 237, 0.3)'
+                     }}
+                     onMouseOver={(e) => {
+                       if (!isMobile && movimientos && !transicionando && !cargandoProductosPerdidos) {
+                         e.currentTarget.style.transform = 'scale(1.05)';
+                         e.currentTarget.style.boxShadow = '0 4px 8px rgba(124, 58, 237, 0.4)';
+                       }
+                     }}
+                     onMouseOut={(e) => {
+                       if (!isMobile) {
+                         e.currentTarget.style.transform = 'scale(1)';
+                         e.currentTarget.style.boxShadow = '0 2px 4px rgba(124, 58, 237, 0.3)';
+                       }
+                     }}
+                   >
+                     {cargandoProductosPerdidos ? '⏳' : '💔'} Ver Perdidos
+                   </button>
+                   
+                   {/* Botón de exportación */}
+                   <button
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       exportarDevolucionesDiaExcel();
+                     }}
+                     disabled={!movimientos || transicionando}
+                     style={{
+                       padding: '0.5rem',
+                       background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                       color: 'white',
+                       border: 'none',
+                       borderRadius: '0.375rem',
+                       fontSize: '0.75rem',
+                       fontWeight: '600',
+                       cursor: !movimientos || transicionando ? 'not-allowed' : 'pointer',
+                       opacity: !movimientos || transicionando ? 0.6 : 1,
+                       transition: 'all 0.2s ease',
+                       display: 'flex',
+                       alignItems: 'center',
+                       gap: '0.25rem',
+                       boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)'
+                     }}
+                     onMouseOver={(e) => {
+                       if (!isMobile && movimientos && !transicionando) {
+                         e.currentTarget.style.transform = 'scale(1.05)';
+                         e.currentTarget.style.boxShadow = '0 4px 8px rgba(245, 158, 11, 0.4)';
+                       }
+                     }}
+                     onMouseOut={(e) => {
+                       if (!isMobile) {
+                         e.currentTarget.style.transform = 'scale(1)';
+                         e.currentTarget.style.boxShadow = '0 2px 4px rgba(245, 158, 11, 0.3)';
+                       }
+                     }}
+                   >
+                     📊 Exportar
+                   </button>
+                 </div>
                )}
              </div>
 
@@ -1741,6 +1807,7 @@ export default function MovimientosDia() {
                    </p>
                  </div>
                </div>
+               
              </div>
 
              {/* Balance Final */}
@@ -2167,10 +2234,238 @@ export default function MovimientosDia() {
         </div>
       )}
 
+
+      {/* Modal de Productos Perdidos de Devoluciones */}
+      {modalAbierto === 'productosPerdidosDevoluciones' && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: isMobile ? '1rem' : '2rem'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '1rem',
+            width: '100%',
+            maxWidth: isMobile ? '100%' : '800px',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            animation: 'modalSlideIn 0.3s ease-out'
+          }}>
+            {/* Header del modal */}
+            <div style={{
+              padding: isMobile ? '1rem' : '1.5rem',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+              color: 'white',
+              borderRadius: '1rem 1rem 0 0'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem'
+              }}>
+                <div style={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>🔄</div>
+                <div>
+                  <h2 style={{
+                    margin: 0,
+                    fontSize: isMobile ? '1.125rem' : '1.25rem',
+                    fontWeight: '700'
+                  }}>
+                    Productos Perdidos en Devoluciones - {fechaSeleccionada}
+                  </h2>
+                  <p style={{
+                    margin: 0,
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    opacity: 0.9
+                  }}>
+                    Productos en mal estado, rotos o defectuosos de devoluciones
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setModalAbierto(null)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  color: 'white',
+                  fontSize: '1.5rem',
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Contenido del modal */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: isMobile ? '1rem' : '1.5rem'
+            }}>
+              {productosPerdidos.length > 0 ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem'
+                }}>
+                  {productosPerdidos.map((producto, index) => (
+                    <div key={index} style={{
+                      background: '#fffbeb',
+                      border: '1px solid #fbbf24',
+                      borderRadius: '0.75rem',
+                      padding: isMobile ? '1rem' : '1.25rem',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '0.75rem'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontSize: isMobile ? '1rem' : '1.125rem',
+                            fontWeight: '600',
+                            color: '#1e293b',
+                            marginBottom: '0.25rem'
+                          }}>
+                            {producto.nombre}
+                          </div>
+                          <div style={{
+                            fontSize: isMobile ? '0.875rem' : '1rem',
+                            color: '#64748b',
+                            marginBottom: '0.5rem'
+                          }}>
+                            Código: {producto.codigoPersonalizado || 'N/A'}
+                          </div>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-end',
+                          gap: '0.25rem'
+                        }}>
+                          <div style={{
+                            fontSize: isMobile ? '1.25rem' : '1.5rem',
+                            fontWeight: '700',
+                            color: '#dc2626'
+                          }}>
+                            -{producto.cantidad}
+                          </div>
+                          <div style={{
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '0.375rem',
+                            fontSize: isMobile ? '0.75rem' : '0.875rem',
+                            fontWeight: '600',
+                            color: 'white',
+                            background: producto.estado === 'ROTO' ? '#ef4444' :
+                                       producto.estado === 'MAL_ESTADO' ? '#f59e0b' :
+                                       producto.estado === 'DEFECTUOSO' ? '#dc2626' : '#6b7280'
+                          }}>
+                            {producto.estadoDescripcion}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: isMobile ? '0.8rem' : '0.875rem',
+                        color: '#64748b'
+                      }}>
+                        <div>
+                          <span style={{ fontWeight: '600' }}>Planilla:</span> {producto.numeroDocumento}
+                        </div>
+                        <div>
+                          {formatearFechaConHora(producto.fechaCreacion)}
+                        </div>
+                      </div>
+                      
+                      {producto.observaciones && (
+                        <div style={{
+                          marginTop: '0.75rem',
+                          padding: '0.75rem',
+                          background: '#fef3c7',
+                          borderRadius: '0.5rem',
+                          fontSize: isMobile ? '0.8rem' : '0.875rem',
+                          color: '#92400e'
+                        }}>
+                          <span style={{ fontWeight: '600' }}>Observaciones:</span> {producto.observaciones}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: isMobile ? '2rem' : '3rem',
+                  color: '#64748b'
+                }}>
+                  <div style={{ fontSize: isMobile ? '3rem' : '4rem', marginBottom: '1rem' }}>
+                    ✅
+                  </div>
+                  <h3 style={{
+                    margin: '0 0 0.5rem 0',
+                    fontSize: isMobile ? '1.125rem' : '1.25rem',
+                    fontWeight: '600'
+                  }}>
+                    ¡Excelente!
+                  </h3>
+                  <p style={{
+                    margin: 0,
+                    fontSize: isMobile ? '1rem' : '1.125rem'
+                  }}>
+                    No se registraron productos perdidos en devoluciones para esta fecha
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
         }
       `}</style>
     </div>

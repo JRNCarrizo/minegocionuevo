@@ -2197,6 +2197,17 @@ class ApiService {
     }
   }
 
+  // Obtener productos perdidos del día
+  async obtenerProductosPerdidos(fecha: string): Promise<any[]> {
+    try {
+      const response = await this.api.get(`/movimientos-dia/${fecha}/productos-perdidos`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al obtener productos perdidos:', error);
+      throw error;
+    }
+  }
+
   // Exportar reporte completo del día a Excel con 5 pestañas
   async exportarReporteCompletoExcel(fecha: string): Promise<Blob> {
     try {
