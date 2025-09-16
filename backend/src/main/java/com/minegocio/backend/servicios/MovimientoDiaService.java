@@ -2847,22 +2847,22 @@ public class MovimientoDiaService {
             );
             System.out.println("🔍 [INGRESOS] Remitos encontrados: " + remitos.size());
         
-        // Obtener todos los productos únicos
+        // Obtener TODOS los productos del stock inicial (igual que en el modal)
         Set<Producto> productosUnicos = new HashSet<>();
-        for (RemitoIngreso remito : remitos) {
-            List<DetalleRemitoIngreso> detalles = detalleRemitoIngresoRepository.findByRemitoIngresoIdOrderByFechaCreacionAsc(remito.getId());
-            for (DetalleRemitoIngreso detalle : detalles) {
-                productosUnicos.add(detalle.getProducto());
-            }
-        }
-        
-        // Agregar productos del stock inicial que no estén en remitos
         if (movimientos.getStockInicial() != null && movimientos.getStockInicial().getProductos() != null) {
             for (MovimientoDiaDTO.ProductoStockDTO productoStock : movimientos.getStockInicial().getProductos()) {
                 Producto producto = productoRepository.findById(productoStock.getId()).orElse(null);
                 if (producto != null) {
                     productosUnicos.add(producto);
                 }
+            }
+        }
+        
+        // Agregar productos de remitos que no estén en stock inicial
+        for (RemitoIngreso remito : remitos) {
+            List<DetalleRemitoIngreso> detalles = detalleRemitoIngresoRepository.findByRemitoIngresoIdOrderByFechaCreacionAsc(remito.getId());
+            for (DetalleRemitoIngreso detalle : detalles) {
+                productosUnicos.add(detalle.getProducto());
             }
         }
         
@@ -2960,10 +2960,53 @@ public class MovimientoDiaService {
             }
         }
         
+        // Crear estilo para la fila de totales
+        CellStyle totalStyle = workbook.createCellStyle();
+        Font totalFont = workbook.createFont();
+        totalFont.setBold(true);
+        totalStyle.setFont(totalFont);
+        totalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        totalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        totalStyle.setBorderTop(BorderStyle.THICK);
+        totalStyle.setBorderBottom(BorderStyle.THICK);
+        totalStyle.setBorderLeft(BorderStyle.THIN);
+        totalStyle.setBorderRight(BorderStyle.THIN);
+        
+        // Agregar fila de totales solo si hay productos
+        if (rowIndex > 4) { // Verificar que hay al menos una fila de datos
+            Row totalRow = sheet.createRow(rowIndex);
+            totalRow.createCell(0).setCellValue("TOTALES:");
+            totalRow.createCell(1).setCellValue("");
+            
+            // Total de Stock Inicial (columna C)
+            Cell stockInicialTotalCell = totalRow.createCell(2);
+            String stockInicialFormula = "SUM(C4:C" + (rowIndex - 1) + ")";
+            stockInicialTotalCell.setCellFormula(stockInicialFormula);
+            
+            // Totales por remito
+            colIndex = 3;
+            for (int i = 0; i < remitos.size(); i++) {
+                Cell totalCell = totalRow.createCell(colIndex);
+                String totalFormula = "SUM(" + getColumnLetter(colIndex) + "4:" + getColumnLetter(colIndex) + (rowIndex - 1) + ")";
+                totalCell.setCellFormula(totalFormula);
+                colIndex++;
+            }
+            
+            // Aplicar estilos a la fila de totales
+            for (int i = 0; i < colIndex; i++) {
+                if (totalRow.getCell(i) != null) {
+                    totalRow.getCell(i).setCellStyle(totalStyle);
+                }
+            }
+        }
+        
         // Establecer anchos de columnas fijos (evita errores de fuentes en headless)
         establecerAnchosColumnas(sheet, 15, 30, 12, 15, 15); // Ajustar según número de columnas
         
-        System.out.println("✅ [INGRESOS] Pestaña Ingresos creada exitosamente");
+        // Congelar paneles para mantener encabezados visibles
+        sheet.createFreezePane(0, 4);
+        
+        System.out.println("✅ [INGRESOS] Pestaña Ingresos creada exitosamente con fila de totales");
         
         } catch (Exception e) {
             System.err.println("❌ [INGRESOS] Error al crear pestaña Ingresos: " + e.getMessage());
