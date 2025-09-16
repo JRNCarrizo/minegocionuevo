@@ -92,6 +92,7 @@ export default function CrearIngreso() {
   const observacionesRef = useRef<HTMLTextAreaElement>(null);
   const cantidadTemporalRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
+  const listaProductosIngresoRef = useRef<HTMLDivElement>(null);
 
   // Función para evaluar expresiones matemáticas de forma segura
   const evaluarExpresion = (expresion: string): { resultado: number | null; error: string | null } => {
@@ -291,6 +292,22 @@ export default function CrearIngreso() {
       }
     }
   }, [productoSeleccionado]);
+
+  // Auto-scroll para mantener visible el último producto agregado al ingreso
+  useEffect(() => {
+    // Solo hacer scroll si hay productos en la lista y no estamos en modo cantidad
+    if (detalles.length > 0 && !mostrarCampoCantidad) {
+      // Solo hacer scroll si hay más de 3 productos (para evitar scroll en los primeros productos)
+      if (detalles.length > 3) {
+        // Delay para asegurar que el DOM se haya actualizado completamente
+        const timeoutId = setTimeout(() => {
+          scrollToLastProduct();
+        }, 200);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [detalles.length, mostrarCampoCantidad]);
 
      // Auto-focus en el campo de número de remito al cargar
    useEffect(() => {
@@ -541,6 +558,13 @@ export default function CrearIngreso() {
     setResultadoCalculoIngreso(null);
     setErrorCalculoIngreso(null);
     
+    // Hacer scroll al último producto agregado solo si hay más de 3 productos
+    if (detalles.length > 3) {
+      setTimeout(() => {
+        scrollToLastProduct();
+      }, 100);
+    }
+    
     // Volver el focus al buscador
     if (inputBusquedaRef.current) {
       inputBusquedaRef.current.focus();
@@ -572,6 +596,27 @@ export default function CrearIngreso() {
 
   const eliminarDetalle = (index: number) => {
     setDetalles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Función para hacer scroll automático al último producto agregado al ingreso
+  const scrollToLastProduct = () => {
+    if (listaProductosIngresoRef.current && detalles.length > 0) {
+      const container = listaProductosIngresoRef.current;
+      const lastProductIndex = detalles.length - 1;
+      
+      // Buscar el último elemento de producto en la lista
+      const productElements = container.querySelectorAll('[data-product-index]');
+      const lastProductElement = productElements[lastProductIndex] as HTMLElement;
+      
+      if (lastProductElement) {
+        // Usar scrollIntoView que es más confiable para posicionar elementos
+        lastProductElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'end', // Posiciona el elemento al final del área visible
+          inline: 'nearest'
+        });
+      }
+    }
   };
 
   const abrirModalCrearProducto = () => {
@@ -1773,15 +1818,21 @@ export default function CrearIngreso() {
                  <p style={{ fontSize: '0.875rem' }}>Busca y agrega productos en el panel izquierdo</p>
                </div>
              ) : (
-               <div style={{
-                 background: 'white',
-                 borderRadius: '0.75rem',
-                 border: '1px solid #e2e8f0',
-                 overflow: 'hidden'
-               }}>
+               <div 
+                 ref={listaProductosIngresoRef}
+                 style={{
+                   background: 'white',
+                   borderRadius: '0.75rem',
+                   border: '1px solid #e2e8f0',
+                   overflow: 'hidden',
+                   height: '400px',
+                   overflowY: 'auto',
+                   overflowX: 'hidden'
+                 }}>
                  {detalles.map((detalle, index) => (
                                        <div
                       key={detalle.id}
+                      data-product-index={index}
                       style={{
                         padding: isMobile ? '1rem' : '0.75rem',
                         borderBottom: index < detalles.length - 1 ? '1px solid #f1f5f9' : 'none',

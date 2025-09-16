@@ -60,6 +60,7 @@ const RecibirProductos: React.FC = () => {
   const listaProductosRef = useRef<HTMLDivElement>(null);
   const listaUbicacionesRef = useRef<HTMLDivElement>(null);
   const inputCantidadRef = useRef<HTMLInputElement>(null);
+  const listaRecepcionesRef = useRef<HTMLDivElement>(null);
 
   // Función helper para hacer llamadas a la API
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
@@ -478,6 +479,13 @@ const RecibirProductos: React.FC = () => {
 
     setRecepciones(prev => [...prev, nuevaRecepcion]);
     
+    // Hacer scroll al último producto agregado solo si hay más de 3 productos
+    if (recepciones.length > 3) {
+      setTimeout(() => {
+        scrollToLastProduct();
+      }, 100);
+    }
+    
     // Actualizar el stock detallado para descontar la cantidad
     setStockDetallado(prevStock => 
       prevStock.map(producto => {
@@ -517,6 +525,49 @@ const RecibirProductos: React.FC = () => {
     }, 100);
 
     toast.success('Producto agregado a la lista de recepción');
+  };
+
+  // Función para hacer scroll automático al último producto agregado a la recepción
+  const scrollToLastProduct = () => {
+    if (listaRecepcionesRef.current && recepciones.length > 0) {
+      const container = listaRecepcionesRef.current;
+      const lastProductIndex = recepciones.length - 1;
+      
+      // Buscar el último elemento de producto en la lista
+      const productElements = container.querySelectorAll('[data-product-index]');
+      const lastProductElement = productElements[lastProductIndex] as HTMLElement;
+      
+      if (lastProductElement) {
+        // Verificar si el contenedor tiene scroll disponible
+        const hasScroll = container.scrollHeight > container.clientHeight;
+        
+        if (hasScroll) {
+          // Calcular la posición del último elemento dentro del contenedor
+          const containerHeight = container.clientHeight;
+          const elementOffsetTop = lastProductElement.offsetTop;
+          const elementHeight = lastProductElement.offsetHeight;
+          const currentScrollTop = container.scrollTop;
+          
+          // Calcular si el elemento está visible en el área visible del contenedor
+          const elementTop = elementOffsetTop - currentScrollTop;
+          const elementBottom = elementTop + elementHeight;
+          
+          // Verificar si el elemento está completamente visible
+          const isFullyVisible = elementTop >= 0 && elementBottom <= containerHeight;
+          
+          if (!isFullyVisible) {
+            // Calcular la posición de scroll para que el último elemento quede visible
+            const targetScrollTop = elementOffsetTop + elementHeight - containerHeight + 20; // 20px de margen
+            
+            // Hacer scroll solo dentro del contenedor, sin afectar la página
+            container.scrollTo({
+              top: Math.max(0, targetScrollTop),
+              behavior: 'smooth'
+            });
+          }
+        }
+      }
+    }
   };
 
   // Cancelar cantidad
@@ -617,6 +668,22 @@ const RecibirProductos: React.FC = () => {
       cargarStockDetallado();
     }
   }, [datosUsuario]);
+
+  // Auto-scroll para mantener visible el último producto agregado a la recepción
+  useEffect(() => {
+    // Solo hacer scroll si hay productos en la lista y no estamos en modo cantidad
+    if (recepciones.length > 0 && !modoCantidad) {
+      // Solo hacer scroll si hay más de 3 productos (para evitar scroll en los primeros productos)
+      if (recepciones.length > 3) {
+        // Delay para asegurar que el DOM se haya actualizado completamente
+        const timeoutId = setTimeout(() => {
+          scrollToLastProduct();
+        }, 200);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [recepciones.length, modoCantidad]);
 
   if (cargandoSector || cargandoStock || !datosUsuario) {
     return (
@@ -1151,7 +1218,7 @@ const RecibirProductos: React.FC = () => {
                         fontWeight: '600',
                         color: '#374151'
                       }}>
-                        📍 Ubicaciones disponibles para {productoSeleccionado.productoNombre}
+                        📍 Ubicaciones actuales de {productoSeleccionado.productoNombre}
                       </span>
                     </div>
                     <div ref={listaUbicacionesRef}>
@@ -1245,10 +1312,18 @@ const RecibirProductos: React.FC = () => {
                     </p>
                   </div>
                 ) : (
-                  <div style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '1.5rem' }}>
+                  <div 
+                    ref={listaRecepcionesRef}
+                    style={{ 
+                      height: '400px', 
+                      overflowY: 'auto', 
+                      overflowX: 'hidden',
+                      marginBottom: '1.5rem' 
+                    }}>
                     {recepciones.map((recepcion, index) => (
                       <div
                         key={index}
+                        data-product-index={index}
                         style={{
                           padding: isMobile ? '1rem' : '1rem',
                           border: '2px solid #e2e8f0',

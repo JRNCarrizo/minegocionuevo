@@ -74,6 +74,7 @@ export default function CrearDevolucion() {
   const estadoTemporalRef = useRef<HTMLSelectElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
   const listaTransportistasRef = useRef<HTMLDivElement>(null);
+  const listaProductosDevolucionRef = useRef<HTMLDivElement>(null);
 
   // Función para evaluar expresiones matemáticas de forma segura
   const evaluarExpresion = (expresion: string): { resultado: number | null; error: string | null } => {
@@ -532,6 +533,22 @@ export default function CrearDevolucion() {
     }
   }, [datosUsuario]);
 
+  // Auto-scroll para mantener visible el último producto agregado a la devolución
+  useEffect(() => {
+    // Solo hacer scroll si hay productos en la lista y no estamos en modo cantidad
+    if (detalles.length > 0 && !mostrarCampoCantidad) {
+      // Solo hacer scroll si hay más de 3 productos (para evitar scroll en los primeros productos)
+      if (detalles.length > 3) {
+        // Delay para asegurar que el DOM se haya actualizado completamente
+        const timeoutId = setTimeout(() => {
+          scrollToLastProduct();
+        }, 200);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [detalles.length, mostrarCampoCantidad]);
+
   // Manejar navegación por teclado en búsqueda
   const manejarTeclas = (e: React.KeyboardEvent) => {
     if (!mostrarProductos || productosFiltrados.length === 0) return;
@@ -705,6 +722,13 @@ export default function CrearDevolucion() {
     setDetalles(prev => [...prev, nuevoDetalle]);
     toast.success(`${productoSeleccionadoTemporal.nombre} agregado (${cantidadTemporal} unidades - ${estadoTemporal})`);
 
+    // Hacer scroll al último producto agregado solo si hay más de 3 productos
+    if (detalles.length > 3) {
+      setTimeout(() => {
+        scrollToLastProduct();
+      }, 100);
+    }
+
     // Resetear estado
     setMostrarCampoCantidad(false);
     setMostrarSelectorEstado(false);
@@ -723,6 +747,49 @@ export default function CrearDevolucion() {
 
   const removerDetalle = (index: number) => {
     setDetalles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Función para hacer scroll automático al último producto agregado a la devolución
+  const scrollToLastProduct = () => {
+    if (listaProductosDevolucionRef.current && detalles.length > 0) {
+      const container = listaProductosDevolucionRef.current;
+      const lastProductIndex = detalles.length - 1;
+      
+      // Buscar el último elemento de producto en la lista
+      const productElements = container.querySelectorAll('[data-product-index]');
+      const lastProductElement = productElements[lastProductIndex] as HTMLElement;
+      
+      if (lastProductElement) {
+        // Verificar si el contenedor tiene scroll disponible
+        const hasScroll = container.scrollHeight > container.clientHeight;
+        
+        if (hasScroll) {
+          // Calcular la posición del último elemento dentro del contenedor
+          const containerHeight = container.clientHeight;
+          const elementOffsetTop = lastProductElement.offsetTop;
+          const elementHeight = lastProductElement.offsetHeight;
+          const currentScrollTop = container.scrollTop;
+          
+          // Calcular si el elemento está visible en el área visible del contenedor
+          const elementTop = elementOffsetTop - currentScrollTop;
+          const elementBottom = elementTop + elementHeight;
+          
+          // Verificar si el elemento está completamente visible
+          const isFullyVisible = elementTop >= 0 && elementBottom <= containerHeight;
+          
+          if (!isFullyVisible) {
+            // Calcular la posición de scroll para que el último elemento quede visible
+            const targetScrollTop = elementOffsetTop + elementHeight - containerHeight + 20; // 20px de margen
+            
+            // Hacer scroll solo dentro del contenedor, sin afectar la página
+            container.scrollTo({
+              top: Math.max(0, targetScrollTop),
+              behavior: 'smooth'
+            });
+          }
+        }
+      }
+    }
   };
 
   const actualizarCantidad = (index: number, nuevaCantidad: number) => {
@@ -1647,15 +1714,21 @@ export default function CrearDevolucion() {
                 <p style={{ fontSize: '0.875rem' }}>Busca y agrega productos en el panel izquierdo</p>
               </div>
             ) : (
-              <div style={{
-                background: 'white',
-                borderRadius: '0.75rem',
-                border: '1px solid #e2e8f0',
-                overflow: 'hidden'
-              }}>
+              <div 
+                ref={listaProductosDevolucionRef}
+                style={{
+                  background: 'white',
+                  borderRadius: '0.75rem',
+                  border: '1px solid #e2e8f0',
+                  overflow: 'hidden',
+                  height: '400px',
+                  overflowY: 'auto',
+                  overflowX: 'hidden'
+                }}>
                 {detalles.map((detalle, index) => (
                   <div
                     key={detalle.id}
+                    data-product-index={index}
                   style={{
                       padding: isMobile ? '1rem' : '0.75rem',
                       borderBottom: index < detalles.length - 1 ? '1px solid #f1f5f9' : 'none',

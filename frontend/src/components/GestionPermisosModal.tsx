@@ -8,6 +8,7 @@ interface Administrador {
   nombre: string;
   apellido: string;
   email: string;
+  telefono?: string;
   rol: string;
 }
 
@@ -134,7 +135,19 @@ export default function GestionPermisosModal({
           <div className="header-content">
             <div>
               <h2>Gestionar Permisos</h2>
-              <p>Configurar acceso para: {administrador.nombre} {administrador.apellido}</p>
+              <p>
+                Configurar acceso para: {administrador.nombre} {administrador.apellido}
+                {administrador.telefono && (
+                  <span style={{ 
+                    display: 'block', 
+                    fontSize: '0.875rem', 
+                    color: '#6b7280', 
+                    marginTop: '0.25rem' 
+                  }}>
+                    📞 {administrador.telefono}
+                  </span>
+                )}
+              </p>
             </div>
             <button onClick={onClose} className="close-button">×</button>
           </div>

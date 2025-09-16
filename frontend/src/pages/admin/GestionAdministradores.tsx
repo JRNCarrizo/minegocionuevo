@@ -13,6 +13,7 @@ interface Administrador {
   nombre: string;
   apellido: string;
   numeroDocumento: string;
+  telefono?: string;
   rol: string;
   activo: boolean;
   empresaId: number;
@@ -386,7 +387,7 @@ export default function GestionAdministradores() {
                       <tr>
                         <th className="th">👤 Administrador</th>
                         <th className="th">📧 Email / Credenciales</th>
-                        <th className="th">🆔 Documento</th>
+                        <th className="th">🆔 Documento / Teléfono</th>
                         <th className="th">📊 Estado</th>
                         <th className="th">⚙️ Acciones</th>
                       </tr>
@@ -420,7 +421,16 @@ export default function GestionAdministradores() {
                           </td>
                           <td className="td">
                             <div className="documento-badge">
-                              {admin.numeroDocumento || 'N/A'}
+                              <div>{admin.numeroDocumento || 'N/A'}</div>
+                              {admin.telefono && (
+                                <div style={{ 
+                                  fontSize: '0.75rem', 
+                                  color: '#6b7280', 
+                                  marginTop: '0.25rem' 
+                                }}>
+                                  📞 {admin.telefono}
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="td">

@@ -100,6 +100,7 @@ export default function CrearPlanilla() {
   const codigoPlanillaRef = useRef<HTMLInputElement>(null);
   const transporteRef = useRef<HTMLInputElement>(null);
   const observacionesRef = useRef<HTMLInputElement>(null);
+  const listaProductosPlanillaRef = useRef<HTMLDivElement>(null);
 
   // Función para evaluar expresiones matemáticas de forma segura
   const evaluarExpresion = (expresion: string): { resultado: number | null; error: string | null } => {
@@ -404,6 +405,22 @@ export default function CrearPlanilla() {
       }
     }
   }, [transportistaSeleccionado]);
+
+  // Auto-scroll para mantener visible el último producto agregado a la planilla
+  useEffect(() => {
+    // Solo hacer scroll si hay productos en la lista y no estamos en modo cantidad
+    if (nuevaPlanilla.detalles.length > 0 && !modoCantidad) {
+      // Solo hacer scroll si hay más de 3 productos (para evitar scroll en los primeros productos)
+      if (nuevaPlanilla.detalles.length > 3) {
+        // Delay más largo para asegurar que el DOM se haya actualizado completamente
+        const timeoutId = setTimeout(() => {
+          scrollToLastProduct();
+        }, 200);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [nuevaPlanilla.detalles.length, modoCantidad]);
 
   const cargarProductos = async () => {
     try {
@@ -724,6 +741,13 @@ export default function CrearPlanilla() {
     setResultadoCalculoPlanilla(null);
     setErrorCalculoPlanilla(null);
     
+    // Hacer scroll al último producto agregado solo si hay más de 3 productos
+    if (nuevaPlanilla.detalles.length > 3) {
+      setTimeout(() => {
+        scrollToLastProduct();
+      }, 100);
+    }
+    
     // Volver al campo de búsqueda con un delay mayor en móvil para asegurar que funcione correctamente
     const delay = isMobile ? 300 : 100;
     setTimeout(() => {
@@ -878,6 +902,49 @@ export default function CrearPlanilla() {
       .reduce((total, detalle) => total + detalle.cantidad, 0);
     
     return producto.stock - cantidadEnPlanilla;
+  };
+
+  // Función para hacer scroll automático al último producto agregado
+  const scrollToLastProduct = () => {
+    if (listaProductosPlanillaRef.current && nuevaPlanilla.detalles.length > 0) {
+      const container = listaProductosPlanillaRef.current;
+      const lastProductIndex = nuevaPlanilla.detalles.length - 1;
+      
+      // Buscar el último elemento de producto en la lista
+      const productElements = container.querySelectorAll('[data-product-index]');
+      const lastProductElement = productElements[lastProductIndex] as HTMLElement;
+      
+      if (lastProductElement) {
+        // Verificar si el contenedor tiene scroll disponible
+        const hasScroll = container.scrollHeight > container.clientHeight;
+        
+        if (hasScroll) {
+          // Calcular la posición del último elemento dentro del contenedor
+          const containerHeight = container.clientHeight;
+          const elementOffsetTop = lastProductElement.offsetTop;
+          const elementHeight = lastProductElement.offsetHeight;
+          const currentScrollTop = container.scrollTop;
+          
+          // Calcular si el elemento está visible en el área visible del contenedor
+          const elementTop = elementOffsetTop - currentScrollTop;
+          const elementBottom = elementTop + elementHeight;
+          
+          // Verificar si el elemento está completamente visible
+          const isFullyVisible = elementTop >= 0 && elementBottom <= containerHeight;
+          
+          if (!isFullyVisible) {
+            // Calcular la posición de scroll para que el último elemento quede visible
+            const targetScrollTop = elementOffsetTop + elementHeight - containerHeight + 20; // 20px de margen
+            
+            // Hacer scroll solo dentro del contenedor, sin afectar la página
+            container.scrollTo({
+              top: Math.max(0, targetScrollTop),
+              behavior: 'smooth'
+            });
+          }
+        }
+      }
+    }
   };
 
   if (cargando || !datosUsuario) {
@@ -1574,7 +1641,11 @@ export default function CrearPlanilla() {
               </h3>
             </div>
             
-            <div style={{ flex: 1, overflow: 'auto' }}>
+            <div ref={listaProductosPlanillaRef} style={{ 
+              height: '400px',
+              overflowY: 'auto',
+              overflowX: 'hidden'
+            }}>
               {nuevaPlanilla.detalles.length === 0 ? (
                 <div style={{
                   padding: '3rem 1.5rem',
@@ -1590,6 +1661,7 @@ export default function CrearPlanilla() {
                   {nuevaPlanilla.detalles.map((detalle, index) => (
                     <div
                       key={index}
+                      data-product-index={index}
                       style={{
                         padding: isMobile ? '1rem' : '0.75rem 1rem',
                         borderBottom: index < nuevaPlanilla.detalles.length - 1 ? '1px solid #f1f5f9' : 'none',
