@@ -14,6 +14,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 import java.util.List;
 import java.util.Map;
@@ -39,6 +43,9 @@ public class GestionAdministradoresController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private DataSource dataSource;
 
     /**
      * Obtener todos los administradores de la empresa actual
@@ -421,5 +428,96 @@ public class GestionAdministradoresController {
             usuario.getEmpresa() != null ? usuario.getEmpresa().getId() : null,
             usuario.getEmpresa() != null ? usuario.getEmpresa().getNombre() : null
         );
+    }
+
+    /**
+     * Endpoint de diagnóstico para verificar el estado de la restricción CHECK
+     */
+    @GetMapping("/diagnostico-rol-constraint")
+    public ResponseEntity<?> diagnosticarRolConstraint() {
+        try {
+            System.out.println("🔍 Iniciando diagnóstico de restricción CHECK del campo rol...");
+            
+            try (Connection connection = dataSource.getConnection();
+                 Statement statement = connection.createStatement()) {
+                
+                // Verificar si existe la restricción
+                String query = "SELECT constraint_name, check_clause FROM information_schema.check_constraints " +
+                              "WHERE table_name = 'usuarios' AND constraint_name = 'usuarios_rol_check'";
+                
+                ResultSet rs = statement.executeQuery(query);
+                
+                if (rs.next()) {
+                    String constraintName = rs.getString("constraint_name");
+                    String checkClause = rs.getString("check_clause");
+                    
+                    System.out.println("✅ Restricción encontrada: " + constraintName);
+                    System.out.println("📋 Cláusula CHECK: " + checkClause);
+                    
+                    return ResponseEntity.ok(Map.of(
+                        "estado", "EXISTE",
+                        "constraint_name", constraintName,
+                        "check_clause", checkClause,
+                        "mensaje", "La restricción existe. Verificar si permite ASIGNADO."
+                    ));
+                } else {
+                    System.out.println("❌ Restricción usuarios_rol_check NO encontrada");
+                    
+                    return ResponseEntity.ok(Map.of(
+                        "estado", "NO_EXISTE",
+                        "mensaje", "La restricción usuarios_rol_check no existe en la base de datos."
+                    ));
+                }
+                
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error en diagnóstico: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error en diagnóstico: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Endpoint para corregir manualmente la restricción CHECK
+     */
+    @PostMapping("/corregir-rol-constraint")
+    public ResponseEntity<?> corregirRolConstraint() {
+        try {
+            System.out.println("🔧 Iniciando corrección manual de restricción CHECK...");
+            
+            try (Connection connection = dataSource.getConnection();
+                 Statement statement = connection.createStatement()) {
+                
+                // Eliminar restricción existente
+                System.out.println("🗑️ Eliminando restricción existente...");
+                try {
+                    statement.execute("ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_rol_check");
+                    System.out.println("✅ Restricción eliminada");
+                } catch (Exception e) {
+                    System.out.println("⚠️ Error al eliminar (puede no existir): " + e.getMessage());
+                }
+                
+                // Crear nueva restricción
+                System.out.println("🔨 Creando nueva restricción...");
+                statement.execute("ALTER TABLE usuarios ADD CONSTRAINT usuarios_rol_check CHECK (rol IN ('ADMINISTRADOR', 'ASIGNADO', 'SUPER_ADMIN'))");
+                System.out.println("✅ Nueva restricción creada");
+                
+                return ResponseEntity.ok(Map.of(
+                    "mensaje", "Restricción CHECK corregida exitosamente",
+                    "estado", "SUCCESS"
+                ));
+                
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error corrigiendo restricción: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error corrigiendo restricción: " + e.getMessage()
+            ));
+        }
     }
 }
