@@ -134,20 +134,10 @@ export default function GestionPermisosModal({
         <div className="modal-header">
           <div className="header-content">
             <div>
-              <h2>Gestionar Permisos</h2>
-              <p>
-                Configurar acceso para: {administrador.nombre} {administrador.apellido}
-                {administrador.telefono && (
-                  <span style={{ 
-                    display: 'block', 
-                    fontSize: '0.875rem', 
-                    color: '#6b7280', 
-                    marginTop: '0.25rem' 
-                  }}>
-                    📞 {administrador.telefono}
-                  </span>
-                )}
-              </p>
+              <h2>Gestionar Permisos - {administrador.nombre} {administrador.apellido}</h2>
+              {administrador.telefono && (
+                <p>📞 {administrador.telefono}</p>
+              )}
             </div>
             <button onClick={onClose} className="close-button">×</button>
           </div>

@@ -1,8 +1,8 @@
 /* Estilos para el modal de permisos */
 .permisos-modal {
-  max-width: 800px;
-  width: 90%;
-  max-height: 90vh;
+  max-width: 1000px;
+  width: 95%;
+  max-height: 95vh;
   background: white;
   border-radius: 12px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -14,43 +14,60 @@
 .permisos-modal .modal-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 24px;
+  padding: 6px 12px;
   border-bottom: 1px solid #e5e7eb;
 }
 
 .permisos-modal .header-content {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  text-align: center;
+  position: relative;
 }
 
 .permisos-modal .header-content h2 {
-  font-size: 24px;
+  font-size: 16px;
   font-weight: bold;
-  margin: 0 0 8px 0;
+  margin: 0;
   color: white;
+  line-height: 1.2;
 }
 
 .permisos-modal .header-content p {
   margin: 0;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.permisos-modal .header-content > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex: 1;
 }
 
 .permisos-modal .close-button {
   background: none;
   border: none;
   color: white;
-  font-size: 28px;
+  font-size: 20px;
   cursor: pointer;
-  padding: 8px;
+  padding: 4px;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .permisos-modal .close-button:hover {
@@ -58,10 +75,11 @@
 }
 
 .permisos-modal .modal-content-body {
-  padding: 24px;
+  padding: 16px 20px;
   overflow-y: auto;
   flex: 1;
-  max-height: calc(90vh - 200px);
+  max-height: calc(95vh - 100px);
+  min-height: 500px;
 }
 
 .permisos-modal .loading-container {
@@ -90,7 +108,7 @@
 .permisos-modal .action-buttons {
   display: flex;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .permisos-modal .action-button {
@@ -122,40 +140,45 @@
 }
 
 .permisos-modal .permissions-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 20px;
+  padding: 8px;
 }
 
 .permisos-modal .permission-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px;
+  flex-direction: column;
+  padding: 24px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 12px;
   background: white;
   transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  min-height: 120px;
 }
 
 .permisos-modal .permission-item:hover {
   background-color: #f9fafb;
   border-color: #d1d5db;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .permisos-modal .permission-info {
   flex: 1;
+  margin-bottom: 16px;
 }
 
 .permisos-modal .permission-info h3 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: #111827;
-  margin: 0 0 4px 0;
+  margin: 0 0 8px 0;
 }
 
 .permisos-modal .permission-info p {
-  font-size: 12px;
+  font-size: 14px;
   color: #6b7280;
   margin: 0;
 }
@@ -163,7 +186,12 @@
 .permisos-modal .permission-controls {
   display: flex;
   align-items: center;
-  gap: 20px;
+  justify-content: center;
+  gap: 24px;
+  padding: 16px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .permisos-modal .radio-group {
@@ -179,22 +207,34 @@
 .permisos-modal .radio-group label {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
 }
 
 .permisos-modal .radio-group .denied {
   color: #ef4444;
 }
 
+.permisos-modal .radio-group .denied:hover {
+  background-color: #fef2f2;
+}
+
 .permisos-modal .radio-group .allowed {
   color: #10b981;
 }
 
+.permisos-modal .radio-group .allowed:hover {
+  background-color: #f0fdf4;
+}
+
 .permisos-modal .modal-footer {
   background-color: #f9fafb;
-  padding: 20px 24px;
+  padding: 16px 20px;
   border-top: 1px solid #e5e7eb;
   display: flex;
   justify-content: flex-end;
@@ -247,6 +287,64 @@
   animation: spin 1s linear infinite;
   margin-right: 8px;
   display: inline-block;
+}
+
+/* Estilos para las secciones */
+.permisos-modal .permissions-section {
+  margin-bottom: 20px;
+}
+
+.permisos-modal .section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 12px 0;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+/* Estilos para sub-permisos */
+.permisos-modal .permission-item.sub-permission {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.permisos-modal .sub-section-badge {
+  display: inline-block;
+  background-color: #f59e0b;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .permisos-modal {
+    width: 98%;
+    max-height: 98vh;
+  }
+  
+  .permisos-modal .permissions-list {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .permisos-modal .permission-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .permisos-modal .radio-group {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 

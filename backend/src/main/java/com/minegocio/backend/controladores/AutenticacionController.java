@@ -139,10 +139,14 @@ public class AutenticacionController {
             usuario.setUltimoAcceso(ahora);
             usuarioRepository.save(usuario);
             
-            // Actualizar último acceso de la empresa
+            // Actualizar último acceso de la empresa (cargar la empresa por separado para evitar LazyInitializationException)
             if (usuario.getEmpresa() != null) {
-                usuario.getEmpresa().setUltimoAcceso(ahora);
-                empresaRepository.save(usuario.getEmpresa());
+                Optional<Empresa> empresaParaActualizarOpt = empresaRepository.findById(usuario.getEmpresa().getId());
+                if (empresaParaActualizarOpt.isPresent()) {
+                    Empresa empresaParaActualizar = empresaParaActualizarOpt.get();
+                    empresaParaActualizar.setUltimoAcceso(ahora);
+                    empresaRepository.save(empresaParaActualizar);
+                }
             }
 
             // Generar token JWT usando el servicio de autenticación
