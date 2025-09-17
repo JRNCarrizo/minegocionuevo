@@ -287,7 +287,7 @@ public class GestionAdministradoresController {
                 // Continuar sin verificación si hay error - permitir eliminación
             }
 
-            // Eliminar administrador
+            // Intentar eliminación física
             usuarioRepository.delete(admin);
 
             System.out.println("✅ Administrador eliminado exitosamente");
@@ -299,6 +299,25 @@ public class GestionAdministradoresController {
         } catch (Exception e) {
             System.err.println("❌ Error eliminando administrador: " + e.getMessage());
             e.printStackTrace();
+            
+            // Verificar si es un error de integridad referencial
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && (
+                errorMessage.contains("Referential integrity constraint violation") ||
+                errorMessage.contains("FKFV2533EDPICKXPHXASYRU2Q9A") ||
+                errorMessage.contains("PLANILLAS_DEVOLUCIONES") ||
+                errorMessage.contains("FOREIGN KEY") ||
+                errorMessage.contains("23503-224") ||
+                errorMessage.contains("could not execute statement")
+            )) {
+                return ResponseEntity.status(400).body(Map.of(
+                    "error", "No se puede eliminar este administrador",
+                    "mensaje", "El administrador tiene registros relacionados en el sistema (planillas, devoluciones, etc.). " +
+                              "Para eliminar el administrador, primero debe desactivarlo y luego eliminar o reasignar todos sus registros relacionados. " +
+                              "Alternativamente, puede usar la opción 'Desactivar' para mantener el historial."
+                ));
+            }
+            
             return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor"));
         }
     }
