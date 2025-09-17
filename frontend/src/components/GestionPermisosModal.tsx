@@ -130,16 +130,38 @@ export default function GestionPermisosModal({
   return (
     <div className="modal-overlay">
       <div className="modal-content permisos-modal">
-        {/* Header */}
-        <div className="modal-header">
-          <div className="header-content">
-            <div>
+        {/* Info Card */}
+        <div className="info-card">
+          <div className="info-content">
+            <div className="info-text">
               <h2>Gestionar Permisos - {administrador.nombre} {administrador.apellido}</h2>
               {administrador.telefono && (
                 <p>📞 {administrador.telefono}</p>
               )}
             </div>
-            <button onClick={onClose} className="close-button">×</button>
+            <div className="info-actions">
+              <button
+                onClick={onClose}
+                className="info-button cancel"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleGuardar}
+                disabled={guardando}
+                className="info-button save"
+              >
+                {guardando ? (
+                  <>
+                    <div className="save-spinner"></div>
+                    Guardando...
+                  </>
+                ) : (
+                  'Guardar'
+                )}
+              </button>
+              <button onClick={onClose} className="close-button">×</button>
+            </div>
           </div>
         </div>
 
@@ -256,29 +278,6 @@ export default function GestionPermisosModal({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="modal-footer">
-          <button
-            onClick={onClose}
-            className="footer-button cancel"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleGuardar}
-            disabled={guardando}
-            className="footer-button save"
-          >
-            {guardando ? (
-              <>
-                <div className="save-spinner"></div>
-                Guardando...
-              </>
-            ) : (
-              'Guardar Permisos'
-            )}
-          </button>
-        </div>
       </div>
     </div>
   );
