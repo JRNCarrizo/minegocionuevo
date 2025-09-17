@@ -1603,7 +1603,7 @@ public class PublicoController {
                 
                 // Verificar si existe la restricción
                 String query = "SELECT constraint_name, check_clause FROM information_schema.check_constraints " +
-                              "WHERE table_name = 'usuarios' AND constraint_name = 'usuarios_rol_check'";
+                              "WHERE constraint_name = 'usuarios_rol_check'";
                 
                 ResultSet rs = statement.executeQuery(query);
                 
@@ -1641,7 +1641,15 @@ public class PublicoController {
     }
 
     /**
-     * Endpoint público temporal para corregir la restricción CHECK
+     * Endpoint público temporal para corregir la restricción CHECK (GET)
+     */
+    @GetMapping("/corregir-rol-constraint")
+    public ResponseEntity<?> corregirRolConstraintGet() {
+        return corregirRolConstraint();
+    }
+
+    /**
+     * Endpoint público temporal para corregir la restricción CHECK (POST)
      */
     @PostMapping("/corregir-rol-constraint")
     public ResponseEntity<?> corregirRolConstraint() {
