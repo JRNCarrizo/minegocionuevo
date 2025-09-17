@@ -134,7 +134,7 @@ public class GestionAdministradoresController {
             nuevoAdmin.setPassword(passwordEncoder.encode(adminDTO.getNumeroDocumento()));
             
             nuevoAdmin.setEmpresa(empresa);
-            nuevoAdmin.setRol(Usuario.RolUsuario.ADMINISTRADOR);
+            nuevoAdmin.setRol(Usuario.RolUsuario.ASIGNADO);
             nuevoAdmin.setActivo(true);
             nuevoAdmin.setEmailVerificado(true); // Los administradores asignados están pre-verificados
 
