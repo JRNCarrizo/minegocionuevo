@@ -7,7 +7,6 @@ import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
 import com.minegocio.backend.seguridad.JwtUtils;
-import com.minegocio.backend.servicios.PermisoUsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,9 +39,6 @@ public class GestionAdministradoresController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private PermisoUsuarioService permisoUsuarioService;
 
     /**
      * Obtener todos los administradores de la empresa actual
@@ -138,18 +134,14 @@ public class GestionAdministradoresController {
             nuevoAdmin.setPassword(passwordEncoder.encode(adminDTO.getNumeroDocumento()));
             
             nuevoAdmin.setEmpresa(empresa);
-            nuevoAdmin.setRol(Usuario.RolUsuario.ASIGNADO);
+            nuevoAdmin.setRol(Usuario.RolUsuario.ADMINISTRADOR);
             nuevoAdmin.setActivo(true);
             nuevoAdmin.setEmailVerificado(true); // Los administradores asignados están pre-verificados
 
             Usuario adminGuardado = usuarioRepository.save(nuevoAdmin);
 
-            // Crear permisos por defecto para el nuevo usuario ASIGNADO
-            permisoUsuarioService.crearPermisosPorDefecto(adminGuardado);
-
             System.out.println("✅ Administrador asignado exitosamente con ID: " + adminGuardado.getId());
             System.out.println("✅ Email generado: " + emailAdmin);
-            System.out.println("✅ Permisos por defecto creados");
 
             UsuarioDTO adminDTO_response = convertirAUsuarioDTO(adminGuardado);
 
