@@ -4,8 +4,12 @@ import com.minegocio.backend.dto.ImportacionProductoDTO;
 import com.minegocio.backend.dto.ResultadoImportacionDTO;
 import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Producto;
+import com.minegocio.backend.entidades.Sector;
+import com.minegocio.backend.entidades.StockPorSector;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
+import com.minegocio.backend.repositorios.SectorRepository;
+import com.minegocio.backend.repositorios.StockPorSectorRepository;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ImportacionProductoService {
@@ -29,6 +34,12 @@ public class ImportacionProductoService {
 
     @Autowired
     private LimiteService limiteService;
+
+    @Autowired
+    private SectorRepository sectorRepository;
+
+    @Autowired
+    private StockPorSectorRepository stockPorSectorRepository;
 
     /**
      * Valida y procesa un archivo Excel para importación de productos
@@ -89,7 +100,7 @@ public class ImportacionProductoService {
     }
 
     /**
-     * Importa los productos validados a la base de datos
+     * Importa los productos validados a la base de datos con distribución por sectores
      */
     @Transactional
     public ResultadoImportacionDTO importarProductos(List<ImportacionProductoDTO> productos, Long empresaId) {
@@ -106,55 +117,111 @@ public class ImportacionProductoService {
         
         System.out.println("✅ Empresa encontrada: " + empresa.getNombre());
 
+        // Log de todos los productos antes de agrupar
+        System.out.println("📋 PRODUCTOS ANTES DE AGRUPAR:");
         for (int i = 0; i < productos.size(); i++) {
-            ImportacionProductoDTO productoDTO = productos.get(i);
+            ImportacionProductoDTO p = productos.get(i);
+            System.out.println("  📦 Producto " + (i+1) + ": Nombre='" + p.getNombre() + "', Stock=" + p.getStock() + ", Sector=" + p.getSectorAlmacenamiento());
+        }
+
+        // Agrupar productos por nombre normalizado para sumar stocks y distribuir por sectores
+        Map<String, List<ImportacionProductoDTO>> productosAgrupados = productos.stream()
+            .collect(Collectors.groupingBy(p -> normalizarNombreProducto(p.getNombre())));
+
+        System.out.println("📊 Productos agrupados: " + productosAgrupados.size() + " grupos únicos");
+        System.out.println("📋 Total de productos en Excel: " + productos.size());
+        
+        // Log detallado de la agrupación
+        for (Map.Entry<String, List<ImportacionProductoDTO>> entry : productosAgrupados.entrySet()) {
+            String nombreProducto = entry.getKey();
+            List<ImportacionProductoDTO> productosDelGrupo = entry.getValue();
+            System.out.println("🔍 Grupo: '" + nombreProducto + "' - " + productosDelGrupo.size() + " registros");
+            for (int i = 0; i < productosDelGrupo.size(); i++) {
+                ImportacionProductoDTO p = productosDelGrupo.get(i);
+                System.out.println("  📦 Registro " + (i+1) + ": Nombre='" + p.getNombre() + "', Stock=" + p.getStock() + ", Sector=" + p.getSectorAlmacenamiento());
+            }
+        }
+
+        for (Map.Entry<String, List<ImportacionProductoDTO>> entry : productosAgrupados.entrySet()) {
+            String nombreProducto = entry.getKey();
+            List<ImportacionProductoDTO> productosDelGrupo = entry.getValue();
             
             try {
                 // Verificar límites de la suscripción
                 if (!limiteService.puedeCrearProducto(empresaId)) {
                     errores.add(Map.of(
-                        "fila", i + 2,
+                        "producto", nombreProducto,
                         "error", "Límite de productos alcanzado en su suscripción"
                     ));
                     continue;
                 }
 
-                // Verificar si el producto ya existe
-                if (verificarProductoExistente(productoDTO, empresaId)) {
+                // Tomar el primer producto del grupo como base (todos tienen el mismo nombre)
+                ImportacionProductoDTO productoBase = productosDelGrupo.get(0);
+                
+                // Verificar si el producto ya existe en la base de datos (solo después de agrupar)
+                if (verificarProductoExistenteEnBD(productoBase, empresaId)) {
                     errores.add(Map.of(
-                        "fila", i + 2,
-                        "error", "Producto duplicado: " + productoDTO.getNombre() + 
-                                (productoDTO.getCodigoBarras() != null ? " (Código de barras: " + productoDTO.getCodigoBarras() + ")" : "") +
-                                (productoDTO.getCodigoPersonalizado() != null ? " (Código personalizado: " + productoDTO.getCodigoPersonalizado() + ")" : "")
+                        "producto", nombreProducto,
+                        "error", "Producto ya existe en la base de datos: " + productoBase.getNombre() + 
+                                (productoBase.getCodigoBarras() != null ? " (Código de barras: " + productoBase.getCodigoBarras() + ")" : "") +
+                                (productoBase.getCodigoPersonalizado() != null ? " (Código personalizado: " + productoBase.getCodigoPersonalizado() + ")" : "")
                     ));
                     continue;
                 }
 
-                // Crear el producto
-                Producto producto = new Producto();
-                producto.setNombre(productoDTO.getNombre());
-                producto.setDescripcion(productoDTO.getDescripcion());
-                // Manejar precio - si es null, establecer 0 para evitar problemas con la BD
-                producto.setPrecio(productoDTO.getPrecio() != null ? productoDTO.getPrecio() : BigDecimal.ZERO);
-                producto.setStock(productoDTO.getStock() != null ? productoDTO.getStock() : 0);
-                producto.setStockMinimo(productoDTO.getStockMinimo() != null ? productoDTO.getStockMinimo() : 0);
-                producto.setCategoria(productoDTO.getCategoria());
-                producto.setMarca(productoDTO.getMarca());
-                producto.setSectorAlmacenamiento(productoDTO.getSectorAlmacenamiento());
-                producto.setCodigoBarras(productoDTO.getCodigoBarras());
-                producto.setCodigoPersonalizado(productoDTO.getCodigoPersonalizado());
-                producto.setEmpresa(empresa);
-                // Manejar estado - por defecto activo si no se especifica
-                producto.setActivo("Activo".equalsIgnoreCase(productoDTO.getEstado()));
+                // Calcular stock total sumando todos los registros del mismo producto
+                int stockTotal = productosDelGrupo.stream()
+                    .mapToInt(p -> p.getStock() != null ? p.getStock() : 0)
+                    .sum();
 
-                productoRepository.save(producto);
+                System.out.println("📦 Producto: " + nombreProducto + " - Stock total: " + stockTotal);
+
+                // Crear el producto principal con stock total
+                Producto producto = new Producto();
+                producto.setNombre(productoBase.getNombre());
+                producto.setDescripcion(productoBase.getDescripcion());
+                producto.setPrecio(productoBase.getPrecio() != null ? productoBase.getPrecio() : BigDecimal.ZERO);
+                producto.setStock(stockTotal); // Stock total sumado
+                producto.setStockMinimo(productoBase.getStockMinimo() != null ? productoBase.getStockMinimo() : 0);
+                producto.setCategoria(productoBase.getCategoria());
+                producto.setMarca(productoBase.getMarca());
+                producto.setSectorAlmacenamiento(null); // No asignar sector específico al producto principal
+                producto.setCodigoBarras(productoBase.getCodigoBarras());
+                producto.setCodigoPersonalizado(productoBase.getCodigoPersonalizado());
+                producto.setEmpresa(empresa);
+                producto.setActivo("Activo".equalsIgnoreCase(productoBase.getEstado()));
+
+                // Guardar el producto principal
+                Producto productoSaved = productoRepository.save(producto);
+                System.out.println("✅ Producto principal creado: " + productoSaved.getId());
+
+                // Distribuir stock por sectores
+                System.out.println("🔄 Distribuyendo stock por sectores para: " + nombreProducto);
+                for (ImportacionProductoDTO productoDelGrupo : productosDelGrupo) {
+                    System.out.println("  📦 Procesando registro: Stock=" + productoDelGrupo.getStock() + 
+                                     ", Sector='" + productoDelGrupo.getSectorAlmacenamiento() + "'");
+                    
+                    if (productoDelGrupo.getSectorAlmacenamiento() != null && 
+                        !productoDelGrupo.getSectorAlmacenamiento().trim().isEmpty() &&
+                        productoDelGrupo.getStock() != null && productoDelGrupo.getStock() > 0) {
+                        
+                        System.out.println("  ✅ Asignando " + productoDelGrupo.getStock() + " unidades al sector: " + 
+                                         productoDelGrupo.getSectorAlmacenamiento());
+                        asignarStockASector(productoSaved, productoDelGrupo.getSectorAlmacenamiento(), 
+                                          productoDelGrupo.getStock(), empresaId);
+                    } else {
+                        System.out.println("  ⚠️ Saltando registro: Sector vacío o stock <= 0");
+                    }
+                }
+
                 registrosExitosos++;
 
             } catch (Exception e) {
-                System.err.println("Error al importar producto en fila " + (i + 2) + ": " + e.getMessage());
+                System.err.println("Error al importar producto " + nombreProducto + ": " + e.getMessage());
                 e.printStackTrace();
                 errores.add(Map.of(
-                    "fila", i + 2,
+                    "producto", nombreProducto,
                     "error", "Error al crear producto: " + e.getMessage()
                 ));
             }
@@ -167,7 +234,85 @@ public class ImportacionProductoService {
             errores, new ArrayList<>(), mensaje);
     }
 
+    /**
+     * Asigna stock de un producto a un sector específico
+     */
+    private void asignarStockASector(Producto producto, String nombreSector, Integer cantidad, Long empresaId) {
+        try {
+            // Buscar o crear el sector
+            Sector sector = buscarOCrearSector(nombreSector, empresaId);
+            if (sector == null) {
+                System.err.println("❌ No se pudo crear/encontrar el sector: " + nombreSector);
+                return;
+            }
 
+            // Buscar si ya existe stock de este producto en este sector
+            Optional<StockPorSector> stockExistente = stockPorSectorRepository
+                .findByProductoIdAndSectorId(producto.getId(), sector.getId());
+
+            if (stockExistente.isPresent()) {
+                // Actualizar stock existente
+                StockPorSector stock = stockExistente.get();
+                stock.setCantidad(stock.getCantidad() + cantidad);
+                stockPorSectorRepository.save(stock);
+                System.out.println("📦 Stock actualizado en sector " + nombreSector + ": +" + cantidad + 
+                                 " (Total: " + stock.getCantidad() + ")");
+            } else {
+                // Crear nuevo registro de stock
+                StockPorSector nuevoStock = new StockPorSector(producto, sector, cantidad);
+                stockPorSectorRepository.save(nuevoStock);
+                System.out.println("📦 Nuevo stock creado en sector " + nombreSector + ": " + cantidad);
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ Error al asignar stock al sector " + nombreSector + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Normaliza el nombre del producto para agrupación
+     */
+    private String normalizarNombreProducto(String nombre) {
+        if (nombre == null) return "";
+        
+        return nombre.trim()
+            .toLowerCase()
+            .replaceAll("\\s+", " ") // Reemplazar múltiples espacios por uno solo
+            .replaceAll("[^a-zA-Z0-9\\s]", ""); // Remover caracteres especiales
+    }
+
+    /**
+     * Busca un sector por nombre o lo crea si no existe
+     */
+    private Sector buscarOCrearSector(String nombreSector, Long empresaId) {
+        try {
+            // Buscar sector existente
+            Optional<Sector> sectorExistente = sectorRepository.findByNombreAndEmpresaId(nombreSector, empresaId);
+            
+            if (sectorExistente.isPresent()) {
+                System.out.println("✅ Sector encontrado: " + nombreSector);
+                return sectorExistente.get();
+            }
+
+            // Crear nuevo sector
+            Sector nuevoSector = new Sector();
+            nuevoSector.setNombre(nombreSector);
+            nuevoSector.setDescripcion("Sector creado automáticamente durante importación");
+            nuevoSector.setActivo(true);
+            nuevoSector.setEmpresa(empresaRepository.findById(empresaId).orElse(null));
+            
+            Sector sectorCreado = sectorRepository.save(nuevoSector);
+            System.out.println("✅ Nuevo sector creado: " + nombreSector + " (ID: " + sectorCreado.getId() + ")");
+            
+            return sectorCreado;
+
+        } catch (Exception e) {
+            System.err.println("❌ Error al buscar/crear sector " + nombreSector + ": " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     /**
      * Busca la fila que contiene los encabezados esperados
@@ -354,9 +499,9 @@ public class ImportacionProductoService {
     }
 
     /**
-     * Verifica si un producto ya existe basándose en nombre, código de barras o código personalizado
+     * Verifica si un producto ya existe en la base de datos basándose en nombre, código de barras o código personalizado
      */
-    private boolean verificarProductoExistente(ImportacionProductoDTO productoDTO, Long empresaId) {
+    private boolean verificarProductoExistenteEnBD(ImportacionProductoDTO productoDTO, Long empresaId) {
         // Verificar por código de barras (si existe)
         if (productoDTO.getCodigoBarras() != null && !productoDTO.getCodigoBarras().trim().isEmpty()) {
             if (productoRepository.existsByEmpresaIdAndCodigoBarras(empresaId, productoDTO.getCodigoBarras().trim())) {
