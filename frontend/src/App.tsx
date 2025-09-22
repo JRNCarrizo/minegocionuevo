@@ -59,6 +59,14 @@ import GestionSectores from './pages/admin/GestionSectores.tsx';
 import StockGeneral from './pages/admin/StockGeneral.tsx';
 import GestionTransportistas from './pages/admin/GestionTransportistas.tsx';
 import RecibirProductos from './pages/admin/RecibirProductos.tsx';
+import GestionInventario from './pages/admin/GestionInventario.tsx';
+import InventarioCompleto from './pages/admin/InventarioCompleto.tsx';
+import InventarioPorSector from './pages/admin/InventarioPorSector.tsx';
+import ConteoProductos from './pages/admin/ConteoProductos.tsx';
+import ConteoSectorInventarioCompleto from './pages/admin/ConteoSectorInventarioCompleto.tsx';
+import DetalleConteo from './pages/admin/DetalleConteo.tsx';
+import ReconteoSector from './pages/admin/ReconteoSector.tsx';
+import ComparacionConteos from './pages/admin/ComparacionConteos.tsx';
 
 
 function AppContent() {
@@ -123,6 +131,14 @@ function AppContent() {
           <Route path="/admin/sectores/:sectorId/recibir-productos" element={<RecibirProductos />} />
           <Route path="/admin/stock-general" element={<StockGeneral />} />
           <Route path="/admin/transportistas" element={<GestionTransportistas />} />
+          <Route path="/admin/gestion-inventario" element={<GestionInventario />} />
+          <Route path="/admin/inventario-completo" element={<InventarioCompleto />} />
+          <Route path="/admin/inventario-por-sector" element={<InventarioPorSector />} />
+          <Route path="/admin/conteo-sector/:id" element={<ConteoSectorInventarioCompleto />} />
+          <Route path="/admin/conteo-inventario-sector/:id" element={<ConteoProductos />} />
+          <Route path="/admin/reconteo-sector/:id" element={<ReconteoSector />} />
+          <Route path="/admin/comparacion-conteos/:id" element={<ComparacionConteos />} />
+          <Route path="/admin/detalle-conteo/:conteoId" element={<DetalleConteo />} />
   
           <Route path="/dashboard-super-admin" element={<DashboardSuperAdmin />} />
           <Route path="/super-admin/empresas" element={<GestionEmpresas />} />

@@ -49,7 +49,9 @@ export default function GestionEmpresa() {
       2: '#059669', // Ingresos - Verde
       3: '#f59e0b', // Gestión de Retornos - Amarillo/Naranja
       4: '#06b6d4', // Gestión de Sectores - Cian
-      5: '#8b5cf6'  // Movimientos del Día - Púrpura
+      5: '#8b5cf6', // Gestión de Transportistas - Púrpura
+      6: '#7c3aed', // Gestión de Inventario - Púrpura Oscuro
+      7: '#10b981'  // Movimientos del Día - Verde
     };
     
     const color = coloresCards[cardIndex as keyof typeof coloresCards] || '#3b82f6';
@@ -299,6 +301,15 @@ export default function GestionEmpresa() {
       enlace: '/admin/transportistas',
       gradiente: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
       permiso: 'GESTION_TRANSPORTISTAS'
+    },
+    {
+      titulo: 'Gestión de Inventario',
+      descripcion: 'Inventario completo y por sector con doble verificación',
+      icono: '📋',
+      color: '#7c3aed',
+      enlace: '/admin/gestion-inventario',
+      gradiente: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+      permiso: 'GESTION_INVENTARIO'
     },
     {
       titulo: 'Movimientos del Día',

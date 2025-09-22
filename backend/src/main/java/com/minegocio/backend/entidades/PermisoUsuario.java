@@ -54,6 +54,7 @@ public class PermisoUsuario {
         CONFIGURACION("Configuración"),
         GESTION_ADMINISTRADORES("Gestión de Administradores"),
         GESTION_EMPRESA("Gestión de Empresa"),
+        GESTION_INVENTARIO("Gestión de Inventario"),
         CONSUMO_SUSCRIPCIONES("Consumo y Suscripciones"),
         // Sub-permisos de Gestión de Empresa
         CARGA_PLANILLAS("Carga de Planillas"),
