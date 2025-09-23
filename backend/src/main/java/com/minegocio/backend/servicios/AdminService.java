@@ -57,6 +57,30 @@ public class AdminService {
     @Autowired
     private ConteoSectorRepository conteoSectorRepository;
     
+    @Autowired
+    private MensajeRepository mensajeRepository;
+    
+    @Autowired
+    private ProductoFavoritoRepository productoFavoritoRepository;
+    
+    @Autowired
+    private HistorialCargaProductosRepository historialCargaProductosRepository;
+    
+    @Autowired
+    private HistorialInventarioRepository historialInventarioRepository;
+    
+    @Autowired
+    private InventarioPorSectorRepository inventarioPorSectorRepository;
+    
+    @Autowired
+    private InventarioFisicoRepository inventarioFisicoRepository;
+    
+    @Autowired
+    private InventarioCompletoRepository inventarioCompletoRepository;
+    
+    @Autowired
+    private DetalleConteoRepository detalleConteoRepository;
+    
     /**
      * Ejecutar Hard Reset - Limpiar todos los datos excepto usuarios y empresa
      */
@@ -119,9 +143,42 @@ public class AdminService {
             System.out.println("🧹 Limpiando transportistas...");
             transportistaRepository.deleteAll();
             
-            // 6. Limpiar productos
+            // 6. Limpiar tablas que dependen de productos y sectores
+            System.out.println("🧹 Limpiando detalles de conteo...");
+            detalleConteoRepository.deleteAll();
+            
+            System.out.println("🧹 Limpiando inventarios por sector...");
+            inventarioPorSectorRepository.deleteAll();
+            
+            System.out.println("🧹 Limpiando inventarios físicos...");
+            inventarioFisicoRepository.deleteAll();
+            
+            System.out.println("🧹 Limpiando inventarios completos...");
+            inventarioCompletoRepository.deleteAll();
+            
+            System.out.println("🧹 Limpiando historial de inventario...");
+            historialInventarioRepository.deleteAll();
+            
+            System.out.println("🧹 Limpiando historial de carga de productos...");
+            historialCargaProductosRepository.deleteAll();
+            
+            System.out.println("🧹 Limpiando productos favoritos...");
+            productoFavoritoRepository.deleteAll();
+            
+            System.out.println("🧹 Limpiando mensajes...");
+            long mensajesAntes = mensajeRepository.count();
+            System.out.println("📊 Mensajes antes: " + mensajesAntes);
+            mensajeRepository.deleteAll();
+            long mensajesDespues = mensajeRepository.count();
+            System.out.println("📊 Mensajes después: " + mensajesDespues);
+            
+            // 7. Limpiar productos (ahora sin dependencias)
             System.out.println("🧹 Limpiando productos...");
+            long productosAntes = productoRepository.count();
+            System.out.println("📊 Productos antes: " + productosAntes);
             productoRepository.deleteAll();
+            long productosDespues = productoRepository.count();
+            System.out.println("📊 Productos después: " + productosDespues);
             
             System.out.println("✅ [HARD RESET] Limpieza completada exitosamente");
             System.out.println("📊 [HARD RESET] Sistema listo para producción");
@@ -142,7 +199,15 @@ public class AdminService {
             estado.put("productos", productoRepository.count());
             estado.put("sectores", sectorRepository.count());
             estado.put("conteosSector", conteoSectorRepository.count());
+            estado.put("detallesConteo", detalleConteoRepository.count());
             estado.put("stockPorSector", stockPorSectorRepository.count());
+            estado.put("inventariosPorSector", inventarioPorSectorRepository.count());
+            estado.put("inventariosFisicos", inventarioFisicoRepository.count());
+            estado.put("inventariosCompletos", inventarioCompletoRepository.count());
+            estado.put("historialInventario", historialInventarioRepository.count());
+            estado.put("historialCargaProductos", historialCargaProductosRepository.count());
+            estado.put("productosFavoritos", productoFavoritoRepository.count());
+            estado.put("mensajes", mensajeRepository.count());
             estado.put("planillasPedido", planillaPedidoRepository.count());
             estado.put("planillasDevolucion", planillaDevolucionRepository.count());
             estado.put("remitosIngreso", remitoIngresoRepository.count());
