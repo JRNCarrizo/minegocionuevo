@@ -305,9 +305,8 @@ export default function DescargaDevoluciones() {
     return esHoy ? 'Hoy' : formatearFecha(fecha);
   };
 
-  // Función helper para formatear fecha con hora de productos perdidos
-  // Muestra la hora en la zona horaria local del usuario
-  const formatearFechaConHoraProductosPerdidos = (fechaString: any): string => {
+  // Función helper para formatear solo fecha de productos perdidos (sin hora)
+  const formatearFechaProductosPerdidos = (fechaString: any): string => {
     try {
       if (fechaString == null) {
         return 'N/A';
@@ -315,76 +314,45 @@ export default function DescargaDevoluciones() {
 
       // Si es un array (formato [year, month, day, hour, minute, second])
       if (Array.isArray(fechaString)) {
-        const [year, month, day, hour = 0, minute = 0, second = 0] = fechaString;
+        const [year, month, day] = fechaString;
         
-        // Crear fecha local interpretando los valores como hora local del usuario
-        const fechaLocal = new Date(year, month - 1, day, hour, minute, second);
+        // Crear fecha local solo con año, mes y día
+        const fechaLocal = new Date(year, month - 1, day);
         
         if (isNaN(fechaLocal.getTime())) {
           return 'Fecha inválida';
         }
         
-        // Mostrar en zona horaria local del usuario
-        return fechaLocal.toLocaleString('es-AR', {
+        // Mostrar solo fecha sin hora
+        return fechaLocal.toLocaleDateString('es-AR', {
           year: 'numeric',
           month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-          // Sin timeZone para usar la zona horaria local del usuario
+          day: '2-digit'
         });
       }
 
-      // Si es un string ISO, parsear como fecha local
+      // Si es un string ISO, extraer solo la fecha
       if (typeof fechaString === 'string' && fechaString.includes('T')) {
-        // Si el string no termina en Z, tratarlo como fecha local
-        if (!fechaString.endsWith('Z')) {
-          const partes = fechaString.split('T');
-          const fechaParte = partes[0].split('-');
-          const horaParte = partes[1].split(':');
-          
-          const year = parseInt(fechaParte[0]);
-          const month = parseInt(fechaParte[1]) - 1; // Meses van de 0-11
-          const day = parseInt(fechaParte[2]);
-          const hour = parseInt(horaParte[0]);
-          const minute = parseInt(horaParte[1]);
-          const second = parseInt(horaParte[2]) || 0;
-          
-          // Crear fecha local interpretando como hora local del usuario
-          const fechaLocal = new Date(year, month, day, hour, minute, second);
-          
-          if (isNaN(fechaLocal.getTime())) {
-            return 'Fecha inválida';
-          }
-          
-          // Mostrar en zona horaria local del usuario
-          return fechaLocal.toLocaleString('es-AR', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-            // Sin timeZone para usar la zona horaria local del usuario
-          });
-        } else {
-          // Si termina en Z, es UTC, convertir a local
-          const fechaUTC = new Date(fechaString);
-          return fechaUTC.toLocaleString('es-AR', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-            // Sin timeZone para usar la zona horaria local del usuario
-          });
+        const fechaParte = fechaString.split('T')[0]; // Solo la parte de fecha
+        const [year, month, day] = fechaParte.split('-').map(Number);
+        
+        // Crear fecha local solo con año, mes y día
+        const fechaLocal = new Date(year, month - 1, day);
+        
+        if (isNaN(fechaLocal.getTime())) {
+          return 'Fecha inválida';
         }
+        
+        // Mostrar solo fecha sin hora
+        return fechaLocal.toLocaleDateString('es-AR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
       }
 
-      // Para otros tipos, usar la función de dateUtils
-      return formatearFechaConHora(fechaString);
+      // Para otros tipos, usar formatearFecha que solo muestra fecha
+      return formatearFecha(fechaString);
     } catch (error) {
       console.error('Error formateando fecha de productos perdidos:', error);
       return 'Fecha inválida';
@@ -1530,7 +1498,7 @@ export default function DescargaDevoluciones() {
                           <span style={{ fontWeight: '600' }}>Planilla:</span> {producto.numeroDocumento}
                         </div>
                         <div>
-                          {formatearFechaConHoraProductosPerdidos(producto.fechaCreacion)}
+                          {formatearFechaProductosPerdidos(producto.fechaCreacion)}
                         </div>
                       </div>
                       
