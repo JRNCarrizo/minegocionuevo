@@ -63,7 +63,7 @@ La función `formatearFechaConHora` en `dateUtils.ts` aplicaba conversión de zo
 
 **Solución:**
 ```javascript
-// Función específica para productos perdidos que evita conversión de zona horaria
+// Función específica para productos perdidos que muestra hora en zona horaria local del usuario
 const formatearFechaConHoraProductosPerdidos = (fechaString: any): string => {
   try {
     if (fechaString == null) {
@@ -74,55 +74,70 @@ const formatearFechaConHoraProductosPerdidos = (fechaString: any): string => {
     if (Array.isArray(fechaString)) {
       const [year, month, day, hour = 0, minute = 0, second = 0] = fechaString;
       
-      // Crear fecha local (no UTC) para evitar conversión automática
+      // Crear fecha local interpretando los valores como hora local del usuario
       const fechaLocal = new Date(year, month - 1, day, hour, minute, second);
       
       if (isNaN(fechaLocal.getTime())) {
         return 'Fecha inválida';
       }
       
-      // Mostrar directamente sin conversión de zona horaria
+      // Mostrar en zona horaria local del usuario
       return fechaLocal.toLocaleString('es-AR', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false,
-        timeZone: 'UTC' // Forzar UTC para evitar conversión de zona horaria
+        hour12: false
+        // Sin timeZone para usar la zona horaria local del usuario
       });
     }
 
-    // Si es un string ISO, parsear manualmente para evitar conversión UTC automática
+    // Si es un string ISO, parsear como fecha local
     if (typeof fechaString === 'string' && fechaString.includes('T')) {
-      const partes = fechaString.split('T');
-      const fechaParte = partes[0].split('-');
-      const horaParte = partes[1].split(':');
-      
-      const year = parseInt(fechaParte[0]);
-      const month = parseInt(fechaParte[1]) - 1; // Meses van de 0-11
-      const day = parseInt(fechaParte[2]);
-      const hour = parseInt(horaParte[0]);
-      const minute = parseInt(horaParte[1]);
-      const second = parseInt(horaParte[2]) || 0;
-      
-      // Crear fecha local (no UTC) para evitar conversión automática
-      const fechaLocal = new Date(year, month, day, hour, minute, second);
-      
-      if (isNaN(fechaLocal.getTime())) {
-        return 'Fecha inválida';
+      // Si el string no termina en Z, tratarlo como fecha local
+      if (!fechaString.endsWith('Z')) {
+        const partes = fechaString.split('T');
+        const fechaParte = partes[0].split('-');
+        const horaParte = partes[1].split(':');
+        
+        const year = parseInt(fechaParte[0]);
+        const month = parseInt(fechaParte[1]) - 1; // Meses van de 0-11
+        const day = parseInt(fechaParte[2]);
+        const hour = parseInt(horaParte[0]);
+        const minute = parseInt(horaParte[1]);
+        const second = parseInt(horaParte[2]) || 0;
+        
+        // Crear fecha local interpretando como hora local del usuario
+        const fechaLocal = new Date(year, month, day, hour, minute, second);
+        
+        if (isNaN(fechaLocal.getTime())) {
+          return 'Fecha inválida';
+        }
+        
+        // Mostrar en zona horaria local del usuario
+        return fechaLocal.toLocaleString('es-AR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+          // Sin timeZone para usar la zona horaria local del usuario
+        });
+      } else {
+        // Si termina en Z, es UTC, convertir a local
+        const fechaUTC = new Date(fechaString);
+        return fechaUTC.toLocaleString('es-AR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+          // Sin timeZone para usar la zona horaria local del usuario
+        });
       }
-      
-      // Mostrar directamente sin conversión de zona horaria
-      return fechaLocal.toLocaleString('es-AR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-        timeZone: 'UTC' // Forzar UTC para evitar conversión de zona horaria
-      });
     }
 
     // Para otros tipos, usar la función de dateUtils
@@ -148,10 +163,10 @@ const formatearFechaConHoraProductosPerdidos = (fechaString: any): string => {
 
 ## Beneficios de la Solución
 
-1. **Consistencia**: Ahora todos los módulos usan el mismo formato de fecha (arrays)
-2. **Simplicidad**: Eliminada la lógica compleja de conversión de zona horaria
-3. **Mantenibilidad**: Una sola función para formatear fechas en toda la aplicación
-4. **Confiabilidad**: Usa la misma lógica probada que funciona en otros módulos
+1. **Zona Horaria Local**: Cada usuario ve la hora en su zona horaria local
+2. **Consistencia**: Ahora todos los módulos usan el mismo formato de fecha (arrays)
+3. **Flexibilidad**: Funciona correctamente para usuarios de diferentes zonas horarias del mundo
+4. **Mantenibilidad**: Función específica que maneja correctamente las fechas sin conversiones incorrectas
 
 ## Archivos Modificados
 
