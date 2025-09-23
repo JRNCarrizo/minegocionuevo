@@ -1223,92 +1223,205 @@ const GestionTransportistas: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Vehículos */}
+      {/* Modal Vehículos - Estructura Simplificada */}
       {mostrarModalVehiculos && transportistaSeleccionado && (
-        <div className="modal-overlay">
-          <div className="modal modal-grande">
-            <div className="modal-header">
-              <h2>Vehículos de {transportistaSeleccionado.nombreApellido}</h2>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '1rem',
+            width: '100%',
+            maxWidth: '600px',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+          }}>
+            {/* Header Simple */}
+            <div style={{
+              padding: '1.5rem',
+              borderBottom: '1px solid #e5e7eb',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '600', color: '#1e293b' }}>
+                Vehículos de {transportistaSeleccionado.nombreApellido}
+              </h2>
               <button 
-                className="btn-cerrar"
                 onClick={() => setMostrarModalVehiculos(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  padding: '0.5rem',
+                  borderRadius: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f1f5f9';
+                  e.currentTarget.style.color = '#1e293b';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.color = '#64748b';
+                }}
               >
                 ×
               </button>
             </div>
             
-            <div className="modal-content">
-              {/* Formulario para agregar vehículo */}
-              <div className="formulario-vehiculo">
-                <h3>Agregar Vehículo</h3>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Marca *</label>
+            {/* Contenido con Scroll */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '1.5rem'
+            }}>
+              {/* Formulario Simple */}
+              <div style={{
+                background: '#f8fafc',
+                padding: '1.5rem',
+                borderRadius: '0.75rem',
+                marginBottom: '1.5rem',
+                border: '1px solid #e2e8f0'
+              }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.125rem', fontWeight: '600', color: '#1e293b' }}>
+                  Agregar Vehículo
+                </h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', alignItems: 'end' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem' }}>
+                      Marca *
+                    </label>
                     <input
                       type="text"
                       value={formVehiculo.marca}
                       onChange={(e) => setFormVehiculo({...formVehiculo, marca: e.target.value})}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          const modeloInput = document.querySelector('input[data-field="modelo"]') as HTMLInputElement;
-                          if (modeloInput) modeloInput.focus();
-                        }
-                      }}
                       className={errors.marca ? 'error' : ''}
-                      data-field="marca"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: errors.marca ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                        borderRadius: '0.75rem',
+                        fontSize: '1rem',
+                        transition: 'all 0.2s ease',
+                        boxSizing: 'border-box'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.borderColor = '#667eea';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = errors.marca ? '#ef4444' : '#e2e8f0';
+                        e.target.style.boxShadow = 'none';
+                      }}
                     />
-                    {errors.marca && <span className="error-message">{errors.marca}</span>}
+                    {errors.marca && <span style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.marca}</span>}
                   </div>
 
-                  <div className="form-group">
-                    <label>Modelo *</label>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem' }}>
+                      Modelo *
+                    </label>
                     <input
                       type="text"
                       value={formVehiculo.modelo}
                       onChange={(e) => setFormVehiculo({...formVehiculo, modelo: e.target.value})}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          const patenteInput = document.querySelector('input[data-field="patente"]') as HTMLInputElement;
-                          if (patenteInput) patenteInput.focus();
-                        }
-                      }}
                       className={errors.modelo ? 'error' : ''}
-                      data-field="modelo"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: errors.modelo ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                        borderRadius: '0.75rem',
+                        fontSize: '1rem',
+                        transition: 'all 0.2s ease',
+                        boxSizing: 'border-box'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.borderColor = '#667eea';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = errors.modelo ? '#ef4444' : '#e2e8f0';
+                        e.target.style.boxShadow = 'none';
+                      }}
                     />
-                    {errors.modelo && <span className="error-message">{errors.modelo}</span>}
+                    {errors.modelo && <span style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.modelo}</span>}
                   </div>
 
-                  <div className="form-group">
-                    <label>Patente *</label>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem' }}>
+                      Patente *
+                    </label>
                     <input
                       type="text"
                       value={formVehiculo.patente}
                       onChange={(e) => setFormVehiculo({...formVehiculo, patente: e.target.value})}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          // Solo crear si todos los campos están completos
-                          if (formVehiculo.marca.trim() && formVehiculo.modelo.trim() && formVehiculo.patente.trim()) {
-                            crearVehiculo();
-                          } else {
-                            toast.error('Por favor completa todos los campos del vehículo');
-                          }
-                        }
-                      }}
                       className={errors.patente ? 'error' : ''}
-                      data-field="patente"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: errors.patente ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                        borderRadius: '0.75rem',
+                        fontSize: '1rem',
+                        transition: 'all 0.2s ease',
+                        boxSizing: 'border-box'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.outline = 'none';
+                        e.target.style.borderColor = '#667eea';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = errors.patente ? '#ef4444' : '#e2e8f0';
+                        e.target.style.boxShadow = 'none';
+                      }}
                     />
-                    {errors.patente && <span className="error-message">{errors.patente}</span>}
+                    {errors.patente && <span style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>{errors.patente}</span>}
                   </div>
 
-                  <div className="form-group">
-                    <label>&nbsp;</label>
+                  <div>
                     <button 
-                      className="btn-agregar"
                       onClick={crearVehiculo}
                       disabled={guardando}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        background: guardando ? '#9ca3af' : 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '0.75rem',
+                        fontSize: '1rem',
+                        fontWeight: '500',
+                        cursor: guardando ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!guardando) {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
                     >
                       {guardando ? 'Guardando...' : 'Agregar'}
                     </button>
@@ -1316,35 +1429,95 @@ const GestionTransportistas: React.FC = () => {
                 </div>
               </div>
 
-              {/* Lista de vehículos */}
-              <div className="lista-vehiculos">
-                <h3>Vehículos ({transportistaSeleccionado?.vehiculos?.length || 0})</h3>
+              {/* Lista de Vehículos Simplificada */}
+              <div>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.125rem', fontWeight: '600', color: '#1e293b' }}>
+                  Vehículos ({transportistaSeleccionado?.vehiculos?.length || 0})
+                </h3>
+                
                 {!transportistaSeleccionado?.vehiculos || transportistaSeleccionado.vehiculos.length === 0 ? (
-                  <p className="sin-vehiculos">No hay vehículos registrados</p>
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '2rem',
+                    color: '#64748b',
+                    fontStyle: 'italic',
+                    background: '#f8fafc',
+                    borderRadius: '0.75rem',
+                    border: '2px dashed #cbd5e1'
+                  }}>
+                    No hay vehículos registrados
+                  </div>
                 ) : (
-                  <div className="vehiculos-grid">
+                  <div style={{ display: 'grid', gap: '1rem', paddingBottom: '2rem' }}>
                     {transportistaSeleccionado.vehiculos.map((vehiculo) => (
-                      <div key={vehiculo.id} className={`vehiculo-item ${!vehiculo.activo ? 'inactivo' : ''}`}>
-                        <div className="vehiculo-info">
-                          <div className="vehiculo-marca-modelo">
+                      <div key={vehiculo.id} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '1rem',
+                        background: vehiculo.activo ? 'white' : '#f8fafc',
+                        border: vehiculo.activo ? '2px solid #e2e8f0' : '2px solid #d1d5db',
+                        borderRadius: '0.75rem',
+                        transition: 'all 0.2s ease',
+                        opacity: vehiculo.activo ? 1 : 0.7
+                      }}
+                      onMouseEnter={(e) => {
+                        if (vehiculo.activo) {
+                          e.currentTarget.style.borderColor = '#667eea';
+                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.1)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = vehiculo.activo ? '#e2e8f0' : '#d1d5db';
+                        e.currentTarget.style.boxShadow = 'none';
+                        e.currentTarget.style.transform = 'none';
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: '600', fontSize: '1rem', color: '#1e293b', marginBottom: '0.25rem' }}>
                             {vehiculo.marca} {vehiculo.modelo}
                           </div>
-                          <div className="vehiculo-patente">
-                            {vehiculo.patente}
+                          <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                            Patente: {vehiculo.patente}
                           </div>
-                          <div className={`vehiculo-estado ${vehiculo.activo ? 'activo' : 'inactivo'}`}>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            color: vehiculo.activo ? '#10b981' : '#ef4444',
+                            background: vehiculo.activo ? '#ecfdf5' : '#fef2f2',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '0.375rem',
+                            display: 'inline-block'
+                          }}>
                             {vehiculo.activo ? 'Activo' : 'Desactivado'}
                           </div>
                         </div>
-                                                 <div className="vehiculo-acciones">
-                           <button
-                             className={`btn-estado ${vehiculo.activo ? 'btn-desactivar' : 'btn-activar'}`}
-                             onClick={() => cambiarEstadoVehiculo(vehiculo.id, !vehiculo.activo)}
-                             title={vehiculo.activo ? 'Desactivar vehículo' : 'Activar vehículo'}
-                           >
-                             {vehiculo.activo ? '⏸️' : '▶️'}
-                           </button>
-                         </div>
+                        <button
+                          onClick={() => cambiarEstadoVehiculo(vehiculo.id, !vehiculo.activo)}
+                          title={vehiculo.activo ? 'Desactivar vehículo' : 'Activar vehículo'}
+                          style={{
+                            background: vehiculo.activo ? '#fef3c7' : '#dcfce7',
+                            color: vehiculo.activo ? '#d97706' : '#16a34a',
+                            border: 'none',
+                            borderRadius: '0.5rem',
+                            width: '40px',
+                            height: '40px',
+                            fontSize: '1.25rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                        >
+                          {vehiculo.activo ? '⏸️' : '▶️'}
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -1352,10 +1525,34 @@ const GestionTransportistas: React.FC = () => {
               </div>
             </div>
 
-            <div className="modal-footer">
+            {/* Footer Simple */}
+            <div style={{
+              padding: '1.5rem',
+              borderTop: '1px solid #e5e7eb',
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}>
               <button 
-                className="btn-cerrar-modal"
                 onClick={() => setMostrarModalVehiculos(false)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.75rem',
+                  fontSize: '1rem',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
                 Cerrar
               </button>

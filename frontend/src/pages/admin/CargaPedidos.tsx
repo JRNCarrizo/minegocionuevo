@@ -40,6 +40,8 @@ export default function CargaPedidos() {
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
   const [diasExpandidos, setDiasExpandidos] = useState<Set<string>>(new Set());
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
+  const [mostrarModalSalidas, setMostrarModalSalidas] = useState(false);
+  const [salidasPorFletero, setSalidasPorFletero] = useState<{[fecha: string]: {[fletero: string]: string[]}}>({});
 
   // Función helper para convertir fechaPlanilla a string de fecha
   const obtenerFechaPlanillaString = (fechaPlanilla: any): string => {
@@ -352,6 +354,82 @@ export default function CargaPedidos() {
       }
       return nuevo;
     });
+  };
+
+  const procesarSalidasPorFletero = (fecha: string) => {
+    const planillasDelDia = filtrarPlanillas().filter(p => 
+      obtenerFechaPlanillaString(p.fechaPlanilla) === fecha
+    );
+    
+    const salidasPorFletero: {[fletero: string]: string[]} = {};
+    
+    planillasDelDia.forEach(planilla => {
+      if (planilla.transporte) {
+        if (!salidasPorFletero[planilla.transporte]) {
+          salidasPorFletero[planilla.transporte] = [];
+        }
+        salidasPorFletero[planilla.transporte].push(planilla.numeroPlanilla);
+      }
+    });
+    
+    return salidasPorFletero;
+  };
+
+  const abrirModalSalidas = (fecha: string) => {
+    const salidas = procesarSalidasPorFletero(fecha);
+    setSalidasPorFletero({[fecha]: salidas});
+    setMostrarModalSalidas(true);
+  };
+
+  const navegarAPlanilla = (numeroPlanilla: string, fecha: string) => {
+    // Cerrar el modal
+    setMostrarModalSalidas(false);
+    
+    // Buscar la planilla por número
+    const planillaEncontrada = planillas.find(p => 
+      p.numeroPlanilla === numeroPlanilla && 
+      obtenerFechaPlanillaString(p.fechaPlanilla) === fecha
+    );
+    
+    if (planillaEncontrada) {
+      // Expandir el día si no está expandido
+      setDiasExpandidos(prev => {
+        const nuevo = new Set(prev);
+        nuevo.add(fecha);
+        return nuevo;
+      });
+      
+      // Seleccionar la planilla
+      setPlanillaSeleccionada(planillaEncontrada);
+      
+      // Scroll suave hacia la planilla después de un pequeño delay
+      setTimeout(() => {
+        const elementoPlanilla = document.querySelector(`[data-planilla-id="${planillaEncontrada.id}"]`);
+        if (elementoPlanilla) {
+          elementoPlanilla.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+          
+          // Resaltar temporalmente la planilla
+          elementoPlanilla.style.background = 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
+          elementoPlanilla.style.borderColor = '#f59e0b';
+          elementoPlanilla.style.transform = 'scale(1.02)';
+          elementoPlanilla.style.boxShadow = '0 8px 25px rgba(245, 158, 11, 0.3)';
+          
+          setTimeout(() => {
+            elementoPlanilla.style.background = 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)';
+            elementoPlanilla.style.borderColor = '#e2e8f0';
+            elementoPlanilla.style.transform = 'scale(1)';
+            elementoPlanilla.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+          }, 2000);
+        }
+      }, 300);
+      
+      toast.success(`Planilla ${numeroPlanilla} seleccionada`);
+    } else {
+      toast.error('No se pudo encontrar la planilla');
+    }
   };
 
   // Manejar teclas globales para abrir modal con Enter
@@ -814,6 +892,41 @@ export default function CargaPedidos() {
                         }}>
                           {grupo.planillas.reduce((total, p) => total + p.totalProductos, 0)} unidades
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            abrirModalSalidas(grupo.fecha);
+                          }}
+                          style={{
+                            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '0.5rem',
+                            padding: isMobile ? '6px 12px' : '0.5rem 1rem',
+                            fontSize: isMobile ? '0.75rem' : '0.875rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)'
+                          }}
+                          onMouseOver={(e) => {
+                            if (!isMobile) {
+                              e.currentTarget.style.transform = 'scale(1.05)';
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(245, 158, 11, 0.4)';
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (!isMobile) {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(245, 158, 11, 0.3)';
+                            }
+                          }}
+                        >
+                          🚛 Ver Salidas
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -827,6 +940,7 @@ export default function CargaPedidos() {
                       {grupo.planillas.map((planilla) => (
                         <div
                           key={planilla.id}
+                          data-planilla-id={planilla.id}
                           style={{
                             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                             border: '2px solid #e2e8f0',
@@ -1443,6 +1557,233 @@ export default function CargaPedidos() {
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Ver Salidas */}
+        {mostrarModalSalidas && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '1rem',
+              width: '100%',
+              maxWidth: '600px',
+              maxHeight: '80vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}>
+              {/* Header */}
+              <div style={{
+                padding: '1.5rem',
+                borderBottom: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '600', color: '#1e293b' }}>
+                  🚛 Salidas por Fletero
+                </h2>
+                <button 
+                  onClick={() => setMostrarModalSalidas(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '1.5rem',
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    padding: '0.5rem',
+                    borderRadius: '0.5rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f1f5f9';
+                    e.currentTarget.style.color = '#1e293b';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'none';
+                    e.currentTarget.style.color = '#64748b';
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              
+              {/* Contenido */}
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '1.5rem'
+              }}>
+                {Object.entries(salidasPorFletero).map(([fecha, salidas]) => (
+                  <div key={fecha} style={{ marginBottom: '2rem' }}>
+                    <h3 style={{
+                      fontSize: '1.125rem',
+                      fontWeight: '600',
+                      color: '#1e293b',
+                      margin: '0 0 1rem 0',
+                      padding: '0.75rem',
+                      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                      borderRadius: '0.75rem',
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      📅 {formatearFecha(fecha)}
+                    </h3>
+                    
+                    {Object.keys(salidas).length === 0 ? (
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '2rem',
+                        color: '#64748b',
+                        fontStyle: 'italic',
+                        background: '#f8fafc',
+                        borderRadius: '0.75rem',
+                        border: '2px dashed #cbd5e1'
+                      }}>
+                        No hay salidas registradas para este día
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gap: '1rem' }}>
+                        {Object.entries(salidas).map(([fletero, planillas]) => (
+                          <div key={fletero} style={{
+                            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                            border: '2px solid #e2e8f0',
+                            borderRadius: '0.75rem',
+                            padding: '1rem',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#3b82f6';
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.15)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = '#e2e8f0';
+                            e.currentTarget.style.boxShadow = 'none';
+                            e.currentTarget.style.transform = 'none';
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              marginBottom: '0.75rem'
+                            }}>
+                              <h4 style={{
+                                margin: 0,
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                color: '#1e293b',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                              }}>
+                                🚛 {fletero}
+                              </h4>
+                              <div style={{
+                                background: '#10b981',
+                                color: 'white',
+                                borderRadius: '0.5rem',
+                                padding: '0.25rem 0.75rem',
+                                fontSize: '0.875rem',
+                                fontWeight: '600'
+                              }}>
+                                {planillas.length} planilla{planillas.length !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                            
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                              gap: '0.5rem'
+                            }}>
+                              {planillas.map((numeroPlanilla, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => navegarAPlanilla(numeroPlanilla, fecha)}
+                                  style={{
+                                    background: '#3b82f6',
+                                    color: 'white',
+                                    padding: '0.5rem 0.75rem',
+                                    borderRadius: '0.5rem',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '600',
+                                    textAlign: 'center',
+                                    transition: 'all 0.2s ease',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#1d4ed8';
+                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(29, 78, 216, 0.4)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = '#3b82f6';
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                  }}
+                                  title={`Hacer clic para ir a la planilla ${numeroPlanilla}`}
+                                >
+                                  {numeroPlanilla}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer */}
+              <div style={{
+                padding: '1.5rem',
+                borderTop: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'flex-end'
+              }}>
+                <button 
+                  onClick={() => setMostrarModalSalidas(false)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.75rem',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'none';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  Cerrar
+                </button>
               </div>
             </div>
           </div>

@@ -3750,16 +3750,35 @@ public class MovimientoDiaService {
             
             // Ordenar por fecha de creación (más recientes primero)
             productosPerdidos.sort((a, b) -> {
-                String fechaA = (String) a.get("fechaCreacion");
-                String fechaB = (String) b.get("fechaCreacion");
+                Object fechaAObj = a.get("fechaCreacion");
+                Object fechaBObj = b.get("fechaCreacion");
                 
                 // Manejar fechas nulas
-                if (fechaA == null && fechaB == null) return 0;
-                if (fechaA == null) return 1;
-                if (fechaB == null) return -1;
+                if (fechaAObj == null && fechaBObj == null) return 0;
+                if (fechaAObj == null) return 1;
+                if (fechaBObj == null) return -1;
                 
-                // Comparar strings de fecha (formato yyyy-MM-dd'T'HH:mm:ss)
-                return fechaB.compareTo(fechaA);
+                // Si son arrays de enteros [año, mes, día, hora, minuto, segundo, nanosegundos]
+                if (fechaAObj instanceof int[] && fechaBObj instanceof int[]) {
+                    int[] fechaA = (int[]) fechaAObj;
+                    int[] fechaB = (int[]) fechaBObj;
+                    
+                    // Comparar año
+                    if (fechaB[0] != fechaA[0]) return fechaB[0] - fechaA[0];
+                    // Comparar mes
+                    if (fechaB[1] != fechaA[1]) return fechaB[1] - fechaA[1];
+                    // Comparar día
+                    if (fechaB[2] != fechaA[2]) return fechaB[2] - fechaA[2];
+                    // Comparar hora
+                    if (fechaB[3] != fechaA[3]) return fechaB[3] - fechaA[3];
+                    // Comparar minuto
+                    if (fechaB[4] != fechaA[4]) return fechaB[4] - fechaA[4];
+                    // Comparar segundo
+                    return fechaB[5] - fechaA[5];
+                }
+                
+                // Si por alguna razón no son arrays, mantener orden original
+                return 0;
             });
             
             System.out.println("✅ [PRODUCTOS PERDIDOS] Encontrados " + productosPerdidos.size() + " productos perdidos");

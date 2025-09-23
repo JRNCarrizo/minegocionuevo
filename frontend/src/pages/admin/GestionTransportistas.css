@@ -494,6 +494,7 @@
 
 .modal-content {
   padding: 1.5rem;
+  padding-bottom: 2rem; /* Espacio adicional para ver el último registro */
 }
 
 .modal-footer {
@@ -644,6 +645,10 @@
 }
 
 /* Lista de vehículos */
+.lista-vehiculos {
+  padding-bottom: 1rem; /* Espacio adicional al final de la lista */
+}
+
 .lista-vehiculos h3 {
   margin: 0 0 1rem 0;
   font-size: 1.125rem;
@@ -664,6 +669,7 @@
 .vehiculos-grid {
   display: grid;
   gap: 1rem;
+  margin-bottom: 1rem; /* Espacio adicional después del último vehículo */
 }
 
 .vehiculo-item {
