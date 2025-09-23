@@ -274,10 +274,7 @@ export default function InventarioCompleto() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          empresaId: datosUsuario.empresaId
-        })
+        }
       });
 
       if (response.ok) {
