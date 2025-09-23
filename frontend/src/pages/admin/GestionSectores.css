@@ -3,7 +3,7 @@
 /* Página principal */
 .pagina-sectores {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
   padding-top: 8rem;
 }
 
@@ -18,7 +18,7 @@
 /* Página de carga */
 .pagina-carga {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -111,23 +111,19 @@
 }
 
 .boton-migrar {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, #475569 0%, #64748b 100%);
 }
 
 .boton-crear {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
 }
 
 .boton-stock-general {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
 }
 
 .boton-stock-general.activo {
-  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
-
-.boton-actualizar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
 }
 
 .boton-migrar:hover,
@@ -483,12 +479,16 @@
   color: white;
 }
 
+.tarjeta-total .icono-estadistica {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
 .tarjeta-activos .icono-estadistica {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
 }
 
 .tarjeta-inactivos .icono-estadistica {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
 }
 
 .texto-estadistica {
@@ -598,7 +598,7 @@
 .tarjeta-sector:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  border-color: #667eea;
+  border-color: #334155;
   border-width: 3px;
 }
 

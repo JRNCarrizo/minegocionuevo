@@ -2445,6 +2445,27 @@ class ApiService {
       throw error;
     }
   }
+
+  // Métodos de Hard Reset para producción
+  async hardReset(confirmationCode: string): Promise<string> {
+    try {
+      const response = await this.api.post(`/admin/hard-reset?confirmationCode=${confirmationCode}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al ejecutar hard reset:', error);
+      throw error;
+    }
+  }
+
+  async verificarEstadoSistema(): Promise<any> {
+    try {
+      const response = await this.api.get('/admin/sistema-status');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al verificar estado del sistema:', error);
+      throw error;
+    }
+  }
 }
 
 export default new ApiService();

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { API_CONFIG } from '../../config/api';
+import ApiService from '../../services/api';
 import './GestionSectores.css';
 
 interface Sector {
@@ -59,6 +60,7 @@ export default function GestionSectores() {
   const [mostrarModalAsignar, setMostrarModalAsignar] = useState(false);
   const [mostrarModalTransferir, setMostrarModalTransferir] = useState(false);
   const [sectorSeleccionado, setSectorSeleccionado] = useState<Sector | null>(null);
+  const [mostrarModalHardReset, setMostrarModalHardReset] = useState(false);
   const [productosEnSector, setProductosEnSector] = useState<StockPorSector[]>([]);
   const [productosDisponibles, setProductosDisponibles] = useState<ProductoDisponible[]>([]);
   const [asignaciones, setAsignaciones] = useState<AsignacionProducto[]>([]);
@@ -732,16 +734,49 @@ export default function GestionSectores() {
 
   const obtenerColorSector = (index: number) => {
     const colores = [
-      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-      'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-      'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-      'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-      'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
+      'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+      'linear-gradient(135deg, #374151 0%, #4b5563 100%)',
+      'linear-gradient(135deg, #475569 0%, #64748b 100%)',
+      'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      'linear-gradient(135deg, #059669 0%, #047857 100%)',
+      'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+      'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+      'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)'
     ];
     return colores[index % colores.length];
+  };
+
+  const ejecutarHardReset = async () => {
+    try {
+      const confirmacion1 = confirm('⚠️ ADVERTENCIA: Esta acción eliminará TODOS los datos de la plataforma.\n\n¿Está seguro de continuar?');
+      if (!confirmacion1) return;
+
+      const confirmacion2 = confirm('🚨 ÚLTIMA ADVERTENCIA: Esta acción es IRREVERSIBLE.\n\n¿Realmente desea eliminar todos los datos?');
+      if (!confirmacion2) return;
+
+      const codigo = prompt('Para confirmar, escriba exactamente: RESETEAR_PRODUCCION_2025');
+      if (codigo !== 'RESETEAR_PRODUCCION_2025') {
+        toast.error('Código de confirmación incorrecto');
+        return;
+      }
+
+      const loadingToast = toast.loading('Iniciando reset del sistema...');
+      
+      const resultado = await ApiService.hardReset('RESETEAR_PRODUCCION_2025');
+      
+      toast.dismiss(loadingToast);
+      toast.success(resultado);
+      setMostrarModalHardReset(false);
+      
+      // Recargar la página después del reset
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+
+    } catch (error: any) {
+      console.error('Error en hard reset:', error);
+      toast.error(error.response?.data || 'Error al ejecutar el reset');
+    }
   };
 
 
@@ -1018,33 +1053,41 @@ export default function GestionSectores() {
             Migrar Sectores Existentes
           </button>
           <button
-            onClick={async () => {
-              setCargando(true);
-              await cargarInfoProductosPorSector();
-              setCargando(false);
-              toast.success('Información actualizada');
+            onClick={() => setMostrarModalHardReset(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1rem',
+              border: '3px solid transparent',
+              borderRadius: '12px',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              boxSizing: 'border-box',
+              transition: 'all 0.3s ease',
+              textDecoration: 'none',
+              color: 'white',
+              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+              whiteSpace: 'nowrap',
+              minWidth: 'fit-content',
+              flexShrink: 0,
+              background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'
             }}
-            className={`boton-actualizar ${modoNavegacion && elementoSeleccionado === 3 ? 'seleccionado' : ''}`}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+            }}
           >
-            <span className="icono-boton">🔄</span>
-            Actualizar Información
+            <span style={{ fontSize: '1.1rem' }}>🧹</span>
+            Reset para Producción
           </button>
         </div>
 
-        {/* Botón de Limpieza */}
-        <div className="botones-sincronizacion">
-          <button
-            onClick={limpiarStockCero}
-            disabled={limpiandoStockCero}
-            className="boton-sincronizacion boton-limpiar-stock"
-            title="Eliminar productos con stock 0 de todos los sectores"
-          >
-            <span className="icono-boton">
-              {limpiandoStockCero ? '⏳' : '🧹'}
-            </span>
-            {limpiandoStockCero ? 'Limpiando...' : 'Limpiar Stock Cero'}
-          </button>
-        </div>
 
         {/* Estadísticas */}
         <div className="estadisticas-sectores">
@@ -2167,6 +2210,142 @@ export default function GestionSectores() {
                 disabled={eliminandoSector}
               >
                 {eliminandoSector ? '⏳ Eliminando...' : '🗑️ Eliminar Sector'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Hard Reset */}
+      {mostrarModalHardReset && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '1rem',
+            width: '100%',
+            maxWidth: '500px',
+            padding: '2rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              fontSize: '3rem',
+              marginBottom: '1rem'
+            }}>
+              🧹
+            </div>
+            
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              color: '#dc2626',
+              margin: '0 0 1rem 0'
+            }}>
+              Reset para Producción
+            </h2>
+            
+            <p style={{
+              color: '#64748b',
+              marginBottom: '1.5rem',
+              lineHeight: '1.6'
+            }}>
+              Esta acción eliminará <strong>TODOS los datos</strong> de la plataforma para empezar en limpio.
+            </p>
+            
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '0.5rem',
+              padding: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              <p style={{
+                color: '#dc2626',
+                fontWeight: '600',
+                margin: 0,
+                fontSize: '0.875rem'
+              }}>
+                ⚠️ Esta acción es IRREVERSIBLE y eliminará:
+              </p>
+              <ul style={{
+                color: '#dc2626',
+                fontSize: '0.875rem',
+                textAlign: 'left',
+                margin: '0.5rem 0 0 0',
+                paddingLeft: '1.5rem'
+              }}>
+                <li>Todos los productos</li>
+                <li>Todos los sectores</li>
+                <li>Todas las planillas</li>
+                <li>Todos los remitos</li>
+                <li>Todos los transportistas</li>
+                <li>Todas las roturas y pérdidas</li>
+              </ul>
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => setMostrarModalHardReset(false)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#64748b',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.75rem',
+                  fontSize: '1rem',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#475569';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#64748b';
+                }}
+              >
+                Cancelar
+              </button>
+              
+              <button
+                onClick={ejecutarHardReset}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.75rem',
+                  fontSize: '1rem',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(220, 38, 38, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                Ejecutar Reset
               </button>
             </div>
           </div>

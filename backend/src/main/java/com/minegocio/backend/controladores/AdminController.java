@@ -7,6 +7,7 @@ import com.minegocio.backend.servicios.AutenticacionService;
 import com.minegocio.backend.servicios.PedidoService;
 import com.minegocio.backend.servicios.VentaRapidaService;
 import com.minegocio.backend.servicios.CloudinaryService;
+import com.minegocio.backend.servicios.AdminService;
 import com.minegocio.backend.seguridad.JwtUtils;
 import com.minegocio.backend.dto.EmpresaDTO;
 import com.minegocio.backend.servicios.VentaRapidaService.VentaRapidaEstadisticas;
@@ -20,8 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 import java.util.Optional;
 import java.util.List;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.HashMap;
@@ -48,6 +47,9 @@ public class AdminController {
     
     @Autowired
     private JwtUtils jwtUtils;
+    
+    @Autowired
+    private AdminService adminService;
 
     /**
      * Endpoint de salud para verificar conectividad y funcionalidad básica
@@ -761,6 +763,68 @@ public class AdminController {
             
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Hard Reset - Limpiar todos los datos para empezar en producción
+     * Solo para administradores
+     */
+    @PostMapping("/hard-reset")
+    public ResponseEntity<?> hardReset(@RequestParam("confirmationCode") String confirmationCode) {
+        try {
+            System.out.println("🔴 [HARD RESET] Iniciando reset completo del sistema...");
+            
+            // Verificar código de confirmación
+            if (!"RESETEAR_PRODUCCION_2025".equals(confirmationCode)) {
+                System.err.println("❌ [HARD RESET] Código de confirmación incorrecto");
+                return ResponseEntity.badRequest().body("Código de confirmación incorrecto");
+            }
+            
+            // Ejecutar reset (implementar en AdminService)
+            ejecutarHardReset();
+            
+            System.out.println("✅ [HARD RESET] Reset completado exitosamente");
+            return ResponseEntity.ok("Reset completado exitosamente. La plataforma está lista para producción.");
+            
+        } catch (Exception e) {
+            System.err.println("❌ [HARD RESET] Error durante el reset: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error durante el reset: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Verificar estado del sistema después del reset
+     */
+    @GetMapping("/sistema-status")
+    public ResponseEntity<?> verificarEstadoSistema() {
+        try {
+            Map<String, Object> estado = new HashMap<>();
+            estado.put("fechaVerificacion", java.time.LocalDateTime.now());
+            estado.put("estado", "Sistema verificado");
+            estado.put("mensaje", "Endpoint de verificación funcionando correctamente");
+            
+            return ResponseEntity.ok(estado);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error al verificar estado del sistema");
+        }
+    }
+    
+    /**
+     * Método para ejecutar hard reset
+     */
+    private void ejecutarHardReset() {
+        System.out.println("🧹 [HARD RESET] Limpiando datos del sistema...");
+        
+        try {
+            // Usar AdminService inyectado para ejecutar la limpieza real
+            adminService.ejecutarHardReset();
+            
+            System.out.println("✅ [HARD RESET] Reset completado exitosamente");
+        } catch (Exception e) {
+            System.err.println("❌ [HARD RESET] Error durante la limpieza: " + e.getMessage());
+            throw new RuntimeException("Error durante el hard reset: " + e.getMessage(), e);
         }
     }
 }
