@@ -3655,7 +3655,11 @@ public class MovimientoDiaService {
                         productoPerdido.put("estadoDescripcion", detalle.getEstadoProducto().getDescripcion());
                         productoPerdido.put("observaciones", detalle.getObservaciones());
                         // Formatear fecha como string para evitar problemas de serialización
-                        productoPerdido.put("fechaCreacion", detalle.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                        if (detalle.getFechaCreacion() != null) {
+                            productoPerdido.put("fechaCreacion", detalle.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                        } else {
+                            productoPerdido.put("fechaCreacion", null);
+                        }
                         productosPerdidos.add(productoPerdido);
                     }
                 }
@@ -3682,7 +3686,11 @@ public class MovimientoDiaService {
                         productoPerdido.put("estadoDescripcion", detalle.getEstadoProducto().getDescripcion());
                         productoPerdido.put("observaciones", detalle.getObservaciones());
                         // Formatear fecha como string para evitar problemas de serialización
-                        productoPerdido.put("fechaCreacion", detalle.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                        if (detalle.getFechaCreacion() != null) {
+                            productoPerdido.put("fechaCreacion", detalle.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                        } else {
+                            productoPerdido.put("fechaCreacion", null);
+                        }
                         productosPerdidos.add(productoPerdido);
                     }
                 }
@@ -3702,14 +3710,25 @@ public class MovimientoDiaService {
                 productoPerdido.put("estadoDescripcion", "Rotura/Pérdida");
                 productoPerdido.put("observaciones", rotura.getObservaciones());
                 // Formatear fecha como string para evitar problemas de serialización
-                productoPerdido.put("fechaCreacion", rotura.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                if (rotura.getFechaCreacion() != null) {
+                    productoPerdido.put("fechaCreacion", rotura.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                } else {
+                    productoPerdido.put("fechaCreacion", null);
+                }
                 productosPerdidos.add(productoPerdido);
             }
             
             // Ordenar por fecha de creación (más recientes primero)
             productosPerdidos.sort((a, b) -> {
-                LocalDateTime fechaA = (LocalDateTime) a.get("fechaCreacion");
-                LocalDateTime fechaB = (LocalDateTime) b.get("fechaCreacion");
+                String fechaA = (String) a.get("fechaCreacion");
+                String fechaB = (String) b.get("fechaCreacion");
+                
+                // Manejar fechas nulas
+                if (fechaA == null && fechaB == null) return 0;
+                if (fechaA == null) return 1;
+                if (fechaB == null) return -1;
+                
+                // Comparar strings de fecha (formato yyyy-MM-dd'T'HH:mm:ss)
                 return fechaB.compareTo(fechaA);
             });
             
