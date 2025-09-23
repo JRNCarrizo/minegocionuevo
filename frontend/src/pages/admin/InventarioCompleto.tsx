@@ -221,18 +221,24 @@ export default function InventarioCompleto() {
               });
             });
           }
-          const inventarioConDefaults = {
-            ...inventarioData,
-            totalSectores: inventarioData.totalSectores || 0,
-            sectoresCompletados: inventarioData.sectoresCompletados || 0,
-            sectoresEnProgreso: inventarioData.sectoresEnProgreso || 0,
-            sectoresPendientes: inventarioData.sectoresPendientes || 0,
-            porcentajeCompletado: inventarioData.porcentajeCompletado || 0,
-            conteosSectores: inventarioData.conteosSectores || []
-          };
-          console.log('✅ Inventario con defaults:', inventarioConDefaults);
-          console.log('✅ Inventario ID cargado:', inventarioConDefaults.id);
-          setInventario(inventarioConDefaults);
+          // ✅ Verificar si hay un inventario activo REAL antes de establecerlo
+          if (inventarioData.inventarioActivo !== false && inventarioData.id) {
+            const inventarioConDefaults = {
+              ...inventarioData,
+              totalSectores: inventarioData.totalSectores || 0,
+              sectoresCompletados: inventarioData.sectoresCompletados || 0,
+              sectoresEnProgreso: inventarioData.sectoresEnProgreso || 0,
+              sectoresPendientes: inventarioData.sectoresPendientes || 0,
+              porcentajeCompletado: inventarioData.porcentajeCompletado || 0,
+              conteosSectores: inventarioData.conteosSectores || []
+            };
+            console.log('✅ Inventario con defaults:', inventarioConDefaults);
+            console.log('✅ Inventario ID cargado:', inventarioConDefaults.id);
+            setInventario(inventarioConDefaults);
+          } else {
+            console.log('ℹ️ No hay inventario activo real');
+            setInventario(null);
+          }
         } else if (inventarioResponse.status === 404) {
           console.log('ℹ️ No hay inventario activo');
           setInventario(null);
