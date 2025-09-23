@@ -170,6 +170,51 @@ public class GestionAdministradoresController {
     }
 
     /**
+     * Obtener información de un administrador específico
+     */
+    @GetMapping("/{adminId}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> obtenerAdministrador(
+            @PathVariable Long adminId,
+            HttpServletRequest request) {
+        try {
+            System.out.println("🔍 === OBTENIENDO ADMINISTRADOR ===");
+            System.out.println("🔍 ID Administrador: " + adminId);
+
+            // Validar token y obtener empresa del usuario actual
+            Empresa empresa = obtenerEmpresaDelUsuarioAutenticado(request);
+            if (empresa == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
+            }
+
+            // Buscar el administrador
+            Optional<Usuario> adminOpt = usuarioRepository.findById(adminId);
+            if (adminOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Administrador no encontrado"));
+            }
+
+            Usuario admin = adminOpt.get();
+
+            // Verificar que el administrador pertenece a la empresa
+            if (admin.getEmpresa() == null || !admin.getEmpresa().getId().equals(empresa.getId())) {
+                return ResponseEntity.status(403).body(Map.of("error", "No tienes permisos para acceder a este administrador"));
+            }
+
+            // Crear DTO del administrador
+            UsuarioDTO adminDTO = convertirAUsuarioDTO(admin);
+            
+            System.out.println("✅ Administrador obtenido exitosamente: " + admin.getNombre() + " " + admin.getApellidos());
+
+            return ResponseEntity.ok(adminDTO);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo administrador: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor"));
+        }
+    }
+
+    /**
      * Desactivar un administrador
      */
     @PutMapping("/{adminId}/desactivar")
