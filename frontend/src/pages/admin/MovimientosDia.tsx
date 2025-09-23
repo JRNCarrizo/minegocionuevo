@@ -84,65 +84,14 @@ export default function MovimientosDia() {
   };
 
   // Función helper para formatear fecha con hora de productos perdidos
+  // Ahora usa la función principal de dateUtils para mantener consistencia
   const formatearFechaConHoraProductosPerdidos = (fechaString: any): string => {
     try {
       if (fechaString == null) {
         return 'N/A';
       }
 
-      // Si es un array (formato [year, month, day, hour, minute, second])
-      if (Array.isArray(fechaString)) {
-        const [year, month, day, hour = 0, minute = 0, second = 0] = fechaString;
-        
-        // Crear fecha local (no UTC) para evitar conversión automática
-        const fechaLocal = new Date(year, month - 1, day, hour, minute, second);
-        
-        if (isNaN(fechaLocal.getTime())) {
-          return 'Fecha inválida';
-        }
-        
-        // Mostrar en zona horaria local del usuario
-        return fechaLocal.toLocaleString('es-AR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        });
-      }
-
-      // Si es un string ISO, parsear manualmente para evitar conversión UTC
-      if (typeof fechaString === 'string' && fechaString.includes('T')) {
-        const partes = fechaString.split('T');
-        const fechaParte = partes[0].split('-');
-        const horaParte = partes[1].split(':');
-        
-        const year = parseInt(fechaParte[0]);
-        const month = parseInt(fechaParte[1]) - 1; // Meses van de 0-11
-        const day = parseInt(fechaParte[2]);
-        const hour = parseInt(horaParte[0]);
-        const minute = parseInt(horaParte[1]);
-        const second = parseInt(horaParte[2]) || 0;
-        
-        // Crear fecha local (no UTC) para evitar conversión automática
-        const fechaLocal = new Date(year, month, day, hour, minute, second);
-        
-        if (isNaN(fechaLocal.getTime())) {
-          return 'Fecha inválida';
-        }
-        
-        return fechaLocal.toLocaleString('es-AR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        });
-      }
-
-      // Para otros tipos, usar la función de dateUtils
+      // Usar la función principal de dateUtils que ya maneja arrays correctamente
       return formatearFechaConHora(fechaString);
     } catch (error) {
       console.error('Error formateando fecha de productos perdidos:', error);

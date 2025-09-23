@@ -37,3 +37,4 @@ CREATE INDEX idx_detalle_conteo_sector ON detalle_conteo(conteo_sector_id);
 CREATE INDEX idx_detalle_conteo_producto ON detalle_conteo(producto_id);
 
 
+

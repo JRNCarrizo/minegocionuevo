@@ -3654,9 +3654,19 @@ public class MovimientoDiaService {
                         productoPerdido.put("estado", detalle.getEstadoProducto().name());
                         productoPerdido.put("estadoDescripcion", detalle.getEstadoProducto().getDescripcion());
                         productoPerdido.put("observaciones", detalle.getObservaciones());
-                        // Formatear fecha como string para evitar problemas de serialización
+                        // Enviar fecha como array para mantener consistencia con otros módulos
                         if (detalle.getFechaCreacion() != null) {
-                            productoPerdido.put("fechaCreacion", detalle.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                            LocalDateTime fechaCreacion = detalle.getFechaCreacion();
+                            int[] fechaArray = {
+                                fechaCreacion.getYear(),
+                                fechaCreacion.getMonthValue(),
+                                fechaCreacion.getDayOfMonth(),
+                                fechaCreacion.getHour(),
+                                fechaCreacion.getMinute(),
+                                fechaCreacion.getSecond(),
+                                0 // nanoseconds
+                            };
+                            productoPerdido.put("fechaCreacion", fechaArray);
                         } else {
                             productoPerdido.put("fechaCreacion", null);
                         }
@@ -3685,9 +3695,19 @@ public class MovimientoDiaService {
                         productoPerdido.put("estado", detalle.getEstadoProducto().name());
                         productoPerdido.put("estadoDescripcion", detalle.getEstadoProducto().getDescripcion());
                         productoPerdido.put("observaciones", detalle.getObservaciones());
-                        // Formatear fecha como string para evitar problemas de serialización
+                        // Enviar fecha como array para mantener consistencia con otros módulos
                         if (detalle.getFechaCreacion() != null) {
-                            productoPerdido.put("fechaCreacion", detalle.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                            LocalDateTime fechaCreacion = detalle.getFechaCreacion();
+                            int[] fechaArray = {
+                                fechaCreacion.getYear(),
+                                fechaCreacion.getMonthValue(),
+                                fechaCreacion.getDayOfMonth(),
+                                fechaCreacion.getHour(),
+                                fechaCreacion.getMinute(),
+                                fechaCreacion.getSecond(),
+                                0 // nanoseconds
+                            };
+                            productoPerdido.put("fechaCreacion", fechaArray);
                         } else {
                             productoPerdido.put("fechaCreacion", null);
                         }
@@ -3709,9 +3729,19 @@ public class MovimientoDiaService {
                 productoPerdido.put("estado", "ROTURA");
                 productoPerdido.put("estadoDescripcion", "Rotura/Pérdida");
                 productoPerdido.put("observaciones", rotura.getObservaciones());
-                // Formatear fecha como string para evitar problemas de serialización
+                // Enviar fecha como array para mantener consistencia con otros módulos
                 if (rotura.getFechaCreacion() != null) {
-                    productoPerdido.put("fechaCreacion", rotura.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                    LocalDateTime fechaCreacion = rotura.getFechaCreacion();
+                    int[] fechaArray = {
+                        fechaCreacion.getYear(),
+                        fechaCreacion.getMonthValue(),
+                        fechaCreacion.getDayOfMonth(),
+                        fechaCreacion.getHour(),
+                        fechaCreacion.getMinute(),
+                        fechaCreacion.getSecond(),
+                        0 // nanoseconds
+                    };
+                    productoPerdido.put("fechaCreacion", fechaArray);
                 } else {
                     productoPerdido.put("fechaCreacion", null);
                 }

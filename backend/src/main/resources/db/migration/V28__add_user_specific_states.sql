@@ -7,3 +7,4 @@ ALTER TABLE conteo_sector ADD COLUMN productos_contados_usuario_1 INTEGER DEFAUL
 ALTER TABLE conteo_sector ADD COLUMN productos_contados_usuario_2 INTEGER DEFAULT 0;
 
 
+
