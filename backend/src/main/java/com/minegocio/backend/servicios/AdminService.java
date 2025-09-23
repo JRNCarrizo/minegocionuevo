@@ -81,6 +81,12 @@ public class AdminService {
     @Autowired
     private DetalleConteoRepository detalleConteoRepository;
     
+    @Autowired
+    private VentaRapidaRepository ventaRapidaRepository;
+    
+    @Autowired
+    private DetalleVentaRapidaRepository detalleVentaRapidaRepository;
+    
     /**
      * Ejecutar Hard Reset - Limpiar todos los datos excepto usuarios y empresa
      */
@@ -165,6 +171,20 @@ public class AdminService {
             System.out.println("🧹 Limpiando productos favoritos...");
             productoFavoritoRepository.deleteAll();
             
+            System.out.println("🧹 Limpiando detalles de venta rápida...");
+            long detallesVentaAntes = detalleVentaRapidaRepository.count();
+            System.out.println("📊 Detalles venta rápida antes: " + detallesVentaAntes);
+            detalleVentaRapidaRepository.deleteAll();
+            long detallesVentaDespues = detalleVentaRapidaRepository.count();
+            System.out.println("📊 Detalles venta rápida después: " + detallesVentaDespues);
+            
+            System.out.println("🧹 Limpiando ventas rápidas...");
+            long ventasAntes = ventaRapidaRepository.count();
+            System.out.println("📊 Ventas rápidas antes: " + ventasAntes);
+            ventaRapidaRepository.deleteAll();
+            long ventasDespues = ventaRapidaRepository.count();
+            System.out.println("📊 Ventas rápidas después: " + ventasDespues);
+            
             System.out.println("🧹 Limpiando mensajes...");
             long mensajesAntes = mensajeRepository.count();
             System.out.println("📊 Mensajes antes: " + mensajesAntes);
@@ -207,6 +227,8 @@ public class AdminService {
             estado.put("historialInventario", historialInventarioRepository.count());
             estado.put("historialCargaProductos", historialCargaProductosRepository.count());
             estado.put("productosFavoritos", productoFavoritoRepository.count());
+            estado.put("detallesVentaRapida", detalleVentaRapidaRepository.count());
+            estado.put("ventasRapidas", ventaRapidaRepository.count());
             estado.put("mensajes", mensajeRepository.count());
             estado.put("planillasPedido", planillaPedidoRepository.count());
             estado.put("planillasDevolucion", planillaDevolucionRepository.count());
