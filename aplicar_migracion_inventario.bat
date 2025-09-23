@@ -24,3 +24,4 @@ echo Espera unos segundos y prueba el inventario completo.
 echo.
 pause
 
+

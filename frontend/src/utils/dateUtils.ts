@@ -314,21 +314,42 @@ export const formatearFechaConHora = (fechaString: any): string => {
         return fechaString;
       }
       
-      // Si tiene formato ISO con T
+      // Si tiene formato ISO con T (YYYY-MM-DDTHH:mm:ss)
       if (fechaString.includes('T')) {
-        // Convertir de UTC a zona horaria local
-        const fechaUTC = new Date(fechaString);
-        if (!isNaN(fechaUTC.getTime())) {
-          return fechaUTC.toLocaleString('es-AR', { 
-            year: 'numeric', 
-            month: '2-digit', 
-            day: '2-digit', 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            hour12: false 
-          });
+        // Parsear manualmente para evitar conversión UTC automática
+        const partes = fechaString.split('T');
+        const fechaParte = partes[0].split('-');
+        const horaParte = partes[1].split(':');
+        
+        const year = parseInt(fechaParte[0]);
+        const month = parseInt(fechaParte[1]) - 1; // Meses van de 0-11
+        const day = parseInt(fechaParte[2]);
+        const hour = parseInt(horaParte[0]);
+        const minute = parseInt(horaParte[1]);
+        const second = parseInt(horaParte[2]) || 0;
+        
+        // Crear fecha local (no UTC) para evitar conversión automática
+        const fechaLocal = new Date(year, month, day, hour, minute, second);
+        
+        if (isNaN(fechaLocal.getTime())) {
+          console.log('🔍 Fecha inválida desde string ISO:', fechaString);
+          return 'Fecha inválida';
         }
-        return fechaString;
+        
+        console.log('🔍 String ISO procesado como fecha local:', {
+          fechaString,
+          year, month, day, hour, minute, second,
+          fechaLocal: fechaLocal.toISOString()
+        });
+        
+        return fechaLocal.toLocaleString('es-AR', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          hour12: false 
+        });
       }
       
       // Otros formatos, usar Date constructor
