@@ -2973,7 +2973,7 @@ public class MovimientoDiaService {
         totalStyle.setBorderRight(BorderStyle.THIN);
         
         // Agregar fila de totales solo si hay productos
-        if (rowIndex > 4) { // Verificar que hay al menos una fila de datos
+        if (rowIndex > 3) { // Verificar que hay al menos una fila de datos (rowIndex 3 = primera fila de datos)
             Row totalRow = sheet.createRow(rowIndex);
             totalRow.createCell(0).setCellValue("TOTALES:");
             totalRow.createCell(1).setCellValue("");
@@ -3205,7 +3205,12 @@ public class MovimientoDiaService {
                 List<DetallePlanillaDevolucion> detalles = detallePlanillaDevolucionRepository.findByPlanillaDevolucionIdOrderByFechaCreacionAsc(planilla.getId());
                 for (DetallePlanillaDevolucion detalle : detalles) {
                     if (detalle.getProducto().getId().equals(producto.getId())) {
-                        cantidad += detalle.getCantidad();
+                        // Solo sumar productos en BUEN_ESTADO para el reporte
+                        // Si no tiene estado definido (productos existentes), considerarlo como BUEN_ESTADO
+                        DetallePlanillaDevolucion.EstadoProducto estado = detalle.getEstadoProducto();
+                        if (estado == null || estado == DetallePlanillaDevolucion.EstadoProducto.BUEN_ESTADO) {
+                            cantidad += detalle.getCantidad();
+                        }
                     }
                 }
                 // Solo mostrar cantidad si es mayor a 0, sino dejar vacío
@@ -3225,34 +3230,36 @@ public class MovimientoDiaService {
             }
         }
         
-        // Agregar fila de totales
-        Row totalRow = sheet.createRow(rowIndex);
-        totalRow.createCell(0).setCellValue("TOTALES:");
-        totalRow.createCell(1).setCellValue("");
-        
-        // Totales por planilla de devolución
-        colIndex = 2;
-        for (int i = 0; i < planillas.size(); i++) {
-            Cell totalCell = totalRow.createCell(colIndex++);
-            String totalFormula = "SUM(" + getColumnLetter(colIndex - 1) + "3:" + getColumnLetter(colIndex - 1) + (rowIndex - 1) + ")";
-            totalCell.setCellFormula(totalFormula);
-        }
-        
-        // Estilo para la fila de totales
-        CellStyle totalStyle = workbook.createCellStyle();
-        Font totalFont = workbook.createFont();
-        totalFont.setBold(true);
-        totalStyle.setFont(totalFont);
-        totalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        totalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        totalStyle.setBorderTop(BorderStyle.THICK);
-        totalStyle.setBorderBottom(BorderStyle.THICK);
-        totalStyle.setBorderLeft(BorderStyle.THIN);
-        totalStyle.setBorderRight(BorderStyle.THIN);
-        
-        for (int i = 0; i < colIndex; i++) {
-            if (totalRow.getCell(i) != null) {
-                totalRow.getCell(i).setCellStyle(totalStyle);
+        // Agregar fila de totales solo si hay productos
+        if (rowIndex > 3) { // Verificar que hay al menos una fila de datos
+            Row totalRow = sheet.createRow(rowIndex);
+            totalRow.createCell(0).setCellValue("TOTALES:");
+            totalRow.createCell(1).setCellValue("");
+            
+            // Totales por planilla de devolución
+            colIndex = 2;
+            for (int i = 0; i < planillas.size(); i++) {
+                Cell totalCell = totalRow.createCell(colIndex++);
+                String totalFormula = "SUM(" + getColumnLetter(colIndex - 1) + "3:" + getColumnLetter(colIndex - 1) + (rowIndex - 1) + ")";
+                totalCell.setCellFormula(totalFormula);
+            }
+            
+            // Estilo para la fila de totales
+            CellStyle totalStyle = workbook.createCellStyle();
+            Font totalFont = workbook.createFont();
+            totalFont.setBold(true);
+            totalStyle.setFont(totalFont);
+            totalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            totalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            totalStyle.setBorderTop(BorderStyle.THICK);
+            totalStyle.setBorderBottom(BorderStyle.THICK);
+            totalStyle.setBorderLeft(BorderStyle.THIN);
+            totalStyle.setBorderRight(BorderStyle.THIN);
+            
+            for (int i = 0; i < colIndex; i++) {
+                if (totalRow.getCell(i) != null) {
+                    totalRow.getCell(i).setCellStyle(totalStyle);
+                }
             }
         }
         
@@ -3318,6 +3325,39 @@ public class MovimientoDiaService {
             for (int i = 0; i < 4; i++) {
                 if (dataRow.getCell(i) != null) {
                     dataRow.getCell(i).setCellStyle(dataStyle);
+                }
+            }
+        }
+        
+        // Agregar fila de totales solo si hay pérdidas
+        if (rowIndex > 3) { // Verificar que hay al menos una fila de datos
+            Row totalRow = sheet.createRow(rowIndex);
+            totalRow.createCell(0).setCellValue("TOTALES:");
+            totalRow.createCell(1).setCellValue("");
+            
+            // Total de cantidad pérdida (columna C)
+            Cell totalCantidadCell = totalRow.createCell(2);
+            String totalCantidadFormula = "SUM(C3:C" + (rowIndex - 1) + ")";
+            totalCantidadCell.setCellFormula(totalCantidadFormula);
+            
+            totalRow.createCell(3).setCellValue(""); // Columna de observación vacía
+            
+            // Estilo para la fila de totales
+            CellStyle totalStyle = workbook.createCellStyle();
+            Font totalFont = workbook.createFont();
+            totalFont.setBold(true);
+            totalStyle.setFont(totalFont);
+            totalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            totalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            totalStyle.setBorderTop(BorderStyle.THICK);
+            totalStyle.setBorderBottom(BorderStyle.THICK);
+            totalStyle.setBorderLeft(BorderStyle.THIN);
+            totalStyle.setBorderRight(BorderStyle.THIN);
+            
+            // Aplicar estilos a la fila de totales
+            for (int i = 0; i < 4; i++) {
+                if (totalRow.getCell(i) != null) {
+                    totalRow.getCell(i).setCellStyle(totalStyle);
                 }
             }
         }
