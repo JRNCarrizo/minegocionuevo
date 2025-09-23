@@ -40,6 +40,7 @@ interface DetalleConteo {
 
 interface ConteoInfo {
   id: number;
+  inventarioId?: number;
   sector?: {
     id: number;
     nombre: string;
@@ -71,6 +72,7 @@ export default function ReconteoSector() {
   const [reconteosSolidificados, setReconteosSolidificados] = useState<{[key: number]: string}>({});
   const [productoActual, setProductoActual] = useState<number | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [mostrarBotonFinalizar, setMostrarBotonFinalizar] = useState(false);
 
   useEffect(() => {
     if (id && datosUsuario?.empresaId) {
@@ -86,12 +88,15 @@ export default function ReconteoSector() {
       primerProducto: detallesConteo[0]?.producto?.id
     });
     
-    if (detallesConteo.length > 0 && productoActual === null) {
-      const primerProductoId = detallesConteo[0].producto.id;
-      console.log('✅ Estableciendo primer producto como activo:', primerProductoId);
-      setProductoActual(primerProductoId);
-    }
-  }, [detallesConteo, productoActual]);
+    // Ya no necesitamos establecer un producto activo específico
+    // Todos los productos están habilitados para reconteo
+  }, [detallesConteo, productoActual, mostrarBotonFinalizar]);
+
+  // Mostrar botón de finalizar cuando haya al menos un reconteo completado
+  useEffect(() => {
+    const tieneReconteosCompletados = Object.keys(reconteosSolidificados).length > 0;
+    setMostrarBotonFinalizar(tieneReconteosCompletados);
+  }, [reconteosSolidificados]);
 
   // Función para calcular el resultado de una fórmula
   const calcularFormula = (formula: string): number => {
@@ -124,25 +129,49 @@ export default function ReconteoSector() {
     // Limpiar el campo de entrada
     setReconteos(prev => ({ ...prev, [productoId]: '' }));
     
-    // Pasar al siguiente producto
-    const indiceActual = detallesConteo.findIndex(d => d.producto.id === productoId);
-    console.log('🔍 Índice actual:', indiceActual, 'Total productos:', detallesConteo.length);
+    console.log('✅ Reconteo completado para producto:', productoId);
     
-    if (indiceActual < detallesConteo.length - 1) {
-      // Hay más productos, pasar al siguiente
-      const siguienteProducto = detallesConteo[indiceActual + 1].producto.id;
-      console.log('➡️ Pasando al siguiente producto:', siguienteProducto);
-      setProductoActual(siguienteProducto);
+    // Buscar el siguiente campo disponible para hacer focus
+    const indiceActual = detallesConteo.findIndex(d => d.producto.id === productoId);
+    
+    // Buscar el siguiente producto que no esté completado
+    let siguienteProducto = null;
+    for (let i = indiceActual + 1; i < detallesConteo.length; i++) {
+      const producto = detallesConteo[i];
+      if (!reconteosSolidificados[producto.producto.id]) {
+        siguienteProducto = producto;
+        break;
+      }
+    }
+    
+    // Si no hay siguiente producto después del actual, buscar desde el inicio
+    if (!siguienteProducto) {
+      for (let i = 0; i < indiceActual; i++) {
+        const producto = detallesConteo[i];
+        if (!reconteosSolidificados[producto.producto.id]) {
+          siguienteProducto = producto;
+          break;
+        }
+      }
+    }
+    
+    if (siguienteProducto) {
+      // Hacer focus en el siguiente campo disponible después de un pequeño delay
+      setTimeout(() => {
+        const siguienteInput = document.querySelector(`input[data-producto-id="${siguienteProducto.producto.id}"]`) as HTMLInputElement;
+        if (siguienteInput) {
+          siguienteInput.focus();
+          console.log('🎯 Focus movido al siguiente producto disponible:', siguienteProducto.producto.id);
+        }
+      }, 100);
     } else {
-      // Es el último producto, guardar todos los reconteos
-      console.log('🏁 Último producto, guardando todos los reconteos');
-      guardarTodosLosReconteos();
+      console.log('✅ Todos los productos han sido reconteados');
     }
   };
 
   // Función para guardar todos los reconteos solidificados
   const guardarTodosLosReconteos = async () => {
-    if (!datosUsuario?.id) return;
+    if (!datosUsuario?.id || guardando) return;
 
     setGuardando(true);
 
@@ -165,19 +194,19 @@ export default function ReconteoSector() {
       });
 
       if (reconteosParaGuardar.length === 0) {
-        toast.info('No hay reconteos para guardar');
+        toast('No hay reconteos para guardar');
         return;
       }
 
       // Guardar cada reconteo
       for (const reconteo of reconteosParaGuardar) {
         console.log('🔍 Enviando reconteo:', {
-          url: `/api/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo?.inventarioId}/conteos-sector/${id}/agregar-producto`,
+          url: `/api/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo?.inventarioId}/conteos-sector/${id}/agregar-producto-reconteo`,
           reconteo: reconteo,
           token: token ? 'presente' : 'ausente'
         });
 
-        const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo?.inventarioId}/conteos-sector/${id}/agregar-producto`, {
+        const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo?.inventarioId}/conteos-sector/${id}/agregar-producto-reconteo`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -199,17 +228,60 @@ export default function ReconteoSector() {
         }
       }
 
+      // Finalizar el reconteo llamando al endpoint específico
+      console.log('🔍 Finalizando reconteo...');
+      const finalizarResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo?.inventarioId}/conteos-sector/${id}/finalizar-reconteo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ usuarioId: datosUsuario.id })
+      });
+
+      if (!finalizarResponse.ok) {
+        const errorText = await finalizarResponse.text();
+        console.error('❌ Error finalizando reconteo:', errorText);
+        throw new Error(`Error finalizando reconteo: ${finalizarResponse.status} ${errorText}`);
+      }
+
+      const finalizarData = await finalizarResponse.json();
+      console.log('✅ Reconteo finalizado:', finalizarData);
+
       // Limpiar reconteos solidificados
       setReconteosSolidificados({});
-      setProductoActual(null);
+      setMostrarBotonFinalizar(false);
       
-      // Recargar datos para ver si hay nuevas diferencias
-      await cargarDatos();
-      
-      toast.success(`${reconteosParaGuardar.length} reconteos guardados correctamente`);
+      // Mostrar mensaje según el estado final y navegar después de un breve delay
+      if (finalizarData.estado === 'COMPLETADO') {
+        toast.success('¡Reconteo completado! El sector ya no tiene diferencias.');
+        // Navegar de vuelta al inventario completo después de mostrar el toast
+        setTimeout(() => {
+          navigate('/admin/inventario-completo');
+        }, 1000);
+      } else if (finalizarData.estado === 'CON_DIFERENCIAS') {
+        toast('Reconteo guardado. Aún hay diferencias entre usuarios. Ambos usuarios deben hacer el reconteo para resolver las diferencias.');
+        // Navegar de vuelta al inventario completo después de mostrar el toast
+        setTimeout(() => {
+          navigate('/admin/inventario-completo');
+        }, 1000);
+      } else if (finalizarData.estado === 'ESPERANDO_VERIFICACION') {
+        toast.success(`${reconteosParaGuardar.length} reconteos guardados. Esperando que el segundo usuario complete su reconteo.`);
+        // Navegar de vuelta al inventario completo después de mostrar el toast
+        setTimeout(() => {
+          navigate('/admin/inventario-completo');
+        }, 1000);
+      } else {
+        toast.success(`${reconteosParaGuardar.length} reconteos guardados correctamente`);
+        // Navegar de vuelta al inventario completo después de mostrar el toast
+        setTimeout(() => {
+          navigate('/admin/inventario-completo');
+        }, 1000);
+      }
     } catch (error) {
       console.error('Error guardando reconteos:', error);
       toast.error('Error al guardar los reconteos');
+      // No navegar en caso de error, mantener al usuario en la página
     } finally {
       setGuardando(false);
     }
@@ -297,7 +369,15 @@ export default function ReconteoSector() {
         usuario2Id: conteoEspecifico.usuario2Id,
         usuario2Nombre: conteoEspecifico.usuario2Nombre
       });
-      setConteoInfo(conteoEspecifico);
+      
+      // Agregar el inventarioId al conteoInfo
+      const conteoInfoCompleto = {
+        ...conteoEspecifico,
+        inventarioId: inventarioData.id
+      };
+      
+      console.log('🔍 ConteoInfo completo con inventarioId:', conteoInfoCompleto);
+      setConteoInfo(conteoInfoCompleto);
 
       // Cargar detalles de reconteo usando el mismo endpoint de comparación
       console.log('🔍 Cargando detalles de reconteo para ID:', id);
@@ -382,9 +462,9 @@ export default function ReconteoSector() {
       case 'EN_PROGRESO':
         return 'En Progreso';
       case 'ESPERANDO_VERIFICACION':
-        return 'Esperando Verificación';
+        return 'Esperando Segundo Usuario';
       case 'CON_DIFERENCIAS':
-        return 'Con Diferencias';
+        return 'Requiere Reconteo';
       case 'COMPLETADO':
         return 'Completado';
       default:
@@ -507,7 +587,10 @@ export default function ReconteoSector() {
                 margin: 0,
                 fontSize: '0.875rem'
               }}>
-                Revisión de diferencias encontradas entre conteos
+                {conteoInfo.estado === 'ESPERANDO_VERIFICACION' 
+                  ? 'Esperando que el segundo usuario complete su reconteo'
+                  : 'Ambos usuarios deben hacer el reconteo para resolver las diferencias'
+                }
               </p>
             </div>
             
@@ -627,6 +710,37 @@ export default function ReconteoSector() {
             }}>
               Productos con Diferencias
             </h2>
+            
+            {/* Información del proceso de reconteo */}
+            <div style={{
+              background: '#fef3c7',
+              border: '1px solid #f59e0b',
+              borderRadius: '0.5rem',
+              padding: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '0.5rem'
+              }}>
+                <span style={{ fontSize: '1.25rem', marginRight: '0.5rem' }}>ℹ️</span>
+                <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#92400e' }}>
+                  Proceso de Reconteo
+                </span>
+              </div>
+              <p style={{
+                fontSize: '0.875rem',
+                color: '#92400e',
+                margin: 0,
+                lineHeight: '1.4'
+              }}>
+                {conteoInfo.estado === 'ESPERANDO_VERIFICACION' 
+                  ? 'El primer usuario ya completó su reconteo. Ahora el segundo usuario debe hacer su reconteo para comparar y resolver las diferencias.'
+                  : 'Ambos usuarios deben hacer el reconteo de los productos con diferencias. El sistema comparará los resultados para determinar las cantidades finales.'
+                }
+              </p>
+            </div>
             
             {/* Indicador de progreso */}
             <div style={{
@@ -866,61 +980,99 @@ export default function ReconteoSector() {
                       color: '#374151',
                       marginBottom: '0.5rem'
                     }}>
-                      {productoActual === detalle.producto.id 
-                        ? '🔄 Reconteo Manual (Enter para continuar)' 
-                        : 'Estado del Reconteo'
+                      {reconteosSolidificados[detalle.producto.id] 
+                        ? '✅ Reconteo Completado' 
+                        : '🔄 Reconteo Manual (Presiona Enter para continuar)'
                       }
                     </label>
                     
                     {(() => {
                       const esSolidificado = reconteosSolidificados[detalle.producto.id];
-                      const esActivo = productoActual === detalle.producto.id;
+                      const esActivo = true; // Todos los productos están habilitados para reconteo
                       
-                      if (esSolidificado) {
-                        // Campo solidificado (solo lectura)
-                        return (
-                          <div style={{
-                            width: '100%',
-                            padding: '0.75rem',
-                            border: '2px solid #10b981',
-                            borderRadius: '0.25rem',
-                            fontSize: '0.875rem',
-                            background: '#f0fdf4',
-                            color: '#065f46',
-                            fontWeight: '600',
-                            textAlign: 'center'
-                          }}>
-                            ✅ {reconteosSolidificados[detalle.producto.id]} = {calcularFormula(reconteosSolidificados[detalle.producto.id])}
-                          </div>
-                        );
-                      } else if (esActivo) {
-                        // Campo activo (editable)
-                        return (
-                          <input
-                            type="text"
-                            placeholder="Ej: 10, 5*2, 3+7, etc."
-                            value={reconteos[detalle.producto.id] || ''}
-                            onChange={(e) => {
-                              setReconteos(prev => ({ ...prev, [detalle.producto.id]: e.target.value }));
-                            }}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
-                                manejarEnter(detalle.producto.id, reconteos[detalle.producto.id] || '');
-                              }
-                            }}
-                            disabled={guardando}
-                            autoFocus
-                            style={{
-                              width: '100%',
-                              padding: '0.75rem',
-                              border: '2px solid #3b82f6',
-                              borderRadius: '0.25rem',
-                              fontSize: '0.875rem',
-                              background: '#eff6ff',
-                              opacity: guardando ? 0.6 : 1
-                            }}
-                          />
-                        );
+                        if (esSolidificado) {
+                          // Campo solidificado (solo lectura) con opción de editar
+                          return (
+                            <div style={{ position: 'relative' }}>
+                              <div style={{
+                                width: '100%',
+                                padding: '0.75rem 2.5rem 0.75rem 0.75rem',
+                                border: '2px solid #10b981',
+                                borderRadius: '0.25rem',
+                                fontSize: '0.875rem',
+                                background: '#f0fdf4',
+                                color: '#065f46',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                                cursor: 'pointer'
+                              }}
+                              onClick={() => {
+                                // Volver a modo editable
+                                setReconteos(prev => ({ 
+                                  ...prev, 
+                                  [detalle.producto.id]: reconteosSolidificados[detalle.producto.id] 
+                                }));
+                                setReconteosSolidificados(prev => {
+                                  const nuevo = { ...prev };
+                                  delete nuevo[detalle.producto.id];
+                                  return nuevo;
+                                });
+                                setProductoActual(detalle.producto.id);
+                              }}
+                              >
+                                ✅ {reconteosSolidificados[detalle.producto.id]} = {calcularFormula(reconteosSolidificados[detalle.producto.id])}
+                              </div>
+                              <div style={{
+                                position: 'absolute',
+                                right: '0.75rem',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: '#10b981',
+                                fontSize: '1rem',
+                                pointerEvents: 'none'
+                              }}>
+                                ✏️
+                              </div>
+                            </div>
+                          );
+                        } else if (esActivo) {
+                          // Campo activo (editable)
+                          return (
+                            <input
+                              type="text"
+                              placeholder="Ej: 10, 5*2, 3+7, etc."
+                              value={reconteos[detalle.producto.id] || ''}
+                              onChange={(e) => {
+                                setReconteos(prev => ({ ...prev, [detalle.producto.id]: e.target.value }));
+                              }}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  manejarEnter(detalle.producto.id, reconteos[detalle.producto.id] || '');
+                                }
+                              }}
+                              disabled={guardando}
+                              data-producto-id={detalle.producto.id}
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                border: '2px solid #3b82f6',
+                                borderRadius: '0.25rem',
+                                fontSize: '0.875rem',
+                                background: '#eff6ff',
+                                opacity: guardando ? 0.6 : 1,
+                                boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onFocus={(e) => {
+                                e.target.style.borderColor = '#1d4ed8';
+                                e.target.style.boxShadow = '0 0 0 3px rgba(29, 78, 216, 0.2)';
+                              }}
+                              onBlur={(e) => {
+                                e.target.style.borderColor = '#3b82f6';
+                                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                              }}
+                            />
+                          );
                       } else {
                         // Campo pendiente
                         return (
@@ -943,6 +1095,60 @@ export default function ReconteoSector() {
                 </div>
               ))}
             </div>
+
+            {/* Botón de Finalizar Reconteo */}
+            {mostrarBotonFinalizar && (
+              <div style={{
+                marginTop: '2rem',
+                textAlign: 'center'
+              }}>
+                <button
+                  onClick={guardarTodosLosReconteos}
+                  disabled={guardando}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      guardarTodosLosReconteos();
+                    }
+                  }}
+                  autoFocus
+                  style={{
+                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.75rem',
+                    padding: '1rem 2rem',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: guardando ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 6px rgba(5, 150, 105, 0.3)',
+                    transition: 'all 0.2s ease',
+                    opacity: guardando ? 0.6 : 1,
+                    outline: 'none'
+                  }}
+                  onMouseOver={(e) => {
+                    if (!guardando) {
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 6px 12px rgba(5, 150, 105, 0.4)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!guardando) {
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 6px rgba(5, 150, 105, 0.3)';
+                    }
+                  }}
+                >
+                  {guardando ? '⏳ Guardando...' : '✅ Guardar Reconteos Completados'}
+                </button>
+                <div style={{
+                  marginTop: '0.5rem',
+                  fontSize: '0.875rem',
+                  color: '#6b7280'
+                }}>
+                  Guarda todos los reconteos completados y finaliza el proceso
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{

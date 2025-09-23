@@ -605,6 +605,62 @@ public class InventarioCompletoController {
         }
     }
 
+    /**
+     * Agregar producto al reconteo (reemplaza cantidad existente)
+     */
+    @PostMapping("/{inventarioId}/conteos-sector/{conteoSectorId}/agregar-producto-reconteo")
+    public ResponseEntity<?> agregarProductoAlReconteo(
+            @PathVariable Long empresaId,
+            @PathVariable Long inventarioId,
+            @PathVariable Long conteoSectorId,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+        try {
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioId = usuarioPrincipal.getId();
+            
+            Long productoId = Long.valueOf(request.get("productoId").toString());
+            Integer cantidad = Integer.valueOf(request.get("cantidad").toString());
+            String formulaCalculo = (String) request.get("formulaCalculo");
+            
+            System.out.println("🔄 DEBUG agregarProductoAlReconteo - Controlador:");
+            System.out.println("  - EmpresaId: " + empresaId);
+            System.out.println("  - InventarioId: " + inventarioId);
+            System.out.println("  - ConteoSectorId: " + conteoSectorId);
+            System.out.println("  - UsuarioId: " + usuarioId);
+            System.out.println("  - ProductoId: " + productoId);
+            System.out.println("  - Cantidad: " + cantidad);
+            System.out.println("  - FormulaCalculo: " + formulaCalculo);
+            
+            // Si se proporciona una fórmula, evaluarla
+            if (formulaCalculo != null && !formulaCalculo.trim().isEmpty()) {
+                CalculadoraService.ResultadoCalculo resultado = calculadoraService.evaluarExpresion(formulaCalculo);
+                if (resultado.isExito()) {
+                    cantidad = resultado.getResultado();
+                } else {
+                    return ResponseEntity.badRequest().body(Map.of("error", resultado.getError()));
+                }
+            }
+            
+            DetalleConteo detalle = inventarioCompletoService.agregarProductoAlReconteo(
+                conteoSectorId, productoId, cantidad, formulaCalculo, usuarioId);
+            
+            System.out.println("✅ Producto agregado exitosamente al reconteo");
+            System.out.println("  - Detalle ID: " + detalle.getId());
+            System.out.println("  - Estado del detalle: " + detalle.getEstado());
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Producto agregado al reconteo exitosamente",
+                "productoId", detalle.getProducto().getId(),
+                "cantidad", detalle.getCantidadConteo1() != null ? detalle.getCantidadConteo1() : detalle.getCantidadConteo2(),
+                "estado", detalle.getEstado().toString()
+            ));
+        } catch (Exception e) {
+            System.err.println("❌ Error agregando producto al reconteo: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
 
     /**
      * Cancelar inventario completo
@@ -717,6 +773,47 @@ public class InventarioCompletoController {
             ));
         } catch (Exception e) {
             System.err.println("❌ Error finalizando conteo de sector: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Finalizar reconteo de sector
+     */
+    @PostMapping("/{inventarioId}/conteos-sector/{conteoSectorId}/finalizar-reconteo")
+    public ResponseEntity<?> finalizarReconteoSector(
+            @PathVariable Long empresaId,
+            @PathVariable Long inventarioId,
+            @PathVariable Long conteoSectorId,
+            @RequestBody Map<String, Long> request,
+            Authentication authentication) {
+        try {
+            System.out.println("🔍 Finalizando reconteo de sector - empresaId: " + empresaId + ", inventarioId: " + inventarioId + ", conteoSectorId: " + conteoSectorId);
+            
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioId = request.get("usuarioId");
+            
+            // Verificar que el usuario pertenece a la empresa
+            if (!usuarioPrincipal.getEmpresaId().equals(empresaId)) {
+                return ResponseEntity.status(403).body(Map.of("error", "No autorizado para acceder a esta empresa"));
+            }
+            
+            // Verificar que el usuario está asignado al conteo
+            if (!usuarioPrincipal.getId().equals(usuarioId)) {
+                return ResponseEntity.status(403).body(Map.of("error", "No autorizado para finalizar este reconteo"));
+            }
+            
+            ConteoSector conteoSector = inventarioCompletoService.finalizarReconteoSector(conteoSectorId, usuarioId);
+            ConteoSectorDTO conteoSectorDTO = new ConteoSectorDTO(conteoSector);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Reconteo finalizado exitosamente",
+                "conteoSector", conteoSectorDTO,
+                "estado", conteoSector.getEstado().toString()
+            ));
+        } catch (Exception e) {
+            System.err.println("❌ Error finalizando reconteo de sector: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
         }

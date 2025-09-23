@@ -340,8 +340,56 @@ export default function InventarioCompleto() {
         setSectorSeleccionado(null);
         setUsuario1Seleccionado(null);
         setUsuario2Seleccionado(null);
-        console.log('🔄 Recargando datos después de asignación...');
-        await cargarDatos();
+        
+        // Actualizar el estado local en lugar de recargar toda la página
+        if (inventario && sectorSeleccionado) {
+          setInventario(prevInventario => {
+            if (!prevInventario) return prevInventario;
+            
+            // Verificar si ya existe un conteo para este sector
+            const conteoExistente = prevInventario.conteosSectores?.find(c => c.sectorId === sectorSeleccionado.id);
+            
+            let nuevosConteosSectores;
+            if (conteoExistente) {
+              // Actualizar conteo existente
+              nuevosConteosSectores = prevInventario.conteosSectores?.map(conteo => {
+                if (conteo.sectorId === sectorSeleccionado.id) {
+                  return {
+                    ...conteo,
+                    usuario1Id: usuario1Seleccionado,
+                    usuario2Id: usuario2Seleccionado,
+                    usuario1Nombre: usuariosAsignados.find(u => u.id === usuario1Seleccionado)?.nombre || 'Usuario 1',
+                    usuario2Nombre: usuariosAsignados.find(u => u.id === usuario2Seleccionado)?.nombre || 'Usuario 2'
+                  };
+                }
+                return conteo;
+              }) || [];
+            } else {
+              // Crear nuevo conteo para el sector
+              const nuevoConteo = {
+                id: Date.now(), // ID temporal
+                sectorId: sectorSeleccionado.id,
+                sectorNombre: sectorSeleccionado.nombre,
+                estado: 'PENDIENTE',
+                usuario1Id: usuario1Seleccionado,
+                usuario2Id: usuario2Seleccionado,
+                usuario1Nombre: usuariosAsignados.find(u => u.id === usuario1Seleccionado)?.nombre || 'Usuario 1',
+                usuario2Nombre: usuariosAsignados.find(u => u.id === usuario2Seleccionado)?.nombre || 'Usuario 2',
+                productosContados: 0,
+                totalProductos: 0,
+                porcentajeCompletado: 0,
+                productosConDiferencias: 0
+              };
+              
+              nuevosConteosSectores = [...(prevInventario.conteosSectores || []), nuevoConteo];
+            }
+            
+            return {
+              ...prevInventario,
+              conteosSectores: nuevosConteosSectores
+            };
+          });
+        }
       } else {
         const errorData = await response.json();
         toast.error(errorData.message || 'Error al asignar usuarios');
@@ -1023,121 +1071,110 @@ export default function InventarioCompleto() {
                           </span>
                         </div>
 
-                        {/* Información de usuarios asignados */}
-                        {conteo ? (
-                          <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                            gap: '1rem',
-                            marginBottom: '1rem'
-                          }}>
-                            <div style={{
-                              background: 'white',
-                              borderRadius: '0.5rem',
-                              padding: '1rem',
-                              border: '1px solid #e2e8f0'
-                            }}>
-                              <div style={{
-                                fontSize: '0.8rem',
-                                color: '#64748b',
-                                marginBottom: '0.25rem'
-                              }}>
-                                Usuario 1
-                              </div>
-                              <div style={{
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
-                                color: '#1e293b'
-                              }}>
-                                {conteo.usuario1Nombre || 'No asignado'}
-                              </div>
-                            </div>
-                            <div style={{
-                              background: 'white',
-                              borderRadius: '0.5rem',
-                              padding: '1rem',
-                              border: '1px solid #e2e8f0'
-                            }}>
-                              <div style={{
-                                fontSize: '0.8rem',
-                                color: '#64748b',
-                                marginBottom: '0.25rem'
-                              }}>
-                                Usuario 2
-                              </div>
-                              <div style={{
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
-                                color: '#1e293b'
-                              }}>
-                                {conteo.usuario2Nombre || 'No asignado'}
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
+                        {/* Información de usuarios asignados - Siempre mostrar la misma estructura */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                          gap: '1rem',
+                          marginBottom: '1rem'
+                        }}>
                           <div style={{
                             background: 'white',
                             borderRadius: '0.5rem',
                             padding: '1rem',
-                            border: '1px solid #e2e8f0',
-                            marginBottom: '1rem',
-                            textAlign: 'center'
+                            border: '1px solid #e2e8f0'
                           }}>
+                            <div style={{
+                              fontSize: '0.8rem',
+                              color: '#64748b',
+                              marginBottom: '0.25rem'
+                            }}>
+                              Usuario 1
+                            </div>
                             <div style={{
                               fontSize: '0.9rem',
-                              color: '#64748b',
-                              fontWeight: '500'
+                              fontWeight: '600',
+                              color: conteo?.usuario1Nombre ? '#1e293b' : '#94a3b8'
                             }}>
-                              Sin usuarios asignados
+                              {conteo?.usuario1Nombre || 'No asignado'}
                             </div>
                           </div>
-                        )}
-
-                        {/* Progreso del sector */}
-                        {conteo && (
                           <div style={{
                             background: 'white',
                             borderRadius: '0.5rem',
                             padding: '1rem',
-                            border: '1px solid #e2e8f0',
-                            marginBottom: '1rem'
+                            border: '1px solid #e2e8f0'
                           }}>
                             <div style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              marginBottom: '0.5rem'
+                              fontSize: '0.8rem',
+                              color: '#64748b',
+                              marginBottom: '0.25rem'
                             }}>
-                              <span style={{
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
-                                color: '#1e293b'
-                              }}>
-                                Progreso
-                              </span>
-                              <span style={{
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
-                                color: '#7c3aed'
-                              }}>
-                                {conteo.productosContados || 0} / {conteo.totalProductos || 0}
-                              </span>
+                              Usuario 2
                             </div>
                             <div style={{
-                              background: '#f1f5f9',
-                              borderRadius: '0.25rem',
-                              height: '6px',
-                              overflow: 'hidden'
+                              fontSize: '0.9rem',
+                              fontWeight: '600',
+                              color: conteo?.usuario2Nombre ? '#1e293b' : '#94a3b8'
                             }}>
-                              <div style={{
-                                background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                                height: '100%',
-                                width: `${conteo.porcentajeCompletado || 0}%`,
-                                transition: 'width 0.3s ease'
-                              }}></div>
+                              {conteo?.usuario2Nombre || 'No asignado'}
                             </div>
                           </div>
-                        )}
+                        </div>
+
+                        {/* Progreso del sector - Siempre mostrar para mantener tamaño consistente */}
+                        <div style={{
+                          background: 'white',
+                          borderRadius: '0.5rem',
+                          padding: '1rem',
+                          border: '1px solid #e2e8f0',
+                          marginBottom: '1rem'
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '0.5rem'
+                          }}>
+                            <span style={{
+                              fontSize: '0.9rem',
+                              fontWeight: '600',
+                              color: '#1e293b'
+                            }}>
+                              Progreso
+                            </span>
+                            <span style={{
+                              fontSize: '0.9rem',
+                              fontWeight: '600',
+                              color: conteo ? '#7c3aed' : '#94a3b8'
+                            }}>
+                              {conteo ? (
+                                conteo.totalProductos && conteo.totalProductos > 0 
+                                  ? `${conteo.productosContados || 0} / ${conteo.totalProductos} (${Math.round((conteo.productosContados || 0) * 100 / conteo.totalProductos)}%)`
+                                  : `${conteo.productosContados || 0} productos contados`
+                              ) : (
+                                'Sin conteo iniciado'
+                              )}
+                            </span>
+                          </div>
+                          <div style={{
+                            background: '#f1f5f9',
+                            borderRadius: '0.25rem',
+                            height: '6px',
+                            overflow: 'hidden'
+                          }}>
+                            <div style={{
+                              background: conteo ? 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' : '#e2e8f0',
+                              height: '100%',
+                              width: `${conteo ? (
+                                conteo.totalProductos && conteo.totalProductos > 0 
+                                  ? Math.round((conteo.productosContados || 0) * 100 / conteo.totalProductos)
+                                  : (conteo.porcentajeCompletado || 0)
+                              ) : 0}%`,
+                              transition: 'width 0.3s ease'
+                            }}></div>
+                          </div>
+                        </div>
 
                         {/* Botones de acción */}
                         <div style={{
@@ -1145,7 +1182,7 @@ export default function InventarioCompleto() {
                           gap: '0.5rem',
                           justifyContent: 'flex-end'
                         }}>
-                          {!conteo || !conteo.usuario1Nombre || !conteo.usuario2Nombre ? (
+                          {(!conteo || !conteo.usuario1Nombre || !conteo.usuario2Nombre) && datosUsuario?.rol === 'ADMINISTRADOR' ? (
                             <button
                               onClick={() => {
                                 setSectorSeleccionado(sector);
@@ -1253,10 +1290,13 @@ export default function InventarioCompleto() {
                                   // Si el usuario ya inició su conteo (estado EN_PROGRESO)
                                   estadoUsuarioActual === 'EN_PROGRESO' ||
                                   // Si hay diferencias y necesita reconteo (estado CON_DIFERENCIAS)
-                                  conteo.estado === 'CON_DIFERENCIAS'
+                                  conteo.estado === 'CON_DIFERENCIAS' ||
+                                  // Si el estado específico del usuario es CON_DIFERENCIAS (para reconteo)
+                                  estadoUsuarioActual === 'CON_DIFERENCIAS'
                                 );
                                 
-                                const mostrarBoton = puedeIniciarConteo;
+                                // Mostrar botón si puede iniciar conteo O si es administrador y no hay usuarios asignados
+                                const mostrarBoton = puedeIniciarConteo || (datosUsuario?.rol === 'ADMINISTRADOR' && !tieneUsuariosAsignados);
                                 
                                 console.log('🔍 LÓGICA BOTÓN:', {
                                   sectorNombre: conteo?.sectorNombre,
@@ -1271,7 +1311,10 @@ export default function InventarioCompleto() {
                                   estadoUsuarioActual: estadoUsuarioActual,
                                   productosContadosUsuarioActual: productosContadosUsuarioActual,
                                   puedeIniciarConteo: puedeIniciarConteo,
-                                  mostrarBoton: mostrarBoton
+                                  mostrarBoton: mostrarBoton,
+                                  // Debug específico para CON_DIFERENCIAS
+                                  esEstadoConDiferencias: conteo?.estado === 'CON_DIFERENCIAS',
+                                  esAsignadoYConDiferencias: esAsignado && conteo?.estado === 'CON_DIFERENCIAS'
                                 });
                                 
                                 // Logs separados para los estados específicos
@@ -1315,13 +1358,20 @@ export default function InventarioCompleto() {
                                     // Verificar si hay usuarios asignados
                                     const tieneUsuariosAsignados = conteo && conteo.usuario1Id && conteo.usuario2Id;
                                     
-                                    if (!tieneUsuariosAsignados) {
+                                    if (!tieneUsuariosAsignados && datosUsuario?.rol === 'ADMINISTRADOR') {
                                       console.log('👥 Navegando a asignar usuarios');
                                       // Navegar a página de asignación de usuarios
                                       navigate(`/admin/asignar-usuarios-inventario/${conteo.id}`);
+                                    } else if (!tieneUsuariosAsignados) {
+                                      console.log('⏳ Usuario no administrador, no puede asignar usuarios');
+                                      toast.info('Solo el administrador puede asignar usuarios');
                                     } else {
-                                      // Verificar si es reconteo basándose en el estado
-                                      const esReconteo = conteo.estado === 'CON_DIFERENCIAS';
+                                      // Verificar si es reconteo basándose en el estado general o el estado del usuario
+                                      const esUsuario1 = conteo && conteo.usuario1Id === datosUsuario?.id;
+                                      const esUsuario2 = conteo && conteo.usuario2Id === datosUsuario?.id;
+                                      const estadoUsuarioActual = esUsuario1 ? conteo.estadoUsuario1 : conteo.estadoUsuario2;
+                                      
+                                      const esReconteo = conteo.estado === 'CON_DIFERENCIAS' || estadoUsuarioActual === 'CON_DIFERENCIAS';
                                       
                                       if (esReconteo) {
                                         console.log('🔍 Navegando al reconteo con modo reconteo');
@@ -1416,8 +1466,18 @@ export default function InventarioCompleto() {
                                     });
                                     
                                     const tieneUsuariosAsignados = conteo && conteo.usuario1Id && conteo.usuario2Id;
-                                    if (!tieneUsuariosAsignados) return '👥 Asignar Usuarios';
-                                    if (conteo?.estado === 'CON_DIFERENCIAS') return '🔍 Revisar y Recontar';
+                                    if (!tieneUsuariosAsignados && datosUsuario?.rol === 'ADMINISTRADOR') return '👥 Asignar Usuarios';
+                                    if (!tieneUsuariosAsignados) return '⏳ Esperando asignación';
+                                    
+                                    // Verificar si el usuario está asignado para obtener su estado específico
+                                    const esUsuario1Local = conteo && conteo.usuario1Id === datosUsuario?.id;
+                                    const esUsuario2Local = conteo && conteo.usuario2Id === datosUsuario?.id;
+                                    const estadoUsuarioActual = esUsuario1Local ? conteo.estadoUsuario1 : conteo.estadoUsuario2;
+                                    
+                                    // Si el estado general es CON_DIFERENCIAS o el estado del usuario es CON_DIFERENCIAS
+                                    if (conteo?.estado === 'CON_DIFERENCIAS' || estadoUsuarioActual === 'CON_DIFERENCIAS') {
+                                      return '🔍 Revisar y Recontar';
+                                    }
                                     
                                     // Verificar si es reconteo: ambos usuarios han finalizado
                                     const esReconteo = conteo.conteo1Finalizado && conteo.conteo2Finalizado;
@@ -1446,11 +1506,11 @@ export default function InventarioCompleto() {
                                     const esUsuario2 = conteo && conteo.usuario2Id === datosUsuario?.id;
                                     const esUsuarioAsignado = esUsuario1 || esUsuario2;
                                     
-                                    // Definir estadoUsuarioActual dentro de este scope
-                                    const estadoUsuarioActual = esUsuario1 ? conteo.estadoUsuario1 : conteo.estadoUsuario2;
+                                    // Definir estadoUsuarioActualLocal dentro de este scope
+                                    const estadoUsuarioActualLocal = esUsuario1 ? conteo.estadoUsuario1 : conteo.estadoUsuario2;
                                     
                                     console.log('🚀 INICIO FUNCIÓN BOTÓN:', {
-                                      estadoUsuarioActual: estadoUsuarioActual,
+                                      estadoUsuarioActual: estadoUsuarioActualLocal,
                                       esUsuario1: esUsuario1,
                                       esUsuario2: esUsuario2
                                     });
@@ -1477,11 +1537,11 @@ export default function InventarioCompleto() {
                                       conteo2Finalizado: conteo.conteo2Finalizado
                                     });
                                     
-                                    if (estadoUsuarioActual === 'PENDIENTE') {
+                                    if (estadoUsuarioActualLocal === 'PENDIENTE') {
                                       return '▶️ Iniciar Conteo';
-                                    } else if (estadoUsuarioActual === 'ESPERANDO_VERIFICACION') {
+                                    } else if (estadoUsuarioActualLocal === 'ESPERANDO_VERIFICACION') {
                                       return '▶️ Iniciar Conteo';
-                                    } else if (estadoUsuarioActual === 'EN_PROGRESO') {
+                                    } else if (estadoUsuarioActualLocal === 'EN_PROGRESO') {
                                       return '🔄 Continuar Conteo';
                                     } else {
                                       return '▶️ Iniciar Conteo';

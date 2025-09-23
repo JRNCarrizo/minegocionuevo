@@ -159,4 +159,55 @@ public class InventarioCompleto {
 
     public List<ConteoSector> getConteosSectores() { return conteosSectores; }
     public void setConteosSectores(List<ConteoSector> conteosSectores) { this.conteosSectores = conteosSectores; }
+
+    /**
+     * Calcular estadísticas basándose en los conteos de sector
+     */
+    public void calcularEstadisticas() {
+        if (conteosSectores == null || conteosSectores.isEmpty()) {
+            this.sectoresCompletados = 0;
+            this.sectoresEnProgreso = 0;
+            this.sectoresPendientes = 0;
+            this.porcentajeCompletado = 0.0;
+            return;
+        }
+
+        int completados = 0;
+        int enProgreso = 0;
+        int pendientes = 0;
+
+        for (ConteoSector conteoSector : conteosSectores) {
+            switch (conteoSector.getEstado()) {
+                case COMPLETADO:
+                    completados++;
+                    break;
+                case EN_PROGRESO:
+                case ESPERANDO_VERIFICACION:
+                case CON_DIFERENCIAS:
+                    enProgreso++;
+                    break;
+                case PENDIENTE:
+                default:
+                    pendientes++;
+                    break;
+            }
+        }
+
+        this.sectoresCompletados = completados;
+        this.sectoresEnProgreso = enProgreso;
+        this.sectoresPendientes = pendientes;
+        
+        // Calcular porcentaje
+        if (totalSectores != null && totalSectores > 0) {
+            this.porcentajeCompletado = (completados * 100.0) / totalSectores;
+        } else {
+            this.porcentajeCompletado = 0.0;
+        }
+
+        System.out.println("📊 Estadísticas calculadas - Total: " + totalSectores + 
+                         ", Completados: " + completados + 
+                         ", En Progreso: " + enProgreso + 
+                         ", Pendientes: " + pendientes + 
+                         ", Porcentaje: " + porcentajeCompletado + "%");
+    }
 }

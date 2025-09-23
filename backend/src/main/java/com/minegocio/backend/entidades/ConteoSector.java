@@ -42,6 +42,9 @@ public class ConteoSector {
     @Column(name = "productos_contados")
     private Integer productosContados;
 
+    @Column(name = "total_productos")
+    private Integer totalProductos;
+
     @Column(name = "productos_con_diferencias")
     private Integer productosConDiferencias;
 
@@ -94,6 +97,7 @@ public class ConteoSector {
     public ConteoSector() {
         this.estado = EstadoConteo.PENDIENTE;
         this.productosContados = 0;
+        this.totalProductos = 0;
         this.productosConDiferencias = 0;
         this.intentosReconteo = 0;
         this.porcentajeCompletado = 0.0;
@@ -181,6 +185,14 @@ public class ConteoSector {
 
     public void setProductosContados(Integer productosContados) {
         this.productosContados = productosContados;
+    }
+
+    public Integer getTotalProductos() {
+        return totalProductos;
+    }
+
+    public void setTotalProductos(Integer totalProductos) {
+        this.totalProductos = totalProductos;
     }
 
     public Integer getProductosConDiferencias() {
@@ -306,10 +318,9 @@ public class ConteoSector {
 
     // Métodos de utilidad
     public void actualizarPorcentajeCompletado() {
-        // Como no tenemos totalProductos, usamos un valor por defecto o calculamos basado en productos contados
-        if (productosContados != null && productosContados > 0) {
-            this.porcentajeCompletado = productosContados * 10.0; // Valor estimado
-        } else {
+        // Este método será sobrescrito por el servicio con datos reales
+        // Por ahora mantenemos el valor actual
+        if (this.porcentajeCompletado == null) {
             this.porcentajeCompletado = 0.0;
         }
     }
