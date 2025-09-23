@@ -5,6 +5,7 @@ import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import ApiService from '../../services/api';
+import { API_CONFIG } from '../../config/api';
 
 interface Sector {
   id: number;
@@ -130,9 +131,9 @@ export default function InventarioCompleto() {
       }
 
       try {
-        // Cargar usuarios asignados usando fetch con URL absoluta
+        // Cargar usuarios asignados usando fetch con configuración correcta
         const token = localStorage.getItem('token');
-        const baseUrl = import.meta.env.VITE_API_URL || 'https://minegocio-backend-production.up.railway.app/api';
+        const baseUrl = API_CONFIG.getBaseUrl();
         const usuariosResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/usuarios?rol=ASIGNADO`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -156,7 +157,7 @@ export default function InventarioCompleto() {
       try {
         // Probar endpoint de test primero
         const token = localStorage.getItem('token');
-        const baseUrl = import.meta.env.VITE_API_URL || 'https://minegocio-backend-production.up.railway.app/api';
+        const baseUrl = API_CONFIG.getBaseUrl();
         const testResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/test`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -177,9 +178,9 @@ export default function InventarioCompleto() {
       }
 
       try {
-        // Cargar inventario activo usando fetch con URL absoluta
+        // Cargar inventario activo usando fetch con configuración correcta
         const token = localStorage.getItem('token');
-        const baseUrl = import.meta.env.VITE_API_URL || 'https://minegocio-backend-production.up.railway.app/api';
+        const baseUrl = API_CONFIG.getBaseUrl();
         const inventarioResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/activo`, {
           headers: {
             'Authorization': `Bearer ${token}`,

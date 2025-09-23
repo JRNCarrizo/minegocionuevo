@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSubdominio } from "../hooks/useSubdominio";
 import api from "../services/api";
+import { API_CONFIG } from "../config/api";
 
 interface ConfirmarCompraProps {
   open: boolean;
@@ -46,7 +47,7 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
       console.log('Iniciando fetch de datos bancarios para subdominio:', subdominio);
       setCargandoBancarios(true);
       try {
-        const response = await fetch(`https://minegocio-backend-production.up.railway.app/api/publico/${subdominio}/datos-bancarios`);
+        const response = await fetch(`${API_CONFIG.getBaseUrl().replace('/api', '')}/publico/${subdominio}/datos-bancarios`);
         console.log('Respuesta del servidor:', response.status, response.statusText);
         
         if (response.ok) {

@@ -496,9 +496,19 @@ public class InventarioCompletoService {
         Usuario usuario2 = usuarioRepository.findById(usuario2Id)
             .orElseThrow(() -> new RuntimeException("Usuario 2 no encontrado"));
         
-        // Buscar el conteo de sector
-        ConteoSector conteoSector = conteoSectorRepository.findByInventarioCompletoAndSector(inventario, sector)
-            .orElseThrow(() -> new RuntimeException("Conteo de sector no encontrado"));
+        // Buscar el conteo de sector, si no existe, crearlo
+        Optional<ConteoSector> conteoSectorOpt = conteoSectorRepository.findByInventarioCompletoAndSector(inventario, sector);
+        ConteoSector conteoSector;
+        
+        if (conteoSectorOpt.isPresent()) {
+            conteoSector = conteoSectorOpt.get();
+            System.out.println("✅ Conteo de sector encontrado: " + conteoSector.getId());
+        } else {
+            System.out.println("⚠️ Conteo de sector no encontrado, creando nuevo...");
+            conteoSector = new ConteoSector(inventario, sector);
+            conteoSector = conteoSectorRepository.save(conteoSector);
+            System.out.println("✅ Nuevo conteo de sector creado: " + conteoSector.getId());
+        }
         
         conteoSector.setUsuarioAsignado1(usuario1);
         conteoSector.setUsuarioAsignado2(usuario2);
