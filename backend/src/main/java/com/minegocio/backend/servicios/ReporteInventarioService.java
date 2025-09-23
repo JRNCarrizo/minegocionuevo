@@ -107,9 +107,17 @@ public class ReporteInventarioService {
             // Agregar resumen al final
             agregarResumen(sheet, productos, rowNum + 2);
 
-            // Ajustar ancho de columnas
-            for (int i = 0; i < headers.length; i++) {
-                sheet.autoSizeColumn(i);
+            // Ajustar ancho de columnas (solo si no estamos en un entorno headless)
+            try {
+                for (int i = 0; i < headers.length; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+            } catch (Exception e) {
+                // Si falla el auto-sizing (entorno headless), establecer anchos fijos
+                System.out.println("⚠️ No se pudo auto-ajustar columnas en ReporteInventario, usando anchos fijos: " + e.getMessage());
+                for (int i = 0; i < headers.length; i++) {
+                    sheet.setColumnWidth(i, 15 * 256); // 15 caracteres por defecto
+                }
             }
 
             // Convertir a bytes

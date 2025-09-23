@@ -477,9 +477,19 @@ public class PlanillaDevolucionService {
                 }
             }
 
-            // Autoajustar columnas
-            for (int i = 0; i < 5; i++) {
-                sheet.autoSizeColumn(i);
+            // Autoajustar columnas (solo si no estamos en un entorno headless)
+            try {
+                for (int i = 0; i < 5; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+            } catch (Exception e) {
+                // Si falla el auto-sizing (entorno headless), establecer anchos fijos
+                System.out.println("⚠️ No se pudo auto-ajustar columnas, usando anchos fijos: " + e.getMessage());
+                sheet.setColumnWidth(0, 15 * 256); // Columna A: 15 caracteres
+                sheet.setColumnWidth(1, 20 * 256); // Columna B: 20 caracteres
+                sheet.setColumnWidth(2, 15 * 256); // Columna C: 15 caracteres
+                sheet.setColumnWidth(3, 15 * 256); // Columna D: 15 caracteres
+                sheet.setColumnWidth(4, 20 * 256); // Columna E: 20 caracteres
             }
 
             // Escribir el workbook a un ByteArrayOutputStream
