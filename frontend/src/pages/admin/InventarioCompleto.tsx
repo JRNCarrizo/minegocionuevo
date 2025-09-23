@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
+import ApiService from '../../services/api';
 
 interface Sector {
   id: number;
@@ -115,111 +116,132 @@ export default function InventarioCompleto() {
         return;
       }
 
-      const token = localStorage.getItem('token');
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-
-      // Cargar sectores
-      const sectoresResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/sectores`, {
-        headers
-      });
-      if (sectoresResponse.ok) {
-        const sectoresData = await sectoresResponse.json();
-        console.log('✅ Sectores cargados:', sectoresData);
-        if (sectoresData.data) {
-          setSectores(sectoresData.data);
+      try {
+        // Cargar sectores usando ApiService
+        const sectoresResponse = await ApiService.obtenerSectores(datosUsuario.empresaId);
+        console.log('✅ Sectores cargados:', sectoresResponse);
+        if (sectoresResponse.data) {
+          setSectores(sectoresResponse.data);
         } else {
-          setSectores(sectoresData);
+          setSectores(sectoresResponse);
         }
-      } else {
-        console.error('❌ Error cargando sectores:', sectoresResponse.status);
-        const errorData = await sectoresResponse.text();
-        console.error('❌ Error details sectores:', errorData);
+      } catch (error) {
+        console.error('❌ Error cargando sectores:', error);
       }
 
-      // Cargar usuarios asignados
-      const usuariosResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/usuarios?rol=ASIGNADO`, {
-        headers
-      });
-      if (usuariosResponse.ok) {
-        const usuariosData = await usuariosResponse.json();
-        console.log('✅ Usuarios asignados cargados:', usuariosData);
-        setUsuariosAsignados(usuariosData);
-      } else {
-        console.error('❌ Error cargando usuarios:', usuariosResponse.status);
-        const errorData = await usuariosResponse.text();
-        console.error('❌ Error details usuarios:', errorData);
-      }
-
-      // Probar endpoint de test primero
-      const testResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/test`, {
-        headers
-      });
-      if (testResponse.ok) {
-        const testData = await testResponse.json();
-        console.log('✅ Test endpoint funcionando:', testData);
-      } else {
-        console.error('❌ Error en test endpoint:', testResponse.status);
-      }
-
-      // Cargar inventario activo
-      const inventarioResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/activo`, {
-        headers
-      });
-      if (inventarioResponse.ok) {
-        const inventarioData = await inventarioResponse.json();
-        console.log('✅ Inventario activo cargado:', inventarioData);
-        console.log('✅ Conteos de sectores:', inventarioData.conteosSectores);
+      try {
+        // Cargar usuarios asignados usando fetch con URL absoluta
+        const token = localStorage.getItem('token');
+        const baseUrl = import.meta.env.VITE_API_URL || 'https://minegocio-backend-production.up.railway.app/api';
+        const usuariosResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/usuarios?rol=ASIGNADO`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         
-        // Debug específico para estados de conteos
-        if (inventarioData.conteosSectores) {
-          inventarioData.conteosSectores.forEach((conteo: any, index: number) => {
-            console.log(`🔍 Conteo ${index + 1} COMPLETO:`, conteo);
-            console.log(`🔍 Conteo ${index + 1} RESUMEN:`, {
-              id: conteo.id,
-              sectorId: conteo.sectorId,
-              sectorNombre: conteo.sectorNombre,
-              estado: conteo.estado,
-              estadoUsuario1: conteo.estadoUsuario1,
-              estadoUsuario2: conteo.estadoUsuario2,
-              usuario1Id: conteo.usuario1Id,
-              usuario2Id: conteo.usuario2Id,
-              conteo1Finalizado: conteo.conteo1Finalizado,
-              conteo2Finalizado: conteo.conteo2Finalizado,
-              fechaConteo1Finalizacion: conteo.fechaConteo1Finalizacion,
-              fechaConteo2Finalizacion: conteo.fechaConteo2Finalizacion
-            });
-            
-            // Debug específico para campos de finalización
-            console.log(`🔍 Conteo ${index + 1} CAMPOS FINALIZACIÓN:`, {
-              conteo1Finalizado: conteo.conteo1Finalizado,
-              conteo2Finalizado: conteo.conteo2Finalizado,
-              tipoConteo1Finalizado: typeof conteo.conteo1Finalizado,
-              tipoConteo2Finalizado: typeof conteo.conteo2Finalizado
-            });
-          });
+        if (usuariosResponse.ok) {
+          const usuariosData = await usuariosResponse.json();
+          console.log('✅ Usuarios asignados cargados:', usuariosData);
+          setUsuariosAsignados(usuariosData);
+        } else {
+          console.error('❌ Error cargando usuarios:', usuariosResponse.status);
+          const errorData = await usuariosResponse.text();
+          console.error('❌ Error details usuarios:', errorData);
         }
-        const inventarioConDefaults = {
-          ...inventarioData,
-          totalSectores: inventarioData.totalSectores || 0,
-          sectoresCompletados: inventarioData.sectoresCompletados || 0,
-          sectoresEnProgreso: inventarioData.sectoresEnProgreso || 0,
-          sectoresPendientes: inventarioData.sectoresPendientes || 0,
-          porcentajeCompletado: inventarioData.porcentajeCompletado || 0,
-          conteosSectores: inventarioData.conteosSectores || []
-        };
-        console.log('✅ Inventario con defaults:', inventarioConDefaults);
-        console.log('✅ Inventario ID cargado:', inventarioConDefaults.id);
-        setInventario(inventarioConDefaults);
-      } else if (inventarioResponse.status === 404) {
-        console.log('ℹ️ No hay inventario activo');
-        setInventario(null);
-      } else {
-        console.error('❌ Error cargando inventario activo:', inventarioResponse.status);
-        const errorData = await inventarioResponse.text();
-        console.error('❌ Error details:', errorData);
+      } catch (error) {
+        console.error('❌ Error cargando usuarios:', error);
+      }
+
+      try {
+        // Probar endpoint de test primero
+        const token = localStorage.getItem('token');
+        const baseUrl = import.meta.env.VITE_API_URL || 'https://minegocio-backend-production.up.railway.app/api';
+        const testResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/test`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (testResponse.ok) {
+          const testData = await testResponse.json();
+          console.log('✅ Test endpoint funcionando:', testData);
+        } else {
+          console.error('❌ Error en test endpoint:', testResponse.status);
+          const errorData = await testResponse.text();
+          console.error('❌ Error details test:', errorData);
+        }
+      } catch (error) {
+        console.error('❌ Error en test endpoint:', error);
+      }
+
+      try {
+        // Cargar inventario activo usando fetch con URL absoluta
+        const token = localStorage.getItem('token');
+        const baseUrl = import.meta.env.VITE_API_URL || 'https://minegocio-backend-production.up.railway.app/api';
+        const inventarioResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/activo`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (inventarioResponse.ok) {
+          const inventarioData = await inventarioResponse.json();
+          console.log('✅ Inventario activo cargado:', inventarioData);
+          console.log('✅ Conteos de sectores:', inventarioData.conteosSectores);
+          
+          // Debug específico para estados de conteos
+          if (inventarioData.conteosSectores) {
+            inventarioData.conteosSectores.forEach((conteo: any, index: number) => {
+              console.log(`🔍 Conteo ${index + 1} COMPLETO:`, conteo);
+              console.log(`🔍 Conteo ${index + 1} RESUMEN:`, {
+                id: conteo.id,
+                sectorId: conteo.sectorId,
+                sectorNombre: conteo.sectorNombre,
+                estado: conteo.estado,
+                estadoUsuario1: conteo.estadoUsuario1,
+                estadoUsuario2: conteo.estadoUsuario2,
+                usuario1Id: conteo.usuario1Id,
+                usuario2Id: conteo.usuario2Id,
+                conteo1Finalizado: conteo.conteo1Finalizado,
+                conteo2Finalizado: conteo.conteo2Finalizado,
+                fechaConteo1Finalizacion: conteo.fechaConteo1Finalizacion,
+                fechaConteo2Finalizacion: conteo.fechaConteo2Finalizacion
+              });
+              
+              // Debug específico para campos de finalización
+              console.log(`🔍 Conteo ${index + 1} CAMPOS FINALIZACIÓN:`, {
+                conteo1Finalizado: conteo.conteo1Finalizado,
+                conteo2Finalizado: conteo.conteo2Finalizado,
+                tipoConteo1Finalizado: typeof conteo.conteo1Finalizado,
+                tipoConteo2Finalizado: typeof conteo.conteo2Finalizado
+              });
+            });
+          }
+          const inventarioConDefaults = {
+            ...inventarioData,
+            totalSectores: inventarioData.totalSectores || 0,
+            sectoresCompletados: inventarioData.sectoresCompletados || 0,
+            sectoresEnProgreso: inventarioData.sectoresEnProgreso || 0,
+            sectoresPendientes: inventarioData.sectoresPendientes || 0,
+            porcentajeCompletado: inventarioData.porcentajeCompletado || 0,
+            conteosSectores: inventarioData.conteosSectores || []
+          };
+          console.log('✅ Inventario con defaults:', inventarioConDefaults);
+          console.log('✅ Inventario ID cargado:', inventarioConDefaults.id);
+          setInventario(inventarioConDefaults);
+        } else if (inventarioResponse.status === 404) {
+          console.log('ℹ️ No hay inventario activo');
+          setInventario(null);
+        } else {
+          console.error('❌ Error cargando inventario activo:', inventarioResponse.status);
+          const errorData = await inventarioResponse.text();
+          console.error('❌ Error details:', errorData);
+        }
+      } catch (error) {
+        console.error('❌ Error cargando inventario activo:', error);
       }
     } catch (error) {
       console.error('Error cargando datos:', error);
