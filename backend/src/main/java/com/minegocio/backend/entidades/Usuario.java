@@ -1,5 +1,6 @@
 package com.minegocio.backend.entidades;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -8,8 +9,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Entidad que representa los usuarios administradores de las empresas
@@ -65,6 +64,7 @@ public class Usuario {
     // Relación con empresa
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = true)
+    @JsonIgnore
     private Empresa empresa;
 
     // Timestamps
