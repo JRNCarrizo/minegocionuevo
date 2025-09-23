@@ -102,7 +102,11 @@ public class InventarioCompletoController {
                 return ResponseEntity.ok(inventarioDTO);
             } else {
                 System.out.println("🔍 No hay inventario activo para la empresa: " + empresaId);
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.ok(Map.of(
+                    "inventarioActivo", false,
+                    "mensaje", "No hay inventario activo para esta empresa",
+                    "empresaId", empresaId
+                ));
             }
         } catch (Exception e) {
             System.err.println("❌ Error obteniendo inventario activo: " + e.getMessage());
