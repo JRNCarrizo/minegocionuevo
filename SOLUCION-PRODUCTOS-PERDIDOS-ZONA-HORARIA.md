@@ -52,30 +52,80 @@ if (detalle.getFechaCreacion() != null) {
 }
 ```
 
-### 2. Simplificación en Frontend
+### 2. Corrección en Frontend
 
 **Archivos modificados:**
 - `frontend/src/pages/admin/DescargaDevoluciones.tsx`
 - `frontend/src/pages/admin/MovimientosDia.tsx`
 
-**Antes:**
-```javascript
-// Función compleja con lógica específica para strings ISO
-const formatearFechaConHoraProductosPerdidos = (fechaString: any): string => {
-  // Lógica compleja para manejar arrays y strings ISO...
-  // Conversión de zona horaria que causaba el problema...
-};
-```
+**Problema identificado:**
+La función `formatearFechaConHora` en `dateUtils.ts` aplicaba conversión de zona horaria que causaba el adelanto de 3 horas.
 
-**Después:**
+**Solución:**
 ```javascript
-// Función simplificada que usa la función principal
+// Función específica para productos perdidos que evita conversión de zona horaria
 const formatearFechaConHoraProductosPerdidos = (fechaString: any): string => {
   try {
     if (fechaString == null) {
       return 'N/A';
     }
-    // Usar la función principal de dateUtils que ya maneja arrays correctamente
+
+    // Si es un array (formato [year, month, day, hour, minute, second])
+    if (Array.isArray(fechaString)) {
+      const [year, month, day, hour = 0, minute = 0, second = 0] = fechaString;
+      
+      // Crear fecha local (no UTC) para evitar conversión automática
+      const fechaLocal = new Date(year, month - 1, day, hour, minute, second);
+      
+      if (isNaN(fechaLocal.getTime())) {
+        return 'Fecha inválida';
+      }
+      
+      // Mostrar directamente sin conversión de zona horaria
+      return fechaLocal.toLocaleString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'UTC' // Forzar UTC para evitar conversión de zona horaria
+      });
+    }
+
+    // Si es un string ISO, parsear manualmente para evitar conversión UTC automática
+    if (typeof fechaString === 'string' && fechaString.includes('T')) {
+      const partes = fechaString.split('T');
+      const fechaParte = partes[0].split('-');
+      const horaParte = partes[1].split(':');
+      
+      const year = parseInt(fechaParte[0]);
+      const month = parseInt(fechaParte[1]) - 1; // Meses van de 0-11
+      const day = parseInt(fechaParte[2]);
+      const hour = parseInt(horaParte[0]);
+      const minute = parseInt(horaParte[1]);
+      const second = parseInt(horaParte[2]) || 0;
+      
+      // Crear fecha local (no UTC) para evitar conversión automática
+      const fechaLocal = new Date(year, month, day, hour, minute, second);
+      
+      if (isNaN(fechaLocal.getTime())) {
+        return 'Fecha inválida';
+      }
+      
+      // Mostrar directamente sin conversión de zona horaria
+      return fechaLocal.toLocaleString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'UTC' // Forzar UTC para evitar conversión de zona horaria
+      });
+    }
+
+    // Para otros tipos, usar la función de dateUtils
     return formatearFechaConHora(fechaString);
   } catch (error) {
     console.error('Error formateando fecha de productos perdidos:', error);
