@@ -3316,7 +3316,9 @@ public class MovimientoDiaService {
             dataRow.createCell(1).setCellValue(perdida.getProducto().getNombre());
             
             // Cantidad pérdida
-            dataRow.createCell(2).setCellValue(perdida.getCantidad());
+            Cell cantidadCell = dataRow.createCell(2);
+            cantidadCell.setCellValue(perdida.getCantidad());
+            System.out.println("🔍 [PÉRDIDAS] Agregando pérdida - Fila: " + (rowIndex-1) + ", Cantidad: " + perdida.getCantidad());
             
             // Observación
             dataRow.createCell(3).setCellValue(perdida.getObservaciones() != null ? perdida.getObservaciones() : "");
@@ -3339,6 +3341,7 @@ public class MovimientoDiaService {
             Cell totalCantidadCell = totalRow.createCell(2);
             String totalCantidadFormula = "SUM(C3:C" + (rowIndex - 1) + ")";
             totalCantidadCell.setCellFormula(totalCantidadFormula);
+            System.out.println("🔍 [PÉRDIDAS] Fórmula de totales: " + totalCantidadFormula + " (rowIndex: " + rowIndex + ")");
             
             totalRow.createCell(3).setCellValue(""); // Columna de observación vacía
             
