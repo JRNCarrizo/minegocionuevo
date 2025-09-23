@@ -477,20 +477,8 @@ public class PlanillaDevolucionService {
                 }
             }
 
-            // Autoajustar columnas (solo si no estamos en un entorno headless)
-            try {
-                for (int i = 0; i < 5; i++) {
-                    sheet.autoSizeColumn(i);
-                }
-            } catch (Exception e) {
-                // Si falla el auto-sizing (entorno headless), establecer anchos fijos
-                System.out.println("⚠️ No se pudo auto-ajustar columnas, usando anchos fijos: " + e.getMessage());
-                sheet.setColumnWidth(0, 15 * 256); // Columna A: 15 caracteres
-                sheet.setColumnWidth(1, 20 * 256); // Columna B: 20 caracteres
-                sheet.setColumnWidth(2, 15 * 256); // Columna C: 15 caracteres
-                sheet.setColumnWidth(3, 15 * 256); // Columna D: 15 caracteres
-                sheet.setColumnWidth(4, 20 * 256); // Columna E: 20 caracteres
-            }
+            // Establecer anchos de columna fijos (evita errores de fuentes en entornos headless)
+            establecerAnchosColumnas(sheet, 15, 20, 15, 15, 20);
 
             // Escribir el workbook a un ByteArrayOutputStream
             try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
@@ -549,6 +537,20 @@ public class PlanillaDevolucionService {
             // Si hay error en la conversión, usar la fecha original
             System.out.println("⚠️ Error al convertir zona horaria '" + zonaHorariaUsuario + "': " + e.getMessage());
             return fechaUTC;
+        }
+    }
+
+    /**
+     * Establece anchos de columna fijos en lugar de autoSizeColumn
+     * Evita errores de fuentes en entornos headless
+     */
+    private void establecerAnchosColumnas(Sheet sheet, int... anchos) {
+        try {
+            for (int i = 0; i < anchos.length; i++) {
+                sheet.setColumnWidth(i, anchos[i] * 256); // POI usa unidades de 1/256 de carácter
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ [PLANILLA DEVOLUCION] Error estableciendo anchos de columna: " + e.getMessage());
         }
     }
 }
