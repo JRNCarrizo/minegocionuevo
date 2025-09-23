@@ -3290,6 +3290,7 @@ public class MovimientoDiaService {
             LocalDate.parse(fechaStr).atStartOfDay(),
             LocalDate.parse(fechaStr).atTime(23, 59, 59)
         );
+        System.out.println("🔍 [PÉRDIDAS] Total pérdidas encontradas: " + perdidas.size());
         
         // Crear encabezados
         Row headerRow = sheet.createRow(2);
@@ -3318,6 +3319,7 @@ public class MovimientoDiaService {
             // Cantidad pérdida
             Cell cantidadCell = dataRow.createCell(2);
             cantidadCell.setCellValue(perdida.getCantidad());
+            cantidadCell.setCellType(CellType.NUMERIC); // Asegurar que sea tratado como número
             System.out.println("🔍 [PÉRDIDAS] Agregando pérdida - Fila: " + (rowIndex-1) + ", Cantidad: " + perdida.getCantidad());
             
             // Observación
@@ -3652,7 +3654,8 @@ public class MovimientoDiaService {
                         productoPerdido.put("estado", detalle.getEstadoProducto().name());
                         productoPerdido.put("estadoDescripcion", detalle.getEstadoProducto().getDescripcion());
                         productoPerdido.put("observaciones", detalle.getObservaciones());
-                        productoPerdido.put("fechaCreacion", detalle.getFechaCreacion());
+                        // Formatear fecha como string para evitar problemas de serialización
+                        productoPerdido.put("fechaCreacion", detalle.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
                         productosPerdidos.add(productoPerdido);
                     }
                 }
@@ -3678,7 +3681,8 @@ public class MovimientoDiaService {
                         productoPerdido.put("estado", detalle.getEstadoProducto().name());
                         productoPerdido.put("estadoDescripcion", detalle.getEstadoProducto().getDescripcion());
                         productoPerdido.put("observaciones", detalle.getObservaciones());
-                        productoPerdido.put("fechaCreacion", detalle.getFechaCreacion());
+                        // Formatear fecha como string para evitar problemas de serialización
+                        productoPerdido.put("fechaCreacion", detalle.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
                         productosPerdidos.add(productoPerdido);
                     }
                 }
@@ -3697,7 +3701,8 @@ public class MovimientoDiaService {
                 productoPerdido.put("estado", "ROTURA");
                 productoPerdido.put("estadoDescripcion", "Rotura/Pérdida");
                 productoPerdido.put("observaciones", rotura.getObservaciones());
-                productoPerdido.put("fechaCreacion", rotura.getFechaCreacion());
+                // Formatear fecha como string para evitar problemas de serialización
+                productoPerdido.put("fechaCreacion", rotura.getFechaCreacion().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
                 productosPerdidos.add(productoPerdido);
             }
             
