@@ -708,6 +708,12 @@ public class InventarioCompletoService {
         
         // Encontrar la entrada original del conteo inicial para este producto
         DetalleConteo entradaExistente = null;
+        
+        // Debug de usuarios asignados
+        System.out.println("🔍 RECONTEO DEBUG: Usuario solicitante ID: " + usuarioId);
+        System.out.println("🔍 RECONTEO DEBUG: Usuario Asignado 1 ID: " + (conteoSector.getUsuarioAsignado1() != null ? conteoSector.getUsuarioAsignado1().getId() : "null"));
+        System.out.println("🔍 RECONTEO DEBUG: Usuario Asignado 2 ID: " + (conteoSector.getUsuarioAsignado2() != null ? conteoSector.getUsuarioAsignado2().getId() : "null"));
+        
         for (DetalleConteo det : detallesExistentes) {
             System.out.println("🔍 RECONTEO DEBUG: Revisando detalle ID: " + det.getId() + 
                              ", Producto ID: " + det.getProducto().getId() + 
@@ -715,20 +721,26 @@ public class InventarioCompletoService {
                              ", Cantidad2: " + det.getCantidadConteo2());
             
             if (det.getProducto().getId().equals(productoId)) {
-                if (conteoSector.getUsuarioAsignado1().getId().equals(usuarioId)) {
+                System.out.println("🔍 RECONTEO DEBUG: Producto coincide, verificando usuario...");
+                
+                if (conteoSector.getUsuarioAsignado1() != null && conteoSector.getUsuarioAsignado1().getId().equals(usuarioId)) {
+                    System.out.println("🔍 RECONTEO DEBUG: Es Usuario 1, buscando entrada con cantidadConteo1 > 0");
                     // Buscar entrada donde el usuario 1 contó originalmente
                     if (det.getCantidadConteo1() != null && det.getCantidadConteo1() > 0) {
                         entradaExistente = det;
                         System.out.println("✅ RECONTEO DEBUG: Encontrada entrada para Usuario 1 - ID: " + det.getId());
                         break; // Usar la primera entrada encontrada del usuario 1
                     }
-                } else {
+                } else if (conteoSector.getUsuarioAsignado2() != null && conteoSector.getUsuarioAsignado2().getId().equals(usuarioId)) {
+                    System.out.println("🔍 RECONTEO DEBUG: Es Usuario 2, buscando entrada con cantidadConteo2 > 0");
                     // Buscar entrada donde el usuario 2 contó originalmente
                     if (det.getCantidadConteo2() != null && det.getCantidadConteo2() > 0) {
                         entradaExistente = det;
                         System.out.println("✅ RECONTEO DEBUG: Encontrada entrada para Usuario 2 - ID: " + det.getId());
                         break; // Usar la primera entrada encontrada del usuario 2
                     }
+                } else {
+                    System.out.println("⚠️ RECONTEO DEBUG: Usuario no coincide con ninguno asignado");
                 }
             }
         }
