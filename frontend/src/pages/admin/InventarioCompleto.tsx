@@ -268,7 +268,30 @@ export default function InventarioCompleto() {
         return;
       }
 
+      // Primero probar el endpoint de test
+      console.log('🔍 [PRODUCCION] Probando endpoint de test...');
       const token = localStorage.getItem('token');
+      
+      try {
+        const testResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/test-crear`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (testResponse.ok) {
+          const testData = await testResponse.json();
+          console.log('✅ [PRODUCCION] Test endpoint funcionando:', testData);
+        } else {
+          console.error('❌ [PRODUCCION] Test endpoint falló:', testResponse.status);
+        }
+      } catch (testError) {
+        console.error('❌ [PRODUCCION] Error en test endpoint:', testError);
+      }
+
+      console.log('🔍 [PRODUCCION] Intentando crear inventario...');
       const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo`, {
         method: 'POST',
         headers: {
@@ -277,9 +300,22 @@ export default function InventarioCompleto() {
         }
       });
 
+      console.log('🔍 [PRODUCCION] Respuesta recibida - Status:', response.status);
+      console.log('🔍 [PRODUCCION] Respuesta recibida - OK:', response.ok);
+      console.log('🔍 [PRODUCCION] Respuesta recibida - Headers:', response.headers);
+
       if (response.ok) {
-        const responseData = await response.json();
-        console.log('✅ Respuesta crear inventario:', responseData);
+        const responseText = await response.text();
+        console.log('🔍 [PRODUCCION] Respuesta texto cruda:', responseText);
+        
+        if (responseText.trim()) {
+          const responseData = JSON.parse(responseText);
+          console.log('✅ Respuesta crear inventario:', responseData);
+        } else {
+          console.error('❌ [PRODUCCION] Respuesta vacía del servidor');
+          toast.error('Error: El servidor devolvió una respuesta vacía');
+          return;
+        }
         
         const inventarioCreado = responseData.inventario || responseData;
         
@@ -299,7 +335,9 @@ export default function InventarioCompleto() {
         toast.success('Inventario completo creado exitosamente');
         setInventario(inventarioConDefaults);
       } else if (response.status === 400) {
+        console.log('🔍 [PRODUCCION] Respuesta 400 - Bad Request');
         const errorData = await response.json();
+        console.log('🔍 [PRODUCCION] Error data:', errorData);
         if (errorData.error && errorData.error.includes('Ya existe un inventario completo en progreso')) {
           toast.success('Ya existe un inventario en progreso. Cargando inventario existente...');
           await cargarDatos();
@@ -307,7 +345,9 @@ export default function InventarioCompleto() {
           toast.error(errorData.error || 'Error al crear el inventario');
         }
       } else {
+        console.log('🔍 [PRODUCCION] Respuesta no OK - Status:', response.status);
         const errorData = await response.json();
+        console.log('🔍 [PRODUCCION] Error data:', errorData);
         toast.error(errorData.message || 'Error al crear el inventario');
       }
     } catch (error) {
