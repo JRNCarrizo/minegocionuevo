@@ -268,143 +268,19 @@ export default function InventarioCompleto() {
         return;
       }
 
-      // Primero probar el endpoint GET para verificar que el problema es solo con POST
-      console.log('🔍 [PRODUCCION] Probando endpoint GET...');
       const token = localStorage.getItem('token');
       const baseUrl = API_CONFIG.getBaseUrl();
-      
-      try {
-        const getTestResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/test-post-problem`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (getTestResponse.ok) {
-          const getTestData = await getTestResponse.json();
-          console.log('✅ [PRODUCCION] Test GET funcionando:', getTestData);
-        } else {
-          console.error('❌ [PRODUCCION] Test GET falló:', getTestResponse.status);
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
-      } catch (getTestError) {
-        console.error('❌ [PRODUCCION] Error en test GET:', getTestError);
-      }
-
-      // Ahora probar el endpoint POST simple (sin autenticación)
-      console.log('🔍 [PRODUCCION] Probando endpoint POST simple...');
-      try {
-        const simpleTestResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/test-simple`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (simpleTestResponse.ok) {
-          const simpleTestData = await simpleTestResponse.json();
-          console.log('✅ [PRODUCCION] Test POST simple funcionando:', simpleTestData);
-        } else {
-          console.error('❌ [PRODUCCION] Test POST simple falló:', simpleTestResponse.status);
-        }
-      } catch (simpleTestError) {
-        console.error('❌ [PRODUCCION] Error en test POST simple:', simpleTestError);
-      }
-
-      // Ahora probar el endpoint POST con autenticación
-      console.log('🔍 [PRODUCCION] Probando endpoint POST con auth...');
-      try {
-        const testResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/test-crear`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (testResponse.ok) {
-          const testData = await testResponse.json();
-          console.log('✅ [PRODUCCION] Test POST con auth funcionando:', testData);
-        } else {
-          console.error('❌ [PRODUCCION] Test POST con auth falló:', testResponse.status);
-        }
-      } catch (testError) {
-        console.error('❌ [PRODUCCION] Error en test POST con auth:', testError);
-      }
-
-      // Probar endpoint POST adicional
-      console.log('🔍 [PRODUCCION] Probando endpoint POST adicional...');
-      try {
-        const testControllerResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/test-controller`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (testControllerResponse.ok) {
-          const testControllerData = await testControllerResponse.json();
-          console.log('✅ [PRODUCCION] Test POST controlador funcionando:', testControllerData);
-        } else {
-          console.error('❌ [PRODUCCION] Test POST controlador falló:', testControllerResponse.status);
-        }
-      } catch (testControllerError) {
-        console.error('❌ [PRODUCCION] Error en test POST controlador:', testControllerError);
-      }
-
-      console.log('🔍 [PRODUCCION] Intentando crear inventario...');
-      
-      // Probar primero con PUT
-      let response;
-      try {
-        console.log('🔍 [PRODUCCION] Probando con PUT...');
-        response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/crear`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          console.log('✅ [PRODUCCION] PUT funcionó!');
-        } else {
-          console.log('❌ [PRODUCCION] PUT falló, probando POST...');
-          response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
-          });
-        }
-      } catch (putError) {
-        console.log('❌ [PRODUCCION] PUT falló, probando POST...', putError);
-        response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      }
-
-      console.log('🔍 [PRODUCCION] Respuesta recibida - Status:', response.status);
-      console.log('🔍 [PRODUCCION] Respuesta recibida - OK:', response.ok);
-      console.log('🔍 [PRODUCCION] Respuesta recibida - Headers:', response.headers);
+      });
 
       if (response.ok) {
-        const responseText = await response.text();
-        console.log('🔍 [PRODUCCION] Respuesta texto cruda:', responseText);
-        
-        if (responseText.trim()) {
-          const responseData = JSON.parse(responseText);
-          console.log('✅ Respuesta crear inventario:', responseData);
-        } else {
-          console.error('❌ [PRODUCCION] Respuesta vacía del servidor');
-          toast.error('Error: El servidor devolvió una respuesta vacía');
-          return;
-        }
+        const responseData = await response.json();
+        console.log('✅ Respuesta crear inventario:', responseData);
         
         const inventarioCreado = responseData.inventario || responseData;
         
@@ -424,9 +300,7 @@ export default function InventarioCompleto() {
         toast.success('Inventario completo creado exitosamente');
         setInventario(inventarioConDefaults);
       } else if (response.status === 400) {
-        console.log('🔍 [PRODUCCION] Respuesta 400 - Bad Request');
         const errorData = await response.json();
-        console.log('🔍 [PRODUCCION] Error data:', errorData);
         if (errorData.error && errorData.error.includes('Ya existe un inventario completo en progreso')) {
           toast.success('Ya existe un inventario en progreso. Cargando inventario existente...');
           await cargarDatos();
@@ -434,9 +308,7 @@ export default function InventarioCompleto() {
           toast.error(errorData.error || 'Error al crear el inventario');
         }
       } else {
-        console.log('🔍 [PRODUCCION] Respuesta no OK - Status:', response.status);
         const errorData = await response.json();
-        console.log('🔍 [PRODUCCION] Error data:', errorData);
         toast.error(errorData.message || 'Error al crear el inventario');
       }
     } catch (error) {

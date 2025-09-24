@@ -386,47 +386,38 @@ public class InventarioCompletoService {
      * Crear un nuevo inventario completo
      */
     public InventarioCompleto crearInventarioCompleto(Long empresaId, Long usuarioAdminId) {
-        System.out.println("🔍 [PRODUCCION] Creando inventario completo para empresa: " + empresaId);
+        System.out.println("🔍 Creando inventario completo para empresa: " + empresaId);
         
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
-        System.out.println("🔍 [PRODUCCION] Empresa encontrada: " + empresa.getNombre());
         
         Usuario usuarioAdmin = usuarioRepository.findById(usuarioAdminId)
             .orElseThrow(() -> new RuntimeException("Usuario administrador no encontrado"));
-        System.out.println("🔍 [PRODUCCION] Usuario admin encontrado: " + usuarioAdmin.getNombre());
         
         // Verificar que no hay inventario activo
         Optional<InventarioCompleto> inventarioActivo = obtenerInventarioActivo(empresaId);
         if (inventarioActivo.isPresent()) {
-            System.out.println("❌ [PRODUCCION] Ya existe un inventario activo para esta empresa");
             throw new RuntimeException("Ya existe un inventario activo para esta empresa");
         }
-        System.out.println("🔍 [PRODUCCION] No hay inventario activo, procediendo a crear");
         
         // Crear inventario completo
         String nombreInventario = "Inventario Completo " + LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
         InventarioCompleto inventario = new InventarioCompleto(nombreInventario, empresa, usuarioAdmin);
         inventario.setEstado(InventarioCompleto.EstadoInventario.PENDIENTE);
-        System.out.println("🔍 [PRODUCCION] Inventario básico creado");
         
         // Obtener sectores activos de la empresa
         List<Sector> sectores = sectorRepository.findByEmpresaIdAndActivoOrderByNombre(empresaId, true);
-        System.out.println("🔍 [PRODUCCION] Sectores encontrados: " + sectores.size());
         inventario.setTotalSectores(sectores.size());
         
         inventario = inventarioCompletoRepository.save(inventario);
-        System.out.println("🔍 [PRODUCCION] Inventario guardado con ID: " + inventario.getId());
         
         // Crear conteos de sector para cada sector
         for (Sector sector : sectores) {
-            System.out.println("🔍 [PRODUCCION] Creando conteo para sector: " + sector.getNombre());
             ConteoSector conteoSector = new ConteoSector(inventario, sector);
             conteoSectorRepository.save(conteoSector);
-            System.out.println("🔍 [PRODUCCION] Conteo creado para sector: " + sector.getNombre());
         }
         
-        System.out.println("✅ [PRODUCCION] Inventario completo creado: " + inventario.getId());
+        System.out.println("✅ Inventario completo creado: " + inventario.getId());
         return inventario;
     }
 
