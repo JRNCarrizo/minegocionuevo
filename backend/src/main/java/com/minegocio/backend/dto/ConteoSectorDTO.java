@@ -101,10 +101,18 @@ public class ConteoSectorDTO {
         
         // Agregar información del inventario completo
         if (conteoSector.getInventarioCompleto() != null) {
-            this.inventarioCompleto = new InventarioCompletoInfo(
-                conteoSector.getInventarioCompleto().getId(),
-                conteoSector.getInventarioCompleto().getEmpresa().getId()
-            );
+            try {
+                this.inventarioCompleto = new InventarioCompletoInfo(
+                    conteoSector.getInventarioCompleto().getId(),
+                    conteoSector.getInventarioCompleto().getEmpresa().getId()
+                );
+            } catch (Exception e) {
+                System.err.println("⚠️ Error accediendo a datos del inventario completo (posible proxy lazy): " + e.getMessage());
+                this.inventarioCompleto = new InventarioCompletoInfo(
+                    conteoSector.getInventarioCompleto().getId(),
+                    null // Empresa no disponible por lazy loading
+                );
+            }
         }
     }
 
