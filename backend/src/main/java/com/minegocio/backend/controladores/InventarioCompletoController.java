@@ -687,14 +687,25 @@ public class InventarioCompletoController {
             
             UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
             
+            System.out.println("🔍 DEBUG Cancelar - Usuario ID: " + usuarioPrincipal.getId());
+            System.out.println("🔍 DEBUG Cancelar - Usuario Empresa ID: " + usuarioPrincipal.getEmpresaId());
+            System.out.println("🔍 DEBUG Cancelar - Empresa ID solicitada: " + empresaId);
+            System.out.println("🔍 DEBUG Cancelar - Usuario Authorities: " + usuarioPrincipal.getAuthorities());
+            
             // Verificar que el usuario pertenece a la empresa
             if (!usuarioPrincipal.getEmpresaId().equals(empresaId)) {
+                System.err.println("❌ ERROR: Usuario no pertenece a la empresa - Usuario: " + usuarioPrincipal.getEmpresaId() + ", Solicitada: " + empresaId);
                 return ResponseEntity.status(403).body(Map.of("error", "No autorizado para acceder a esta empresa"));
             }
             
             // Verificar que el usuario es administrador
-            if (!usuarioPrincipal.getAuthorities().stream()
-                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMINISTRADOR"))) {
+            boolean esAdministrador = usuarioPrincipal.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMINISTRADOR"));
+            
+            System.out.println("🔍 DEBUG Cancelar - Es administrador: " + esAdministrador);
+            
+            if (!esAdministrador) {
+                System.err.println("❌ ERROR: Usuario no es administrador - Authorities: " + usuarioPrincipal.getAuthorities());
                 return ResponseEntity.status(403).body(Map.of("error", "Solo los administradores pueden cancelar inventarios"));
             }
             
