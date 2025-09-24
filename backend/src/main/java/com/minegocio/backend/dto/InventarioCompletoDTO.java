@@ -32,11 +32,25 @@ public class InventarioCompletoDTO {
 
     public InventarioCompletoDTO(InventarioCompleto inventario) {
         this.id = inventario.getId();
-        this.empresaId = inventario.getEmpresa() != null ? inventario.getEmpresa().getId() : null;
-        this.empresaNombre = inventario.getEmpresa() != null ? inventario.getEmpresa().getNombre() : null;
-        this.usuarioAdministradorId = inventario.getUsuarioAdministrador() != null ? inventario.getUsuarioAdministrador().getId() : null;
-        this.usuarioAdministradorNombre = inventario.getUsuarioAdministrador() != null ? 
-            inventario.getUsuarioAdministrador().getNombre() + " " + inventario.getUsuarioAdministrador().getApellidos() : null;
+        
+        try {
+            this.empresaId = inventario.getEmpresa() != null ? inventario.getEmpresa().getId() : null;
+            this.empresaNombre = inventario.getEmpresa() != null ? inventario.getEmpresa().getNombre() : null;
+        } catch (Exception e) {
+            System.err.println("⚠️ Error accediendo a empresa (posible proxy lazy): " + e.getMessage());
+            this.empresaId = null;
+            this.empresaNombre = null;
+        }
+        
+        try {
+            this.usuarioAdministradorId = inventario.getUsuarioAdministrador() != null ? inventario.getUsuarioAdministrador().getId() : null;
+            this.usuarioAdministradorNombre = inventario.getUsuarioAdministrador() != null ? 
+                inventario.getUsuarioAdministrador().getNombre() + " " + inventario.getUsuarioAdministrador().getApellidos() : null;
+        } catch (Exception e) {
+            System.err.println("⚠️ Error accediendo a usuarioAdministrador (posible proxy lazy): " + e.getMessage());
+            this.usuarioAdministradorId = null;
+            this.usuarioAdministradorNombre = null;
+        }
         this.fechaInicio = inventario.getFechaInicio();
         this.fechaActualizacion = inventario.getFechaActualizacion();
         this.fechaFinalizacion = inventario.getFechaFinalizacion();
@@ -47,10 +61,15 @@ public class InventarioCompletoDTO {
         this.sectoresPendientes = inventario.getSectoresPendientes();
         this.porcentajeCompletado = inventario.getPorcentajeCompletado();
         this.observaciones = inventario.getObservaciones();
-        if (inventario.getConteosSectores() != null) {
-            this.conteosSectores = inventario.getConteosSectores().stream()
-                    .map(ConteoSectorDTO::new)
-                    .collect(Collectors.toList());
+        try {
+            if (inventario.getConteosSectores() != null) {
+                this.conteosSectores = inventario.getConteosSectores().stream()
+                        .map(ConteoSectorDTO::new)
+                        .collect(Collectors.toList());
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Error accediendo a conteosSectores (posible proxy lazy): " + e.getMessage());
+            this.conteosSectores = null;
         }
     }
 

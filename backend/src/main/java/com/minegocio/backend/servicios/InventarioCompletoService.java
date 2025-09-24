@@ -764,16 +764,25 @@ public class InventarioCompletoService {
     /**
      * Cancelar inventario completo
      */
+    @Transactional
     public InventarioCompleto cancelarInventarioCompleto(Long inventarioId) {
         System.out.println("🔍 Cancelando inventario completo: " + inventarioId);
         
         InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId)
             .orElseThrow(() -> new RuntimeException("Inventario no encontrado"));
         
+        System.out.println("🔍 Inventario encontrado: " + inventario.getId() + ", estado actual: " + inventario.getEstado());
+        
         inventario.setEstado(InventarioCompleto.EstadoInventario.CANCELADO);
         inventario.setFechaFinalizacion(LocalDateTime.now());
         
-        return inventarioCompletoRepository.save(inventario);
+        System.out.println("🔍 Estado cambiado a CANCELADO, guardando...");
+        
+        InventarioCompleto inventarioGuardado = inventarioCompletoRepository.save(inventario);
+        
+        System.out.println("✅ Inventario cancelado exitosamente: " + inventarioGuardado.getId());
+        
+        return inventarioGuardado;
     }
 
     /**

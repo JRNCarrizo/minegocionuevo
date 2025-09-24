@@ -698,8 +698,12 @@ public class InventarioCompletoController {
                 return ResponseEntity.status(403).body(Map.of("error", "Solo los administradores pueden cancelar inventarios"));
             }
             
+            System.out.println("🔍 Llamando a cancelarInventarioCompleto...");
             InventarioCompleto inventario = inventarioCompletoService.cancelarInventarioCompleto(inventarioId);
+            System.out.println("✅ Inventario cancelado en servicio, creando DTO...");
+            
             InventarioCompletoDTO inventarioDTO = new InventarioCompletoDTO(inventario);
+            System.out.println("✅ DTO creado exitosamente");
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Inventario cancelado exitosamente",
