@@ -130,6 +130,27 @@ public class InventarioCompletoController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+    
+    /**
+     * Endpoint POST para probar si el problema es específico de este controlador
+     */
+    @PostMapping("/test-controller")
+    public ResponseEntity<?> testControllerPost(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🔍 [PRODUCCION] Test POST controlador - empresa: " + empresaId);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Test POST controlador funcionando",
+                "empresaId", empresaId,
+                "controlador", "InventarioCompletoController",
+                "timestamp", java.time.LocalDateTime.now().toString()
+            ));
+        } catch (Exception e) {
+            System.err.println("❌ [PRODUCCION] Error en test POST controlador: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 
     /**
      * Obtener inventario activo de la empresa
@@ -231,6 +252,7 @@ public class InventarioCompletoController {
      * Crear un nuevo inventario completo
      */
     @PostMapping
+    @PutMapping("/crear")
     public ResponseEntity<?> crearInventarioCompleto(
             @PathVariable Long empresaId,
             Authentication authentication) {

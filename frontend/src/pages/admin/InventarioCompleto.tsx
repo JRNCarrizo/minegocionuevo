@@ -271,9 +271,10 @@ export default function InventarioCompleto() {
       // Primero probar el endpoint GET para verificar que el problema es solo con POST
       console.log('🔍 [PRODUCCION] Probando endpoint GET...');
       const token = localStorage.getItem('token');
+      const baseUrl = API_CONFIG.getBaseUrl();
       
       try {
-        const getTestResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/test-post-problem`, {
+        const getTestResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/test-post-problem`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -293,7 +294,7 @@ export default function InventarioCompleto() {
       // Ahora probar el endpoint POST simple (sin autenticación)
       console.log('🔍 [PRODUCCION] Probando endpoint POST simple...');
       try {
-        const simpleTestResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/test-simple`, {
+        const simpleTestResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/test-simple`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -313,7 +314,7 @@ export default function InventarioCompleto() {
       // Ahora probar el endpoint POST con autenticación
       console.log('🔍 [PRODUCCION] Probando endpoint POST con auth...');
       try {
-        const testResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/test-crear`, {
+        const testResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/test-crear`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -331,14 +332,62 @@ export default function InventarioCompleto() {
         console.error('❌ [PRODUCCION] Error en test POST con auth:', testError);
       }
 
-      console.log('🔍 [PRODUCCION] Intentando crear inventario...');
-      const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+      // Probar endpoint POST adicional
+      console.log('🔍 [PRODUCCION] Probando endpoint POST adicional...');
+      try {
+        const testControllerResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/test-controller`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (testControllerResponse.ok) {
+          const testControllerData = await testControllerResponse.json();
+          console.log('✅ [PRODUCCION] Test POST controlador funcionando:', testControllerData);
+        } else {
+          console.error('❌ [PRODUCCION] Test POST controlador falló:', testControllerResponse.status);
         }
-      });
+      } catch (testControllerError) {
+        console.error('❌ [PRODUCCION] Error en test POST controlador:', testControllerError);
+      }
+
+      console.log('🔍 [PRODUCCION] Intentando crear inventario...');
+      
+      // Probar primero con PUT
+      let response;
+      try {
+        console.log('🔍 [PRODUCCION] Probando con PUT...');
+        response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/crear`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          console.log('✅ [PRODUCCION] PUT funcionó!');
+        } else {
+          console.log('❌ [PRODUCCION] PUT falló, probando POST...');
+          response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        }
+      } catch (putError) {
+        console.log('❌ [PRODUCCION] PUT falló, probando POST...', putError);
+        response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
 
       console.log('🔍 [PRODUCCION] Respuesta recibida - Status:', response.status);
       console.log('🔍 [PRODUCCION] Respuesta recibida - OK:', response.ok);
