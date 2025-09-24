@@ -874,6 +874,12 @@ public class InventarioCompletoService {
         Map<Long, String> nombresProductos = new HashMap<>();
         
         for (DetalleConteo detalle : detalles) {
+            // Verificar que el producto no sea nulo
+            if (detalle.getProducto() == null) {
+                System.err.println("⚠️ DetalleConteo con ID " + detalle.getId() + " tiene producto nulo, saltando...");
+                continue;
+            }
+            
             Long productoId = detalle.getProducto().getId();
             String nombreProducto = detalle.getProducto().getNombre();
             nombresProductos.put(productoId, nombreProducto);
