@@ -154,28 +154,6 @@ export default function InventarioCompleto() {
         console.error('❌ Error cargando usuarios:', error);
       }
 
-      try {
-        // Probar endpoint de test primero
-        const token = localStorage.getItem('token');
-        const baseUrl = API_CONFIG.getBaseUrl();
-        const testResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/test`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (testResponse.ok) {
-          const testData = await testResponse.json();
-          console.log('✅ Test endpoint funcionando:', testData);
-        } else {
-          console.error('❌ Error en test endpoint:', testResponse.status);
-          const errorData = await testResponse.text();
-          console.error('❌ Error details test:', errorData);
-        }
-      } catch (error) {
-        console.error('❌ Error en test endpoint:', error);
-      }
 
       try {
         // Cargar inventario activo usando fetch con configuración correcta
