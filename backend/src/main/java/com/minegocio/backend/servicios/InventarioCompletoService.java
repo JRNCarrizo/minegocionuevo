@@ -154,7 +154,17 @@ public class InventarioCompletoService {
         Map<Long, List<DetalleConteo>> detallesPorProducto = new HashMap<>();
         for (DetalleConteo detalle : detalles) {
             Long productoId = detalle.getProducto().getId();
+            String nombreProducto = detalle.getProducto().getNombre();
+            System.out.println("🔍 DEBUG Agrupación - Detalle ID: " + detalle.getId() + 
+                             ", Producto ID: " + productoId + ", Nombre: " + nombreProducto +
+                             ", Usuario1: " + detalle.getCantidadConteo1() + 
+                             ", Usuario2: " + detalle.getCantidadConteo2());
             detallesPorProducto.computeIfAbsent(productoId, k -> new ArrayList<>()).add(detalle);
+        }
+        
+        System.out.println("🔍 DEBUG - Total productos únicos: " + detallesPorProducto.size());
+        for (Map.Entry<Long, List<DetalleConteo>> entry : detallesPorProducto.entrySet()) {
+            System.out.println("  - Producto ID: " + entry.getKey() + ", Detalles: " + entry.getValue().size());
         }
 
         List<Map<String, Object>> productosConsolidados = new ArrayList<>();
@@ -163,14 +173,22 @@ public class InventarioCompletoService {
             List<DetalleConteo> detallesDelProducto = entry.getValue();
             DetalleConteo primerDetalle = detallesDelProducto.get(0);
             
-            // Calcular totales consolidados
-            int totalUsuario1 = detallesDelProducto.stream()
-                .mapToInt(d -> d.getCantidadConteo1() != null ? d.getCantidadConteo1() : 0)
-                .sum();
+            // Calcular totales consolidados - tomar la última cantidad no nula de cada usuario
+            int totalUsuario1 = 0;
+            int totalUsuario2 = 0;
             
-            int totalUsuario2 = detallesDelProducto.stream()
-                .mapToInt(d -> d.getCantidadConteo2() != null ? d.getCantidadConteo2() : 0)
-                .sum();
+            // Buscar la última cantidad no nula de cada usuario para este producto
+            for (DetalleConteo detalle : detallesDelProducto) {
+                if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
+                    totalUsuario1 = detalle.getCantidadConteo1(); // Sobrescribir con la última
+                }
+                if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
+                    totalUsuario2 = detalle.getCantidadConteo2(); // Sobrescribir con la última
+                }
+            }
+            
+            System.out.println("🔍 DEBUG Consolidación - Producto: " + primerDetalle.getProducto().getNombre() + 
+                             " - Total Usuario1: " + totalUsuario1 + ", Total Usuario2: " + totalUsuario2);
             
             int diferencia = totalUsuario1 - totalUsuario2;
             
@@ -185,6 +203,24 @@ public class InventarioCompletoService {
             productoConsolidado.put("cantidadConteo2", totalUsuario2);
             productoConsolidado.put("diferenciaEntreConteos", diferencia);
             productoConsolidado.put("diferenciaSistema", primerDetalle.getStockSistema() - Math.max(totalUsuario1, totalUsuario2));
+            
+            // Agregar información de los usuarios para el frontend
+            try {
+                if (conteoSector.getUsuarioAsignado1() != null) {
+                    productoConsolidado.put("usuario1Id", conteoSector.getUsuarioAsignado1().getId());
+                    productoConsolidado.put("usuario1Nombre", conteoSector.getUsuarioAsignado1().getNombre() + " " + conteoSector.getUsuarioAsignado1().getApellidos());
+                }
+                if (conteoSector.getUsuarioAsignado2() != null) {
+                    productoConsolidado.put("usuario2Id", conteoSector.getUsuarioAsignado2().getId());
+                    productoConsolidado.put("usuario2Nombre", conteoSector.getUsuarioAsignado2().getNombre() + " " + conteoSector.getUsuarioAsignado2().getApellidos());
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Error accediendo a datos de usuarios (posible proxy lazy): " + e.getMessage());
+                productoConsolidado.put("usuario1Id", null);
+                productoConsolidado.put("usuario1Nombre", "Usuario 1");
+                productoConsolidado.put("usuario2Id", null);
+                productoConsolidado.put("usuario2Nombre", "Usuario 2");
+            }
             
             // Consolidar fórmulas con detalles de cada conteo individual
             List<Map<String, Object>> conteosUsuario1 = new ArrayList<>();
