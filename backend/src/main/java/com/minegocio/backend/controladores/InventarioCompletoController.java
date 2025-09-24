@@ -204,6 +204,7 @@ public class InventarioCompletoController {
      * Obtener conteo de sector por ID
      */
     @GetMapping("/conteos-sector/{conteoSectorId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> obtenerConteoSector(
             @PathVariable Long empresaId,
             @PathVariable Long conteoSectorId) {
@@ -213,13 +214,15 @@ public class InventarioCompletoController {
             Optional<ConteoSector> conteoSector = inventarioCompletoService.obtenerConteoSector(conteoSectorId);
             
             if (conteoSector.isPresent()) {
+                ConteoSector conteo = conteoSector.get();
+                
                 // Verificar que el conteo pertenece a la empresa
-                if (!conteoSector.get().getInventarioCompleto().getEmpresa().getId().equals(empresaId)) {
+                if (!conteo.getInventarioCompleto().getEmpresa().getId().equals(empresaId)) {
                     System.err.println("❌ El conteo de sector no pertenece a la empresa: " + empresaId);
                     return ResponseEntity.status(403).body(Map.of("error", "No autorizado para acceder a este conteo"));
                 }
                 
-                ConteoSectorDTO conteoSectorDTO = new ConteoSectorDTO(conteoSector.get());
+                ConteoSectorDTO conteoSectorDTO = new ConteoSectorDTO(conteo);
                 return ResponseEntity.ok(conteoSectorDTO);
             } else {
                 System.err.println("❌ Conteo de sector no encontrado: " + conteoSectorId);
