@@ -425,6 +425,7 @@ public class InventarioCompletoController {
      * Obtener detalles consolidados para comparación de conteos
      */
     @GetMapping("/conteos-sector/{conteoSectorId}/comparacion")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> obtenerDetallesParaComparacion(
             @PathVariable Long empresaId,
             @PathVariable Long conteoSectorId) {
@@ -438,8 +439,15 @@ public class InventarioCompletoController {
             }
             
             ConteoSector conteoSector = conteoSectorOpt.get();
-            if (!conteoSector.getInventarioCompleto().getEmpresa().getId().equals(empresaId)) {
-                return ResponseEntity.status(403).body(Map.of("error", "No autorizado para acceder a este conteo"));
+            
+            // Verificar que el conteo pertenece a la empresa con protección contra lazy loading
+            try {
+                if (!conteoSector.getInventarioCompleto().getEmpresa().getId().equals(empresaId)) {
+                    return ResponseEntity.status(403).body(Map.of("error", "No autorizado para acceder a este conteo"));
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Error verificando empresa del conteo (posible proxy lazy): " + e.getMessage());
+                return ResponseEntity.status(500).body(Map.of("error", "Error verificando autorización"));
             }
             
             List<Map<String, Object>> detallesComparacion = inventarioCompletoService.obtenerDetallesParaComparacion(conteoSectorId);
@@ -458,6 +466,7 @@ public class InventarioCompletoController {
      * Obtener detalles de conteo de un sector
      */
     @GetMapping("/conteos-sector/{conteoSectorId}/detalles")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> obtenerDetallesConteo(
             @PathVariable Long empresaId,
             @PathVariable Long conteoSectorId,
@@ -495,18 +504,29 @@ public class InventarioCompletoController {
             // Convertir a DTOs para evitar problemas de serialización
             List<Map<String, Object>> detallesDTO = detalles.stream().map(detalle -> {
                 System.out.println("🔍 DEBUG convirtiendo detalle a DTO:");
-                System.out.println("  - Producto: " + detalle.getProducto().getNombre());
-                System.out.println("  - CantidadConteo1: " + detalle.getCantidadConteo1());
-                System.out.println("  - CantidadConteo2: " + detalle.getCantidadConteo2());
-                System.out.println("  - FormulaCalculo1: " + detalle.getFormulaCalculo1());
-                System.out.println("  - FormulaCalculo2: " + detalle.getFormulaCalculo2());
-                System.out.println("  - ModoReconteo: " + modoReconteo);
                 
                 Map<String, Object> dto = new HashMap<>();
                 dto.put("id", detalle.getId());
-                dto.put("productoId", detalle.getProducto().getId());
-                dto.put("nombreProducto", detalle.getProducto().getNombre());
-                dto.put("codigoProducto", detalle.getProducto().getCodigoPersonalizado());
+                
+                // Manejar producto con protección contra lazy loading
+                if (detalle.getProducto() != null) {
+                    try {
+                        dto.put("productoId", detalle.getProducto().getId());
+                        dto.put("nombreProducto", detalle.getProducto().getNombre());
+                        dto.put("codigoProducto", detalle.getProducto().getCodigoPersonalizado());
+                        System.out.println("  - Producto: " + detalle.getProducto().getNombre());
+                    } catch (Exception e) {
+                        System.err.println("⚠️ Error accediendo a datos del producto (posible proxy lazy): " + e.getMessage());
+                        dto.put("productoId", null);
+                        dto.put("nombreProducto", "Producto no disponible");
+                        dto.put("codigoProducto", null);
+                    }
+                } else {
+                    dto.put("productoId", null);
+                    dto.put("nombreProducto", "Producto no disponible");
+                    dto.put("codigoProducto", null);
+                }
+                
                 dto.put("stockSistema", detalle.getStockSistema());
                 dto.put("cantidadConteo1", detalle.getCantidadConteo1());
                 dto.put("cantidadConteo2", detalle.getCantidadConteo2());
