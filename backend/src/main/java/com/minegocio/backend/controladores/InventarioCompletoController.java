@@ -86,6 +86,30 @@ public class InventarioCompletoController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+    
+    /**
+     * Endpoint de prueba GET para verificar que los POST no funcionan
+     */
+    @GetMapping("/test-post-problem")
+    public ResponseEntity<?> testPostProblem(@PathVariable Long empresaId, Authentication authentication) {
+        try {
+            System.out.println("🔍 [PRODUCCION] Test GET para verificar problema POST - empresa: " + empresaId);
+            
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioAdminId = usuarioPrincipal.getId();
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Test GET funcionando - el problema es solo con POST",
+                "empresaId", empresaId,
+                "usuarioId", usuarioAdminId,
+                "timestamp", java.time.LocalDateTime.now().toString()
+            ));
+        } catch (Exception e) {
+            System.err.println("❌ [PRODUCCION] Error en test GET: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 
     /**
      * Obtener inventario activo de la empresa

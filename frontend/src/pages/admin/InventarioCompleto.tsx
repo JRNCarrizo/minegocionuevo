@@ -268,10 +268,30 @@ export default function InventarioCompleto() {
         return;
       }
 
-      // Primero probar el endpoint de test
-      console.log('🔍 [PRODUCCION] Probando endpoint de test...');
+      // Primero probar el endpoint GET para verificar que el problema es solo con POST
+      console.log('🔍 [PRODUCCION] Probando endpoint GET...');
       const token = localStorage.getItem('token');
       
+      try {
+        const getTestResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/test-post-problem`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (getTestResponse.ok) {
+          const getTestData = await getTestResponse.json();
+          console.log('✅ [PRODUCCION] Test GET funcionando:', getTestData);
+        } else {
+          console.error('❌ [PRODUCCION] Test GET falló:', getTestResponse.status);
+        }
+      } catch (getTestError) {
+        console.error('❌ [PRODUCCION] Error en test GET:', getTestError);
+      }
+
+      // Ahora probar el endpoint POST
+      console.log('🔍 [PRODUCCION] Probando endpoint POST...');
       try {
         const testResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/test-crear`, {
           method: 'POST',
@@ -283,12 +303,12 @@ export default function InventarioCompleto() {
         
         if (testResponse.ok) {
           const testData = await testResponse.json();
-          console.log('✅ [PRODUCCION] Test endpoint funcionando:', testData);
+          console.log('✅ [PRODUCCION] Test POST funcionando:', testData);
         } else {
-          console.error('❌ [PRODUCCION] Test endpoint falló:', testResponse.status);
+          console.error('❌ [PRODUCCION] Test POST falló:', testResponse.status);
         }
       } catch (testError) {
-        console.error('❌ [PRODUCCION] Error en test endpoint:', testError);
+        console.error('❌ [PRODUCCION] Error en test POST:', testError);
       }
 
       console.log('🔍 [PRODUCCION] Intentando crear inventario...');
