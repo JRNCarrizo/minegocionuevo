@@ -325,7 +325,8 @@ export default function InventarioCompleto() {
       }
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${inventario.id}/sectores/${sectorSeleccionado.id}/asignar`, {
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${inventario.id}/sectores/${sectorSeleccionado.id}/asignar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -415,7 +416,8 @@ export default function InventarioCompleto() {
       }
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${inventario.id}/cancelar`, {
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${inventario.id}/cancelar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -449,7 +451,8 @@ export default function InventarioCompleto() {
       }
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${inventario.id}/finalizar`, {
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${inventario.id}/finalizar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
+import { API_CONFIG } from '../../config/api';
 
 interface Producto {
   id: number;
@@ -102,7 +103,8 @@ export default function ConteoProductos() {
       console.log('🔍 Cargando datos del conteo:', id);
 
       // Cargar información del conteo
-      const conteoResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}`, {
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const conteoResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}`, {
         headers
       });
 
@@ -116,7 +118,7 @@ export default function ConteoProductos() {
         if (conteoData.estado === 'PENDIENTE') {
           console.log('🔄 Conteo en estado PENDIENTE, iniciando automáticamente...');
           try {
-            const iniciarResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/iniciar`, {
+            const iniciarResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/iniciar`, {
               method: 'POST',
               headers
             });
@@ -144,7 +146,7 @@ export default function ConteoProductos() {
       }
 
       // Cargar productos del sector
-      const productosResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/productos?activo=true`, {
+      const productosResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/productos?activo=true`, {
         headers
       });
 
@@ -178,7 +180,7 @@ export default function ConteoProductos() {
 
       // Cargar detalles de conteo existentes
       console.log('🔍 Intentando cargar detalles de conteo para ID:', id);
-      const detallesResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles`, {
+      const detallesResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles`, {
         headers
       });
 
@@ -294,7 +296,8 @@ export default function ConteoProductos() {
       };
 
       // Llamar a la API para agregar el producto al conteo
-      const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/productos`, {
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/productos`, {
         method: 'POST',
         headers,
         body: JSON.stringify({

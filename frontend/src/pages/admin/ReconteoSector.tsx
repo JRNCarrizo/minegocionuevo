@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
+import { API_CONFIG } from '../../config/api';
 
 interface Producto {
   id: number;
@@ -206,7 +207,8 @@ export default function ReconteoSector() {
           token: token ? 'presente' : 'ausente'
         });
 
-        const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo?.inventarioId}/conteos-sector/${id}/agregar-producto-reconteo`, {
+        const baseUrl = API_CONFIG.getBaseUrl();
+        const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo?.inventarioId}/conteos-sector/${id}/agregar-producto-reconteo`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -230,7 +232,8 @@ export default function ReconteoSector() {
 
       // Finalizar el reconteo llamando al endpoint específico
       console.log('🔍 Finalizando reconteo...');
-      const finalizarResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo?.inventarioId}/conteos-sector/${id}/finalizar-reconteo`, {
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const finalizarResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo?.inventarioId}/conteos-sector/${id}/finalizar-reconteo`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -326,7 +329,8 @@ export default function ReconteoSector() {
       console.log('🔍 Cargando datos del reconteo:', id);
 
       // Primero obtener el inventario activo
-      const inventarioResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/activo`, {
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const inventarioResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/activo`, {
         headers
       });
 
@@ -340,7 +344,7 @@ export default function ReconteoSector() {
       console.log('✅ Inventario activo cargado:', inventarioData);
 
       // Luego obtener los conteos de sector para encontrar el conteo específico
-      const conteosResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${inventarioData.id}/conteos-sector`, {
+      const conteosResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${inventarioData.id}/conteos-sector`, {
         headers
       });
 
@@ -381,8 +385,8 @@ export default function ReconteoSector() {
 
       // Cargar detalles de reconteo usando el mismo endpoint de comparación
       console.log('🔍 Cargando detalles de reconteo para ID:', id);
-      console.log('🔍 URL de detalles:', `/api/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/comparacion`);
-      const detallesResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/comparacion`, {
+      console.log('🔍 URL de detalles:', `${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/comparacion`);
+      const detallesResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/comparacion`, {
         headers
       });
 

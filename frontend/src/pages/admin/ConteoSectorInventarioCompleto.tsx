@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
+import { API_CONFIG } from '../../config/api';
 
 interface Producto {
   id: number;
@@ -241,7 +242,8 @@ export default function ConteoSectorInventarioCompleto() {
         'Content-Type': 'application/json'
       };
 
-      const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/productos-diferencias`, {
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/productos-diferencias`, {
         headers
       });
 
@@ -288,7 +290,8 @@ export default function ConteoSectorInventarioCompleto() {
       };
 
       // Cargar información del conteo de sector
-      const conteoResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}`, {
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const conteoResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}`, {
         headers
       });
 
@@ -334,7 +337,7 @@ export default function ConteoSectorInventarioCompleto() {
       }
 
       // Cargar TODOS los productos de la empresa (como en CrearIngreso)
-      const productosResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/productos`, {
+      const productosResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/productos`, {
         headers
       });
 
@@ -350,7 +353,7 @@ export default function ConteoSectorInventarioCompleto() {
       // Cargar detalles de conteo existentes
       console.log('🔍 Intentando cargar detalles de conteo para ID:', id);
       const modoReconteoParam = esModoReconteo ? '?modoReconteo=true' : '';
-      const detallesUrl = `/api/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles${modoReconteoParam}`;
+      const detallesUrl = `${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles${modoReconteoParam}`;
       console.log('🔍 DEBUG URL de detalles:', detallesUrl);
       console.log('🔍 DEBUG esModoReconteo:', esModoReconteo);
       const detallesResponse = await fetch(detallesUrl, {
@@ -527,7 +530,8 @@ export default function ConteoSectorInventarioCompleto() {
       }
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo.inventarioCompleto.id}/conteos-sector/${id}/iniciar`, {
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo.inventarioCompleto.id}/conteos-sector/${id}/iniciar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -623,7 +627,8 @@ export default function ConteoSectorInventarioCompleto() {
           console.log('🔄 Sincronizando con el servidor en segundo plano...');
           
           const token = localStorage.getItem('token');
-          const response = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo.inventarioCompleto.id}/conteos-sector/${id}/agregar-producto`, {
+          const baseUrl = API_CONFIG.getBaseUrl();
+          const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo.inventarioCompleto.id}/conteos-sector/${id}/agregar-producto`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -2468,8 +2473,9 @@ export default function ConteoSectorInventarioCompleto() {
                         try {
                           setGuardando(true);
                           const token = localStorage.getItem('token');
+                          const baseUrl = API_CONFIG.getBaseUrl();
                           
-                          const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/finalizar`, {
+                          const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/finalizar`, {
                             method: 'POST',
                             headers: {
                               'Content-Type': 'application/json',
@@ -2526,7 +2532,8 @@ export default function ConteoSectorInventarioCompleto() {
 
                         for (const detalle of detallesConteo) {
                           try {
-                            const response = await fetch(`/api/empresas/${datosUsuario?.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/agregar-producto`, {
+                            const baseUrl = API_CONFIG.getBaseUrl();
+                            const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/agregar-producto`, {
                               method: 'POST',
                               headers: {
                                 'Content-Type': 'application/json',

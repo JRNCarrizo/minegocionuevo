@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { toast } from 'react-toastify';
+import { API_CONFIG } from '../../config/api';
 
 interface ConteoIndividual {
   cantidad: number;
@@ -82,7 +83,8 @@ const ComparacionConteos: React.FC = () => {
       };
 
       // Primero obtener el inventario activo
-      const inventarioResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/activo`, {
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const inventarioResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/activo`, {
         headers
       });
 
@@ -96,7 +98,7 @@ const ComparacionConteos: React.FC = () => {
       console.log('✅ Inventario activo cargado:', inventarioData);
 
       // Luego obtener los conteos de sector para encontrar el conteo específico
-      const conteosResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/${inventarioData.id}/conteos-sector`, {
+      const conteosResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${inventarioData.id}/conteos-sector`, {
         headers
       });
 
@@ -123,7 +125,7 @@ const ComparacionConteos: React.FC = () => {
 
       // Cargar detalles consolidados para comparación
       console.log('🔍 Cargando detalles para comparación para ID:', id);
-      const detallesResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/comparacion`, {
+      const detallesResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/comparacion`, {
         headers
       });
 
