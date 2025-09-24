@@ -290,8 +290,28 @@ export default function InventarioCompleto() {
         console.error('❌ [PRODUCCION] Error en test GET:', getTestError);
       }
 
-      // Ahora probar el endpoint POST
-      console.log('🔍 [PRODUCCION] Probando endpoint POST...');
+      // Ahora probar el endpoint POST simple (sin autenticación)
+      console.log('🔍 [PRODUCCION] Probando endpoint POST simple...');
+      try {
+        const simpleTestResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/test-simple`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (simpleTestResponse.ok) {
+          const simpleTestData = await simpleTestResponse.json();
+          console.log('✅ [PRODUCCION] Test POST simple funcionando:', simpleTestData);
+        } else {
+          console.error('❌ [PRODUCCION] Test POST simple falló:', simpleTestResponse.status);
+        }
+      } catch (simpleTestError) {
+        console.error('❌ [PRODUCCION] Error en test POST simple:', simpleTestError);
+      }
+
+      // Ahora probar el endpoint POST con autenticación
+      console.log('🔍 [PRODUCCION] Probando endpoint POST con auth...');
       try {
         const testResponse = await fetch(`/api/empresas/${datosUsuario.empresaId}/inventario-completo/test-crear`, {
           method: 'POST',
@@ -303,12 +323,12 @@ export default function InventarioCompleto() {
         
         if (testResponse.ok) {
           const testData = await testResponse.json();
-          console.log('✅ [PRODUCCION] Test POST funcionando:', testData);
+          console.log('✅ [PRODUCCION] Test POST con auth funcionando:', testData);
         } else {
-          console.error('❌ [PRODUCCION] Test POST falló:', testResponse.status);
+          console.error('❌ [PRODUCCION] Test POST con auth falló:', testResponse.status);
         }
       } catch (testError) {
-        console.error('❌ [PRODUCCION] Error en test POST:', testError);
+        console.error('❌ [PRODUCCION] Error en test POST con auth:', testError);
       }
 
       console.log('🔍 [PRODUCCION] Intentando crear inventario...');

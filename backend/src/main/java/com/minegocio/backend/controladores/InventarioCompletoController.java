@@ -110,6 +110,26 @@ public class InventarioCompletoController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+    
+    /**
+     * Endpoint POST muy simple para diagnosticar el problema
+     */
+    @PostMapping("/test-simple")
+    public ResponseEntity<?> testSimplePost(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🔍 [PRODUCCION] Test POST simple - empresa: " + empresaId);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Test POST simple funcionando",
+                "empresaId", empresaId,
+                "timestamp", java.time.LocalDateTime.now().toString()
+            ));
+        } catch (Exception e) {
+            System.err.println("❌ [PRODUCCION] Error en test POST simple: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 
     /**
      * Obtener inventario activo de la empresa
