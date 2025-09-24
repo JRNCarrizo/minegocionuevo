@@ -1022,7 +1022,14 @@ public class InventarioCompletoService {
             System.out.println("⏳ Primer usuario finalizó reconteo, estado cambiado a ESPERANDO_VERIFICACION");
         }
         
-        return conteoSectorRepository.save(conteoSector);
+        ConteoSector conteoSectorGuardado = conteoSectorRepository.save(conteoSector);
+        
+        // Actualizar estadísticas del inventario completo
+        InventarioCompleto inventario = conteoSector.getInventarioCompleto();
+        inventario.calcularEstadisticas();
+        inventarioCompletoRepository.save(inventario);
+        
+        return conteoSectorGuardado;
     }
 
     /**
