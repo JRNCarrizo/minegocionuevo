@@ -949,6 +949,7 @@ public class InventarioCompletoService {
     /**
      * Finalizar reconteo de sector (para el flujo de reconteo)
      */
+    @Transactional
     public ConteoSector finalizarReconteoSector(Long conteoSectorId, Long usuarioId) {
         System.out.println("🔍 Finalizando reconteo de sector: " + conteoSectorId + " por usuario: " + usuarioId);
         
@@ -956,8 +957,16 @@ public class InventarioCompletoService {
             .orElseThrow(() -> new RuntimeException("Conteo de sector no encontrado"));
         
         // Verificar que el usuario está asignado al conteo
-        boolean esUsuario1 = conteoSector.getUsuarioAsignado1().getId().equals(usuarioId);
-        boolean esUsuario2 = conteoSector.getUsuarioAsignado2().getId().equals(usuarioId);
+        boolean esUsuario1 = false;
+        boolean esUsuario2 = false;
+        
+        if (conteoSector.getUsuarioAsignado1() != null) {
+            esUsuario1 = conteoSector.getUsuarioAsignado1().getId().equals(usuarioId);
+        }
+        
+        if (conteoSector.getUsuarioAsignado2() != null) {
+            esUsuario2 = conteoSector.getUsuarioAsignado2().getId().equals(usuarioId);
+        }
         
         if (!esUsuario1 && !esUsuario2) {
             throw new RuntimeException("El usuario no está asignado a este conteo");
