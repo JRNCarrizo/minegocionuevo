@@ -43,12 +43,26 @@ public class ConteoSectorDTO {
         
         if (conteoSector.getUsuarioAsignado1() != null) {
             this.usuario1Id = conteoSector.getUsuarioAsignado1().getId();
-            this.usuario1Nombre = conteoSector.getUsuarioAsignado1().getNombre() + " " + conteoSector.getUsuarioAsignado1().getApellidos();
+            try {
+                String nombre1 = conteoSector.getUsuarioAsignado1().getNombre();
+                String apellidos1 = conteoSector.getUsuarioAsignado1().getApellidos();
+                this.usuario1Nombre = (nombre1 != null ? nombre1 : "") + " " + (apellidos1 != null ? apellidos1 : "");
+            } catch (Exception e) {
+                System.err.println("⚠️ Error accediendo a datos del usuario 1 (posible proxy lazy): " + e.getMessage());
+                this.usuario1Nombre = "Usuario " + this.usuario1Id;
+            }
         }
         
         if (conteoSector.getUsuarioAsignado2() != null) {
             this.usuario2Id = conteoSector.getUsuarioAsignado2().getId();
-            this.usuario2Nombre = conteoSector.getUsuarioAsignado2().getNombre() + " " + conteoSector.getUsuarioAsignado2().getApellidos();
+            try {
+                String nombre2 = conteoSector.getUsuarioAsignado2().getNombre();
+                String apellidos2 = conteoSector.getUsuarioAsignado2().getApellidos();
+                this.usuario2Nombre = (nombre2 != null ? nombre2 : "") + " " + (apellidos2 != null ? apellidos2 : "");
+            } catch (Exception e) {
+                System.err.println("⚠️ Error accediendo a datos del usuario 2 (posible proxy lazy): " + e.getMessage());
+                this.usuario2Nombre = "Usuario " + this.usuario2Id;
+            }
         }
         
         this.estado = conteoSector.getEstado().name();
