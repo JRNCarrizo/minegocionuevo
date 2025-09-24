@@ -45,15 +45,45 @@ public class InventarioCompletoController {
     @GetMapping("/test")
     public ResponseEntity<?> testEndpoint(@PathVariable Long empresaId) {
         try {
-            System.out.println("🔍 Test endpoint llamado para empresa: " + empresaId);
+            System.out.println("🔍 [PRODUCCION] Test endpoint llamado para empresa: " + empresaId);
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Controlador funcionando correctamente",
                 "empresaId", empresaId,
-                "timestamp", java.time.LocalDateTime.now().toString()
+                "timestamp", java.time.LocalDateTime.now().toString(),
+                "entorno", "produccion"
             ));
         } catch (Exception e) {
-            System.err.println("❌ Error en test endpoint: " + e.getMessage());
+            System.err.println("❌ [PRODUCCION] Error en test endpoint: " + e.getMessage());
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Endpoint de prueba para verificar la creación de inventario (sin persistir)
+     */
+    @PostMapping("/test-crear")
+    public ResponseEntity<?> testCrearInventario(@PathVariable Long empresaId, Authentication authentication) {
+        try {
+            System.out.println("🔍 [PRODUCCION] Test crear inventario para empresa: " + empresaId);
+            
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioAdminId = usuarioPrincipal.getId();
+            
+            // Solo verificar que los datos existen, sin crear nada
+            boolean empresaExiste = empresaRepository.existsById(empresaId);
+            boolean usuarioExiste = usuarioRepository.existsById(usuarioAdminId);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Test de creación de inventario",
+                "empresaExiste", empresaExiste,
+                "usuarioExiste", usuarioExiste,
+                "empresaId", empresaId,
+                "usuarioId", usuarioAdminId
+            ));
+        } catch (Exception e) {
+            System.err.println("❌ [PRODUCCION] Error en test crear inventario: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -161,21 +191,40 @@ public class InventarioCompletoController {
             @PathVariable Long empresaId,
             Authentication authentication) {
         try {
-            System.out.println("🔍 Creando inventario completo para empresa: " + empresaId);
+            System.out.println("🔍 [PRODUCCION] Creando inventario completo para empresa: " + empresaId);
             
             UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
             Long usuarioAdminId = usuarioPrincipal.getId();
+            System.out.println("🔍 [PRODUCCION] Usuario admin ID: " + usuarioAdminId);
             
             InventarioCompleto inventario = inventarioCompletoService.crearInventarioCompleto(empresaId, usuarioAdminId);
-            InventarioCompletoDTO inventarioDTO = new InventarioCompletoDTO(inventario);
+            System.out.println("🔍 [PRODUCCION] Inventario creado con ID: " + inventario.getId());
             
-            return ResponseEntity.ok(Map.of(
+            InventarioCompletoDTO inventarioDTO = new InventarioCompletoDTO(inventario);
+            System.out.println("🔍 [PRODUCCION] DTO creado exitosamente");
+            
+            Map<String, Object> response = Map.of(
                 "mensaje", "Inventario completo creado exitosamente",
                 "inventario", inventarioDTO
-            ));
+            );
+            
+            System.out.println("🔍 [PRODUCCION] Respuesta preparada, enviando...");
+            return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
-            System.err.println("❌ Error creando inventario completo: " + e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            System.err.println("❌ [PRODUCCION] Error creando inventario completo: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Intentar devolver una respuesta más simple si hay problemas de serialización
+            try {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage(),
+                    "tipoError", e.getClass().getSimpleName()
+                ));
+            } catch (Exception serializationError) {
+                System.err.println("❌ [PRODUCCION] Error de serialización: " + serializationError.getMessage());
+                return ResponseEntity.status(500).body("Error interno del servidor");
+            }
         }
     }
 
