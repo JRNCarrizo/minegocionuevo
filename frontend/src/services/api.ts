@@ -1760,16 +1760,44 @@ class ApiService {
     const formData = new FormData();
     formData.append('archivo', archivo);
     
+    console.log('🔍 Enviando archivo para validación:', {
+      empresaId,
+      nombreArchivo: archivo.name,
+      tamaño: archivo.size,
+      tipo: archivo.type
+    });
+    
     const response = await this.api.post(`/empresas/${empresaId}/productos/validar-importacion`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
+      },
+      timeout: 60000, // 60 segundos para archivos grandes
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          console.log(`📤 Progreso de carga: ${percentCompleted}%`);
+        }
       }
     });
+    
+    console.log('📊 Respuesta de validación recibida:', response.data);
     return response.data;
   }
 
   async importarProductos(empresaId: number, productos: any[]): Promise<any> {
-    const response = await this.api.post(`/empresas/${empresaId}/productos/importar-productos`, productos);
+    console.log('🚀 Enviando productos para importación:', {
+      empresaId,
+      cantidadProductos: productos.length
+    });
+    
+    const response = await this.api.post(`/empresas/${empresaId}/productos/importar-productos`, productos, {
+      timeout: 120000, // 2 minutos para importaciones grandes
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📊 Respuesta de importación recibida:', response.data);
     return response.data;
   }
 

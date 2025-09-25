@@ -124,21 +124,64 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
 
     try {
       setCargando(true);
-      const resultado = await ApiService.validarArchivoImportacion(empresaId, archivo);
-
-      setResultadoValidacion(resultado);
-      setProductosAImportar(resultado.productosPreview);
+      console.log('🔍 Validando archivo:', archivo.name, 'Tamaño:', archivo.size);
       
-      if (resultado.registrosConErrores > 0) {
-        alert(`Se encontraron ${resultado.registrosConErrores} errores. Revise los detalles antes de continuar.`);
+      const resultado = await ApiService.validarArchivoImportacion(empresaId, archivo);
+      
+      console.log('📊 Resultado de validación:', resultado);
+      
+      // Validar que la respuesta tenga la estructura esperada
+      if (!resultado) {
+        throw new Error('El servidor no devolvió datos válidos');
+      }
+      
+      if (typeof resultado !== 'object') {
+        throw new Error('Formato de respuesta inválido del servidor');
+      }
+      
+      // Verificar campos obligatorios en la respuesta
+      const resultadoValidado = {
+        totalRegistros: resultado.totalRegistros || 0,
+        registrosExitosos: resultado.registrosExitosos || 0,
+        registrosConErrores: resultado.registrosConErrores || 0,
+        errores: resultado.errores || [],
+        productosPreview: resultado.productosPreview || [],
+        mensaje: resultado.mensaje || 'Validación completada'
+      };
+
+      setResultadoValidacion(resultadoValidado);
+      setProductosAImportar(resultadoValidado.productosPreview);
+      
+      if (resultadoValidado.registrosConErrores > 0) {
+        alert(`Se encontraron ${resultadoValidado.registrosConErrores} errores. Revise los detalles antes de continuar.`);
       } else {
         alert('Archivo validado correctamente. Puede proceder con la importación.');
       }
 
     } catch (error: any) {
-      console.error('Error al validar archivo:', error);
-      const mensaje = error.response?.data?.error || 'Error al validar el archivo';
-      alert(mensaje);
+      console.error('❌ Error al validar archivo:', error);
+      
+      let mensaje = 'Error al validar el archivo';
+      
+      if (error.response) {
+        // Error de respuesta del servidor
+        if (error.response.status === 413) {
+          mensaje = 'El archivo es demasiado grande. Reduzca el tamaño o divida la importación en lotes más pequeños.';
+        } else if (error.response.status === 400) {
+          mensaje = 'Formato de archivo inválido. Verifique que esté usando la plantilla correcta.';
+        } else if (error.response.status === 500) {
+          mensaje = 'Error interno del servidor. Intente nuevamente o contacte al soporte.';
+        } else {
+          mensaje = error.response.data?.error || `Error del servidor (${error.response.status})`;
+        }
+      } else if (error.message) {
+        // Error de validación o conexión
+        mensaje = error.message;
+      } else {
+        mensaje = 'Error de conexión. Verifique su internet e intente nuevamente.';
+      }
+      
+      alert(`❌ ${mensaje}`);
     } finally {
       setCargando(false);
     }
@@ -150,37 +193,90 @@ const ImportacionProductos: React.FC<ImportacionProductosProps> = ({
       return;
     }
 
-    console.log('Debug - Intentando importar productos para empresaId:', empresaId);
-    console.log('Debug - Productos a importar:', productosAImportar);
+    console.log('🚀 Intentando importar productos para empresaId:', empresaId);
+    console.log('📦 Productos a importar:', productosAImportar.length);
 
     try {
       setImportando(true);
-      const resultado = await ApiService.importarProductos(empresaId, productosAImportar);
-
-      setResultadoImportacion(resultado);
       
-      if (resultado.registrosExitosos > 0) {
-        alert(`Importación completada. ${resultado.registrosExitosos} productos creados exitosamente.`);
+      // Validar límites antes de importar
+      if (productosAImportar.length > 100) {
+        const confirmar = confirm(
+          `⚠️ Estás intentando importar ${productosAImportar.length} productos de una vez. ` +
+          `Para archivos grandes, recomendamos dividir la importación en lotes de 50-100 productos. ` +
+          `¿Deseas continuar?`
+        );
+        if (!confirmar) {
+          return;
+        }
+      }
+      
+      const resultado = await ApiService.importarProductos(empresaId, productosAImportar);
+      
+      console.log('📊 Resultado de importación:', resultado);
+      
+      // Validar que la respuesta tenga la estructura esperada
+      if (!resultado) {
+        throw new Error('El servidor no devolvió datos válidos');
+      }
+      
+      if (typeof resultado !== 'object') {
+        throw new Error('Formato de respuesta inválido del servidor');
+      }
+      
+      // Verificar campos obligatorios en la respuesta
+      const resultadoValidado = {
+        totalRegistros: resultado.totalRegistros || productosAImportar.length,
+        registrosExitosos: resultado.registrosExitosos || 0,
+        registrosConErrores: resultado.registrosConErrores || 0,
+        errores: resultado.errores || [],
+        productosPreview: resultado.productosPreview || [],
+        mensaje: resultado.mensaje || 'Importación completada'
+      };
+
+      setResultadoImportacion(resultadoValidado);
+      
+      if (resultadoValidado.registrosExitosos > 0) {
+        const mensaje = `✅ Importación completada!\n\n` +
+          `📊 Resultados:\n` +
+          `• Productos creados: ${resultadoValidado.registrosExitosos}\n` +
+          `• Errores: ${resultadoValidado.registrosConErrores}\n` +
+          `• Total procesados: ${resultadoValidado.totalRegistros}`;
+        
+        alert(mensaje);
         onImportacionCompletada();
       } else {
-        alert('No se pudieron importar productos. Revise los errores.');
+        alert('❌ No se pudieron importar productos. Revise los errores en la sección de detalles.');
       }
 
     } catch (error: any) {
-      console.error('Error al importar productos:', error);
+      console.error('❌ Error al importar productos:', error);
       console.error('Error response:', error.response);
       console.error('Error data:', error.response?.data);
       
       let mensaje = 'Error al importar productos';
-      if (error.response?.data?.error) {
-        mensaje = error.response.data.error;
-      } else if (error.response?.status === 500) {
-        mensaje = 'Error interno del servidor. Verifique que la empresa existe y tiene permisos.';
-      } else if (error.response?.status === 404) {
-        mensaje = 'Empresa no encontrada. Verifique su sesión.';
+      
+      if (error.response) {
+        // Error de respuesta del servidor
+        if (error.response.status === 413) {
+          mensaje = 'El archivo es demasiado grande. Reduzca la cantidad de productos o divida la importación en lotes más pequeños.';
+        } else if (error.response.status === 400) {
+          mensaje = 'Datos de importación inválidos. Verifique el formato de los productos.';
+        } else if (error.response.status === 500) {
+          mensaje = 'Error interno del servidor. Intente nuevamente o contacte al soporte.';
+        } else if (error.response.status === 404) {
+          mensaje = 'Empresa no encontrada. Verifique su sesión.';
+        } else {
+          mensaje = error.response.data?.error || `Error del servidor (${error.response.status})`;
+        }
+      } else if (error.message) {
+        // Error de validación o conexión
+        mensaje = error.message;
+      } else {
+        mensaje = 'Error de conexión. Verifique su internet e intente nuevamente.';
       }
       
-      alert(mensaje);
+      alert(`❌ ${mensaje}`);
     } finally {
       setImportando(false);
     }
