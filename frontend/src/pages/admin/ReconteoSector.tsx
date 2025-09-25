@@ -884,7 +884,7 @@ export default function ReconteoSector() {
                       }}>
                         {detalle.cantidadConteo1 || 0}
                       </div>
-                      {detalle.conteosUsuario1 && detalle.conteosUsuario1.length > 0 && (
+                      {detalle.formulaCalculo1 && detalle.formulaCalculo1 !== 'Sin fórmula' && (
                         <div style={{
                           fontSize: '0.65rem',
                           color: '#4b5563',
@@ -893,9 +893,16 @@ export default function ReconteoSector() {
                           borderRadius: '0.25rem',
                           border: '1px solid #dbeafe'
                         }}>
-                          {detalle.conteosUsuario1.map((conteo: any, idx: number) => (
-                            <div key={idx}>
-                              {conteo.cantidad} ({conteo.formula})
+                          <div style={{ fontWeight: '600', marginBottom: '0.125rem' }}>Fórmulas:</div>
+                          {detalle.formulaCalculo1.split(' | ').map((formula, index) => (
+                            <div key={index} style={{ 
+                              marginBottom: '0.125rem',
+                              padding: '0.125rem 0.25rem',
+                              background: 'rgba(59, 130, 246, 0.1)',
+                              borderRadius: '0.25rem',
+                              fontSize: '0.6rem'
+                            }}>
+                              {formula}
                             </div>
                           ))}
                         </div>
@@ -926,7 +933,7 @@ export default function ReconteoSector() {
                       }}>
                         {detalle.cantidadConteo2 || 0}
                       </div>
-                      {detalle.conteosUsuario2 && detalle.conteosUsuario2.length > 0 && (
+                      {detalle.formulaCalculo2 && detalle.formulaCalculo2 !== 'Sin fórmula' && (
                         <div style={{
                           fontSize: '0.65rem',
                           color: '#4b5563',
@@ -935,9 +942,16 @@ export default function ReconteoSector() {
                           borderRadius: '0.25rem',
                           border: '1px solid #bbf7d0'
                         }}>
-                          {detalle.conteosUsuario2.map((conteo: any, idx: number) => (
-                            <div key={idx}>
-                              {conteo.cantidad} ({conteo.formula})
+                          <div style={{ fontWeight: '600', marginBottom: '0.125rem' }}>Fórmulas:</div>
+                          {detalle.formulaCalculo2.split(' | ').map((formula, index) => (
+                            <div key={index} style={{ 
+                              marginBottom: '0.125rem',
+                              padding: '0.125rem 0.25rem',
+                              background: 'rgba(34, 197, 94, 0.1)',
+                              borderRadius: '0.25rem',
+                              fontSize: '0.6rem'
+                            }}>
+                              {formula}
                             </div>
                           ))}
                         </div>

@@ -86,26 +86,68 @@ public class CalculadoraService {
      * Evaluación básica de expresiones matemáticas simples
      */
     private double evaluarExpresionBasica(String expresion) {
-        // Implementación muy básica para casos simples
-        // Solo maneja multiplicación y división básica
         expresion = expresion.replaceAll("\\s+", "");
         
-        // Buscar multiplicaciones y divisiones
-        if (expresion.contains("*")) {
-            String[] partes = expresion.split("\\*", 2);
-            if (partes.length == 2) {
-                return evaluarExpresionBasica(partes[0]) * evaluarExpresionBasica(partes[1]);
+        // Manejar sumas y restas (menor precedencia)
+        if (expresion.contains("+") || expresion.contains("-")) {
+            // Buscar el último + o - para manejar correctamente la precedencia
+            int ultimoMas = expresion.lastIndexOf("+");
+            int ultimoMenos = expresion.lastIndexOf("-");
+            
+            // Evitar el signo negativo al inicio
+            if (ultimoMenos == 0) {
+                ultimoMenos = -1;
+            }
+            
+            int posicionOperador = Math.max(ultimoMas, ultimoMenos);
+            
+            if (posicionOperador > 0) {
+                String izquierda = expresion.substring(0, posicionOperador);
+                String derecha = expresion.substring(posicionOperador + 1);
+                char operador = expresion.charAt(posicionOperador);
+                
+                double resultadoIzquierda = evaluarExpresionBasica(izquierda);
+                double resultadoDerecha = evaluarExpresionBasica(derecha);
+                
+                if (operador == '+') {
+                    return resultadoIzquierda + resultadoDerecha;
+                } else {
+                    return resultadoIzquierda - resultadoDerecha;
+                }
             }
         }
         
-        if (expresion.contains("/")) {
-            String[] partes = expresion.split("/", 2);
-            if (partes.length == 2) {
-                double divisor = evaluarExpresionBasica(partes[1]);
-                if (divisor == 0) {
-                    throw new ArithmeticException("División por cero");
+        // Manejar multiplicaciones y divisiones (mayor precedencia)
+        if (expresion.contains("*") || expresion.contains("/")) {
+            // Buscar el primer * o / para manejar correctamente la precedencia
+            int posicionMultiplicacion = expresion.indexOf("*");
+            int posicionDivision = expresion.indexOf("/");
+            
+            int posicionOperador;
+            if (posicionMultiplicacion == -1) {
+                posicionOperador = posicionDivision;
+            } else if (posicionDivision == -1) {
+                posicionOperador = posicionMultiplicacion;
+            } else {
+                posicionOperador = Math.min(posicionMultiplicacion, posicionDivision);
+            }
+            
+            if (posicionOperador > 0) {
+                String izquierda = expresion.substring(0, posicionOperador);
+                String derecha = expresion.substring(posicionOperador + 1);
+                char operador = expresion.charAt(posicionOperador);
+                
+                double resultadoIzquierda = evaluarExpresionBasica(izquierda);
+                double resultadoDerecha = evaluarExpresionBasica(derecha);
+                
+                if (operador == '*') {
+                    return resultadoIzquierda * resultadoDerecha;
+                } else {
+                    if (resultadoDerecha == 0) {
+                        throw new ArithmeticException("División por cero");
+                    }
+                    return resultadoIzquierda / resultadoDerecha;
                 }
-                return evaluarExpresionBasica(partes[0]) / divisor;
             }
         }
         

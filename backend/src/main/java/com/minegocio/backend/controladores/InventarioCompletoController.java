@@ -9,6 +9,7 @@ import com.minegocio.backend.seguridad.UsuarioPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -450,7 +451,16 @@ public class InventarioCompletoController {
                 return ResponseEntity.status(500).body(Map.of("error", "Error verificando autorización"));
             }
             
-            List<Map<String, Object>> detallesComparacion = inventarioCompletoService.obtenerDetallesParaComparacion(conteoSectorId);
+            // Obtener el usuario autenticado
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
+            }
+            
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioId = usuarioPrincipal.getUsuario().getId();
+            
+            List<Map<String, Object>> detallesComparacion = inventarioCompletoService.obtenerDetallesParaComparacion(conteoSectorId, usuarioId);
             
             System.out.println("✅ Detalles para comparación obtenidos: " + detallesComparacion.size());
             return ResponseEntity.ok(detallesComparacion);

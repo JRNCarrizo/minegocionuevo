@@ -651,15 +651,38 @@ export default function StockGeneral() {
                       </td>
                       <td className="sector-cell" style={{
                         padding: isMobile ? '0.5rem 0.25rem' : '1.25rem 1rem',
-                        fontSize: isMobile ? '0.8rem' : '0.9rem'
+                        fontSize: isMobile ? '0.8rem' : '0.9rem',
+                        minWidth: isMobile ? '120px' : '150px',
+                        maxWidth: isMobile ? '200px' : '300px',
+                        overflow: 'auto',
+                        whiteSpace: 'nowrap'
                       }}>
-                        {filtroTipo === 'sin_sectorizar' ? (
-                          <span className="consolidated-badge">Consolidado</span>
-                        ) : item.sector ? (
-                          <span className="sector-badge">{item.sector.nombre}</span>
-                        ) : (
-                          <span className="no-sector-badge">Sin sector</span>
-                        )}
+                        <div className="sector-cell-content" style={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          width: '100%'
+                        }}>
+                          {filtroTipo === 'sin_sectorizar' ? (
+                            <span className="consolidated-badge">Consolidado</span>
+                          ) : item.sector ? (
+                            <span 
+                              className="sector-badge sector-badge-full" 
+                              title={item.sector.nombre}
+                              style={{
+                                maxWidth: 'none',
+                                whiteSpace: 'nowrap',
+                                overflow: 'visible',
+                                textOverflow: 'clip',
+                                display: 'inline-block'
+                              }}
+                            >
+                              {item.sector.nombre}
+                            </span>
+                          ) : (
+                            <span className="no-sector-badge">Sin sector</span>
+                          )}
+                        </div>
                       </td>
                       <td className="quantity-cell" style={{
                         padding: isMobile ? '0.5rem 0.25rem' : '1.25rem 1rem',

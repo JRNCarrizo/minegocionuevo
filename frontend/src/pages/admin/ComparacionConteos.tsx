@@ -410,17 +410,25 @@ const ComparacionConteos: React.FC = () => {
                           border: '1px solid #bfdbfe'
                         }}>
                           <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1e40af', marginBottom: '0.5rem' }}>
-                            Total: {detalle.cantidadConteo1}
+                            {detalle.cantidadConteo1}
                           </div>
-                          {/* Mostrar conteos individuales */}
-                          {detalle.conteosUsuario1 && detalle.conteosUsuario1.length > 0 && (
+                          {/* Mostrar fórmulas en lista */}
+                          {detalle.formulaCalculo1 && detalle.formulaCalculo1 !== 'Sin fórmula' && (
                             <div style={{ marginTop: '0.5rem', fontSize: '0.7rem', color: '#4b5563' }}>
-                              <strong>Conteos individuales:</strong>
-                              {detalle.conteosUsuario1.map((conteo: any, idx: number) => (
-                                <div key={idx} style={{ marginTop: '0.25rem' }}>
-                                  • {conteo.cantidad} ({conteo.formula})
-                                </div>
-                              ))}
+                              <strong>Fórmulas:</strong>
+                              <div style={{ marginTop: '0.25rem' }}>
+                                {detalle.formulaCalculo1.split(' | ').map((formula, index) => (
+                                  <div key={index} style={{ 
+                                    marginBottom: '0.125rem',
+                                    padding: '0.125rem 0.25rem',
+                                    background: 'rgba(59, 130, 246, 0.1)',
+                                    borderRadius: '0.25rem',
+                                    fontSize: '0.65rem'
+                                  }}>
+                                    {formula}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -433,17 +441,25 @@ const ComparacionConteos: React.FC = () => {
                           border: '1px solid #bbf7d0'
                         }}>
                           <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#166534', marginBottom: '0.5rem' }}>
-                            Total: {detalle.cantidadConteo2}
+                            {detalle.cantidadConteo2}
                           </div>
-                          {/* Mostrar conteos individuales */}
-                          {detalle.conteosUsuario2 && detalle.conteosUsuario2.length > 0 && (
+                          {/* Mostrar fórmulas en lista */}
+                          {detalle.formulaCalculo2 && detalle.formulaCalculo2 !== 'Sin fórmula' && (
                             <div style={{ marginTop: '0.5rem', fontSize: '0.7rem', color: '#4b5563' }}>
-                              <strong>Conteos individuales:</strong>
-                              {detalle.conteosUsuario2.map((conteo: any, idx: number) => (
-                                <div key={idx} style={{ marginTop: '0.25rem' }}>
-                                  • {conteo.cantidad} ({conteo.formula})
-                                </div>
-                              ))}
+                              <strong>Fórmulas:</strong>
+                              <div style={{ marginTop: '0.25rem' }}>
+                                {detalle.formulaCalculo2.split(' | ').map((formula, index) => (
+                                  <div key={index} style={{ 
+                                    marginBottom: '0.125rem',
+                                    padding: '0.125rem 0.25rem',
+                                    background: 'rgba(34, 197, 94, 0.1)',
+                                    borderRadius: '0.25rem',
+                                    fontSize: '0.65rem'
+                                  }}>
+                                    {formula}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
