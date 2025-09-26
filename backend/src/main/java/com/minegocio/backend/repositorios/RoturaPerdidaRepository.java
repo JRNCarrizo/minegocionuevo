@@ -17,17 +17,19 @@ public interface RoturaPerdidaRepository extends JpaRepository<RoturaPerdida, Lo
     /**
      * Buscar roturas y pérdidas por empresa
      */
-    List<RoturaPerdida> findByEmpresaIdOrderByFechaDesc(Long empresaId);
+    @Query("SELECT r FROM RoturaPerdida r LEFT JOIN FETCH r.usuario LEFT JOIN FETCH r.producto WHERE r.empresa.id = :empresaId ORDER BY r.fecha DESC")
+    List<RoturaPerdida> findByEmpresaIdOrderByFechaDesc(@Param("empresaId") Long empresaId);
 
     /**
      * Buscar roturas y pérdidas por empresa y fecha
      */
-    List<RoturaPerdida> findByEmpresaIdAndFechaOrderByFechaCreacionDesc(Long empresaId, LocalDate fecha);
+    @Query("SELECT r FROM RoturaPerdida r LEFT JOIN FETCH r.usuario LEFT JOIN FETCH r.producto WHERE r.empresa.id = :empresaId AND DATE(r.fecha) = :fecha ORDER BY r.fechaCreacion DESC")
+    List<RoturaPerdida> findByEmpresaIdAndFechaOrderByFechaCreacionDesc(@Param("empresaId") Long empresaId, @Param("fecha") LocalDate fecha);
 
     /**
      * Buscar roturas y pérdidas por empresa y rango de fechas
      */
-    @Query("SELECT r FROM RoturaPerdida r WHERE r.empresa.id = :empresaId AND r.fecha BETWEEN :fechaInicio AND :fechaFin ORDER BY r.fecha DESC, r.fechaCreacion DESC")
+    @Query("SELECT r FROM RoturaPerdida r LEFT JOIN FETCH r.usuario LEFT JOIN FETCH r.producto WHERE r.empresa.id = :empresaId AND r.fecha BETWEEN :fechaInicio AND :fechaFin ORDER BY r.fecha DESC, r.fechaCreacion DESC")
     List<RoturaPerdida> findByEmpresaIdAndFechaBetweenOrderByFechaDesc(
             @Param("empresaId") Long empresaId,
             @Param("fechaInicio") java.time.LocalDateTime fechaInicio,
@@ -68,7 +70,7 @@ public interface RoturaPerdidaRepository extends JpaRepository<RoturaPerdida, Lo
     /**
      * Buscar roturas y pérdidas por empresa y rango de fechas usando LocalDateTime
      */
-    @Query("SELECT r FROM RoturaPerdida r WHERE r.empresa.id = :empresaId AND r.fecha BETWEEN :fechaInicio AND :fechaFin ORDER BY r.fechaCreacion DESC")
+    @Query("SELECT r FROM RoturaPerdida r LEFT JOIN FETCH r.usuario LEFT JOIN FETCH r.producto WHERE r.empresa.id = :empresaId AND r.fecha BETWEEN :fechaInicio AND :fechaFin ORDER BY r.fechaCreacion DESC")
     List<RoturaPerdida> findByEmpresaIdAndFechaBetweenOrderByFechaCreacionDesc(
             @Param("empresaId") Long empresaId,
             @Param("fechaInicio") java.time.LocalDateTime fechaInicio,

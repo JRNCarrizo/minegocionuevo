@@ -159,13 +159,13 @@ public class ImportacionProductoService {
                 // Tomar el primer producto del grupo como base (todos tienen el mismo nombre)
                 ImportacionProductoDTO productoBase = productosDelGrupo.get(0);
                 
-                // Verificar si el producto ya existe en la base de datos (solo después de agrupar)
+                // Verificar si el producto ya existe en la base de datos por código personalizado
                 if (verificarProductoExistenteEnBD(productoBase, empresaId)) {
                     errores.add(Map.of(
                         "producto", nombreProducto,
-                        "error", "Producto ya existe en la base de datos: " + productoBase.getNombre() + 
-                                (productoBase.getCodigoBarras() != null ? " (Código de barras: " + productoBase.getCodigoBarras() + ")" : "") +
-                                (productoBase.getCodigoPersonalizado() != null ? " (Código personalizado: " + productoBase.getCodigoPersonalizado() + ")" : "")
+                        "error", "Producto ya existe en la base de datos con el mismo código personalizado: " + 
+                                (productoBase.getCodigoPersonalizado() != null ? productoBase.getCodigoPersonalizado() : "Sin código personalizado") +
+                                " (Nombre: " + productoBase.getNombre() + ")"
                     ));
                     continue;
                 }
@@ -499,18 +499,11 @@ public class ImportacionProductoService {
     }
 
     /**
-     * Verifica si un producto ya existe en la base de datos basándose en nombre, código de barras o código personalizado
+     * Verifica si un producto ya existe en la base de datos basándose únicamente en código personalizado
+     * Permite productos con el mismo nombre o código de barras, ya que pueden ser productos diferentes
      */
     private boolean verificarProductoExistenteEnBD(ImportacionProductoDTO productoDTO, Long empresaId) {
-        // Verificar por código de barras (si existe)
-        if (productoDTO.getCodigoBarras() != null && !productoDTO.getCodigoBarras().trim().isEmpty()) {
-            if (productoRepository.existsByEmpresaIdAndCodigoBarras(empresaId, productoDTO.getCodigoBarras().trim())) {
-                System.out.println("❌ Producto duplicado por código de barras: " + productoDTO.getCodigoBarras());
-                return true;
-            }
-        }
-
-        // Verificar por código personalizado (si existe)
+        // Solo verificar por código personalizado (si existe)
         if (productoDTO.getCodigoPersonalizado() != null && !productoDTO.getCodigoPersonalizado().trim().isEmpty()) {
             if (productoRepository.existsByEmpresaIdAndCodigoPersonalizado(empresaId, productoDTO.getCodigoPersonalizado().trim())) {
                 System.out.println("❌ Producto duplicado por código personalizado: " + productoDTO.getCodigoPersonalizado());
@@ -518,12 +511,10 @@ public class ImportacionProductoService {
             }
         }
 
-        // Verificar por nombre (siempre verificar)
-        if (productoRepository.existsByEmpresaIdAndNombreIgnoreCase(empresaId, productoDTO.getNombre().trim())) {
-            System.out.println("❌ Producto duplicado por nombre: " + productoDTO.getNombre());
-            return true;
-        }
-
+        // No verificar por nombre ni código de barras para permitir productos similares
+        System.out.println("✅ Producto permitido - Código personalizado único: " + 
+            (productoDTO.getCodigoPersonalizado() != null ? productoDTO.getCodigoPersonalizado() : "Sin código personalizado"));
+        
         return false;
     }
 

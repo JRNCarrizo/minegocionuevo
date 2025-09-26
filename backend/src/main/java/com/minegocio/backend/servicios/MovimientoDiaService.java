@@ -3063,8 +3063,31 @@ public class MovimientoDiaService {
             headerRow.getCell(i).setCellStyle(headerStyle);
         }
         
+        // Crear fila de transportistas debajo de los encabezados de planillas
+        Row transportistaRow = sheet.createRow(3);
+        transportistaRow.createCell(0).setCellValue(""); // Celda vacía para código
+        transportistaRow.createCell(1).setCellValue(""); // Celda vacía para descripción
+        
+        // Transportistas por planilla
+        colIndex = 2;
+        for (PlanillaPedido planilla : planillas) {
+            Cell transportistaCell = transportistaRow.createCell(colIndex++);
+            String transportista = planilla.getTransporte() != null && !planilla.getTransporte().trim().isEmpty() 
+                ? planilla.getTransporte() 
+                : "Sin transportista";
+            transportistaCell.setCellValue(transportista);
+            transportistaCell.setCellStyle(headerStyle);
+        }
+        
+        // Aplicar estilos a la fila de transportistas
+        for (int i = 0; i < colIndex; i++) {
+            if (transportistaRow.getCell(i) != null) {
+                transportistaRow.getCell(i).setCellStyle(headerStyle);
+            }
+        }
+        
         // Datos de TODOS los productos
-        int rowIndex = 3;
+        int rowIndex = 4; // Aumentado porque agregamos la fila de transportistas
         for (Producto producto : todosLosProductos) {
             Row dataRow = sheet.createRow(rowIndex++);
             
@@ -3110,7 +3133,7 @@ public class MovimientoDiaService {
         colIndex = 2;
         for (int i = 0; i < planillas.size(); i++) {
             Cell totalCell = totalRow.createCell(colIndex++);
-            String totalFormula = "SUM(" + getColumnLetter(colIndex - 1) + "3:" + getColumnLetter(colIndex - 1) + (rowIndex - 1) + ")";
+            String totalFormula = "SUM(" + getColumnLetter(colIndex - 1) + "4:" + getColumnLetter(colIndex - 1) + (rowIndex - 1) + ")";
             totalCell.setCellFormula(totalFormula);
         }
         
@@ -3135,8 +3158,8 @@ public class MovimientoDiaService {
         // Establecer anchos de columnas fijos (evita errores de fuentes en headless)
         establecerAnchosColumnas(sheet, 15, 30, 12, 15, 15); // Ajustar según número de columnas
         
-        // Congelar paneles para mantener encabezados visibles
-        sheet.createFreezePane(0, 3);
+        // Congelar paneles para mantener encabezados visibles (incluyendo la fila de transportistas)
+        sheet.createFreezePane(0, 4);
     }
     
     /**
@@ -3187,8 +3210,31 @@ public class MovimientoDiaService {
             headerRow.getCell(i).setCellStyle(headerStyle);
         }
         
+        // Crear fila de transportistas debajo de los encabezados de planillas de devolución
+        Row transportistaRow = sheet.createRow(3);
+        transportistaRow.createCell(0).setCellValue(""); // Celda vacía para código
+        transportistaRow.createCell(1).setCellValue(""); // Celda vacía para descripción
+        
+        // Transportistas por planilla de devolución
+        colIndex = 2;
+        for (PlanillaDevolucion planilla : planillas) {
+            Cell transportistaCell = transportistaRow.createCell(colIndex++);
+            String transportista = planilla.getTransporte() != null && !planilla.getTransporte().trim().isEmpty() 
+                ? planilla.getTransporte() 
+                : "Sin transportista";
+            transportistaCell.setCellValue(transportista);
+            transportistaCell.setCellStyle(headerStyle);
+        }
+        
+        // Aplicar estilos a la fila de transportistas
+        for (int i = 0; i < colIndex; i++) {
+            if (transportistaRow.getCell(i) != null) {
+                transportistaRow.getCell(i).setCellStyle(headerStyle);
+            }
+        }
+        
         // Datos de TODOS los productos
-        int rowIndex = 3;
+        int rowIndex = 4; // Aumentado porque agregamos la fila de transportistas
         for (Producto producto : todosLosProductos) {
             Row dataRow = sheet.createRow(rowIndex++);
             
@@ -3240,7 +3286,7 @@ public class MovimientoDiaService {
             colIndex = 2;
             for (int i = 0; i < planillas.size(); i++) {
                 Cell totalCell = totalRow.createCell(colIndex++);
-                String totalFormula = "SUM(" + getColumnLetter(colIndex - 1) + "3:" + getColumnLetter(colIndex - 1) + (rowIndex - 1) + ")";
+                String totalFormula = "SUM(" + getColumnLetter(colIndex - 1) + "4:" + getColumnLetter(colIndex - 1) + (rowIndex - 1) + ")";
                 totalCell.setCellFormula(totalFormula);
             }
             
@@ -3266,8 +3312,8 @@ public class MovimientoDiaService {
         // Establecer anchos de columnas fijos (evita errores de fuentes en headless)
         establecerAnchosColumnas(sheet, 15, 30, 12, 15, 15); // Ajustar según número de columnas
         
-        // Congelar paneles para mantener encabezados visibles
-        sheet.createFreezePane(0, 3);
+        // Congelar paneles para mantener encabezados visibles (incluyendo la fila de transportistas)
+        sheet.createFreezePane(0, 4);
     }
     
     /**

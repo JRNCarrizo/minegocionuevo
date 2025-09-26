@@ -79,6 +79,10 @@ export default function InventarioCompleto() {
   const [mostrarModalFinalizacion, setMostrarModalFinalizacion] = useState(false);
   const [cancelando, setCancelando] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
+  
+  // Estados para navegación por teclado
+  const [modoNavegacion, setModoNavegacion] = useState(false);
+  const [elementoSeleccionado, setElementoSeleccionado] = useState(0);
 
   useEffect(() => {
     if (datosUsuario) {
@@ -100,6 +104,70 @@ export default function InventarioCompleto() {
       cargarDatos();
     }
   }, [location.pathname, datosUsuario]);
+
+  // Manejo de teclas para navegación
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ignorar si estamos en un input, textarea o select, o si algún modal está abierto
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || 
+          target.tagName === 'TEXTAREA' || 
+          target.tagName === 'SELECT' ||
+          mostrarModalAsignacion ||
+          mostrarModalCancelacion ||
+          mostrarModalFinalizacion) {
+        return;
+      }
+
+      switch (event.key) {
+        case 'Enter':
+          event.preventDefault();
+          if (modoNavegacion) {
+            // Si hay un inventario activo, no hacer nada (solo navegación visual)
+            // Si no hay inventario activo, crear uno nuevo
+            if (!inventario && !creandoInventario) {
+              crearInventarioCompleto();
+            }
+          } else {
+            // Si no está en modo navegación, activarlo
+            setModoNavegacion(true);
+            setElementoSeleccionado(0);
+          }
+          break;
+
+        case 'Escape':
+          event.preventDefault();
+          if (modoNavegacion) {
+            setModoNavegacion(false);
+            setElementoSeleccionado(0);
+          } else {
+            navigate('/admin/gestion-inventario');
+          }
+          break;
+
+        case 'ArrowUp':
+        case 'ArrowDown':
+        case 'ArrowLeft':
+        case 'ArrowRight':
+          if (!modoNavegacion) {
+            setModoNavegacion(true);
+            setElementoSeleccionado(0);
+          }
+          
+          event.preventDefault();
+          // Para esta página solo tenemos un elemento principal (el botón de crear)
+          // Todas las flechas mantienen la selección en 0
+          setElementoSeleccionado(0);
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [modoNavegacion, elementoSeleccionado, navigate, inventario, creandoInventario, 
+      mostrarModalAsignacion, mostrarModalCancelacion, mostrarModalFinalizacion]);
 
 
   const cargarDatos = async () => {
@@ -124,7 +192,7 @@ export default function InventarioCompleto() {
         if (sectoresResponse.data) {
           setSectores(sectoresResponse.data);
         } else {
-          setSectores(sectoresResponse);
+          setSectores([]);
         }
       } catch (error) {
         console.error('❌ Error cargando sectores:', error);
@@ -384,7 +452,8 @@ export default function InventarioCompleto() {
                 productosContados: 0,
                 totalProductos: 0,
                 porcentajeCompletado: 0,
-                productosConDiferencias: 0
+                productosConDiferencias: 0,
+                fechaInicio: new Date().toISOString()
               };
               
               nuevosConteosSectores = [...(prevInventario.conteosSectores || []), nuevoConteo];
@@ -566,6 +635,52 @@ export default function InventarioCompleto() {
     }
   };
 
+  // Función para obtener estilos del botón cuando está seleccionado
+  const obtenerEstilosBoton = (esSeleccionado: boolean, esDisabled: boolean) => {
+    const baseStyles = {
+      background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '0.5rem',
+      padding: '1rem 2rem',
+      fontSize: '1rem',
+      fontWeight: '600',
+      cursor: esDisabled ? 'not-allowed' : 'pointer',
+      opacity: esDisabled ? 0.7 : 1,
+      transition: 'all 0.3s ease',
+      position: 'relative' as const,
+      overflow: 'hidden'
+    };
+
+    if (esSeleccionado && !esDisabled) {
+      return {
+        ...baseStyles,
+        transform: 'scale(1.05)',
+        boxShadow: '0 8px 25px rgba(124, 58, 237, 0.4)',
+        border: '3px solid #3b82f6'
+      };
+    }
+
+    return baseStyles;
+  };
+
+  // Función para obtener estilos del indicador de selección
+  const obtenerEstilosIndicador = () => {
+    return {
+      position: 'absolute' as const,
+      top: '-4px',
+      left: '-4px',
+      right: '-4px',
+      bottom: '-4px',
+      border: '3px solid #3b82f6',
+      borderRadius: '0.5rem',
+      pointerEvents: 'none' as const,
+      zIndex: 10,
+      opacity: 1,
+      boxShadow: '0 0 20px #3b82f640'
+    };
+  };
+
   const esUsuarioAsignadoAlSector = (conteo: ConteoSector) => {
     if (!datosUsuario?.id) {
       console.log('🔍 esUsuarioAsignadoAlSector: No hay datosUsuario.id');
@@ -675,6 +790,29 @@ export default function InventarioCompleto() {
             }}>
               Inventario de todos los sectores con doble verificación
             </p>
+            
+            {/* Instrucciones de navegación */}
+            <div style={{
+              marginTop: '1rem',
+              padding: '0.75rem 1.5rem',
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              display: 'inline-block'
+            }}>
+              <div style={{
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontSize: '0.9rem',
+                display: 'flex',
+                gap: '1rem',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                justifyContent: 'center'
+              }}>
+                <span><strong>Enter</strong> Crear Inventario</span>
+                <span><strong>Esc</strong> Volver</span>
+              </div>
+            </div>
           </div>
           
           {!inventario ? (
@@ -712,19 +850,12 @@ export default function InventarioCompleto() {
               <button
                 onClick={crearInventarioCompleto}
                 disabled={creandoInventario}
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  padding: '1rem 2rem',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: creandoInventario ? 'not-allowed' : 'pointer',
-                  opacity: creandoInventario ? 0.7 : 1,
-                  transition: 'all 0.3s ease'
-                }}
+                style={obtenerEstilosBoton(modoNavegacion && elementoSeleccionado === 0, creandoInventario)}
               >
+                {/* Indicador de selección */}
+                {modoNavegacion && elementoSeleccionado === 0 && !creandoInventario && (
+                  <div style={obtenerEstilosIndicador()}></div>
+                )}
                 {creandoInventario ? 'Creando...' : 'Crear Inventario Completo'}
               </button>
             </div>
@@ -1366,18 +1497,17 @@ export default function InventarioCompleto() {
                                     // Verificar si hay usuarios asignados
                                     const tieneUsuariosAsignados = conteo && conteo.usuario1Id && conteo.usuario2Id;
                                     
-                                    if (!tieneUsuariosAsignados && datosUsuario?.rol === 'ADMINISTRADOR') {
+                                    if (!tieneUsuariosAsignados && datosUsuario?.rol === 'ADMINISTRADOR' && conteo) {
                                       console.log('👥 Navegando a asignar usuarios');
                                       // Navegar a página de asignación de usuarios
                                       navigate(`/admin/asignar-usuarios-inventario/${conteo.id}`);
                                     } else if (!tieneUsuariosAsignados) {
                                       console.log('⏳ Usuario no administrador, no puede asignar usuarios');
-                                      toast.info('Solo el administrador puede asignar usuarios');
+                                      toast('Solo el administrador puede asignar usuarios');
                                     } else {
                                       // Verificar si es reconteo basándose en el estado general o el estado del usuario
                                       const esUsuario1 = conteo && conteo.usuario1Id === datosUsuario?.id;
-                                      const esUsuario2 = conteo && conteo.usuario2Id === datosUsuario?.id;
-                                      const estadoUsuarioActual = esUsuario1 ? conteo.estadoUsuario1 : conteo.estadoUsuario2;
+                                      const estadoUsuarioActual = esUsuario1 ? conteo?.estadoUsuario1 : conteo?.estadoUsuario2;
                                       
                                       const esReconteo = conteo.estado === 'CON_DIFERENCIAS' || estadoUsuarioActual === 'CON_DIFERENCIAS';
                                       
@@ -1479,8 +1609,7 @@ export default function InventarioCompleto() {
                                     
                                     // Verificar si el usuario está asignado para obtener su estado específico
                                     const esUsuario1Local = conteo && conteo.usuario1Id === datosUsuario?.id;
-                                    const esUsuario2Local = conteo && conteo.usuario2Id === datosUsuario?.id;
-                                    const estadoUsuarioActual = esUsuario1Local ? conteo.estadoUsuario1 : conteo.estadoUsuario2;
+                                    const estadoUsuarioActual = esUsuario1Local ? conteo?.estadoUsuario1 : conteo?.estadoUsuario2;
                                     
                                     // Si el estado general es CON_DIFERENCIAS o el estado del usuario es CON_DIFERENCIAS
                                     if (conteo?.estado === 'CON_DIFERENCIAS' || estadoUsuarioActual === 'CON_DIFERENCIAS') {
@@ -1587,7 +1716,7 @@ export default function InventarioCompleto() {
                                   {(() => {
                                     // Definir el estado específico del usuario para determinar el mensaje
                                     const esUsuario1 = conteo && conteo.usuario1Id === datosUsuario?.id;
-                                    const estadoUsuarioActual = esUsuario1 ? conteo.estadoUsuario1 : conteo.estadoUsuario2;
+                                    const estadoUsuarioActual = esUsuario1 ? conteo?.estadoUsuario1 : conteo?.estadoUsuario2;
                                     
                                     if (estadoUsuarioActual === 'ESPERANDO_VERIFICACION') {
                                       return '✅ Tu conteo está completo. Esperando verificación del segundo usuario';
@@ -1622,7 +1751,9 @@ export default function InventarioCompleto() {
                                       estado: conteo?.estado
                                     });
                                     // Navegar a la página de detalle del conteo
-                                    navigate(`/admin/detalle-conteo/${conteo.id}`);
+                                    if (conteo) {
+                                      navigate(`/admin/detalle-conteo/${conteo.id}`);
+                                    }
                                   }}
                                   style={{
                                     background: '#8b5cf6', // Púrpura para ver detalle
@@ -1671,7 +1802,9 @@ export default function InventarioCompleto() {
                                       estado: conteo?.estado
                                     });
                                     // Navegar a la página de comparación de conteos
-                                    navigate(`/admin/comparacion-conteos/${conteo.id}`);
+                                    if (conteo) {
+                                      navigate(`/admin/comparacion-conteos/${conteo.id}`);
+                                    }
                                   }}
                                   style={{
                                     background: '#3b82f6', // Azul para primer conteo

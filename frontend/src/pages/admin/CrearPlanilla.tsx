@@ -164,19 +164,51 @@ export default function CrearPlanilla() {
     }
   }, [navigate, datosUsuario]);
 
-  // Efecto para filtrar productos
+  // Efecto para filtrar productos (priorizando código personalizado primero)
   useEffect(() => {
     if (inputBusqueda.trim()) {
       const filtrados = productos.filter(producto => {
-        const matchNombre = producto.nombre.toLowerCase().includes(inputBusqueda.toLowerCase());
         const matchCodigo = producto.codigoPersonalizado && producto.codigoPersonalizado.toLowerCase().includes(inputBusqueda.toLowerCase());
         const matchBarras = producto.codigoBarras && producto.codigoBarras.includes(inputBusqueda);
+        const matchNombre = producto.nombre.toLowerCase().includes(inputBusqueda.toLowerCase());
         
-        return matchNombre || matchCodigo || matchBarras;
+        return matchCodigo || matchBarras || matchNombre;
       });
       
-      setProductosFiltrados(filtrados);
-      setMostrarProductos(filtrados.length > 0);
+      // Ordenar resultados: primero códigos personalizados, luego códigos de barras, luego nombres
+      const productosOrdenados = filtrados.sort((a, b) => {
+        const busqueda = inputBusqueda.toLowerCase();
+        
+        // Prioridad 1: Coincidencia exacta en código personalizado
+        const aCodigoExacto = a.codigoPersonalizado?.toLowerCase() === busqueda;
+        const bCodigoExacto = b.codigoPersonalizado?.toLowerCase() === busqueda;
+        if (aCodigoExacto && !bCodigoExacto) return -1;
+        if (!aCodigoExacto && bCodigoExacto) return 1;
+        
+        // Prioridad 2: Coincidencia que empieza con el código personalizado
+        const aCodigoInicio = a.codigoPersonalizado?.toLowerCase().startsWith(busqueda);
+        const bCodigoInicio = b.codigoPersonalizado?.toLowerCase().startsWith(busqueda);
+        if (aCodigoInicio && !bCodigoInicio) return -1;
+        if (!aCodigoInicio && bCodigoInicio) return 1;
+        
+        // Prioridad 3: Coincidencia en código personalizado (contiene)
+        const aTieneCodigo = a.codigoPersonalizado?.toLowerCase().includes(busqueda);
+        const bTieneCodigo = b.codigoPersonalizado?.toLowerCase().includes(busqueda);
+        if (aTieneCodigo && !bTieneCodigo) return -1;
+        if (!aTieneCodigo && bTieneCodigo) return 1;
+        
+        // Prioridad 4: Coincidencia en código de barras
+        const aTieneBarras = a.codigoBarras?.includes(inputBusqueda);
+        const bTieneBarras = b.codigoBarras?.includes(inputBusqueda);
+        if (aTieneBarras && !bTieneBarras) return -1;
+        if (!aTieneBarras && bTieneBarras) return 1;
+        
+        // Prioridad 5: Coincidencia en nombre (orden alfabético)
+        return a.nombre.localeCompare(b.nombre);
+      });
+      
+      setProductosFiltrados(productosOrdenados);
+      setMostrarProductos(productosOrdenados.length > 0);
     } else {
       setProductosFiltrados([]);
       setMostrarProductos(false);
@@ -1388,8 +1420,10 @@ export default function CrearPlanilla() {
                         borderRadius: '0.5rem',
                         boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
                         zIndex: 1000,
-                        maxHeight: '300px',
-                        overflow: 'auto'
+                        maxHeight: '320px',
+                        overflow: 'auto',
+                        paddingTop: '0.5rem',
+                        paddingBottom: '0.5rem'
                       }}
                     >
                       {productosFiltrados.map((producto, index) => {

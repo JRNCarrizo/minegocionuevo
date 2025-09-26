@@ -199,9 +199,11 @@ const RecibirProductos: React.FC = () => {
     }
 
     const filtrados = stockDetallado.filter(producto => {
-      // Filtrar por nombre o código
-      const coincideBusqueda = producto.productoNombre.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
-        (producto.codigoPersonalizado && producto.codigoPersonalizado.toLowerCase().includes(filtroBusqueda.toLowerCase()));
+      // Filtrar por código personalizado, código de barras o nombre (priorizando código personalizado)
+      const matchCodigo = producto.codigoPersonalizado && producto.codigoPersonalizado.toLowerCase().includes(filtroBusqueda.toLowerCase());
+      const matchNombre = producto.productoNombre.toLowerCase().includes(filtroBusqueda.toLowerCase());
+      
+      const coincideBusqueda = matchCodigo || matchNombre;
       
       if (!coincideBusqueda) return false;
       
@@ -217,6 +219,29 @@ const RecibirProductos: React.FC = () => {
       
       // Solo incluir productos que NO estén en el sector actual Y tengan stock disponible
       return tieneStockDisponible;
+    }).sort((a, b) => {
+      const busqueda = filtroBusqueda.toLowerCase();
+      
+      // Prioridad 1: Coincidencia exacta en código personalizado
+      const aCodigoExacto = a.codigoPersonalizado?.toLowerCase() === busqueda;
+      const bCodigoExacto = b.codigoPersonalizado?.toLowerCase() === busqueda;
+      if (aCodigoExacto && !bCodigoExacto) return -1;
+      if (!aCodigoExacto && bCodigoExacto) return 1;
+      
+      // Prioridad 2: Coincidencia que empieza con el código personalizado
+      const aCodigoInicio = a.codigoPersonalizado?.toLowerCase().startsWith(busqueda);
+      const bCodigoInicio = b.codigoPersonalizado?.toLowerCase().startsWith(busqueda);
+      if (aCodigoInicio && !bCodigoInicio) return -1;
+      if (!aCodigoInicio && bCodigoInicio) return 1;
+      
+      // Prioridad 3: Coincidencia en código personalizado (contiene)
+      const aTieneCodigo = a.codigoPersonalizado?.toLowerCase().includes(busqueda);
+      const bTieneCodigo = b.codigoPersonalizado?.toLowerCase().includes(busqueda);
+      if (aTieneCodigo && !bTieneCodigo) return -1;
+      if (!aTieneCodigo && bTieneCodigo) return 1;
+      
+      // Prioridad 4: Coincidencia en nombre (orden alfabético)
+      return a.productoNombre.localeCompare(b.productoNombre);
     });
 
     setProductosFiltrados(filtrados);
@@ -969,7 +994,17 @@ const RecibirProductos: React.FC = () => {
                          fontSize: isMobile ? '0.875rem' : '0.875rem'
                        }}>
                          <div style={{ fontWeight: '600', marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
-                           {productoSeleccionado?.productoNombre}
+                           {productoSeleccionado?.codigoPersonalizado ? (
+                             <>
+                               <span style={{ color: '#3b82f6', fontWeight: '700' }}>
+                                 {productoSeleccionado.codigoPersonalizado}
+                               </span>
+                               <br />
+                               {productoSeleccionado.productoNombre}
+                             </>
+                           ) : (
+                             productoSeleccionado?.productoNombre
+                           )}
                          </div>
                          <div style={{ color: '#64748b', marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
                            Desde: {stockSeleccionado.ubicacion}
@@ -1146,7 +1181,20 @@ const RecibirProductos: React.FC = () => {
                               fontSize: isMobile ? '1rem' : 'inherit',
                               lineHeight: isMobile ? '1.3' : 'inherit'
                             }}>
-                              {producto.productoNombre}
+                              {producto.codigoPersonalizado ? (
+                                <>
+                                  <span style={{ 
+                                    color: productoSeleccionadoIndex === index ? '#bfdbfe' : '#3b82f6', 
+                                    fontWeight: '700' 
+                                  }}>
+                                    {producto.codigoPersonalizado}
+                                  </span>
+                                  <br />
+                                  {producto.productoNombre}
+                                </>
+                              ) : (
+                                producto.productoNombre
+                              )}
                             </div>
                             <div style={{
                               display: 'flex',
@@ -1174,16 +1222,6 @@ const RecibirProductos: React.FC = () => {
                               </div>
                             </div>
                           </div>
-                          {producto.codigoPersonalizado && (
-                            <div style={{
-                              fontSize: isMobile ? '0.8rem' : '0.75rem',
-                              opacity: 0.8,
-                              color: productoSeleccionadoIndex === index ? 'rgba(255,255,255,0.8)' : '#64748b',
-                              marginTop: isMobile ? '0.25rem' : '0'
-                            }}>
-                              📋 {producto.codigoPersonalizado}
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>

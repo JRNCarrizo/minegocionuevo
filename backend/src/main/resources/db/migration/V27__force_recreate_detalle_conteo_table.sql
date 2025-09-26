@@ -43,3 +43,4 @@ CREATE INDEX idx_detalle_conteo_producto ON detalle_conteo(producto_id);
 
 
 
+

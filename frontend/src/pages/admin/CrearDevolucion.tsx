@@ -390,19 +390,51 @@ export default function CrearDevolucion() {
   };
 
 
-  // Efecto para filtrar productos
+  // Efecto para filtrar productos (priorizando código personalizado primero)
   useEffect(() => {
     if (inputBusqueda.trim()) {
       const filtrados = productos.filter(producto => {
-        const matchNombre = producto.nombre.toLowerCase().includes(inputBusqueda.toLowerCase());
         const matchCodigo = producto.codigoPersonalizado && producto.codigoPersonalizado.toLowerCase().includes(inputBusqueda.toLowerCase());
         const matchBarras = producto.codigoBarras && producto.codigoBarras.includes(inputBusqueda);
+        const matchNombre = producto.nombre.toLowerCase().includes(inputBusqueda.toLowerCase());
         
-        return matchNombre || matchCodigo || matchBarras;
+        return matchCodigo || matchBarras || matchNombre;
       });
       
-    setProductosFiltrados(filtrados);
-      setMostrarProductos(filtrados.length > 0);
+      // Ordenar resultados: primero códigos personalizados, luego códigos de barras, luego nombres
+      const productosOrdenados = filtrados.sort((a, b) => {
+        const busqueda = inputBusqueda.toLowerCase();
+        
+        // Prioridad 1: Coincidencia exacta en código personalizado
+        const aCodigoExacto = a.codigoPersonalizado?.toLowerCase() === busqueda;
+        const bCodigoExacto = b.codigoPersonalizado?.toLowerCase() === busqueda;
+        if (aCodigoExacto && !bCodigoExacto) return -1;
+        if (!aCodigoExacto && bCodigoExacto) return 1;
+        
+        // Prioridad 2: Coincidencia que empieza con el código personalizado
+        const aCodigoInicio = a.codigoPersonalizado?.toLowerCase().startsWith(busqueda);
+        const bCodigoInicio = b.codigoPersonalizado?.toLowerCase().startsWith(busqueda);
+        if (aCodigoInicio && !bCodigoInicio) return -1;
+        if (!aCodigoInicio && bCodigoInicio) return 1;
+        
+        // Prioridad 3: Coincidencia en código personalizado (contiene)
+        const aTieneCodigo = a.codigoPersonalizado?.toLowerCase().includes(busqueda);
+        const bTieneCodigo = b.codigoPersonalizado?.toLowerCase().includes(busqueda);
+        if (aTieneCodigo && !bTieneCodigo) return -1;
+        if (!aTieneCodigo && bTieneCodigo) return 1;
+        
+        // Prioridad 4: Coincidencia en código de barras
+        const aTieneBarras = a.codigoBarras?.includes(inputBusqueda);
+        const bTieneBarras = b.codigoBarras?.includes(inputBusqueda);
+        if (aTieneBarras && !bTieneBarras) return -1;
+        if (!aTieneBarras && bTieneBarras) return 1;
+        
+        // Prioridad 5: Coincidencia en nombre (orden alfabético)
+        return a.nombre.localeCompare(b.nombre);
+      });
+      
+      setProductosFiltrados(productosOrdenados);
+      setMostrarProductos(productosOrdenados.length > 0);
     } else {
       setProductosFiltrados([]);
       setMostrarProductos(false);
@@ -1427,17 +1459,19 @@ export default function CrearDevolucion() {
                       background: 'white',
               border: '1px solid #e2e8f0',
                       borderRadius: '0.5rem',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                      maxHeight: '280px',
+                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                      zIndex: 1000,
+                      maxHeight: '320px',
                       overflow: 'auto',
-                      zIndex: 1000
+                      paddingTop: '0.5rem',
+                      paddingBottom: '0.5rem'
                     }}>
                       {productosFiltrados.map((producto, index) => (
                   <div
                     key={producto.id}
                           onClick={() => seleccionarProducto(producto)}
                     style={{
-                            padding: isMobile ? '0.75rem' : '0.75rem',
+                            padding: isMobile ? '0.75rem' : '0.5rem',
                       cursor: 'pointer',
                             borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
                             background: index === productoSeleccionado ? '#3b82f6' : 'white',
@@ -1458,16 +1492,29 @@ export default function CrearDevolucion() {
                               fontSize: isMobile ? '0.95rem' : '0.875rem',
                               lineHeight: '1.3'
                             }}>
-                              {producto.nombre}
+                              {producto.codigoPersonalizado ? (
+                                <>
+                                  <span style={{ 
+                                    color: index === productoSeleccionado ? '#bfdbfe' : '#3b82f6', 
+                                    fontWeight: '700' 
+                                  }}>
+                                    {producto.codigoPersonalizado}
+                                  </span>
+                                  <br />
+                                  {producto.nombre}
+                                </>
+                              ) : (
+                                producto.nombre
+                              )}
                             </div>
                             <div style={{ 
                               fontSize: isMobile ? '0.8rem' : '0.75rem', 
                               color: index === productoSeleccionado ? '#e2e8f0' : '#64748b',
                               marginTop: '0.25rem'
                             }}>
-                              {producto.codigoPersonalizado && `Código: ${producto.codigoPersonalizado}`}
-                              {producto.codigoBarras && ` • Barras: ${producto.codigoBarras}`}
-                              {` • Stock: ${producto.stock}`}
+                              {producto.codigoBarras && `Barras: ${producto.codigoBarras}`}
+                              {producto.codigoBarras && ` • `}
+                              {`Stock: ${producto.stock}`}
                             </div>
                           </div>
                         </div>
@@ -1749,17 +1796,18 @@ export default function CrearDevolucion() {
                           fontSize: isMobile ? '1rem' : '0.875rem',
                           lineHeight: '1.3'
                       }}>
-                        {detalle.descripcion}
+                        {detalle.codigoPersonalizado ? (
+                          <>
+                            <span style={{ color: '#3b82f6', fontWeight: '700' }}>
+                              {detalle.codigoPersonalizado}
+                            </span>
+                            <br />
+                            {detalle.descripcion}
+                          </>
+                        ) : (
+                          detalle.descripcion
+                        )}
                       </div>
-                      {detalle.codigoPersonalizado && (
-                        <div style={{
-                            fontSize: isMobile ? '0.8rem' : '0.7rem', 
-                            color: '#64748b',
-                            marginTop: '0.25rem'
-                        }}>
-                          Código: {detalle.codigoPersonalizado}
-                        </div>
-                      )}
                     </div>
                     
                     {/* Cantidad, Estado y Botón eliminar en la misma línea */}

@@ -905,21 +905,60 @@ export default function RoturasPerdidas() {
                                       fontSize: '1rem',
                                       fontWeight: '600',
                                       color: '#1e293b',
-                                      margin: '0 0 0.25rem 0'
+                                      margin: '0 0 0.5rem 0'
                                     }}>
-                                      {(roturaPerdida.codigoCompleto || roturaPerdida.codigoPersonalizado) ? 
-                                        `${roturaPerdida.codigoCompleto || roturaPerdida.codigoPersonalizado} - ${roturaPerdida.descripcionCompleta || roturaPerdida.descripcionProducto || 'Producto no especificado'}` :
-                                        `${roturaPerdida.descripcionCompleta || roturaPerdida.descripcionProducto || 'Producto no especificado'}`
-                                      }
+                                      {(roturaPerdida.codigoCompleto || roturaPerdida.codigoPersonalizado) ? (
+                                        <>
+                                          <span style={{ color: '#3b82f6', fontWeight: '700' }}>
+                                            {roturaPerdida.codigoCompleto || roturaPerdida.codigoPersonalizado}
+                                          </span>
+                                          <br />
+                                          {roturaPerdida.descripcionCompleta || roturaPerdida.descripcionProducto || 'Producto no especificado'}
+                                        </>
+                                      ) : (
+                                        roturaPerdida.descripcionCompleta || roturaPerdida.descripcionProducto || 'Producto no especificado'
+                                      )}
                                     </h4>
-                                    <p style={{
-                                      fontSize: '0.75rem',
-                                      color: '#059669',
-                                      margin: '0.25rem 0 0 0',
-                                      fontWeight: '600'
+                                    <div style={{
+                                      display: 'flex',
+                                      gap: '1rem',
+                                      flexWrap: 'wrap',
+                                      alignItems: 'center'
                                     }}>
-                                      📅 {formatearFecha(roturaPerdida.fecha)}
-                                    </p>
+                                      <span style={{
+                                        fontSize: '0.75rem',
+                                        color: '#059669',
+                                        fontWeight: '600',
+                                        background: '#f0fdf4',
+                                        padding: '0.25rem 0.5rem',
+                                        borderRadius: '0.375rem',
+                                        border: '1px solid #bbf7d0'
+                                      }}>
+                                        📊 {roturaPerdida.cantidad} unidad{roturaPerdida.cantidad !== 1 ? 'es' : ''}
+                                      </span>
+                                      <span style={{
+                                        fontSize: '0.75rem',
+                                        color: '#059669',
+                                        fontWeight: '600',
+                                        background: '#f0fdf4',
+                                        padding: '0.25rem 0.5rem',
+                                        borderRadius: '0.375rem',
+                                        border: '1px solid #bbf7d0'
+                                      }}>
+                                        📅 {formatearFecha(roturaPerdida.fecha)}
+                                      </span>
+                                      <span style={{
+                                        fontSize: '0.75rem',
+                                        color: '#64748b',
+                                        fontWeight: '500',
+                                        background: '#f8fafc',
+                                        padding: '0.25rem 0.5rem',
+                                        borderRadius: '0.375rem',
+                                        border: '1px solid #e2e8f0'
+                                      }}>
+                                        👤 {roturaPerdida.nombreUsuario || 'Usuario no disponible'}
+                                      </span>
+                                    </div>
                                   </div>
                                </div>
                                
@@ -1198,10 +1237,17 @@ export default function RoturasPerdidas() {
                                      color: '#1e293b',
                                      margin: '0 0 0.25rem 0'
                                    }}>
-                                     {(roturaPerdida.codigoCompleto || roturaPerdida.codigoPersonalizado) ? 
-                                       `${roturaPerdida.codigoCompleto || roturaPerdida.codigoPersonalizado} - ${roturaPerdida.descripcionCompleta || roturaPerdida.descripcionProducto || 'Producto no especificado'}` :
-                                       `${roturaPerdida.descripcionCompleta || roturaPerdida.descripcionProducto || 'Producto no especificado'}`
-                                     }
+                                     {(roturaPerdida.codigoCompleto || roturaPerdida.codigoPersonalizado) ? (
+                                       <>
+                                         <span style={{ color: '#3b82f6', fontWeight: '700' }}>
+                                           {roturaPerdida.codigoCompleto || roturaPerdida.codigoPersonalizado}
+                                         </span>
+                                         <br />
+                                         {roturaPerdida.descripcionCompleta || roturaPerdida.descripcionProducto || 'Producto no especificado'}
+                                       </>
+                                     ) : (
+                                       roturaPerdida.descripcionCompleta || roturaPerdida.descripcionProducto || 'Producto no especificado'
+                                     )}
                                    </h4>
                                  </div>
                               </div>
@@ -1235,51 +1281,45 @@ export default function RoturasPerdidas() {
                                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
                                gap: '0.75rem'
                              }}>
-                              <div>
-                                <label style={{
-                                  display: 'block',
+                              <div style={{
+                                display: 'flex',
+                                gap: '1rem',
+                                flexWrap: 'wrap',
+                                alignItems: 'center'
+                              }}>
+                                <span style={{
                                   fontSize: '0.75rem',
+                                  color: '#ef4444',
                                   fontWeight: '600',
-                                  color: '#64748b',
-                                  marginBottom: '0.25rem'
+                                  background: '#fef2f2',
+                                  padding: '0.375rem 0.75rem',
+                                  borderRadius: '0.5rem',
+                                  border: '1px solid #fecaca'
                                 }}>
-                                  📊 Cantidad Perdida
-                                </label>
-                                                                 <div style={{
-                                   padding: '0.375rem',
-                                   background: 'white',
-                                   border: '1px solid #e2e8f0',
-                                   borderRadius: '0.5rem',
-                                   fontSize: '1rem',
-                                   fontWeight: '600',
-                                   color: '#ef4444'
-                                 }}>
-                                  {roturaPerdida.cantidad} unidad{roturaPerdida.cantidad !== 1 ? 'es' : ''}
-                                </div>
-                              </div>
-                              
-                              
-                              
-                              <div>
-                                <label style={{
-                                  display: 'block',
+                                  📊 {roturaPerdida.cantidad} unidad{roturaPerdida.cantidad !== 1 ? 'es' : ''}
+                                </span>
+                                <span style={{
                                   fontSize: '0.75rem',
+                                  color: '#059669',
                                   fontWeight: '600',
-                                  color: '#64748b',
-                                  marginBottom: '0.25rem'
+                                  background: '#f0fdf4',
+                                  padding: '0.375rem 0.75rem',
+                                  borderRadius: '0.5rem',
+                                  border: '1px solid #bbf7d0'
                                 }}>
-                                  🕒 Fecha de Registro
-                                </label>
-                                                                 <div style={{
-                                   padding: '0.375rem',
-                                   background: 'white',
-                                   border: '1px solid #e2e8f0',
-                                   borderRadius: '0.5rem',
-                                   fontSize: '0.875rem',
-                                   color: '#374151'
-                                 }}>
-                                  {formatearFechaCorta(roturaPerdida.fechaCreacion)}
-                                </div>
+                                  🕒 {formatearFechaCorta(roturaPerdida.fechaCreacion)}
+                                </span>
+                                <span style={{
+                                  fontSize: '0.75rem',
+                                  color: '#64748b',
+                                  fontWeight: '500',
+                                  background: '#f8fafc',
+                                  padding: '0.375rem 0.75rem',
+                                  borderRadius: '0.5rem',
+                                  border: '1px solid #e2e8f0'
+                                }}>
+                                  👤 {roturaPerdida.nombreUsuario || 'Usuario no disponible'}
+                                </span>
                               </div>
                             </div>
                             

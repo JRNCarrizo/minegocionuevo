@@ -37,10 +37,89 @@ export default function GestionInventario() {
   const [inventariosCompletos, setInventariosCompletos] = useState<InventarioCompleto[]>([]);
   const [inventariosPorSector, setInventariosPorSector] = useState<InventarioPorSector[]>([]);
   const [cargando, setCargando] = useState(true);
+  
+  // Estados para navegación por teclado
+  const [modoNavegacion, setModoNavegacion] = useState(false);
+  const [elementoSeleccionado, setElementoSeleccionado] = useState(0);
 
   useEffect(() => {
     cargarInventarios();
   }, []);
+
+  // Manejo de teclas para navegación
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ignorar si estamos en un input o textarea
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      switch (event.key) {
+        case 'ArrowUp':
+        case 'ArrowDown':
+        case 'ArrowLeft':
+        case 'ArrowRight':
+          if (!modoNavegacion) {
+            setModoNavegacion(true);
+            setElementoSeleccionado(0);
+          }
+          
+          event.preventDefault();
+          const totalElementos = 2; // Solo tenemos 2 cards principales
+          
+          let nuevaSeleccion = elementoSeleccionado;
+          
+          if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+            if (elementoSeleccionado <= 0) {
+              nuevaSeleccion = totalElementos - 1;
+            } else {
+              nuevaSeleccion = elementoSeleccionado - 1;
+            }
+          } else {
+            if (elementoSeleccionado >= totalElementos - 1) {
+              nuevaSeleccion = 0;
+            } else {
+              nuevaSeleccion = elementoSeleccionado + 1;
+            }
+          }
+          
+          setElementoSeleccionado(nuevaSeleccion);
+          break;
+
+        case 'Enter':
+          event.preventDefault();
+          if (modoNavegacion) {
+            // Navegar según la opción seleccionada
+            if (elementoSeleccionado === 0) {
+              navigate('/admin/inventario-completo');
+            } else if (elementoSeleccionado === 1) {
+              navigate('/admin/inventario-por-sector');
+            }
+          } else {
+            // Si no está en modo navegación, activarlo y seleccionar la primera opción
+            setModoNavegacion(true);
+            setElementoSeleccionado(0);
+          }
+          break;
+
+        case 'Escape':
+          event.preventDefault();
+          if (modoNavegacion) {
+            setModoNavegacion(false);
+            setElementoSeleccionado(0);
+          } else {
+            navigate('/admin/gestion-empresa');
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [modoNavegacion, elementoSeleccionado, navigate]);
 
   const cargarInventarios = async () => {
     try {
@@ -75,6 +154,57 @@ export default function GestionInventario() {
       case 'CANCELADO': return 'Cancelado';
       default: return estado;
     }
+  };
+
+  // Función para obtener estilos de la card cuando está seleccionada
+  const obtenerEstilosCard = (index: number, esSeleccionada: boolean) => {
+    const baseStyles = {
+      background: 'white',
+      borderRadius: '1rem',
+      padding: '2rem',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+      border: '1px solid #e2e8f0',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      position: 'relative' as const,
+      overflow: 'hidden'
+    };
+
+    if (esSeleccionada) {
+      return {
+        ...baseStyles,
+        transform: 'translateY(-4px) scale(1.02)',
+        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+        zIndex: 5,
+        border: '3px solid #3b82f6'
+      };
+    }
+
+    return baseStyles;
+  };
+
+  // Función para obtener estilos del indicador de selección
+  const obtenerEstilosIndicador = (cardIndex: number) => {
+    const coloresCards = {
+      0: '#7c3aed', // Inventario Completo - Púrpura
+      1: '#06b6d4'  // Inventario por Sector - Cyan
+    };
+    
+    const color = coloresCards[cardIndex as keyof typeof coloresCards] || '#3b82f6';
+    
+    return {
+      position: 'absolute' as const,
+      top: '-4px',
+      left: '-4px',
+      right: '-4px',
+      bottom: '-4px',
+      border: `3px solid ${color}`,
+      borderRadius: '1rem',
+      pointerEvents: 'none' as const,
+      zIndex: 10,
+      opacity: 1,
+      boxShadow: `0 0 20px ${color}40`
+    };
   };
 
   if (cargando) {
@@ -148,6 +278,30 @@ export default function GestionInventario() {
           }}>
             Inventario completo y por sector con doble verificación
           </p>
+          
+          {/* Instrucciones de navegación */}
+          <div style={{
+            marginTop: '1rem',
+            padding: '0.75rem 1.5rem',
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '0.5rem',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            display: 'inline-block'
+          }}>
+            <div style={{
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '0.9rem',
+              display: 'flex',
+              gap: '1rem',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              justifyContent: 'center'
+            }}>
+              <span><strong>← → ↑ ↓</strong> Navegar</span>
+              <span><strong>Enter</strong> Seleccionar</span>
+              <span><strong>Esc</strong> Volver</span>
+            </div>
+          </div>
         </div>
 
         {/* Opciones principales */}
@@ -160,26 +314,24 @@ export default function GestionInventario() {
           {/* Inventario Completo */}
           <div
             onClick={() => navigate('/admin/inventario-completo')}
-            style={{
-              background: 'white',
-              borderRadius: '1rem',
-              padding: '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              border: '1px solid #e2e8f0',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
+            style={obtenerEstilosCard(0, modoNavegacion && elementoSeleccionado === 0)}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+              if (!modoNavegacion) {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+              }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+              if (!modoNavegacion) {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+              }
             }}
           >
+            {/* Indicador de selección */}
+            {modoNavegacion && elementoSeleccionado === 0 && (
+              <div style={obtenerEstilosIndicador(0)}></div>
+            )}
             <div style={{
               background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
               position: 'absolute',
@@ -251,26 +403,24 @@ export default function GestionInventario() {
           {/* Inventario por Sector */}
           <div
             onClick={() => navigate('/admin/inventario-por-sector')}
-            style={{
-              background: 'white',
-              borderRadius: '1rem',
-              padding: '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              border: '1px solid #e2e8f0',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
+            style={obtenerEstilosCard(1, modoNavegacion && elementoSeleccionado === 1)}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+              if (!modoNavegacion) {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+              }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+              if (!modoNavegacion) {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+              }
             }}
           >
+            {/* Indicador de selección */}
+            {modoNavegacion && elementoSeleccionado === 1 && (
+              <div style={obtenerEstilosIndicador(1)}></div>
+            )}
             <div style={{
               background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
               position: 'absolute',
@@ -515,6 +665,7 @@ export default function GestionInventario() {
     </div>
   );
 }
+
 
 
 

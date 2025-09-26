@@ -229,15 +229,47 @@ export default function ConteoProductos() {
       return;
     }
 
-    const busqueda = inputBusqueda.toLowerCase();
-    const filtrados = productos.filter(producto =>
-      producto.nombre.toLowerCase().includes(busqueda) ||
-      producto.codigoBarras?.toLowerCase().includes(busqueda) ||
-      producto.codigoPersonalizado?.toLowerCase().includes(busqueda) ||
-      producto.categoria?.toLowerCase().includes(busqueda) ||
-      producto.marca?.toLowerCase().includes(busqueda)
-    );
-    setProductosFiltrados(filtrados);
+    const filtrados = productos.filter(producto => {
+      const matchCodigo = producto.codigoPersonalizado && producto.codigoPersonalizado.toLowerCase().includes(inputBusqueda.toLowerCase());
+      const matchBarras = producto.codigoBarras && producto.codigoBarras.includes(inputBusqueda);
+      const matchNombre = producto.nombre.toLowerCase().includes(inputBusqueda.toLowerCase());
+      
+      return matchCodigo || matchBarras || matchNombre;
+    });
+    
+    // Ordenar resultados: primero códigos personalizados, luego códigos de barras, luego nombres
+    const productosOrdenados = filtrados.sort((a, b) => {
+      const busqueda = inputBusqueda.toLowerCase();
+      
+      // Prioridad 1: Coincidencia exacta en código personalizado
+      const aCodigoExacto = a.codigoPersonalizado?.toLowerCase() === busqueda;
+      const bCodigoExacto = b.codigoPersonalizado?.toLowerCase() === busqueda;
+      if (aCodigoExacto && !bCodigoExacto) return -1;
+      if (!aCodigoExacto && bCodigoExacto) return 1;
+      
+      // Prioridad 2: Coincidencia que empieza con el código personalizado
+      const aCodigoInicio = a.codigoPersonalizado?.toLowerCase().startsWith(busqueda);
+      const bCodigoInicio = b.codigoPersonalizado?.toLowerCase().startsWith(busqueda);
+      if (aCodigoInicio && !bCodigoInicio) return -1;
+      if (!aCodigoInicio && bCodigoInicio) return 1;
+      
+      // Prioridad 3: Coincidencia en código personalizado (contiene)
+      const aTieneCodigo = a.codigoPersonalizado?.toLowerCase().includes(busqueda);
+      const bTieneCodigo = b.codigoPersonalizado?.toLowerCase().includes(busqueda);
+      if (aTieneCodigo && !bTieneCodigo) return -1;
+      if (!aTieneCodigo && bTieneCodigo) return 1;
+      
+      // Prioridad 4: Coincidencia en código de barras
+      const aTieneBarras = a.codigoBarras?.includes(inputBusqueda);
+      const bTieneBarras = b.codigoBarras?.includes(inputBusqueda);
+      if (aTieneBarras && !bTieneBarras) return -1;
+      if (!aTieneBarras && bTieneBarras) return 1;
+      
+      // Prioridad 5: Coincidencia en nombre (orden alfabético)
+      return a.nombre.localeCompare(b.nombre);
+    });
+    
+    setProductosFiltrados(productosOrdenados);
   };
 
   const evaluarFormula = async (formula: string) => {
@@ -668,11 +700,14 @@ export default function ConteoProductos() {
             {/* Lista de productos */}
             {inputBusqueda && (
               <div style={{
-                maxHeight: '200px',
+                maxHeight: '320px',
                 overflow: 'auto',
                 border: '1px solid #e2e8f0',
                 borderRadius: '0.5rem',
-                background: 'white'
+                background: 'white',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                paddingTop: '0.5rem',
+                paddingBottom: '0.5rem'
               }}>
                 {productosFiltrados.map((producto) => (
                   <div
@@ -682,7 +717,7 @@ export default function ConteoProductos() {
                       setInputBusqueda('');
                     }}
                     style={{
-                      padding: '0.75rem',
+                      padding: isMobile ? '0.75rem' : '0.5rem',
                       borderBottom: '1px solid #f1f5f9',
                       cursor: 'pointer',
                       transition: 'background 0.2s ease'
@@ -694,6 +729,19 @@ export default function ConteoProductos() {
                       e.currentTarget.style.background = 'white';
                     }}
                   >
+                    {/* Código personalizado en azul arriba del nombre */}
+                    {producto.codigoPersonalizado && (
+                      <div style={{
+                        fontWeight: 'bold',
+                        color: '#3b82f6',
+                        fontSize: '0.9rem',
+                        marginBottom: '0.25rem'
+                      }}>
+                        {producto.codigoPersonalizado}
+                      </div>
+                    )}
+                    
+                    {/* Nombre del producto */}
                     <div style={{
                       fontWeight: '600',
                       color: '#1e293b',
@@ -701,12 +749,13 @@ export default function ConteoProductos() {
                     }}>
                       {producto.nombre}
                     </div>
+                    
+                    {/* Información adicional */}
                     <div style={{
                       fontSize: '0.9rem',
                       color: '#64748b'
                     }}>
                       {producto.codigoBarras && `Código: ${producto.codigoBarras}`}
-                      {producto.codigoPersonalizado && ` | Personalizado: ${producto.codigoPersonalizado}`}
                       {producto.categoria && ` | Categoría: ${producto.categoria}`}
                     </div>
                   </div>
