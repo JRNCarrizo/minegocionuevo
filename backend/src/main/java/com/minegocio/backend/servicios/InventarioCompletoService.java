@@ -872,6 +872,60 @@ public class InventarioCompletoService {
     }
 
     /**
+     * Eliminar un detalle de conteo
+     */
+    @Transactional
+    public boolean eliminarDetalleConteo(Long detalleId, Long conteoSectorId, Long usuarioId) {
+        try {
+            System.out.println("🗑️ Eliminando detalle de conteo: " + detalleId + " del sector: " + conteoSectorId);
+            
+            // Verificar que el detalle existe y pertenece al conteo sector
+            Optional<DetalleConteo> detalleOpt = detalleConteoRepository.findById(detalleId);
+            if (!detalleOpt.isPresent()) {
+                System.out.println("❌ Detalle no encontrado: " + detalleId);
+                return false;
+            }
+            
+            DetalleConteo detalle = detalleOpt.get();
+            if (!detalle.getConteoSector().getId().equals(conteoSectorId)) {
+                System.out.println("❌ El detalle no pertenece al conteo sector: " + conteoSectorId);
+                return false;
+            }
+            
+            // Verificar que el usuario tiene permisos (es uno de los usuarios asignados)
+            ConteoSector conteoSector = detalle.getConteoSector();
+            boolean esUsuarioAsignado = false;
+            
+            if (conteoSector.getUsuarioAsignado1() != null && conteoSector.getUsuarioAsignado1().getId().equals(usuarioId)) {
+                esUsuarioAsignado = true;
+            }
+            if (conteoSector.getUsuarioAsignado2() != null && conteoSector.getUsuarioAsignado2().getId().equals(usuarioId)) {
+                esUsuarioAsignado = true;
+            }
+            
+            if (!esUsuarioAsignado) {
+                System.out.println("❌ Usuario " + usuarioId + " no tiene permisos para eliminar detalles de este conteo");
+                return false;
+            }
+            
+            // Eliminar el detalle
+            detalleConteoRepository.delete(detalle);
+            System.out.println("✅ Detalle eliminado exitosamente: " + detalleId);
+            
+            // Recalcular el progreso del conteo sector
+            calcularProgresoReal(conteoSector);
+            conteoSectorRepository.save(conteoSector);
+            
+            return true;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error eliminando detalle: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
      * Obtener inventario activo por empresa
      */
     public Optional<InventarioCompleto> obtenerInventarioActivo(Long empresaId) {

@@ -1425,27 +1425,28 @@ export default function CrearDevolucion() {
               </label>
               <div style={{ 
                 display: 'grid',
-                gridTemplateColumns: mostrarCampoCantidad ? '1fr 120px' : mostrarSelectorEstado ? '1fr 120px' : '1fr',
+                gridTemplateColumns: '1fr',
                 gap: '0.5rem',
                 alignItems: 'end'
               }}>
-                <div style={{ position: 'relative' }}>
-              <input
-                    ref={inputBusquedaRef}
-                type="text"
-                    placeholder="Código de barras, código personalizado o nombre..."
-                value={inputBusqueda}
-                    onChange={(e) => setInputBusqueda(e.target.value)}
-                    onKeyDown={manejarTeclas}
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '1rem' : '0.75rem',
-                      border: '2px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                      fontSize: isMobile ? '1rem' : '0.875rem',
-                      minHeight: isMobile ? '48px' : 'auto'
-                }}
-              />
+                {!mostrarCampoCantidad && !mostrarSelectorEstado && (
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      ref={inputBusquedaRef}
+                      type="text"
+                      placeholder="Código de barras, código personalizado o nombre..."
+                      value={inputBusqueda}
+                      onChange={(e) => setInputBusqueda(e.target.value)}
+                      onKeyDown={manejarTeclas}
+                      style={{
+                        width: '100%',
+                        padding: isMobile ? '1rem' : '0.75rem',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '0.5rem',
+                        fontSize: isMobile ? '1rem' : '0.875rem',
+                        minHeight: isMobile ? '48px' : 'auto'
+                      }}
+                    />
 
                   {/* Lista de productos filtrados */}
                   {mostrarProductos && (
@@ -1522,19 +1523,11 @@ export default function CrearDevolucion() {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Campo de cantidad temporal */}
                 {mostrarCampoCantidad && (
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: isMobile ? '0.875rem' : '0.75rem',
-                      fontWeight: '600',
-                      color: '#64748b',
-                      marginBottom: isMobile ? '0.5rem' : '0.25rem'
-                    }}>
-                      Cantidad
-                    </label>
+                  <div style={{ position: 'relative' }}>
                     <input
                       ref={cantidadTemporalRef}
                       type="text"
@@ -1593,16 +1586,16 @@ export default function CrearDevolucion() {
                       </div>
                     )}
                     
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#64748b',
-                      marginTop: '0.25rem',
-                      lineHeight: '1.2'
-                    }}>
-                      💡 Puedes usar: +, -, *, /, x, paréntesis
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#64748b',
+                        marginTop: '0.25rem',
+                        lineHeight: '1.2'
+                      }}>
+                        💡 Puedes usar: +, -, *, /, x, paréntesis
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Selector de estado temporal */}
                 {mostrarSelectorEstado && (

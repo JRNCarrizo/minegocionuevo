@@ -5,6 +5,7 @@ import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import { API_CONFIG } from '../../config/api';
+import BarcodeScanner from '../../components/BarcodeScanner';
 
 interface Producto {
   id: number;
@@ -84,19 +85,17 @@ export default function ConteoSectorInventarioCompleto() {
   const [productoSeleccionado, setProductoSeleccionado] = useState(-1);
   const [inputBusqueda, setInputBusqueda] = useState('');
   const [mostrarScanner, setMostrarScanner] = useState(false);
-  const [cantidad, setCantidad] = useState('');
-  const [formulaCalculo, setFormulaCalculo] = useState('');
   const [resultadoCalculo, setResultadoCalculo] = useState<number | null>(null);
   const [errorCalculo, setErrorCalculo] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [iniciando, setIniciando] = useState(false);
   const [mostrarCampoCantidad, setMostrarCampoCantidad] = useState(false);
+  const [productosEliminados, setProductosEliminados] = useState<Set<number>>(new Set());
   const [cantidadTemporal, setCantidadTemporal] = useState(0);
   const [cantidadTemporalTexto, setCantidadTemporalTexto] = useState<string>('');
   const [productoSeleccionadoTemporal, setProductoSeleccionadoTemporal] = useState<Producto | null>(null);
   const [editandoDetalle, setEditandoDetalle] = useState<number | null>(null);
   const [nuevaCantidad, setNuevaCantidad] = useState('');
-  const [nuevaFormula, setNuevaFormula] = useState('');
   const [esModoReconteo, setEsModoReconteo] = useState(false);
   const [filtroProductosContados, setFiltroProductosContados] = useState('');
   const [vieneConAutoStart, setVieneConAutoStart] = useState(false);
@@ -107,6 +106,47 @@ export default function ConteoSectorInventarioCompleto() {
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
   const cantidadTemporalRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
+  const listaProductosContadosRef = useRef<HTMLDivElement>(null);
+
+  // Manejador global de teclas para auto-scroll al buscador
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Enter: Enfocar buscador y hacer scroll
+      if (event.key === 'Enter' && !inputBusqueda.trim()) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (inputBusquedaRef.current) {
+          inputBusquedaRef.current.focus();
+          // Scroll suave hacia el buscador después de un pequeño delay
+          setTimeout(() => {
+            // Calcular la posición del buscador y la altura del navbar
+            const navbar = document.querySelector('.navbar-admin') as HTMLElement;
+            const navbarHeight = navbar ? navbar.offsetHeight : 80; // altura por defecto si no encuentra el navbar
+            
+            // Obtener la posición del buscador
+            const buscadorRect = inputBusquedaRef.current!.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const buscadorTop = buscadorRect.top + scrollTop;
+            
+            // Scroll para posicionar el buscador justo debajo del navbar
+            window.scrollTo({
+              top: buscadorTop - navbarHeight - 100, // 30px de margen adicional
+              behavior: 'smooth'
+            });
+          }, 100);
+        }
+        return;
+      }
+    };
+
+    // Agregar el event listener
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [inputBusqueda]);
 
   useEffect(() => {
     console.log('🚀 ConteoSectorInventarioCompleto - useEffect ejecutado:', {
@@ -143,6 +183,11 @@ export default function ConteoSectorInventarioCompleto() {
               setProgresoCargadoMostrado(true);
             }
           }
+          
+          // Cargar productos eliminados si existen
+          if (progreso.productosEliminados && Array.isArray(progreso.productosEliminados)) {
+            setProductosEliminados(new Set(progreso.productosEliminados));
+          }
         } else {
           // Limpiar progreso antiguo
           localStorage.removeItem(`conteo-progreso-${id}`);
@@ -169,10 +214,11 @@ export default function ConteoSectorInventarioCompleto() {
       localStorage.setItem(`conteo-progreso-${id}`, JSON.stringify({
         conteoInfo,
         detallesConteo,
+        productosEliminados: Array.from(productosEliminados),
         timestamp: Date.now()
       }));
     }
-  }, [detallesConteo, conteoInfo, id]);
+  }, [detallesConteo, conteoInfo, id, productosEliminados]);
 
   // Auto-scroll para mantener visible el elemento seleccionado en la lista de productos
   useEffect(() => {
@@ -204,6 +250,22 @@ export default function ConteoSectorInventarioCompleto() {
       cantidadTemporalRef.current.select();
     }
   }, [mostrarCampoCantidad]);
+
+  // Auto-scroll para mantener visible el último producto agregado al conteo
+  useEffect(() => {
+    // Solo hacer scroll si hay productos en la lista y no estamos en modo cantidad
+    if (detallesConteo.length > 0 && !mostrarCampoCantidad) {
+      // Solo hacer scroll si hay más de 3 productos (para evitar scroll en los primeros productos)
+      if (detallesConteo.length > 3) {
+        // Delay para asegurar que el DOM se haya actualizado completamente
+        const timeoutId = setTimeout(() => {
+          scrollToLastProduct();
+        }, 200);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [detallesConteo.length, mostrarCampoCantidad]);
 
   const calcularFormula = (valor: string): number | null => {
     if (!valor) return null;
@@ -373,9 +435,9 @@ export default function ConteoSectorInventarioCompleto() {
         // Debug específico para modo reconteo
         if (esModoReconteo) {
           console.log('🔍 DEBUG MODO RECONTEO - Datos recibidos:');
-          detallesData.forEach((detalle, index) => {
+          detallesData.forEach((detalle: any, index: number) => {
             console.log(`  Producto ${index + 1}:`, {
-              nombre: detalle.nombreProducto,
+              nombre: detalle.producto?.nombre,
               cantidadConteo1: detalle.cantidadConteo1,
               cantidadConteo2: detalle.cantidadConteo2,
               formulaCalculo1: detalle.formulaCalculo1,
@@ -387,16 +449,16 @@ export default function ConteoSectorInventarioCompleto() {
         }
         
         // Ordenar por fecha de creación para mantener el orden de agregado
-        console.log('🔍 Fechas de creación recibidas:', detallesData.map(d => ({
+        console.log('🔍 Fechas de creación recibidas:', detallesData.map((d: any) => ({
           id: d.id,
-          nombre: d.nombreProducto,
+          nombre: d.producto?.nombre,
           fechaCreacion: d.fechaCreacion
         })));
         
         const detallesOrdenados = detallesData.sort((a: any, b: any) => {
           const fechaA = new Date(a.fechaCreacion || 0).getTime();
           const fechaB = new Date(b.fechaCreacion || 0).getTime();
-          console.log(`🔄 Comparando: ${a.nombreProducto} (${fechaA}) vs ${b.nombreProducto} (${fechaB})`);
+          console.log(`🔄 Comparando: ${a.producto?.nombre} (${fechaA}) vs ${b.producto?.nombre} (${fechaB})`);
           return fechaA - fechaB; // Orden ascendente (más antiguos primero)
         });
         
@@ -667,12 +729,46 @@ export default function ConteoSectorInventarioCompleto() {
       return;
     }
 
-    const filtrados = productos.filter(producto => {
-      // Permitir buscar cualquier producto (no excluir productos ya contados)
-      return producto.nombre.toLowerCase().includes(valor.toLowerCase()) ||
-             (producto.codigoBarras && producto.codigoBarras.includes(valor)) ||
-             (producto.codigoPersonalizado && producto.codigoPersonalizado.toLowerCase().includes(valor.toLowerCase()));
+    const valorLower = valor.toLowerCase();
+    const valorExacto = valor.trim();
+
+    // Filtrar productos y asignar prioridad
+    const productosConPrioridad = productos.map(producto => {
+      let prioridad = 999; // Prioridad por defecto (baja)
+      
+      // 1. Prioridad más alta: Código personalizado exacto
+      if (producto.codigoPersonalizado && producto.codigoPersonalizado.toLowerCase() === valorLower) {
+        prioridad = 1;
+      }
+      // 2. Segunda prioridad: Código personalizado que contiene el valor
+      else if (producto.codigoPersonalizado && producto.codigoPersonalizado.toLowerCase().includes(valorLower)) {
+        prioridad = 2;
+      }
+      // 3. Tercera prioridad: Código de barras exacto
+      else if (producto.codigoBarras && producto.codigoBarras === valorExacto) {
+        prioridad = 3;
+      }
+      // 4. Cuarta prioridad: Código de barras que contiene el valor
+      else if (producto.codigoBarras && producto.codigoBarras.includes(valorExacto)) {
+        prioridad = 4;
+      }
+      // 5. Quinta prioridad: Nombre exacto
+      else if (producto.nombre.toLowerCase() === valorLower) {
+        prioridad = 5;
+      }
+      // 6. Prioridad más baja: Nombre que contiene el valor
+      else if (producto.nombre.toLowerCase().includes(valorLower)) {
+        prioridad = 6;
+      }
+
+      return { producto, prioridad };
     });
+
+    // Filtrar solo los productos que coinciden y ordenar por prioridad
+    const filtrados = productosConPrioridad
+      .filter(item => item.prioridad < 999)
+      .sort((a, b) => a.prioridad - b.prioridad)
+      .map(item => item.producto);
 
     setProductosFiltrados(filtrados);
     setMostrarProductos(filtrados.length > 0);
@@ -801,6 +897,13 @@ export default function ConteoSectorInventarioCompleto() {
     // Agregar el producto con la cantidad calculada
     agregarProductoAlConteo(productoSeleccionadoTemporal, cantidadFinal, cantidadTemporalTexto.trim() || undefined);
     
+    // Hacer scroll al último producto agregado solo si hay más de 3 productos
+    if (detallesConteo.length > 3) {
+      setTimeout(() => {
+        scrollToLastProduct();
+      }, 100);
+    }
+    
     // Limpiar el estado
     setMostrarCampoCantidad(false);
     setProductoSeleccionadoTemporal(null);
@@ -808,12 +911,83 @@ export default function ConteoSectorInventarioCompleto() {
     setCantidadTemporalTexto('');
     setResultadoCalculo(null);
     setErrorCalculo(null);
+    
+    // Volver el focus al buscador
+    setTimeout(() => {
+      if (inputBusquedaRef.current) {
+        inputBusquedaRef.current.focus();
+      }
+    }, 100);
+  };
+
+  const cancelarCantidad = () => {
+    setMostrarCampoCantidad(false);
+    setProductoSeleccionadoTemporal(null);
+    setCantidadTemporal(0);
+    setCantidadTemporalTexto('');
+    setResultadoCalculo(null);
+    setErrorCalculo(null);
+    // Enfocar el buscador después de cancelar
+    setTimeout(() => {
+      inputBusquedaRef.current?.focus();
+    }, 100);
+  };
+
+  const manejarScan = (codigo: string) => {
+    setInputBusqueda(codigo);
+    buscarProductos(codigo);
+  };
+
+  // Función para hacer scroll automático al último producto agregado
+  const scrollToLastProduct = () => {
+    if (listaProductosContadosRef.current && detallesConteo.length > 0) {
+      const container = listaProductosContadosRef.current;
+      const lastProductIndex = detallesConteo.length - 1;
+      
+      // Buscar el último elemento de producto en la lista
+      const productElements = container.querySelectorAll('[data-product-index]');
+      const lastProductElement = productElements[lastProductIndex] as HTMLElement;
+      
+      if (lastProductElement) {
+        // Verificar si el contenedor tiene scroll disponible
+        const hasScroll = container.scrollHeight > container.clientHeight;
+        
+        if (hasScroll) {
+          // Calcular la posición del último elemento dentro del contenedor
+          const containerHeight = container.clientHeight;
+          const elementOffsetTop = lastProductElement.offsetTop;
+          const elementHeight = lastProductElement.offsetHeight;
+          const currentScrollTop = container.scrollTop;
+          
+          // Calcular si el elemento está visible en el área visible del contenedor
+          const elementTop = elementOffsetTop - currentScrollTop;
+          const elementBottom = elementTop + elementHeight;
+          
+          // Verificar si el elemento está completamente visible
+          const isFullyVisible = elementTop >= 0 && elementBottom <= containerHeight;
+          
+          if (!isFullyVisible) {
+            // Calcular la posición de scroll para que el último elemento quede visible
+            const targetScrollTop = elementOffsetTop + elementHeight - containerHeight + 20; // 20px de margen
+            
+            // Hacer scroll solo dentro del contenedor, sin afectar la página
+            container.scrollTo({
+              top: Math.max(0, targetScrollTop),
+              behavior: 'smooth'
+            });
+          }
+        }
+      }
+    }
   };
 
   const manejarEnterCantidadTemporal = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       confirmarCantidad();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelarCantidad();
     }
   };
 
@@ -827,13 +1001,11 @@ export default function ConteoSectorInventarioCompleto() {
       setNuevaCantidad((detalle.cantidadConteo1 || detalle.cantidadConteo2 || detalle.cantidadContada)?.toString() || '');
     }
     
-    setNuevaFormula(detalle.formulaCalculo || '');
   };
 
   const cancelarEdicion = () => {
     setEditandoDetalle(null);
     setNuevaCantidad('');
-    setNuevaFormula('');
   };
 
   const guardarEdicion = () => {
@@ -898,23 +1070,91 @@ export default function ConteoSectorInventarioCompleto() {
     cancelarEdicion();
   };
 
-  const borrarDetalle = (detalleId: number) => {
+  const borrarDetalle = async (detalleId: number) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta entrada?')) {
-      setDetallesConteo(prev => {
-        const nuevaLista = prev.filter(detalle => detalle.id !== detalleId);
+      // Verificar si es un ID temporal (generado con Date.now()) o un ID real de base de datos
+      const esIdTemporal = detalleId > 1000000000000; // Los timestamps de Date.now() son muy grandes
+      
+      if (esIdTemporal) {
+        // Es un detalle temporal, solo eliminar del estado local
+        const detalleAEliminar = detallesConteo.find(d => d.id === detalleId);
+        if (detalleAEliminar?.producto?.id) {
+          // Marcar el producto como eliminado
+          const nuevoProductosEliminados = new Set([...productosEliminados, detalleAEliminar.producto.id]);
+          setProductosEliminados(nuevoProductosEliminados);
+          
+          setDetallesConteo(prev => {
+            const nuevaLista = prev.filter(detalle => detalle.id !== detalleId);
 
-        // Guardar en localStorage
-        const progreso = {
-          conteoInfo,
-          detallesConteo: nuevaLista,
-          timestamp: Date.now()
-        };
-        localStorage.setItem(`conteo-progreso-${id}`, JSON.stringify(progreso));
+            // Guardar en localStorage
+            const progreso = {
+              conteoInfo,
+              detallesConteo: nuevaLista,
+              productosEliminados: Array.from(nuevoProductosEliminados),
+              timestamp: Date.now()
+            };
+            localStorage.setItem(`conteo-progreso-${id}`, JSON.stringify(progreso));
 
-        return nuevaLista;
-      });
+            return nuevaLista;
+          });
+        } else {
+          setDetallesConteo(prev => {
+            const nuevaLista = prev.filter(detalle => detalle.id !== detalleId);
 
-      toast.success('Entrada eliminada exitosamente');
+            // Guardar en localStorage
+            const progreso = {
+              conteoInfo,
+              detallesConteo: nuevaLista,
+              productosEliminados: Array.from(productosEliminados),
+              timestamp: Date.now()
+            };
+            localStorage.setItem(`conteo-progreso-${id}`, JSON.stringify(progreso));
+
+            return nuevaLista;
+          });
+        }
+
+        toast.success('Entrada eliminada exitosamente');
+      } else {
+        // Es un detalle real de base de datos, llamar al backend
+        try {
+          const headers = {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          };
+
+          const baseUrl = API_CONFIG.getBaseUrl();
+          const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${detalleId}`, {
+            method: 'DELETE',
+            headers
+          });
+
+          if (response.ok) {
+            // Eliminar del estado local
+            setDetallesConteo(prev => {
+              const nuevaLista = prev.filter(detalle => detalle.id !== detalleId);
+
+              // Guardar en localStorage
+              const progreso = {
+                conteoInfo,
+                detallesConteo: nuevaLista,
+                timestamp: Date.now()
+              };
+              localStorage.setItem(`conteo-progreso-${id}`, JSON.stringify(progreso));
+
+              return nuevaLista;
+            });
+
+            toast.success('Entrada eliminada exitosamente');
+          } else {
+            const errorData = await response.json();
+            toast.error(`Error al eliminar: ${errorData.error || 'Error desconocido'}`);
+          }
+        } catch (error) {
+          console.error('Error eliminando detalle:', error);
+          toast.error('Error al eliminar la entrada');
+        }
+      }
     }
   };
 
@@ -928,8 +1168,8 @@ export default function ConteoSectorInventarioCompleto() {
     const filtro = filtroProductosContados.toLowerCase();
     
     // Adaptar para la nueva estructura de DTOs del backend
-    const nombreProducto = detalle.nombreProducto || (detalle.producto && detalle.producto.nombre) || '';
-    const codigoProducto = detalle.codigoProducto || (detalle.producto && detalle.producto.codigoPersonalizado) || '';
+    const nombreProducto = detalle.producto?.nombre || '';
+    const codigoProducto = detalle.producto?.codigoPersonalizado || '';
     const codigoBarras = (detalle.producto && detalle.producto.codigoBarras) || '';
     const formulaCalculo = detalle.formulaCalculo1 || detalle.formulaCalculo2 || detalle.formulaCalculo || '';
     const cantidad = detalle.cantidadConteo1 || detalle.cantidadConteo2 || detalle.cantidadContada || 0;
@@ -943,21 +1183,8 @@ export default function ConteoSectorInventarioCompleto() {
     );
   });
 
-  const handleAgregarProducto = () => {
-    if (!productoSeleccionadoTemporal) return;
-
-    const cantidadFinal = resultadoCalculo !== null ? resultadoCalculo : parseInt(cantidad);
-    
-    if (isNaN(cantidadFinal) || cantidadFinal < 0) {
-      toast.error('Por favor ingresa una cantidad válida');
-      return;
-    }
-
-    agregarProductoAlConteo(productoSeleccionadoTemporal, cantidadFinal, formulaCalculo || undefined);
-  };
 
   const esUsuario1 = conteoInfo?.usuario1Id === datosUsuario?.id;
-  const esUsuario2 = conteoInfo?.usuario2Id === datosUsuario?.id;
   const usuarioActual = esUsuario1 ? 
     { nombre: conteoInfo?.usuario1Nombre?.split(' ')[0] || '', apellidos: conteoInfo?.usuario1Nombre?.split(' ').slice(1).join(' ') || '' } :
     { nombre: conteoInfo?.usuario2Nombre?.split(' ')[0] || '', apellidos: conteoInfo?.usuario2Nombre?.split(' ').slice(1).join(' ') || '' };
@@ -1354,10 +1581,10 @@ export default function ConteoSectorInventarioCompleto() {
                 {detallesConteo
                   .filter(detalle => {
                     const filtro = filtroProductosContados.toLowerCase();
-                    const nombreProducto = detalle.nombreProducto?.toLowerCase() || '';
-                    const codigoProducto = detalle.codigoProducto?.toLowerCase() || '';
-                    const totalUsuario1 = detalle.totalUsuario1?.toString() || '';
-                    const totalUsuario2 = detalle.totalUsuario2?.toString() || '';
+                    const nombreProducto = detalle.producto?.nombre?.toLowerCase() || '';
+                    const codigoProducto = detalle.producto?.codigoPersonalizado?.toLowerCase() || '';
+                    const totalUsuario1 = detalle.cantidadConteo1?.toString() || '';
+                    const totalUsuario2 = detalle.cantidadConteo2?.toString() || '';
                     const diferencia = detalle.diferenciaEntreConteos?.toString() || '';
                     
                     return (
@@ -1393,14 +1620,14 @@ export default function ConteoSectorInventarioCompleto() {
                             fontWeight: '600',
                             color: '#1e293b'
                           }}>
-                            {detalle.nombreProducto}
+                            {detalle.producto?.nombre}
                           </h3>
                           <p style={{
                             margin: '0 0 0.25rem 0',
                             fontSize: isMobile ? '0.875rem' : '0.75rem',
                             color: '#64748b'
                           }}>
-                            Código: {detalle.codigoProducto || 'N/A'}
+                            Código: {detalle.producto?.codigoPersonalizado || 'N/A'}
                           </p>
                           <p style={{
                             margin: 0,
@@ -1439,7 +1666,7 @@ export default function ConteoSectorInventarioCompleto() {
                             color: '#3b82f6',
                             marginBottom: '0.25rem'
                           }}>
-                            {detalle.totalUsuario1?.toLocaleString() || 0}
+                            {detalle.cantidadConteo1?.toLocaleString() || 0}
                           </div>
                           <div style={{
                             fontSize: isMobile ? '0.625rem' : '0.5rem',
@@ -1451,7 +1678,7 @@ export default function ConteoSectorInventarioCompleto() {
                             marginTop: '0.125rem',
                             textAlign: 'center'
                           }}>
-                            {detalle.formulaTotalUsuario1 || 'Sin fórmula'}
+                            {detalle.formulaCalculo1 || 'Sin fórmula'}
                           </div>
                         </div>
 
@@ -1471,7 +1698,7 @@ export default function ConteoSectorInventarioCompleto() {
                             color: '#10b981',
                             marginBottom: '0.25rem'
                           }}>
-                            {detalle.totalUsuario2?.toLocaleString() || 0}
+                            {detalle.cantidadConteo2?.toLocaleString() || 0}
                           </div>
                           <div style={{
                             fontSize: isMobile ? '0.625rem' : '0.5rem',
@@ -1483,7 +1710,7 @@ export default function ConteoSectorInventarioCompleto() {
                             marginTop: '0.125rem',
                             textAlign: 'center'
                           }}>
-                            {detalle.formulaTotalUsuario2 || 'Sin fórmula'}
+                            {detalle.formulaCalculo2 || 'Sin fórmula'}
                           </div>
                         </div>
 
@@ -1790,34 +2017,35 @@ export default function ConteoSectorInventarioCompleto() {
                     color: '#64748b',
                     marginBottom: isMobile ? '0.75rem' : '0.5rem'
                   }}>
-                    🔍 Buscar Producto
+                    {mostrarCampoCantidad ? '📊 Cantidad' : '🔍 Buscar Producto'}
                   </label>
                   <div style={{ 
                     display: 'grid',
-                    gridTemplateColumns: mostrarCampoCantidad ? '1fr 120px' : '1fr',
+                    gridTemplateColumns: '1fr',
                     gap: '0.5rem',
                     alignItems: 'end'
                   }}>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        ref={inputBusquedaRef}
-                        type="text"
-                        placeholder="Buscar por nombre, código de barras o código personalizado..."
-                        value={inputBusqueda}
-                        onChange={(e) => buscarProductos(e.target.value)}
-                        onKeyDown={manejarTeclas}
-                        style={{
-                          width: '100%',
-                          padding: isMobile ? '1rem' : '0.75rem',
-                          border: '2px solid #e2e8f0',
-                          borderRadius: '0.5rem',
-                          fontSize: isMobile ? '1rem' : '0.875rem',
-                          minHeight: isMobile ? '48px' : 'auto'
-                        }}
-                      />
+                    {!mostrarCampoCantidad && (
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          ref={inputBusquedaRef}
+                          type="text"
+                          placeholder="Buscar por nombre, código de barras o código personalizado..."
+                          value={inputBusqueda}
+                          onChange={(e) => buscarProductos(e.target.value)}
+                          onKeyDown={manejarTeclas}
+                          style={{
+                            width: '100%',
+                            padding: isMobile ? '1rem' : '0.75rem',
+                            border: '2px solid #e2e8f0',
+                            borderRadius: '0.5rem',
+                            fontSize: isMobile ? '1rem' : '0.875rem',
+                            minHeight: isMobile ? '48px' : 'auto'
+                          }}
+                        />
                   
                       {/* Lista de productos filtrados */}
-                      {mostrarProductos && (
+                      {mostrarProductos && productosFiltrados.length > 0 && (
                         <div
                           ref={listaProductosRef}
                           style={{
@@ -1828,23 +2056,15 @@ export default function ConteoSectorInventarioCompleto() {
                             background: 'white',
                             border: '1px solid #e2e8f0',
                             borderRadius: '0.5rem',
-                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                            maxHeight: '280px',
+                            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                            zIndex: 1000,
+                            maxHeight: '320px',
                             overflow: 'auto',
-                            zIndex: 1000
+                            paddingTop: '0.5rem',
+                            paddingBottom: '0.5rem'
                           }}>
-                          {productosFiltrados.length === 0 ? (
-                            <div style={{
-                              padding: '2rem',
-                              textAlign: 'center',
-                              color: '#6b7280',
-                              fontSize: isMobile ? '1rem' : '0.875rem'
-                            }}>
-                              {inputBusqueda ? 'No se encontraron productos' : 'No hay productos disponibles para contar'}
-                            </div>
-                          ) : (
-                            productosFiltrados.map((producto, index) => {
-                              const detallesExistentes = detallesConteo.filter(d => (d.productoId || (d.producto && d.producto.id)) === producto.id);
+                          {productosFiltrados.map((producto, index) => {
+                              const detallesExistentes = detallesConteo.filter(d => d.producto?.id === producto.id);
                               const cantidadTotal = detallesExistentes.reduce((sum, d) => sum + (d.cantidadConteo1 || d.cantidadConteo2 || d.cantidadContada || 0), 0);
                               
                               return (
@@ -1852,100 +2072,105 @@ export default function ConteoSectorInventarioCompleto() {
                                   key={producto.id}
                                   onClick={() => agregarProducto(producto)}
                                   style={{
-                                    padding: isMobile ? '1rem' : '0.75rem',
+                                    padding: isMobile ? '0.75rem' : '0.5rem',
                                     cursor: 'pointer',
                                     borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
                                     background: index === productoSeleccionado ? '#3b82f6' : 
                                                detallesExistentes.length > 0 ? '#f0fdf4' : 'white',
                                     color: index === productoSeleccionado ? 'white' : '#1e293b',
-                                    fontSize: isMobile ? '1rem' : '0.875rem',
-                                    transition: 'all 0.2s ease',
-                                    minHeight: isMobile ? '60px' : 'auto',
-                                    border: detallesExistentes.length > 0 ? '1px solid #bbf7d0' : 'none',
-                                    borderRadius: detallesExistentes.length > 0 ? '0.25rem' : '0'
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: isMobile ? '1rem' : '0.75rem',
+                                    borderRadius: index === productoSeleccionado ? '0.375rem' : '0',
+                                    boxShadow: index === productoSeleccionado ? '0 2px 4px rgba(59, 130, 246, 0.3)' : 'none',
+                                    minHeight: isMobile ? '60px' : 'auto'
                                   }}
-                                  onMouseOver={() => setProductoSeleccionado(index)}
+                                  onMouseEnter={() => setProductoSeleccionado(index)}
                                 >
-                                  <div style={{ 
-                                    fontWeight: '600', 
-                                    color: index === productoSeleccionado ? 'white' : '#1e293b',
-                                    fontSize: isMobile ? '1rem' : '0.875rem',
-                                    lineHeight: '1.3'
-                                  }}>
-                                    {producto.nombre}
-                                  </div>
-                                  <div style={{ 
-                                    fontSize: isMobile ? '0.875rem' : '0.75rem', 
-                                    color: index === productoSeleccionado ? '#e2e8f0' : '#64748b',
-                                    marginTop: '0.25rem'
-                                  }}>
-                                    {producto.codigoPersonalizado && `Código: ${producto.codigoPersonalizado}`}
-                                    {producto.codigoBarras && ` • Barras: ${producto.codigoBarras}`}
-                                    {` • Stock: ${producto.stock}`}
-                                    {detallesExistentes.length > 0 && (
-                                      <span style={{ 
-                                        color: index === productoSeleccionado ? '#e2e8f0' : '#059669',
-                                        fontWeight: '600',
-                                        marginLeft: '0.5rem'
-                                      }}>
-                                        • Total contado: {cantidadTotal}
-                                      </span>
-                                    )}
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{
+                                      fontWeight: '600',
+                                      color: index === productoSeleccionado ? 'white' : '#1e293b',
+                                      fontSize: isMobile ? '0.95rem' : '0.8rem',
+                                      lineHeight: '1.3'
+                                    }}>
+                                      {producto.codigoPersonalizado ? (
+                                        <>
+                                          <span style={{ 
+                                            color: index === productoSeleccionado ? '#bfdbfe' : '#3b82f6', 
+                                            fontWeight: '700' 
+                                          }}>
+                                            {producto.codigoPersonalizado}
+                                          </span>
+                                          <br />
+                                          {producto.nombre}
+                                        </>
+                                      ) : (
+                                        producto.nombre
+                                      )}
+                                    </div>
+                                    <div style={{
+                                      color: index === productoSeleccionado ? '#e2e8f0' : '#64748b',
+                                      fontSize: isMobile ? '0.8rem' : '0.7rem',
+                                      marginTop: '0.25rem'
+                                    }}>
+                                      Stock disponible: {producto.stock}
+                                      {detallesExistentes.length > 0 && (
+                                        <span style={{ 
+                                          color: index === productoSeleccionado ? '#e2e8f0' : '#059669',
+                                          fontWeight: '600',
+                                          marginLeft: '0.5rem'
+                                        }}>
+                                          • Total contado: {cantidadTotal}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               );
-                            })
-                          )}
+                            })}
                         </div>
                       )}
-                    </div>
+                      </div>
+                    )}
 
-                  {/* Campo de cantidad temporal */}
-                  {mostrarCampoCantidad && (
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: isMobile ? '0.875rem' : '0.75rem',
-                        fontWeight: '600',
-                        color: '#64748b',
-                        marginBottom: isMobile ? '0.5rem' : '0.25rem'
-                      }}>
-                        Cantidad
-                      </label>
-                      <input
-                        ref={cantidadTemporalRef}
-                        type="text"
-                        value={cantidadTemporalTexto || cantidadTemporal || ''}
-                        onChange={(e) => {
-                          const valor = e.target.value;
-                          setCantidadTemporalTexto(valor);
-                          // También actualizar el valor numérico si es un número simple
-                          const numero = parseInt(valor);
-                          if (!isNaN(numero) && !/[+\-*/x()]/.test(valor)) {
-                            setCantidadTemporal(numero);
-                          } else if (valor === '') {
-                            setCantidadTemporal(0);
-                          }
-                          
-                          // Evaluar fórmula en tiempo real
-                          if (valor.trim() && /[+\-*/x()]/.test(valor)) {
-                            evaluarFormula(valor);
-                          } else {
-                            setResultadoCalculo(null);
-                            setErrorCalculo(null);
-                          }
-                        }}
-                        onKeyDown={manejarEnterCantidadTemporal}
-                        placeholder="Ej: 336, 3*112, 3x60..."
-                        style={{
-                          width: '100%',
-                          padding: isMobile ? '1rem' : '0.75rem',
-                          border: '2px solid #e2e8f0',
-                          borderRadius: '0.5rem',
-                          fontSize: isMobile ? '1rem' : '0.875rem',
-                          minHeight: isMobile ? '48px' : 'auto'
-                        }}
-                      />
+                    {/* Campo de cantidad temporal */}
+                    {mostrarCampoCantidad && (
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          ref={cantidadTemporalRef}
+                          type="text"
+                          value={cantidadTemporalTexto || cantidadTemporal || ''}
+                          onChange={(e) => {
+                            const valor = e.target.value;
+                            setCantidadTemporalTexto(valor);
+                            // También actualizar el valor numérico si es un número simple
+                            const numero = parseInt(valor);
+                            if (!isNaN(numero) && !/[+\-*/x()]/.test(valor)) {
+                              setCantidadTemporal(numero);
+                            } else if (valor === '') {
+                              setCantidadTemporal(0);
+                            }
+                            
+                            // Evaluar fórmula en tiempo real
+                            if (valor.trim() && /[+\-*/x()]/.test(valor)) {
+                              evaluarFormula(valor);
+                            } else {
+                              setResultadoCalculo(null);
+                              setErrorCalculo(null);
+                            }
+                          }}
+                          onKeyDown={manejarEnterCantidadTemporal}
+                          placeholder="Ej: 336, 3*112, 3x60..."
+                          style={{
+                            width: '100%',
+                            padding: isMobile ? '1rem' : '0.75rem',
+                            border: '2px solid #e2e8f0',
+                            borderRadius: '0.5rem',
+                            fontSize: isMobile ? '1rem' : '0.875rem',
+                            minHeight: isMobile ? '48px' : 'auto'
+                          }}
+                        />
                       
                       {/* Mostrar resultado del cálculo en tiempo real */}
                       {resultadoCalculo !== null && (
@@ -1978,16 +2203,16 @@ export default function ConteoSectorInventarioCompleto() {
                         </div>
                       )}
                       
-                      <div style={{
-                        fontSize: '0.75rem',
-                        color: '#64748b',
-                        marginTop: '0.25rem',
-                        lineHeight: '1.2'
-                      }}>
-                        💡 Puedes usar: +, -, *, /, x, paréntesis
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: '#64748b',
+                          marginTop: '0.25rem',
+                          lineHeight: '1.2'
+                        }}>
+                          💡 Puedes usar: +, -, *, /, x, paréntesis
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
 
                 {/* Vista previa del producto seleccionado */}
@@ -2035,7 +2260,7 @@ export default function ConteoSectorInventarioCompleto() {
                   {/* Scanner de códigos de barras */}
                   <div style={{ marginBottom: '1rem' }}>
                     <button
-                      onClick={() => setMostrarScanner(!mostrarScanner)}
+                      onClick={() => setMostrarScanner(true)}
                       style={{
                         width: '100%',
                         marginTop: '0.5rem',
@@ -2053,7 +2278,7 @@ export default function ConteoSectorInventarioCompleto() {
                         gap: '0.5rem'
                       }}
                     >
-                      📷 {mostrarScanner ? 'Ocultar Scanner' : 'Escanear Código de Barras'}
+                      📷 Escanear Código de Barras
                     </button>
                   </div>
                 </div>
@@ -2140,21 +2365,24 @@ export default function ConteoSectorInventarioCompleto() {
                     <p style={{ fontSize: '0.875rem' }}>Busca y agrega productos en el panel izquierdo</p>
                   </div>
                 ) : (
-                  <div style={{
-                    background: 'white',
-                    borderRadius: '0.75rem',
-                    border: '1px solid #e2e8f0',
-                    overflow: 'hidden',
-                    height: '500px',
-                    overflowY: 'auto',
-                    overflowX: 'hidden'
-                  }}>
+                  <div 
+                    ref={listaProductosContadosRef}
+                    style={{
+                      background: 'white',
+                      borderRadius: '0.75rem',
+                      border: '1px solid #e2e8f0',
+                      overflow: 'hidden',
+                      height: '350px',
+                      overflowY: 'auto',
+                      overflowX: 'hidden'
+                    }}>
                     {productosContadosFiltrados.map((detalle, index) => {
                       const estaEditando = editandoDetalle === detalle.id;
                       
                       return (
                         <div
                           key={detalle.id}
+                          data-product-index={index}
                           style={{
                             padding: isMobile ? '1rem' : '0.75rem',
                             borderBottom: index < productosContadosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
@@ -2285,15 +2513,15 @@ export default function ConteoSectorInventarioCompleto() {
                                   fontSize: isMobile ? '1rem' : '0.875rem',
                                   lineHeight: '1.3'
                                 }}>
-                                  {detalle.nombreProducto || (detalle.producto && detalle.producto.nombre) || 'Producto sin nombre'}
+                                  {detalle.producto?.nombre || 'Producto sin nombre'}
                                 </div>
-                                {(detalle.codigoProducto || (detalle.producto && detalle.producto.codigoPersonalizado)) && (
+                                {detalle.producto?.codigoPersonalizado && (
                                   <div style={{ 
                                     fontSize: isMobile ? '0.8rem' : '0.7rem', 
                                     color: '#64748b',
                                     marginTop: '0.25rem'
                                   }}>
-                                    Código: {detalle.codigoProducto || (detalle.producto && detalle.producto.codigoPersonalizado)}
+                                    Código: {detalle.producto?.codigoPersonalizado}
                                   </div>
                                 )}
                                 {(detalle.formulaCalculo1 || detalle.formulaCalculo2 || detalle.formulaCalculo) && (
@@ -2475,6 +2703,66 @@ export default function ConteoSectorInventarioCompleto() {
                           const token = localStorage.getItem('token');
                           const baseUrl = API_CONFIG.getBaseUrl();
                           
+                          // Primero sincronizar todos los productos con el servidor
+                          let sincronizados = 0;
+                          let errores = 0;
+
+                          console.log('🔍 DEBUG sincronización:');
+                          console.log('  - Total detalles:', detallesConteo.length);
+                          console.log('  - Productos eliminados:', Array.from(productosEliminados));
+                          console.log('  - Detalles a sincronizar:');
+
+                          for (const detalle of detallesConteo) {
+                            const esTemporal = detalle.id > 1000000000000;
+                            const tieneProducto = detalle.producto?.id;
+                            const noEliminado = !productosEliminados.has(detalle.producto?.id || 0);
+                            
+                            console.log(`    - Producto ${detalle.producto?.id} (${detalle.producto?.nombre}):`, {
+                              esTemporal,
+                              tieneProducto,
+                              noEliminado,
+                              sincronizar: esTemporal && tieneProducto && noEliminado
+                            });
+
+                            // Solo sincronizar detalles temporales (IDs grandes) que no hayan sido eliminados
+                            if (esTemporal && tieneProducto && noEliminado) {
+                              try {
+                                const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/agregar-producto`, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                  },
+                                  body: JSON.stringify({
+                                    productoId: detalle.producto?.id,
+                                    cantidad: detalle.cantidadConteo1 || detalle.cantidadConteo2 || 0,
+                                    formulaCalculo: detalle.formulaCalculo1 || detalle.formulaCalculo2,
+                                    usuarioId: datosUsuario?.id
+                                  })
+                                });
+
+                                if (response.ok) {
+                                  sincronizados++;
+                                } else {
+                                  errores++;
+                                }
+                              } catch (error) {
+                                console.error('Error sincronizando producto:', error);
+                                errores++;
+                              }
+                            }
+                          }
+
+                          if (errores > 0) {
+                            toast.error(`${errores} productos no pudieron sincronizarse. No se puede finalizar el conteo.`);
+                            return;
+                          }
+
+                          if (sincronizados > 0) {
+                            toast.success(`${sincronizados} productos sincronizados con el servidor`);
+                          }
+                          
+                          // Ahora finalizar el conteo
                           const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/finalizar`, {
                             method: 'POST',
                             headers: {
@@ -2488,6 +2776,8 @@ export default function ConteoSectorInventarioCompleto() {
 
                           if (response.ok) {
                             toast.success('Conteo finalizado exitosamente');
+                            // Limpiar progreso guardado
+                            localStorage.removeItem(`conteo-progreso-${id}`);
                             // Redirigir a la página de inventario completo
                             navigate('/admin/inventario-completo');
                           } else {
@@ -2540,7 +2830,7 @@ export default function ConteoSectorInventarioCompleto() {
                                 'Authorization': `Bearer ${token}`
                               },
                               body: JSON.stringify({
-                                productoId: detalle.productoId || (detalle.producto && detalle.producto.id),
+                                productoId: detalle.producto?.id,
                                 cantidad: detalle.cantidadConteo1 || detalle.cantidadConteo2 || detalle.cantidadContada || detalle.cantidadFinal,
                                 formulaCalculo: detalle.formulaCalculo || null
                               })
@@ -2709,6 +2999,13 @@ export default function ConteoSectorInventarioCompleto() {
           )}
         </div>
       </div>
+
+      {/* Scanner de código de barras */}
+      <BarcodeScanner
+        isOpen={mostrarScanner}
+        onScan={manejarScan}
+        onClose={() => setMostrarScanner(false)}
+      />
     </>
   );
 }

@@ -922,6 +922,39 @@ public class InventarioCompletoController {
     }
 
     /**
+     * Eliminar un detalle de conteo
+     */
+    @DeleteMapping("/conteos-sector/{conteoSectorId}/detalles/{detalleId}")
+    public ResponseEntity<?> eliminarDetalleConteo(
+            @PathVariable Long empresaId,
+            @PathVariable Long conteoSectorId,
+            @PathVariable Long detalleId,
+            Authentication authentication) {
+        try {
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioId = usuarioPrincipal.getId();
+            
+            System.out.println("🗑️ Eliminando detalle de conteo:");
+            System.out.println("  - EmpresaId: " + empresaId);
+            System.out.println("  - ConteoSectorId: " + conteoSectorId);
+            System.out.println("  - DetalleId: " + detalleId);
+            System.out.println("  - UsuarioId: " + usuarioId);
+            
+            boolean eliminado = inventarioCompletoService.eliminarDetalleConteo(detalleId, conteoSectorId, usuarioId);
+            
+            if (eliminado) {
+                return ResponseEntity.ok(Map.of("mensaje", "Detalle eliminado exitosamente"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se pudo eliminar el detalle"));
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error eliminando detalle: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Endpoint temporal para debug - resetear estado de conteo
      */
     @PostMapping("/debug/reset-conteo/{conteoSectorId}")

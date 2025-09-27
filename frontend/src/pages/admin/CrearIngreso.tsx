@@ -600,9 +600,11 @@ export default function CrearIngreso() {
     }
     
     // Volver el focus al buscador
-    if (inputBusquedaRef.current) {
-      inputBusquedaRef.current.focus();
-    }
+    setTimeout(() => {
+      if (inputBusquedaRef.current) {
+        inputBusquedaRef.current.focus();
+      }
+    }, 100);
   };
 
   const manejarEnterCantidadTemporal = (e: React.KeyboardEvent) => {
@@ -1540,27 +1542,28 @@ export default function CrearIngreso() {
                </label>
                <div style={{ 
                  display: 'grid',
-                 gridTemplateColumns: mostrarCampoCantidad ? '1fr 120px' : '1fr',
+                 gridTemplateColumns: '1fr',
                  gap: '0.5rem',
                  alignItems: 'end'
                }}>
-                 <div style={{ position: 'relative' }}>
-                   <input
-                     ref={inputBusquedaRef}
-                     type="text"
-                     placeholder="Código de barras, código personalizado o nombre..."
-                     value={inputBusqueda}
-                     onChange={(e) => buscarProductos(e.target.value)}
-                     onKeyDown={manejarTeclas}
-                     style={{
-                       width: '100%',
-                       padding: isMobile ? '1rem' : '0.75rem',
-                       border: '2px solid #e2e8f0',
-                       borderRadius: '0.5rem',
-                       fontSize: isMobile ? '1rem' : '0.875rem',
-                       minHeight: isMobile ? '48px' : 'auto'
-                     }}
-                   />
+                 {!mostrarCampoCantidad && (
+                   <div style={{ position: 'relative' }}>
+                     <input
+                       ref={inputBusquedaRef}
+                       type="text"
+                       placeholder="Código de barras, código personalizado o nombre..."
+                       value={inputBusqueda}
+                       onChange={(e) => buscarProductos(e.target.value)}
+                       onKeyDown={manejarTeclas}
+                       style={{
+                         width: '100%',
+                         padding: isMobile ? '1rem' : '0.75rem',
+                         border: '2px solid #e2e8f0',
+                         borderRadius: '0.5rem',
+                         fontSize: isMobile ? '1rem' : '0.875rem',
+                         minHeight: isMobile ? '48px' : 'auto'
+                       }}
+                     />
                 
                                    {/* Lista de productos filtrados */}
                    {mostrarProductos && (
@@ -1632,30 +1635,22 @@ export default function CrearIngreso() {
                      </div>
                    )}
                  </div>
+                 )}
 
                  {/* Campo de cantidad temporal */}
                  {mostrarCampoCantidad && (
-                   <div>
-                     <label style={{
-                       display: 'block',
-                       fontSize: isMobile ? '0.875rem' : '0.75rem',
-                       fontWeight: '600',
-                       color: '#64748b',
-                       marginBottom: isMobile ? '0.5rem' : '0.25rem'
-                     }}>
-                       Cantidad
-                     </label>
-                                           <input
-                        ref={cantidadTemporalRef}
-                        type="text"
-                        value={cantidadTemporalTexto || cantidadTemporal || ''}
-                        onChange={(e) => {
-                          const valor = e.target.value;
-                          setCantidadTemporalTexto(valor);
-                          // También actualizar el valor numérico si es un número simple
-                          const numero = parseInt(valor);
-                          if (!isNaN(numero) && !/[+\-*/x()]/.test(valor)) {
-                            setCantidadTemporal(numero);
+                   <div style={{ position: 'relative' }}>
+                     <input
+                       ref={cantidadTemporalRef}
+                       type="text"
+                       value={cantidadTemporalTexto || cantidadTemporal || ''}
+                       onChange={(e) => {
+                         const valor = e.target.value;
+                         setCantidadTemporalTexto(valor);
+                         // También actualizar el valor numérico si es un número simple
+                         const numero = parseInt(valor);
+                         if (!isNaN(numero) && !/[+\-*/x()]/.test(valor)) {
+                           setCantidadTemporal(numero);
                           } else if (valor === '') {
                             setCantidadTemporal(0);
                           }
@@ -1703,16 +1698,16 @@ export default function CrearIngreso() {
                         </div>
                       )}
                       
-                      <div style={{
-                        fontSize: '0.75rem',
-                        color: '#64748b',
-                        marginTop: '0.25rem',
-                        lineHeight: '1.2'
-                      }}>
-                        💡 Puedes usar: +, -, *, /, x, paréntesis
-                      </div>
-                   </div>
-                 )}
+                       <div style={{
+                         fontSize: '0.75rem',
+                         color: '#64748b',
+                         marginTop: '0.25rem',
+                         lineHeight: '1.2'
+                       }}>
+                         💡 Puedes usar: +, -, *, /, x, paréntesis
+                       </div>
+                     </div>
+                   )}
                </div>
 
                {/* Vista previa del producto seleccionado */}

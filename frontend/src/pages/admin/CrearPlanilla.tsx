@@ -1376,32 +1376,30 @@ export default function CrearPlanilla() {
             <div style={{ marginBottom: '1rem' }}>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: modoCantidad ? '1fr 80px' : '1fr',
+                gridTemplateColumns: '1fr',
                 gap: '0.5rem',
                 alignItems: 'end'
               }}>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    ref={inputBusquedaRef}
-                    type="text"
-                    placeholder={modoCantidad ? "Producto seleccionado" : "Nombre, código o barras..."}
-                    value={inputBusqueda}
-                    onChange={(e) => {
-                      if (!modoCantidad) {
+                {!modoCantidad && (
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      ref={inputBusquedaRef}
+                      type="text"
+                      placeholder="Nombre, código o barras..."
+                      value={inputBusqueda}
+                      onChange={(e) => {
                         setInputBusqueda(e.target.value);
                         mostrarPredicciones();
-                      }
-                    }}
-                    onKeyDown={manejarTeclas}
-                    disabled={modoCantidad}
-                    style={{
-                      width: '100%',
-                      padding: isMobile ? '1rem' : '0.75rem',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '0.5rem',
-                      fontSize: isMobile ? '1rem' : '0.875rem',
-                      background: modoCantidad ? '#f3f4f6' : 'white',
-                      color: modoCantidad ? '#6b7280' : '#1e293b',
+                      }}
+                      onKeyDown={manejarTeclas}
+                      style={{
+                        width: '100%',
+                        padding: isMobile ? '1rem' : '0.75rem',
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '0.5rem',
+                        fontSize: isMobile ? '1rem' : '0.875rem',
+                        background: 'white',
+                        color: '#1e293b',
                       minHeight: isMobile ? '48px' : 'auto'
                     }}
                   />
@@ -1484,10 +1482,11 @@ export default function CrearPlanilla() {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Campo de cantidad */}
                 {modoCantidad && (
-                  <div>
+                  <div style={{ position: 'relative' }}>
                     <input
                       ref={inputCantidadRef}
                       type="text"
@@ -1549,16 +1548,16 @@ export default function CrearPlanilla() {
                       </div>
                     )}
                     
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#64748b',
-                      marginTop: '0.25rem',
-                      lineHeight: '1.2'
-                    }}>
-                      💡 Puedes usar: +, -, *, /, x, paréntesis
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#64748b',
+                        marginTop: '0.25rem',
+                        lineHeight: '1.2'
+                      }}>
+                        💡 Puedes usar: +, -, *, /, x, paréntesis
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
 
               {/* Información del producto seleccionado */}

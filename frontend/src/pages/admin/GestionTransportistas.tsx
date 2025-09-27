@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
@@ -64,6 +64,11 @@ const GestionTransportistas: React.FC = () => {
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [guardando, setGuardando] = useState(false);
+
+  // Referencias para los campos del modal de vehículos
+  const marcaRef = useRef<HTMLInputElement>(null);
+  const modeloRef = useRef<HTMLInputElement>(null);
+  const patenteRef = useRef<HTMLInputElement>(null);
 
   // Función helper para hacer llamadas a la API
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
@@ -408,15 +413,38 @@ const GestionTransportistas: React.FC = () => {
     if (mostrarModalVehiculos) {
       // Pequeño delay para asegurar que el modal esté renderizado
       const timer = setTimeout(() => {
-        const marcaInput = document.querySelector('input[data-field="marca"]') as HTMLInputElement;
-        if (marcaInput) {
-          marcaInput.focus();
+        if (marcaRef.current) {
+          marcaRef.current.focus();
         }
       }, 100);
       
       return () => clearTimeout(timer);
     }
   }, [mostrarModalVehiculos]);
+
+  // Función para manejar navegación con Enter en el modal de vehículos
+  const manejarEnterVehiculo = (e: React.KeyboardEvent, campoActual: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      switch (campoActual) {
+        case 'marca':
+          if (modeloRef.current) {
+            modeloRef.current.focus();
+          }
+          break;
+        case 'modelo':
+          if (patenteRef.current) {
+            patenteRef.current.focus();
+          }
+          break;
+        case 'patente':
+          // En el último campo, guardar el vehículo
+          crearVehiculo();
+          break;
+      }
+    }
+  };
 
   // Filtrar transportistas
   const transportistasFiltrados = transportistas.filter(transportista => {
@@ -1308,9 +1336,11 @@ const GestionTransportistas: React.FC = () => {
                       Marca *
                     </label>
                     <input
+                      ref={marcaRef}
                       type="text"
                       value={formVehiculo.marca}
                       onChange={(e) => setFormVehiculo({...formVehiculo, marca: e.target.value})}
+                      onKeyDown={(e) => manejarEnterVehiculo(e, 'marca')}
                       className={errors.marca ? 'error' : ''}
                       style={{
                         width: '100%',
@@ -1339,9 +1369,11 @@ const GestionTransportistas: React.FC = () => {
                       Modelo *
                     </label>
                     <input
+                      ref={modeloRef}
                       type="text"
                       value={formVehiculo.modelo}
                       onChange={(e) => setFormVehiculo({...formVehiculo, modelo: e.target.value})}
+                      onKeyDown={(e) => manejarEnterVehiculo(e, 'modelo')}
                       className={errors.modelo ? 'error' : ''}
                       style={{
                         width: '100%',
@@ -1370,9 +1402,11 @@ const GestionTransportistas: React.FC = () => {
                       Patente *
                     </label>
                     <input
+                      ref={patenteRef}
                       type="text"
                       value={formVehiculo.patente}
                       onChange={(e) => setFormVehiculo({...formVehiculo, patente: e.target.value})}
+                      onKeyDown={(e) => manejarEnterVehiculo(e, 'patente')}
                       className={errors.patente ? 'error' : ''}
                       style={{
                         width: '100%',
