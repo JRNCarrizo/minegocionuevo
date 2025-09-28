@@ -7,7 +7,7 @@ DROP TABLE IF EXISTS detalle_conteo;
 CREATE TABLE detalle_conteo (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     conteo_sector_id BIGINT NOT NULL,
-    inventario_por_sector_id BIGINT,
+    -- inventario_por_sector_id BIGINT, -- Comentado temporalmente
     producto_id BIGINT NOT NULL,
     codigo_producto VARCHAR(255),
     nombre_producto VARCHAR(255),
@@ -25,16 +25,20 @@ CREATE TABLE detalle_conteo (
     marca VARCHAR(255),
     estado VARCHAR(50) DEFAULT 'PENDIENTE',
     observaciones TEXT,
+    eliminado BOOLEAN NOT NULL DEFAULT FALSE,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (conteo_sector_id) REFERENCES conteo_sector(id) ON DELETE CASCADE,
-    FOREIGN KEY (inventario_por_sector_id) REFERENCES inventario_por_sector(id) ON DELETE CASCADE,
+    -- FOREIGN KEY (inventario_por_sector_id) REFERENCES inventario_por_sector(id) ON DELETE CASCADE, -- Comentado temporalmente
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
 );
 
 -- Recrear índices
 CREATE INDEX idx_detalle_conteo_sector ON detalle_conteo(conteo_sector_id);
 CREATE INDEX idx_detalle_conteo_producto ON detalle_conteo(producto_id);
+CREATE INDEX idx_detalle_conteo_eliminado ON detalle_conteo(eliminado);
+CREATE INDEX idx_detalle_conteo_sector_eliminado ON detalle_conteo(conteo_sector_id, eliminado);
+
 
 
 

@@ -21,9 +21,19 @@ public interface DetalleConteoRepository extends JpaRepository<DetalleConteo, Lo
     List<DetalleConteo> findByConteoSectorOrderByProductoNombre(ConteoSector conteoSector);
     
     /**
+     * Buscar detalles de conteo por conteo de sector excluyendo eliminados
+     */
+    List<DetalleConteo> findByConteoSectorAndEliminadoFalseOrderByProductoNombre(ConteoSector conteoSector);
+    
+    /**
      * Buscar detalles de conteo por inventario por sector
      */
     List<DetalleConteo> findByInventarioPorSectorOrderByProductoNombre(InventarioPorSector inventarioPorSector);
+    
+    /**
+     * Buscar detalles de conteo por inventario por sector excluyendo eliminados
+     */
+    List<DetalleConteo> findByInventarioPorSectorAndEliminadoFalseOrderByProductoNombre(InventarioPorSector inventarioPorSector);
     
     /**
      * Buscar detalles de conteo por conteo de sector y estado
@@ -46,15 +56,15 @@ public interface DetalleConteoRepository extends JpaRepository<DetalleConteo, Lo
     Optional<DetalleConteo> findByInventarioPorSectorAndProducto(InventarioPorSector inventarioPorSector, Producto producto);
     
     /**
-     * Buscar detalles de conteo con diferencias por conteo de sector
+     * Buscar detalles de conteo con diferencias por conteo de sector (excluyendo eliminados)
      */
-    @Query("SELECT d FROM DetalleConteo d WHERE d.conteoSector = :conteoSector AND d.diferenciaEntreConteos != 0")
+    @Query("SELECT d FROM DetalleConteo d WHERE d.conteoSector = :conteoSector AND d.diferenciaEntreConteos != 0 AND d.eliminado = false")
     List<DetalleConteo> findDetallesConDiferencias(@Param("conteoSector") ConteoSector conteoSector);
     
     /**
-     * Buscar detalles de conteo con diferencias por inventario por sector
+     * Buscar detalles de conteo con diferencias por inventario por sector (excluyendo eliminados)
      */
-    @Query("SELECT d FROM DetalleConteo d WHERE d.inventarioPorSector = :inventarioPorSector AND d.diferenciaEntreConteos != 0")
+    @Query("SELECT d FROM DetalleConteo d WHERE d.inventarioPorSector = :inventarioPorSector AND d.diferenciaEntreConteos != 0 AND d.eliminado = false")
     List<DetalleConteo> findDetallesConDiferenciasPorInventario(@Param("inventarioPorSector") InventarioPorSector inventarioPorSector);
     
     /**
@@ -72,5 +82,15 @@ public interface DetalleConteoRepository extends JpaRepository<DetalleConteo, Lo
      */
     @Query("SELECT d FROM DetalleConteo d WHERE d.producto = :producto AND (d.conteoSector.estado IN ('EN_PROGRESO', 'ESPERANDO_VERIFICACION', 'CON_DIFERENCIAS') OR d.inventarioPorSector.estado IN ('EN_PROGRESO', 'ESPERANDO_VERIFICACION', 'CON_DIFERENCIAS'))")
     List<DetalleConteo> findDetallesActivosPorProducto(@Param("producto") Producto producto);
+    
+    /**
+     * Buscar detalles de conteo por conteo de sector, producto y que no estén eliminados
+     */
+    List<DetalleConteo> findByConteoSectorIdAndProductoIdAndEliminadoFalse(Long conteoSectorId, Long productoId);
+    
+    /**
+     * Buscar detalles de conteo por conteo de sector, producto y que no estén eliminados
+     */
+    List<DetalleConteo> findByConteoSectorAndProductoAndEliminadoFalse(ConteoSector conteoSector, Producto producto);
 }
 

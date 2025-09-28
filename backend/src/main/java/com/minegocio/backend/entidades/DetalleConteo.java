@@ -1,5 +1,6 @@
 package com.minegocio.backend.entidades;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,14 +22,16 @@ public class DetalleConteo {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conteo_sector_id")
+    @JsonIgnore
     private ConteoSector conteoSector;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inventario_por_sector_id")
+    @JsonIgnore
     private InventarioPorSector inventarioPorSector;
 
     @NotNull(message = "El producto es obligatorio")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 
@@ -89,6 +92,9 @@ public class DetalleConteo {
     @Column(name = "observaciones", length = 1000)
     private String observaciones;
 
+    @Column(name = "eliminado", nullable = false)
+    private Boolean eliminado = false;
+
     // Enum para estados del detalle
     public enum EstadoDetalle {
         PENDIENTE("Pendiente"),
@@ -96,7 +102,8 @@ public class DetalleConteo {
         CONTADO_2("Contado por Usuario 2"),
         CON_DIFERENCIAS("Con Diferencias"),
         VERIFICADO("Verificado"),
-        FINALIZADO("Finalizado");
+        FINALIZADO("Finalizado"),
+        ELIMINADO("Eliminado");
 
         private final String descripcion;
 
@@ -209,4 +216,7 @@ public class DetalleConteo {
 
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+
+    public Boolean getEliminado() { return eliminado; }
+    public void setEliminado(Boolean eliminado) { this.eliminado = eliminado; }
 }

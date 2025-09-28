@@ -162,6 +162,17 @@ export default function ConteoSectorInventarioCompleto() {
     }
   }, [id, datosUsuario, esModoReconteo]);
 
+  // Debug del estado del conteo
+  useEffect(() => {
+    if (conteoInfo) {
+      console.log('🔍 DEBUG estado del conteo:', {
+        vieneConAutoStart,
+        estado: conteoInfo.estado,
+        mostrarInterfaz: vieneConAutoStart || conteoInfo.estado === 'EN_PROGRESO' || conteoInfo.estado === 'COMPLETADO' || conteoInfo.estado === 'REVISION'
+      });
+    }
+  }, [conteoInfo, vieneConAutoStart]);
+
 
   const cargarProgresoGuardado = () => {
     try {
@@ -405,10 +416,16 @@ export default function ConteoSectorInventarioCompleto() {
 
       if (productosResponse.ok) {
         const productosData = await productosResponse.json();
-        console.log('Productos cargados:', productosData);
-        setProductos(productosData.data || productosData); // Manejar diferentes formatos de respuesta
+        console.log('✅ Productos cargados:', productosData);
+        console.log('🔍 DEBUG - Total productos:', productosData.data ? productosData.data.length : productosData.length);
+        const productosLista = productosData.data || productosData;
+        setProductos(productosLista); // Manejar diferentes formatos de respuesta
+        
+        // 🔧 GUARDAR PRODUCTOS EN LOCALSTORAGE para uso posterior
+        localStorage.setItem(`productos-empresa-${datosUsuario.empresaId}`, JSON.stringify(productosLista));
+        console.log('💾 Productos guardados en localStorage para corrección posterior');
       } else {
-        console.error('Error cargando productos:', productosResponse.status, productosResponse.statusText);
+        console.error('❌ Error cargando productos:', productosResponse.status, productosResponse.statusText);
         toast.error('Error al cargar los productos');
       }
 
@@ -418,6 +435,8 @@ export default function ConteoSectorInventarioCompleto() {
       const detallesUrl = `${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles${modoReconteoParam}`;
       console.log('🔍 DEBUG URL de detalles:', detallesUrl);
       console.log('🔍 DEBUG esModoReconteo:', esModoReconteo);
+      console.log('🔍 DEBUG datosUsuario:', datosUsuario);
+      console.log('🔍 DEBUG empresaId:', datosUsuario.empresaId);
       const detallesResponse = await fetch(detallesUrl, {
         headers
       });
@@ -432,10 +451,80 @@ export default function ConteoSectorInventarioCompleto() {
         const detallesData = await detallesResponse.json();
         console.log('✅ Detalles de conteo cargados:', detallesData);
         
+        // 🔧 CORRECCIÓN: Verificar y corregir productos sin nombre
+        const detallesCorregidos = detallesData.map((detalle: any) => {
+          if (!detalle.producto || !detalle.producto.nombre) {
+            console.warn('⚠️ Producto sin nombre detectado:', {
+              detalleId: detalle.id,
+              productoId: detalle.productoId,
+              nombreProducto: detalle.nombreProducto,
+              detalleCompleto: detalle
+            });
+            
+            // Buscar el producto en la lista cargada
+            let productoEncontrado = productos.find((p: any) => p.id === detalle.productoId);
+            
+            // 🔧 RESPALDO: Si no se encuentra, buscar en localStorage
+            if (!productoEncontrado) {
+              console.log('🔍 Producto no encontrado en estado, buscando en localStorage...');
+              try {
+                const productosRespaldo = localStorage.getItem(`productos-empresa-${datosUsuario?.empresaId}`);
+                if (productosRespaldo) {
+                  const productosLista = JSON.parse(productosRespaldo);
+                  productoEncontrado = productosLista.find((p: any) => p.id === detalle.productoId);
+                  if (productoEncontrado) {
+                    console.log('✅ Producto encontrado en localStorage:', productoEncontrado.nombre);
+                  }
+                }
+              } catch (error) {
+                console.error('❌ Error leyendo productos desde localStorage:', error);
+              }
+            }
+            
+            if (productoEncontrado) {
+              console.log('✅ Producto encontrado y corregido:', {
+                productoId: detalle.productoId,
+                nombre: productoEncontrado.nombre,
+                productoCompleto: productoEncontrado
+              });
+              return {
+                ...detalle,
+                producto: productoEncontrado
+              };
+            } else {
+              console.error('❌ No se pudo encontrar el producto con ID:', {
+                productoId: detalle.productoId,
+                productosDisponibles: productos.map((p: any) => ({ id: p.id, nombre: p.nombre })),
+                detalleCompleto: detalle
+              });
+              
+              // Crear un producto temporal con la información disponible
+              const productoTemporal = {
+                id: detalle.productoId,
+                nombre: detalle.nombreProducto || `Producto ID ${detalle.productoId}`,
+                stock: detalle.stockSistema || 0,
+                precio: detalle.precioUnitario || 0,
+                codigoPersonalizado: detalle.codigoProducto || '',
+                categoria: detalle.categoria || '',
+                marca: detalle.marca || ''
+              };
+              
+              console.log('🔧 Creando producto temporal:', productoTemporal);
+              return {
+                ...detalle,
+                producto: productoTemporal
+              };
+            }
+          }
+          return detalle;
+        });
+        
+        console.log('🔧 Detalles corregidos:', detallesCorregidos);
+        
         // Debug específico para modo reconteo
         if (esModoReconteo) {
           console.log('🔍 DEBUG MODO RECONTEO - Datos recibidos:');
-          detallesData.forEach((detalle: any, index: number) => {
+          detallesCorregidos.forEach((detalle: any, index: number) => {
             console.log(`  Producto ${index + 1}:`, {
               nombre: detalle.producto?.nombre,
               cantidadConteo1: detalle.cantidadConteo1,
@@ -449,13 +538,13 @@ export default function ConteoSectorInventarioCompleto() {
         }
         
         // Ordenar por fecha de creación para mantener el orden de agregado
-        console.log('🔍 Fechas de creación recibidas:', detallesData.map((d: any) => ({
+        console.log('🔍 Fechas de creación recibidas:', detallesCorregidos.map((d: any) => ({
           id: d.id,
           nombre: d.producto?.nombre,
           fechaCreacion: d.fechaCreacion
         })));
         
-        const detallesOrdenados = detallesData.sort((a: any, b: any) => {
+        const detallesOrdenados = detallesCorregidos.sort((a: any, b: any) => {
           const fechaA = new Date(a.fechaCreacion || 0).getTime();
           const fechaB = new Date(b.fechaCreacion || 0).getTime();
           console.log(`🔄 Comparando: ${a.producto?.nombre} (${fechaA}) vs ${b.producto?.nombre} (${fechaB})`);
@@ -465,8 +554,17 @@ export default function ConteoSectorInventarioCompleto() {
         console.log('🔄 Detalles ordenados por fecha de creación:', detallesOrdenados);
         setDetallesConteo(detallesOrdenados);
         
+        // 🔧 SISTEMA DE RESPALDO: Guardar progreso en localStorage como respaldo
+        const progresoRespaldo = {
+          timestamp: Date.now(),
+          detalles: detallesOrdenados,
+          conteoInfo: conteoData
+        };
+        localStorage.setItem(`conteo-respaldo-${id}`, JSON.stringify(progresoRespaldo));
+        console.log('💾 Progreso guardado como respaldo en localStorage');
+        
         // Si no hay detalles en el backend pero hay progreso guardado, limpiar el localStorage
-        if (detallesData.length === 0) {
+        if (detallesCorregidos.length === 0) {
           const progresoGuardado = localStorage.getItem(`conteo-progreso-${id}`);
           if (progresoGuardado) {
             console.log('🧹 Limpiando progreso guardado obsoleto (no hay datos en backend)');
@@ -475,8 +573,35 @@ export default function ConteoSectorInventarioCompleto() {
         }
       } else {
         console.error('❌ Error cargando detalles de conteo:', detallesResponse.status, detallesResponse.statusText);
-        // No es crítico, puede que no haya detalles aún
-        setDetallesConteo([]);
+        
+        // 🔧 RECUPERACIÓN AUTOMÁTICA: Intentar recuperar desde respaldo
+        const respaldo = localStorage.getItem(`conteo-respaldo-${id}`);
+        if (respaldo) {
+          try {
+            const datosRespaldo = JSON.parse(respaldo);
+            const tiempoTranscurrido = Date.now() - datosRespaldo.timestamp;
+            const horasTranscurridas = tiempoTranscurrido / (1000 * 60 * 60);
+            
+            console.log('🔄 Intentando recuperar desde respaldo...');
+            console.log('⏰ Tiempo transcurrido:', horasTranscurridas.toFixed(2), 'horas');
+            
+            if (horasTranscurridas < 24) { // Solo recuperar si es menor a 24 horas
+              console.log('✅ Recuperando datos desde respaldo');
+              setDetallesConteo(datosRespaldo.detalles || []);
+              setConteoInfo(datosRespaldo.conteoInfo || conteoData);
+              toast.warning('⚠️ Datos recuperados desde respaldo local');
+            } else {
+              console.log('⚠️ Respaldo muy antiguo, no se recupera');
+              setDetallesConteo([]);
+            }
+          } catch (error) {
+            console.error('❌ Error recuperando respaldo:', error);
+            setDetallesConteo([]);
+          }
+        } else {
+          console.log('ℹ️ No hay respaldo disponible');
+          setDetallesConteo([]);
+        }
       }
 
     } catch (error) {
@@ -677,46 +802,50 @@ export default function ConteoSectorInventarioCompleto() {
         
         return nuevaLista;
       });
+
+    // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Sincronizar inmediatamente con el servidor
+    setTimeout(async () => {
+      try {
+        console.log('🔄 SINCRONIZACIÓN AUTOMÁTICA: Enviando producto al servidor');
+        const token = localStorage.getItem('token');
+        const baseUrl = API_CONFIG.getBaseUrl();
+        
+        const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/agregar-producto`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            productoId: producto.id,
+            cantidad: cantidad,
+            formulaCalculo: formulaCalculo || null,
+            usuarioId: datosUsuario?.id
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Producto sincronizado automáticamente:', result);
+          
+          // Actualizar el ID del detalle local con el ID real del servidor
+          setDetallesConteo(prev => prev.map(detalle => 
+            detalle.id === timestamp ? { ...detalle, id: result.detalleId || timestamp } : detalle
+          ));
+        } else {
+          console.error('❌ Error en sincronización automática:', response.status, response.statusText);
+        }
+      } catch (error) {
+        console.error('❌ Error en sincronización automática:', error);
+      }
+    }, 1000); // Delay de 1 segundo para asegurar que el estado se haya actualizado
       
     // Mostrar toast de éxito inmediatamente
     toast.success('✅ Producto agregado');
 
-    // Sincronizar con el servidor en segundo plano (sin bloquear UI)
-      if (datosUsuario?.empresaId && id && conteoInfo?.inventarioCompleto?.id) {
-      // Ejecutar sincronización de forma asíncrona sin bloquear
-      setTimeout(async () => {
-        try {
-          console.log('🔄 Sincronizando con el servidor en segundo plano...');
-          
-          const token = localStorage.getItem('token');
-          const baseUrl = API_CONFIG.getBaseUrl();
-          const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo.inventarioCompleto.id}/conteos-sector/${id}/agregar-producto`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              productoId: producto.id,
-              cantidad: cantidad,
-              formulaCalculo: formulaCalculo || null
-            })
-          });
-
-          if (response.ok) {
-            console.log('✅ Producto sincronizado con el servidor exitosamente');
-            // No recargar datos - mantener la experiencia dinámica
-          } else {
-            const errorData = await response.json();
-            console.error('❌ Error del servidor:', errorData);
-            // Mostrar error solo en consola, no molestar al usuario
-          }
-        } catch (serverError) {
-          console.error('❌ Error de servidor en segundo plano:', serverError);
-          // No mostrar toast de error, el producto ya está guardado localmente
-        }
-      }, 100); // Pequeño delay para no sobrecargar el servidor
-    }
+    // ✅ CORRECCIÓN: No sincronizar en segundo plano porque el producto ya se agregó exitosamente
+    // La sincronización redundante estaba causando registros duplicados
+    console.log('✅ Producto agregado exitosamente - no se requiere sincronización adicional');
   };
 
   const buscarProductos = (valor: string) => {
@@ -1008,7 +1137,7 @@ export default function ConteoSectorInventarioCompleto() {
     setNuevaCantidad('');
   };
 
-  const guardarEdicion = () => {
+  const guardarEdicion = async () => {
     if (!editandoDetalle) return;
 
     // Determinar la cantidad final y la fórmula
@@ -1035,7 +1164,10 @@ export default function ConteoSectorInventarioCompleto() {
           return;
         }
         cantidadFinal = numero;
-        formulaFinal = null; // No hay fórmula, solo número
+        
+        // Cuando el usuario ingresa un número simple, usar ese número como fórmula
+        // Esto permite cambiar de una fórmula compleja (3*2) a una simple (2)
+        formulaFinal = nuevaCantidad.trim();
       }
     } else {
       toast.error('Por favor ingresa una cantidad válida');
@@ -1046,11 +1178,30 @@ export default function ConteoSectorInventarioCompleto() {
     setDetallesConteo(prev => {
       const nuevaLista = prev.map(detalle => {
         if (detalle.id === editandoDetalle) {
+          // Determinar si es usuario 1 o 2 para actualizar el campo correcto
+          const esUsuario1 = conteoInfo?.usuario1Id === datosUsuario?.id;
+          const esUsuario2 = conteoInfo?.usuario2Id === datosUsuario?.id;
+          
+          if (esUsuario1) {
+            return {
+              ...detalle,
+              cantidadConteo1: cantidadFinal,
+              formulaCalculo1: formulaFinal
+            } as DetalleConteo;
+          } else if (esUsuario2) {
+            return {
+              ...detalle,
+              cantidadConteo2: cantidadFinal,
+              formulaCalculo2: formulaFinal
+            } as DetalleConteo;
+          } else {
+            // Fallback al campo genérico
             return {
               ...detalle,
               cantidadConteo1: cantidadFinal,
               formulaCalculo: formulaFinal
             } as DetalleConteo;
+          }
         }
         return detalle;
       });
@@ -1066,6 +1217,50 @@ export default function ConteoSectorInventarioCompleto() {
       return nuevaLista;
     });
 
+    // 🔄 SINCRONIZAR CON EL BACKEND
+    const detalleEditado = detallesConteo.find(d => d.id === editandoDetalle);
+    if (detalleEditado) {
+      try {
+        const token = localStorage.getItem('token');
+        const baseUrl = API_CONFIG.getBaseUrl();
+        
+        console.log('🔄 FRONTEND - Llamando al endpoint actualizar-detalle:');
+        console.log('  - URL: ' + `${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${detalleEditado.id}`);
+        console.log('  - Method: PUT');
+        console.log('  - Body: ' + JSON.stringify({
+            cantidad: cantidadFinal,
+            formula: formulaFinal
+          }));
+        
+        // Llamar al endpoint para actualizar en el backend
+        const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${detalleEditado.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            cantidad: cantidadFinal,
+            formula: formulaFinal
+          })
+        });
+
+        console.log('📡 FRONTEND - Respuesta del endpoint:');
+        console.log('  - Status: ' + response.status);
+        console.log('  - OK: ' + response.ok);
+
+        if (response.ok) {
+          console.log('✅ Edición sincronizada con el backend');
+        } else {
+          console.error('❌ Error sincronizando edición con el backend');
+          const errorText = await response.text();
+          console.error('❌ Error details: ' + errorText);
+        }
+      } catch (error) {
+        console.error('❌ Error en sincronización de edición:', error);
+      }
+    }
+
     toast.success('Entrada actualizada exitosamente');
     cancelarEdicion();
   };
@@ -1075,11 +1270,65 @@ export default function ConteoSectorInventarioCompleto() {
       // Verificar si es un ID temporal (generado con Date.now()) o un ID real de base de datos
       const esIdTemporal = detalleId > 1000000000000; // Los timestamps de Date.now() son muy grandes
       
+      console.log('🗑️ DEBUG BORRAR DETALLE:');
+      console.log('  - DetalleId: ' + detalleId);
+      console.log('  - EsIdTemporal: ' + esIdTemporal);
+      console.log('  - Tipo: ' + (esIdTemporal ? 'TEMPORAL' : 'REAL DE BASE DE DATOS'));
+      
       if (esIdTemporal) {
-        // Es un detalle temporal, solo eliminar del estado local
+        // Es un detalle temporal, crear registro eliminado en la base de datos
         const detalleAEliminar = detallesConteo.find(d => d.id === detalleId);
         if (detalleAEliminar?.producto?.id) {
-          // Marcar el producto como eliminado
+          try {
+            // 🔧 SOLUCIÓN: Crear un registro eliminado en la base de datos
+            const headers = {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+            };
+
+            const baseUrl = API_CONFIG.getBaseUrl();
+            console.log('🚀 LLAMANDO AL ENDPOINT marcar-eliminado:');
+            console.log('  - URL: ' + `${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/conteos-sector/${id}/detalles/marcar-eliminado`);
+            console.log('  - Method: POST');
+            console.log('  - Body: ' + JSON.stringify({
+                productoId: detalleAEliminar.producto.id,
+                cantidadConteo1: detalleAEliminar.cantidadConteo1,
+                cantidadConteo2: detalleAEliminar.cantidadConteo2,
+                formulaCalculo1: detalleAEliminar.formulaCalculo1,
+                formulaCalculo2: detalleAEliminar.formulaCalculo2
+              }));
+
+            const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/conteos-sector/${id}/detalles/marcar-eliminado`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                productoId: detalleAEliminar.producto.id,
+                cantidadConteo1: detalleAEliminar.cantidadConteo1,
+                cantidadConteo2: detalleAEliminar.cantidadConteo2,
+                formulaCalculo1: detalleAEliminar.formulaCalculo1,
+                formulaCalculo2: detalleAEliminar.formulaCalculo2
+              })
+            });
+
+            console.log('📡 RESPUESTA DEL ENDPOINT:');
+            console.log('  - Status: ' + response.status);
+            console.log('  - OK: ' + response.ok);
+            console.log('  - URL: ' + response.url);
+
+            if (response.ok) {
+              const responseData = await response.json();
+              console.log('✅ Detalle temporal marcado como eliminado en la base de datos');
+              console.log('  - Response data: ' + JSON.stringify(responseData));
+            } else {
+              const errorData = await response.text();
+              console.warn('⚠️ No se pudo marcar como eliminado en la base de datos, pero se elimina localmente');
+              console.warn('  - Error: ' + errorData);
+            }
+          } catch (error) {
+            console.error('❌ Error marcando detalle temporal como eliminado:', error);
+          }
+
+          // Marcar el producto como eliminado localmente
           const nuevoProductosEliminados = new Set([...productosEliminados, detalleAEliminar.producto.id]);
           setProductosEliminados(nuevoProductosEliminados);
           
@@ -1115,6 +1364,10 @@ export default function ConteoSectorInventarioCompleto() {
         }
 
         toast.success('Entrada eliminada exitosamente');
+        
+        // 🔧 SOLUCIÓN TEMPORAL: No recargar datos para evitar referencia circular (también para detalles temporales)
+        console.log('🔄 NO recargando datos para evitar referencia circular (detalle temporal)...');
+        // await cargarDatos();
       } else {
         // Es un detalle real de base de datos, llamar al backend
         try {
@@ -1138,6 +1391,7 @@ export default function ConteoSectorInventarioCompleto() {
               const progreso = {
                 conteoInfo,
                 detallesConteo: nuevaLista,
+                productosEliminados: Array.from(productosEliminados),
                 timestamp: Date.now()
               };
               localStorage.setItem(`conteo-progreso-${id}`, JSON.stringify(progreso));
@@ -1146,6 +1400,10 @@ export default function ConteoSectorInventarioCompleto() {
             });
 
             toast.success('Entrada eliminada exitosamente');
+            
+            // 🔧 SOLUCIÓN TEMPORAL: No recargar datos para evitar referencia circular
+            console.log('🔄 NO recargando datos para evitar referencia circular...');
+            // await cargarDatos();
           } else {
             const errorData = await response.json();
             toast.error(`Error al eliminar: ${errorData.error || 'Error desconocido'}`);
@@ -2724,34 +2982,13 @@ export default function ConteoSectorInventarioCompleto() {
                               sincronizar: esTemporal && tieneProducto && noEliminado
                             });
 
-                            // Solo sincronizar detalles temporales (IDs grandes) que no hayan sido eliminados
-                            if (esTemporal && tieneProducto && noEliminado) {
-                              try {
-                                const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/agregar-producto`, {
-                                  method: 'POST',
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
-                                  },
-                                  body: JSON.stringify({
-                                    productoId: detalle.producto?.id,
-                                    cantidad: detalle.cantidadConteo1 || detalle.cantidadConteo2 || 0,
-                                    formulaCalculo: detalle.formulaCalculo1 || detalle.formulaCalculo2,
-                                    usuarioId: datosUsuario?.id
-                                  })
-                                });
-
-                                if (response.ok) {
-                                  sincronizados++;
-                                } else {
-                                  errores++;
-                                }
-                              } catch (error) {
-                                console.error('Error sincronizando producto:', error);
-                                errores++;
-                              }
-                            }
+                            // ✅ ELIMINADO: Esta sincronización duplicada ya no es necesaria
+                            // La sincronización automática (línea 813) ya maneja esto
                           }
+
+                          // ✅ ELIMINADO: Esta sincronización de productos eliminados ya no es necesaria
+                          // Los productos eliminados se marcan automáticamente cuando el usuario los elimina
+                          console.log('ℹ️ Los productos eliminados ya se marcan automáticamente al eliminarlos');
 
                           if (errores > 0) {
                             toast.error(`${errores} productos no pudieron sincronizarse. No se puede finalizar el conteo.`);
@@ -2778,6 +3015,8 @@ export default function ConteoSectorInventarioCompleto() {
                             toast.success('Conteo finalizado exitosamente');
                             // Limpiar progreso guardado
                             localStorage.removeItem(`conteo-progreso-${id}`);
+                            // Limpiar productos eliminados
+                            setProductosEliminados(new Set());
                             // Redirigir a la página de inventario completo
                             navigate('/admin/inventario-completo');
                           } else {
@@ -2820,31 +3059,13 @@ export default function ConteoSectorInventarioCompleto() {
                         let sincronizados = 0;
                         let errores = 0;
 
-                        for (const detalle of detallesConteo) {
-                          try {
-                            const baseUrl = API_CONFIG.getBaseUrl();
-                            const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/agregar-producto`, {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                              },
-                              body: JSON.stringify({
-                                productoId: detalle.producto?.id,
-                                cantidad: detalle.cantidadConteo1 || detalle.cantidadConteo2 || detalle.cantidadContada || detalle.cantidadFinal,
-                                formulaCalculo: detalle.formulaCalculo || null
-                              })
-                            });
+                        // ✅ ELIMINADO: Esta sincronización duplicada ya no es necesaria
+                        // La sincronización automática (línea 813) ya maneja esto
+                        console.log('ℹ️ Sincronización automática ya maneja los productos agregados');
 
-                            if (response.ok) {
-                              sincronizados++;
-                            } else {
-                              errores++;
-                            }
-                          } catch (error) {
-                            errores++;
-                          }
-                        }
+                        // ✅ ELIMINADO: Esta sincronización de productos eliminados ya no es necesaria
+                        // Los productos eliminados se marcan automáticamente cuando el usuario los elimina
+                        console.log('ℹ️ Los productos eliminados ya se marcan automáticamente al eliminarlos');
 
                         if (sincronizados > 0) {
                           toast.success(`${sincronizados} productos sincronizados con el servidor`);
@@ -2853,8 +3074,11 @@ export default function ConteoSectorInventarioCompleto() {
                           toast.error(`${errores} productos no pudieron sincronizarse`);
                         }
                         
-                        // Recargar datos del servidor
+                        // Recargar datos del servidor para reflejar los cambios
                         await cargarDatos();
+                        
+                        // Limpiar productos eliminados después de sincronizar
+                        setProductosEliminados(new Set());
                       } catch (error) {
                         toast.error('Error al sincronizar con el servidor');
                       }

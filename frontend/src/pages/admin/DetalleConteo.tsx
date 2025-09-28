@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
-import ApiService from '../../services/api';
+import { API_CONFIG } from '../../config/api';
 import { toast } from 'react-toastify';
 
 interface DetalleConteoData {
@@ -56,19 +56,48 @@ const DetalleConteo: React.FC = () => {
       setCargando(true);
       console.log('🔍 Cargando detalle del conteo para ID:', conteoId);
       
+      // Obtener token de autenticación
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró token de autenticación');
+      }
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+      
+      const baseUrl = API_CONFIG.getBaseUrl();
+      
       // Cargar información del conteo sector
-      const responseConteo = await ApiService.get(`/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${conteoId}/info`);
-      console.log('✅ Información del conteo cargada:', responseConteo);
-      setConteoSectorInfo(responseConteo);
+      const responseConteo = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${conteoId}/info`, {
+        headers
+      });
+      
+      if (!responseConteo.ok) {
+        throw new Error(`Error cargando información del conteo: ${responseConteo.status}`);
+      }
+      
+      const conteoData = await responseConteo.json();
+      console.log('✅ Información del conteo cargada:', conteoData);
+      setConteoSectorInfo(conteoData);
       
       // Cargar detalles del conteo
-      const responseDetalles = await ApiService.get(`/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${conteoId}/detalles`);
-      console.log('✅ Detalles del conteo cargados:', responseDetalles);
+      const responseDetalles = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${conteoId}/detalles`, {
+        headers
+      });
       
-      if (Array.isArray(responseDetalles)) {
-        setDetallesConteo(responseDetalles);
+      if (!responseDetalles.ok) {
+        throw new Error(`Error cargando detalles del conteo: ${responseDetalles.status}`);
+      }
+      
+      const detallesData = await responseDetalles.json();
+      console.log('✅ Detalles del conteo cargados:', detallesData);
+      
+      if (Array.isArray(detallesData)) {
+        setDetallesConteo(detallesData);
       } else {
-        console.log('⚠️ Respuesta no es un array:', responseDetalles);
+        console.log('⚠️ Respuesta no es un array:', detallesData);
         setDetallesConteo([]);
       }
       

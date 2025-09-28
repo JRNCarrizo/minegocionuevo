@@ -135,8 +135,9 @@ const ComparacionConteos: React.FC = () => {
         
         if (Array.isArray(detallesData)) {
           // El backend ya devuelve los datos en el formato correcto
+          console.log('🔍 DEBUG: Primer detalle del backend:', detallesData[0]);
           const detallesProcesados = detallesData.map(detalle => {
-            // Crear objeto producto a partir de los campos individuales
+            // ✅ CORRECCIÓN: Usar los campos directos que vienen del backend
             const productoObj = {
               id: detalle.productoId,
               nombre: detalle.nombreProducto || 'Producto sin nombre',
@@ -153,7 +154,7 @@ const ComparacionConteos: React.FC = () => {
               formulaCalculo1: detalle.formulaCalculo1 || 'Sin fórmula',
               formulaCalculo2: detalle.formulaCalculo2 || 'Sin fórmula',
               diferenciaSistema: detalle.diferenciaSistema || 0,
-              diferenciaEntreConteos: detalle.diferenciaEntreConteos || 0,
+              diferenciaEntreConteos: detalle.diferenciaConteo || detalle.diferenciaEntreConteos || 0,
               estado: detalle.estado || 'PENDIENTE',
               conteosUsuario1: detalle.conteosUsuario1 || [],
               conteosUsuario2: detalle.conteosUsuario2 || []
@@ -161,6 +162,7 @@ const ComparacionConteos: React.FC = () => {
           });
           
           console.log('✅ Detalles procesados para comparación:', detallesProcesados);
+          console.log('🔍 DEBUG: Primer detalle procesado:', detallesProcesados[0]);
           setDetallesConteo(detallesProcesados);
         } else {
           setDetallesConteo([]);
@@ -377,7 +379,7 @@ const ComparacionConteos: React.FC = () => {
                 </thead>
                 <tbody>
                   {detallesConteo.map((detalle, index) => (
-                    <tr key={detalle.id} style={{
+                    <tr key={`${detalle.producto?.id || 'unknown'}-${index}`} style={{
                       borderBottom: '1px solid #e5e7eb',
                       background: index % 2 === 0 ? '#ffffff' : '#f9fafb'
                     }}>

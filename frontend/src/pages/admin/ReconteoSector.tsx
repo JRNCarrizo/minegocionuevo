@@ -74,6 +74,7 @@ export default function ReconteoSector() {
   const [productoActual, setProductoActual] = useState<number | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [mostrarBotonFinalizar, setMostrarBotonFinalizar] = useState(false);
+  const [sectorCompletado, setSectorCompletado] = useState(false);
 
   useEffect(() => {
     if (id && datosUsuario?.empresaId) {
@@ -96,7 +97,16 @@ export default function ReconteoSector() {
   // Mostrar botón de finalizar cuando haya al menos un reconteo completado
   useEffect(() => {
     const tieneReconteosCompletados = Object.keys(reconteosSolidificados).length > 0;
+    // ✅ CORRECCIÓN: Solo mostrar botón si hay reconteos completados
+    // Si no hay reconteos, NO mostrar el mensaje de "completado"
     setMostrarBotonFinalizar(tieneReconteosCompletados);
+    console.log('🔍 [DEBUG] useEffect reconteosSolidificados:', {
+      reconteosSolidificados,
+      keys: Object.keys(reconteosSolidificados),
+      length: Object.keys(reconteosSolidificados).length,
+      tieneReconteosCompletados,
+      mostrarBotonFinalizar: tieneReconteosCompletados
+    });
   }, [reconteosSolidificados]);
 
   // Función para calcular el resultado de una fórmula
@@ -124,6 +134,8 @@ export default function ReconteoSector() {
     setReconteosSolidificados(prev => {
       const nuevo = { ...prev, [productoId]: formula };
       console.log('✅ Reconteo solidificado:', nuevo);
+      console.log('🔍 [DEBUG] Total reconteos solidificados:', Object.keys(nuevo).length);
+      console.log('🔍 [DEBUG] mostrarBotonFinalizar será:', Object.keys(nuevo).length > 0);
       return nuevo;
     });
     
@@ -172,12 +184,22 @@ export default function ReconteoSector() {
 
   // Función para guardar todos los reconteos solidificados
   const guardarTodosLosReconteos = async () => {
-    if (!datosUsuario?.id || guardando) return;
+    console.log('🔍 [DEBUG] guardarTodosLosReconteos INICIADO');
+    console.log('🔍 [DEBUG] datosUsuario?.id:', datosUsuario?.id);
+    console.log('🔍 [DEBUG] guardando:', guardando);
+    
+    if (!datosUsuario?.id || guardando) {
+      console.log('🔍 [DEBUG] SALIENDO - datosUsuario?.id:', datosUsuario?.id, 'guardando:', guardando);
+      return;
+    }
 
+    console.log('🔍 [DEBUG] Iniciando proceso de guardado...');
     setGuardando(true);
 
     try {
       const token = localStorage.getItem('token');
+      console.log('🔍 [DEBUG] Token obtenido:', token ? 'presente' : 'ausente');
+      
       const reconteosParaGuardar = Object.entries(reconteosSolidificados)
         .filter(([_, formula]) => formula.trim())
         .map(([productoId, formula]) => ({
@@ -186,7 +208,7 @@ export default function ReconteoSector() {
           formulaCalculo: formula
         }));
 
-      console.log('🔍 Reconteos preparados para guardar:', {
+      console.log('🔍 [DEBUG] Reconteos preparados para guardar:', {
         reconteosSolidificados,
         reconteosParaGuardar,
         usuarioId: datosUsuario.id,
@@ -253,33 +275,62 @@ export default function ReconteoSector() {
 
       // Limpiar reconteos solidificados
       setReconteosSolidificados({});
-      setMostrarBotonFinalizar(false);
       
-      // Mostrar mensaje según el estado final y navegar después de un breve delay
-      if (finalizarData.estado === 'COMPLETADO') {
-        toast.success('¡Reconteo completado! El sector ya no tiene diferencias.');
-        // Navegar de vuelta al inventario completo después de mostrar el toast
-        setTimeout(() => {
-          navigate('/admin/inventario-completo');
-        }, 1000);
-      } else if (finalizarData.estado === 'CON_DIFERENCIAS') {
-        toast('Reconteo guardado. Aún hay diferencias entre usuarios. Ambos usuarios deben hacer el reconteo para resolver las diferencias.');
-        // Navegar de vuelta al inventario completo después de mostrar el toast
-        setTimeout(() => {
-          navigate('/admin/inventario-completo');
-        }, 1000);
-      } else if (finalizarData.estado === 'ESPERANDO_VERIFICACION') {
-        toast.success(`${reconteosParaGuardar.length} reconteos guardados. Esperando que el segundo usuario complete su reconteo.`);
-        // Navegar de vuelta al inventario completo después de mostrar el toast
-        setTimeout(() => {
-          navigate('/admin/inventario-completo');
-        }, 1000);
-      } else {
-        toast.success(`${reconteosParaGuardar.length} reconteos guardados correctamente`);
-        // Navegar de vuelta al inventario completo después de mostrar el toast
-        setTimeout(() => {
-          navigate('/admin/inventario-completo');
-        }, 1000);
+      // ✅ FLUJO SIMPLIFICADO: Manejar estados del reconteo
+      console.log('🔄 [RECONTEO] Estado recibido:', finalizarData.estado);
+      console.log('🔄 [RECONTEO] Observaciones:', finalizarData.observaciones);
+      
+      switch (finalizarData.estado) {
+        case 'ESPERANDO_SEGUNDO_RECONTEO':
+          // Primer usuario finalizó, puede salir
+          setMostrarBotonFinalizar(false);
+          toast.success(`${reconteosParaGuardar.length} reconteos guardados. Esperando que el segundo usuario complete su reconteo.`);
+          // Navegar de vuelta al inventario completo
+          setTimeout(() => {
+            navigate('/admin/inventario-completo');
+          }, 2000);
+          break;
+          
+        case 'COMPARANDO_RECONTEO':
+          // Segundo usuario finalizó, sistema comparando
+          setMostrarBotonFinalizar(false);
+          toast.success(`${reconteosParaGuardar.length} reconteos guardados. Comparando reconteos...`);
+          // Navegar de vuelta al inventario completo
+          setTimeout(() => {
+            navigate('/admin/inventario-completo');
+          }, 2000);
+          break;
+          
+        case 'COMPLETADO':
+          // Reconteo completado exitosamente
+          setMostrarBotonFinalizar(false);
+          setSectorCompletado(true);
+          toast.success('¡Reconteo completado! El sector ya no tiene diferencias.');
+          // Navegar de vuelta al inventario completo
+          setTimeout(() => {
+            navigate('/admin/inventario-completo');
+          }, 2000);
+          break;
+          
+        case 'CON_DIFERENCIAS':
+          // Hay diferencias, volver a reconteo
+          setMostrarBotonFinalizar(false);
+          toast('Reconteo guardado. Aún hay diferencias entre usuarios. Ambos usuarios deben hacer el reconteo para resolver las diferencias.');
+          // Navegar de vuelta al inventario completo
+          setTimeout(() => {
+            navigate('/admin/inventario-completo');
+          }, 2000);
+          break;
+          
+        default:
+          // Estado inesperado
+          setMostrarBotonFinalizar(false);
+          toast.success(`${reconteosParaGuardar.length} reconteos guardados. Estado: ${finalizarData.estado}`);
+          // Navegar de vuelta al inventario completo
+          setTimeout(() => {
+            navigate('/admin/inventario-completo');
+          }, 2000);
+          break;
       }
     } catch (error) {
       console.error('Error guardando reconteos:', error);
@@ -383,10 +434,10 @@ export default function ReconteoSector() {
       console.log('🔍 ConteoInfo completo con inventarioId:', conteoInfoCompleto);
       setConteoInfo(conteoInfoCompleto);
 
-      // Cargar detalles de reconteo usando el mismo endpoint de comparación
-      console.log('🔍 Cargando detalles de reconteo para ID:', id);
-      console.log('🔍 URL de detalles:', `${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/comparacion`);
-      const detallesResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/comparacion`, {
+      // ✅ NUEVA ARQUITECTURA: Cargar datos de referencia para reconteo
+      console.log('🔍 [NUEVA ARQUITECTURA] Cargando datos de referencia para reconteo ID:', id);
+      console.log('🔍 [NUEVA ARQUITECTURA] URL de datos de referencia:', `${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/datos-referencia-reconteo`);
+      const detallesResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/datos-referencia-reconteo`, {
         headers
       });
 
@@ -397,58 +448,56 @@ export default function ReconteoSector() {
       });
 
       if (detallesResponse.ok) {
-        const detallesData = await detallesResponse.json();
-        console.log('✅ Detalles de reconteo cargados:', detallesData);
+        const responseData = await detallesResponse.json();
+        console.log('✅ [RECONTEO] Datos de referencia cargados:', responseData);
         
-        if (Array.isArray(detallesData)) {
-          console.log('✅ Detalles de reconteo (array directo):', detallesData.length, 'elementos');
-          console.log('🔍 Primer detalle completo:', detallesData[0]);
-          console.log('🔍 Estructura del primer detalle:', Object.keys(detallesData[0]));
+        // El endpoint devuelve un objeto con datosReferencia
+        const datosReferencia = responseData.datosReferencia || [];
+        console.log('✅ [RECONTEO] Datos de referencia extraídos:', datosReferencia.length, 'productos');
+        
+        if (Array.isArray(datosReferencia) && datosReferencia.length > 0) {
+          console.log('🔍 [RECONTEO] Primer producto de referencia:', datosReferencia[0]);
           
-          // El endpoint de comparación ya devuelve los datos en el formato correcto
-          const todosLosDetalles = detallesData.map(detalle => {
-            // Crear objeto producto a partir de los campos individuales
+          // Procesar datos de referencia
+          const productosParaReconteo = datosReferencia.map((productoRef: any) => {
+            // Crear objeto producto a partir de los datos de referencia
             const productoObj = {
-              id: detalle.productoId,
-              nombre: detalle.nombreProducto || 'Producto sin nombre',
-              codigoPersonalizado: detalle.codigoProducto || 'N/A',
-              stock: detalle.stockSistema || 0
+              id: productoRef.productoId,
+              nombre: productoRef.producto?.nombre || 'Producto sin nombre',
+              codigoPersonalizado: productoRef.producto?.codigoPersonalizado || 'N/A',
+              stock: productoRef.producto?.stock || 0
             };
             
             return {
-              id: detalle.id,
+              id: productoRef.productoId, // Usar productoId como ID único
               producto: productoObj,
-              stockSistema: detalle.stockSistema || 0,
-              cantidadConteo1: detalle.cantidadConteo1 || 0,
-              cantidadConteo2: detalle.cantidadConteo2 || 0,
-              formulaCalculo1: detalle.formulaCalculo1 || 'Sin fórmula',
-              formulaCalculo2: detalle.formulaCalculo2 || 'Sin fórmula',
-              diferenciaSistema: detalle.diferenciaSistema || 0,
-              diferenciaEntreConteos: detalle.diferenciaEntreConteos || 0,
-              estado: detalle.estado || 'PENDIENTE',
-              conteosUsuario1: detalle.conteosUsuario1 || [],
-              conteosUsuario2: detalle.conteosUsuario2 || []
+              stockSistema: productoRef.producto?.stock || 0,
+              // Usar datos del conteo original como referencia
+              cantidadConteo1: productoRef.cantidadConteo1 || 0,
+              cantidadConteo2: productoRef.cantidadConteo2 || 0,
+              formulaCalculo1: productoRef.formulaConteo1 || 'Sin fórmula',
+              formulaCalculo2: productoRef.formulaConteo2 || 'Sin fórmula',
+              diferenciaSistema: 0, // No aplicable en reconteo
+              diferenciaEntreConteos: productoRef.diferenciaConteo || 0, // Diferencia del conteo original
+              estado: 'PENDIENTE_RECONTEO',
+              conteosUsuario1: [],
+              conteosUsuario2: []
             };
           });
           
-          // Filtrar solo los productos que tienen diferencias para reconteo
-          const detallesConDiferencias = todosLosDetalles.filter(detalle => {
-            const tieneDiferencias = detalle.diferenciaEntreConteos !== 0;
-            console.log(`🔍 Producto ${detalle.producto.nombre}: diferencia=${detalle.diferenciaEntreConteos}, tieneDiferencias=${tieneDiferencias}`);
-            return tieneDiferencias;
-          });
-          
-          console.log('✅ Todos los detalles procesados:', todosLosDetalles.length);
-          console.log('✅ Detalles con diferencias (para reconteo):', detallesConDiferencias.length);
-          setDetallesConteo(detallesConDiferencias);
+          console.log('✅ [RECONTEO] Productos procesados para reconteo:', productosParaReconteo.length);
+          console.log('🔍 [RECONTEO] Ejemplo de producto procesado:', productosParaReconteo[0]);
+          setDetallesConteo(productosParaReconteo);
         } else {
-          console.log('⚠️ No se encontraron detalles válidos');
+          console.log('⚠️ [RECONTEO] No se encontraron productos para reconteo');
+          toast('No hay productos con diferencias para recontear');
           setDetallesConteo([]);
         }
       } else {
-        console.error('❌ Error cargando detalles de reconteo:', detallesResponse.status);
+        console.error('❌ [RECONTEO] Error cargando datos de referencia:', detallesResponse.status);
         const errorText = await detallesResponse.text();
-        console.error('❌ Error details:', errorText);
+        console.error('❌ [RECONTEO] Error details:', errorText);
+        toast.error('Error al cargar los datos del reconteo');
         setDetallesConteo([]);
       }
     } catch (error) {
@@ -469,6 +518,10 @@ export default function ReconteoSector() {
         return 'Esperando Segundo Usuario';
       case 'CON_DIFERENCIAS':
         return 'Requiere Reconteo';
+      case 'ESPERANDO_SEGUNDO_RECONTEO':
+        return 'Esperando Segundo Reconteo';
+      case 'COMPARANDO_RECONTEO':
+        return 'Comparando Reconteos';
       case 'COMPLETADO':
         return 'Completado';
       default:
@@ -1168,7 +1221,7 @@ export default function ReconteoSector() {
               </div>
             )}
           </div>
-        ) : (
+        ) : sectorCompletado ? (
           <div style={{
             background: 'white',
             borderRadius: '1rem',
@@ -1216,6 +1269,30 @@ export default function ReconteoSector() {
             >
               🔍 Ver Detalle Final del Sector
             </button>
+          </div>
+        ) : (
+          <div style={{
+            background: 'white',
+            borderRadius: '1rem',
+            padding: '2rem',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              color: '#6b7280',
+              marginBottom: '1rem'
+            }}>
+              Iniciando Reconteo
+            </h2>
+            <p style={{
+              color: '#6b7280',
+              marginBottom: '1.5rem'
+            }}>
+              Comienza a hacer el reconteo de los productos con diferencias. Ingresa las cantidades y presiona Enter para continuar.
+            </p>
           </div>
         )}
       </div>

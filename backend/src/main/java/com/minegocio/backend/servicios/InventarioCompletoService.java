@@ -79,8 +79,8 @@ public class InventarioCompletoService {
             return new ArrayList<>();
         }
 
-        List<DetalleConteo> todosLosDetalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
-        System.out.println("✅ Todos los detalles encontrados: " + todosLosDetalles.size());
+        List<DetalleConteo> todosLosDetalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
+        System.out.println("✅ Todos los detalles encontrados (SIN eliminados): " + todosLosDetalles.size());
         
         // Verificar si estamos en modo reconteo (estado CON_DIFERENCIAS)
         boolean esModoReconteo = conteoSector.getEstado() == ConteoSector.EstadoConteo.CON_DIFERENCIAS;
@@ -224,8 +224,8 @@ public class InventarioCompletoService {
             return new ArrayList<>();
         }
 
-        List<DetalleConteo> todosLosDetalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
-        System.out.println("✅ Detalles encontrados para reconteo: " + todosLosDetalles.size());
+        List<DetalleConteo> todosLosDetalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
+        System.out.println("✅ Detalles encontrados para reconteo (SIN eliminados): " + todosLosDetalles.size());
         
         // Verificar si estamos en reconteo y determinar fecha de inicio
         boolean esReconteo = conteoSector.getObservaciones() != null && 
@@ -380,10 +380,33 @@ public class InventarioCompletoService {
             return new ArrayList<>();
         }
 
-        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
-        System.out.println("✅ Detalles encontrados para comparación: " + detalles.size());
+        // DEBUG: Obtener TODOS los detalles (incluyendo eliminados) para comparar
+        List<DetalleConteo> todosLosDetalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+        System.out.println("🔍 DEBUG - Total detalles (INCLUYENDO eliminados): " + todosLosDetalles.size());
         
-        // Agrupar por producto y consolidar
+        // DEBUG: Verificar el estado de eliminado de TODOS los detalles
+        System.out.println("🔍 DEBUG - Estado de TODOS los detalles:");
+        for (DetalleConteo detalle : todosLosDetalles) {
+            System.out.println("  - Detalle ID: " + detalle.getId() + 
+                             ", Producto: " + detalle.getProducto().getNombre() + 
+                             ", Eliminado: " + detalle.getEliminado() + 
+                             ", Tipo: " + (detalle.getEliminado() != null ? detalle.getEliminado().getClass().getSimpleName() : "NULL"));
+        }
+        
+        // Obtener detalles SIN eliminados usando el filtro correcto
+        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
+        System.out.println("✅ Detalles encontrados para comparación (SIN eliminados): " + detalles.size());
+        
+        // DEBUG: Verificar el estado de eliminado de cada detalle filtrado
+        System.out.println("🔍 DEBUG - Verificando estado de eliminado de cada detalle filtrado:");
+        for (DetalleConteo detalle : detalles) {
+            System.out.println("  - Detalle ID: " + detalle.getId() + 
+                             ", Producto: " + detalle.getProducto().getNombre() + 
+                             ", Eliminado: " + detalle.getEliminado() + 
+                             ", Tipo: " + (detalle.getEliminado() != null ? detalle.getEliminado().getClass().getSimpleName() : "NULL"));
+        }
+        
+        // Agrupar por producto y consolidar (ya filtrados sin eliminados)
         Map<Long, List<DetalleConteo>> detallesPorProducto = new HashMap<>();
         for (DetalleConteo detalle : detalles) {
             Long productoId = detalle.getProducto().getId();
@@ -391,7 +414,8 @@ public class InventarioCompletoService {
             System.out.println("🔍 DEBUG Agrupación - Detalle ID: " + detalle.getId() + 
                              ", Producto ID: " + productoId + ", Nombre: " + nombreProducto +
                              ", Usuario1: " + detalle.getCantidadConteo1() + 
-                             ", Usuario2: " + detalle.getCantidadConteo2());
+                             ", Usuario2: " + detalle.getCantidadConteo2() +
+                             ", Eliminado: " + detalle.getEliminado());
             detallesPorProducto.computeIfAbsent(productoId, k -> new ArrayList<>()).add(detalle);
         }
         
@@ -791,14 +815,23 @@ public class InventarioCompletoService {
             return new ArrayList<>();
         }
 
-        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
-        System.out.println("✅ Detalles encontrados para análisis de diferencias: " + detalles.size());
+        // ✅ CORRECCIÓN: Filtrar por eliminados también en este método
+        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
+        System.out.println("✅ Detalles encontrados para análisis de diferencias (SIN eliminados): " + detalles.size());
         
-        // Agrupar por producto y consolidar
+        // Agrupar por producto y consolidar (SOLO detalles no eliminados)
         Map<Long, List<DetalleConteo>> detallesPorProducto = new HashMap<>();
         for (DetalleConteo detalle : detalles) {
-            Long productoId = detalle.getProducto().getId();
-            detallesPorProducto.computeIfAbsent(productoId, k -> new ArrayList<>()).add(detalle);
+            // ✅ FILTRO ADICIONAL: Verificar que no esté eliminado
+            if (detalle.getEliminado() == null || !detalle.getEliminado()) {
+                Long productoId = detalle.getProducto().getId();
+                System.out.println("🔍 DEBUG Agrupación - Detalle ID: " + detalle.getId() + 
+                                 ", Producto: " + detalle.getProducto().getNombre() +
+                                 ", Eliminado: " + detalle.getEliminado());
+                detallesPorProducto.computeIfAbsent(productoId, k -> new ArrayList<>()).add(detalle);
+            } else {
+                System.out.println("🔍 DEBUG Agrupación - EXCLUIDO (eliminado) - Detalle ID: " + detalle.getId());
+            }
         }
 
         List<Map<String, Object>> productosConsolidados = new ArrayList<>();
@@ -875,6 +908,118 @@ public class InventarioCompletoService {
      * Eliminar un detalle de conteo
      */
     @Transactional
+    public boolean crearDetalleEliminado(Long conteoSectorId, Map<String, Object> requestBody, Long usuarioId) {
+        try {
+            System.out.println("🗑️ Creando detalle eliminado para conteo sector: " + conteoSectorId);
+            
+            // Obtener el conteo sector
+            ConteoSector conteoSector = obtenerConteoSectorPorId(conteoSectorId);
+            if (conteoSector == null) {
+                System.out.println("❌ Conteo sector no encontrado: " + conteoSectorId);
+                return false;
+            }
+            
+            // Verificar que el usuario tiene permisos
+            boolean esUsuarioAsignado = false;
+            if (conteoSector.getUsuarioAsignado1() != null && conteoSector.getUsuarioAsignado1().getId().equals(usuarioId)) {
+                esUsuarioAsignado = true;
+            }
+            if (conteoSector.getUsuarioAsignado2() != null && conteoSector.getUsuarioAsignado2().getId().equals(usuarioId)) {
+                esUsuarioAsignado = true;
+            }
+            
+            if (!esUsuarioAsignado) {
+                System.out.println("❌ Usuario " + usuarioId + " no tiene permisos para este conteo");
+                return false;
+            }
+            
+            // Extraer datos del request
+            Long productoId = Long.valueOf(requestBody.get("productoId").toString());
+            Integer cantidadConteo1 = requestBody.get("cantidadConteo1") != null ? 
+                Integer.valueOf(requestBody.get("cantidadConteo1").toString()) : null;
+            Integer cantidadConteo2 = requestBody.get("cantidadConteo2") != null ? 
+                Integer.valueOf(requestBody.get("cantidadConteo2").toString()) : null;
+            String formulaCalculo1 = requestBody.get("formulaCalculo1") != null ? 
+                requestBody.get("formulaCalculo1").toString() : null;
+            String formulaCalculo2 = requestBody.get("formulaCalculo2") != null ? 
+                requestBody.get("formulaCalculo2").toString() : null;
+            
+            // Obtener el producto
+            Optional<Producto> productoOpt = productoRepository.findById(productoId);
+            if (!productoOpt.isPresent()) {
+                System.out.println("❌ Producto no encontrado: " + productoId);
+                return false;
+            }
+            
+            Producto producto = productoOpt.get();
+            
+            // Buscar el detalle existente para este producto y usuario
+            List<DetalleConteo> detallesExistentes = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+            DetalleConteo detalleExistente = null;
+            
+            // Buscar el detalle que corresponde al usuario actual
+            for (DetalleConteo detalle : detallesExistentes) {
+                if (detalle.getProducto().getId().equals(productoId) && !detalle.getEliminado()) {
+                    // Verificar si es del usuario correcto basándose en las cantidades
+                    boolean esDelUsuario = false;
+                    if (usuarioId.equals(conteoSector.getUsuarioAsignado1().getId())) {
+                        // Es usuario 1 - verificar si tiene cantidadConteo1
+                        if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
+                            esDelUsuario = true;
+                        }
+                    } else if (usuarioId.equals(conteoSector.getUsuarioAsignado2().getId())) {
+                        // Es usuario 2 - verificar si tiene cantidadConteo2
+                        if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
+                            esDelUsuario = true;
+                        }
+                    }
+                    
+                    if (esDelUsuario) {
+                        detalleExistente = detalle;
+                        break;
+                    }
+                }
+            }
+            
+            if (detalleExistente != null) {
+                // Marcar el detalle existente como eliminado
+                System.out.println("🔍 Marcando detalle existente como eliminado - ID: " + detalleExistente.getId() + 
+                                 ", Producto: " + detalleExistente.getProducto().getNombre());
+                detalleExistente.setEliminado(true);
+                detalleConteoRepository.save(detalleExistente);
+                System.out.println("✅ Detalle existente marcado como eliminado exitosamente para producto: " + producto.getNombre());
+            } else {
+                System.out.println("⚠️ No se encontró detalle existente para marcar como eliminado, creando uno nuevo");
+                // Si no se encuentra un detalle existente, crear uno nuevo (caso excepcional)
+                DetalleConteo detalleEliminado = new DetalleConteo();
+                detalleEliminado.setConteoSector(conteoSector);
+                detalleEliminado.setProducto(producto);
+                detalleEliminado.setNombreProducto(producto.getNombre());
+                detalleEliminado.setCodigoProducto(producto.getCodigoPersonalizado());
+                detalleEliminado.setCantidadConteo1(cantidadConteo1);
+                detalleEliminado.setCantidadConteo2(cantidadConteo2);
+                detalleEliminado.setFormulaCalculo1(formulaCalculo1);
+                detalleEliminado.setFormulaCalculo2(formulaCalculo2);
+                detalleEliminado.setEliminado(true);
+                detalleEliminado.setStockSistema(producto.getStock());
+                
+                detalleConteoRepository.save(detalleEliminado);
+                System.out.println("✅ Detalle eliminado creado exitosamente para producto: " + producto.getNombre());
+            }
+            
+            // Recalcular el progreso del conteo sector
+            calcularProgresoReal(conteoSector);
+            conteoSectorRepository.save(conteoSector);
+            
+            return true;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error creando detalle eliminado: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean eliminarDetalleConteo(Long detalleId, Long conteoSectorId, Long usuarioId) {
         try {
             System.out.println("🗑️ Eliminando detalle de conteo: " + detalleId + " del sector: " + conteoSectorId);
@@ -908,9 +1053,13 @@ public class InventarioCompletoService {
                 return false;
             }
             
-            // Eliminar el detalle
-            detalleConteoRepository.delete(detalle);
-            System.out.println("✅ Detalle eliminado exitosamente: " + detalleId);
+            // Marcar el detalle como eliminado (soft delete)
+            System.out.println("🔍 DEBUG - Estado ANTES de marcar como eliminado: " + detalle.getEliminado());
+            detalle.setEliminado(true);
+            System.out.println("🔍 DEBUG - Estado DESPUÉS de setEliminado(true): " + detalle.getEliminado());
+            DetalleConteo detalleGuardado = detalleConteoRepository.save(detalle);
+            System.out.println("🔍 DEBUG - Estado DESPUÉS de guardar en BD: " + detalleGuardado.getEliminado());
+            System.out.println("✅ Detalle marcado como eliminado exitosamente: " + detalleId);
             
             // Recalcular el progreso del conteo sector
             calcularProgresoReal(conteoSector);
@@ -1179,7 +1328,7 @@ public class InventarioCompletoService {
             System.out.println("🔄 RECONTEO: Buscando entrada existente para actualizar");
             
             // Buscar entrada existente del usuario para este producto
-            List<DetalleConteo> detallesExistentes = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+            List<DetalleConteo> detallesExistentes = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
             
             // Encontrar la entrada original del conteo inicial para este producto
             DetalleConteo entradaExistente = null;
@@ -1263,6 +1412,71 @@ public class InventarioCompletoService {
     }
 
     /**
+     * Actualizar detalle de conteo existente
+     */
+    public DetalleConteo actualizarDetalleConteo(Long conteoSectorId, Long detalleId, Integer cantidad, String formulaCalculo, Long usuarioId) {
+        System.out.println("🔄 ACTUALIZAR DETALLE: Actualizando detalle - sector: " + conteoSectorId + ", detalle: " + detalleId + ", cantidad: " + cantidad);
+        
+        ConteoSector conteoSector = conteoSectorRepository.findById(conteoSectorId)
+            .orElseThrow(() -> new RuntimeException("Conteo de sector no encontrado"));
+        
+        System.out.println("🔍 ACTUALIZAR DEBUG: ConteoSector encontrado - ID: " + conteoSector.getId() + 
+                         ", Usuario1: " + (conteoSector.getUsuarioAsignado1() != null ? conteoSector.getUsuarioAsignado1().getId() : "null") +
+                         ", Usuario2: " + (conteoSector.getUsuarioAsignado2() != null ? conteoSector.getUsuarioAsignado2().getId() : "null"));
+        
+        // Verificar que el usuario está asignado al conteo
+        if (!conteoSector.getUsuarioAsignado1().getId().equals(usuarioId) && 
+            !conteoSector.getUsuarioAsignado2().getId().equals(usuarioId)) {
+            throw new RuntimeException("El usuario no está asignado a este conteo");
+        }
+        
+        // Buscar el detalle específico
+        DetalleConteo detalle = detalleConteoRepository.findById(detalleId)
+            .orElseThrow(() -> new RuntimeException("Detalle de conteo no encontrado"));
+        
+        // Verificar que el detalle pertenece al sector correcto
+        if (!detalle.getConteoSector().getId().equals(conteoSectorId)) {
+            throw new RuntimeException("El detalle no pertenece a este sector");
+        }
+        
+        System.out.println("🔍 ACTUALIZAR DEBUG: Detalle encontrado - ID: " + detalle.getId() + 
+                         ", Producto: " + detalle.getProducto().getNombre() + 
+                         ", Cantidad1 ANTES: " + detalle.getCantidadConteo1() + 
+                         ", Cantidad2 ANTES: " + detalle.getCantidadConteo2() +
+                         ", Formula1 ANTES: " + detalle.getFormulaCalculo1() +
+                         ", Formula2 ANTES: " + detalle.getFormulaCalculo2());
+        
+        // Actualizar la cantidad según el usuario
+        if (conteoSector.getUsuarioAsignado1().getId().equals(usuarioId)) {
+            System.out.println("🔄 ACTUALIZAR DEBUG: Usuario 1 - Actualizando cantidad de " + detalle.getCantidadConteo1() + " a " + cantidad);
+            detalle.setCantidadConteo1(cantidad);
+            detalle.setFormulaCalculo1(formulaCalculo);
+            detalle.setEstado(DetalleConteo.EstadoDetalle.CONTADO_1);
+        } else {
+            System.out.println("🔄 ACTUALIZAR DEBUG: Usuario 2 - Actualizando cantidad de " + detalle.getCantidadConteo2() + " a " + cantidad);
+            detalle.setCantidadConteo2(cantidad);
+            detalle.setFormulaCalculo2(formulaCalculo);
+            detalle.setEstado(DetalleConteo.EstadoDetalle.CONTADO_2);
+        }
+        
+        // Recalcular diferencias
+        calcularDiferencias(detalle);
+        
+        DetalleConteo resultado = detalleConteoRepository.save(detalle);
+        System.out.println("✅ ACTUALIZAR DEBUG: Detalle actualizado - Cantidad1 DESPUÉS: " + resultado.getCantidadConteo1() + 
+                         ", Cantidad2 DESPUÉS: " + resultado.getCantidadConteo2() +
+                         ", Formula1 DESPUÉS: " + resultado.getFormulaCalculo1() +
+                         ", Formula2 DESPUÉS: " + resultado.getFormulaCalculo2() +
+                         ", Estado: " + resultado.getEstado());
+        
+        // Actualizar el progreso real del sector
+        calcularProgresoReal(conteoSector);
+        conteoSectorRepository.save(conteoSector);
+        
+        return resultado;
+    }
+
+    /**
      * Agregar producto al reconteo (reemplaza cantidad existente)
      */
     public DetalleConteo agregarProductoAlReconteo(Long conteoSectorId, Long productoId, Integer cantidad, String formulaCalculo, Long usuarioId) {
@@ -1282,7 +1496,7 @@ public class InventarioCompletoService {
         }
         
         // Buscar entrada existente del usuario para este producto
-        List<DetalleConteo> detallesExistentes = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+        List<DetalleConteo> detallesExistentes = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
         
         System.out.println("🔍 RECONTEO DEBUG: Total detalles existentes: " + detallesExistentes.size());
         System.out.println("🔍 RECONTEO DEBUG: Buscando producto ID: " + productoId + " para usuario: " + usuarioId);
@@ -1451,7 +1665,7 @@ public class InventarioCompletoService {
     private boolean verificarDiferenciasEnConteo(ConteoSector conteoSector) {
         System.out.println("🔍 Verificando diferencias en conteo sector: " + conteoSector.getId());
         
-        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
         
         // Consolidar conteos por producto
         Map<Long, Integer> totalesUsuario1 = new HashMap<>();
@@ -1582,10 +1796,10 @@ public class InventarioCompletoService {
             
             // Comparar conteos de ambos usuarios (ahora ya son los reconteos)
             boolean hayDiferencias = verificarDiferenciasEnConteo(conteoSector);
-            
-            if (hayDiferencias) {
+                
+                if (hayDiferencias) {
                 // Hay diferencias, ir a estado CON_DIFERENCIAS para nuevo reconteo
-                conteoSector.setEstado(ConteoSector.EstadoConteo.CON_DIFERENCIAS);
+                    conteoSector.setEstado(ConteoSector.EstadoConteo.CON_DIFERENCIAS);
                 if (esReconteo) {
                     conteoSector.setObservaciones("Reconteo_" + LocalDateTime.now().toString()); // Marcar nuevo reconteo
                     System.out.println("⚠️ Diferencias persisten después del reconteo, iniciando nuevo reconteo");
@@ -1593,9 +1807,9 @@ public class InventarioCompletoService {
                     conteoSector.setObservaciones("Diferencias_Encontradas");
                     System.out.println("⚠️ Diferencias encontradas en conteo inicial, estado cambiado a CON_DIFERENCIAS");
                 }
-            } else {
-                // No hay diferencias, sector completado
-                conteoSector.setEstado(ConteoSector.EstadoConteo.COMPLETADO);
+                } else {
+                    // No hay diferencias, sector completado
+                    conteoSector.setEstado(ConteoSector.EstadoConteo.COMPLETADO);
                 if (esReconteo) {
                     conteoSector.setObservaciones("Reconteo_Completado");
                     System.out.println("✅ Sin diferencias después del reconteo, estado cambiado a COMPLETADO");
@@ -1636,7 +1850,7 @@ public class InventarioCompletoService {
         System.out.println("🔍 Buscando fecha de inicio de reconteo de manera alternativa...");
         
         // Obtener todos los detalles del sector ordenados por fecha
-        List<DetalleConteo> todosLosDetalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+        List<DetalleConteo> todosLosDetalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
         
         if (todosLosDetalles.isEmpty()) {
             System.out.println("⚠️ No hay detalles para determinar fecha de reconteo");
@@ -1712,7 +1926,7 @@ public class InventarioCompletoService {
         }
         
         // Obtener todos los detalles del sector
-        List<DetalleConteo> todosLosDetalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+        List<DetalleConteo> todosLosDetalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
         
         // Agrupar por producto
         Map<Long, List<DetalleConteo>> detallesPorProducto = new HashMap<>();
@@ -1819,9 +2033,11 @@ public class InventarioCompletoService {
      */
     public void calcularProgresoReal(ConteoSector conteoSector) {
         System.out.println("📊 Calculando progreso real para sector: " + conteoSector.getId());
+        System.out.println("📊 STACK TRACE - Llamada desde: " + Thread.currentThread().getStackTrace()[2].getMethodName());
         
         // Obtener todos los detalles de conteo para este sector
-        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
+        System.out.println("📊 DEBUG - Detalles encontrados (SIN eliminados): " + detalles.size());
         
         // Contar productos únicos que aparecen en DetalleConteo (estos son los productos que se están contando)
         Set<Long> productosUnicos = new HashSet<>();
@@ -1891,19 +2107,26 @@ public class InventarioCompletoService {
             productosConDiferencias == 0 && 
             productosContados.size() == totalProductos) {
             
-            System.out.println("🎉 ¡No hay diferencias! Completando automáticamente el sector: " + conteoSector.getId());
+            // 🔍 VERIFICACIÓN ADICIONAL: Ambos usuarios deben haber contado exactamente los mismos productos
+            boolean ambosContaronMismosProductos = verificarAmbosUsuariosContaronMismosProductos(conteoSector);
             
-            // Cambiar estado a COMPLETADO
-            conteoSector.setEstado(ConteoSector.EstadoConteo.COMPLETADO);
-            conteoSector.setFechaFinalizacion(LocalDateTime.now());
-            
-            // Limpiar observaciones de reconteo
-            if (conteoSector.getObservaciones() != null && 
-                conteoSector.getObservaciones().startsWith("Reconteo_")) {
-                conteoSector.setObservaciones("Reconteo completado automáticamente - Sin diferencias");
+            if (ambosContaronMismosProductos) {
+                System.out.println("🎉 ¡No hay diferencias y ambos usuarios contaron los mismos productos! Completando automáticamente el sector: " + conteoSector.getId());
+                
+                // Cambiar estado a COMPLETADO
+                conteoSector.setEstado(ConteoSector.EstadoConteo.COMPLETADO);
+                conteoSector.setFechaFinalizacion(LocalDateTime.now());
+                
+                // Limpiar observaciones de reconteo
+                if (conteoSector.getObservaciones() != null && 
+                    conteoSector.getObservaciones().startsWith("Reconteo_")) {
+                    conteoSector.setObservaciones("Reconteo completado automáticamente - Sin diferencias");
+                }
+                
+                System.out.println("✅ Sector completado automáticamente - Estado: " + conteoSector.getEstado());
+            } else {
+                System.out.println("⚠️ Los usuarios no contaron los mismos productos, manteniendo estado CON_DIFERENCIAS");
             }
-            
-            System.out.println("✅ Sector completado automáticamente - Estado: " + conteoSector.getEstado());
         }
         
         System.out.println("📊 Progreso calculado - Total productos únicos: " + totalProductos + 
@@ -1935,30 +2158,30 @@ public class InventarioCompletoService {
             
             if (esReconteo) {
                 // En reconteo, determinar qué usuario debe hacer reconteo
-                boolean esUsuario1 = conteoSector.getUsuarioAsignado1() != null && 
-                                    conteoSector.getUsuarioAsignado1().getId().equals(usuarioId);
-                boolean esUsuario2 = conteoSector.getUsuarioAsignado2() != null && 
-                                    conteoSector.getUsuarioAsignado2().getId().equals(usuarioId);
-                
+            boolean esUsuario1 = conteoSector.getUsuarioAsignado1() != null && 
+                                conteoSector.getUsuarioAsignado1().getId().equals(usuarioId);
+            boolean esUsuario2 = conteoSector.getUsuarioAsignado2() != null && 
+                                conteoSector.getUsuarioAsignado2().getId().equals(usuarioId);
+            
                 System.out.println("🔍 Usuario " + usuarioId + " - esUsuario1: " + esUsuario1 + ", esUsuario2: " + esUsuario2);
                 System.out.println("🔍 UsuarioAsignado1 ID: " + (conteoSector.getUsuarioAsignado1() != null ? conteoSector.getUsuarioAsignado1().getId() : "null"));
                 System.out.println("🔍 UsuarioAsignado2 ID: " + (conteoSector.getUsuarioAsignado2() != null ? conteoSector.getUsuarioAsignado2().getId() : "null"));
-                
+            
                 if (esUsuario1 || esUsuario2) {
                     // Verificar si este usuario ya finalizó el reconteo
                     boolean esElUsuarioQueFinalizo = false;
                     if (esUsuario1 && "Reconteo_Usuario1_Finalizado".equals(observaciones)) {
-                        esElUsuarioQueFinalizo = true;
+                esElUsuarioQueFinalizo = true;
                     } else if (esUsuario2 && "Reconteo_Usuario2_Finalizado".equals(observaciones)) {
-                        esElUsuarioQueFinalizo = true;
-                    }
-                    
-                    if (esElUsuarioQueFinalizo) {
+                esElUsuarioQueFinalizo = true;
+            }
+            
+            if (esElUsuarioQueFinalizo) {
                         System.out.println("⏳ Usuario " + usuarioId + " ya finalizó reconteo, esperando verificación");
                         return ConteoSector.EstadoConteo.ESPERANDO_VERIFICACION;
-                    } else {
+            } else {
                         System.out.println("🔄 Usuario " + usuarioId + " debe hacer reconteo, estado: CON_DIFERENCIAS");
-                        return ConteoSector.EstadoConteo.CON_DIFERENCIAS;
+                return ConteoSector.EstadoConteo.CON_DIFERENCIAS;
                     }
                 }
             }
@@ -2017,7 +2240,7 @@ public class InventarioCompletoService {
                         return ConteoSector.EstadoConteo.CON_DIFERENCIAS;
                     } else {
                         // Para conteo inicial, determinar si ha contado algo
-                        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+                        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
                         boolean tieneProductosContados = false;
                         
                         for (DetalleConteo detalle : detalles) {
@@ -2033,7 +2256,7 @@ public class InventarioCompletoService {
                         
                         if (tieneProductosContados) {
                             System.out.println("✅ Usuario " + usuarioId + " ha contado productos, estado: EN_PROGRESO");
-                            return ConteoSector.EstadoConteo.EN_PROGRESO;
+                        return ConteoSector.EstadoConteo.EN_PROGRESO;
                         } else {
                             System.out.println("ℹ️ Usuario " + usuarioId + " no ha contado productos, estado: PENDIENTE");
                             return ConteoSector.EstadoConteo.PENDIENTE;
@@ -2056,7 +2279,7 @@ public class InventarioCompletoService {
             }
             
             // Obtener todos los detalles de conteo para este sector
-            List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+            List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
             
             // Verificar si hay productos contados por este usuario específico
             boolean tieneProductosContados = false;
@@ -2091,7 +2314,7 @@ public class InventarioCompletoService {
             
             if (esUsuario1 || esUsuario2) {
                 // Obtener todos los detalles de conteo para este sector
-                List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+                List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
                 
                 // Verificar si hay productos contados por este usuario específico
                 boolean tieneProductosContados = false;
@@ -2120,5 +2343,115 @@ public class InventarioCompletoService {
         
         // Para otros estados, retornar el estado general
         return conteoSector.getEstado();
+    }
+
+    /**
+     * Calcular diferencias para un detalle de conteo
+     */
+    private void calcularDiferencias(DetalleConteo detalle) {
+        if (detalle == null) return;
+        
+        System.out.println("🔍 Calculando diferencias para detalle ID: " + detalle.getId());
+        
+        // Calcular diferencia entre conteos de usuarios
+        Integer cantidad1 = detalle.getCantidadConteo1();
+        Integer cantidad2 = detalle.getCantidadConteo2();
+        
+        if (cantidad1 != null && cantidad2 != null) {
+            int diferencia = cantidad1 - cantidad2;
+            detalle.setDiferenciaEntreConteos(diferencia);
+            System.out.println("🔍 Diferencia entre conteos: " + cantidad1 + " - " + cantidad2 + " = " + diferencia);
+        } else if (cantidad1 != null) {
+            detalle.setDiferenciaEntreConteos(cantidad1);
+            System.out.println("🔍 Solo usuario 1 contó: " + cantidad1);
+        } else if (cantidad2 != null) {
+            detalle.setDiferenciaEntreConteos(-cantidad2);
+            System.out.println("🔍 Solo usuario 2 contó: " + cantidad2);
+        } else {
+            detalle.setDiferenciaEntreConteos(0);
+            System.out.println("🔍 Ningún usuario contó");
+        }
+        
+        // Calcular diferencia con sistema
+        Integer stockSistema = detalle.getStockSistema();
+        if (stockSistema != null) {
+            Integer cantidadFinal = Math.max(
+                cantidad1 != null ? cantidad1 : 0,
+                cantidad2 != null ? cantidad2 : 0
+            );
+            int diferenciaSistema = stockSistema - cantidadFinal;
+            detalle.setDiferenciaSistema(diferenciaSistema);
+            System.out.println("🔍 Diferencia con sistema: " + stockSistema + " - " + cantidadFinal + " = " + diferenciaSistema);
+        }
+        
+        // Calcular valor de diferencia (precio unitario * diferencia)
+        if (detalle.getPrecioUnitario() != null && detalle.getDiferenciaEntreConteos() != null) {
+            java.math.BigDecimal precioUnitario = detalle.getPrecioUnitario();
+            java.math.BigDecimal diferencia = java.math.BigDecimal.valueOf(detalle.getDiferenciaEntreConteos());
+            java.math.BigDecimal valorDiferencia = precioUnitario.multiply(diferencia);
+            detalle.setValorDiferencia(valorDiferencia);
+            System.out.println("🔍 Valor diferencia: " + precioUnitario + " * " + diferencia + " = " + valorDiferencia);
+        }
+        
+        System.out.println("✅ Diferencias calculadas para detalle ID: " + detalle.getId());
+    }
+
+    /**
+     * Verificar si ambos usuarios contaron exactamente los mismos productos
+     */
+    private boolean verificarAmbosUsuariosContaronMismosProductos(ConteoSector conteoSector) {
+        System.out.println("🔍 Verificando si ambos usuarios contaron los mismos productos en sector: " + conteoSector.getId());
+        
+        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
+        
+        // Obtener productos contados por cada usuario
+        Set<Long> productosUsuario1 = new HashSet<>();
+        Set<Long> productosUsuario2 = new HashSet<>();
+        
+        for (DetalleConteo detalle : detalles) {
+            if (detalle.getProducto() == null) continue;
+            
+            Long productoId = detalle.getProducto().getId();
+            
+            // Verificar si el usuario 1 contó este producto
+            if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
+                productosUsuario1.add(productoId);
+            }
+            
+            // Verificar si el usuario 2 contó este producto
+            if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
+                productosUsuario2.add(productoId);
+            }
+        }
+        
+        System.out.println("🔍 Productos contados por Usuario 1: " + productosUsuario1.size() + " productos");
+        System.out.println("🔍 Productos contados por Usuario 2: " + productosUsuario2.size() + " productos");
+        
+        // Verificar si ambos usuarios contaron exactamente los mismos productos
+        boolean mismosProductos = productosUsuario1.equals(productosUsuario2);
+        
+        if (mismosProductos) {
+            System.out.println("✅ Ambos usuarios contaron exactamente los mismos productos");
+        } else {
+            System.out.println("⚠️ Los usuarios NO contaron los mismos productos:");
+            System.out.println("  - Solo Usuario 1 contó: " + productosUsuario1.size() + " productos");
+            System.out.println("  - Solo Usuario 2 contó: " + productosUsuario2.size() + " productos");
+            
+            // Mostrar productos únicos de cada usuario
+            Set<Long> soloUsuario1 = new HashSet<>(productosUsuario1);
+            soloUsuario1.removeAll(productosUsuario2);
+            
+            Set<Long> soloUsuario2 = new HashSet<>(productosUsuario2);
+            soloUsuario2.removeAll(productosUsuario1);
+            
+            if (!soloUsuario1.isEmpty()) {
+                System.out.println("  - Productos solo del Usuario 1: " + soloUsuario1);
+            }
+            if (!soloUsuario2.isEmpty()) {
+                System.out.println("  - Productos solo del Usuario 2: " + soloUsuario2);
+            }
+        }
+        
+        return mismosProductos;
     }
 }

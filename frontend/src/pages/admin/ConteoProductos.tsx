@@ -73,6 +73,13 @@ export default function ConteoProductos() {
   const [resultadoCalculo, setResultadoCalculo] = useState<number | null>(null);
   const [errorCalculo, setErrorCalculo] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+  
+  // Estados para edición
+  const [editandoDetalle, setEditandoDetalle] = useState<DetalleConteo | null>(null);
+  const [cantidadEditada, setCantidadEditada] = useState('');
+  const [formulaEditada, setFormulaEditada] = useState('');
+  const [resultadoEditado, setResultadoEditado] = useState<number | null>(null);
+  const [errorEditado, setErrorEditado] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -296,6 +303,29 @@ export default function ConteoProductos() {
     }
   };
 
+  const evaluarFormulaEditada = async (formula: string) => {
+    if (!formula.trim()) {
+      setResultadoEditado(null);
+      setErrorEditado(null);
+      return;
+    }
+
+    try {
+      // Evaluar la fórmula de forma segura
+      const resultado = eval(formula); // En producción usarías una librería segura
+      if (typeof resultado === 'number' && !isNaN(resultado)) {
+        setResultadoEditado(Math.round(resultado));
+        setErrorEditado(null);
+      } else {
+        setErrorEditado('La fórmula debe resultar en un número válido');
+        setResultadoEditado(null);
+      }
+    } catch (error) {
+      setErrorEditado('Error en la fórmula matemática');
+      setResultadoEditado(null);
+    }
+  };
+
   const agregarProductoAlConteo = async () => {
     if (!productoSeleccionado) {
       toast.error('Debe seleccionar un producto');
@@ -354,6 +384,10 @@ export default function ConteoProductos() {
       
         // Recargar datos para mostrar el producto agregado
       await cargarDatos();
+      
+      // ✅ NOTIFICAR CAMBIO: Marcar que hay cambios en el inventario completo
+      localStorage.setItem('inventario_completo_actualizado', Date.now().toString());
+      console.log('📢 Notificación enviada: inventario_completo_actualizado');
       } else {
         const errorData = await response.json();
         console.error('❌ Error agregando producto:', errorData);
@@ -362,6 +396,175 @@ export default function ConteoProductos() {
     } catch (error) {
       console.error('Error agregando producto:', error);
       toast.error('Error al agregar el producto al conteo');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const eliminarProductoDelConteo = async (detalleId: number) => {
+    try {
+      setGuardando(true);
+      
+      if (!datosUsuario?.empresaId || !id) {
+        toast.error('No se pudo obtener la información del conteo');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      // Llamar a la API para eliminar el producto del conteo
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${detalleId}`, {
+        method: 'DELETE',
+        headers
+      });
+
+      if (response.ok) {
+        console.log('✅ Producto eliminado del conteo');
+        toast.success('Producto eliminado del conteo exitosamente');
+        
+        // Recargar datos para actualizar la lista
+        await cargarDatos();
+        
+        // ✅ NOTIFICAR CAMBIO: Marcar que hay cambios en el inventario completo
+        localStorage.setItem('inventario_completo_actualizado', Date.now().toString());
+        console.log('📢 Notificación enviada: inventario_completo_actualizado');
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Error eliminando producto:', errorData);
+        toast.error(errorData.message || 'Error al eliminar el producto del conteo');
+      }
+    } catch (error) {
+      console.error('Error eliminando producto:', error);
+      toast.error('Error al eliminar el producto del conteo');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const iniciarEdicion = (detalle: DetalleConteo) => {
+    setEditandoDetalle(detalle);
+    // Determinar qué cantidad mostrar basándose en el usuario actual
+    const cantidadActual = datosUsuario?.id === conteoInfo?.usuarioAsignado1?.id 
+      ? detalle.cantidadConteo1 
+      : detalle.cantidadConteo2;
+    const formulaActual = datosUsuario?.id === conteoInfo?.usuarioAsignado1?.id 
+      ? detalle.formulaCalculo1 
+      : detalle.formulaCalculo2;
+    
+    setCantidadEditada(cantidadActual?.toString() || '');
+    setFormulaEditada(formulaActual || '');
+    setResultadoEditado(null);
+    setErrorEditado(null);
+    
+    // Evaluar la fórmula si existe
+    if (formulaActual) {
+      evaluarFormulaEditada(formulaActual);
+    }
+  };
+
+  const cancelarEdicion = () => {
+    setEditandoDetalle(null);
+    setCantidadEditada('');
+    setFormulaEditada('');
+    setResultadoEditado(null);
+    setErrorEditado(null);
+  };
+
+  const actualizarDetalleConteo = async () => {
+    console.log('🔍 FRONTEND: actualizarDetalleConteo iniciado');
+    
+    if (!editandoDetalle) {
+      toast.error('No hay detalle seleccionado para editar');
+      return;
+    }
+
+    let cantidadFinal = parseInt(cantidadEditada);
+    
+    if (formulaEditada.trim() && resultadoEditado !== null) {
+      cantidadFinal = resultadoEditado;
+    }
+
+    if (isNaN(cantidadFinal) || cantidadFinal < 0) {
+      toast.error('La cantidad debe ser un número válido mayor o igual a 0');
+      return;
+    }
+
+    try {
+      setGuardando(true);
+      
+      if (!datosUsuario?.empresaId || !id) {
+        toast.error('No se pudo obtener la información del conteo');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      // Llamar a la API para actualizar el detalle
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const url = `${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${editandoDetalle.id}`;
+      const body = {
+        cantidad: cantidadFinal,
+        formula: formulaEditada.trim() || null
+      };
+
+      console.log('🔍 FRONTEND: Enviando PUT request:', {
+        url: url,
+        method: 'PUT',
+        headers: headers,
+        body: body,
+        editandoDetalle: editandoDetalle,
+        cantidadEditada: cantidadEditada,
+        formulaEditada: formulaEditada,
+        cantidadFinal: cantidadFinal
+      });
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(body)
+      });
+
+      console.log('🔍 FRONTEND: Response status:', response.status, 'ok:', response.ok);
+      
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('✅ FRONTEND: Detalle actualizado exitosamente:', responseData);
+        toast.success('Producto actualizado exitosamente');
+        
+        // Cancelar edición
+        cancelarEdicion();
+        
+        // Recargar datos para mostrar los cambios
+        await cargarDatos();
+        
+        // ✅ NOTIFICAR CAMBIO: Marcar que hay cambios en el inventario completo
+        localStorage.setItem('inventario_completo_actualizado', Date.now().toString());
+        console.log('📢 Notificación enviada: inventario_completo_actualizado');
+      } else {
+        const errorData = await response.json();
+        console.error('❌ FRONTEND: Error actualizando detalle:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData: errorData
+        });
+        toast.error(errorData.message || 'Error al actualizar el producto');
+      }
+    } catch (error) {
+      console.error('❌ FRONTEND: Error en actualizarDetalleConteo:', {
+        error: error,
+        message: error.message,
+        stack: error.stack
+      });
+      toast.error('Error al actualizar el producto');
     } finally {
       setGuardando(false);
     }
@@ -484,7 +687,7 @@ export default function ConteoProductos() {
     }}>
       <NavbarAdmin
         onCerrarSesion={cerrarSesion}
-        empresaNombre={datosUsuario?.empresa?.nombre}
+        empresaNombre={datosUsuario?.empresaNombre}
         nombreAdministrador={datosUsuario?.nombre}
       />
 
@@ -970,16 +1173,59 @@ export default function ConteoProductos() {
                     }}>
                       {detalle.producto.nombre}
                     </h4>
-                    <span style={{
-                      background: obtenerColorEstado(detalle.estado),
-                      color: 'white',
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '1rem',
-                      fontSize: '0.8rem',
-                      fontWeight: '500'
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
                     }}>
-                      {obtenerTextoEstado(detalle.estado)}
-                    </span>
+                      <span style={{
+                        background: obtenerColorEstado(detalle.estado),
+                        color: 'white',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '1rem',
+                        fontSize: '0.8rem',
+                        fontWeight: '500'
+                      }}>
+                        {obtenerTextoEstado(detalle.estado)}
+                      </span>
+                      <button
+                        onClick={() => iniciarEdicion(detalle)}
+                        style={{
+                          background: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '0.25rem',
+                          padding: '0.25rem 0.5rem',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          marginRight: '0.5rem'
+                        }}
+                        title="Editar cantidad y fórmula"
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button
+                        onClick={() => eliminarProductoDelConteo(detalle.id)}
+                        style={{
+                          background: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '0.25rem',
+                          padding: '0.25rem 0.5rem',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}
+                        title="Eliminar producto del conteo"
+                      >
+                        🗑️ Eliminar
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{
@@ -1018,6 +1264,145 @@ export default function ConteoProductos() {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Formulario de edición */}
+        {editandoDetalle && (
+          <div style={{
+            background: 'white',
+            borderRadius: '1rem',
+            padding: '2rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            border: '2px solid #3b82f6',
+            marginBottom: '2rem'
+          }}>
+            <h3 style={{
+              margin: '0 0 1.5rem 0',
+              color: '#1e293b',
+              fontSize: '1.3rem',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              ✏️ Editando: {editandoDetalle.producto.nombre}
+            </h3>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+              gap: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  color: '#374151',
+                  fontWeight: '500'
+                }}>
+                  Cantidad:
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={cantidadEditada}
+                  onChange={(e) => setCantidadEditada(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  color: '#374151',
+                  fontWeight: '500'
+                }}>
+                  Fórmula de cálculo (opcional):
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: 112*4+3"
+                  value={formulaEditada}
+                  onChange={(e) => {
+                    setFormulaEditada(e.target.value);
+                    evaluarFormulaEditada(e.target.value);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem'
+                  }}
+                />
+                {formulaEditada && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    {errorEditado ? (
+                      <div style={{
+                        color: '#ef4444',
+                        fontSize: '0.9rem'
+                      }}>
+                        ❌ {errorEditado}
+                      </div>
+                    ) : resultadoEditado !== null ? (
+                      <div style={{
+                        color: '#10b981',
+                        fontSize: '0.9rem'
+                      }}>
+                        ✅ Resultado: {resultadoEditado}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={cancelarEdicion}
+                style={{
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '1rem',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={actualizarDetalleConteo}
+                disabled={guardando || !cantidadEditada}
+                style={{
+                  background: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '1rem',
+                  fontWeight: '500',
+                  cursor: guardando || !cantidadEditada ? 'not-allowed' : 'pointer',
+                  opacity: guardando || !cantidadEditada ? 0.7 : 1
+                }}
+              >
+                {guardando ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
             </div>
           </div>
         )}

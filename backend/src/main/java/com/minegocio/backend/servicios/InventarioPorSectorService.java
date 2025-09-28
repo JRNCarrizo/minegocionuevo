@@ -227,8 +227,8 @@ public class InventarioPorSectorService {
             throw new RuntimeException("El usuario no está asignado a este inventario");
         }
 
-        // Verificar que ambos usuarios han completado su conteo
-        List<DetalleConteo> detalles = detalleConteoRepository.findByInventarioPorSectorOrderByProductoNombre(inventario);
+        // Verificar que ambos usuarios han completado su conteo (solo no eliminados)
+        List<DetalleConteo> detalles = detalleConteoRepository.findByInventarioPorSectorAndEliminadoFalseOrderByProductoNombre(inventario);
         
         boolean usuario1Completo = detalles.stream().allMatch(d -> d.getCantidadConteo1() != null && d.getCantidadConteo1() >= 0);
         boolean usuario2Completo = detalles.stream().allMatch(d -> d.getCantidadConteo2() != null && d.getCantidadConteo2() >= 0);
@@ -321,7 +321,8 @@ public class InventarioPorSectorService {
      * Actualizar estadísticas del inventario
      */
     private void actualizarEstadisticasInventario(InventarioPorSector inventario) {
-        List<DetalleConteo> detalles = detalleConteoRepository.findByInventarioPorSectorOrderByProductoNombre(inventario);
+        // Solo obtener detalles que NO están eliminados
+        List<DetalleConteo> detalles = detalleConteoRepository.findByInventarioPorSectorAndEliminadoFalseOrderByProductoNombre(inventario);
         
         int productosContados = (int) detalles.stream()
                 .filter(d -> d.getCantidadConteo1() != null && d.getCantidadConteo2() != null)

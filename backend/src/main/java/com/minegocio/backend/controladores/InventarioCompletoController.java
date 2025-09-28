@@ -816,6 +816,52 @@ public class InventarioCompletoController {
     }
 
     /**
+     * Actualizar reconteo existente
+     */
+    @PutMapping("/{inventarioId}/conteos-sector/{conteoSectorId}/actualizar-reconteo")
+    public ResponseEntity<?> actualizarReconteo(
+            @PathVariable Long empresaId,
+            @PathVariable Long inventarioId,
+            @PathVariable Long conteoSectorId,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+        try {
+            System.out.println("🔄 DEBUG actualizarReconteo - Controlador:");
+            System.out.println("  - EmpresaId: " + empresaId);
+            System.out.println("  - InventarioId: " + inventarioId);
+            System.out.println("  - ConteoSectorId: " + conteoSectorId);
+            
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioId = usuarioPrincipal.getId();
+            Long productoId = Long.valueOf(request.get("productoId").toString());
+            Integer cantidad = Integer.valueOf(request.get("cantidad").toString());
+            String formulaCalculo = (String) request.get("formulaCalculo");
+            
+            System.out.println("  - UsuarioId: " + usuarioId);
+            System.out.println("  - ProductoId: " + productoId);
+            System.out.println("  - Cantidad: " + cantidad);
+            System.out.println("  - FormulaCalculo: " + formulaCalculo);
+            
+            DetalleConteo detalle = inventarioCompletoService.actualizarReconteo(
+                conteoSectorId, productoId, cantidad, formulaCalculo, usuarioId);
+            
+            System.out.println("✅ Reconteo actualizado exitosamente");
+            System.out.println("  - Detalle ID: " + detalle.getId());
+            System.out.println("  - Estado del detalle: " + detalle.getEstado());
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Reconteo actualizado exitosamente",
+                "productoId", detalle.getProducto().getId(),
+                "cantidad", detalle.getCantidadConteo1() != null ? detalle.getCantidadConteo1() : detalle.getCantidadConteo2(),
+                "estado", detalle.getEstado().toString()
+            ));
+        } catch (Exception e) {
+            System.err.println("❌ Error actualizando reconteo: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * Finalizar reconteo de sector
      */
     @PostMapping("/{inventarioId}/conteos-sector/{conteoSectorId}/finalizar-reconteo")
@@ -924,6 +970,82 @@ public class InventarioCompletoController {
     /**
      * Eliminar un detalle de conteo
      */
+    @PostMapping("/conteos-sector/{conteoSectorId}/detalles/marcar-eliminado")
+    public ResponseEntity<?> marcarDetalleComoEliminado(
+            @PathVariable Long empresaId,
+            @PathVariable Long conteoSectorId,
+            @RequestBody Map<String, Object> requestBody,
+            Authentication authentication) {
+        try {
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioId = usuarioPrincipal.getId();
+            
+            System.out.println("🗑️ Marcando detalle como eliminado (temporal):");
+            System.out.println("  - EmpresaId: " + empresaId);
+            System.out.println("  - ConteoSectorId: " + conteoSectorId);
+            System.out.println("  - UsuarioId: " + usuarioId);
+            System.out.println("  - RequestBody: " + requestBody);
+            
+            // Crear un detalle eliminado en la base de datos
+            boolean creado = inventarioCompletoService.crearDetalleEliminado(conteoSectorId, requestBody, usuarioId);
+            
+            if (creado) {
+                return ResponseEntity.ok(Map.of("mensaje", "Detalle marcado como eliminado exitosamente"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se pudo marcar el detalle como eliminado"));
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error marcando detalle como eliminado: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Actualizar detalle de conteo existente
+     */
+    @PutMapping("/conteos-sector/{conteoSectorId}/detalles/{detalleId}")
+    public ResponseEntity<?> actualizarDetalleConteo(
+            @PathVariable Long empresaId,
+            @PathVariable Long conteoSectorId,
+            @PathVariable Long detalleId,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+        try {
+            System.out.println("🔄 DEBUG actualizarDetalleConteo - Controlador:");
+            System.out.println("  - EmpresaId: " + empresaId);
+            System.out.println("  - ConteoSectorId: " + conteoSectorId);
+            System.out.println("  - DetalleId: " + detalleId);
+            
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioId = usuarioPrincipal.getId();
+            Integer cantidad = Integer.valueOf(request.get("cantidad").toString());
+            String formula = (String) request.get("formula");
+            
+            System.out.println("  - UsuarioId: " + usuarioId);
+            System.out.println("  - Cantidad: " + cantidad);
+            System.out.println("  - Formula: " + formula);
+            
+            DetalleConteo detalle = inventarioCompletoService.actualizarDetalleConteo(
+                conteoSectorId, detalleId, cantidad, formula, usuarioId);
+            
+            System.out.println("✅ Detalle de conteo actualizado exitosamente");
+            System.out.println("  - Detalle ID: " + detalle.getId());
+            System.out.println("  - Estado del detalle: " + detalle.getEstado());
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Producto actualizado exitosamente",
+                "detalleId", detalle.getId(),
+                "productoId", detalle.getProducto().getId(),
+                "cantidad", detalle.getCantidadConteo1() != null ? detalle.getCantidadConteo1() : detalle.getCantidadConteo2(),
+                "estado", detalle.getEstado().toString()
+            ));
+        } catch (Exception e) {
+            System.err.println("❌ Error actualizando detalle de conteo: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/conteos-sector/{conteoSectorId}/detalles/{detalleId}")
     public ResponseEntity<?> eliminarDetalleConteo(
             @PathVariable Long empresaId,

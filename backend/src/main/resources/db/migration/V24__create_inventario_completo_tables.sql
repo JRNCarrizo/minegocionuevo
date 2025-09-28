@@ -43,7 +43,7 @@ CREATE TABLE conteo_sector (
 CREATE TABLE detalle_conteo (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     conteo_sector_id BIGINT NOT NULL,
-    inventario_por_sector_id BIGINT,
+    -- inventario_por_sector_id BIGINT, -- Comentado temporalmente
     producto_id BIGINT NOT NULL,
     codigo_producto VARCHAR(255),
     nombre_producto VARCHAR(255),
@@ -64,7 +64,7 @@ CREATE TABLE detalle_conteo (
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (conteo_sector_id) REFERENCES conteo_sector(id) ON DELETE CASCADE,
-    FOREIGN KEY (inventario_por_sector_id) REFERENCES inventario_por_sector(id) ON DELETE CASCADE,
+    -- FOREIGN KEY (inventario_por_sector_id) REFERENCES inventario_por_sector(id) ON DELETE CASCADE, -- Comentado temporalmente
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
 );
 

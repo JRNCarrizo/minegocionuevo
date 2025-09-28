@@ -105,6 +105,34 @@ export default function InventarioCompleto() {
     }
   }, [location.pathname, datosUsuario]);
 
+  // ✅ ESCUCHAR CAMBIOS: Recargar datos cuando hay cambios en el inventario
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const inventarioActualizado = localStorage.getItem('inventario_completo_actualizado');
+      if (inventarioActualizado && datosUsuario) {
+        console.log('📢 Cambio detectado en inventario completo, recargando datos...');
+        cargarDatos();
+        // Limpiar la notificación después de procesarla
+        localStorage.removeItem('inventario_completo_actualizado');
+      }
+    };
+
+    // Escuchar cambios en localStorage
+    window.addEventListener('storage', handleStorageChange);
+    
+    // También verificar al montar el componente por si hay cambios pendientes
+    const inventarioActualizado = localStorage.getItem('inventario_completo_actualizado');
+    if (inventarioActualizado && datosUsuario) {
+      console.log('📢 Cambio pendiente detectado al montar, recargando datos...');
+      cargarDatos();
+      localStorage.removeItem('inventario_completo_actualizado');
+    }
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [datosUsuario]);
+
   // Manejo de teclas para navegación
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1423,15 +1451,24 @@ export default function InventarioCompleto() {
                                 });
                                 
                                 
-                                const puedeIniciarConteo = esAsignado && conteo && (
-                                  // Si el usuario no ha iniciado su conteo (estado PENDIENTE)
-                                  estadoUsuarioActual === 'PENDIENTE' ||
-                                  // Si el usuario ya inició su conteo (estado EN_PROGRESO)
-                                  estadoUsuarioActual === 'EN_PROGRESO' ||
-                                  // Si hay diferencias y necesita reconteo (estado CON_DIFERENCIAS)
-                                  conteo.estado === 'CON_DIFERENCIAS' ||
-                                  // Si el estado específico del usuario es CON_DIFERENCIAS (para reconteo)
-                                  estadoUsuarioActual === 'CON_DIFERENCIAS'
+                                // ✅ CORRECCIÓN: Verificar si el usuario ya completó su reconteo
+                                const usuarioYaCompletoReconteo = (esUsuario1 && conteo?.conteo1Finalizado) || 
+                                                               (esUsuario2 && conteo?.conteo2Finalizado);
+                                
+                                const puedeIniciarConteo = esAsignado && conteo && !usuarioYaCompletoReconteo && (
+                                  // ✅ CORREGIDO: No permitir iniciar conteo si el sector ya está completado
+                                  conteo.estado !== 'COMPLETADO' && (
+                                    // Si el usuario no ha iniciado su conteo (estado PENDIENTE)
+                                    estadoUsuarioActual === 'PENDIENTE' ||
+                                    // Si el usuario ya inició su conteo (estado EN_PROGRESO)
+                                    estadoUsuarioActual === 'EN_PROGRESO' ||
+                                    // Si hay diferencias y necesita reconteo (estado CON_DIFERENCIAS)
+                                    conteo.estado === 'CON_DIFERENCIAS' ||
+                                    // Si el estado específico del usuario es CON_DIFERENCIAS (para reconteo)
+                                    estadoUsuarioActual === 'CON_DIFERENCIAS' ||
+                                    // ✅ CORRECCIÓN: Solo permitir reconteo cuando el usuario específico debe hacer reconteo
+                                    (conteo.estado === 'ESPERANDO_SEGUNDO_RECONTEO' && estadoUsuarioActual === 'ESPERANDO_SEGUNDO_RECONTEO')
+                                  )
                                 );
                                 
                                 // Mostrar botón si puede iniciar conteo O si es administrador y no hay usuarios asignados
@@ -1451,6 +1488,11 @@ export default function InventarioCompleto() {
                                   productosContadosUsuarioActual: productosContadosUsuarioActual,
                                   puedeIniciarConteo: puedeIniciarConteo,
                                   mostrarBoton: mostrarBoton,
+                                  // ✅ DEBUG: Información adicional para reconteo
+                                  conteo1Finalizado: conteo?.conteo1Finalizado,
+                                  conteo2Finalizado: conteo?.conteo2Finalizado,
+                                  ambosUsuariosFinalizaron: conteo?.conteo1Finalizado && conteo?.conteo2Finalizado,
+                                  usuarioYaCompletoReconteo: usuarioYaCompletoReconteo,
                                   // Debug específico para CON_DIFERENCIAS
                                   esEstadoConDiferencias: conteo?.estado === 'CON_DIFERENCIAS',
                                   esAsignadoYConDiferencias: esAsignado && conteo?.estado === 'CON_DIFERENCIAS'
@@ -1509,7 +1551,17 @@ export default function InventarioCompleto() {
                                       const esUsuario1 = conteo && conteo.usuario1Id === datosUsuario?.id;
                                       const estadoUsuarioActual = esUsuario1 ? conteo?.estadoUsuario1 : conteo?.estadoUsuario2;
                                       
-                                      const esReconteo = conteo.estado === 'CON_DIFERENCIAS' || estadoUsuarioActual === 'CON_DIFERENCIAS';
+                                      // ✅ CORREGIDO: No permitir acceso a reconteo si el sector ya está completado
+                                      if (conteo.estado === 'COMPLETADO') {
+                                        console.log('⚠️ Sector ya completado, no se puede acceder a reconteo');
+                                        toast('Este sector ya está completado. No se puede hacer reconteo.');
+                                        return;
+                                      }
+                                      
+                                      const esReconteo = conteo.estado === 'CON_DIFERENCIAS' || 
+                                                         estadoUsuarioActual === 'CON_DIFERENCIAS' ||
+                                                         conteo.estado === 'ESPERANDO_SEGUNDO_RECONTEO' ||
+                                                         estadoUsuarioActual === 'ESPERANDO_SEGUNDO_RECONTEO';
                                       
                                       if (esReconteo) {
                                         console.log('🔍 Navegando al reconteo con modo reconteo');
@@ -1534,8 +1586,9 @@ export default function InventarioCompleto() {
                                       const esUsuario2 = conteo && conteo.usuario2Id === datosUsuario?.id;
                                       const esUsuarioAsignado = esUsuario1 || esUsuario2;
                                       
-                                      // Si el estado es EN_PROGRESO o ESPERANDO_VERIFICACION pero el usuario está asignado, usar color azul para continuar
-                                      if ((conteo?.estado === 'EN_PROGRESO' || conteo?.estado === 'ESPERANDO_VERIFICACION') && esUsuarioAsignado) {
+                                      // Si el estado es EN_PROGRESO, ESPERANDO_VERIFICACION, ESPERANDO_SEGUNDO_RECONTEO o COMPARANDO_RECONTEO pero el usuario está asignado, usar color azul para continuar
+                                      if ((conteo?.estado === 'EN_PROGRESO' || conteo?.estado === 'ESPERANDO_VERIFICACION' || 
+                                           conteo?.estado === 'ESPERANDO_SEGUNDO_RECONTEO' || conteo?.estado === 'COMPARANDO_RECONTEO') && esUsuarioAsignado) {
                                         return '#3b82f6'; // Azul para continuar conteo
                                       }
                                       
@@ -1565,7 +1618,8 @@ export default function InventarioCompleto() {
                                       const esUsuario2 = conteo && conteo.usuario2Id === datosUsuario?.id;
                                       const esUsuarioAsignado = esUsuario1 || esUsuario2;
                                       
-                                      if ((conteo?.estado === 'EN_PROGRESO' || conteo?.estado === 'ESPERANDO_VERIFICACION') && esUsuarioAsignado) {
+                                      if ((conteo?.estado === 'EN_PROGRESO' || conteo?.estado === 'ESPERANDO_VERIFICACION' || 
+                                           conteo?.estado === 'ESPERANDO_SEGUNDO_RECONTEO' || conteo?.estado === 'COMPARANDO_RECONTEO') && esUsuarioAsignado) {
                                         e.currentTarget.style.background = '#2563eb'; // Azul para continuar
                                       } else {
                                         e.currentTarget.style.background = '#059669'; // Verde para iniciar
@@ -1587,7 +1641,8 @@ export default function InventarioCompleto() {
                                       const esUsuario2 = conteo && conteo.usuario2Id === datosUsuario?.id;
                                       const esUsuarioAsignado = esUsuario1 || esUsuario2;
                                       
-                                      if ((conteo?.estado === 'EN_PROGRESO' || conteo?.estado === 'ESPERANDO_VERIFICACION') && esUsuarioAsignado) {
+                                      if ((conteo?.estado === 'EN_PROGRESO' || conteo?.estado === 'ESPERANDO_VERIFICACION' || 
+                                           conteo?.estado === 'ESPERANDO_SEGUNDO_RECONTEO' || conteo?.estado === 'COMPARANDO_RECONTEO') && esUsuarioAsignado) {
                                         e.currentTarget.style.background = '#3b82f6'; // Azul para continuar
                                       } else {
                                         e.currentTarget.style.background = '#10b981'; // Verde para iniciar
@@ -1610,6 +1665,11 @@ export default function InventarioCompleto() {
                                     // Verificar si el usuario está asignado para obtener su estado específico
                                     const esUsuario1Local = conteo && conteo.usuario1Id === datosUsuario?.id;
                                     const estadoUsuarioActual = esUsuario1Local ? conteo?.estadoUsuario1 : conteo?.estadoUsuario2;
+                                    
+                                    // ✅ CORREGIDO: No mostrar "Revisar y Recontar" si el sector ya está completado
+                                    if (conteo?.estado === 'COMPLETADO') {
+                                      return '✅ Completado';
+                                    }
                                     
                                     // Si el estado general es CON_DIFERENCIAS o el estado del usuario es CON_DIFERENCIAS
                                     if (conteo?.estado === 'CON_DIFERENCIAS' || estadoUsuarioActual === 'CON_DIFERENCIAS') {
@@ -1678,6 +1738,10 @@ export default function InventarioCompleto() {
                                       return '▶️ Iniciar Conteo';
                                     } else if (estadoUsuarioActualLocal === 'ESPERANDO_VERIFICACION') {
                                       return '▶️ Iniciar Conteo';
+                                    } else if (estadoUsuarioActualLocal === 'ESPERANDO_SEGUNDO_RECONTEO') {
+                                      return '🔄 Continuar Reconteo';
+                                    } else if (estadoUsuarioActualLocal === 'COMPARANDO_RECONTEO') {
+                                      return '⏳ Comparando Reconteos';
                                     } else if (estadoUsuarioActualLocal === 'EN_PROGRESO') {
                                       return '🔄 Continuar Conteo';
                                     } else {
@@ -1687,9 +1751,11 @@ export default function InventarioCompleto() {
                                 </button>
                               )}
                               
-                              {/* Mensaje cuando está esperando verificación */}
+                              {/* Mensaje cuando está esperando verificación o en reconteo */}
                               {(() => {
-                                const mostrarMensaje = conteo && conteo.estado === 'ESPERANDO_VERIFICACION';
+                                const mostrarMensaje = conteo && (conteo.estado === 'ESPERANDO_VERIFICACION' || 
+                                                                    conteo.estado === 'ESPERANDO_SEGUNDO_RECONTEO' || 
+                                                                    conteo.estado === 'COMPARANDO_RECONTEO');
                                 const esUsuario1 = conteo && conteo.usuario1Id === datosUsuario?.id;
                                 const esUsuario2 = conteo && conteo.usuario2Id === datosUsuario?.id;
                                 
@@ -1720,6 +1786,10 @@ export default function InventarioCompleto() {
                                     
                                     if (estadoUsuarioActual === 'ESPERANDO_VERIFICACION') {
                                       return '✅ Tu conteo está completo. Esperando verificación del segundo usuario';
+                                    } else if (estadoUsuarioActual === 'ESPERANDO_SEGUNDO_RECONTEO') {
+                                      return '✅ Tu reconteo está completo. Esperando que el segundo usuario complete su reconteo';
+                                    } else if (estadoUsuarioActual === 'COMPARANDO_RECONTEO') {
+                                      return '⏳ Sistema comparando reconteos. Por favor espera...';
                                     } else if (estadoUsuarioActual === 'EN_PROGRESO' || estadoUsuarioActual === 'PENDIENTE') {
                                       return '🔄 Es tu turno de hacer el conteo de verificación';
                                     } else {
