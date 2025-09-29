@@ -982,7 +982,8 @@ public class InventarioCompletoController {
             Long usuarioId = usuarioPrincipal.getId();
             
             // Verificar que el usuario está asignado al sector
-            ConteoSector conteoSector = inventarioCompletoService.obtenerConteoSector(conteoSectorId);
+            ConteoSector conteoSector = inventarioCompletoService.obtenerConteoSector(conteoSectorId)
+                .orElseThrow(() -> new RuntimeException("Conteo de sector no encontrado"));
             
             if (!conteoSector.getUsuarioAsignado1().getId().equals(usuarioId) && 
                 !conteoSector.getUsuarioAsignado2().getId().equals(usuarioId)) {
