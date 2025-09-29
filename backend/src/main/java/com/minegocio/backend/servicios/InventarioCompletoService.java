@@ -1746,6 +1746,80 @@ public class InventarioCompletoService {
     }
 
     /**
+     * Actualizar reconteo existente
+     */
+    public DetalleConteo actualizarReconteo(Long conteoSectorId, Long productoId, Integer cantidad, String formulaCalculo, Long usuarioId) {
+        System.out.println("🔄 ACTUALIZAR RECONTEO: Actualizando reconteo - sector: " + conteoSectorId + ", producto: " + productoId + ", cantidad: " + cantidad);
+        
+        ConteoSector conteoSector = conteoSectorRepository.findById(conteoSectorId)
+            .orElseThrow(() -> new RuntimeException("Conteo de sector no encontrado"));
+        
+        System.out.println("🔍 ACTUALIZAR RECONTEO DEBUG: ConteoSector encontrado - ID: " + conteoSector.getId());
+        
+        if (!conteoSector.getUsuarioAsignado1().getId().equals(usuarioId) && 
+            !conteoSector.getUsuarioAsignado2().getId().equals(usuarioId)) {
+            throw new RuntimeException("El usuario no está asignado a este conteo");
+        }
+        
+        // Buscar el detalle existente para este producto
+        List<DetalleConteo> detallesExistentes = detalleConteoRepository.findByConteoSectorOrderByProductoNombre(conteoSector);
+        DetalleConteo detalleExistente = null;
+        
+        for (DetalleConteo detalle : detallesExistentes) {
+            if (detalle.getProducto().getId().equals(productoId) && !detalle.getEliminado()) {
+                // Verificar si es del usuario correcto
+                boolean esDelUsuario = false;
+                if (usuarioId.equals(conteoSector.getUsuarioAsignado1().getId())) {
+                    if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
+                        esDelUsuario = true;
+                    }
+                } else if (usuarioId.equals(conteoSector.getUsuarioAsignado2().getId())) {
+                    if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
+                        esDelUsuario = true;
+                    }
+                }
+                
+                if (esDelUsuario) {
+                    detalleExistente = detalle;
+                    break;
+                }
+            }
+        }
+        
+        if (detalleExistente == null) {
+            throw new RuntimeException("No se encontró el detalle de reconteo para actualizar");
+        }
+        
+        System.out.println("🔍 ACTUALIZAR RECONTEO DEBUG: Detalle encontrado - ID: " + detalleExistente.getId());
+        
+        // Actualizar el detalle según el usuario
+        if (usuarioId.equals(conteoSector.getUsuarioAsignado1().getId())) {
+            System.out.println("🔄 ACTUALIZAR RECONTEO DEBUG: Usuario 1 - Actualizando cantidad de " + detalleExistente.getCantidadConteo1() + " a " + cantidad);
+            detalleExistente.setCantidadConteo1(cantidad);
+            detalleExistente.setFormulaCalculo1(formulaCalculo);
+            detalleExistente.setEstado(DetalleConteo.EstadoDetalle.CONTADO_1);
+        } else {
+            System.out.println("🔄 ACTUALIZAR RECONTEO DEBUG: Usuario 2 - Actualizando cantidad de " + detalleExistente.getCantidadConteo2() + " a " + cantidad);
+            detalleExistente.setCantidadConteo2(cantidad);
+            detalleExistente.setFormulaCalculo2(formulaCalculo);
+            detalleExistente.setEstado(DetalleConteo.EstadoDetalle.CONTADO_2);
+        }
+        
+        // Recalcular diferencias
+        calcularDiferencias(detalleExistente);
+        
+        DetalleConteo resultado = detalleConteoRepository.save(detalleExistente);
+        
+        System.out.println("✅ ACTUALIZAR RECONTEO DEBUG: Reconteo actualizado exitosamente - ID: " + resultado.getId());
+        
+        // Recalcular progreso del sector
+        calcularProgresoReal(conteoSector);
+        conteoSectorRepository.save(conteoSector);
+        
+        return resultado;
+    }
+
+    /**
      * Finalizar reconteo de sector (para el flujo de reconteo)
      */
     @Transactional

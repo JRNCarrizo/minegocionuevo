@@ -968,6 +968,40 @@ public class InventarioCompletoController {
     }
 
     /**
+     * Obtener datos de referencia para reconteo
+     */
+    @GetMapping("/conteos-sector/{conteoSectorId}/datos-referencia-reconteo")
+    public ResponseEntity<?> obtenerDatosReferenciaReconteo(
+            @PathVariable Long empresaId,
+            @PathVariable Long conteoSectorId,
+            Authentication authentication) {
+        try {
+            System.out.println("🔍 Obteniendo datos de referencia para reconteo - empresaId: " + empresaId + ", conteoSectorId: " + conteoSectorId);
+            
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioId = usuarioPrincipal.getId();
+            
+            // Verificar que el usuario está asignado al sector
+            ConteoSector conteoSector = inventarioCompletoService.obtenerConteoSector(conteoSectorId);
+            
+            if (!conteoSector.getUsuarioAsignado1().getId().equals(usuarioId) && 
+                !conteoSector.getUsuarioAsignado2().getId().equals(usuarioId)) {
+                return ResponseEntity.status(403).body(Map.of("error", "No autorizado para acceder a este reconteo"));
+            }
+            
+            // Obtener detalles consolidados para reconteo
+            List<Map<String, Object>> detallesConsolidados = inventarioCompletoService.obtenerDetallesParaComparacion(conteoSectorId, usuarioId);
+            
+            System.out.println("✅ Datos de referencia para reconteo obtenidos: " + detallesConsolidados.size() + " productos");
+            
+            return ResponseEntity.ok(detallesConsolidados);
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo datos de referencia para reconteo: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * Eliminar un detalle de conteo
      */
     @PostMapping("/conteos-sector/{conteoSectorId}/detalles/marcar-eliminado")
