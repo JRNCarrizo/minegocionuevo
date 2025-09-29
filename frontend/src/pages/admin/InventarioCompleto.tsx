@@ -1852,22 +1852,24 @@ export default function InventarioCompleto() {
                                 </button>
                               )}
 
-                              {/* Botón para ver detalle de primer conteo cuando el estado es COMPLETADO o CON_DIFERENCIAS */}
+                              {/* Botón para ver detalle de conteo cuando el estado es COMPLETADO o CON_DIFERENCIAS */}
                               {(() => {
                                 const estadoFinal = conteo && (conteo.estado === 'COMPLETADO' || conteo.estado === 'CON_DIFERENCIAS');
                                 const esAsignado = conteo && esUsuarioAsignadoAlSector(conteo);
+                                const esAdmin = datosUsuario?.rol === 'ADMINISTRADOR';
                                 
-                                console.log('🔍 DEBUG BOTÓN PRIMER CONTEO:', {
+                                console.log('🔍 DEBUG BOTÓN VER DETALLE:', {
                                   estado: conteo?.estado,
                                   estadoFinal: estadoFinal,
-                                  esAsignado: esAsignado
+                                  esAsignado: esAsignado,
+                                  esAdmin: esAdmin
                                 });
                                 
-                                return estadoFinal && esAsignado;
+                                return estadoFinal && (esAsignado || esAdmin);
                               })() && (
                                 <button
                                   onClick={() => {
-                                    console.log('🖱️ CLIC EN VER PRIMER CONTEO:', {
+                                    console.log('🖱️ CLIC EN VER DETALLE:', {
                                       conteoId: conteo?.id,
                                       estado: conteo?.estado
                                     });
@@ -1877,7 +1879,7 @@ export default function InventarioCompleto() {
                                     }
                                   }}
                                   style={{
-                                    background: '#3b82f6', // Azul para primer conteo
+                                    background: '#3b82f6', // Azul para ver detalle
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '0.25rem',
@@ -1898,7 +1900,7 @@ export default function InventarioCompleto() {
                                     e.currentTarget.style.transform = 'scale(1)';
                                   }}
                                 >
-                                  🔍 Ver Detalle de Primer Conteo
+                                  🔍 Ver Detalle de Conteo
                                 </button>
                               )}
                             </div>

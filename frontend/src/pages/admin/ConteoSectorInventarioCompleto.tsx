@@ -589,7 +589,7 @@ export default function ConteoSectorInventarioCompleto() {
               console.log('✅ Recuperando datos desde respaldo');
               setDetallesConteo(datosRespaldo.detalles || []);
               setConteoInfo(datosRespaldo.conteoInfo || conteoData);
-              toast.warning('⚠️ Datos recuperados desde respaldo local');
+              toast.success('⚠️ Datos recuperados desde respaldo local');
             } else {
               console.log('⚠️ Respaldo muy antiguo, no se recupera');
               setDetallesConteo([]);
@@ -750,6 +750,34 @@ export default function ConteoSectorInventarioCompleto() {
       conteoId: id,
       empresaId: datosUsuario?.empresaId
     });
+    
+    // ✅ VERIFICAR SI EL PRODUCTO YA EXISTE
+    const productoExistente = detallesConteo.find(d => d.producto?.id === producto.id);
+    
+    console.log('🔍 DEBUG DETECCIÓN PRODUCTO:', {
+      productoId: producto.id,
+      productoNombre: producto.nombre,
+      totalDetalles: detallesConteo.length,
+      detallesExistentes: detallesConteo.map(d => ({
+        id: d.id,
+        productoId: d.producto?.id,
+        productoNombre: d.producto?.nombre,
+        cantidadConteo1: d.cantidadConteo1,
+        cantidadConteo2: d.cantidadConteo2
+      })),
+      productoExistente: productoExistente ? {
+        id: productoExistente.id,
+        cantidadConteo1: productoExistente.cantidadConteo1,
+        cantidadConteo2: productoExistente.cantidadConteo2
+      } : null
+    });
+    
+    if (productoExistente) {
+      console.log('🔍 Producto ya existe, usando flujo de edición en lugar de agregar nuevo');
+      // Si el producto ya existe, usar el flujo de edición
+      await editarProductoExistente(productoExistente, cantidad, formulaCalculo);
+      return;
+    }
       
       // Crear el detalle de conteo local con timestamp único
       const timestamp = Date.now();
@@ -846,6 +874,143 @@ export default function ConteoSectorInventarioCompleto() {
     // ✅ CORRECCIÓN: No sincronizar en segundo plano porque el producto ya se agregó exitosamente
     // La sincronización redundante estaba causando registros duplicados
     console.log('✅ Producto agregado exitosamente - no se requiere sincronización adicional');
+  };
+
+  // ✅ NUEVA FUNCIÓN: Editar producto existente
+  const editarProductoExistente = async (detalleExistente: DetalleConteo, cantidad: number, formulaCalculo?: string) => {
+    console.log('🔄 Editando producto existente:', {
+      detalleId: detalleExistente.id,
+      productoId: detalleExistente.producto?.id,
+      cantidadAnterior: detalleExistente.cantidadConteo1 || detalleExistente.cantidadConteo2,
+      cantidadNueva: cantidad
+    });
+
+    // Determinar si es usuario 1 o 2
+    const esUsuario1 = conteoInfo?.usuario1Id === datosUsuario?.id;
+    const esUsuario2 = conteoInfo?.usuario2Id === datosUsuario?.id;
+
+    // Actualizar el estado local inmediatamente
+    setDetallesConteo(prev => {
+      const nuevaLista = prev.map(detalle => {
+        if (detalle.id === detalleExistente.id) {
+          const detalleActualizado = { ...detalle };
+          
+          if (esUsuario1) {
+            detalleActualizado.cantidadConteo1 = cantidad;
+            detalleActualizado.formulaCalculo1 = formulaCalculo || undefined;
+          } else if (esUsuario2) {
+            detalleActualizado.cantidadConteo2 = cantidad;
+            detalleActualizado.formulaCalculo2 = formulaCalculo || undefined;
+          }
+          return detalleActualizado;
+        }
+        return detalle;
+      });
+
+      // Guardar en localStorage
+      const progreso = {
+        conteoInfo,
+        detallesConteo: nuevaLista,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(`conteo-progreso-${id}`, JSON.stringify(progreso));
+
+      return nuevaLista;
+    });
+
+    // Sincronizar con el backend usando el flujo de actualización
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = API_CONFIG.getBaseUrl();
+      
+      // Buscar el detalle real en el backend usando el producto ID
+      const detallesResponse = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/conteos-sector/${id}/detalles`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (detallesResponse.ok) {
+        const detallesBackend = await detallesResponse.json();
+        const detalleReal = detallesBackend.find((d: any) => d.productoId === detalleExistente.producto?.id);
+        
+        if (detalleReal) {
+          console.log('🔍 Detalle real encontrado para edición:', {
+            detalleId: detalleReal.id,
+            productoId: detalleReal.productoId
+          });
+          
+          // Actualizar el detalle real en el backend
+          const updateResponse = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${detalleReal.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              cantidad: cantidad,
+              formula: formulaCalculo || null
+            })
+          });
+          
+          if (updateResponse.ok) {
+            console.log('✅ Producto editado y sincronizado con backend exitosamente');
+            toast.success('Producto actualizado exitosamente');
+            
+            // ✅ ACTUALIZAR SOLO EL DETALLE ESPECÍFICO en lugar de recargar toda la pantalla
+            const detalleActualizado = await updateResponse.json();
+            setDetallesConteo(prev => prev.map(detalle => {
+              if (detalle.id === detalleExistente.id) {
+                return {
+                  ...detalle,
+                  cantidadConteo1: detalleActualizado.cantidadConteo1 || detalle.cantidadConteo1,
+                  cantidadConteo2: detalleActualizado.cantidadConteo2 || detalle.cantidadConteo2,
+                  formulaCalculo1: detalleActualizado.formulaCalculo1 || detalle.formulaCalculo1,
+                  formulaCalculo2: detalleActualizado.formulaCalculo2 || detalle.formulaCalculo2,
+                  estado: detalleActualizado.estado || detalle.estado
+                };
+              }
+              return detalle;
+            }));
+            
+            // Actualizar localStorage
+            const progreso = {
+              conteoInfo,
+              detallesConteo: detallesConteo.map(detalle => {
+                if (detalle.id === detalleExistente.id) {
+                  return {
+                    ...detalle,
+                    cantidadConteo1: detalleActualizado.cantidadConteo1 || detalle.cantidadConteo1,
+                    cantidadConteo2: detalleActualizado.cantidadConteo2 || detalle.cantidadConteo2,
+                    formulaCalculo1: detalleActualizado.formulaCalculo1 || detalle.formulaCalculo1,
+                    formulaCalculo2: detalleActualizado.formulaCalculo2 || detalle.formulaCalculo2,
+                    estado: detalleActualizado.estado || detalle.estado
+                  };
+                }
+                return detalle;
+              }),
+              timestamp: Date.now()
+            };
+            localStorage.setItem(`conteo-progreso-${id}`, JSON.stringify(progreso));
+            
+          } else {
+            const errorData = await updateResponse.json();
+            console.error('❌ Error actualizando producto en backend:', errorData);
+            toast.error('Error al actualizar en el servidor');
+          }
+        } else {
+          console.error('❌ No se encontró el detalle real en el backend');
+          toast.error('Error: No se encontró el detalle en el servidor');
+        }
+      } else {
+        console.error('❌ Error obteniendo detalles del backend');
+        toast.error('Error al obtener datos del servidor');
+      }
+    } catch (error) {
+      console.error('❌ Error en edición de producto:', error);
+      toast.error('Error al sincronizar con el servidor');
+    }
   };
 
   const buscarProductos = (valor: string) => {
@@ -1217,51 +1382,113 @@ export default function ConteoSectorInventarioCompleto() {
       return nuevaLista;
     });
 
-    // 🔄 SINCRONIZAR CON EL BACKEND
+    // ✅ SOLUCIÓN: Enviar cambios al backend usando el producto ID
     const detalleEditado = detallesConteo.find(d => d.id === editandoDetalle);
-    if (detalleEditado) {
+    if (detalleEditado && detalleEditado.producto?.id) {
       try {
         const token = localStorage.getItem('token');
         const baseUrl = API_CONFIG.getBaseUrl();
         
-        console.log('🔄 FRONTEND - Llamando al endpoint actualizar-detalle:');
-        console.log('  - URL: ' + `${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${detalleEditado.id}`);
-        console.log('  - Method: PUT');
-        console.log('  - Body: ' + JSON.stringify({
-            cantidad: cantidadFinal,
-            formula: formulaFinal
-          }));
-        
-        // Llamar al endpoint para actualizar en el backend
-        const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${detalleEditado.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            cantidad: cantidadFinal,
-            formula: formulaFinal
-          })
+        console.log('🔄 Enviando cambios al backend usando producto ID:', {
+          productoId: detalleEditado.producto.id,
+          cantidadFinal: cantidadFinal,
+          formulaFinal: formulaFinal,
+          conteoSectorId: id
         });
-
-        console.log('📡 FRONTEND - Respuesta del endpoint:');
-        console.log('  - Status: ' + response.status);
-        console.log('  - OK: ' + response.ok);
-
-        if (response.ok) {
-          console.log('✅ Edición sincronizada con el backend');
+        
+        // Buscar el detalle real en el backend usando el producto ID
+        const detallesResponse = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/conteos-sector/${id}/detalles`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (detallesResponse.ok) {
+          const detallesBackend = await detallesResponse.json();
+          const detalleReal = detallesBackend.find((d: any) => d.productoId === detalleEditado.producto.id);
+          
+          if (detalleReal) {
+            console.log('🔍 Detalle real encontrado en backend:', {
+              detalleId: detalleReal.id,
+              productoId: detalleReal.productoId
+            });
+            
+            // Actualizar el detalle real en el backend
+            const updateResponse = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${detalleReal.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                cantidad: cantidadFinal,
+                formula: formulaFinal
+              })
+            });
+            
+            if (updateResponse.ok) {
+              console.log('✅ Cambios enviados al backend exitosamente');
+              
+              // ✅ ACTUALIZAR SOLO EL DETALLE ESPECÍFICO en lugar de recargar toda la pantalla
+              const detalleActualizado = await updateResponse.json();
+              setDetallesConteo(prev => prev.map(detalle => {
+                if (detalle.id === editandoDetalle) {
+                  return {
+                    ...detalle,
+                    cantidadConteo1: detalleActualizado.cantidadConteo1 || detalle.cantidadConteo1,
+                    cantidadConteo2: detalleActualizado.cantidadConteo2 || detalle.cantidadConteo2,
+                    formulaCalculo1: detalleActualizado.formulaCalculo1 || detalle.formulaCalculo1,
+                    formulaCalculo2: detalleActualizado.formulaCalculo2 || detalle.formulaCalculo2,
+                    estado: detalleActualizado.estado || detalle.estado
+                  };
+                }
+                return detalle;
+              }));
+              
+              // Actualizar localStorage
+              const progreso = {
+                conteoInfo,
+                detallesConteo: detallesConteo.map(detalle => {
+                  if (detalle.id === editandoDetalle) {
+                    return {
+                      ...detalle,
+                      cantidadConteo1: detalleActualizado.cantidadConteo1 || detalle.cantidadConteo1,
+                      cantidadConteo2: detalleActualizado.cantidadConteo2 || detalle.cantidadConteo2,
+                      formulaCalculo1: detalleActualizado.formulaCalculo1 || detalle.formulaCalculo1,
+                      formulaCalculo2: detalleActualizado.formulaCalculo2 || detalle.formulaCalculo2,
+                      estado: detalleActualizado.estado || detalle.estado
+                    };
+                  }
+                  return detalle;
+                }),
+                timestamp: Date.now()
+              };
+              localStorage.setItem(`conteo-progreso-${id}`, JSON.stringify(progreso));
+              
+              toast.success('Entrada actualizada exitosamente');
+            } else {
+              const errorData = await updateResponse.json();
+              console.error('❌ Error actualizando en backend:', errorData);
+              toast.error('Error al actualizar en el servidor');
+            }
+          } else {
+            console.error('❌ No se encontró el detalle real en el backend');
+            toast.error('Error: No se encontró el detalle en el servidor');
+          }
         } else {
-          console.error('❌ Error sincronizando edición con el backend');
-          const errorText = await response.text();
-          console.error('❌ Error details: ' + errorText);
+          console.error('❌ Error obteniendo detalles del backend');
+          toast.error('Error al obtener datos del servidor');
         }
       } catch (error) {
-        console.error('❌ Error en sincronización de edición:', error);
+        console.error('❌ Error en sincronización:', error);
+        toast.error('Error al sincronizar con el servidor');
       }
+    } else {
+      console.error('❌ No se pudo encontrar el detalle editado o el producto ID');
+      toast.error('Error: No se pudo encontrar el detalle');
     }
-
-    toast.success('Entrada actualizada exitosamente');
+    
     cancelarEdicion();
   };
 
@@ -1365,9 +1592,11 @@ export default function ConteoSectorInventarioCompleto() {
 
         toast.success('Entrada eliminada exitosamente');
         
-        // 🔧 SOLUCIÓN TEMPORAL: No recargar datos para evitar referencia circular (también para detalles temporales)
-        console.log('🔄 NO recargando datos para evitar referencia circular (detalle temporal)...');
-        // await cargarDatos();
+        // ✅ SOLUCIÓN: Recargar datos desde backend para evitar IDs temporales
+        console.log('🔄 Recargando datos desde backend después de eliminar detalle temporal...');
+        setDetallesConteo([]);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await cargarDatos();
       } else {
         // Es un detalle real de base de datos, llamar al backend
         try {
@@ -1401,9 +1630,11 @@ export default function ConteoSectorInventarioCompleto() {
 
             toast.success('Entrada eliminada exitosamente');
             
-            // 🔧 SOLUCIÓN TEMPORAL: No recargar datos para evitar referencia circular
-            console.log('🔄 NO recargando datos para evitar referencia circular...');
-            // await cargarDatos();
+            // ✅ SOLUCIÓN: Recargar datos desde backend para evitar IDs temporales
+            console.log('🔄 Recargando datos desde backend después de eliminar detalle real...');
+            setDetallesConteo([]);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await cargarDatos();
           } else {
             const errorData = await response.json();
             toast.error(`Error al eliminar: ${errorData.error || 'Error desconocido'}`);

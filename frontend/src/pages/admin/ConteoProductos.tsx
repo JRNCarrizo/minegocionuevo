@@ -206,9 +206,25 @@ export default function ConteoProductos() {
         
         // Verificar si los datos están en el formato correcto
         if (Array.isArray(detallesData)) {
+          console.log('🔍 FRONTEND: Detalles cargados (array directo):', detallesData.length, 'elementos');
+          if (detallesData.length > 0) {
+            console.log('🔍 FRONTEND: Primer detalle cargado:', {
+              id: detallesData[0].id,
+              idType: typeof detallesData[0].id,
+              producto: detallesData[0].producto?.nombre
+            });
+          }
           setDetallesConteo(detallesData);
         } else if (detallesData && detallesData.data && Array.isArray(detallesData.data)) {
           console.log('✅ Datos encontrados en .data:', detallesData.data);
+          console.log('🔍 FRONTEND: Detalles cargados (.data):', detallesData.data.length, 'elementos');
+          if (detallesData.data.length > 0) {
+            console.log('🔍 FRONTEND: Primer detalle cargado (.data):', {
+              id: detallesData.data[0].id,
+              idType: typeof detallesData.data[0].id,
+              producto: detallesData.data[0].producto?.nombre
+            });
+          }
           setDetallesConteo(detallesData.data);
         } else {
           console.log('⚠️ Formato de datos inesperado, estableciendo array vacío');
@@ -332,6 +348,34 @@ export default function ConteoProductos() {
       return;
     }
 
+    // ✅ VERIFICAR SI EL PRODUCTO YA EXISTE
+    const productoExistente = detallesConteo.find(d => d.producto?.id === productoSeleccionado.id);
+    
+    console.log('🔍 DEBUG DETECCIÓN PRODUCTO (ConteoProductos):', {
+      productoId: productoSeleccionado.id,
+      productoNombre: productoSeleccionado.nombre,
+      totalDetalles: detallesConteo.length,
+      detallesExistentes: detallesConteo.map(d => ({
+        id: d.id,
+        productoId: d.producto?.id,
+        productoNombre: d.producto?.nombre,
+        cantidadConteo1: d.cantidadConteo1,
+        cantidadConteo2: d.cantidadConteo2
+      })),
+      productoExistente: productoExistente ? {
+        id: productoExistente.id,
+        cantidadConteo1: productoExistente.cantidadConteo1,
+        cantidadConteo2: productoExistente.cantidadConteo2
+      } : null
+    });
+    
+    if (productoExistente) {
+      console.log('🔍 Producto ya existe, usando flujo de edición en lugar de agregar nuevo');
+      // Si el producto ya existe, usar el flujo de edición
+      await editarProductoExistente(productoExistente, parseInt(cantidad), formulaCalculo);
+      return;
+    }
+
     let cantidadFinal = parseInt(cantidad);
     
     if (formulaCalculo.trim() && resultadoCalculo !== null) {
@@ -382,8 +426,11 @@ export default function ConteoProductos() {
       setErrorCalculo(null);
       setMostrarProductos(false);
       
-        // Recargar datos para mostrar el producto agregado
-      await cargarDatos();
+      // ✅ FORZAR RECARGA COMPLETA: Limpiar estado local y recargar desde backend
+      console.log('🔄 Limpiando estado local y recargando datos desde backend...');
+      setDetallesConteo([]); // Limpiar estado local
+      await new Promise(resolve => setTimeout(resolve, 500)); // Esperar un momento
+      await cargarDatos(); // Recargar desde backend
       
       // ✅ NOTIFICAR CAMBIO: Marcar que hay cambios en el inventario completo
       localStorage.setItem('inventario_completo_actualizado', Date.now().toString());
@@ -396,6 +443,114 @@ export default function ConteoProductos() {
     } catch (error) {
       console.error('Error agregando producto:', error);
       toast.error('Error al agregar el producto al conteo');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  // ✅ NUEVA FUNCIÓN: Editar producto existente
+  const editarProductoExistente = async (detalleExistente: any, cantidad: number, formulaCalculo: string) => {
+    console.log('🔄 Editando producto existente en ConteoProductos:', {
+      detalleId: detalleExistente.id,
+      productoId: detalleExistente.producto?.id,
+      cantidadAnterior: detalleExistente.cantidadConteo1 || detalleExistente.cantidadConteo2,
+      cantidadNueva: cantidad
+    });
+
+    try {
+      setGuardando(true);
+      
+      if (!datosUsuario?.empresaId || !id) {
+        toast.error('No se pudo obtener la información del conteo');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      // ✅ SOLUCIÓN: Buscar el detalle real en el backend usando el producto ID
+      const baseUrl = API_CONFIG.getBaseUrl();
+      
+      console.log('🔄 Buscando detalle real en backend usando producto ID:', {
+        productoId: detalleExistente.producto?.id,
+        detalleExistenteId: detalleExistente.id
+      });
+      
+      // Primero obtener los detalles del backend para encontrar el ID real
+      const detallesResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles`, {
+        headers
+      });
+      
+      if (!detallesResponse.ok) {
+        throw new Error('Error obteniendo detalles del backend');
+      }
+      
+      const detallesBackend = await detallesResponse.json();
+      const detalleReal = detallesBackend.find((d: any) => d.productoId === detalleExistente.producto?.id);
+      
+      if (!detalleReal) {
+        throw new Error('No se encontró el detalle real en el backend');
+      }
+      
+      console.log('🔍 Detalle real encontrado:', {
+        detalleId: detalleReal.id,
+        productoId: detalleReal.productoId
+      });
+      
+      // Usar el ID real para actualizar
+      const url = `${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${detalleReal.id}`;
+      const body = {
+        cantidad: cantidad,
+        formula: formulaCalculo.trim() || null
+      };
+
+      console.log('🔍 FRONTEND: Enviando PUT request:', {
+        url: url,
+        method: 'PUT',
+        headers: headers,
+        body: body
+      });
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify(body)
+      });
+      
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('✅ FRONTEND: Producto editado exitosamente:', responseData);
+        toast.success('Producto actualizado exitosamente');
+        
+        // ✅ ACTUALIZAR SOLO EL DETALLE ESPECÍFICO en lugar de recargar toda la pantalla
+        setDetallesConteo(prev => prev.map(detalle => {
+          if (detalle.id === detalleExistente.id) {
+            return {
+              ...detalle,
+              cantidadConteo1: responseData.cantidadConteo1 || detalle.cantidadConteo1,
+              cantidadConteo2: responseData.cantidadConteo2 || detalle.cantidadConteo2,
+              formulaCalculo1: responseData.formulaCalculo1 || detalle.formulaCalculo1,
+              formulaCalculo2: responseData.formulaCalculo2 || detalle.formulaCalculo2,
+              estado: responseData.estado || detalle.estado
+            };
+          }
+          return detalle;
+        }));
+        
+        // ✅ NOTIFICAR CAMBIO: Marcar que hay cambios en el inventario completo
+        localStorage.setItem('inventario_completo_actualizado', Date.now().toString());
+        console.log('📢 Notificación enviada: inventario_completo_actualizado');
+      } else {
+        const errorData = await response.json();
+        console.error('❌ FRONTEND: Error actualizando producto:', errorData);
+        toast.error(errorData.error || 'Error al actualizar el producto');
+      }
+    } catch (error) {
+      console.error('❌ Error editando producto existente:', error);
+      toast.error('Error al editar el producto');
     } finally {
       setGuardando(false);
     }
@@ -427,8 +582,11 @@ export default function ConteoProductos() {
         console.log('✅ Producto eliminado del conteo');
         toast.success('Producto eliminado del conteo exitosamente');
         
-        // Recargar datos para actualizar la lista
-        await cargarDatos();
+        // ✅ FORZAR RECARGA COMPLETA: Limpiar estado local y recargar desde backend
+        console.log('🔄 Limpiando estado local y recargando datos desde backend...');
+        setDetallesConteo([]); // Limpiar estado local
+        await new Promise(resolve => setTimeout(resolve, 500)); // Esperar un momento
+        await cargarDatos(); // Recargar desde backend
         
         // ✅ NOTIFICAR CAMBIO: Marcar que hay cambios en el inventario completo
         localStorage.setItem('inventario_completo_actualizado', Date.now().toString());
@@ -447,6 +605,12 @@ export default function ConteoProductos() {
   };
 
   const iniciarEdicion = (detalle: DetalleConteo) => {
+    console.log('🔍 FRONTEND: iniciarEdicion llamado con detalle:', {
+      detalle: detalle,
+      detalleId: detalle.id,
+      detalleIdType: typeof detalle.id,
+      producto: detalle.producto
+    });
     setEditandoDetalle(detalle);
     // Determinar qué cantidad mostrar basándose en el usuario actual
     const cantidadActual = datosUsuario?.id === conteoInfo?.usuarioAsignado1?.id 
@@ -477,6 +641,11 @@ export default function ConteoProductos() {
 
   const actualizarDetalleConteo = async () => {
     console.log('🔍 FRONTEND: actualizarDetalleConteo iniciado');
+    console.log('🔍 FRONTEND: editandoDetalle actual:', {
+      editandoDetalle: editandoDetalle,
+      editandoDetalleId: editandoDetalle?.id,
+      editandoDetalleIdType: typeof editandoDetalle?.id
+    });
     
     if (!editandoDetalle) {
       toast.error('No hay detalle seleccionado para editar');
@@ -508,9 +677,37 @@ export default function ConteoProductos() {
         'Content-Type': 'application/json'
       };
 
-      // Llamar a la API para actualizar el detalle
+      // ✅ SOLUCIÓN: Buscar el detalle real en el backend usando el producto ID
       const baseUrl = API_CONFIG.getBaseUrl();
-      const url = `${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${editandoDetalle.id}`;
+      
+      console.log('🔄 Buscando detalle real en backend usando producto ID:', {
+        productoId: editandoDetalle.producto?.id,
+        editandoDetalleId: editandoDetalle.id
+      });
+      
+      // Primero obtener los detalles del backend para encontrar el ID real
+      const detallesResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles`, {
+        headers
+      });
+      
+      if (!detallesResponse.ok) {
+        throw new Error('Error obteniendo detalles del backend');
+      }
+      
+      const detallesBackend = await detallesResponse.json();
+      const detalleReal = detallesBackend.find((d: any) => d.productoId === editandoDetalle.producto?.id);
+      
+      if (!detalleReal) {
+        throw new Error('No se encontró el detalle real en el backend');
+      }
+      
+      console.log('🔍 Detalle real encontrado:', {
+        detalleId: detalleReal.id,
+        productoId: detalleReal.productoId
+      });
+      
+      // Usar el ID real para actualizar
+      const url = `${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/detalles/${detalleReal.id}`;
       const body = {
         cantidad: cantidadFinal,
         formula: formulaEditada.trim() || null
@@ -540,11 +737,23 @@ export default function ConteoProductos() {
         console.log('✅ FRONTEND: Detalle actualizado exitosamente:', responseData);
         toast.success('Producto actualizado exitosamente');
         
+        // ✅ ACTUALIZAR SOLO EL DETALLE ESPECÍFICO en lugar de recargar toda la pantalla
+        setDetallesConteo(prev => prev.map(detalle => {
+          if (detalle.id === editandoDetalle?.id) {
+            return {
+              ...detalle,
+              cantidadConteo1: responseData.cantidadConteo1 || detalle.cantidadConteo1,
+              cantidadConteo2: responseData.cantidadConteo2 || detalle.cantidadConteo2,
+              formulaCalculo1: responseData.formulaCalculo1 || detalle.formulaCalculo1,
+              formulaCalculo2: responseData.formulaCalculo2 || detalle.formulaCalculo2,
+              estado: responseData.estado || detalle.estado
+            };
+          }
+          return detalle;
+        }));
+        
         // Cancelar edición
         cancelarEdicion();
-        
-        // Recargar datos para mostrar los cambios
-        await cargarDatos();
         
         // ✅ NOTIFICAR CAMBIO: Marcar que hay cambios en el inventario completo
         localStorage.setItem('inventario_completo_actualizado', Date.now().toString());
@@ -558,11 +767,11 @@ export default function ConteoProductos() {
         });
         toast.error(errorData.message || 'Error al actualizar el producto');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ FRONTEND: Error en actualizarDetalleConteo:', {
         error: error,
-        message: error.message,
-        stack: error.stack
+        message: error?.message,
+        stack: error?.stack
       });
       toast.error('Error al actualizar el producto');
     } finally {
@@ -1189,7 +1398,17 @@ export default function ConteoProductos() {
                         {obtenerTextoEstado(detalle.estado)}
                       </span>
                       <button
-                        onClick={() => iniciarEdicion(detalle)}
+                        onClick={() => {
+                          console.log('🔍 FRONTEND: Botón editar clickeado para detalle:', {
+                            detalle: detalle,
+                            detalleId: detalle.id,
+                            detalleIdType: typeof detalle.id,
+                            producto: detalle.producto?.nombre,
+                            detallesConteoLength: detallesConteo.length,
+                            detallesConteoIds: detallesConteo.map(d => ({ id: d.id, tipo: typeof d.id, producto: d.producto?.nombre }))
+                          });
+                          iniciarEdicion(detalle);
+                        }}
                         style={{
                           background: '#3b82f6',
                           color: 'white',

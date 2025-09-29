@@ -451,8 +451,8 @@ export default function ReconteoSector() {
         const responseData = await detallesResponse.json();
         console.log('✅ [RECONTEO] Datos de referencia cargados:', responseData);
         
-        // El endpoint devuelve un objeto con datosReferencia
-        const datosReferencia = responseData.datosReferencia || [];
+        // El endpoint devuelve un array directo de productos
+        const datosReferencia = Array.isArray(responseData) ? responseData : (responseData.datosReferencia || []);
         console.log('✅ [RECONTEO] Datos de referencia extraídos:', datosReferencia.length, 'productos');
         
         if (Array.isArray(datosReferencia) && datosReferencia.length > 0) {
@@ -463,25 +463,26 @@ export default function ReconteoSector() {
             // Crear objeto producto a partir de los datos de referencia
             const productoObj = {
               id: productoRef.productoId,
-              nombre: productoRef.producto?.nombre || 'Producto sin nombre',
-              codigoPersonalizado: productoRef.producto?.codigoPersonalizado || 'N/A',
-              stock: productoRef.producto?.stock || 0
+              nombre: productoRef.nombreProducto || 'Producto sin nombre',
+              codigoPersonalizado: productoRef.codigoProducto || 'N/A',
+              stock: productoRef.stockSistema || 0
             };
             
             return {
               id: productoRef.productoId, // Usar productoId como ID único
               producto: productoObj,
-              stockSistema: productoRef.producto?.stock || 0,
+              stockSistema: productoRef.stockSistema || 0,
               // Usar datos del conteo original como referencia
               cantidadConteo1: productoRef.cantidadConteo1 || 0,
               cantidadConteo2: productoRef.cantidadConteo2 || 0,
-              formulaCalculo1: productoRef.formulaConteo1 || 'Sin fórmula',
-              formulaCalculo2: productoRef.formulaConteo2 || 'Sin fórmula',
-              diferenciaSistema: 0, // No aplicable en reconteo
-              diferenciaEntreConteos: productoRef.diferenciaConteo || 0, // Diferencia del conteo original
-              estado: 'PENDIENTE_RECONTEO',
-              conteosUsuario1: [],
-              conteosUsuario2: []
+              formulaCalculo1: productoRef.formulaCalculo1 || 'Sin fórmula',
+              formulaCalculo2: productoRef.formulaCalculo2 || 'Sin fórmula',
+              diferenciaSistema: productoRef.diferenciaSistema || 0,
+              diferenciaEntreConteos: productoRef.diferenciaEntreConteos || 0, // Diferencia del conteo original
+              estado: productoRef.estado || 'DIFERENCIA',
+              conteosUsuario1: productoRef.conteosUsuario1 || [],
+              conteosUsuario2: productoRef.conteosUsuario2 || [],
+              todosLosDetallesDelProducto: productoRef.todosLosDetallesDelProducto || []
             };
           });
           
