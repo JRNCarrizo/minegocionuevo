@@ -1199,8 +1199,40 @@ public class InventarioCompletoService {
             System.out.println("  - Inventario ID: " + inv.getId() + ", Estado: " + inv.getEstado() + ", Fecha: " + inv.getFechaInicio());
         }
         
-        Optional<InventarioCompleto> inventarioActivo = inventarioCompletoRepository.findInventarioActivoByEmpresa(empresa);
-        System.out.println("🔍 DEBUG - Inventario activo encontrado: " + inventarioActivo.isPresent());
+        // Obtener todos los inventarios activos
+        List<InventarioCompleto> inventariosActivos = inventarioCompletoRepository.findInventariosActivosByEmpresa(empresa);
+        System.out.println("🔍 DEBUG - Inventarios activos encontrados: " + inventariosActivos.size());
+        
+        Optional<InventarioCompleto> inventarioActivo = Optional.empty();
+        
+        if (inventariosActivos.isEmpty()) {
+            System.out.println("🔍 No hay inventarios activos");
+        } else if (inventariosActivos.size() == 1) {
+            inventarioActivo = Optional.of(inventariosActivos.get(0));
+            System.out.println("🔍 Inventario activo único encontrado: " + inventarioActivo.get().getId());
+        } else {
+            // Hay múltiples inventarios activos - cancelar los más antiguos y mantener el más reciente
+            System.out.println("⚠️ Múltiples inventarios activos encontrados (" + inventariosActivos.size() + "). Cancelando los más antiguos...");
+            
+            // Ordenar por fecha de inicio descendente (más reciente primero)
+            inventariosActivos.sort((a, b) -> b.getFechaInicio().compareTo(a.getFechaInicio()));
+            
+            // Mantener el más reciente
+            InventarioCompleto inventarioMasReciente = inventariosActivos.get(0);
+            inventarioActivo = Optional.of(inventarioMasReciente);
+            
+            // Cancelar los más antiguos
+            for (int i = 1; i < inventariosActivos.size(); i++) {
+                InventarioCompleto inventarioAntiguo = inventariosActivos.get(i);
+                System.out.println("🗑️ Cancelando inventario antiguo: " + inventarioAntiguo.getId());
+                inventarioAntiguo.setEstado(InventarioCompleto.EstadoInventario.CANCELADO);
+                inventarioAntiguo.setFechaFinalizacion(LocalDateTime.now());
+                inventarioCompletoRepository.save(inventarioAntiguo);
+            }
+            
+            System.out.println("✅ Inventario activo final: " + inventarioActivo.get().getId());
+        }
+        
         if (inventarioActivo.isPresent()) {
             InventarioCompleto inventario = inventarioActivo.get();
             System.out.println("  - ID: " + inventario.getId() + ", Estado: " + inventario.getEstado());
@@ -1232,10 +1264,16 @@ public class InventarioCompletoService {
         Usuario usuarioAdmin = usuarioRepository.findById(usuarioAdminId)
             .orElseThrow(() -> new RuntimeException("Usuario administrador no encontrado"));
         
-        // Verificar que no hay inventario activo
-        Optional<InventarioCompleto> inventarioActivo = obtenerInventarioActivo(empresaId);
-        if (inventarioActivo.isPresent()) {
-            throw new RuntimeException("Ya existe un inventario activo para esta empresa");
+        // Verificar si hay inventarios activos y limpiarlos automáticamente
+        List<InventarioCompleto> inventariosActivos = inventarioCompletoRepository.findInventariosActivosByEmpresa(empresa);
+        if (!inventariosActivos.isEmpty()) {
+            System.out.println("⚠️ Encontrados " + inventariosActivos.size() + " inventarios activos. Cancelando todos...");
+            for (InventarioCompleto inventarioActivo : inventariosActivos) {
+                System.out.println("🗑️ Cancelando inventario activo: " + inventarioActivo.getId());
+                inventarioActivo.setEstado(InventarioCompleto.EstadoInventario.CANCELADO);
+                inventarioActivo.setFechaFinalizacion(LocalDateTime.now());
+                inventarioCompletoRepository.save(inventarioActivo);
+            }
         }
         
         // Crear inventario completo

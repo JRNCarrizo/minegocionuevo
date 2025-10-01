@@ -24,7 +24,13 @@ public interface InventarioCompletoRepository extends JpaRepository<InventarioCo
     List<InventarioCompleto> findByEmpresaAndEstadoOrderByFechaInicioDesc(Empresa empresa, InventarioCompleto.EstadoInventario estado);
     
     /**
-     * Buscar inventario completo activo por empresa
+     * Buscar inventarios completos activos por empresa
+     */
+    @Query("SELECT i FROM InventarioCompleto i WHERE i.empresa = :empresa AND i.estado IN ('PENDIENTE', 'EN_PROGRESO') ORDER BY i.fechaInicio DESC")
+    List<InventarioCompleto> findInventariosActivosByEmpresa(@Param("empresa") Empresa empresa);
+    
+    /**
+     * Buscar inventario completo activo por empresa (el más reciente)
      */
     @Query("SELECT i FROM InventarioCompleto i WHERE i.empresa = :empresa AND i.estado IN ('PENDIENTE', 'EN_PROGRESO') ORDER BY i.fechaInicio DESC")
     Optional<InventarioCompleto> findInventarioActivoByEmpresa(@Param("empresa") Empresa empresa);

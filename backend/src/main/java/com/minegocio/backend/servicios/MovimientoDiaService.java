@@ -3427,14 +3427,14 @@ public class MovimientoDiaService {
         // Título
         Row titleRow = sheet.createRow(0);
         Cell titleCell = titleRow.createCell(0);
-        titleCell.setCellValue("INVENTARIO - " + fechaStr);
+        titleCell.setCellValue("INVENTARIO POR SECTORES - " + fechaStr);
         titleCell.setCellStyle(titleStyle);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 5));
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 9)); // Aumentado para 9 columnas
         
         // Información sobre el uso de fórmulas
         Row infoRow = sheet.createRow(1);
         Cell infoCell = infoRow.createCell(0);
-        infoCell.setCellValue("💡 Ingrese el recuento real en la columna 'Recuento de Hoy' - la diferencia se calculará automáticamente");
+        infoCell.setCellValue("💡 Ingrese el recuento real en cada sector - la diferencia total se calculará automáticamente");
         CellStyle infoStyle = workbook.createCellStyle();
         Font infoFont = workbook.createFont();
         infoFont.setItalic(true);
@@ -3443,18 +3443,28 @@ public class MovimientoDiaService {
         infoStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
         infoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         infoCell.setCellStyle(infoStyle);
-        sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 4));
+        sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 9)); // Aumentado para 9 columnas
+        
+        // Definir sectores
+        String[] sectores = {"Esmeralda", "Catena", "Tinglado", "1er Piso", "Jaula", "Cosechas Antiguas", "Sotano"};
         
         // Crear encabezados
         Row headerRow = sheet.createRow(2);
         headerRow.createCell(0).setCellValue("Código");
         headerRow.createCell(1).setCellValue("Descripción");
         headerRow.createCell(2).setCellValue("Saldo de Cuenta");
-        headerRow.createCell(3).setCellValue("Recuento de Hoy");
-        headerRow.createCell(4).setCellValue("Diferencia");
+        
+        // Encabezados de sectores
+        int colIndex = 3;
+        for (String sector : sectores) {
+            headerRow.createCell(colIndex++).setCellValue(sector);
+        }
+        
+        // Columna de diferencia total
+        headerRow.createCell(colIndex).setCellValue("Diferencia Total");
         
         // Aplicar estilos a encabezados
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i <= colIndex; i++) {
             headerRow.getCell(i).setCellStyle(headerStyle);
         }
         
@@ -3482,19 +3492,27 @@ public class MovimientoDiaService {
             saldoCell.setCellValue(saldoCuenta);
             saldoCell.setCellStyle(dataStyle);
             
-            // Recuento de hoy (por defecto 0, se puede modificar manualmente) - Columna D
-            Cell recuentoCell = dataRow.createCell(3);
-            recuentoCell.setCellValue(0);
-            CellStyle recuentoStyle = workbook.createCellStyle();
-            recuentoStyle.cloneStyleFrom(dataStyle);
-            recuentoStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
-            recuentoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            recuentoCell.setCellStyle(recuentoStyle);
+            // Crear estilo para celdas de sectores (editable)
+            CellStyle sectorStyle = workbook.createCellStyle();
+            sectorStyle.cloneStyleFrom(dataStyle);
+            sectorStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+            sectorStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             
-            // Diferencia (recuento - saldo) - Columna E con FÓRMULA
-            Cell diferenciaCell = dataRow.createCell(4);
-            // Fórmula: =D3-C3 (Recuento - Saldo de Cuenta)
-            String formula = "D" + rowIndex + "-C" + rowIndex;
+            // Columnas de sectores (inicializadas en 0, editables)
+            int currentColIndex = 3;
+            for (int i = 0; i < sectores.length; i++) {
+                Cell sectorCell = dataRow.createCell(currentColIndex++);
+                sectorCell.setCellValue(0); // Inicializar en 0
+                sectorCell.setCellStyle(sectorStyle);
+            }
+            
+            // Diferencia total (suma de todos los sectores - saldo) - Columna final con FÓRMULA
+            Cell diferenciaCell = dataRow.createCell(currentColIndex);
+            
+            // Crear fórmula que sume todas las columnas de sectores menos el saldo de cuenta
+            // Fórmula: =SUM(D3:J3)-C3 (Suma de todos los sectores - Saldo de Cuenta)
+            String sectorColumns = "D" + rowIndex + ":J" + rowIndex; // D a J = 7 sectores
+            String formula = "SUM(" + sectorColumns + ")-C" + rowIndex;
             diferenciaCell.setCellFormula(formula);
             
             // Estilo para la celda de diferencia
@@ -3519,14 +3537,18 @@ public class MovimientoDiaService {
         String totalSaldoFormula = "SUM(C3:C" + (rowIndex - 1) + ")";
         totalSaldoCell.setCellFormula(totalSaldoFormula);
         
-        // Total de recuento
-        Cell totalRecuentoCell = totalRow.createCell(3);
-        String totalRecuentoFormula = "SUM(D3:D" + (rowIndex - 1) + ")";
-        totalRecuentoCell.setCellFormula(totalRecuentoFormula);
+        // Totales por sector
+        int totalColIndex = 3;
+        for (int i = 0; i < sectores.length; i++) {
+            Cell totalSectorCell = totalRow.createCell(totalColIndex++);
+            String colLetter = getColumnLetter(totalColIndex - 1);
+            String totalSectorFormula = "SUM(" + colLetter + "3:" + colLetter + (rowIndex - 1) + ")";
+            totalSectorCell.setCellFormula(totalSectorFormula);
+        }
         
         // Total de diferencia
-        Cell totalDiferenciaCell = totalRow.createCell(4);
-        String totalDiferenciaFormula = "SUM(E3:E" + (rowIndex - 1) + ")";
+        Cell totalDiferenciaCell = totalRow.createCell(totalColIndex);
+        String totalDiferenciaFormula = "SUM(K3:K" + (rowIndex - 1) + ")"; // K = columna de diferencia total
         totalDiferenciaCell.setCellFormula(totalDiferenciaFormula);
         
         // Estilo para la fila de totales
@@ -3541,14 +3563,15 @@ public class MovimientoDiaService {
         totalStyle.setBorderLeft(BorderStyle.THIN);
         totalStyle.setBorderRight(BorderStyle.THIN);
         
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i <= totalColIndex; i++) {
             if (totalRow.getCell(i) != null) {
                 totalRow.getCell(i).setCellStyle(totalStyle);
             }
         }
         
         // Establecer anchos de columnas fijos (evita errores de fuentes en headless)
-        establecerAnchosColumnas(sheet, 15, 30, 12, 15, 15);
+        // Ajustado para 10 columnas: Código, Descripción, Saldo, 7 sectores, Diferencia
+        establecerAnchosColumnas(sheet, 15, 30, 12, 10, 10, 10, 10, 10, 10, 10, 15);
         
         // Congelar paneles para mantener encabezados visibles
         sheet.createFreezePane(0, 3);
@@ -3612,10 +3635,10 @@ public class MovimientoDiaService {
             dataRow.createCell(1).setCellValue(productoStock.getNombre());
             
             // Stock (conectado dinámicamente con la pestaña Inventario)
-            // Fórmula que toma el valor de "Recuento de Hoy" de la pestaña Inventario
+            // Fórmula que suma todos los sectores de la pestaña Inventario
             Cell stockCell = dataRow.createCell(2);
-            // Fórmula: =Inventario!D{rowIndex} (columna D = "Recuento de Hoy" en pestaña Inventario)
-            String formula = "Inventario!D" + rowIndex;
+            // Fórmula: =SUM(Inventario!D{rowIndex}:Inventario!J{rowIndex}) (suma de todos los sectores)
+            String formula = "SUM(Inventario!D" + rowIndex + ":Inventario!J" + rowIndex + ")";
             stockCell.setCellFormula(formula);
             
             // Estilo para la celda de stock (conectada dinámicamente)
