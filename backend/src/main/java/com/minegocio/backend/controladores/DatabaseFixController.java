@@ -14,7 +14,7 @@ import java.util.Map;
  * ELIMINAR DESPUÉS DE USAR
  */
 @RestController
-@RequestMapping("/api/admin/database-fix")
+@RequestMapping("/api/publico/database-fix")
 @CrossOrigin(origins = "*")
 public class DatabaseFixController {
 
