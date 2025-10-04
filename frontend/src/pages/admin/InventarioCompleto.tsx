@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import NavbarAdmin from '../../components/NavbarAdmin';
@@ -64,9 +64,28 @@ interface InventarioCompleto {
 export default function InventarioCompleto() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { hasPermission } = usePermissions();
-  const { isMobile } = useResponsive();
+  const { isMobile, isTablet } = useResponsive();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Agregar estilos CSS para animaciones
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   
   const [inventario, setInventario] = useState<InventarioCompleto | null>(null);
   const [sectores, setSectores] = useState<Sector[]>([]);
@@ -1353,8 +1372,9 @@ export default function InventarioCompleto() {
 
                 <div style={{ 
                   display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-                  gap: '1rem' 
+                  gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(380px, 1fr))',
+                  gap: isMobile ? '1rem' : '1.5rem',
+                  padding: isMobile ? '0.5rem' : '0'
                 }}>
                   {sectores.map((sector) => {
                     const conteo = inventario.conteosSectores?.find(c => c.sectorId === sector.id);
@@ -1372,26 +1392,28 @@ export default function InventarioCompleto() {
                       <div
                         key={sector.id}
                         style={{
-                          background: colores.gradient,
-                          borderRadius: '0.75rem',
-                          padding: '1.5rem',
-                          border: `2px solid ${colores.border}`,
-                          transition: 'all 0.3s ease',
-                          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+                          background: 'white',
+                          borderRadius: '1rem',
+                          padding: isMobile ? '1rem' : '1.5rem',
+                          border: `1px solid #e2e8f0`,
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
                           position: 'relative',
                           overflow: 'hidden',
                           cursor: 'pointer',
-                          transform: 'translateY(0)'
+                          transform: 'translateY(0)',
+                          backdropFilter: 'blur(10px)',
+                          backgroundImage: `linear-gradient(135deg, ${colores.gradient.replace('linear-gradient(135deg, ', '').replace(')', '')}, rgba(255, 255, 255, 0.95))`
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px)';
-                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1)';
                           e.currentTarget.style.borderColor = colores.accent;
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.1)';
-                          e.currentTarget.style.borderColor = colores.border;
+                          e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)';
+                          e.currentTarget.style.borderColor = '#e2e8f0';
                         }}
                       >
                         <div style={{
@@ -1463,171 +1485,343 @@ export default function InventarioCompleto() {
                           </span>
                         </div>
 
-                        {/* Información de usuarios asignados - Siempre mostrar la misma estructura */}
+                        {/* Información de usuarios asignados - Diseño moderno */}
                         <div style={{
                           display: 'grid',
                           gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                          gap: '1rem',
-                          marginBottom: '1rem'
+                          gap: isMobile ? '0.75rem' : '1rem',
+                          marginBottom: '1.25rem'
                         }}>
                           <div style={{
-                            background: 'white',
-                            borderRadius: '0.5rem',
-                            padding: '1rem',
-                            border: '1px solid #e2e8f0'
+                            background: 'rgba(255, 255, 255, 0.7)',
+                            borderRadius: '0.75rem',
+                            padding: isMobile ? '0.875rem' : '1rem',
+                            border: `1px solid ${conteo?.usuario1Nombre ? colores.accent + '30' : '#e2e8f0'}`,
+                            backdropFilter: 'blur(10px)',
+                            transition: 'all 0.3s ease',
+                            position: 'relative',
+                            overflow: 'hidden'
                           }}>
+                            {conteo?.usuario1Nombre && (
                             <div style={{
-                              fontSize: '0.8rem',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                height: '3px',
+                                background: colores.accent,
+                                borderRadius: '0.75rem 0.75rem 0 0'
+                              }}></div>
+                            )}
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              marginBottom: '0.5rem'
+                            }}>
+                              <div style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: conteo?.usuario1Nombre ? colores.accent : '#94a3b8',
+                                boxShadow: `0 0 0 2px ${conteo?.usuario1Nombre ? colores.accent + '30' : '#94a3b830'}`
+                              }}></div>
+                              <span style={{
+                                fontSize: isMobile ? '0.75rem' : '0.8rem',
                               color: '#64748b',
-                              marginBottom: '0.25rem'
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
                             }}>
                               Usuario 1
+                              </span>
                             </div>
                             <div style={{
-                              fontSize: '0.9rem',
+                              fontSize: isMobile ? '0.85rem' : '0.9rem',
                               fontWeight: '600',
-                              color: conteo?.usuario1Nombre ? '#1e293b' : '#94a3b8'
+                              color: conteo?.usuario1Nombre ? '#1e293b' : '#94a3b8',
+                              lineHeight: '1.3'
                             }}>
                               {conteo?.usuario1Nombre || 'No asignado'}
                             </div>
                           </div>
                           <div style={{
-                            background: 'white',
-                            borderRadius: '0.5rem',
-                            padding: '1rem',
-                            border: '1px solid #e2e8f0'
+                            background: 'rgba(255, 255, 255, 0.7)',
+                            borderRadius: '0.75rem',
+                            padding: isMobile ? '0.875rem' : '1rem',
+                            border: `1px solid ${conteo?.usuario2Nombre ? colores.accent + '30' : '#e2e8f0'}`,
+                            backdropFilter: 'blur(10px)',
+                            transition: 'all 0.3s ease',
+                            position: 'relative',
+                            overflow: 'hidden'
                           }}>
+                            {conteo?.usuario2Nombre && (
                             <div style={{
-                              fontSize: '0.8rem',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                height: '3px',
+                                background: colores.accent,
+                                borderRadius: '0.75rem 0.75rem 0 0'
+                              }}></div>
+                            )}
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              marginBottom: '0.5rem'
+                            }}>
+                              <div style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: conteo?.usuario2Nombre ? colores.accent : '#94a3b8',
+                                boxShadow: `0 0 0 2px ${conteo?.usuario2Nombre ? colores.accent + '30' : '#94a3b830'}`
+                              }}></div>
+                              <span style={{
+                                fontSize: isMobile ? '0.75rem' : '0.8rem',
                               color: '#64748b',
-                              marginBottom: '0.25rem'
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
                             }}>
                               Usuario 2
+                              </span>
                             </div>
                             <div style={{
-                              fontSize: '0.9rem',
+                              fontSize: isMobile ? '0.85rem' : '0.9rem',
                               fontWeight: '600',
-                              color: conteo?.usuario2Nombre ? '#1e293b' : '#94a3b8'
+                              color: conteo?.usuario2Nombre ? '#1e293b' : '#94a3b8',
+                              lineHeight: '1.3'
                             }}>
                               {conteo?.usuario2Nombre || 'No asignado'}
                             </div>
                           </div>
                         </div>
 
-                        {/* Progreso del sector - Siempre mostrar para mantener tamaño consistente */}
+                        {/* Progreso del sector - Diseño moderno */}
                         <div style={{
-                          background: 'white',
-                          borderRadius: '0.5rem',
-                          padding: '1rem',
-                          border: '1px solid #e2e8f0',
-                          marginBottom: '1rem'
+                          background: 'rgba(255, 255, 255, 0.8)',
+                          borderRadius: '0.75rem',
+                          padding: isMobile ? '1rem' : '1.25rem',
+                          border: `1px solid ${colores.accent}20`,
+                          marginBottom: '1.25rem',
+                          backdropFilter: 'blur(10px)',
+                          position: 'relative',
+                          overflow: 'hidden'
                         }}>
+                          {/* Indicador de progreso animado */}
+                          <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '3px',
+                            background: `linear-gradient(90deg, ${colores.accent}, ${colores.accent}80)`,
+                            borderRadius: '0.75rem 0.75rem 0 0'
+                          }}></div>
+                          
                           <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            marginBottom: '0.5rem'
+                            marginBottom: '0.75rem'
                           }}>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem'
+                            }}>
+                              <div style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: conteo ? colores.accent : '#94a3b8',
+                                boxShadow: `0 0 0 2px ${conteo ? colores.accent + '30' : '#94a3b830'}`
+                              }}></div>
                             <span style={{
-                              fontSize: '0.9rem',
+                                fontSize: isMobile ? '0.8rem' : '0.9rem',
                               fontWeight: '600',
-                              color: '#1e293b'
+                                color: '#1e293b',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
                             }}>
                               Progreso
                             </span>
+                            </div>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem'
+                            }}>
                             <span style={{
-                              fontSize: '0.9rem',
-                              fontWeight: '600',
-                              color: conteo ? '#7c3aed' : '#94a3b8'
+                                fontSize: isMobile ? '0.75rem' : '0.8rem',
+                                fontWeight: '700',
+                                color: conteo ? colores.accent : '#94a3b8',
+                                background: conteo ? `${colores.accent}15` : '#f1f5f9',
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '0.375rem',
+                                border: `1px solid ${conteo ? colores.accent + '30' : '#e2e8f0'}`
                             }}>
                               {conteo ? (
                                 conteo.totalProductos && conteo.totalProductos > 0 
-                                  ? `${conteo.productosContados || 0} / ${conteo.totalProductos} (${Math.round((conteo.productosContados || 0) * 100 / conteo.totalProductos)}%)`
-                                  : `${conteo.productosContados || 0} productos contados`
+                                    ? `${Math.round((conteo.productosContados || 0) * 100 / conteo.totalProductos)}%`
+                                    : `${conteo.productosContados || 0} productos`
                               ) : (
-                                'Sin conteo iniciado'
+                                  '0%'
                               )}
                             </span>
                           </div>
+                          </div>
+                          
+                          {/* Barra de progreso mejorada */}
                           <div style={{
                             background: '#f1f5f9',
-                            borderRadius: '0.25rem',
-                            height: '6px',
-                            overflow: 'hidden'
+                            borderRadius: '0.5rem',
+                            height: isMobile ? '8px' : '10px',
+                            overflow: 'hidden',
+                            position: 'relative',
+                            boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)'
                           }}>
                             <div style={{
-                              background: conteo ? 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' : '#e2e8f0',
+                              background: conteo ? `linear-gradient(90deg, ${colores.accent}, ${colores.accent}80)` : '#e2e8f0',
                               height: '100%',
                               width: `${conteo ? (
                                 conteo.totalProductos && conteo.totalProductos > 0 
                                   ? Math.round((conteo.productosContados || 0) * 100 / conteo.totalProductos)
                                   : (conteo.porcentajeCompletado || 0)
                               ) : 0}%`,
-                              transition: 'width 0.3s ease'
+                              transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                              borderRadius: '0.5rem',
+                              position: 'relative',
+                              overflow: 'hidden'
+                            }}>
+                              {/* Efecto de brillo animado */}
+                              {conteo && (
+                                <div style={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: '-100%',
+                                  width: '100%',
+                                  height: '100%',
+                                  background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)',
+                                  animation: 'shimmer 2s infinite'
                             }}></div>
+                              )}
                           </div>
                         </div>
 
-                        {/* Botones de acción */}
+                          {/* Información detallada */}
+                          {conteo && (
                         <div style={{
                           display: 'flex',
-                          gap: '0.5rem',
-                          justifyContent: 'flex-end'
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              marginTop: '0.75rem',
+                              fontSize: isMobile ? '0.75rem' : '0.8rem',
+                              color: '#64748b'
+                            }}>
+                              <span>
+                                {conteo.productosContados || 0} de {conteo.totalProductos || 0} productos
+                              </span>
+                              {(conteo as any).productosConDiferencias > 0 && (
+                                <span style={{
+                                  color: '#ef4444',
+                                  fontWeight: '600'
+                                }}>
+                                  {(conteo as any).productosConDiferencias} diferencias
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Botones de acción - Diseño moderno y responsive */}
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: isMobile ? 'column' : 'row',
+                          gap: isMobile ? '0.75rem' : '0.5rem',
+                          justifyContent: isMobile ? 'stretch' : 'flex-end',
+                          marginTop: 'auto'
                         }}>
                           {(!conteo || !conteo.usuario1Nombre || !conteo.usuario2Nombre) && datosUsuario?.rol === 'ADMINISTRADOR' && conteo?.estado !== 'COMPLETADO_SIN_CONTEO' ? (
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div style={{ 
+                              display: 'flex', 
+                              flexDirection: isMobile ? 'column' : 'row',
+                              gap: isMobile ? '0.75rem' : '0.5rem',
+                              width: isMobile ? '100%' : 'auto'
+                            }}>
                               <button
                                 onClick={() => {
                                   setSectorSeleccionado(sector);
                                   setMostrarModalAsignacion(true);
                                 }}
                                 style={{
-                                  background: '#3b82f6',
+                                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                                   color: 'white',
                                   border: 'none',
-                                  borderRadius: '0.25rem',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '0.9rem',
-                                  fontWeight: '500',
+                                  borderRadius: '0.75rem',
+                                  padding: isMobile ? '0.875rem 1.25rem' : '0.75rem 1.5rem',
+                                  fontSize: isMobile ? '0.9rem' : '0.85rem',
+                                  fontWeight: '600',
                                   cursor: 'pointer',
-                                  transition: 'all 0.3s ease',
-                                  transform: 'scale(1)'
+                                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                  transform: 'translateY(0)',
+                                  boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                  position: 'relative',
+                                  overflow: 'hidden',
+                                  width: isMobile ? '100%' : 'auto',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '0.5rem'
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = '#2563eb';
-                                  e.currentTarget.style.transform = 'scale(1.05)';
+                                  e.currentTarget.style.transform = 'translateY(-2px)';
+                                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = '#3b82f6';
-                                  e.currentTarget.style.transform = 'scale(1)';
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.3)';
                                 }}
                               >
+                                <span>👥</span>
                                 Asignar Usuarios
                               </button>
                               <button
                                 onClick={() => marcarSectorCompletadoSinConteo(sector)}
                                 style={{
-                                  background: '#10b981',
+                                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                                   color: 'white',
                                   border: 'none',
-                                  borderRadius: '0.25rem',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '0.9rem',
-                                  fontWeight: '500',
+                                  borderRadius: '0.75rem',
+                                  padding: isMobile ? '0.875rem 1.25rem' : '0.75rem 1.5rem',
+                                  fontSize: isMobile ? '0.9rem' : '0.85rem',
+                                  fontWeight: '600',
                                   cursor: 'pointer',
-                                  transition: 'all 0.3s ease',
-                                  transform: 'scale(1)'
+                                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                  transform: 'translateY(0)',
+                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)',
+                                  position: 'relative',
+                                  overflow: 'hidden',
+                                  width: isMobile ? '100%' : 'auto',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '0.5rem'
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = '#059669';
-                                  e.currentTarget.style.transform = 'scale(1.05)';
+                                  e.currentTarget.style.transform = 'translateY(-2px)';
+                                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = '#10b981';
-                                  e.currentTarget.style.transform = 'scale(1)';
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.3)';
                                 }}
                               >
-                                ✅ Dar por completado
+                                <span>✅</span>
+                                Dar por completado
                               </button>
                             </div>
                           ) : (
@@ -1637,27 +1831,36 @@ export default function InventarioCompleto() {
                                 <button
                                   onClick={() => cancelarCompletadoSinConteo(sector)}
                                   style={{
-                                    background: '#ef4444',
+                                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                                     color: 'white',
                                     border: 'none',
-                                    borderRadius: '0.25rem',
-                                    padding: '0.5rem 1rem',
-                                    fontSize: '0.9rem',
-                                    fontWeight: '500',
+                                    borderRadius: '0.75rem',
+                                    padding: isMobile ? '0.875rem 1.25rem' : '0.75rem 1.5rem',
+                                    fontSize: isMobile ? '0.9rem' : '0.85rem',
+                                    fontWeight: '600',
                                     cursor: 'pointer',
-                                    transition: 'all 0.3s ease',
-                                    transform: 'scale(1)'
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    transform: 'translateY(0)',
+                                    boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    width: isMobile ? '100%' : 'auto',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem'
                                   }}
                                   onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#dc2626';
-                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
                                   }}
                                   onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = '#ef4444';
-                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(239, 68, 68, 0.3)';
                                   }}
                                 >
-                                  ❌ Cancelar y Contar
+                                  <span>❌</span>
+                                  Cancelar y Contar
                                 </button>
                               ) : (
                                 <>
@@ -1858,9 +2061,9 @@ export default function InventarioCompleto() {
                                   style={{
                                     background: (() => {
                                       const tieneUsuariosAsignados = conteo && conteo.usuario1Id && conteo.usuario2Id;
-                                      if (!tieneUsuariosAsignados) return '#3b82f6'; // Azul para asignar usuarios
-                                      if (conteo?.estado === 'CON_DIFERENCIAS') return '#f59e0b'; // Naranja para revisar
-                                      if (conteo?.estado === 'EN_PROGRESO') return '#3b82f6'; // Azul para continuar conteo
+                                      if (!tieneUsuariosAsignados) return 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'; // Azul para asignar usuarios
+                                      if (conteo?.estado === 'CON_DIFERENCIAS') return 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'; // Naranja para revisar
+                                      if (conteo?.estado === 'EN_PROGRESO') return 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'; // Azul para continuar conteo
                                       
                                       // Verificar si el usuario está asignado
                                       const esUsuario1 = conteo && conteo.usuario1Id === datosUsuario?.id;
@@ -1870,66 +2073,38 @@ export default function InventarioCompleto() {
                                       // Si el estado es EN_PROGRESO, ESPERANDO_VERIFICACION, ESPERANDO_SEGUNDO_RECONTEO o COMPARANDO_RECONTEO pero el usuario está asignado, usar color azul para continuar
                                       if ((conteo?.estado === 'EN_PROGRESO' || conteo?.estado === 'ESPERANDO_VERIFICACION' || 
                                            conteo?.estado === 'ESPERANDO_SEGUNDO_RECONTEO' || conteo?.estado === 'COMPARANDO_RECONTEO') && esUsuarioAsignado) {
-                                        return '#3b82f6'; // Azul para continuar conteo
+                                        return 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'; // Azul para continuar conteo
                                       }
                                       
-                                      return '#10b981'; // Verde para iniciar conteo
+                                      return 'linear-gradient(135deg, #10b981 0%, #059669 100%)'; // Verde para iniciar conteo
                                     })(),
                                     color: 'white',
                                     border: 'none',
-                                    borderRadius: '0.25rem',
-                                    padding: '0.5rem 1rem',
-                                    fontSize: '0.9rem',
-                                    fontWeight: '500',
+                                    borderRadius: '0.75rem',
+                                    padding: isMobile ? '0.875rem 1.25rem' : '0.75rem 1.5rem',
+                                    fontSize: isMobile ? '0.9rem' : '0.85rem',
+                                    fontWeight: '600',
                                     cursor: 'pointer',
-                                    transition: 'all 0.3s ease',
-                                    transform: 'scale(1)'
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    transform: 'translateY(0)',
+                                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    width: isMobile ? '100%' : 'auto',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    minHeight: isMobile ? 'auto' : '3rem',
+                                    marginTop: '0.5rem'
                                   }}
                                   onMouseEnter={(e) => {
-                                    const tieneUsuariosAsignados = conteo && conteo.usuario1Id && conteo.usuario2Id;
-                                    if (!tieneUsuariosAsignados) {
-                                      e.currentTarget.style.background = '#2563eb';
-                                    } else if (conteo.estado === 'CON_DIFERENCIAS') {
-                                      e.currentTarget.style.background = '#d97706';
-                                    } else if (conteo.estado === 'EN_PROGRESO') {
-                                      e.currentTarget.style.background = '#2563eb';
-                                    } else {
-                                      // Verificar si es para continuar conteo
-                                      const esUsuario1 = conteo && conteo.usuario1Id === datosUsuario?.id;
-                                      const esUsuario2 = conteo && conteo.usuario2Id === datosUsuario?.id;
-                                      const esUsuarioAsignado = esUsuario1 || esUsuario2;
-                                      
-                                      if ((conteo?.estado === 'EN_PROGRESO' || conteo?.estado === 'ESPERANDO_VERIFICACION' || 
-                                           conteo?.estado === 'ESPERANDO_SEGUNDO_RECONTEO' || conteo?.estado === 'COMPARANDO_RECONTEO') && esUsuarioAsignado) {
-                                        e.currentTarget.style.background = '#2563eb'; // Azul para continuar
-                                      } else {
-                                        e.currentTarget.style.background = '#059669'; // Verde para iniciar
-                                      }
-                                    }
-                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
                                   }}
                                   onMouseLeave={(e) => {
-                                    const tieneUsuariosAsignados = conteo && conteo.usuario1Id && conteo.usuario2Id;
-                                    if (!tieneUsuariosAsignados) {
-                                      e.currentTarget.style.background = '#3b82f6';
-                                    } else if (conteo.estado === 'CON_DIFERENCIAS') {
-                                      e.currentTarget.style.background = '#f59e0b';
-                                    } else if (conteo.estado === 'EN_PROGRESO') {
-                                      e.currentTarget.style.background = '#3b82f6';
-                                    } else {
-                                      // Verificar si es para continuar conteo
-                                      const esUsuario1 = conteo && conteo.usuario1Id === datosUsuario?.id;
-                                      const esUsuario2 = conteo && conteo.usuario2Id === datosUsuario?.id;
-                                      const esUsuarioAsignado = esUsuario1 || esUsuario2;
-                                      
-                                      if ((conteo?.estado === 'EN_PROGRESO' || conteo?.estado === 'ESPERANDO_VERIFICACION' || 
-                                           conteo?.estado === 'ESPERANDO_SEGUNDO_RECONTEO' || conteo?.estado === 'COMPARANDO_RECONTEO') && esUsuarioAsignado) {
-                                        e.currentTarget.style.background = '#3b82f6'; // Azul para continuar
-                                      } else {
-                                        e.currentTarget.style.background = '#10b981'; // Verde para iniciar
-                                      }
-                                    }
-                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
                                   }}
                                 >
                                   {(() => {
@@ -2052,13 +2227,20 @@ export default function InventarioCompleto() {
                               })() && (
                                 <div style={{
                                   marginTop: '1rem',
-                                  padding: '0.75rem',
+                                  padding: isMobile ? '1rem' : '0.875rem',
                                   background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
                                   color: 'white',
-                                  borderRadius: '0.5rem',
+                                  borderRadius: '0.75rem',
                                   textAlign: 'center',
-                                  fontSize: '0.875rem',
-                                  fontWeight: '500'
+                                  fontSize: isMobile ? '0.8rem' : '0.875rem',
+                                  fontWeight: '500',
+                                  lineHeight: '1.4',
+                                  minHeight: isMobile ? 'auto' : '3rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  boxShadow: '0 2px 8px rgba(251, 191, 36, 0.3)',
+                                  border: '1px solid rgba(255, 255, 255, 0.2)'
                                 }}>
                                   {(() => {
                                     // Definir el estado específico del usuario para determinar el mensaje

@@ -53,3 +53,4 @@ public interface ReconteoDetalleRepository extends JpaRepository<ReconteoDetalle
     Long countUsuariosReconteoBySectorAndNumero(@Param("conteoSectorId") Long conteoSectorId, @Param("numeroReconteo") Integer numeroReconteo);
 }
 
+

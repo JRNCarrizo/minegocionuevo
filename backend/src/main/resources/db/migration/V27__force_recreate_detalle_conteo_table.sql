@@ -1,11 +1,12 @@
 -- Forzar la recreación de la tabla detalle_conteo con el esquema correcto
+-- Compatible con PostgreSQL
 
 -- Eliminar la tabla si existe (con todas sus dependencias)
-DROP TABLE IF EXISTS detalle_conteo;
+DROP TABLE IF EXISTS detalle_conteo CASCADE;
 
 -- Recrear la tabla con el esquema correcto que coincide con la entidad
 CREATE TABLE detalle_conteo (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     conteo_sector_id BIGINT NOT NULL,
     -- inventario_por_sector_id BIGINT, -- Comentado temporalmente
     producto_id BIGINT NOT NULL,
@@ -27,7 +28,7 @@ CREATE TABLE detalle_conteo (
     observaciones TEXT,
     eliminado BOOLEAN NOT NULL DEFAULT FALSE,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (conteo_sector_id) REFERENCES conteo_sector(id) ON DELETE CASCADE,
     -- FOREIGN KEY (inventario_por_sector_id) REFERENCES inventario_por_sector(id) ON DELETE CASCADE, -- Comentado temporalmente
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
