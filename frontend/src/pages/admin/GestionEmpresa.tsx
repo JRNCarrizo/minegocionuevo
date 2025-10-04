@@ -303,11 +303,11 @@ export default function GestionEmpresa() {
       permiso: 'GESTION_TRANSPORTISTAS'
     },
     {
-      titulo: 'Gestión de Inventario',
-      descripcion: 'Inventario completo y por sector con doble verificación',
+      titulo: 'Inventario Completo',
+      descripcion: 'Inventario completo con doble verificación por sector',
       icono: '📋',
       color: '#7c3aed',
-      enlace: '/admin/gestion-inventario',
+      enlace: '/admin/inventario-completo',
       gradiente: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
       permiso: 'GESTION_INVENTARIO'
     },

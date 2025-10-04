@@ -184,7 +184,7 @@ export default function InventarioCompleto() {
             setModoNavegacion(false);
             setElementoSeleccionado(0);
           } else {
-            navigate('/admin/gestion-inventario');
+            navigate('/admin/gestion-empresa');
           }
           break;
 
