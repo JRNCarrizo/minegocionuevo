@@ -1133,8 +1133,8 @@ export default function InventarioCompleto() {
                   </span>
                 </div>
                 
-                {/* Botón para ver vista consolidada cuando todos los sectores estén completados */}
-                {inventario.sectoresCompletados === inventario.totalSectores && inventario.totalSectores > 0 && (
+                {/* Botón para ver vista consolidada cuando todos los sectores estén completados - Solo para administradores */}
+                {inventario.sectoresCompletados === inventario.totalSectores && inventario.totalSectores > 0 && datosUsuario?.rol === 'ADMINISTRADOR' && (
                   <div style={{
                     marginTop: '1.5rem',
                     paddingTop: '1.5rem',
