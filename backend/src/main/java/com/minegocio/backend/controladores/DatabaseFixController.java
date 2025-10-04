@@ -26,6 +26,7 @@ public class DatabaseFixController {
      * ELIMINAR DESPUÉS DE USAR
      */
     @PostMapping("/add-eliminado-column")
+    @GetMapping("/add-eliminado-column")
     @Transactional
     public ResponseEntity<?> addEliminadoColumn() {
         try {
