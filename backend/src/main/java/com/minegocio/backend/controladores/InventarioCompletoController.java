@@ -544,10 +544,8 @@ public class InventarioCompletoController {
                 dto.put("formulaCalculo1", detalle.getFormulaCalculo1());
                 dto.put("formulaCalculo2", detalle.getFormulaCalculo2());
                 
-                // Agregar todos los detalles del producto para mostrar conteos individuales
-                if (Boolean.TRUE.equals(modoReconteo)) {
-                    dto.put("todosLosDetallesDelProducto", obtenerTodosLosDetallesDelProducto(conteoSectorId, detalle.getProducto().getId()));
-                }
+                // ✅ ELIMINADO: No agregar datos adicionales que puedan interferir con la consolidación
+                // Los datos consolidados ya están en cantidadConteo1, cantidadConteo2, etc.
                 dto.put("estado", detalle.getEstado().toString());
                 dto.put("diferenciaSistema", detalle.getDiferenciaSistema());
                 dto.put("diferenciaEntreConteos", detalle.getDiferenciaEntreConteos());

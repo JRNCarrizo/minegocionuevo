@@ -481,8 +481,8 @@ export default function ReconteoSector() {
               diferenciaEntreConteos: productoRef.diferenciaEntreConteos || 0, // Diferencia del conteo original
               estado: productoRef.estado || 'DIFERENCIA',
               conteosUsuario1: productoRef.conteosUsuario1 || [],
-              conteosUsuario2: productoRef.conteosUsuario2 || [],
-              todosLosDetallesDelProducto: productoRef.todosLosDetallesDelProducto || []
+              conteosUsuario2: productoRef.conteosUsuario2 || []
+              // ✅ ELIMINADO: todosLosDetallesDelProducto ya no se usa
             };
           });
           

@@ -751,33 +751,23 @@ export default function ConteoSectorInventarioCompleto() {
       empresaId: datosUsuario?.empresaId
     });
     
-    // ✅ VERIFICAR SI EL PRODUCTO YA EXISTE
-    const productoExistente = detallesConteo.find(d => d.producto?.id === producto.id);
-    
-    console.log('🔍 DEBUG DETECCIÓN PRODUCTO:', {
+    // ✅ PERMITIR MÚLTIPLES ENTRADAS DEL MISMO PRODUCTO
+    // Ya no validamos si el producto existe, permitimos múltiples conteos del mismo producto
+    console.log('🔍 DEBUG MÚLTIPLES ENTRADAS:', {
       productoId: producto.id,
       productoNombre: producto.nombre,
       totalDetalles: detallesConteo.length,
+      entradasExistentesDelProducto: detallesConteo.filter(d => d.producto?.id === producto.id).length,
       detallesExistentes: detallesConteo.map(d => ({
         id: d.id,
         productoId: d.producto?.id,
         productoNombre: d.producto?.nombre,
         cantidadConteo1: d.cantidadConteo1,
         cantidadConteo2: d.cantidadConteo2
-      })),
-      productoExistente: productoExistente ? {
-        id: productoExistente.id,
-        cantidadConteo1: productoExistente.cantidadConteo1,
-        cantidadConteo2: productoExistente.cantidadConteo2
-      } : null
+      }))
     });
     
-    if (productoExistente) {
-      console.log('🔍 Producto ya existe, usando flujo de edición en lugar de agregar nuevo');
-      // Si el producto ya existe, usar el flujo de edición
-      await editarProductoExistente(productoExistente, cantidad, formulaCalculo);
-      return;
-    }
+    console.log('✅ PERMITIENDO múltiples entradas del mismo producto para mayor precisión');
       
       // Crear el detalle de conteo local con timestamp único
       const timestamp = Date.now();

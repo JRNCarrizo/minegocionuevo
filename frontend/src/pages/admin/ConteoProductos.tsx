@@ -51,6 +51,10 @@ interface ConteoInfo {
     nombre: string;
     apellidos: string;
   };
+  inventarioCompleto?: {
+    id: number;
+    empresaId: number;
+  };
 }
 
 export default function ConteoProductos() {
@@ -343,38 +347,31 @@ export default function ConteoProductos() {
   };
 
   const agregarProductoAlConteo = async () => {
+    console.log('🎯 ========== AGREGAR PRODUCTO AL CONTEO ==========');
+    console.log('🎯 ESTA FUNCIÓN FUE LLAMADA');
+    
     if (!productoSeleccionado) {
       toast.error('Debe seleccionar un producto');
       return;
     }
 
-    // ✅ VERIFICAR SI EL PRODUCTO YA EXISTE
-    const productoExistente = detallesConteo.find(d => d.producto?.id === productoSeleccionado.id);
-    
-    console.log('🔍 DEBUG DETECCIÓN PRODUCTO (ConteoProductos):', {
+    // ✅ PERMITIR MÚLTIPLES ENTRADAS DEL MISMO PRODUCTO
+    // Ya no validamos si el producto existe, permitimos múltiples conteos del mismo producto
+    console.log('🔍 DEBUG MÚLTIPLES ENTRADAS (ConteoProductos):', {
       productoId: productoSeleccionado.id,
       productoNombre: productoSeleccionado.nombre,
       totalDetalles: detallesConteo.length,
+      entradasExistentesDelProducto: detallesConteo.filter(d => d.producto?.id === productoSeleccionado.id).length,
       detallesExistentes: detallesConteo.map(d => ({
         id: d.id,
         productoId: d.producto?.id,
         productoNombre: d.producto?.nombre,
         cantidadConteo1: d.cantidadConteo1,
         cantidadConteo2: d.cantidadConteo2
-      })),
-      productoExistente: productoExistente ? {
-        id: productoExistente.id,
-        cantidadConteo1: productoExistente.cantidadConteo1,
-        cantidadConteo2: productoExistente.cantidadConteo2
-      } : null
+      }))
     });
     
-    if (productoExistente) {
-      console.log('🔍 Producto ya existe, usando flujo de edición en lugar de agregar nuevo');
-      // Si el producto ya existe, usar el flujo de edición
-      await editarProductoExistente(productoExistente, parseInt(cantidad), formulaCalculo);
-      return;
-    }
+    console.log('✅ PERMITIENDO múltiples entradas del mismo producto para mayor precisión');
 
     let cantidadFinal = parseInt(cantidad);
     
@@ -403,7 +400,7 @@ export default function ConteoProductos() {
 
       // Llamar a la API para agregar el producto al conteo
       const baseUrl = API_CONFIG.getBaseUrl();
-      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/conteos-sector/${id}/productos`, {
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/agregar-producto`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -640,6 +637,8 @@ export default function ConteoProductos() {
   };
 
   const actualizarDetalleConteo = async () => {
+    console.log('🔴 ========== ACTUALIZAR DETALLE CONTEO (EDICIÓN) ==========');
+    console.log('🔴 ESTA FUNCIÓN FUE LLAMADA (MODO EDICIÓN)');
     console.log('🔍 FRONTEND: actualizarDetalleConteo iniciado');
     console.log('🔍 FRONTEND: editandoDetalle actual:', {
       editandoDetalle: editandoDetalle,
