@@ -3357,6 +3357,7 @@ public class InventarioCompletoService {
     /**
      * Determinar el estado específico de un usuario basándose en los DetalleConteo
      */
+    @Transactional(readOnly = true)
     public ConteoSector.EstadoConteo determinarEstadoUsuario(ConteoSector conteoSector, Long usuarioId) {
         System.out.println("🔍 Determinando estado para usuario: " + usuarioId + " en sector: " + conteoSector.getId());
         System.out.println("🔍 Estado general del sector: " + conteoSector.getEstado());
