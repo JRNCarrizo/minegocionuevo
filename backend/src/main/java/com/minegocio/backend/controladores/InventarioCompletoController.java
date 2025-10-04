@@ -1253,6 +1253,114 @@ public class InventarioCompletoController {
     }
 
     /**
+     * Marcar un sector como completado sin conteo
+     */
+    @PostMapping("/{inventarioId}/marcar-sector-completado-sin-conteo")
+    @Transactional
+    public ResponseEntity<?> marcarSectorCompletadoSinConteo(
+            @PathVariable Long empresaId,
+            @PathVariable Long inventarioId,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+        try {
+            System.out.println("🔄 === MARCAR SECTOR COMPLETADO SIN CONTEO ===");
+            
+            // Obtener usuario autenticado
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Usuario usuario = usuarioRepository.findById(usuarioPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+            // Obtener empresa
+            Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+            
+            // Validar que el usuario pertenece a la empresa
+            if (!usuario.getEmpresa().getId().equals(empresaId)) {
+                return ResponseEntity.status(403).body(Map.of("error", "No tienes permisos para acceder a esta empresa"));
+            }
+            
+            // Obtener datos del request
+            Long sectorId = Long.valueOf(request.get("sectorId").toString());
+            String sectorNombre = request.get("sectorNombre").toString();
+            
+            System.out.println("🔍 Datos recibidos:");
+            System.out.println("  - Empresa ID: " + empresaId);
+            System.out.println("  - Inventario ID: " + inventarioId);
+            System.out.println("  - Sector ID: " + sectorId);
+            System.out.println("  - Sector Nombre: " + sectorNombre);
+            
+            // Marcar el sector como completado sin conteo
+            inventarioCompletoService.marcarSectorCompletadoSinConteo(inventarioId, sectorId, sectorNombre, usuario);
+            
+            System.out.println("✅ Sector marcado como completado sin conteo exitosamente");
+            return ResponseEntity.ok(Map.of(
+                "message", "Sector marcado como completado sin conteo exitosamente",
+                "sectorId", sectorId,
+                "sectorNombre", sectorNombre
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error marcando sector como completado sin conteo: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Cancelar un sector completado sin conteo (volver a estado pendiente)
+     */
+    @PostMapping("/{inventarioId}/cancelar-sector-completado-sin-conteo")
+    @Transactional
+    public ResponseEntity<?> cancelarSectorCompletadoSinConteo(
+            @PathVariable Long empresaId,
+            @PathVariable Long inventarioId,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+        try {
+            System.out.println("🔄 === CANCELAR SECTOR COMPLETADO SIN CONTEO ===");
+            
+            // Obtener usuario autenticado
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Usuario usuario = usuarioRepository.findById(usuarioPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+            // Obtener empresa
+            Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+            
+            // Validar que el usuario pertenece a la empresa
+            if (!usuario.getEmpresa().getId().equals(empresaId)) {
+                return ResponseEntity.status(403).body(Map.of("error", "No tienes permisos para acceder a esta empresa"));
+            }
+            
+            // Obtener datos del request
+            Long sectorId = Long.valueOf(request.get("sectorId").toString());
+            String sectorNombre = request.get("sectorNombre").toString();
+            
+            System.out.println("🔍 Datos recibidos:");
+            System.out.println("  - Empresa ID: " + empresaId);
+            System.out.println("  - Inventario ID: " + inventarioId);
+            System.out.println("  - Sector ID: " + sectorId);
+            System.out.println("  - Sector Nombre: " + sectorNombre);
+            
+            // Cancelar el completado sin conteo del sector
+            inventarioCompletoService.cancelarSectorCompletadoSinConteo(inventarioId, sectorId, sectorNombre, usuario);
+            
+            System.out.println("✅ Sector cancelado de completado sin conteo exitosamente");
+            return ResponseEntity.ok(Map.of(
+                "message", "Sector cancelado de completado sin conteo exitosamente",
+                "sectorId", sectorId,
+                "sectorNombre", sectorNombre
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error cancelando sector completado sin conteo: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Obtener todos los detalles de un producto para mostrar conteos individuales
      */
     private List<Map<String, Object>> obtenerTodosLosDetallesDelProducto(Long conteoSectorId, Long productoId) {

@@ -281,6 +281,26 @@ export default function InventarioCompleto() {
           const inventarioData = await inventarioResponse.json();
           console.log('✅ Inventario activo cargado:', inventarioData);
           console.log('✅ Conteos de sectores:', inventarioData.conteosSectores);
+          console.log('🔍 DEBUG - Estado del inventario:', {
+            id: inventarioData.id,
+            estado: inventarioData.estado,
+            sectoresCompletados: inventarioData.sectoresCompletados,
+            totalSectores: inventarioData.totalSectores,
+            porcentajeCompletado: inventarioData.porcentajeCompletado
+          });
+          
+          // Debug adicional para verificar si se debe mostrar el botón
+          const debeMostrarBoton = inventarioData.sectoresCompletados === inventarioData.totalSectores && 
+                                  inventarioData.totalSectores > 0 && 
+                                  datosUsuario?.rol === 'ADMINISTRADOR';
+          console.log('🔍 DEBUG - ¿Debe mostrar botón consolidar?', {
+            sectoresCompletados: inventarioData.sectoresCompletados,
+            totalSectores: inventarioData.totalSectores,
+            sonIguales: inventarioData.sectoresCompletados === inventarioData.totalSectores,
+            totalSectoresMayorCero: inventarioData.totalSectores > 0,
+            esAdministrador: datosUsuario?.rol === 'ADMINISTRADOR',
+            resultado: debeMostrarBoton
+          });
           
           // Debug específico para estados de conteos
           if (inventarioData.conteosSectores) {
@@ -581,6 +601,78 @@ export default function InventarioCompleto() {
     }
   };
 
+  const cancelarCompletadoSinConteo = async (sector: Sector) => {
+    try {
+      if (!datosUsuario?.empresaId || !inventario?.id) {
+        toast.error('No se pudo obtener la información del inventario');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const baseUrl = API_CONFIG.getBaseUrl();
+      
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${inventario.id}/cancelar-sector-completado-sin-conteo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          sectorId: sector.id,
+          sectorNombre: sector.nombre
+        })
+      });
+
+      if (response.ok) {
+        toast.success(`Sector "${sector.nombre}" vuelve a estado pendiente`);
+        // Recargar los datos del inventario
+        await cargarDatos();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || 'Error al cancelar el completado sin conteo');
+      }
+    } catch (error) {
+      console.error('Error cancelando completado sin conteo:', error);
+      toast.error('Error al cancelar el completado sin conteo');
+    }
+  };
+
+  const marcarSectorCompletadoSinConteo = async (sector: Sector) => {
+    try {
+      if (!datosUsuario?.empresaId || !inventario?.id) {
+        toast.error('No se pudo obtener la información del inventario');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const baseUrl = API_CONFIG.getBaseUrl();
+      
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${inventario.id}/marcar-sector-completado-sin-conteo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          sectorId: sector.id,
+          sectorNombre: sector.nombre
+        })
+      });
+
+      if (response.ok) {
+        toast.success(`Sector "${sector.nombre}" marcado como completado sin conteo`);
+        // Recargar los datos del inventario
+        await cargarDatos();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || 'Error al marcar el sector como completado');
+      }
+    } catch (error) {
+      console.error('Error marcando sector como completado:', error);
+      toast.error('Error al marcar el sector como completado');
+    }
+  };
+
   const cancelarInventario = async () => {
     try {
       setCancelando(true);
@@ -662,6 +754,8 @@ export default function InventarioCompleto() {
         return '#3b82f6';
       case 'COMPLETADO':
         return '#10b981';
+      case 'COMPLETADO_SIN_CONTEO':
+        return '#8b5cf6';
       default:
         return '#6b7280';
     }
@@ -739,6 +833,8 @@ export default function InventarioCompleto() {
         return 'Con Diferencias';
       case 'COMPLETADO':
         return 'Completado';
+      case 'COMPLETADO_SIN_CONTEO':
+        return 'Completado sin Conteo';
       default:
         return estado;
     }
@@ -1478,37 +1574,93 @@ export default function InventarioCompleto() {
                           gap: '0.5rem',
                           justifyContent: 'flex-end'
                         }}>
-                          {(!conteo || !conteo.usuario1Nombre || !conteo.usuario2Nombre) && datosUsuario?.rol === 'ADMINISTRADOR' ? (
-                            <button
-                              onClick={() => {
-                                setSectorSeleccionado(sector);
-                                setMostrarModalAsignacion(true);
-                              }}
-                              style={{
-                                background: '#3b82f6',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '0.25rem',
-                                padding: '0.5rem 1rem',
-                                fontSize: '0.9rem',
-                                fontWeight: '500',
-                                cursor: 'pointer',
-                                transition: 'all 0.3s ease',
-                                transform: 'scale(1)'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#2563eb';
-                                e.currentTarget.style.transform = 'scale(1.05)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = '#3b82f6';
-                                e.currentTarget.style.transform = 'scale(1)';
-                              }}
-                            >
-                              Asignar Usuarios
-                            </button>
+                          {(!conteo || !conteo.usuario1Nombre || !conteo.usuario2Nombre) && datosUsuario?.rol === 'ADMINISTRADOR' && conteo?.estado !== 'COMPLETADO_SIN_CONTEO' ? (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button
+                                onClick={() => {
+                                  setSectorSeleccionado(sector);
+                                  setMostrarModalAsignacion(true);
+                                }}
+                                style={{
+                                  background: '#3b82f6',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '0.25rem',
+                                  padding: '0.5rem 1rem',
+                                  fontSize: '0.9rem',
+                                  fontWeight: '500',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.3s ease',
+                                  transform: 'scale(1)'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = '#2563eb';
+                                  e.currentTarget.style.transform = 'scale(1.05)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = '#3b82f6';
+                                  e.currentTarget.style.transform = 'scale(1)';
+                                }}
+                              >
+                                Asignar Usuarios
+                              </button>
+                              <button
+                                onClick={() => marcarSectorCompletadoSinConteo(sector)}
+                                style={{
+                                  background: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '0.25rem',
+                                  padding: '0.5rem 1rem',
+                                  fontSize: '0.9rem',
+                                  fontWeight: '500',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.3s ease',
+                                  transform: 'scale(1)'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = '#059669';
+                                  e.currentTarget.style.transform = 'scale(1.05)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = '#10b981';
+                                  e.currentTarget.style.transform = 'scale(1)';
+                                }}
+                              >
+                                ✅ Dar por completado
+                              </button>
+                            </div>
                           ) : (
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              {/* Mostrar botón "Cancelar y Contar" si el sector está completado sin conteo */}
+                              {conteo?.estado === 'COMPLETADO_SIN_CONTEO' && datosUsuario?.rol === 'ADMINISTRADOR' ? (
+                                <button
+                                  onClick={() => cancelarCompletadoSinConteo(sector)}
+                                  style={{
+                                    background: '#ef4444',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '0.25rem',
+                                    padding: '0.5rem 1rem',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    transform: 'scale(1)'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#dc2626';
+                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = '#ef4444';
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                  }}
+                                >
+                                  ❌ Cancelar y Contar
+                                </button>
+                              ) : (
+                                <>
                               {datosUsuario?.rol === 'ADMINISTRADOR' && (
                                 <button
                                   onClick={() => {
@@ -2031,6 +2183,8 @@ export default function InventarioCompleto() {
                                 >
                                   🔍 Ver Detalle de Conteo
                                 </button>
+                              )}
+                                </>
                               )}
                               
                             </div>

@@ -80,6 +80,7 @@ public class ConteoSector {
         ESPERANDO_VERIFICACION("Esperando Verificación"),
         CON_DIFERENCIAS("Con Diferencias"),
         COMPLETADO("Completado"),
+        COMPLETADO_SIN_CONTEO("Completado sin Conteo"),
         CANCELADO("Cancelado");
 
         private final String descripcion;

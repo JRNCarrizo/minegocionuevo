@@ -234,12 +234,33 @@ public class InventarioCompletoService {
         List<ConteoSector> sectores = conteoSectorRepository.findByInventarioCompleto(inventario);
         System.out.println("🔍 Total de sectores en el inventario: " + sectores.size());
         
-        // Verificar si todos los sectores están completados
+        // Debug: mostrar estado de cada sector
+        for (int i = 0; i < sectores.size(); i++) {
+            ConteoSector sector = sectores.get(i);
+            System.out.println("🔍 Sector " + (i + 1) + ": ID=" + sector.getId() + 
+                             ", Nombre=" + sector.getNombreSector() + 
+                             ", Estado=" + sector.getEstado());
+        }
+        
+        // Verificar si todos los sectores están completados (incluyendo los completados sin conteo)
         long sectoresCompletados = sectores.stream()
-            .filter(sector -> sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO)
+            .filter(sector -> sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO || 
+                            sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO)
             .count();
         
         System.out.println("🔍 Sectores completados: " + sectoresCompletados + " de " + sectores.size());
+        
+        // SIEMPRE actualizar el progreso del inventario
+        inventario.setSectoresCompletados((int) sectoresCompletados);
+        inventario.setSectoresEnProgreso((int) sectores.stream().filter(s -> s.getEstado() == ConteoSector.EstadoConteo.EN_PROGRESO).count());
+        inventario.setSectoresPendientes((int) sectores.stream().filter(s -> s.getEstado() == ConteoSector.EstadoConteo.PENDIENTE).count());
+        inventario.setPorcentajeCompletado(sectores.size() > 0 ? (sectoresCompletados * 100.0 / sectores.size()) : 0.0);
+        
+        System.out.println("🔍 Progreso actualizado:");
+        System.out.println("  - Sectores completados: " + inventario.getSectoresCompletados());
+        System.out.println("  - Sectores en progreso: " + inventario.getSectoresEnProgreso());
+        System.out.println("  - Sectores pendientes: " + inventario.getSectoresPendientes());
+        System.out.println("  - Porcentaje completado: " + inventario.getPorcentajeCompletado());
         
         // Si todos los sectores están completados
         if (sectoresCompletados == sectores.size() && sectores.size() > 0) {
@@ -248,16 +269,14 @@ public class InventarioCompletoService {
             // Actualizar estado del inventario a COMPLETADO
             inventario.setEstado(InventarioCompleto.EstadoInventario.COMPLETADO);
             inventario.setFechaFinalizacion(LocalDateTime.now());
-            inventario.setSectoresCompletados((int) sectoresCompletados);
-            inventario.setSectoresEnProgreso(0);
-            inventario.setSectoresPendientes(0);
-            inventario.setPorcentajeCompletado(100.0);
             
             inventarioCompletoRepository.save(inventario);
             System.out.println("✅ Inventario completo finalizado exitosamente");
             return true;
         } else {
             System.out.println("⏳ Aún hay sectores pendientes o en progreso");
+            // Guardar el progreso actualizado
+            inventarioCompletoRepository.save(inventario);
             return false;
         }
     }
@@ -275,14 +294,19 @@ public class InventarioCompletoService {
         // Establecer el ID del inventario actual para usar en obtenerDistribucionRealPorSectores
         this.inventarioActualId = inventarioId;
         
-        // Verificar que todos los sectores estén completados
+        // Verificar que todos los sectores estén completados (incluyendo los completados sin conteo)
         List<ConteoSector> sectoresVerificacion = conteoSectorRepository.findByInventarioCompleto(inventario);
         boolean todosSectoresCompletados = sectoresVerificacion.stream()
-            .allMatch(sector -> sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO);
+            .allMatch(sector -> sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO || 
+                              sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO);
         
         if (!todosSectoresCompletados) {
             throw new RuntimeException("Todos los sectores deben estar completados para actualizar el stock");
         }
+        
+        // PASO CRÍTICO: Verificar y corregir stock de sectores "completado sin conteo"
+        System.out.println("🔄 === VERIFICANDO STOCK DE SECTORES SIN CONTEO ===");
+        verificarYCorregirStockSectoresSinConteo(inventario);
         
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -504,17 +528,30 @@ public class InventarioCompletoService {
         List<ConteoSector> sectores = conteoSectorRepository.findByInventarioCompleto(inventario);
         System.out.println("🔍 Procesando " + sectores.size() + " sectores para consolidación");
         
-        // Filtrar solo sectores completados para la consolidación
+        // Filtrar sectores completados (incluyendo los completados sin conteo)
         List<ConteoSector> sectoresCompletados = sectores.stream()
+            .filter(sector -> sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO || 
+                            sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO)
+            .collect(Collectors.toList());
+        
+        // Separar sectores contados de los completados sin conteo
+        List<ConteoSector> sectoresContados = sectores.stream()
             .filter(sector -> sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO)
+            .collect(Collectors.toList());
+            
+        List<ConteoSector> sectoresSinConteo = sectores.stream()
+            .filter(sector -> sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO)
             .collect(Collectors.toList());
         
         System.out.println("✅ Sectores completados encontrados: " + sectoresCompletados.size() + " de " + sectores.size());
+        System.out.println("  - Sectores contados: " + sectoresContados.size());
+        System.out.println("  - Sectores completados sin conteo: " + sectoresSinConteo.size());
         
         // Map para consolidar productos por ID (productoId -> datos consolidados)
         Map<Long, Map<String, Object>> productosConsolidados = new HashMap<>();
         
-        for (ConteoSector sector : sectoresCompletados) {
+        // Procesar sectores que fueron realmente contados
+        for (ConteoSector sector : sectoresContados) {
             System.out.println("🔍 Procesando sector: " + sector.getNombreSector() + " (ID: " + sector.getId() + ")");
             
             // Obtener detalles consolidados del sector
@@ -607,29 +644,66 @@ public class InventarioCompletoService {
             }
         }
         
-        // AGREGAR PRODUCTOS NO CONTADOS - Obtener todos los productos de la empresa
-        System.out.println("🔍 Buscando productos no contados...");
+        // Calcular stock ajustado para productos contados (descontando sectores completados sin conteo)
+        System.out.println("🔍 Calculando stock ajustado para productos contados...");
+        for (Map<String, Object> producto : productosConsolidados.values()) {
+            Long productoId = (Long) producto.get("productoId");
+            Integer stockOriginal = (Integer) producto.get("stockSistema");
+            
+            // Calcular stock ajustado descontando sectores completados sin conteo
+            Integer stockAjustado = calcularStockAjustado(productoId, stockOriginal, sectoresSinConteo);
+            producto.put("stockSistema", stockAjustado);
+            
+            // Recalcular diferencias con el stock ajustado
+            Integer cantidadConteo1 = (Integer) producto.get("cantidadConteo1");
+            Integer cantidadConteo2 = (Integer) producto.get("cantidadConteo2");
+            Integer cantidadFinal = Math.max(cantidadConteo1 != null ? cantidadConteo1 : 0, cantidadConteo2 != null ? cantidadConteo2 : 0);
+            
+            producto.put("diferenciaSistema", cantidadFinal - stockAjustado);
+            
+            System.out.println("  📊 Producto: " + producto.get("nombreProducto") + 
+                             " - Stock original: " + stockOriginal + 
+                             " - Stock ajustado: " + stockAjustado + 
+                             " - Cantidad final: " + cantidadFinal);
+        }
+        
+        // AGREGAR PRODUCTOS NO CONTADOS - Solo productos que NO están en sectores contados NI en sectores sin conteo
+        // (Los productos de sectores sin conteo NO aparecen en la lista, pero se descuentan del stock)
+        System.out.println("🔍 Buscando productos realmente no contados...");
         List<Producto> todosLosProductos = productoRepository.findByEmpresaId(inventario.getEmpresa().getId());
         System.out.println("🔍 Total de productos en el sistema: " + todosLosProductos.size());
         
+        // Obtener IDs de productos que están en sectores completados sin conteo
+        Set<Long> productosEnSectoresSinConteo = new HashSet<>();
+        for (ConteoSector sector : sectoresSinConteo) {
+            List<StockPorSector> stockEnSector = stockPorSectorRepository.findBySectorId(sector.getSector().getId());
+            for (StockPorSector stockPorSector : stockEnSector) {
+                productosEnSectoresSinConteo.add(stockPorSector.getProducto().getId());
+            }
+        }
+        System.out.println("🔍 Productos en sectores sin conteo: " + productosEnSectoresSinConteo.size());
+        
         int productosNoContados = 0;
         for (Producto producto : todosLosProductos) {
-            if (!productosConsolidados.containsKey(producto.getId())) {
-                // Producto no fue contado - agregarlo con valores por defecto
+            if (!productosConsolidados.containsKey(producto.getId()) && 
+                !productosEnSectoresSinConteo.contains(producto.getId())) {
+                // Producto realmente no fue contado (no está en sectores contados ni en sectores sin conteo)
+                Integer stockAjustado = calcularStockAjustado(producto.getId(), producto.getStock(), sectoresSinConteo);
+                
                 Map<String, Object> productoNoContado = new HashMap<>();
                 productoNoContado.put("productoId", producto.getId());
                 productoNoContado.put("nombreProducto", producto.getNombre());
                 productoNoContado.put("codigoProducto", producto.getCodigoPersonalizado());
-                productoNoContado.put("stockSistema", producto.getStock());
+                productoNoContado.put("stockSistema", stockAjustado); // Usar stock ajustado
                 productoNoContado.put("cantidadConteo1", 0);
                 productoNoContado.put("cantidadConteo2", 0);
                 productoNoContado.put("formulaCalculo1", "");
                 productoNoContado.put("formulaCalculo2", "");
-                productoNoContado.put("diferenciaSistema", -producto.getStock()); // Negativo porque no fue contado
+                productoNoContado.put("diferenciaSistema", -stockAjustado); // Negativo porque no fue contado
                 productoNoContado.put("diferenciaEntreConteos", 0);
                 productoNoContado.put("fueContado", false); // Marcar que no fue contado
                 productoNoContado.put("accionRecomendada", "OMITIR"); // Acción por defecto: omitir
-                productoNoContado.put("cantidadFinal", producto.getStock()); // Valor por defecto: stock actual
+                productoNoContado.put("cantidadFinal", stockAjustado); // Valor por defecto: stock ajustado
                 
                 // Lista vacía de sectores (no fue contado en ningún sector)
                 productoNoContado.put("sectores", new ArrayList<>());
@@ -637,12 +711,16 @@ public class InventarioCompletoService {
                 productosConsolidados.put(producto.getId(), productoNoContado);
                 productosNoContados++;
                 
-                System.out.println("  ⚠️ Producto no contado agregado: " + producto.getNombre() + 
-                                 " - Stock actual: " + producto.getStock());
-            } else {
-                // Marcar productos contados
+                System.out.println("  ⚠️ Producto realmente no contado agregado: " + producto.getNombre() + 
+                                 " - Stock original: " + producto.getStock() + 
+                                 " - Stock ajustado: " + stockAjustado);
+            } else if (productosConsolidados.containsKey(producto.getId())) {
+                // Marcar productos contados (ya procesados anteriormente)
                 productosConsolidados.get(producto.getId()).put("fueContado", true);
                 productosConsolidados.get(producto.getId()).put("accionRecomendada", "ACTUALIZAR");
+            } else {
+                // Producto está en sector sin conteo - NO agregarlo a la lista
+                System.out.println("  ✅ Producto en sector sin conteo (NO agregado a lista): " + producto.getNombre());
             }
         }
         
@@ -3603,6 +3681,7 @@ public class InventarioCompletoService {
             System.out.println("🔄 === INICIANDO ACTUALIZACIÓN STOCK POR SECTOR ===");
             System.out.println("🔄 Producto: " + producto.getNombre() + " (ID: " + producto.getId() + ")");
             System.out.println("🔄 Cantidad final solicitada: " + cantidadFinal);
+            System.out.println("🔄 Stock actual del producto: " + producto.getStock());
             
             // PASO 1: Obtener la distribución real del inventario por sectores
             Map<Long, Integer> distribucionPorSectores = obtenerDistribucionRealPorSectores(producto.getId());
@@ -3616,36 +3695,127 @@ public class InventarioCompletoService {
                 return;
             }
             
-            // PASO 2: Verificar si la cantidad final coincide con el total del inventario
-            Integer totalInventario = distribucionPorSectores.values().stream().mapToInt(Integer::intValue).sum();
+            // PASO 2: Separar sectores contados de sectores sin conteo
+            Map<Long, Integer> sectoresContados = new HashMap<>();
+            Map<Long, Integer> sectoresSinConteo = new HashMap<>();
             
-            System.out.println("🔍 Distribución original: " + distribucionPorSectores);
-            System.out.println("🔍 Total inventario: " + totalInventario + " -> Cantidad final solicitada: " + cantidadFinal);
-            
-            // Si las cantidades coinciden, mantener la distribución exacta
-            // Si no coinciden, aplicar ajuste proporcional solo si es necesario
-            boolean mantenerDistribucionExacta = totalInventario.equals(cantidadFinal);
-            
-            if (mantenerDistribucionExacta) {
-                System.out.println("✅ Manteniendo distribución exacta del inventario");
-            } else {
-                System.out.println("⚠️ Aplicando ajuste proporcional: " + totalInventario + " -> " + cantidadFinal);
+            // Obtener información de sectores del inventario para clasificar
+            InventarioCompleto inventario = inventarioCompletoRepository.findById(this.inventarioActualId).orElse(null);
+            if (inventario != null) {
+                List<ConteoSector> todosLosSectores = conteoSectorRepository.findByInventarioCompleto(inventario);
+                Map<Long, ConteoSector.EstadoConteo> estadosSectores = todosLosSectores.stream()
+                    .collect(Collectors.toMap(
+                        sector -> sector.getSector().getId(),
+                        ConteoSector::getEstado
+                    ));
+                
+                for (Map.Entry<Long, Integer> entry : distribucionPorSectores.entrySet()) {
+                    Long sectorId = entry.getKey();
+                    Integer cantidad = entry.getValue();
+                    ConteoSector.EstadoConteo estado = estadosSectores.get(sectorId);
+                    
+                    if (estado == ConteoSector.EstadoConteo.COMPLETADO) {
+                        sectoresContados.put(sectorId, cantidad);
+                    } else if (estado == ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO) {
+                        sectoresSinConteo.put(sectorId, cantidad);
+                    }
+                }
             }
             
-            // PASO 3: Actualizar o crear registros con la distribución
+            System.out.println("🔍 Distribución original: " + distribucionPorSectores);
+            System.out.println("🔍 Sectores contados: " + sectoresContados);
+            System.out.println("🔍 Sectores sin conteo: " + sectoresSinConteo);
+            System.out.println("🔍 Cantidad final solicitada: " + cantidadFinal);
+            
+            // PASO 3: Calcular distribución final
+            // - Sectores contados: usar cantidades del inventario
+            // - Sectores sin conteo: mantener stock original
+            // - Si hay diferencia, ajustar solo en sectores contados
+            Integer totalSectoresContados = sectoresContados.values().stream().mapToInt(Integer::intValue).sum();
+            Integer totalSectoresSinConteo = sectoresSinConteo.values().stream().mapToInt(Integer::intValue).sum();
+            Integer totalActual = totalSectoresContados + totalSectoresSinConteo;
+            
+            System.out.println("🔍 === ANÁLISIS DETALLADO ===");
+            System.out.println("🔍 Producto: " + producto.getNombre());
+            System.out.println("🔍 Cantidad final solicitada: " + cantidadFinal);
+            System.out.println("🔍 Stock actual del producto: " + producto.getStock());
+            System.out.println("🔍 Total sectores contados: " + totalSectoresContados);
+            System.out.println("🔍 Total sectores sin conteo: " + totalSectoresSinConteo);
+            System.out.println("🔍 Total actual (contados + sin conteo): " + totalActual);
+            System.out.println("🔍 ¿Coinciden cantidad final y total actual? " + cantidadFinal.equals(totalActual));
+            
+            System.out.println("🔍 Total sectores contados: " + totalSectoresContados);
+            System.out.println("🔍 Total sectores sin conteo: " + totalSectoresSinConteo);
+            System.out.println("🔍 Total actual: " + totalActual);
+            
+            // CORRECCIÓN: La cantidad final debe incluir TODOS los sectores (contados + sin conteo)
+            // La cantidad final que llega aquí solo incluye sectores contados, necesitamos sumar los sin conteo
+            Integer cantidadFinalCompleta = cantidadFinal + totalSectoresSinConteo;
+            
+            System.out.println("🔍 === CÁLCULO DE AJUSTE CORREGIDO ===");
+            System.out.println("🔍 Cantidad final solicitada (solo contados): " + cantidadFinal);
+            System.out.println("🔍 Total sectores sin conteo: " + totalSectoresSinConteo);
+            System.out.println("🔍 Total sectores contados: " + totalSectoresContados);
+            System.out.println("🔍 Total actual (contados + sin conteo): " + totalActual);
+            System.out.println("🔍 Cantidad final completa (contados + sin conteo): " + cantidadFinalCompleta);
+            System.out.println("🔍 ¿Necesita ajuste? " + (!totalActual.equals(cantidadFinalCompleta)));
+            
+            // CORRECCIÓN: NO hacer ajustes proporcionales cuando hay sectores sin conteo
+            // Cada sector debe mantener su cantidad original
+            boolean necesitaAjuste = false;
+            Integer cantidadFinalSectoresContados = totalSectoresContados;
+            
+            // Solo hacer ajuste si NO hay sectores sin conteo
+            if (totalSectoresSinConteo == 0) {
+                necesitaAjuste = !totalActual.equals(cantidadFinalCompleta);
+                if (necesitaAjuste) {
+                    Integer diferencia = cantidadFinalCompleta - totalActual;
+                    cantidadFinalSectoresContados = totalSectoresContados + diferencia;
+                    System.out.println("🔍 Diferencia a distribuir (solo sectores contados): " + diferencia);
+                    System.out.println("🔍 Cantidad final para sectores contados: " + cantidadFinalSectoresContados);
+                }
+            } else {
+                System.out.println("🔍 NO SE HACE AJUSTE - Hay sectores sin conteo, cada sector mantiene su cantidad original");
+                System.out.println("🔍 Sectores contados mantienen: " + totalSectoresContados);
+                System.out.println("🔍 Sectores sin conteo mantienen: " + totalSectoresSinConteo);
+            }
+            
+            // PASO 4: Actualizar o crear registros con la distribución
             for (Map.Entry<Long, Integer> entry : distribucionPorSectores.entrySet()) {
                 Long sectorId = entry.getKey();
                 Integer cantidadOriginal = entry.getValue();
                 
                 // Calcular cantidad final para este sector
                 Integer cantidadFinalSector;
-                if (mantenerDistribucionExacta) {
-                    // Mantener cantidad exacta del inventario
+                
+                if (sectoresContados.containsKey(sectorId)) {
+                    // Sector contado: mantener cantidad original cuando hay sectores sin conteo
+                    System.out.println("🔍 === PROCESANDO SECTOR CONTADO ===");
+                    System.out.println("🔍 Sector ID: " + sectorId);
+                    System.out.println("🔍 Cantidad original: " + cantidadOriginal);
+                    System.out.println("🔍 Total sectores contados: " + totalSectoresContados);
+                    System.out.println("🔍 Total sectores sin conteo: " + totalSectoresSinConteo);
+                    System.out.println("🔍 ¿Necesita ajuste? " + necesitaAjuste);
+                    
+                    if (necesitaAjuste && totalSectoresContados > 0) {
+                        double factorAjuste = cantidadFinalSectoresContados.doubleValue() / totalSectoresContados.doubleValue();
+                        cantidadFinalSector = (int) Math.round(cantidadOriginal * factorAjuste);
+                        System.out.println("🔍 AJUSTE APLICADO - Factor: " + factorAjuste);
+                        System.out.println("🔍 Cálculo: " + cantidadOriginal + " * " + factorAjuste + " = " + cantidadFinalSector);
+                        System.out.println("🔍 Sector contado ajustado: " + sectorId + " - Original: " + cantidadOriginal + " -> Final: " + cantidadFinalSector);
+                    } else {
+                        cantidadFinalSector = cantidadOriginal;
+                        System.out.println("🔍 SIN AJUSTE - Manteniendo cantidad original");
+                        System.out.println("🔍 Sector contado sin ajuste: " + sectorId + " - Cantidad: " + cantidadFinalSector);
+                    }
+                } else if (sectoresSinConteo.containsKey(sectorId)) {
+                    // Sector sin conteo: mantener cantidad original
                     cantidadFinalSector = cantidadOriginal;
+                    System.out.println("🔍 Sector sin conteo mantenido: " + sectorId + " - Cantidad: " + cantidadFinalSector);
                 } else {
-                    // Aplicar ajuste proporcional
-                    double factorAjuste = cantidadFinal.doubleValue() / totalInventario.doubleValue();
-                    cantidadFinalSector = (int) Math.round(cantidadOriginal * factorAjuste);
+                    // No debería pasar, pero por seguridad
+                    cantidadFinalSector = cantidadOriginal;
+                    System.out.println("⚠️ Sector no clasificado: " + sectorId + " - Cantidad: " + cantidadFinalSector);
                 }
                 
                 // Solo procesar si la cantidad es mayor a 0
@@ -3672,23 +3842,32 @@ public class InventarioCompletoService {
                 }
             }
             
-            // PASO 4: Eliminar registros de sectores que no están en la distribución
+            // PASO 5: Eliminar registros de sectores que no están en la distribución
             List<StockPorSector> todosLosStocks = stockPorSectorRepository.findByProductoId(producto.getId());
+            System.out.println("🔍 === VERIFICANDO STOCKS EXISTENTES ===");
+            System.out.println("🔍 Total stocks existentes para " + producto.getNombre() + ": " + todosLosStocks.size());
+            for (StockPorSector stock : todosLosStocks) {
+                System.out.println("🔍 Stock existente: " + producto.getNombre() + " en " + stock.getSector().getNombre() + " = " + stock.getCantidad());
+            }
+            System.out.println("🔍 Distribución a mantener: " + distribucionPorSectores);
+            
             for (StockPorSector stock : todosLosStocks) {
                 Long sectorId = stock.getSector().getId();
                 if (!distribucionPorSectores.containsKey(sectorId)) {
                     // Este sector no está en la distribución, eliminar el registro
                     stockPorSectorRepository.delete(stock);
                     System.out.println("🗑️ Stock eliminado: " + producto.getNombre() + " en " + stock.getSector().getNombre() + " (no está en distribución)");
+                } else {
+                    System.out.println("✅ Stock mantenido: " + producto.getNombre() + " en " + stock.getSector().getNombre() + " = " + stock.getCantidad());
                 }
             }
             
-            // PASO 5: SINCRONIZAR: Actualizar el stock total del producto
-            if (!producto.getStock().equals(cantidadFinal)) {
-                producto.setStock(cantidadFinal);
-                productoRepository.save(producto);
-                System.out.println("🔄 Stock del producto sincronizado: " + producto.getNombre() + " = " + cantidadFinal);
-            }
+                // PASO 5: SINCRONIZAR: Actualizar el stock total del producto
+                if (!producto.getStock().equals(cantidadFinalCompleta)) {
+                    producto.setStock(cantidadFinalCompleta);
+                    productoRepository.save(producto);
+                    System.out.println("🔄 Stock del producto sincronizado: " + producto.getNombre() + " = " + cantidadFinalCompleta);
+                }
             
             // PASO 6: VERIFICACIÓN FINAL - Mostrar el estado final
             System.out.println("🔄 === VERIFICACIÓN FINAL ===");
@@ -3713,69 +3892,99 @@ public class InventarioCompletoService {
         Map<Long, Integer> distribucion = new HashMap<>();
         
         try {
-            // Buscar todos los DetalleConteo para este producto
             Producto producto = productoRepository.findById(productoId).orElse(null);
             if (producto == null) {
                 System.out.println("⚠️ Producto no encontrado con ID: " + productoId);
                 return distribucion;
             }
             
-            // CORRECCIÓN: Solo obtener detalles del inventario actual, no de todos los inventarios
-            // Buscar todos los DetalleConteo para este producto en el inventario actual
-            List<DetalleConteo> detallesProducto = detalleConteoRepository.findAll().stream()
-                .filter(detalle -> detalle.getProducto().getId().equals(productoId) && !detalle.getEliminado())
-                .filter(detalle -> {
-                    // Solo incluir detalles del inventario actual
-                    ConteoSector conteoSector = detalle.getConteoSector();
-                    return conteoSector.getInventarioCompleto().getId().equals(this.inventarioActualId);
-                })
-                .collect(Collectors.toList());
+            System.out.println("🔍 === OBTENIENDO DISTRIBUCIÓN PARA PRODUCTO: " + producto.getNombre() + " ===");
             
-            System.out.println("🔍 Encontrados " + detallesProducto.size() + " detalles de conteo para producto ID: " + productoId + " (" + producto.getNombre() + ")");
+            // PASO 1: Obtener todos los sectores del inventario actual
+            InventarioCompleto inventario = inventarioCompletoRepository.findById(this.inventarioActualId).orElse(null);
+            if (inventario == null) {
+                System.out.println("⚠️ Inventario no encontrado con ID: " + this.inventarioActualId);
+                return distribucion;
+            }
             
-            for (DetalleConteo detalle : detallesProducto) {
-                ConteoSector conteoSector = detalle.getConteoSector();
-                
+            List<ConteoSector> todosLosSectores = conteoSectorRepository.findByInventarioCompleto(inventario);
+            System.out.println("🔍 Total de sectores en el inventario: " + todosLosSectores.size());
+            
+            // PASO 2: Procesar cada sector del inventario
+            for (ConteoSector conteoSector : todosLosSectores) {
                 // Solo procesar sectores completados
-                if (conteoSector.getEstado() != ConteoSector.EstadoConteo.COMPLETADO) {
+                if (conteoSector.getEstado() != ConteoSector.EstadoConteo.COMPLETADO && 
+                    conteoSector.getEstado() != ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO) {
                     System.out.println("  ⏭️ Saltando sector " + conteoSector.getSector().getNombre() + " - Estado: " + conteoSector.getEstado());
                     continue;
                 }
                 
                 Long sectorId = conteoSector.getSector().getId();
+                Integer cantidadSector = 0;
                 
-                // CORRECCIÓN: Usar la cantidad final consolidada (el mayor entre conteo1 y conteo2)
-                // Esto representa la cantidad final acordada para este producto en este sector
-                Integer cantidadConteo1 = detalle.getCantidadConteo1() != null ? detalle.getCantidadConteo1() : 0;
-                Integer cantidadConteo2 = detalle.getCantidadConteo2() != null ? detalle.getCantidadConteo2() : 0;
-                Integer cantidadSector = Math.max(cantidadConteo1, cantidadConteo2);
-                
-                System.out.println("  🔍 Detalle ID: " + detalle.getId() + 
-                                 " - Producto: " + producto.getNombre() + 
-                                 " - Sector: " + conteoSector.getSector().getNombre() + 
-                                 " - Conteo1: " + cantidadConteo1 + 
-                                 " - Conteo2: " + cantidadConteo2 + 
-                                 " - Cantidad final: " + cantidadSector);
-                
-                if (cantidadSector > 0) {
-                    // NO usar merge con sum - cada producto debería tener solo UNA entrada por sector
-                    // Si ya existe, mantener la mayor cantidad (caso de múltiples conteos del mismo producto en el mismo sector)
-                    Integer cantidadAnterior = distribucion.get(sectorId);
-                    distribucion.merge(sectorId, cantidadSector, Math::max);
-                    Integer cantidadNueva = distribucion.get(sectorId);
+                if (conteoSector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO) {
+                    // PASO 2A: Sector contado - buscar en DetalleConteo
+                    List<DetalleConteo> detallesDelProducto = detalleConteoRepository.findByConteoSectorAndProductoAndEliminadoFalse(conteoSector, producto);
                     
-                    if (cantidadAnterior != null && !cantidadAnterior.equals(cantidadNueva)) {
-                        System.out.println("  ⚠️ ACTUALIZACIÓN: Sector " + conteoSector.getSector().getNombre() + 
-                                         " - Anterior: " + cantidadAnterior + " -> Nueva: " + cantidadNueva);
+                    if (!detallesDelProducto.isEmpty()) {
+                        // Consolidar cantidades de múltiples conteos del mismo producto
+                        int totalConteo1 = 0;
+                        int totalConteo2 = 0;
+                        
+                        for (DetalleConteo detalle : detallesDelProducto) {
+                            if (detalle.getCantidadConteo1() != null) {
+                                totalConteo1 += detalle.getCantidadConteo1();
+                            }
+                            if (detalle.getCantidadConteo2() != null) {
+                                totalConteo2 += detalle.getCantidadConteo2();
+                            }
+                        }
+                        
+                        cantidadSector = Math.max(totalConteo1, totalConteo2);
+                        
+                        System.out.println("  🔍 SECTOR CONTADO - Producto: " + producto.getNombre() + 
+                                         " - Sector: " + conteoSector.getSector().getNombre() + 
+                                         " - Total Conteo1: " + totalConteo1 + 
+                                         " - Total Conteo2: " + totalConteo2 + 
+                                         " - Cantidad final: " + cantidadSector);
                     } else {
-                        System.out.println("  ✅ Sector " + conteoSector.getSector().getNombre() + 
-                                         " (ID: " + sectorId + "): " + cantidadSector);
+                        System.out.println("  ⚠️ SECTOR CONTADO SIN DETALLES - Producto: " + producto.getNombre() + 
+                                         " - Sector: " + conteoSector.getSector().getNombre());
                     }
+                } else {
+                    // PASO 2B: Sector completado sin conteo - buscar en StockPorSector
+                    Optional<StockPorSector> stockActual = stockPorSectorRepository.findByProductoIdAndSectorId(producto.getId(), sectorId);
+                    cantidadSector = stockActual.map(StockPorSector::getCantidad).orElse(0);
+                    
+                    System.out.println("  🔍 SECTOR SIN CONTEO - Producto: " + producto.getNombre() + 
+                                     " - Sector: " + conteoSector.getSector().getNombre() + 
+                                     " - Stock actual mantenido: " + cantidadSector);
+                }
+                
+                // PASO 3: Agregar a la distribución si hay cantidad
+                if (cantidadSector > 0) {
+                    distribucion.put(sectorId, cantidadSector);
+                    System.out.println("  ✅ Agregado a distribución - Sector: " + conteoSector.getSector().getNombre() + 
+                                     " (ID: " + sectorId + "): " + cantidadSector);
+                } else {
+                    System.out.println("  ⚠️ Sin cantidad - Sector: " + conteoSector.getSector().getNombre() + 
+                                     " (ID: " + sectorId + "): " + cantidadSector);
                 }
             }
             
+            System.out.println("🔍 === DISTRIBUCIÓN FINAL PARA " + producto.getNombre() + " ===");
+            for (Map.Entry<Long, Integer> entry : distribucion.entrySet()) {
+                Long sectorId = entry.getKey();
+                Integer cantidad = entry.getValue();
+                Sector sector = sectorRepository.findById(sectorId).orElse(null);
+                String nombreSector = sector != null ? sector.getNombre() : "Sector ID " + sectorId;
+                System.out.println("  📊 " + nombreSector + ": " + cantidad);
+            }
+            System.out.println("🔍 === FIN DISTRIBUCIÓN ===");
+            
         } catch (Exception e) {
             System.err.println("❌ Error obteniendo distribución por sectores: " + e.getMessage());
+            e.printStackTrace();
         }
         
         return distribucion;
@@ -3877,6 +4086,287 @@ public class InventarioCompletoService {
         } catch (Exception e) {
             System.err.println("❌ Error en sincronización automática: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Marcar un sector como completado sin conteo
+     */
+    public void marcarSectorCompletadoSinConteo(Long inventarioId, Long sectorId, String sectorNombre, Usuario usuario) {
+        try {
+            System.out.println("🔄 === MARCAR SECTOR COMPLETADO SIN CONTEO ===");
+            System.out.println("🔍 Inventario ID: " + inventarioId);
+            System.out.println("🔍 Sector ID: " + sectorId);
+            System.out.println("🔍 Sector Nombre: " + sectorNombre);
+            
+            // Obtener el inventario completo
+            InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId)
+                .orElseThrow(() -> new RuntimeException("Inventario no encontrado"));
+            
+            // Obtener el sector
+            Sector sector = sectorRepository.findById(sectorId)
+                .orElseThrow(() -> new RuntimeException("Sector no encontrado"));
+            
+            // Verificar si ya existe un conteo para este sector
+            Optional<ConteoSector> conteoExistente = conteoSectorRepository.findByInventarioCompletoAndSector(inventario, sector);
+            
+            if (conteoExistente.isPresent()) {
+                // Si ya existe, actualizar el estado
+                ConteoSector conteo = conteoExistente.get();
+                conteo.setEstado(ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO);
+                conteo.setFechaFinalizacion(LocalDateTime.now());
+                conteo.setObservaciones("Sector marcado como completado sin conteo por " + usuario.getNombre() + " " + usuario.getApellidos());
+                conteoSectorRepository.save(conteo);
+                
+                System.out.println("✅ Conteo existente actualizado a COMPLETADO_SIN_CONTEO");
+                System.out.println("🔍 DEBUG - Estado guardado: " + conteo.getEstado());
+                System.out.println("🔍 DEBUG - Sector ID: " + conteo.getSector().getId());
+                System.out.println("🔍 DEBUG - Sector Nombre: " + conteo.getSector().getNombre());
+            } else {
+                // Si no existe, crear un nuevo conteo marcado como completado sin conteo
+                ConteoSector nuevoConteo = new ConteoSector();
+                nuevoConteo.setInventarioCompleto(inventario);
+                nuevoConteo.setSector(sector);
+                nuevoConteo.setEstado(ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO);
+                nuevoConteo.setFechaCreacion(LocalDateTime.now());
+                nuevoConteo.setFechaFinalizacion(LocalDateTime.now());
+                nuevoConteo.setObservaciones("Sector marcado como completado sin conteo por " + usuario.getNombre() + " " + usuario.getApellidos());
+                nuevoConteo.setTotalProductos(0);
+                nuevoConteo.setProductosContados(0);
+                nuevoConteo.setProductosConDiferencias(0);
+                nuevoConteo.setPorcentajeCompletado(100.0);
+                
+                conteoSectorRepository.save(nuevoConteo);
+                
+                System.out.println("✅ Nuevo conteo creado como COMPLETADO_SIN_CONTEO");
+                System.out.println("🔍 DEBUG - Estado guardado: " + nuevoConteo.getEstado());
+                System.out.println("🔍 DEBUG - Sector ID: " + nuevoConteo.getSector().getId());
+                System.out.println("🔍 DEBUG - Sector Nombre: " + nuevoConteo.getSector().getNombre());
+            }
+            
+            // PASO CRÍTICO: Preservar el stock original de todos los productos en este sector
+            System.out.println("🔄 === PRESERVANDO STOCK ORIGINAL DEL SECTOR ===");
+            List<Producto> productosEmpresa = productoRepository.findByEmpresaId(inventario.getEmpresa().getId());
+            int productosPreservados = 0;
+            
+            for (Producto producto : productosEmpresa) {
+                // Verificar si el producto tiene stock en este sector
+                Optional<StockPorSector> stockExistente = stockPorSectorRepository.findByProductoIdAndSectorId(producto.getId(), sectorId);
+                
+                if (stockExistente.isPresent()) {
+                    // El producto ya tiene stock en este sector, mantenerlo
+                    StockPorSector stock = stockExistente.get();
+                    System.out.println("✅ Stock preservado: " + producto.getNombre() + " en " + sector.getNombre() + " = " + stock.getCantidad());
+                    productosPreservados++;
+                } else {
+                    // El producto no tiene stock en este sector, pero podría tenerlo según su sector de almacenamiento
+                    if (producto.getSectorAlmacenamiento() != null && producto.getSectorAlmacenamiento().equals(sector.getNombre())) {
+                        // Crear registro de stock para preservar el stock original
+                        StockPorSector nuevoStock = new StockPorSector(producto, sector, producto.getStock());
+                        stockPorSectorRepository.save(nuevoStock);
+                        System.out.println("✅ Stock creado para preservar: " + producto.getNombre() + " en " + sector.getNombre() + " = " + producto.getStock());
+                        productosPreservados++;
+                    }
+                }
+            }
+            
+            System.out.println("🔄 === STOCK PRESERVADO ===");
+            System.out.println("  - Total productos en empresa: " + productosEmpresa.size());
+            System.out.println("  - Productos con stock preservado: " + productosPreservados);
+            
+            // Actualizar el progreso del inventario completo
+            System.out.println("🔄 === ANTES DE LLAMAR A verificarYFinalizarInventarioCompleto ===");
+            System.out.println("🔄 Inventario ID: " + inventario.getId());
+            System.out.println("🔄 Estado actual del inventario: " + inventario.getEstado());
+            System.out.println("🔄 Sectores completados actual: " + inventario.getSectoresCompletados());
+            System.out.println("🔄 Total sectores actual: " + inventario.getTotalSectores());
+            
+            boolean finalizado = verificarYFinalizarInventarioCompleto(inventario.getId());
+            System.out.println("🔄 Resultado de verificarYFinalizarInventarioCompleto: " + finalizado);
+            
+            // Recargar el inventario para obtener los datos actualizados
+            inventario = inventarioCompletoRepository.findById(inventarioId).orElse(null);
+            if (inventario != null) {
+                System.out.println("🔍 Estado final del inventario:");
+                System.out.println("  - ID: " + inventario.getId());
+                System.out.println("  - Estado: " + inventario.getEstado());
+                System.out.println("  - Sectores completados: " + inventario.getSectoresCompletados());
+                System.out.println("  - Total sectores: " + inventario.getTotalSectores());
+                System.out.println("  - Porcentaje completado: " + inventario.getPorcentajeCompletado());
+                System.out.println("  - Finalizado: " + finalizado);
+            }
+            
+            System.out.println("✅ Sector marcado como completado sin conteo exitosamente");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error marcando sector como completado sin conteo: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * Cancelar un sector completado sin conteo (volver a estado pendiente)
+     */
+    public void cancelarSectorCompletadoSinConteo(Long inventarioId, Long sectorId, String sectorNombre, Usuario usuario) {
+        try {
+            System.out.println("🔄 === CANCELAR SECTOR COMPLETADO SIN CONTEO ===");
+            System.out.println("🔍 Inventario ID: " + inventarioId);
+            System.out.println("🔍 Sector ID: " + sectorId);
+            System.out.println("🔍 Sector Nombre: " + sectorNombre);
+            
+            // Obtener el inventario completo
+            InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId)
+                .orElseThrow(() -> new RuntimeException("Inventario no encontrado"));
+            
+            // Obtener el sector
+            Sector sector = sectorRepository.findById(sectorId)
+                .orElseThrow(() -> new RuntimeException("Sector no encontrado"));
+            
+            // Verificar si existe un conteo para este sector
+            Optional<ConteoSector> conteoExistente = conteoSectorRepository.findByInventarioCompletoAndSector(inventario, sector);
+            
+            if (conteoExistente.isPresent()) {
+                ConteoSector conteo = conteoExistente.get();
+                
+                // Verificar que el sector esté en estado COMPLETADO_SIN_CONTEO
+                if (conteo.getEstado() == ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO) {
+                    // Cambiar el estado a PENDIENTE
+                    conteo.setEstado(ConteoSector.EstadoConteo.PENDIENTE);
+                    conteo.setFechaFinalizacion(null); // Limpiar fecha de finalización
+                    conteo.setObservaciones("Sector cancelado de completado sin conteo por " + usuario.getNombre() + " " + usuario.getApellidos());
+                    conteo.setTotalProductos(0);
+                    conteo.setProductosContados(0);
+                    conteo.setProductosConDiferencias(0);
+                    conteo.setPorcentajeCompletado(0.0);
+                    
+                    conteoSectorRepository.save(conteo);
+                    
+                    System.out.println("✅ Conteo actualizado de COMPLETADO_SIN_CONTEO a PENDIENTE");
+                    System.out.println("🔍 DEBUG - Estado guardado: " + conteo.getEstado());
+                    System.out.println("🔍 DEBUG - Sector ID: " + conteo.getSector().getId());
+                    System.out.println("🔍 DEBUG - Sector Nombre: " + conteo.getSector().getNombre());
+                } else {
+                    throw new RuntimeException("El sector no está en estado COMPLETADO_SIN_CONTEO");
+                }
+            } else {
+                throw new RuntimeException("No se encontró un conteo para este sector");
+            }
+            
+            // Actualizar el progreso del inventario completo
+            System.out.println("🔄 === ACTUALIZANDO PROGRESO DEL INVENTARIO ===");
+            boolean finalizado = verificarYFinalizarInventarioCompleto(inventario.getId());
+            System.out.println("🔄 Resultado de verificarYFinalizarInventarioCompleto: " + finalizado);
+            
+            // Recargar el inventario para obtener los datos actualizados
+            inventario = inventarioCompletoRepository.findById(inventarioId).orElse(null);
+            if (inventario != null) {
+                System.out.println("🔍 Estado final del inventario:");
+                System.out.println("  - ID: " + inventario.getId());
+                System.out.println("  - Estado: " + inventario.getEstado());
+                System.out.println("  - Sectores completados: " + inventario.getSectoresCompletados());
+                System.out.println("  - Total sectores: " + inventario.getTotalSectores());
+                System.out.println("  - Porcentaje completado: " + inventario.getPorcentajeCompletado());
+                System.out.println("  - Finalizado: " + finalizado);
+            }
+            
+            System.out.println("✅ Sector cancelado de completado sin conteo exitosamente");
+        } catch (Exception e) {
+            System.err.println("❌ Error cancelando sector completado sin conteo: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * Verificar y corregir stock de sectores "completado sin conteo"
+     */
+    private void verificarYCorregirStockSectoresSinConteo(InventarioCompleto inventario) {
+        try {
+            System.out.println("🔄 === VERIFICANDO STOCK DE SECTORES SIN CONTEO ===");
+            
+            // Obtener todos los sectores "completado sin conteo"
+            List<ConteoSector> sectoresSinConteo = conteoSectorRepository.findByInventarioCompleto(inventario).stream()
+                .filter(sector -> sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO)
+                .collect(Collectors.toList());
+            
+            System.out.println("🔍 Sectores sin conteo encontrados: " + sectoresSinConteo.size());
+            
+            for (ConteoSector conteoSector : sectoresSinConteo) {
+                Sector sector = conteoSector.getSector();
+                System.out.println("🔍 Verificando sector: " + sector.getNombre() + " (ID: " + sector.getId() + ")");
+                
+                // Obtener todos los productos de la empresa
+                List<Producto> productosEmpresa = productoRepository.findByEmpresaId(inventario.getEmpresa().getId());
+                
+                for (Producto producto : productosEmpresa) {
+                    // Verificar si el producto tiene stock en este sector
+                    Optional<StockPorSector> stockExistente = stockPorSectorRepository.findByProductoIdAndSectorId(producto.getId(), sector.getId());
+                    
+                    if (!stockExistente.isPresent()) {
+                        // El producto no tiene stock en este sector, pero podría tenerlo según su sector de almacenamiento
+                        if (producto.getSectorAlmacenamiento() != null && producto.getSectorAlmacenamiento().equals(sector.getNombre())) {
+                            // Crear registro de stock para preservar el stock original
+                            StockPorSector nuevoStock = new StockPorSector(producto, sector, producto.getStock());
+                            stockPorSectorRepository.save(nuevoStock);
+                            System.out.println("✅ Stock creado para preservar: " + producto.getNombre() + " en " + sector.getNombre() + " = " + producto.getStock());
+                        }
+                    } else {
+                        // El producto ya tiene stock en este sector
+                        StockPorSector stock = stockExistente.get();
+                        System.out.println("✅ Stock ya existe: " + producto.getNombre() + " en " + sector.getNombre() + " = " + stock.getCantidad());
+                    }
+                }
+            }
+            
+            System.out.println("🔄 === VERIFICACIÓN COMPLETADA ===");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error verificando stock de sectores sin conteo: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Calcular stock ajustado descontando sectores completados sin conteo
+     */
+    private Integer calcularStockAjustado(Long productoId, Integer stockOriginal, List<ConteoSector> sectoresSinConteo) {
+        try {
+            if (sectoresSinConteo.isEmpty()) {
+                return stockOriginal; // No hay sectores sin conteo, usar stock original
+            }
+            
+            // Obtener el stock por sector para este producto
+            List<StockPorSector> stockPorSectores = stockPorSectorRepository.findByProductoId(productoId);
+            
+            if (stockPorSectores.isEmpty()) {
+                return stockOriginal; // No hay distribución por sectores, usar stock original
+            }
+            
+            // Calcular el stock total en sectores completados sin conteo
+            Integer stockEnSectoresSinConteo = 0;
+            for (ConteoSector sectorSinConteo : sectoresSinConteo) {
+                for (StockPorSector stockPorSector : stockPorSectores) {
+                    if (stockPorSector.getSector().getId().equals(sectorSinConteo.getSector().getId())) {
+                        stockEnSectoresSinConteo += stockPorSector.getCantidad();
+                        System.out.println("    📦 Descontando stock del sector " + sectorSinConteo.getSector().getNombre() + 
+                                         ": " + stockPorSector.getCantidad());
+                    }
+                }
+            }
+            
+            Integer stockAjustado = stockOriginal - stockEnSectoresSinConteo;
+            
+            System.out.println("    📊 Stock ajustado para producto ID " + productoId + ":");
+            System.out.println("      - Stock original: " + stockOriginal);
+            System.out.println("      - Stock en sectores sin conteo: " + stockEnSectoresSinConteo);
+            System.out.println("      - Stock ajustado: " + stockAjustado);
+            
+            return Math.max(0, stockAjustado); // No permitir stock negativo
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error calculando stock ajustado para producto " + productoId + ": " + e.getMessage());
+            return stockOriginal; // En caso de error, usar stock original
         }
     }
 }

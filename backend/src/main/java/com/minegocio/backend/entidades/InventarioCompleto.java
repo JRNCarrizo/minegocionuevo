@@ -179,6 +179,7 @@ public class InventarioCompleto {
         for (ConteoSector conteoSector : conteosSectores) {
             switch (conteoSector.getEstado()) {
                 case COMPLETADO:
+                case COMPLETADO_SIN_CONTEO:  // ✅ AGREGAR ESTE ESTADO
                     completados++;
                     break;
                 case EN_PROGRESO:
