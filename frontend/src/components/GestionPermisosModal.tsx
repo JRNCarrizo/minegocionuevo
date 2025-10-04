@@ -53,16 +53,20 @@ export default function GestionPermisosModal({
       // Organizar las secciones: principales primero, luego sub-secciones de Gestión de Empresa
       const seccionesPrincipales = seccionesArray.filter(s => 
         !['CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
-          'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'MOVIMIENTOS_DIA'].includes(s.codigo)
+          'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'GESTION_INVENTARIO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
       );
       
       const subSeccionesGestionEmpresa = seccionesArray.filter(s => 
         ['CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
-         'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'MOVIMIENTOS_DIA'].includes(s.codigo)
+         'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'GESTION_INVENTARIO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
       );
       
-      // Combinar: principales + sub-secciones de gestión de empresa
-      const seccionesOrganizadas = [...seccionesPrincipales, ...subSeccionesGestionEmpresa];
+      // Reorganizar: mover GESTION_EMPRESA al final de las secciones principales
+      const gestionEmpresa = seccionesPrincipales.find(s => s.codigo === 'GESTION_EMPRESA');
+      const otrasSecciones = seccionesPrincipales.filter(s => s.codigo !== 'GESTION_EMPRESA');
+      
+      // Combinar: otras secciones + gestión de empresa al final + sub-secciones
+      const seccionesOrganizadas = [...otrasSecciones, ...(gestionEmpresa ? [gestionEmpresa] : []), ...subSeccionesGestionEmpresa];
       setSecciones(seccionesOrganizadas);
     } catch (error) {
       console.error('Error cargando secciones:', error);
@@ -86,10 +90,26 @@ export default function GestionPermisosModal({
   };
 
   const handlePermisoChange = (funcionalidad: string, permitido: boolean) => {
-    setPermisos(prev => ({
-      ...prev,
-      [funcionalidad]: permitido
-    }));
+    setPermisos(prev => {
+      const nuevosPermisos = {
+        ...prev,
+        [funcionalidad]: permitido
+      };
+
+      // Si se deshabilita GESTION_EMPRESA, deshabilitar automáticamente todas las sub-secciones
+      if (funcionalidad === 'GESTION_EMPRESA' && !permitido) {
+        const subSecciones = [
+          'CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
+          'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'MOVIMIENTOS_DIA', 'GESTION_INVENTARIO'
+        ];
+        
+        subSecciones.forEach(subSeccion => {
+          nuevosPermisos[subSeccion] = false;
+        });
+      }
+
+      return nuevosPermisos;
+    });
   };
 
   const handleGuardar = async () => {
@@ -114,6 +134,19 @@ export default function GestionPermisosModal({
     secciones.forEach(seccion => {
       nuevosPermisos[seccion.codigo] = true;
     });
+    
+    // Si se habilita GESTION_EMPRESA, habilitar automáticamente todas las sub-secciones
+    if (nuevosPermisos['GESTION_EMPRESA']) {
+      const subSecciones = [
+        'CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
+        'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'MOVIMIENTOS_DIA', 'GESTION_INVENTARIO'
+      ];
+      
+      subSecciones.forEach(subSeccion => {
+        nuevosPermisos[subSeccion] = true;
+      });
+    }
+    
     setPermisos(nuevosPermisos);
   };
 
@@ -196,7 +229,7 @@ export default function GestionPermisosModal({
                 <div className="permissions-list">
                   {secciones.filter(s => 
                     !['CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
-                      'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'MOVIMIENTOS_DIA'].includes(s.codigo)
+                      'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'GESTION_INVENTARIO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
                   ).map((seccion) => (
                     <div key={seccion.codigo} className="permission-item">
                       <div className="permission-info">
@@ -232,14 +265,15 @@ export default function GestionPermisosModal({
                 </div>
               </div>
 
-              {/* Sub-secciones de Gestión de Empresa */}
-              <div className="permissions-section">
-                <h3 className="section-title">Sub-secciones de Gestión de Empresa</h3>
-                <div className="permissions-list">
-                  {secciones.filter(s => 
-                    ['CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
-                     'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'MOVIMIENTOS_DIA'].includes(s.codigo)
-                  ).map((seccion) => (
+              {/* Sub-secciones de Gestión de Empresa - Solo se muestran si GESTION_EMPRESA está habilitado */}
+              {permisos['GESTION_EMPRESA'] && (
+                <div className="permissions-section">
+                  <h3 className="section-title">Sub-secciones de Gestión de Empresa</h3>
+                  <div className="permissions-list">
+                    {secciones.filter(s => 
+                      ['CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
+                       'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'GESTION_INVENTARIO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
+                    ).map((seccion) => (
                     <div key={seccion.codigo} className="permission-item sub-permission">
                       <div className="permission-info">
                         <h3>{seccion.descripcion}</h3>
@@ -272,8 +306,9 @@ export default function GestionPermisosModal({
                       </div>
                     </div>
                   ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           )}
         </div>

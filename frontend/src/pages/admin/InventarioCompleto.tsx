@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useResponsive } from '../../hooks/useResponsive';
 import ApiService from '../../services/api';
 import { API_CONFIG } from '../../config/api';
@@ -62,6 +63,7 @@ interface InventarioCompleto {
 
 export default function InventarioCompleto() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
+  const { hasPermission } = usePermissions();
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
   const location = useLocation();
