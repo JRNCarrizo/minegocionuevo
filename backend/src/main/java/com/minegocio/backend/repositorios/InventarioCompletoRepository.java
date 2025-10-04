@@ -45,4 +45,9 @@ public interface InventarioCompletoRepository extends JpaRepository<InventarioCo
      */
     @Query("SELECT i FROM InventarioCompleto i WHERE i.usuarioAdministrador.id = :usuarioAdministradorId ORDER BY i.fechaInicio DESC")
     List<InventarioCompleto> findByUsuarioAdministradorOrderByFechaInicioDesc(@Param("usuarioAdministradorId") Long usuarioAdministradorId);
+    
+    /**
+     * Buscar inventarios completados con observaciones (procesados)
+     */
+    List<InventarioCompleto> findByEmpresaAndObservacionesIsNotNullOrderByFechaFinalizacionDesc(Empresa empresa);
 }

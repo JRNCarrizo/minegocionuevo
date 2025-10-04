@@ -8,6 +8,9 @@ import com.minegocio.backend.entidades.Producto;
 import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.entidades.Empresa;
 import com.minegocio.backend.entidades.Sector;
+import com.minegocio.backend.entidades.RegistroInventario;
+import com.minegocio.backend.entidades.DetalleRegistroInventario;
+import com.minegocio.backend.entidades.StockPorSector;
 import com.minegocio.backend.repositorios.ConteoSectorRepository;
 import com.minegocio.backend.repositorios.DetalleConteoRepository;
 import com.minegocio.backend.repositorios.InventarioCompletoRepository;
@@ -15,18 +18,23 @@ import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
 import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.SectorRepository;
+import com.minegocio.backend.repositorios.RegistroInventarioRepository;
+import com.minegocio.backend.repositorios.DetalleRegistroInventarioRepository;
+import com.minegocio.backend.repositorios.StockPorSectorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Comparator;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -52,6 +60,15 @@ public class InventarioCompletoService {
 
     @Autowired
     private SectorRepository sectorRepository;
+
+    @Autowired
+    private RegistroInventarioRepository registroInventarioRepository;
+
+    @Autowired
+    private DetalleRegistroInventarioRepository detalleRegistroInventarioRepository;
+    
+    @Autowired
+    private StockPorSectorRepository stockPorSectorRepository;
 
     /**
      * Obtener un conteo sector por ID
@@ -199,6 +216,567 @@ public class InventarioCompletoService {
     }
 
     /**
+     * Verificar si todos los sectores están completados y actualizar estado del inventario
+     */
+    public boolean verificarYFinalizarInventarioCompleto(Long inventarioId) {
+        System.out.println("🔍 Verificando si el inventario completo está listo para finalizar: " + inventarioId);
+        
+        InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId).orElse(null);
+        if (inventario == null) {
+            System.out.println("❌ Inventario completo no encontrado con ID: " + inventarioId);
+            return false;
+        }
+        
+        // Obtener todos los sectores del inventario
+        List<ConteoSector> sectores = conteoSectorRepository.findByInventarioCompleto(inventario);
+        System.out.println("🔍 Total de sectores en el inventario: " + sectores.size());
+        
+        // Verificar si todos los sectores están completados
+        long sectoresCompletados = sectores.stream()
+            .filter(sector -> sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO)
+            .count();
+        
+        System.out.println("🔍 Sectores completados: " + sectoresCompletados + " de " + sectores.size());
+        
+        // Si todos los sectores están completados
+        if (sectoresCompletados == sectores.size() && sectores.size() > 0) {
+            System.out.println("✅ Todos los sectores están completados. Preparando para finalización...");
+            
+            // Actualizar estado del inventario a COMPLETADO
+            inventario.setEstado(InventarioCompleto.EstadoInventario.COMPLETADO);
+            inventario.setFechaFinalizacion(LocalDateTime.now());
+            inventario.setSectoresCompletados((int) sectoresCompletados);
+            inventario.setSectoresEnProgreso(0);
+            inventario.setSectoresPendientes(0);
+            inventario.setPorcentajeCompletado(100.0);
+            
+            inventarioCompletoRepository.save(inventario);
+            System.out.println("✅ Inventario completo finalizado exitosamente");
+            return true;
+        } else {
+            System.out.println("⏳ Aún hay sectores pendientes o en progreso");
+            return false;
+        }
+    }
+
+    /**
+     * Actualizar stock del sistema y generar registro del inventario
+     */
+    @Transactional
+    public Map<String, Object> actualizarStockYGenerarRegistro(Long inventarioId, List<Map<String, Object>> productosEditados, String observaciones, Long usuarioId) {
+        System.out.println("🔄 Iniciando actualización de stock y generación de registro para inventario: " + inventarioId);
+        
+        InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId)
+                .orElseThrow(() -> new RuntimeException("Inventario completo no encontrado"));
+        
+        // Verificar que todos los sectores estén completados
+        List<ConteoSector> sectoresVerificacion = conteoSectorRepository.findByInventarioCompleto(inventario);
+        boolean todosSectoresCompletados = sectoresVerificacion.stream()
+            .allMatch(sector -> sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO);
+        
+        if (!todosSectoresCompletados) {
+            throw new RuntimeException("Todos los sectores deben estar completados para actualizar el stock");
+        }
+        
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        
+        // Crear registro del inventario
+        Map<String, Object> registroInventario = new HashMap<>();
+        registroInventario.put("inventarioId", inventarioId);
+        registroInventario.put("nombreInventario", inventario.getNombre());
+        registroInventario.put("fechaRealizacion", inventario.getFechaFinalizacion());
+        registroInventario.put("usuarioResponsable", usuario.getNombre() + " " + usuario.getApellidos());
+        registroInventario.put("observaciones", observaciones);
+        registroInventario.put("fechaGeneracion", LocalDateTime.now());
+        
+        // Obtener información de sectores antes de procesar productos
+        List<ConteoSector> sectores = conteoSectorRepository.findByInventarioCompleto(inventario);
+        
+        // Procesar cada producto editado
+        List<Map<String, Object>> productosActualizados = new ArrayList<>();
+        int productosConDiferencias = 0;
+        int productosSinDiferencias = 0;
+        
+        for (Map<String, Object> productoEditado : productosEditados) {
+            Long productoId = Long.valueOf(productoEditado.get("productoId").toString());
+            Integer cantidadFinal = Integer.valueOf(productoEditado.get("cantidadFinal").toString());
+            String observacionesProducto = (String) productoEditado.get("observaciones");
+            Boolean fueContado = (Boolean) productoEditado.get("fueContado");
+            String accionSeleccionada = (String) productoEditado.get("accionSeleccionada");
+            
+            Producto producto = productoRepository.findById(productoId)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productoId));
+            
+            Integer stockAnterior = producto.getStock();
+            Integer diferenciaStock = cantidadFinal - stockAnterior;
+            
+            // MANEJO DE PRODUCTOS NO CONTADOS
+            if (fueContado != null && !fueContado) {
+                System.out.println("⚠️ Procesando producto NO CONTADO: " + producto.getNombre());
+                System.out.println("⚠️ Acción seleccionada: " + accionSeleccionada);
+                
+                if ("DAR_POR_0".equals(accionSeleccionada)) {
+                    // Dar por 0 - actualizar stock a 0
+                    cantidadFinal = 0;
+                    diferenciaStock = cantidadFinal - stockAnterior;
+                    System.out.println("⚠️ Producto NO CONTADO - Dado por 0: " + producto.getNombre());
+                } else {
+                    // OMITIR - conservar valor actual (no hacer nada)
+                    cantidadFinal = stockAnterior;
+                    diferenciaStock = 0;
+                    System.out.println("⚠️ Producto NO CONTADO - Omitido (conserva valor): " + producto.getNombre());
+                }
+            }
+            
+            // Actualizar sector del producto basado en el inventario
+            // Solo actualizar sector si el producto fue contado
+            if (fueContado == null || fueContado) {
+                // Buscar el sector más frecuente para este producto en el inventario
+                List<ConteoSector> sectoresDelProducto = sectores.stream()
+                    .filter(sector -> {
+                        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndProductoAndEliminadoFalse(sector, producto);
+                        return !detalles.isEmpty();
+                    })
+                    .collect(Collectors.toList());
+                
+                if (!sectoresDelProducto.isEmpty()) {
+                    // Usar el sector con más conteos para este producto
+                    ConteoSector sectorMasFrecuente = sectoresDelProducto.stream()
+                        .max(Comparator.comparing(sector -> 
+                            detalleConteoRepository.findByConteoSectorAndProductoAndEliminadoFalse(sector, producto).size()))
+                        .orElse(sectoresDelProducto.get(0));
+                    
+                    producto.setSectorAlmacenamiento(sectorMasFrecuente.getSector().getNombre());
+                    System.out.println("✅ Sector actualizado para " + producto.getNombre() + 
+                                     " - Nuevo sector: " + sectorMasFrecuente.getSector().getNombre());
+                }
+            }
+            
+            productoRepository.save(producto);
+            
+            // Actualizar stock por sector y sincronizar
+            actualizarStockPorSector(producto, cantidadFinal);
+            
+            // Crear registro del producto
+            Map<String, Object> registroProducto = new HashMap<>();
+            registroProducto.put("productoId", productoId);
+            registroProducto.put("nombreProducto", producto.getNombre());
+            registroProducto.put("codigoProducto", producto.getCodigoPersonalizado());
+            registroProducto.put("stockAnterior", stockAnterior);
+            registroProducto.put("stockNuevo", cantidadFinal);
+            registroProducto.put("diferenciaStock", diferenciaStock);
+            registroProducto.put("observaciones", observacionesProducto);
+            
+            productosActualizados.add(registroProducto);
+            
+            if (diferenciaStock != 0) {
+                productosConDiferencias++;
+            } else {
+                productosSinDiferencias++;
+            }
+            
+            System.out.println("✅ Producto actualizado: " + producto.getNombre() + 
+                             " - Stock anterior: " + stockAnterior + 
+                             " - Stock nuevo: " + cantidadFinal + 
+                             " - Diferencia: " + diferenciaStock);
+        }
+        
+        // Crear información de sectores
+        List<Map<String, Object>> sectoresInfo = new ArrayList<>();
+        
+        for (ConteoSector sector : sectores) {
+            Map<String, Object> sectorInfo = new HashMap<>();
+            sectorInfo.put("sectorId", sector.getSector().getId());
+            sectorInfo.put("nombreSector", sector.getSector().getNombre());
+            sectorInfo.put("productosContados", sector.getProductosContados());
+            sectorInfo.put("productosConDiferencias", sector.getProductosConDiferencias());
+            sectorInfo.put("fechaInicio", sector.getFechaCreacion());
+            sectorInfo.put("fechaFinalizacion", sector.getFechaFinalizacion());
+            sectorInfo.put("estado", sector.getEstado().toString());
+            
+            sectoresInfo.add(sectorInfo);
+        }
+        
+        // Crear y guardar el registro del inventario en la base de datos
+        RegistroInventario registroInventarioEntity = new RegistroInventario();
+        registroInventarioEntity.setInventarioCompleto(inventario);
+        registroInventarioEntity.setEmpresa(inventario.getEmpresa());
+        registroInventarioEntity.setUsuarioResponsable(usuario);
+        registroInventarioEntity.setNombreInventario(inventario.getNombre());
+        registroInventarioEntity.setFechaRealizacion(inventario.getFechaFinalizacion() != null ? inventario.getFechaFinalizacion() : LocalDateTime.now());
+        registroInventarioEntity.setObservaciones(observaciones);
+        registroInventarioEntity.setFechaGeneracion(LocalDateTime.now());
+        registroInventarioEntity.setTotalProductos(productosActualizados.size());
+        registroInventarioEntity.setProductosConDiferencias(productosConDiferencias);
+        registroInventarioEntity.setProductosSinDiferencias(productosSinDiferencias);
+        registroInventarioEntity.setTotalSectores(sectores.size());
+        
+        // Guardar el registro principal
+        registroInventarioEntity = registroInventarioRepository.save(registroInventarioEntity);
+        System.out.println("✅ RegistroInventario guardado con ID: " + registroInventarioEntity.getId());
+        
+        // Crear y guardar los detalles del registro
+        List<DetalleRegistroInventario> detallesRegistro = new ArrayList<>();
+        for (Map<String, Object> productoActualizado : productosActualizados) {
+            DetalleRegistroInventario detalle = new DetalleRegistroInventario();
+            detalle.setRegistroInventario(registroInventarioEntity);
+            
+            Long productoId = Long.valueOf(productoActualizado.get("productoId").toString());
+            Producto producto = productoRepository.findById(productoId).orElse(null);
+            detalle.setProducto(producto);
+            
+            detalle.setNombreProducto((String) productoActualizado.get("nombreProducto"));
+            detalle.setCodigoProducto((String) productoActualizado.get("codigoProducto"));
+            detalle.setStockAnterior((Integer) productoActualizado.get("stockAnterior"));
+            detalle.setStockNuevo((Integer) productoActualizado.get("stockNuevo"));
+            detalle.setDiferenciaStock((Integer) productoActualizado.get("diferenciaStock"));
+            detalle.setObservaciones((String) productoActualizado.get("observaciones"));
+            detalle.setFechaActualizacion(LocalDateTime.now());
+            
+            detallesRegistro.add(detalle);
+        }
+        
+        // Guardar todos los detalles
+        detalleRegistroInventarioRepository.saveAll(detallesRegistro);
+        System.out.println("✅ " + detallesRegistro.size() + " detalles de registro guardados");
+        
+        // Marcar inventario como completado
+        inventario.setEstado(InventarioCompleto.EstadoInventario.COMPLETADO);
+        inventario.setFechaFinalizacion(LocalDateTime.now());
+        inventario.setObservaciones("Stock actualizado y registro generado el " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        inventarioCompletoRepository.save(inventario);
+        
+        // SINCRONIZAR STOCK AUTOMÁTICAMENTE - Ejecutar sincronización masiva
+        sincronizarStockCompleto(inventario.getEmpresa().getId());
+        
+        // Crear respuesta completa
+        Map<String, Object> resultado = new HashMap<>();
+        resultado.put("success", true);
+        resultado.put("mensaje", "Stock actualizado y registro generado exitosamente");
+        resultado.put("registroInventario", registroInventario);
+        resultado.put("productosActualizados", productosActualizados);
+        resultado.put("sectoresInfo", sectoresInfo);
+        resultado.put("estadisticas", Map.of(
+            "totalProductos", productosActualizados.size(),
+            "productosConDiferencias", productosConDiferencias,
+            "productosSinDiferencias", productosSinDiferencias,
+            "totalSectores", sectores.size()
+        ));
+        
+        System.out.println("✅ Registro generado y guardado exitosamente:");
+        System.out.println("  - ID del registro: " + registroInventarioEntity.getId());
+        System.out.println("  - Total productos: " + productosActualizados.size());
+        System.out.println("  - Con diferencias: " + productosConDiferencias);
+        System.out.println("  - Sin diferencias: " + productosSinDiferencias);
+        System.out.println("  - Total sectores: " + sectores.size());
+        
+        return resultado;
+    }
+
+    /**
+     * Obtener todos los productos consolidados de todos los sectores del inventario
+     */
+    public List<Map<String, Object>> obtenerProductosConsolidadosInventarioCompleto(Long inventarioId) {
+        System.out.println("🔍 Obteniendo productos consolidados del inventario completo: " + inventarioId);
+        
+        InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId).orElse(null);
+        if (inventario == null) {
+            System.out.println("❌ Inventario completo no encontrado con ID: " + inventarioId);
+            return new ArrayList<>();
+        }
+        
+        // Verificar que el inventario tenga sectores completados
+        if (inventario.getSectoresCompletados() == null || inventario.getSectoresCompletados() == 0) {
+            System.out.println("⚠️ No hay sectores completados en el inventario");
+            return new ArrayList<>();
+        }
+        
+        System.out.println("✅ Inventario con " + inventario.getSectoresCompletados() + " sectores completados. Estado: " + inventario.getEstado());
+        
+        // Obtener todos los sectores del inventario
+        List<ConteoSector> sectores = conteoSectorRepository.findByInventarioCompleto(inventario);
+        System.out.println("🔍 Procesando " + sectores.size() + " sectores para consolidación");
+        
+        // Filtrar solo sectores completados para la consolidación
+        List<ConteoSector> sectoresCompletados = sectores.stream()
+            .filter(sector -> sector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO)
+            .collect(Collectors.toList());
+        
+        System.out.println("✅ Sectores completados encontrados: " + sectoresCompletados.size() + " de " + sectores.size());
+        
+        // Map para consolidar productos por ID (productoId -> datos consolidados)
+        Map<Long, Map<String, Object>> productosConsolidados = new HashMap<>();
+        
+        for (ConteoSector sector : sectoresCompletados) {
+            System.out.println("🔍 Procesando sector: " + sector.getNombreSector() + " (ID: " + sector.getId() + ")");
+            
+            // Obtener detalles consolidados del sector
+            List<DetalleConteo> detallesSector = obtenerDetallesConteoConsolidados(sector.getId());
+            System.out.println("🔍 Detalles consolidados en sector: " + detallesSector.size());
+            
+            for (DetalleConteo detalle : detallesSector) {
+                Long productoId = detalle.getProducto().getId();
+                
+                if (productosConsolidados.containsKey(productoId)) {
+                    // Producto ya existe, actualizar datos
+                    Map<String, Object> productoExistente = productosConsolidados.get(productoId);
+                    
+                    // Sumar cantidades
+                    Integer cantidadActual1 = (Integer) productoExistente.get("cantidadConteo1");
+                    Integer cantidadActual2 = (Integer) productoExistente.get("cantidadConteo2");
+                    
+                    Integer nuevaCantidad1 = (cantidadActual1 != null ? cantidadActual1 : 0) + 
+                                           (detalle.getCantidadConteo1() != null ? detalle.getCantidadConteo1() : 0);
+                    Integer nuevaCantidad2 = (cantidadActual2 != null ? cantidadActual2 : 0) + 
+                                           (detalle.getCantidadConteo2() != null ? detalle.getCantidadConteo2() : 0);
+                    
+                    productoExistente.put("cantidadConteo1", nuevaCantidad1);
+                    productoExistente.put("cantidadConteo2", nuevaCantidad2);
+                    
+                    // Concatenar fórmulas
+                    String formulaActual1 = (String) productoExistente.get("formulaCalculo1");
+                    String formulaActual2 = (String) productoExistente.get("formulaCalculo2");
+                    
+                    String nuevaFormula1 = formulaActual1 != null && !formulaActual1.isEmpty() ? 
+                                         formulaActual1 + ", " + (detalle.getFormulaCalculo1() != null ? detalle.getFormulaCalculo1() : "") :
+                                         (detalle.getFormulaCalculo1() != null ? detalle.getFormulaCalculo1() : "");
+                    String nuevaFormula2 = formulaActual2 != null && !formulaActual2.isEmpty() ? 
+                                         formulaActual2 + ", " + (detalle.getFormulaCalculo2() != null ? detalle.getFormulaCalculo2() : "") :
+                                         (detalle.getFormulaCalculo2() != null ? detalle.getFormulaCalculo2() : "");
+                    
+                    productoExistente.put("formulaCalculo1", nuevaFormula1);
+                    productoExistente.put("formulaCalculo2", nuevaFormula2);
+                    
+                    // Agregar sector a la lista
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> sectoresDelProducto = (List<Map<String, Object>>) productoExistente.get("sectores");
+                    if (sectoresDelProducto == null) {
+                        sectoresDelProducto = new ArrayList<>();
+                        productoExistente.put("sectores", sectoresDelProducto);
+                    }
+                    
+                    Map<String, Object> sectorInfo = new HashMap<>();
+                    sectorInfo.put("sectorId", sector.getId());
+                    sectorInfo.put("nombreSector", sector.getNombreSector());
+                    sectorInfo.put("cantidadConteo1", detalle.getCantidadConteo1());
+                    sectorInfo.put("cantidadConteo2", detalle.getCantidadConteo2());
+                    sectorInfo.put("formulaCalculo1", detalle.getFormulaCalculo1());
+                    sectorInfo.put("formulaCalculo2", detalle.getFormulaCalculo2());
+                    sectoresDelProducto.add(sectorInfo);
+                    
+                    System.out.println("  ➕ Producto existente actualizado: " + detalle.getProducto().getNombre() + 
+                                     " - Total Usuario1: " + nuevaCantidad1 + ", Total Usuario2: " + nuevaCantidad2);
+                } else {
+                    // Nuevo producto
+                    Map<String, Object> nuevoProducto = new HashMap<>();
+                    nuevoProducto.put("productoId", productoId);
+                    nuevoProducto.put("nombreProducto", detalle.getProducto().getNombre());
+                    nuevoProducto.put("codigoProducto", detalle.getProducto().getCodigoPersonalizado());
+                    nuevoProducto.put("stockSistema", detalle.getStockSistema());
+                    nuevoProducto.put("cantidadConteo1", detalle.getCantidadConteo1());
+                    nuevoProducto.put("cantidadConteo2", detalle.getCantidadConteo2());
+                    nuevoProducto.put("formulaCalculo1", detalle.getFormulaCalculo1());
+                    nuevoProducto.put("formulaCalculo2", detalle.getFormulaCalculo2());
+                    nuevoProducto.put("diferenciaSistema", detalle.getDiferenciaSistema());
+                    nuevoProducto.put("diferenciaEntreConteos", detalle.getDiferenciaEntreConteos());
+                    
+                    // Lista de sectores para este producto
+                    List<Map<String, Object>> sectoresDelProducto = new ArrayList<>();
+                    Map<String, Object> sectorInfo = new HashMap<>();
+                    sectorInfo.put("sectorId", sector.getId());
+                    sectorInfo.put("nombreSector", sector.getNombreSector());
+                    sectorInfo.put("cantidadConteo1", detalle.getCantidadConteo1());
+                    sectorInfo.put("cantidadConteo2", detalle.getCantidadConteo2());
+                    sectorInfo.put("formulaCalculo1", detalle.getFormulaCalculo1());
+                    sectorInfo.put("formulaCalculo2", detalle.getFormulaCalculo2());
+                    sectoresDelProducto.add(sectorInfo);
+                    nuevoProducto.put("sectores", sectoresDelProducto);
+                    
+                    productosConsolidados.put(productoId, nuevoProducto);
+                    
+                    System.out.println("  ➕ Nuevo producto agregado: " + detalle.getProducto().getNombre() + 
+                                     " - Usuario1: " + detalle.getCantidadConteo1() + ", Usuario2: " + detalle.getCantidadConteo2());
+                }
+            }
+        }
+        
+        // AGREGAR PRODUCTOS NO CONTADOS - Obtener todos los productos de la empresa
+        System.out.println("🔍 Buscando productos no contados...");
+        List<Producto> todosLosProductos = productoRepository.findByEmpresaId(inventario.getEmpresa().getId());
+        System.out.println("🔍 Total de productos en el sistema: " + todosLosProductos.size());
+        
+        int productosNoContados = 0;
+        for (Producto producto : todosLosProductos) {
+            if (!productosConsolidados.containsKey(producto.getId())) {
+                // Producto no fue contado - agregarlo con valores por defecto
+                Map<String, Object> productoNoContado = new HashMap<>();
+                productoNoContado.put("productoId", producto.getId());
+                productoNoContado.put("nombreProducto", producto.getNombre());
+                productoNoContado.put("codigoProducto", producto.getCodigoPersonalizado());
+                productoNoContado.put("stockSistema", producto.getStock());
+                productoNoContado.put("cantidadConteo1", 0);
+                productoNoContado.put("cantidadConteo2", 0);
+                productoNoContado.put("formulaCalculo1", "");
+                productoNoContado.put("formulaCalculo2", "");
+                productoNoContado.put("diferenciaSistema", -producto.getStock()); // Negativo porque no fue contado
+                productoNoContado.put("diferenciaEntreConteos", 0);
+                productoNoContado.put("fueContado", false); // Marcar que no fue contado
+                productoNoContado.put("accionRecomendada", "OMITIR"); // Acción por defecto: omitir
+                productoNoContado.put("cantidadFinal", producto.getStock()); // Valor por defecto: stock actual
+                
+                // Lista vacía de sectores (no fue contado en ningún sector)
+                productoNoContado.put("sectores", new ArrayList<>());
+                
+                productosConsolidados.put(producto.getId(), productoNoContado);
+                productosNoContados++;
+                
+                System.out.println("  ⚠️ Producto no contado agregado: " + producto.getNombre() + 
+                                 " - Stock actual: " + producto.getStock());
+            } else {
+                // Marcar productos contados
+                productosConsolidados.get(producto.getId()).put("fueContado", true);
+                productosConsolidados.get(producto.getId()).put("accionRecomendada", "ACTUALIZAR");
+            }
+        }
+        
+        System.out.println("📊 Resumen de productos:");
+        System.out.println("  - Total en sistema: " + todosLosProductos.size());
+        System.out.println("  - Contados: " + (todosLosProductos.size() - productosNoContados));
+        System.out.println("  - No contados: " + productosNoContados);
+        
+        List<Map<String, Object>> resultado = new ArrayList<>(productosConsolidados.values());
+        
+        // Ordenar: productos contados primero, luego no contados
+        resultado.sort((a, b) -> {
+            Boolean fueContadoA = (Boolean) a.get("fueContado");
+            Boolean fueContadoB = (Boolean) b.get("fueContado");
+            
+            if (fueContadoA && !fueContadoB) return -1;
+            if (!fueContadoA && fueContadoB) return 1;
+            return 0; // Mismo tipo, mantener orden original
+        });
+        
+        System.out.println("✅ Productos consolidados del inventario completo: " + resultado.size());
+        return resultado;
+    }
+
+    /**
+     * Obtener registros de inventarios completados para una empresa
+     */
+    public List<Map<String, Object>> obtenerRegistrosInventariosCompletados(Long empresaId) {
+        System.out.println("🔍 Obteniendo registros de inventarios completados para empresa: " + empresaId);
+        
+        Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
+        if (empresa == null) {
+            System.out.println("❌ Empresa no encontrada con ID: " + empresaId);
+            return new ArrayList<>();
+        }
+        
+        // Obtener registros de inventarios desde la tabla RegistroInventario
+        List<RegistroInventario> registrosInventarios = registroInventarioRepository.findByEmpresaOrderByFechaGeneracionDesc(empresa);
+        
+        System.out.println("✅ Registros de inventarios encontrados: " + registrosInventarios.size());
+        
+        List<Map<String, Object>> registros = new ArrayList<>();
+        
+        for (RegistroInventario registroInventario : registrosInventarios) {
+            Map<String, Object> registro = new HashMap<>();
+            registro.put("inventarioId", registroInventario.getInventarioCompleto().getId());
+            registro.put("nombreInventario", registroInventario.getNombreInventario());
+            registro.put("fechaRealizacion", registroInventario.getFechaRealizacion());
+            registro.put("observaciones", registroInventario.getObservaciones());
+            
+            // Obtener información de sectores del inventario original
+            List<ConteoSector> sectores = conteoSectorRepository.findByInventarioCompleto(registroInventario.getInventarioCompleto());
+            List<Map<String, Object>> sectoresInfo = new ArrayList<>();
+            
+            for (ConteoSector sector : sectores) {
+                Map<String, Object> sectorInfo = new HashMap<>();
+                sectorInfo.put("sectorId", sector.getSector().getId());
+                sectorInfo.put("nombreSector", sector.getSector().getNombre());
+                sectorInfo.put("productosContados", sector.getProductosContados());
+                sectorInfo.put("productosConDiferencias", sector.getProductosConDiferencias());
+                sectorInfo.put("estado", sector.getEstado().toString());
+                
+                sectoresInfo.add(sectorInfo);
+            }
+            
+            registro.put("sectoresInfo", sectoresInfo);
+            registro.put("estadisticas", Map.of(
+                "totalSectores", registroInventario.getTotalSectores(),
+                "totalProductos", registroInventario.getTotalProductos(),
+                "productosConDiferencias", registroInventario.getProductosConDiferencias()
+            ));
+            
+            // Obtener información del usuario responsable
+            if (registroInventario.getUsuarioResponsable() != null) {
+                registro.put("usuarioResponsable", 
+                    registroInventario.getUsuarioResponsable().getNombre() + " " + 
+                    registroInventario.getUsuarioResponsable().getApellidos());
+            }
+            
+            registros.add(registro);
+            
+            System.out.println("✅ Registro agregado: " + registroInventario.getNombreInventario() + 
+                             " - Fecha: " + registroInventario.getFechaRealizacion());
+        }
+        
+        System.out.println("✅ Total registros generados: " + registros.size());
+        return registros;
+    }
+
+    /**
+     * Obtener detalles de productos actualizados para un inventario específico
+     */
+    public List<Map<String, Object>> obtenerProductosActualizadosInventario(Long inventarioId) {
+        System.out.println("🔍 Obteniendo productos actualizados para inventario: " + inventarioId);
+        
+        InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId)
+                .orElseThrow(() -> new RuntimeException("Inventario completo no encontrado"));
+        
+        // Buscar el registro de inventario correspondiente
+        List<RegistroInventario> registrosInventarios = registroInventarioRepository.findByEmpresaOrderByFechaGeneracionDesc(inventario.getEmpresa());
+        RegistroInventario registroInventario = registrosInventarios.stream()
+            .filter(registro -> registro.getInventarioCompleto().getId().equals(inventarioId))
+            .findFirst()
+            .orElse(null);
+        
+        if (registroInventario == null) {
+            System.out.println("❌ No se encontró registro de inventario para el inventario: " + inventarioId);
+            return new ArrayList<>();
+        }
+        
+        // Obtener los detalles del registro
+        List<DetalleRegistroInventario> detallesRegistro = detalleRegistroInventarioRepository.findByRegistroInventario(registroInventario);
+        
+        System.out.println("✅ Detalles de registro encontrados: " + detallesRegistro.size());
+        
+        List<Map<String, Object>> productosActualizados = new ArrayList<>();
+        
+        for (DetalleRegistroInventario detalle : detallesRegistro) {
+            Map<String, Object> producto = new HashMap<>();
+            producto.put("productoId", detalle.getProducto().getId());
+            producto.put("nombreProducto", detalle.getNombreProducto());
+            producto.put("codigoProducto", detalle.getCodigoProducto());
+            producto.put("stockAnterior", detalle.getStockAnterior());
+            producto.put("stockNuevo", detalle.getStockNuevo());
+            producto.put("diferenciaStock", detalle.getDiferenciaStock());
+            producto.put("observaciones", detalle.getObservaciones());
+            
+            productosActualizados.add(producto);
+            
+            System.out.println("✅ Producto cargado: " + detalle.getNombreProducto() + 
+                             " - Stock anterior: " + detalle.getStockAnterior() + 
+                             " - Stock nuevo: " + detalle.getStockNuevo() + 
+                             " - Diferencia: " + detalle.getDiferenciaStock());
+        }
+        
+        System.out.println("✅ Productos actualizados obtenidos: " + productosActualizados.size());
+        return productosActualizados;
+    }
+
+    /**
      * Obtener detalles de conteo por usuario
      */
     public List<DetalleConteo> obtenerDetallesConteoPorUsuario(Long conteoSectorId, Long usuarioId) {
@@ -313,9 +891,19 @@ public class InventarioCompletoService {
         List<DetalleConteo> detallesFiltrados = new ArrayList<>();
         
         for (DetalleConteo detalle : detallesConsolidados.values()) {
-            // En modo reconteo: mostrar TODOS los productos que tienen diferencias
-            boolean tieneDiferencias = (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) ||
-                                     (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0);
+            // ✅ LÓGICA CORREGIDA: Solo incluir productos que tienen diferencias entre los conteos
+            boolean tieneDiferencias = false;
+            
+            if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo2() != null) {
+                // Ambos usuarios contaron: verificar si hay diferencia
+                tieneDiferencias = !detalle.getCantidadConteo1().equals(detalle.getCantidadConteo2());
+            } else if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
+                // Solo usuario 1 contó: hay diferencia
+                tieneDiferencias = true;
+            } else if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
+                // Solo usuario 2 contó: hay diferencia
+                tieneDiferencias = true;
+            }
             
             if (tieneDiferencias) {
                 detallesFiltrados.add(detalle);
@@ -556,10 +1144,25 @@ public class InventarioCompletoService {
             detalleConsolidado.setFormulaCalculo2(formulaMasRecienteUsuario2);
             }
             
-            // Solo incluir si tiene conteos (al menos un usuario ha contado)
-            if ((detalleConsolidado.getCantidadConteo1() != null && detalleConsolidado.getCantidadConteo1() > 0) ||
-                (detalleConsolidado.getCantidadConteo2() != null && detalleConsolidado.getCantidadConteo2() > 0)) {
+            // ✅ LÓGICA CORREGIDA: Solo incluir productos que tienen diferencias entre los conteos
+            boolean tieneDiferencias = false;
+            
+            if (detalleConsolidado.getCantidadConteo1() != null && detalleConsolidado.getCantidadConteo2() != null) {
+                // Ambos usuarios contaron: verificar si hay diferencia
+                tieneDiferencias = !detalleConsolidado.getCantidadConteo1().equals(detalleConsolidado.getCantidadConteo2());
+            } else if (detalleConsolidado.getCantidadConteo1() != null && detalleConsolidado.getCantidadConteo1() > 0) {
+                // Solo usuario 1 contó: hay diferencia
+                tieneDiferencias = true;
+            } else if (detalleConsolidado.getCantidadConteo2() != null && detalleConsolidado.getCantidadConteo2() > 0) {
+                // Solo usuario 2 contó: hay diferencia
+                tieneDiferencias = true;
+            }
+            
+            if (tieneDiferencias) {
                 detallesConsolidados.add(detalleConsolidado);
+                System.out.println("✅ RECONTEO: Incluyendo producto " + detalleConsolidado.getProducto().getNombre() + 
+                                 " - Usuario1: " + detalleConsolidado.getCantidadConteo1() + 
+                                 ", Usuario2: " + detalleConsolidado.getCantidadConteo2());
             }
         }
         
@@ -569,7 +1172,125 @@ public class InventarioCompletoService {
     }
 
     /**
-     * Obtener detalles consolidados para comparación de conteos
+     * Obtener detalles consolidados para reconteo (SOLO productos con diferencias)
+     */
+    public List<Map<String, Object>> obtenerDetallesParaReconteo(Long conteoSectorId, Long usuarioId) {
+        System.out.println("🔍 Obteniendo detalles consolidados para RECONTEO en sector: " + conteoSectorId);
+        
+        ConteoSector conteoSector = obtenerConteoSectorPorId(conteoSectorId);
+        if (conteoSector == null) {
+            return new ArrayList<>();
+        }
+
+        // Obtener detalles SIN eliminados
+        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
+        System.out.println("✅ Detalles encontrados para RECONTEO (SIN eliminados): " + detalles.size());
+        
+        // Agrupar por producto y consolidar
+        Map<Long, List<DetalleConteo>> detallesPorProducto = new HashMap<>();
+        for (DetalleConteo detalle : detalles) {
+            detallesPorProducto.computeIfAbsent(detalle.getProducto().getId(), k -> new ArrayList<>()).add(detalle);
+        }
+        
+        List<Map<String, Object>> productosConsolidados = new ArrayList<>();
+        
+        for (Map.Entry<Long, List<DetalleConteo>> entry : detallesPorProducto.entrySet()) {
+            List<DetalleConteo> detallesDelProducto = entry.getValue();
+            DetalleConteo primerDetalle = detallesDelProducto.get(0);
+            
+            // ✅ LÓGICA RECONTEO: Consolidar cantidades y fórmulas de todos los detalles
+            int totalUsuario1 = 0;
+            int totalUsuario2 = 0;
+            List<String> formulasUsuario1 = new ArrayList<>();
+            List<String> formulasUsuario2 = new ArrayList<>();
+            
+            for (DetalleConteo detalle : detallesDelProducto) {
+                if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
+                    totalUsuario1 += detalle.getCantidadConteo1();
+                    if (detalle.getFormulaCalculo1() != null && !detalle.getFormulaCalculo1().trim().isEmpty()) {
+                        formulasUsuario1.add(detalle.getFormulaCalculo1());
+                    }
+                }
+                if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
+                    totalUsuario2 += detalle.getCantidadConteo2();
+                    if (detalle.getFormulaCalculo2() != null && !detalle.getFormulaCalculo2().trim().isEmpty()) {
+                        formulasUsuario2.add(detalle.getFormulaCalculo2());
+                    }
+                }
+            }
+            
+            int diferencia = totalUsuario1 - totalUsuario2;
+            
+            // ✅ LÓGICA RECONTEO: Solo incluir productos que tienen diferencias
+            boolean tieneDiferencias = false;
+            
+            if (totalUsuario1 > 0 && totalUsuario2 > 0) {
+                // Ambos usuarios contaron: verificar si hay diferencia
+                tieneDiferencias = totalUsuario1 != totalUsuario2;
+            } else if (totalUsuario1 > 0) {
+                // Solo usuario 1 contó: hay diferencia
+                tieneDiferencias = true;
+            } else if (totalUsuario2 > 0) {
+                // Solo usuario 2 contó: hay diferencia
+                tieneDiferencias = true;
+            }
+            
+            // Solo procesar si hay diferencias
+            if (!tieneDiferencias) {
+                System.out.println("✅ RECONTEO: Excluyendo producto " + primerDetalle.getProducto().getNombre() + 
+                                 " - Usuario1: " + totalUsuario1 + ", Usuario2: " + totalUsuario2 + " (coinciden)");
+                continue; // Saltar este producto
+            }
+            
+            System.out.println("✅ RECONTEO: Incluyendo producto " + primerDetalle.getProducto().getNombre() + 
+                             " - Usuario1: " + totalUsuario1 + ", Usuario2: " + totalUsuario2 + " (tienen diferencias)");
+            
+            Map<String, Object> productoConsolidado = new HashMap<>();
+            productoConsolidado.put("id", primerDetalle.getId());
+            productoConsolidado.put("productoId", primerDetalle.getProducto().getId());
+            productoConsolidado.put("nombreProducto", primerDetalle.getProducto().getNombre());
+            productoConsolidado.put("codigoProducto", primerDetalle.getProducto().getCodigoPersonalizado());
+            productoConsolidado.put("stockSistema", primerDetalle.getStockSistema());
+            productoConsolidado.put("cantidadConteo1", totalUsuario1);
+            productoConsolidado.put("cantidadConteo2", totalUsuario2);
+            productoConsolidado.put("diferenciaEntreConteos", diferencia);
+            productoConsolidado.put("diferenciaSistema", primerDetalle.getStockSistema() - Math.max(totalUsuario1, totalUsuario2));
+            
+            // Agregar información de los usuarios para el frontend
+            try {
+                if (conteoSector.getUsuarioAsignado1() != null) {
+                    productoConsolidado.put("usuario1Id", conteoSector.getUsuarioAsignado1().getId());
+                    productoConsolidado.put("usuario1Nombre", conteoSector.getUsuarioAsignado1().getNombre() + " " + conteoSector.getUsuarioAsignado1().getApellidos());
+                }
+                if (conteoSector.getUsuarioAsignado2() != null) {
+                    productoConsolidado.put("usuario2Id", conteoSector.getUsuarioAsignado2().getId());
+                    productoConsolidado.put("usuario2Nombre", conteoSector.getUsuarioAsignado2().getNombre() + " " + conteoSector.getUsuarioAsignado2().getApellidos());
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Error accediendo a datos de usuarios (posible proxy lazy): " + e.getMessage());
+                productoConsolidado.put("usuario1Id", null);
+                productoConsolidado.put("usuario1Nombre", "Usuario 1");
+                productoConsolidado.put("usuario2Id", null);
+                productoConsolidado.put("usuario2Nombre", "Usuario 2");
+            }
+            
+            // Concatenar todas las fórmulas de cada usuario
+            String historialCompletoUsuario1 = String.join(" | ", formulasUsuario1);
+            String historialCompletoUsuario2 = String.join(" | ", formulasUsuario2);
+            
+            productoConsolidado.put("formulaCalculo1", historialCompletoUsuario1);
+            productoConsolidado.put("formulaCalculo2", historialCompletoUsuario2);
+            
+            productosConsolidados.add(productoConsolidado);
+        }
+        
+        System.out.println("✅ Productos consolidados para RECONTEO: " + productosConsolidados.size());
+        
+        return productosConsolidados;
+    }
+
+    /**
+     * Obtener detalles consolidados para comparación de conteos (TODOS los productos)
      */
     public List<Map<String, Object>> obtenerDetallesParaComparacion(Long conteoSectorId, Long usuarioId) {
         System.out.println("🔍 Obteniendo detalles consolidados para comparación en sector: " + conteoSectorId);
@@ -870,7 +1591,7 @@ public class InventarioCompletoService {
             
             int diferencia = totalUsuario1 - totalUsuario2;
             
-            // Incluir TODOS los productos, no solo los que tienen diferencias
+            // Incluir TODOS los productos para comparación (detalle de conteo)
             Map<String, Object> productoConsolidado = new HashMap<>();
             productoConsolidado.put("id", primerDetalle.getId());
             productoConsolidado.put("productoId", primerDetalle.getProducto().getId());
@@ -1573,7 +2294,7 @@ public class InventarioCompletoService {
                     // Usuario 1 haciendo reconteo - copiar valor del usuario 2
                     detalle.setCantidadConteo2(entradaOriginal.getCantidadConteo2());
                     detalle.setFormulaCalculo2(entradaOriginal.getFormulaCalculo2());
-                } else {
+            } else {
                     // Usuario 2 haciendo reconteo - copiar valor del usuario 1
                     detalle.setCantidadConteo1(entradaOriginal.getCantidadConteo1());
                     detalle.setFormulaCalculo1(entradaOriginal.getFormulaCalculo1());
@@ -2841,5 +3562,284 @@ public class InventarioCompletoService {
         }
         
         return mismosProductos;
+    }
+    
+    /**
+     * Actualizar stock por sector para un producto
+     */
+    private void actualizarStockPorSector(Producto producto, Integer cantidadFinal) {
+        try {
+            System.out.println("🔄 === INICIANDO ACTUALIZACIÓN STOCK POR SECTOR ===");
+            System.out.println("🔄 Producto: " + producto.getNombre() + " (ID: " + producto.getId() + ")");
+            System.out.println("🔄 Cantidad final solicitada: " + cantidadFinal);
+            
+            // PASO 1: Obtener la distribución real del inventario por sectores
+            Map<Long, Integer> distribucionPorSectores = obtenerDistribucionRealPorSectores(producto.getId());
+            
+            System.out.println("🔄 Distribución obtenida: " + distribucionPorSectores);
+            
+            if (distribucionPorSectores.isEmpty()) {
+                System.out.println("⚠️ No se encontró distribución por sectores para producto: " + producto.getNombre());
+                // Fallback: usar el sector principal
+                actualizarStockSectorPrincipal(producto, cantidadFinal);
+                return;
+            }
+            
+            // PASO 2: Verificar si la cantidad final coincide con el total del inventario
+            Integer totalInventario = distribucionPorSectores.values().stream().mapToInt(Integer::intValue).sum();
+            
+            System.out.println("🔍 Distribución original: " + distribucionPorSectores);
+            System.out.println("🔍 Total inventario: " + totalInventario + " -> Cantidad final solicitada: " + cantidadFinal);
+            
+            // Si las cantidades coinciden, mantener la distribución exacta
+            // Si no coinciden, aplicar ajuste proporcional solo si es necesario
+            boolean mantenerDistribucionExacta = totalInventario.equals(cantidadFinal);
+            
+            if (mantenerDistribucionExacta) {
+                System.out.println("✅ Manteniendo distribución exacta del inventario");
+            } else {
+                System.out.println("⚠️ Aplicando ajuste proporcional: " + totalInventario + " -> " + cantidadFinal);
+            }
+            
+            // PASO 3: Actualizar o crear registros con la distribución
+            for (Map.Entry<Long, Integer> entry : distribucionPorSectores.entrySet()) {
+                Long sectorId = entry.getKey();
+                Integer cantidadOriginal = entry.getValue();
+                
+                // Calcular cantidad final para este sector
+                Integer cantidadFinalSector;
+                if (mantenerDistribucionExacta) {
+                    // Mantener cantidad exacta del inventario
+                    cantidadFinalSector = cantidadOriginal;
+                } else {
+                    // Aplicar ajuste proporcional
+                    double factorAjuste = cantidadFinal.doubleValue() / totalInventario.doubleValue();
+                    cantidadFinalSector = (int) Math.round(cantidadOriginal * factorAjuste);
+                }
+                
+                // Solo procesar si la cantidad es mayor a 0
+                if (cantidadFinalSector > 0) {
+                    Sector sector = sectorRepository.findById(sectorId).orElse(null);
+                    if (sector != null) {
+                        // Buscar si ya existe un registro para este producto y sector
+                        Optional<StockPorSector> stockExistente = stockPorSectorRepository.findByProductoIdAndSectorId(producto.getId(), sectorId);
+                        
+                        if (stockExistente.isPresent()) {
+                            // Actualizar el registro existente
+                            StockPorSector stock = stockExistente.get();
+                            stock.setCantidad(cantidadFinalSector);
+                            stock.setFechaActualizacion(LocalDateTime.now());
+                            stockPorSectorRepository.save(stock);
+                            System.out.println("✅ Stock actualizado: " + producto.getNombre() + " en " + sector.getNombre() + " = " + cantidadFinalSector + " (original: " + cantidadOriginal + ")");
+                        } else {
+                            // Crear nuevo registro
+                            StockPorSector nuevoStock = new StockPorSector(producto, sector, cantidadFinalSector);
+                            stockPorSectorRepository.save(nuevoStock);
+                            System.out.println("✅ Stock creado: " + producto.getNombre() + " en " + sector.getNombre() + " = " + cantidadFinalSector + " (original: " + cantidadOriginal + ")");
+                        }
+                    }
+                }
+            }
+            
+            // PASO 4: Eliminar registros de sectores que no están en la distribución
+            List<StockPorSector> todosLosStocks = stockPorSectorRepository.findByProductoId(producto.getId());
+            for (StockPorSector stock : todosLosStocks) {
+                Long sectorId = stock.getSector().getId();
+                if (!distribucionPorSectores.containsKey(sectorId)) {
+                    // Este sector no está en la distribución, eliminar el registro
+                    stockPorSectorRepository.delete(stock);
+                    System.out.println("🗑️ Stock eliminado: " + producto.getNombre() + " en " + stock.getSector().getNombre() + " (no está en distribución)");
+                }
+            }
+            
+            // PASO 5: SINCRONIZAR: Actualizar el stock total del producto
+            if (!producto.getStock().equals(cantidadFinal)) {
+                producto.setStock(cantidadFinal);
+                productoRepository.save(producto);
+                System.out.println("🔄 Stock del producto sincronizado: " + producto.getNombre() + " = " + cantidadFinal);
+            }
+            
+            // PASO 6: VERIFICACIÓN FINAL - Mostrar el estado final
+            System.out.println("🔄 === VERIFICACIÓN FINAL ===");
+            List<StockPorSector> stockFinal = stockPorSectorRepository.findByProductoId(producto.getId());
+            for (StockPorSector stock : stockFinal) {
+                System.out.println("🔄 Stock final - Producto: " + producto.getNombre() + 
+                                 " - Sector: " + stock.getSector().getNombre() + 
+                                 " - Cantidad: " + stock.getCantidad());
+            }
+            System.out.println("🔄 === FIN ACTUALIZACIÓN STOCK POR SECTOR ===");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error actualizando stock por sector para producto " + producto.getNombre() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Obtener la distribución real por sectores basada en el inventario realizado
+     */
+    private Map<Long, Integer> obtenerDistribucionRealPorSectores(Long productoId) {
+        Map<Long, Integer> distribucion = new HashMap<>();
+        
+        try {
+            // Buscar todos los DetalleConteo para este producto
+            Producto producto = productoRepository.findById(productoId).orElse(null);
+            if (producto == null) {
+                System.out.println("⚠️ Producto no encontrado con ID: " + productoId);
+                return distribucion;
+            }
+            
+            // Buscar todos los DetalleConteo para este producto usando consulta personalizada
+            List<DetalleConteo> detallesProducto = detalleConteoRepository.findAll().stream()
+                .filter(detalle -> detalle.getProducto().getId().equals(productoId) && !detalle.getEliminado())
+                .collect(Collectors.toList());
+            
+            System.out.println("🔍 Encontrados " + detallesProducto.size() + " detalles de conteo para producto ID: " + productoId + " (" + producto.getNombre() + ")");
+            
+            for (DetalleConteo detalle : detallesProducto) {
+                ConteoSector conteoSector = detalle.getConteoSector();
+                
+                // Solo procesar sectores completados
+                if (conteoSector.getEstado() != ConteoSector.EstadoConteo.COMPLETADO) {
+                    System.out.println("  ⏭️ Saltando sector " + conteoSector.getSector().getNombre() + " - Estado: " + conteoSector.getEstado());
+                    continue;
+                }
+                
+                Long sectorId = conteoSector.getSector().getId();
+                
+                // CORRECCIÓN: Usar la cantidad final consolidada (el mayor entre conteo1 y conteo2)
+                // Esto representa la cantidad final acordada para este producto en este sector
+                Integer cantidadConteo1 = detalle.getCantidadConteo1() != null ? detalle.getCantidadConteo1() : 0;
+                Integer cantidadConteo2 = detalle.getCantidadConteo2() != null ? detalle.getCantidadConteo2() : 0;
+                Integer cantidadSector = Math.max(cantidadConteo1, cantidadConteo2);
+                
+                System.out.println("  🔍 Detalle ID: " + detalle.getId() + 
+                                 " - Producto: " + producto.getNombre() + 
+                                 " - Sector: " + conteoSector.getSector().getNombre() + 
+                                 " - Conteo1: " + cantidadConteo1 + 
+                                 " - Conteo2: " + cantidadConteo2 + 
+                                 " - Cantidad final: " + cantidadSector);
+                
+                if (cantidadSector > 0) {
+                    // NO usar merge con sum - cada producto debería tener solo UNA entrada por sector
+                    // Si ya existe, mantener la mayor cantidad (caso de múltiples conteos del mismo producto en el mismo sector)
+                    Integer cantidadAnterior = distribucion.get(sectorId);
+                    distribucion.merge(sectorId, cantidadSector, Math::max);
+                    Integer cantidadNueva = distribucion.get(sectorId);
+                    
+                    if (cantidadAnterior != null && !cantidadAnterior.equals(cantidadNueva)) {
+                        System.out.println("  ⚠️ ACTUALIZACIÓN: Sector " + conteoSector.getSector().getNombre() + 
+                                         " - Anterior: " + cantidadAnterior + " -> Nueva: " + cantidadNueva);
+                    } else {
+                        System.out.println("  ✅ Sector " + conteoSector.getSector().getNombre() + 
+                                         " (ID: " + sectorId + "): " + cantidadSector);
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo distribución por sectores: " + e.getMessage());
+        }
+        
+        return distribucion;
+    }
+    
+    /**
+     * Fallback: actualizar solo el sector principal cuando no hay distribución disponible
+     */
+    private void actualizarStockSectorPrincipal(Producto producto, Integer cantidadFinal) {
+        Sector sector = sectorRepository.findByNombreAndEmpresaId(producto.getSectorAlmacenamiento(), producto.getEmpresa().getId())
+            .orElse(null);
+        
+        if (sector == null) {
+            System.out.println("⚠️ No se encontró sector principal para producto: " + producto.getNombre());
+            return;
+        }
+        
+        // Buscar si ya existe un registro de stock por sector para este producto y sector
+        Optional<StockPorSector> stockExistente = stockPorSectorRepository.findByProductoIdAndSectorId(producto.getId(), sector.getId());
+        
+        if (stockExistente.isPresent()) {
+            // Actualizar el stock existente
+            StockPorSector stock = stockExistente.get();
+            stock.setCantidad(cantidadFinal);
+            stock.setFechaActualizacion(LocalDateTime.now());
+            stockPorSectorRepository.save(stock);
+            System.out.println("✅ Stock por sector actualizado (fallback): " + producto.getNombre() + " en " + sector.getNombre() + " = " + cantidadFinal);
+        } else {
+            // Crear nuevo registro de stock por sector
+            StockPorSector nuevoStock = new StockPorSector(producto, sector, cantidadFinal);
+            stockPorSectorRepository.save(nuevoStock);
+            System.out.println("✅ Nuevo stock por sector creado (fallback): " + producto.getNombre() + " en " + sector.getNombre() + " = " + cantidadFinal);
+        }
+        
+        // SINCRONIZAR: Actualizar el stock total del producto
+        if (!producto.getStock().equals(cantidadFinal)) {
+            producto.setStock(cantidadFinal);
+            productoRepository.save(producto);
+            System.out.println("🔄 Stock del producto sincronizado (fallback): " + producto.getNombre() + " = " + cantidadFinal);
+        }
+    }
+    
+    /**
+     * Sincroniza el stock de todos los productos después de completar el inventario
+     */
+    private void sincronizarStockCompleto(Long empresaId) {
+        try {
+            System.out.println("🔄 SINCRONIZACIÓN AUTOMÁTICA - Iniciando sincronización masiva para empresa: " + empresaId);
+            
+            // Obtener todos los productos de la empresa
+            List<Producto> productos = productoRepository.findByEmpresaId(empresaId);
+            int productosSincronizados = 0;
+            int productosConInconsistencias = 0;
+            
+            for (Producto producto : productos) {
+                try {
+                    // Obtener stock actual en sectores
+                    List<StockPorSector> stockEnSectores = stockPorSectorRepository.findByProductoId(producto.getId());
+                    Integer stockTotalEnSectores = stockEnSectores.stream()
+                            .mapToInt(StockPorSector::getCantidad)
+                            .sum();
+                    
+                    Integer diferencia = producto.getStock() - stockTotalEnSectores;
+                    
+                    if (diferencia != 0) {
+                        productosConInconsistencias++;
+                        
+                        // Sincronizar el stock - actualizar stock_por_sector con el valor del producto
+                        if (!stockEnSectores.isEmpty()) {
+                            // Si hay sectores, actualizar el primer sector (o el sector principal)
+                            StockPorSector sectorPrincipal = stockEnSectores.get(0);
+                            sectorPrincipal.setCantidad(producto.getStock());
+                            sectorPrincipal.setFechaActualizacion(LocalDateTime.now());
+                            stockPorSectorRepository.save(sectorPrincipal);
+                        } else {
+                            // Si no hay sectores, crear uno con el sector de almacenamiento del producto
+                            if (producto.getSectorAlmacenamiento() != null && !producto.getSectorAlmacenamiento().trim().isEmpty()) {
+                                Sector sector = sectorRepository.findByNombreAndEmpresaId(producto.getSectorAlmacenamiento(), empresaId).orElse(null);
+                                if (sector != null) {
+                                    StockPorSector nuevoStock = new StockPorSector(producto, sector, producto.getStock());
+                                    stockPorSectorRepository.save(nuevoStock);
+                                }
+                            }
+                        }
+                        
+                        productosSincronizados++;
+                        System.out.println("✅ Stock sincronizado: " + producto.getNombre() + " - Diferencia: " + diferencia);
+                    }
+                } catch (Exception e) {
+                    System.err.println("❌ Error sincronizando producto " + producto.getNombre() + ": " + e.getMessage());
+                }
+            }
+            
+            System.out.println("🔄 SINCRONIZACIÓN AUTOMÁTICA - Completada:");
+            System.out.println("  - Total productos: " + productos.size());
+            System.out.println("  - Productos con inconsistencias: " + productosConInconsistencias);
+            System.out.println("  - Productos sincronizados: " + productosSincronizados);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error en sincronización automática: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

@@ -67,6 +67,7 @@ import ConteoSectorInventarioCompleto from './pages/admin/ConteoSectorInventario
 import DetalleConteo from './pages/admin/DetalleConteo.tsx';
 import ReconteoSector from './pages/admin/ReconteoSector.tsx';
 import ComparacionConteos from './pages/admin/ComparacionConteos.tsx';
+import ProductosConsolidadosInventario from './pages/admin/ProductosConsolidadosInventario.tsx';
 
 
 function AppContent() {
@@ -133,6 +134,7 @@ function AppContent() {
           <Route path="/admin/transportistas" element={<GestionTransportistas />} />
           <Route path="/admin/gestion-inventario" element={<GestionInventario />} />
           <Route path="/admin/inventario-completo" element={<InventarioCompleto />} />
+          <Route path="/admin/inventario-completo/:inventarioId/productos-consolidados" element={<ProductosConsolidadosInventario />} />
           <Route path="/admin/inventario-por-sector" element={<InventarioPorSector />} />
           <Route path="/admin/conteo-sector/:id" element={<ConteoSectorInventarioCompleto />} />
           <Route path="/admin/conteo-inventario-sector/:id" element={<ConteoProductos />} />

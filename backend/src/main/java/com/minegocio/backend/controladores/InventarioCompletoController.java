@@ -759,13 +759,25 @@ public class InventarioCompletoController {
                 return ResponseEntity.status(403).body(Map.of("error", "Solo los administradores pueden finalizar inventarios"));
             }
             
-            InventarioCompleto inventario = inventarioCompletoService.finalizarInventarioCompleto(inventarioId);
-            InventarioCompletoDTO inventarioDTO = new InventarioCompletoDTO(inventario);
+            // Verificar y finalizar el inventario
+            boolean finalizado = inventarioCompletoService.verificarYFinalizarInventarioCompleto(inventarioId);
             
-            return ResponseEntity.ok(Map.of(
-                "mensaje", "Inventario finalizado exitosamente",
-                "inventario", inventarioDTO
-            ));
+            if (finalizado) {
+                // Obtener los productos consolidados
+                List<Map<String, Object>> productosConsolidados = inventarioCompletoService.obtenerProductosConsolidadosInventarioCompleto(inventarioId);
+                
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "mensaje", "Inventario finalizado exitosamente",
+                    "productosConsolidados", productosConsolidados,
+                    "totalProductos", productosConsolidados.size()
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "mensaje", "No todos los sectores están completados"
+                ));
+            }
         } catch (Exception e) {
             System.err.println("❌ Error finalizando inventario: " + e.getMessage());
             e.printStackTrace();
@@ -966,6 +978,40 @@ public class InventarioCompletoController {
     }
 
     /**
+     * Actualizar stock del sistema con los resultados del inventario y generar registro
+     */
+    @PostMapping("/{inventarioId}/actualizar-stock-y-generar-registro")
+    public ResponseEntity<?> actualizarStockYGenerarRegistro(
+            @PathVariable Long empresaId,
+            @PathVariable Long inventarioId,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+        try {
+            System.out.println("🔄 Actualizando stock y generando registro para inventario: " + inventarioId);
+            
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long usuarioId = usuarioPrincipal.getId();
+            
+            // Obtener los productos editados del request
+            List<Map<String, Object>> productosEditados = (List<Map<String, Object>>) request.get("productosEditados");
+            String observaciones = (String) request.get("observaciones");
+            
+            System.out.println("🔍 Productos editados recibidos: " + productosEditados.size());
+            
+            // Procesar la actualización del stock y generación del registro
+            Map<String, Object> resultado = inventarioCompletoService.actualizarStockYGenerarRegistro(
+                inventarioId, productosEditados, observaciones, usuarioId);
+            
+            return ResponseEntity.ok(resultado);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error actualizando stock y generando registro: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Obtener datos de referencia para reconteo
      */
     @GetMapping("/conteos-sector/{conteoSectorId}/datos-referencia-reconteo")
@@ -988,8 +1034,8 @@ public class InventarioCompletoController {
                 return ResponseEntity.status(403).body(Map.of("error", "No autorizado para acceder a este reconteo"));
             }
             
-            // Obtener detalles consolidados para reconteo
-            List<Map<String, Object>> detallesConsolidados = inventarioCompletoService.obtenerDetallesParaComparacion(conteoSectorId, usuarioId);
+            // Obtener detalles consolidados para reconteo (SOLO productos con diferencias)
+            List<Map<String, Object>> detallesConsolidados = inventarioCompletoService.obtenerDetallesParaReconteo(conteoSectorId, usuarioId);
             
             System.out.println("✅ Datos de referencia para reconteo obtenidos: " + detallesConsolidados.size() + " productos");
             
@@ -1131,6 +1177,81 @@ public class InventarioCompletoController {
         }
     }
     
+    
+    /**
+     * Obtener registros de inventarios completados
+     */
+    @GetMapping("/registros")
+    public ResponseEntity<Map<String, Object>> obtenerRegistrosInventarios(
+            @PathVariable Long empresaId) {
+        try {
+            System.out.println("🔍 Obteniendo registros de inventarios completados para empresa: " + empresaId);
+            
+            List<Map<String, Object>> registros = inventarioCompletoService.obtenerRegistrosInventariosCompletados(empresaId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "registros", registros,
+                "totalRegistros", registros.size()
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo registros de inventarios: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Obtener productos actualizados de un inventario específico
+     */
+    @GetMapping("/{inventarioId}/productos-actualizados")
+    public ResponseEntity<Map<String, Object>> obtenerProductosActualizados(
+            @PathVariable Long empresaId,
+            @PathVariable Long inventarioId) {
+        try {
+            System.out.println("🔍 Obteniendo productos actualizados del inventario: " + inventarioId);
+            
+            List<Map<String, Object>> productosActualizados = inventarioCompletoService.obtenerProductosActualizadosInventario(inventarioId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "productosActualizados", productosActualizados,
+                "totalProductos", productosActualizados.size()
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo productos actualizados: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Obtener productos consolidados del inventario completo finalizado
+     */
+    @GetMapping("/{inventarioId}/productos-consolidados")
+    public ResponseEntity<Map<String, Object>> obtenerProductosConsolidados(
+            @PathVariable Long empresaId,
+            @PathVariable Long inventarioId) {
+        try {
+            System.out.println("🔍 Obteniendo productos consolidados del inventario: " + inventarioId);
+            
+            List<Map<String, Object>> productosConsolidados = inventarioCompletoService.obtenerProductosConsolidadosInventarioCompleto(inventarioId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "productosConsolidados", productosConsolidados,
+                "totalProductos", productosConsolidados.size()
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo productos consolidados: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+
     /**
      * Obtener todos los detalles de un producto para mostrar conteos individuales
      */

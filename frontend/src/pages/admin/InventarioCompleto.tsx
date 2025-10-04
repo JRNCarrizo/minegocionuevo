@@ -79,6 +79,9 @@ export default function InventarioCompleto() {
   const [mostrarModalFinalizacion, setMostrarModalFinalizacion] = useState(false);
   const [cancelando, setCancelando] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
+  const [registrosInventarios, setRegistrosInventarios] = useState<any[]>([]);
+  const [mostrarModalRegistro, setMostrarModalRegistro] = useState(false);
+  const [registroSeleccionado, setRegistroSeleccionado] = useState<any>(null);
   
   // Estados para navegación por teclado
   const [modoNavegacion, setModoNavegacion] = useState(false);
@@ -87,8 +90,18 @@ export default function InventarioCompleto() {
   useEffect(() => {
     if (datosUsuario) {
       cargarDatos();
+      cargarRegistrosInventarios();
     }
   }, [datosUsuario]);
+
+  // Debug para el modal de registro
+  useEffect(() => {
+    if (registroSeleccionado) {
+      console.log('🔍 Modal - registroSeleccionado:', registroSeleccionado);
+      console.log('🔍 Modal - productosActualizados:', registroSeleccionado?.productosActualizados);
+      console.log('🔍 Modal - cantidad productos:', registroSeleccionado?.productosActualizados?.length);
+    }
+  }, [registroSeleccionado]);
 
   // Recargar datos cuando se monta el componente (para actualizar estados después de navegación)
   useEffect(() => {
@@ -332,6 +345,69 @@ export default function InventarioCompleto() {
     }
   };
 
+  const cargarRegistrosInventarios = async () => {
+    try {
+      if (!datosUsuario?.empresaId) return;
+      
+      const token = localStorage.getItem('token');
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/registros`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRegistrosInventarios(data.registros || []);
+      } else {
+        console.error('Error cargando registros de inventarios');
+      }
+    } catch (error) {
+      console.error('Error cargando registros:', error);
+    }
+  };
+
+  const verRegistro = async (registro: any) => {
+    try {
+      console.log('🔍 Abriendo modal de registro:', registro);
+      
+      // Cargar productos actualizados del inventario
+      const token = localStorage.getItem('token');
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const url = `${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${registro.inventarioId}/productos-actualizados`;
+      
+      console.log('🔍 URL para cargar productos actualizados:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('🔍 Respuesta del servidor:', response.status, response.statusText);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Datos recibidos del servidor:', data);
+        registro.productosActualizados = data.productosActualizados;
+        console.log('🔍 Registro con productos actualizados:', registro);
+        setRegistroSeleccionado(registro);
+        setMostrarModalRegistro(true);
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Error cargando productos actualizados:', errorData);
+        setRegistroSeleccionado(registro);
+        setMostrarModalRegistro(true);
+      }
+    } catch (error) {
+      console.error('❌ Error cargando productos actualizados:', error);
+      setRegistroSeleccionado(registro);
+      setMostrarModalRegistro(true);
+    }
+  };
 
   const crearInventarioCompleto = async () => {
     try {
@@ -558,9 +634,12 @@ export default function InventarioCompleto() {
       });
 
       if (response.ok) {
+        await response.json();
         toast.success('Inventario finalizado exitosamente');
         setMostrarModalFinalizacion(false);
-        await cargarDatos();
+        
+        // Navegar a la vista de productos consolidados
+        navigate(`/admin/inventario-completo/${inventario.id}/productos-consolidados`);
       } else {
         const errorData = await response.json();
         toast.error(errorData.message || 'Error al finalizar el inventario');
@@ -887,6 +966,7 @@ export default function InventarioCompleto() {
                 {creandoInventario ? 'Creando...' : 'Crear Inventario Completo'}
               </button>
             </div>
+            
           ) : (
             /* Inventario existente */
             <div>
@@ -1052,6 +1132,53 @@ export default function InventarioCompleto() {
                     {(inventario.porcentajeCompletado || 0).toFixed(1)}%
                   </span>
                 </div>
+                
+                {/* Botón para ver vista consolidada cuando todos los sectores estén completados */}
+                {inventario.sectoresCompletados === inventario.totalSectores && inventario.totalSectores > 0 && (
+                  <div style={{
+                    marginTop: '1.5rem',
+                    paddingTop: '1.5rem',
+                    borderTop: '1px solid #e2e8f0',
+                    textAlign: 'center'
+                  }}>
+                    <button
+                      onClick={() => navigate(`/admin/inventario-completo/${inventario.id}/productos-consolidados`)}
+                      style={{
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '0.75rem',
+                        padding: '1rem 2rem',
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        boxShadow: '0 4px 14px 0 rgba(139, 92, 246, 0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 6px 20px 0 rgba(139, 92, 246, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(139, 92, 246, 0.3)';
+                      }}
+                    >
+                      📊 Ver Lista Consolidada y Comparar con Stock
+                    </button>
+                    <p style={{
+                      margin: '0.75rem 0 0 0',
+                      fontSize: '0.85rem',
+                      color: '#64748b',
+                      fontStyle: 'italic'
+                    }}>
+                      Revisa todos los productos consolidados y compara con el stock real del sistema
+                    </p>
+                  </div>
+                )}
                 
                 {/* Botones de gestión del administrador */}
                 {datosUsuario?.rol === 'ADMINISTRADOR' && (
@@ -1903,6 +2030,7 @@ export default function InventarioCompleto() {
                                   🔍 Ver Detalle de Conteo
                                 </button>
                               )}
+                              
                             </div>
                           )}
                         </div>
@@ -1910,6 +2038,88 @@ export default function InventarioCompleto() {
                     );
                   })}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Registros de inventarios completados */}
+          {registrosInventarios.length > 0 && (
+            <div style={{
+              background: 'white',
+              borderRadius: '1rem',
+              padding: '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #e2e8f0',
+              marginTop: '2rem'
+            }}>
+              <h3 style={{
+                margin: '0 0 1.5rem 0',
+                color: '#1e293b',
+                fontSize: '1.3rem',
+                fontWeight: 'bold'
+              }}>
+                📋 Registros de Inventarios Completados
+              </h3>
+              
+              <div style={{
+                display: 'grid',
+                gap: '1rem'
+              }}>
+                {registrosInventarios.map((registro) => (
+                  <div
+                    key={registro.inventarioId}
+                    onClick={() => verRegistro(registro)}
+                    style={{
+                      background: '#f8fafc',
+                      borderRadius: '0.5rem',
+                      padding: '1rem',
+                      border: '1px solid #e2e8f0',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#f1f5f9';
+                      e.currentTarget.style.borderColor = '#7c3aed';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#f8fafc';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                    }}
+                  >
+                    <div>
+                      <div style={{
+                        fontWeight: '600',
+                        color: '#1e293b',
+                        fontSize: '1rem'
+                      }}>
+                        {registro.nombreInventario}
+                      </div>
+                      <div style={{
+                        fontSize: '0.9rem',
+                        color: '#64748b',
+                        marginTop: '0.25rem'
+                      }}>
+                        Realizado el {new Date(registro.fechaRealizacion).toLocaleDateString('es-ES')}
+                      </div>
+                      <div style={{
+                        fontSize: '0.8rem',
+                        color: '#64748b',
+                        marginTop: '0.25rem'
+                      }}>
+                        Por: {registro.usuarioResponsable}
+                      </div>
+                    </div>
+                    <div style={{
+                      color: '#7c3aed',
+                      fontSize: '1.5rem'
+                    }}>
+                      👁️
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -2223,6 +2433,261 @@ export default function InventarioCompleto() {
                     }}
                   >
                     {finalizando ? 'Finalizando...' : 'Sí, Finalizar'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal de detalle de registro */}
+          {mostrarModalRegistro && registroSeleccionado && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 1000
+            }}>
+              <div style={{
+                background: 'white',
+                borderRadius: '1rem',
+                padding: '2rem',
+                maxWidth: '90vw',
+                maxHeight: '90vh',
+                width: '800px',
+                overflow: 'auto'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1.5rem'
+                }}>
+                  <h2 style={{
+                    margin: 0,
+                    color: '#1e293b',
+                    fontSize: '1.5rem',
+                    fontWeight: 'bold'
+                  }}>
+                    📋 Detalle del Registro - {registroSeleccionado.nombreInventario}
+                  </h2>
+                  <button
+                    onClick={() => setMostrarModalRegistro(false)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '1.5rem',
+                      cursor: 'pointer',
+                      color: '#64748b'
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Información del registro */}
+                <div style={{
+                  background: '#f8fafc',
+                  borderRadius: '0.5rem',
+                  padding: '1rem',
+                  marginBottom: '1.5rem'
+                }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <strong>Fecha de realización:</strong><br/>
+                      {new Date(registroSeleccionado.fechaRealizacion).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                    <div>
+                      <strong>Usuario responsable:</strong><br/>
+                      {registroSeleccionado.usuarioResponsable}
+                    </div>
+                    <div>
+                      <strong>Total productos:</strong><br/>
+                      {registroSeleccionado.estadisticas?.totalProductos || 0}
+                    </div>
+                    <div>
+                      <strong>Productos con diferencias:</strong><br/>
+                      {registroSeleccionado.estadisticas?.productosConDiferencias || 0}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Productos actualizados */}
+                <h3 style={{
+                  margin: '0 0 1rem 0',
+                  color: '#1e293b',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold'
+                }}>
+                  Productos Actualizados
+                </h3>
+                
+                
+                <div style={{
+                  background: '#f8fafc',
+                  borderRadius: '0.5rem',
+                  padding: '1rem',
+                  border: '1px solid #e2e8f0'
+                }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+                    gap: '1rem',
+                    fontWeight: '600',
+                    color: '#374151',
+                    fontSize: '0.9rem',
+                    marginBottom: '0.5rem',
+                    paddingBottom: '0.5rem',
+                    borderBottom: '1px solid #e2e8f0'
+                  }}>
+                    <div>Producto</div>
+                    <div style={{ textAlign: 'center' }}>Stock Anterior</div>
+                    <div style={{ textAlign: 'center' }}>Stock Nuevo</div>
+                    <div style={{ textAlign: 'center' }}>Diferencia</div>
+                    <div style={{ textAlign: 'center' }}>Estado</div>
+                  </div>
+                  
+                  {registroSeleccionado.productosActualizados?.length > 0 ? (
+                    registroSeleccionado.productosActualizados.map((producto: any, index: number) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+                        gap: '1rem',
+                        padding: '0.5rem 0',
+                        borderBottom: index < (registroSeleccionado.productosActualizados.length - 1) ? '1px solid #f1f5f9' : 'none'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: '600', color: '#1e293b' }}>
+                          {producto.nombreProducto}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                          {producto.codigoProducto}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'center', color: '#64748b' }}>
+                        {producto.stockAnterior}
+                      </div>
+                      <div style={{ textAlign: 'center', fontWeight: '600', color: '#1e293b' }}>
+                        {producto.stockNuevo}
+                      </div>
+                      <div style={{ 
+                        textAlign: 'center', 
+                        fontWeight: '600',
+                        color: producto.diferenciaStock === 0 ? '#10b981' : 
+                               producto.diferenciaStock > 0 ? '#3b82f6' : '#ef4444'
+                      }}>
+                        {producto.diferenciaStock > 0 ? '+' : ''}{producto.diferenciaStock}
+                      </div>
+                      <div style={{ 
+                        textAlign: 'center',
+                        color: producto.diferenciaStock === 0 ? '#10b981' : 
+                               producto.diferenciaStock > 0 ? '#3b82f6' : '#ef4444'
+                      }}>
+                        {producto.diferenciaStock === 0 ? 'Sin cambios' : 
+                         producto.diferenciaStock > 0 ? 'Aumento' : 'Disminución'}
+                      </div>
+                    </div>
+                    ))
+                  ) : (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '2rem',
+                      color: '#64748b',
+                      fontStyle: 'italic'
+                    }}>
+                      No hay productos actualizados disponibles para este inventario.
+                      <br/>
+                      <small>Debug: productosActualizados = {JSON.stringify(registroSeleccionado?.productosActualizados)}</small>
+                    </div>
+                  )}
+                </div>
+
+                {/* Información de sectores */}
+                <h3 style={{
+                  margin: '1.5rem 0 1rem 0',
+                  color: '#1e293b',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold'
+                }}>
+                  Sectores Involucrados
+                </h3>
+                
+                <div style={{
+                  display: 'grid',
+                  gap: '0.5rem'
+                }}>
+                  {registroSeleccionado.sectoresInfo?.map((sector: any, index: number) => (
+                    <div
+                      key={index}
+                      style={{
+                        background: '#f8fafc',
+                        borderRadius: '0.25rem',
+                        padding: '0.75rem',
+                        border: '1px solid #e2e8f0',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: '600', color: '#1e293b' }}>
+                          {sector.nombreSector}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                          {sector.productosContados} productos contados
+                        </div>
+                      </div>
+                      <div style={{
+                        color: '#10b981',
+                        fontWeight: '600',
+                        fontSize: '0.9rem'
+                      }}>
+                        {sector.estado}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  marginTop: '2rem'
+                }}>
+                  <button
+                    onClick={() => setMostrarModalRegistro(false)}
+                    style={{
+                      background: '#6b7280',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      padding: '0.75rem 1.5rem',
+                      fontSize: '0.9rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#4b5563';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#6b7280';
+                    }}
+                  >
+                    Cerrar
                   </button>
                 </div>
               </div>
