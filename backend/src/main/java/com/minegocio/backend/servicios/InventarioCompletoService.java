@@ -69,6 +69,9 @@ public class InventarioCompletoService {
     
     @Autowired
     private StockPorSectorRepository stockPorSectorRepository;
+    
+    // Variable para almacenar el ID del inventario actual durante la actualización
+    private Long inventarioActualId;
 
     /**
      * Obtener un conteo sector por ID
@@ -268,6 +271,9 @@ public class InventarioCompletoService {
         
         InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId)
                 .orElseThrow(() -> new RuntimeException("Inventario completo no encontrado"));
+        
+        // Establecer el ID del inventario actual para usar en obtenerDistribucionRealPorSectores
+        this.inventarioActualId = inventarioId;
         
         // Verificar que todos los sectores estén completados
         List<ConteoSector> sectoresVerificacion = conteoSectorRepository.findByInventarioCompleto(inventario);
@@ -2244,13 +2250,28 @@ public class InventarioCompletoService {
      * Agregar producto al conteo
      */
     public DetalleConteo agregarProductoAlConteo(Long conteoSectorId, Long productoId, Integer cantidad, String formulaCalculo, Long usuarioId) {
-        System.out.println("🔍 Agregando producto al conteo - sector: " + conteoSectorId + ", producto: " + productoId + ", cantidad: " + cantidad);
+        System.out.println("🔍 === AGREGANDO PRODUCTO AL CONTEO ===");
+        System.out.println("🔍 ConteoSector ID: " + conteoSectorId);
+        System.out.println("🔍 Producto ID: " + productoId);
+        System.out.println("🔍 Cantidad: " + cantidad);
+        System.out.println("🔍 Usuario ID: " + usuarioId);
         
         ConteoSector conteoSector = conteoSectorRepository.findById(conteoSectorId)
             .orElseThrow(() -> new RuntimeException("Conteo de sector no encontrado"));
         
+        System.out.println("🔍 ConteoSector encontrado:");
+        System.out.println("  - ID: " + conteoSector.getId());
+        System.out.println("  - Sector ID: " + conteoSector.getSector().getId());
+        System.out.println("  - Sector Nombre: " + conteoSector.getSector().getNombre());
+        System.out.println("  - Estado: " + conteoSector.getEstado());
+        
         Producto producto = productoRepository.findById(productoId)
             .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        System.out.println("🔍 Producto encontrado:");
+        System.out.println("  - ID: " + producto.getId());
+        System.out.println("  - Nombre: " + producto.getNombre());
+        System.out.println("  - Sector Almacenamiento: " + producto.getSectorAlmacenamiento());
         
         // Verificar que el usuario está asignado al conteo
         if (!conteoSector.getUsuarioAsignado1().getId().equals(usuarioId) && 
@@ -2374,8 +2395,18 @@ public class InventarioCompletoService {
         // El estado se mantiene como PENDIENTE hasta que se finalice el conteo
         // Los estados por usuario se determinan individualmente basándose en los DetalleConteo
         
+        System.out.println("🔍 === DETALLE GUARDADO ===");
+        System.out.println("🔍 Detalle ID: " + detalle.getId());
+        System.out.println("🔍 Producto: " + detalle.getProducto().getNombre());
+        System.out.println("🔍 Sector: " + detalle.getConteoSector().getSector().getNombre());
+        System.out.println("🔍 Cantidad Conteo1: " + detalle.getCantidadConteo1());
+        System.out.println("🔍 Cantidad Conteo2: " + detalle.getCantidadConteo2());
+        System.out.println("🔍 Fórmula1: " + detalle.getFormulaCalculo1());
+        System.out.println("🔍 Fórmula2: " + detalle.getFormulaCalculo2());
+        
         System.out.println("✅ Producto agregado al conteo por usuario " + usuarioId);
         System.out.println("ℹ️ Estado general del conteo sector se mantiene como: " + conteoSector.getEstado());
+        System.out.println("🔍 === FIN AGREGAR PRODUCTO AL CONTEO ===");
         
         return detalle;
     }
@@ -3689,9 +3720,15 @@ public class InventarioCompletoService {
                 return distribucion;
             }
             
-            // Buscar todos los DetalleConteo para este producto usando consulta personalizada
+            // CORRECCIÓN: Solo obtener detalles del inventario actual, no de todos los inventarios
+            // Buscar todos los DetalleConteo para este producto en el inventario actual
             List<DetalleConteo> detallesProducto = detalleConteoRepository.findAll().stream()
                 .filter(detalle -> detalle.getProducto().getId().equals(productoId) && !detalle.getEliminado())
+                .filter(detalle -> {
+                    // Solo incluir detalles del inventario actual
+                    ConteoSector conteoSector = detalle.getConteoSector();
+                    return conteoSector.getInventarioCompleto().getId().equals(this.inventarioActualId);
+                })
                 .collect(Collectors.toList());
             
             System.out.println("🔍 Encontrados " + detallesProducto.size() + " detalles de conteo para producto ID: " + productoId + " (" + producto.getNombre() + ")");

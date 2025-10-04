@@ -828,6 +828,17 @@ export default function ConteoSectorInventarioCompleto() {
         const token = localStorage.getItem('token');
         const baseUrl = API_CONFIG.getBaseUrl();
         
+        console.log('🔍 DEBUG FRONTEND - Datos del request:', {
+          url: `${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/agregar-producto`,
+          conteoSectorId: id,
+          inventarioCompletoId: conteoInfo?.inventarioCompleto?.id,
+          productoId: producto.id,
+          productoNombre: producto.nombre,
+          cantidad: cantidad,
+          usuarioId: datosUsuario?.id,
+          sectorNombre: conteoInfo?.sectorNombre
+        });
+
         const response = await fetch(`${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${conteoInfo?.inventarioCompleto?.id}/conteos-sector/${id}/agregar-producto`, {
           method: 'POST',
           headers: {
