@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUsers, FaStore, FaChartLine, FaBell, FaBox, FaMoneyBillWave, FaExclamationTriangle, FaCreditCard } from 'react-icons/fa';
-import { MdDashboard, MdInventory, MdPeople, MdSettings, MdNotifications, MdLogout } from 'react-icons/md';
+import {  MdInventory, MdPeople, MdSettings, MdNotifications, MdLogout } from 'react-icons/md';
 import { superAdminService } from '../services/superAdminService';
 import type { DashboardStats } from '../services/superAdminService';
 import toast from 'react-hot-toast';

@@ -8,7 +8,7 @@ import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import type { Producto } from '../../types';
 import BarcodeScanner from '../../components/BarcodeScanner';
-import { crearFechaLocal } from '../../utils/dateUtils';
+
 
 // Extender la interfaz Window para incluir webkitAudioContext
 declare global {

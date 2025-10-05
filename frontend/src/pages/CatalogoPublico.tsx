@@ -24,7 +24,7 @@ export default function CatalogoPublico() {
   const [filtroMarca, setFiltroMarca] = useState<string>('');
   const [categorias, setCategorias] = useState<string[]>([]);
   const [marcas, setMarcas] = useState<string[]>([]);
-  const { clienteInfo, isAuthenticated, cerrarSesion } = useClienteAuth();
+  const { clienteInfo, cerrarSesion } = useClienteAuth();
   const [showCart, setShowCart] = useState(false);
   type VistaProducto = 'lista' | 'intermedia' | 'grande';
   const [vista, setVista] = useState<VistaProducto>('intermedia');

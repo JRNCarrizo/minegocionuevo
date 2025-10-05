@@ -4,7 +4,7 @@ import { useResponsive } from '../../hooks/useResponsive';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { usePermissions } from '../../hooks/usePermissions';
-import { toast } from 'react-hot-toast';
+
 import '../../estilos/inventario-fisico.css';
 
 export default function InventarioFisico() {

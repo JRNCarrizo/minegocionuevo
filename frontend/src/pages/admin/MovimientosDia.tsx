@@ -5,7 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha, formatearFechaConHora } from '../../utils/dateUtils';
+import { formatearFecha} from '../../utils/dateUtils';
 
 interface MovimientoDia {
   fecha: string;

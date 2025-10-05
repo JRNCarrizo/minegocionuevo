@@ -1260,11 +1260,16 @@ public class InventarioCompletoService {
      */
     public List<Map<String, Object>> obtenerDetallesParaReconteo(Long conteoSectorId, Long usuarioId) {
         System.out.println("🔍 Obteniendo detalles consolidados para RECONTEO en sector: " + conteoSectorId);
+        System.out.println("🔍 Usuario solicitando reconteo: " + usuarioId);
         
         ConteoSector conteoSector = obtenerConteoSectorPorId(conteoSectorId);
         if (conteoSector == null) {
+            System.out.println("❌ ConteoSector no encontrado para ID: " + conteoSectorId);
             return new ArrayList<>();
         }
+        
+        System.out.println("🔍 Estado del ConteoSector: " + conteoSector.getEstado());
+        System.out.println("🔍 Observaciones del ConteoSector: " + conteoSector.getObservaciones());
 
         // Obtener detalles SIN eliminados
         List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
@@ -1305,24 +1310,43 @@ public class InventarioCompletoService {
             
             int diferencia = totalUsuario1 - totalUsuario2;
             
-            // ✅ LÓGICA RECONTEO: Solo incluir productos que tienen diferencias
+            // ✅ LÓGICA RECONTEO CORREGIDA: Si el sector está en CON_DIFERENCIAS, 
+            // significa que tuvo diferencias en el conteo original, por lo que debe incluirse en reconteo
             boolean tieneDiferencias = false;
             
-            if (totalUsuario1 > 0 && totalUsuario2 > 0) {
-                // Ambos usuarios contaron: verificar si hay diferencia
-                tieneDiferencias = totalUsuario1 != totalUsuario2;
-            } else if (totalUsuario1 > 0) {
-                // Solo usuario 1 contó: hay diferencia
-                tieneDiferencias = true;
-            } else if (totalUsuario2 > 0) {
-                // Solo usuario 2 contó: hay diferencia
-                tieneDiferencias = true;
+            System.out.println("🔍 Analizando producto " + primerDetalle.getProducto().getNombre() + 
+                             " - Estado sector: " + conteoSector.getEstado() + 
+                             " - Usuario1: " + totalUsuario1 + ", Usuario2: " + totalUsuario2);
+            
+            // Si el sector está en estado CON_DIFERENCIAS o ESPERANDO_VERIFICACION, incluir todos los productos contados
+            if (conteoSector.getEstado() == ConteoSector.EstadoConteo.CON_DIFERENCIAS || 
+                conteoSector.getEstado() == ConteoSector.EstadoConteo.ESPERANDO_VERIFICACION) {
+                // Verificar si el producto fue contado por al menos un usuario
+                if (totalUsuario1 > 0 || totalUsuario2 > 0) {
+                    tieneDiferencias = true;
+                    System.out.println("✅ RECONTEO: Sector en " + conteoSector.getEstado() + " - Incluyendo producto " + primerDetalle.getProducto().getNombre() + 
+                                     " - Usuario1: " + totalUsuario1 + ", Usuario2: " + totalUsuario2);
+                } else {
+                    System.out.println("⚠️ RECONTEO: Sector en " + conteoSector.getEstado() + " pero producto no contado - " + primerDetalle.getProducto().getNombre());
+                }
+            } else {
+                System.out.println("🔍 Sector NO está en CON_DIFERENCIAS ni ESPERANDO_VERIFICACION, estado actual: " + conteoSector.getEstado());
+                // Si no está en estados de reconteo, verificar diferencias actuales
+                if (totalUsuario1 > 0 && totalUsuario2 > 0) {
+                    // Ambos usuarios contaron: verificar si hay diferencia
+                    tieneDiferencias = totalUsuario1 != totalUsuario2;
+                    System.out.println("🔍 Ambos usuarios contaron - Diferencia: " + tieneDiferencias);
+                } else if (totalUsuario1 > 0 || totalUsuario2 > 0) {
+                    // Al menos uno contó: hay diferencia
+                    tieneDiferencias = true;
+                    System.out.println("🔍 Solo un usuario contó - Diferencia: " + tieneDiferencias);
+                }
             }
             
             // Solo procesar si hay diferencias
             if (!tieneDiferencias) {
                 System.out.println("✅ RECONTEO: Excluyendo producto " + primerDetalle.getProducto().getNombre() + 
-                                 " - Usuario1: " + totalUsuario1 + ", Usuario2: " + totalUsuario2 + " (coinciden)");
+                                 " - Usuario1: " + totalUsuario1 + ", Usuario2: " + totalUsuario2 + " (sin diferencias)");
                 continue; // Saltar este producto
             }
             
@@ -1369,6 +1393,14 @@ public class InventarioCompletoService {
         }
         
         System.out.println("✅ Productos consolidados para RECONTEO: " + productosConsolidados.size());
+        
+        // Debug: mostrar cada producto que se devuelve
+        for (int i = 0; i < productosConsolidados.size(); i++) {
+            Map<String, Object> producto = productosConsolidados.get(i);
+            System.out.println("🔍 Producto " + (i+1) + " devuelto: " + producto.get("nombreProducto") + 
+                             " - Usuario1: " + producto.get("cantidadConteo1") + 
+                             " - Usuario2: " + producto.get("cantidadConteo2"));
+        }
         
         return productosConsolidados;
     }
@@ -2754,16 +2786,6 @@ public class InventarioCompletoService {
         List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
         System.out.println("🔍 Total detalles encontrados para verificación: " + detalles.size());
         
-        // ✅ DETECTAR SI ESTAMOS EN MODO RECONTEO
-        boolean esReconteo = conteoSector.getObservaciones() != null && 
-                            (conteoSector.getObservaciones().startsWith("Reconteo_") || 
-                             conteoSector.getObservaciones().contains("Reconteo_Usuario") ||
-                             conteoSector.getObservaciones().contains("Usuario1_Finalizado") ||
-                             conteoSector.getObservaciones().contains("Usuario2_Finalizado"));
-        
-        System.out.println("🔍 Es modo reconteo: " + esReconteo);
-        System.out.println("🔍 Observaciones para detección: '" + conteoSector.getObservaciones() + "'");
-        
         // Consolidar conteos por producto
         Map<Long, Integer> totalesUsuario1 = new HashMap<>();
         Map<Long, Integer> totalesUsuario2 = new HashMap<>();
@@ -2786,34 +2808,17 @@ public class InventarioCompletoService {
                              ", Usuario2: " + detalle.getCantidadConteo2() + 
                              ", Eliminado: " + detalle.getEliminado());
             
-            // ✅ LÓGICA CORREGIDA: En reconteo, solo sumar valores del reconteo (< 100)
-            if (esReconteo) {
-                // Solo sumar reconteos del Usuario 1 (valores < 100)
-                if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0 && detalle.getCantidadConteo1() < 100) {
-                    totalesUsuario1.put(productoId, totalesUsuario1.getOrDefault(productoId, 0) + detalle.getCantidadConteo1());
-                    System.out.println("🔍 RECONTEO - Producto " + nombreProducto + " - Usuario 1 reconteo: +" + detalle.getCantidadConteo1() + 
-                                     " (total reconteo: " + totalesUsuario1.get(productoId) + ")");
-                }
-                
-                // Solo sumar reconteos del Usuario 2 (valores < 100)
-                if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0 && detalle.getCantidadConteo2() < 100) {
-                    totalesUsuario2.put(productoId, totalesUsuario2.getOrDefault(productoId, 0) + detalle.getCantidadConteo2());
-                    System.out.println("🔍 RECONTEO - Producto " + nombreProducto + " - Usuario 2 reconteo: +" + detalle.getCantidadConteo2() + 
-                                     " (total reconteo: " + totalesUsuario2.get(productoId) + ")");
-                }
-            } else {
-                // ✅ MODO CONTEO NORMAL: Sumar todos los valores
-                if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
-                    totalesUsuario1.put(productoId, totalesUsuario1.getOrDefault(productoId, 0) + detalle.getCantidadConteo1());
-                    System.out.println("🔍 CONTEO NORMAL - Producto " + nombreProducto + " - Usuario 1: +" + detalle.getCantidadConteo1() + 
-                                     " (total: " + totalesUsuario1.get(productoId) + ")");
-                }
-                
-                if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
-                    totalesUsuario2.put(productoId, totalesUsuario2.getOrDefault(productoId, 0) + detalle.getCantidadConteo2());
-                    System.out.println("🔍 CONTEO NORMAL - Producto " + nombreProducto + " - Usuario 2: +" + detalle.getCantidadConteo2() + 
-                                     " (total: " + totalesUsuario2.get(productoId) + ")");
-                }
+            // Sumar todos los valores del conteo normal
+            if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
+                totalesUsuario1.put(productoId, totalesUsuario1.getOrDefault(productoId, 0) + detalle.getCantidadConteo1());
+                System.out.println("🔍 CONTEO NORMAL - Producto " + nombreProducto + " - Usuario 1: +" + detalle.getCantidadConteo1() + 
+                                 " (total: " + totalesUsuario1.get(productoId) + ")");
+            }
+            
+            if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
+                totalesUsuario2.put(productoId, totalesUsuario2.getOrDefault(productoId, 0) + detalle.getCantidadConteo2());
+                System.out.println("🔍 CONTEO NORMAL - Producto " + nombreProducto + " - Usuario 2: +" + detalle.getCantidadConteo2() + 
+                                 " (total: " + totalesUsuario2.get(productoId) + ")");
             }
         }
         
@@ -2832,8 +2837,7 @@ public class InventarioCompletoService {
             // Si ambos usuarios contaron el producto, comparar totales
             if (total1 > 0 && total2 > 0) {
                 if (!total1.equals(total2)) {
-                    String modo = esReconteo ? "RECONTEO" : "CONTEO NORMAL";
-                    System.out.println("⚠️ Diferencia encontrada en " + modo + " - producto: " + nombreProducto + 
+                    System.out.println("⚠️ Diferencia encontrada en CONTEO NORMAL - producto: " + nombreProducto + 
                                      " - Usuario 1: " + total1 + ", Usuario 2: " + total2);
                     return true;
                 }
@@ -2841,14 +2845,93 @@ public class InventarioCompletoService {
             
             // Si solo uno de los usuarios contó el producto, también es una diferencia
             if ((total1 > 0 && total2 == 0) || (total2 > 0 && total1 == 0)) {
-                String modo = esReconteo ? "RECONTEO" : "CONTEO NORMAL";
-                System.out.println("⚠️ Diferencia encontrada en " + modo + ": solo un usuario contó " + nombreProducto + 
+                System.out.println("⚠️ Diferencia encontrada en CONTEO NORMAL: solo un usuario contó " + nombreProducto + 
                                  " (Usuario 1: " + total1 + ", Usuario 2: " + total2 + ")");
                 return true;
             }
         }
         
         System.out.println("✅ No se encontraron diferencias entre los conteos");
+        return false;
+    }
+
+    /**
+     * Verificar si hay diferencias entre los reconteos de ambos usuarios
+     * Este método es específico para reconteos y compara solo los valores de reconteo
+     */
+    private boolean verificarDiferenciasEnReconteo(ConteoSector conteoSector) {
+        System.out.println("🔍 [RECONTEO] Verificando diferencias en reconteo sector: " + conteoSector.getId());
+        System.out.println("🔍 [RECONTEO] Estado actual del sector: " + conteoSector.getEstado());
+        System.out.println("🔍 [RECONTEO] Observaciones del sector: " + conteoSector.getObservaciones());
+        
+        List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
+        System.out.println("🔍 [RECONTEO] Total detalles encontrados para verificación: " + detalles.size());
+        
+        // Consolidar reconteos por producto
+        Map<Long, Integer> reconteosUsuario1 = new HashMap<>();
+        Map<Long, Integer> reconteosUsuario2 = new HashMap<>();
+        Map<Long, String> nombresProductos = new HashMap<>();
+        
+        for (DetalleConteo detalle : detalles) {
+            // Verificar que el producto no sea nulo
+            if (detalle.getProducto() == null) {
+                System.err.println("⚠️ [RECONTEO] DetalleConteo con ID " + detalle.getId() + " tiene producto nulo, saltando...");
+                continue;
+            }
+            
+            Long productoId = detalle.getProducto().getId();
+            String nombreProducto = detalle.getProducto().getNombre();
+            nombresProductos.put(productoId, nombreProducto);
+            
+            System.out.println("🔍 [RECONTEO] Procesando detalle ID: " + detalle.getId() + 
+                             ", Producto: " + nombreProducto + 
+                             ", Usuario1: " + detalle.getCantidadConteo1() + 
+                             ", Usuario2: " + detalle.getCantidadConteo2() + 
+                             ", Eliminado: " + detalle.getEliminado());
+            
+            // En reconteo, usar los valores más recientes (que son los reconteos)
+            // Los reconteos se almacenan en los mismos campos pero con valores actualizados
+            if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
+                reconteosUsuario1.put(productoId, detalle.getCantidadConteo1());
+                System.out.println("🔍 [RECONTEO] Producto " + nombreProducto + " - Usuario 1 reconteo: " + detalle.getCantidadConteo1());
+            }
+            
+            if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
+                reconteosUsuario2.put(productoId, detalle.getCantidadConteo2());
+                System.out.println("🔍 [RECONTEO] Producto " + nombreProducto + " - Usuario 2 reconteo: " + detalle.getCantidadConteo2());
+            }
+        }
+        
+        // Comparar reconteos por producto
+        Set<Long> todosLosProductos = new HashSet<>();
+        todosLosProductos.addAll(reconteosUsuario1.keySet());
+        todosLosProductos.addAll(reconteosUsuario2.keySet());
+        
+        for (Long productoId : todosLosProductos) {
+            String nombreProducto = nombresProductos.get(productoId);
+            Integer reconteo1 = reconteosUsuario1.getOrDefault(productoId, 0);
+            Integer reconteo2 = reconteosUsuario2.getOrDefault(productoId, 0);
+            
+            System.out.println("🔍 [RECONTEO] Comparando producto " + nombreProducto + ": Usuario 1=" + reconteo1 + ", Usuario 2=" + reconteo2);
+            
+            // Si ambos usuarios recontaron el producto, comparar reconteos
+            if (reconteo1 > 0 && reconteo2 > 0) {
+                if (!reconteo1.equals(reconteo2)) {
+                    System.out.println("⚠️ [RECONTEO] Diferencia encontrada en reconteo - producto: " + nombreProducto + 
+                                     " - Usuario 1: " + reconteo1 + ", Usuario 2: " + reconteo2);
+                    return true;
+                }
+            }
+            
+            // Si solo uno de los usuarios recontó el producto, también es una diferencia
+            if ((reconteo1 > 0 && reconteo2 == 0) || (reconteo2 > 0 && reconteo1 == 0)) {
+                System.out.println("⚠️ [RECONTEO] Diferencia encontrada: solo un usuario recontó " + nombreProducto + 
+                                 " (Usuario 1: " + reconteo1 + ", Usuario 2: " + reconteo2 + ")");
+                return true;
+            }
+        }
+        
+        System.out.println("✅ [RECONTEO] No se encontraron diferencias entre los reconteos");
         return false;
     }
 
@@ -2990,8 +3073,8 @@ public class InventarioCompletoService {
                 reemplazarConteosInicialesConReconteos(conteoSector);
             }
             
-            // Comparar conteos de ambos usuarios (ahora ya son los reconteos)
-            boolean hayDiferencias = verificarDiferenciasEnConteo(conteoSector);
+            // Comparar reconteos de ambos usuarios usando el método específico para reconteos
+            boolean hayDiferencias = verificarDiferenciasEnReconteo(conteoSector);
                 
                 if (hayDiferencias) {
                 // Hay diferencias, ir a estado CON_DIFERENCIAS para nuevo reconteo
