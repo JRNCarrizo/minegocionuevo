@@ -135,9 +135,18 @@ export default function InventarioCompleto() {
   useEffect(() => {
     if (datosUsuario && location.pathname === '/admin/inventario-completo') {
       console.log('🔄 Navegación detectada a inventario-completo, recargando datos...');
-      cargarDatos();
+      
+      // Si viene con estado de inventario actualizado, forzar recarga
+      if (location.state?.inventarioActualizado) {
+        console.log('📢 Estado de inventario actualizado detectado, forzando recarga...');
+        setTimeout(() => {
+          cargarDatos();
+        }, 100); // Pequeño delay para asegurar que el estado se procese
+      } else {
+        cargarDatos();
+      }
     }
-  }, [location.pathname, datosUsuario]);
+  }, [location.pathname, location.state, datosUsuario]);
 
   // ✅ ESCUCHAR CAMBIOS: Recargar datos cuando hay cambios en el inventario
   useEffect(() => {
@@ -151,8 +160,18 @@ export default function InventarioCompleto() {
       }
     };
 
-    // Escuchar cambios en localStorage
+    // Escuchar cambios en localStorage (para cambios desde otras pestañas)
     window.addEventListener('storage', handleStorageChange);
+    
+    // También verificar periódicamente si hay cambios (para cambios desde la misma pestaña)
+    const intervalId = setInterval(() => {
+      const inventarioActualizado = localStorage.getItem('inventario_completo_actualizado');
+      if (inventarioActualizado && datosUsuario) {
+        console.log('📢 Cambio detectado por polling, recargando datos...');
+        cargarDatos();
+        localStorage.removeItem('inventario_completo_actualizado');
+      }
+    }, 1000); // Verificar cada segundo
     
     // También verificar al montar el componente por si hay cambios pendientes
     const inventarioActualizado = localStorage.getItem('inventario_completo_actualizado');
@@ -164,6 +183,7 @@ export default function InventarioCompleto() {
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      clearInterval(intervalId);
     };
   }, [datosUsuario]);
 

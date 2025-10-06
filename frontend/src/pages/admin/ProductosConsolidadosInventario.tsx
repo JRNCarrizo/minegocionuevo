@@ -233,7 +233,7 @@ const ProductosConsolidadosInventario: React.FC = () => {
         },
         body: JSON.stringify({
           productosEditados,
-          observaciones: `Registro generado por ${datosUsuario.nombreCompleto} el ${new Date().toLocaleDateString()}`
+          observaciones: `Registro generado por ${datosUsuario.nombre} ${datosUsuario.apellidos} el ${new Date().toLocaleDateString()}`
         })
       });
 
@@ -274,9 +274,20 @@ const ProductosConsolidadosInventario: React.FC = () => {
   const cerrarRegistro = () => {
     setMostrarRegistro(false);
     setRegistroGenerado(null);
+    
+    // El inventario ya se finaliza automáticamente en el backend cuando se actualiza el stock
+    // Marcar que el inventario fue actualizado para forzar recarga en la página principal
+    localStorage.setItem('inventario_completo_actualizado', Date.now().toString());
+    
     // Redirigir al inicio del inventario completo cuando se cierre el modal
-    navigate('/admin/inventario-completo');
+    navigate('/admin/inventario-completo', { 
+      state: { 
+        inventarioActualizado: true,
+        timestamp: Date.now()
+      } 
+    });
   };
+
 
   if (cargando) {
     return (

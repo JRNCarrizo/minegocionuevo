@@ -187,17 +187,17 @@ public class InventarioCompletoService {
         System.out.println("  - Sectores pendientes: " + inventario.getSectoresPendientes());
         System.out.println("  - Porcentaje completado: " + inventario.getPorcentajeCompletado());
         
-        // Si todos los sectores están completados
+        // ✅ CORREGIDO: NO finalizar automáticamente cuando todos los sectores están completados
+        // El inventario debe mantenerse EN_PROGRESO para permitir la consolidación manual
         if (sectoresCompletados == sectores.size() && sectores.size() > 0) {
-            System.out.println("✅ Todos los sectores están completados. Preparando para finalización...");
+            System.out.println("✅ Todos los sectores están completados. Inventario listo para consolidación manual...");
+            System.out.println("🔍 Manteniendo inventario EN_PROGRESO para permitir consolidación y actualización de stock");
             
-            // Actualizar estado del inventario a COMPLETADO
-            inventario.setEstado(InventarioCompleto.EstadoInventario.COMPLETADO);
-            inventario.setFechaFinalizacion(LocalDateTime.now());
-            
+            // NO cambiar el estado del inventario - mantenerlo EN_PROGRESO
+            // El inventario solo se finaliza cuando se actualiza el stock del sistema
             inventarioCompletoRepository.save(inventario);
-            System.out.println("✅ Inventario completo finalizado exitosamente");
-            return true;
+            System.out.println("✅ Inventario listo para consolidación - NO finalizado automáticamente");
+            return false; // NO finalizar automáticamente
         } else {
             System.out.println("⏳ Aún hay sectores pendientes o en progreso");
             // Guardar el progreso actualizado
@@ -396,11 +396,13 @@ public class InventarioCompletoService {
         detalleRegistroInventarioRepository.saveAll(detallesRegistro);
         System.out.println("✅ " + detallesRegistro.size() + " detalles de registro guardados");
         
-        // Marcar inventario como completado
+        // Marcar inventario como completado y stock actualizado
         inventario.setEstado(InventarioCompleto.EstadoInventario.COMPLETADO);
         inventario.setFechaFinalizacion(LocalDateTime.now());
-        inventario.setObservaciones("Stock actualizado y registro generado el " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        inventario.setObservaciones("STOCK_ACTUALIZADO - Stock actualizado y registro generado el " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
         inventarioCompletoRepository.save(inventario);
+        
+        System.out.println("✅ Inventario marcado como COMPLETADO con stock actualizado");
         
         // SINCRONIZAR STOCK AUTOMÁTICAMENTE - Ejecutar sincronización masiva
         sincronizarStockCompleto(inventario.getEmpresa().getId());
@@ -2413,14 +2415,34 @@ public class InventarioCompletoService {
         System.out.println("🔍 DEBUG - Inventarios activos encontrados: " + inventariosActivos.size());
         
         // Si no hay inventarios activos, buscar el inventario COMPLETADO más reciente
+        // PERO solo si NO tiene el stock actualizado Y es RECIENTE (últimas 24 horas)
         if (inventariosActivos.isEmpty()) {
             System.out.println("🔍 No hay inventarios activos, buscando inventario COMPLETADO más reciente...");
             List<InventarioCompleto> inventariosCompletados = inventarioCompletoRepository.findByEmpresaAndEstadoOrderByFechaInicioDesc(empresa, InventarioCompleto.EstadoInventario.COMPLETADO);
-            if (!inventariosCompletados.isEmpty()) {
-                InventarioCompleto inventarioCompletado = inventariosCompletados.get(0);
-                System.out.println("🔍 Inventario COMPLETADO más reciente encontrado: " + inventarioCompletado.getId());
-                return Optional.of(inventarioCompletado);
+            
+            LocalDateTime hace24Horas = LocalDateTime.now().minusHours(24);
+            System.out.println("🔍 Solo considerando inventarios completados después de: " + hace24Horas);
+            
+            for (InventarioCompleto inventario : inventariosCompletados) {
+                // Solo devolver inventarios completados que:
+                // 1. NO tengan el stock actualizado
+                // 2. Sean recientes (últimas 24 horas)
+                boolean tieneStockActualizado = inventario.getObservaciones() != null && inventario.getObservaciones().contains("STOCK_ACTUALIZADO");
+                boolean esReciente = inventario.getFechaInicio().isAfter(hace24Horas);
+                
+                if (!tieneStockActualizado && esReciente) {
+                    System.out.println("🔍 Inventario COMPLETADO reciente encontrado (sin stock actualizado): " + inventario.getId() + " - Fecha: " + inventario.getFechaInicio());
+                    return Optional.of(inventario);
+                } else {
+                    if (tieneStockActualizado) {
+                        System.out.println("🔍 Inventario " + inventario.getId() + " ya tiene stock actualizado, saltando...");
+                    } else if (!esReciente) {
+                        System.out.println("🔍 Inventario " + inventario.getId() + " es muy viejo (" + inventario.getFechaInicio() + "), saltando...");
+                    }
+                }
             }
+            
+            System.out.println("🔍 No se encontraron inventarios completados recientes sin stock actualizado - Mostrando botón 'Crear Inventario'");
         }
         
         Optional<InventarioCompleto> inventarioActivo = Optional.empty();
@@ -3754,21 +3776,19 @@ public class InventarioCompletoService {
         // ✅ NO CAMBIAR ESTADO si ya está ESPERANDO_VERIFICACION (pero SÍ si está COMPLETADO en reconteo)
         boolean estadoEsperandoVerificacion = conteoSector.getEstado() == ConteoSector.EstadoConteo.ESPERANDO_VERIFICACION;
         
-        if ((conteoSector.getEstado() == ConteoSector.EstadoConteo.CON_DIFERENCIAS || 
-             (estaEnReconteo && productosConDiferencias == 0)) && 
+        // ✅ CORREGIDO: Solo completar automáticamente en casos muy específicos
+        // 1. Durante reconteo cuando no hay diferencias
+        // 2. NO completar automáticamente durante el conteo normal inicial
+        if (estaEnReconteo && 
             productosConDiferencias == 0 && 
             productosContados.size() == totalProductos &&
-            !estadoEsperandoVerificacion) { // ✅ Ejecutar tanto en conteo normal como en reconteo
+            !estadoEsperandoVerificacion) {
             
             // 🔍 VERIFICACIÓN CORREGIDA: Usar el método correcto para verificar diferencias en cantidades
             boolean hayDiferenciasEnCantidades = verificarDiferenciasEnConteo(conteoSector);
             
             if (!hayDiferenciasEnCantidades) {
-                if (estaEnReconteo) {
-                    System.out.println("🎉 ¡Reconteo completado sin diferencias! Completando automáticamente el sector: " + conteoSector.getId());
-                } else {
-                System.out.println("🎉 ¡No hay diferencias en las cantidades! Completando automáticamente el sector: " + conteoSector.getId());
-                }
+                System.out.println("🎉 ¡Reconteo completado sin diferencias! Completando automáticamente el sector: " + conteoSector.getId());
                 
                 // Cambiar estado a COMPLETADO
                 conteoSector.setEstado(ConteoSector.EstadoConteo.COMPLETADO);
@@ -3795,11 +3815,7 @@ public class InventarioCompletoService {
                     // No lanzar la excepción para no interrumpir el flujo principal
                 }
             } else {
-                if (estaEnReconteo) {
-                    System.out.println("⚠️ Hay diferencias en el reconteo, manteniendo estado CON_DIFERENCIAS");
-            } else {
-                System.out.println("⚠️ Hay diferencias en las cantidades, manteniendo estado CON_DIFERENCIAS");
-                }
+                System.out.println("⚠️ Hay diferencias en el reconteo, manteniendo estado CON_DIFERENCIAS");
             }
         } else if (estaEnReconteo) {
             System.out.println("⚠️ Sector en reconteo - Verificando si se puede completar automáticamente...");
