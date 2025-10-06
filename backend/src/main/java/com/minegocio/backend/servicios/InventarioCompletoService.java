@@ -139,6 +139,15 @@ public class InventarioCompletoService {
      * Verificar si todos los sectores están completados y actualizar estado del inventario
      */
     public boolean verificarYFinalizarInventarioCompleto(Long inventarioId) {
+        return verificarYFinalizarInventarioCompleto(inventarioId, false);
+    }
+
+    /**
+     * Verificar si todos los sectores están completados y actualizar estado del inventario
+     * @param inventarioId ID del inventario
+     * @param forzarFinalizacion true si debe finalizar automáticamente (cuando se actualiza stock), false si solo debe verificar
+     */
+    public boolean verificarYFinalizarInventarioCompleto(Long inventarioId, boolean forzarFinalizacion) {
         System.out.println("🔍 Verificando si el inventario completo está listo para finalizar: " + inventarioId);
         
         InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId).orElse(null);
@@ -187,17 +196,29 @@ public class InventarioCompletoService {
         System.out.println("  - Sectores pendientes: " + inventario.getSectoresPendientes());
         System.out.println("  - Porcentaje completado: " + inventario.getPorcentajeCompletado());
         
-        // ✅ CORREGIDO: NO finalizar automáticamente cuando todos los sectores están completados
-        // El inventario debe mantenerse EN_PROGRESO para permitir la consolidación manual
+        // Lógica de finalización basada en el parámetro forzarFinalizacion
         if (sectoresCompletados == sectores.size() && sectores.size() > 0) {
-            System.out.println("✅ Todos los sectores están completados. Inventario listo para consolidación manual...");
-            System.out.println("🔍 Manteniendo inventario EN_PROGRESO para permitir consolidación y actualización de stock");
-            
-            // NO cambiar el estado del inventario - mantenerlo EN_PROGRESO
-            // El inventario solo se finaliza cuando se actualiza el stock del sistema
-            inventarioCompletoRepository.save(inventario);
-            System.out.println("✅ Inventario listo para consolidación - NO finalizado automáticamente");
-            return false; // NO finalizar automáticamente
+            if (forzarFinalizacion) {
+                // ✅ FINALIZAR: Cuando se actualiza el stock del sistema
+                System.out.println("✅ Todos los sectores están completados. Finalizando inventario por actualización de stock...");
+                
+                inventario.setEstado(InventarioCompleto.EstadoInventario.COMPLETADO);
+                inventario.setFechaFinalizacion(LocalDateTime.now());
+                
+                inventarioCompletoRepository.save(inventario);
+                System.out.println("✅ Inventario completo finalizado exitosamente por actualización de stock");
+                return true;
+            } else {
+                // ✅ NO FINALIZAR: Cuando solo se completan los sectores
+                System.out.println("✅ Todos los sectores están completados. Inventario listo para consolidación manual...");
+                System.out.println("🔍 Manteniendo inventario EN_PROGRESO para permitir consolidación y actualización de stock");
+                
+                // NO cambiar el estado del inventario - mantenerlo EN_PROGRESO
+                // El inventario solo se finaliza cuando se actualiza el stock del sistema
+                inventarioCompletoRepository.save(inventario);
+                System.out.println("✅ Inventario listo para consolidación - NO finalizado automáticamente");
+                return false; // NO finalizar automáticamente
+            }
         } else {
             System.out.println("⏳ Aún hay sectores pendientes o en progreso");
             // Guardar el progreso actualizado
@@ -4732,7 +4753,7 @@ public class InventarioCompletoService {
             
             // Actualizar el progreso del inventario completo
             System.out.println("🔄 === ACTUALIZANDO PROGRESO DEL INVENTARIO ===");
-            boolean finalizado = verificarYFinalizarInventarioCompleto(inventario.getId());
+            boolean finalizado = verificarYFinalizarInventarioCompleto(inventario.getId(), true); // forzarFinalizacion = true para actualización de stock
             System.out.println("🔄 Resultado de verificarYFinalizarInventarioCompleto: " + finalizado);
             
             // Recargar el inventario para obtener los datos actualizados
