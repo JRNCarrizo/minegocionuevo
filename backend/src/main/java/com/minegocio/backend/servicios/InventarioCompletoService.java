@@ -4936,7 +4936,7 @@ public class InventarioCompletoService {
             String referenciaJson = conteoSector.getReferenciaActual();
             System.out.println("🔍 [SIMPLE] Referencia actual: " + referenciaJson);
             
-            // Obtener detalles actuales del sector
+            // ✅ CORRECCIÓN: Obtener detalles actuales del sector
             List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
             
             // Agrupar por producto
@@ -4945,16 +4945,46 @@ public class InventarioCompletoService {
                 detallesPorProducto.computeIfAbsent(detalle.getProducto().getId(), k -> new ArrayList<>()).add(detalle);
             }
             
-            // Para cada producto, crear el detalle para reconteo
+            // ✅ FILTRO CRÍTICO: Solo procesar productos que TIENEN DIFERENCIAS
+            System.out.println("🔍 [SIMPLE] Filtrando productos con diferencias...");
+            int totalProductos = detallesPorProducto.size();
+            int productosConDiferencias = 0;
+            
+            // Para cada producto, crear el detalle para reconteo SOLO SI TIENE DIFERENCIAS
             for (Map.Entry<Long, List<DetalleConteo>> entry : detallesPorProducto.entrySet()) {
                 Long productoId = entry.getKey();
                 List<DetalleConteo> detallesDelProducto = entry.getValue();
                 DetalleConteo primerDetalle = detallesDelProducto.get(0);
                 
-                // Obtener valores de referencia desde el JSON
-                Map<String, Object> valoresReferencia = parsearValoresReferencia(referenciaJson, productoId);
+                // ✅ VERIFICAR SI EL PRODUCTO TIENE DIFERENCIAS
+                boolean tieneDiferencias = false;
                 
+                // Verificar diferencias en los valores de referencia
+                Map<String, Object> valoresReferencia = parsearValoresReferencia(referenciaJson, productoId);
                 if (valoresReferencia != null) {
+                    Object usuario1Ref = valoresReferencia.get("usuario1");
+                    Object usuario2Ref = valoresReferencia.get("usuario2");
+                    
+                    if (usuario1Ref != null && usuario2Ref != null) {
+                        try {
+                            int cantidadUsuario1 = Integer.parseInt(usuario1Ref.toString());
+                            int cantidadUsuario2 = Integer.parseInt(usuario2Ref.toString());
+                            tieneDiferencias = cantidadUsuario1 != cantidadUsuario2;
+                            
+                            System.out.println("🔍 [SIMPLE] Producto " + productoId + " (" + primerDetalle.getProducto().getNombre() + "):");
+                            System.out.println("  - Usuario1: " + cantidadUsuario1 + ", Usuario2: " + cantidadUsuario2);
+                            System.out.println("  - Tiene diferencias: " + tieneDiferencias);
+                        } catch (NumberFormatException e) {
+                            System.out.println("⚠️ [SIMPLE] Error parseando cantidades para producto " + productoId);
+                            tieneDiferencias = false;
+                        }
+                    }
+                }
+                
+                // ✅ SOLO PROCESAR PRODUCTOS CON DIFERENCIAS
+                if (tieneDiferencias) {
+                    productosConDiferencias++;
+                    System.out.println("✅ [SIMPLE] Incluyendo producto " + productoId + " en reconteo (tiene diferencias)");
                     Map<String, Object> detalleReconteo = new HashMap<>();
                     detalleReconteo.put("productoId", productoId);
                     detalleReconteo.put("nombreProducto", primerDetalle.getProducto().getNombre());
@@ -5066,10 +5096,15 @@ public class InventarioCompletoService {
                     System.out.println("  - Diferencia entre usuarios: " + diferenciaEntreUsuarios + " (hayDiferencias: " + hayDiferencias + ")");
                     
                     detallesReconteo.add(detalleReconteo);
+                } else {
+                    System.out.println("⏭️ [SIMPLE] Saltando producto " + productoId + " - NO tiene diferencias");
                 }
             }
             
-            System.out.println("✅ [SIMPLE] Detalles para reconteo obtenidos: " + detallesReconteo.size());
+            System.out.println("✅ [SIMPLE] FILTRADO COMPLETADO:");
+            System.out.println("  - Total productos en sector: " + totalProductos);
+            System.out.println("  - Productos con diferencias: " + productosConDiferencias);
+            System.out.println("  - Productos incluidos en reconteo: " + detallesReconteo.size());
             
         } catch (Exception e) {
             System.err.println("❌ [SIMPLE] Error obteniendo detalles para reconteo: " + e.getMessage());
