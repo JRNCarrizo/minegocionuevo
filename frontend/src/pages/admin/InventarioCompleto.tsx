@@ -1513,14 +1513,30 @@ export default function InventarioCompleto() {
                           marginBottom: '1.25rem'
                         }}>
                           <div style={{
-                            background: 'rgba(255, 255, 255, 0.7)',
+                            background: (() => {
+                              // ✅ DESTACADO VISUAL: Si el usuario actual es el Usuario 1
+                              const esUsuarioActual = conteo?.usuario1Id === datosUsuario?.id;
+                              return esUsuarioActual ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)' : 'rgba(255, 255, 255, 0.7)';
+                            })(),
                             borderRadius: '0.75rem',
                             padding: isMobile ? '0.875rem' : '1rem',
-                            border: `1px solid ${conteo?.usuario1Nombre ? colores.accent + '30' : '#e2e8f0'}`,
+                            border: (() => {
+                              // ✅ DESTACADO VISUAL: Borde especial para el usuario actual
+                              const esUsuarioActual = conteo?.usuario1Id === datosUsuario?.id;
+                              if (esUsuarioActual) {
+                                return `2px solid #3b82f6`;
+                              }
+                              return `1px solid ${conteo?.usuario1Nombre ? colores.accent + '30' : '#e2e8f0'}`;
+                            })(),
                             backdropFilter: 'blur(10px)',
                             transition: 'all 0.3s ease',
                             position: 'relative',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            boxShadow: (() => {
+                              // ✅ DESTACADO VISUAL: Sombra especial para el usuario actual
+                              const esUsuarioActual = conteo?.usuario1Id === datosUsuario?.id;
+                              return esUsuarioActual ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none';
+                            })()
                           }}>
                             {conteo?.usuario1Nombre && (
                             <div style={{
@@ -1529,7 +1545,11 @@ export default function InventarioCompleto() {
                                 left: 0,
                                 right: 0,
                                 height: '3px',
-                                background: colores.accent,
+                                background: (() => {
+                                  // ✅ DESTACADO VISUAL: Color especial para el usuario actual
+                                  const esUsuarioActual = conteo?.usuario1Id === datosUsuario?.id;
+                                  return esUsuarioActual ? '#3b82f6' : colores.accent;
+                                })(),
                                 borderRadius: '0.75rem 0.75rem 0 0'
                               }}></div>
                             )}
@@ -1543,8 +1563,21 @@ export default function InventarioCompleto() {
                                 width: '8px',
                                 height: '8px',
                                 borderRadius: '50%',
-                                background: conteo?.usuario1Nombre ? colores.accent : '#94a3b8',
-                                boxShadow: `0 0 0 2px ${conteo?.usuario1Nombre ? colores.accent + '30' : '#94a3b830'}`
+                                background: (() => {
+                                  // ✅ DESTACADO VISUAL: Color especial para el usuario actual
+                                  const esUsuarioActual = conteo?.usuario1Id === datosUsuario?.id;
+                                  if (esUsuarioActual) {
+                                    return '#3b82f6';
+                                  }
+                                  return conteo?.usuario1Nombre ? colores.accent : '#94a3b8';
+                                })(),
+                                boxShadow: (() => {
+                                  const esUsuarioActual = conteo?.usuario1Id === datosUsuario?.id;
+                                  if (esUsuarioActual) {
+                                    return '0 0 0 2px rgba(59, 130, 246, 0.3)';
+                                  }
+                                  return `0 0 0 2px ${conteo?.usuario1Nombre ? colores.accent + '30' : '#94a3b830'}`;
+                                })()
                               }}></div>
                               <span style={{
                                 fontSize: isMobile ? '0.75rem' : '0.8rem',
@@ -1555,25 +1588,62 @@ export default function InventarioCompleto() {
                             }}>
                               Usuario 1
                               </span>
+                              {/* ✅ DESTACADO VISUAL: Ícono especial para el usuario actual */}
+                              {conteo?.usuario1Id === datosUsuario?.id && (
+                                <span style={{
+                                  fontSize: '0.75rem',
+                                  color: '#3b82f6',
+                                  fontWeight: 'bold',
+                                  background: 'rgba(59, 130, 246, 0.1)',
+                                  padding: '0.125rem 0.375rem',
+                                  borderRadius: '0.375rem',
+                                  border: '1px solid rgba(59, 130, 246, 0.2)'
+                                }}>
+                                  TÚ
+                                </span>
+                              )}
                             </div>
                             <div style={{
                               fontSize: isMobile ? '0.85rem' : '0.9rem',
                               fontWeight: '600',
-                              color: conteo?.usuario1Nombre ? '#1e293b' : '#94a3b8',
+                              color: (() => {
+                                // ✅ DESTACADO VISUAL: Color especial para el nombre del usuario actual
+                                const esUsuarioActual = conteo?.usuario1Id === datosUsuario?.id;
+                                if (esUsuarioActual) {
+                                  return '#1e40af';
+                                }
+                                return conteo?.usuario1Nombre ? '#1e293b' : '#94a3b8';
+                              })(),
                               lineHeight: '1.3'
                             }}>
                               {conteo?.usuario1Nombre || 'No asignado'}
                             </div>
                           </div>
                           <div style={{
-                            background: 'rgba(255, 255, 255, 0.7)',
+                            background: (() => {
+                              // ✅ DESTACADO VISUAL: Si el usuario actual es el Usuario 2
+                              const esUsuarioActual = conteo?.usuario2Id === datosUsuario?.id;
+                              return esUsuarioActual ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)' : 'rgba(255, 255, 255, 0.7)';
+                            })(),
                             borderRadius: '0.75rem',
                             padding: isMobile ? '0.875rem' : '1rem',
-                            border: `1px solid ${conteo?.usuario2Nombre ? colores.accent + '30' : '#e2e8f0'}`,
+                            border: (() => {
+                              // ✅ DESTACADO VISUAL: Borde especial para el usuario actual
+                              const esUsuarioActual = conteo?.usuario2Id === datosUsuario?.id;
+                              if (esUsuarioActual) {
+                                return `2px solid #3b82f6`;
+                              }
+                              return `1px solid ${conteo?.usuario2Nombre ? colores.accent + '30' : '#e2e8f0'}`;
+                            })(),
                             backdropFilter: 'blur(10px)',
                             transition: 'all 0.3s ease',
                             position: 'relative',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            boxShadow: (() => {
+                              // ✅ DESTACADO VISUAL: Sombra especial para el usuario actual
+                              const esUsuarioActual = conteo?.usuario2Id === datosUsuario?.id;
+                              return esUsuarioActual ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none';
+                            })()
                           }}>
                             {conteo?.usuario2Nombre && (
                             <div style={{
@@ -1582,7 +1652,11 @@ export default function InventarioCompleto() {
                                 left: 0,
                                 right: 0,
                                 height: '3px',
-                                background: colores.accent,
+                                background: (() => {
+                                  // ✅ DESTACADO VISUAL: Color especial para el usuario actual
+                                  const esUsuarioActual = conteo?.usuario2Id === datosUsuario?.id;
+                                  return esUsuarioActual ? '#3b82f6' : colores.accent;
+                                })(),
                                 borderRadius: '0.75rem 0.75rem 0 0'
                               }}></div>
                             )}
@@ -1596,8 +1670,21 @@ export default function InventarioCompleto() {
                                 width: '8px',
                                 height: '8px',
                                 borderRadius: '50%',
-                                background: conteo?.usuario2Nombre ? colores.accent : '#94a3b8',
-                                boxShadow: `0 0 0 2px ${conteo?.usuario2Nombre ? colores.accent + '30' : '#94a3b830'}`
+                                background: (() => {
+                                  // ✅ DESTACADO VISUAL: Color especial para el usuario actual
+                                  const esUsuarioActual = conteo?.usuario2Id === datosUsuario?.id;
+                                  if (esUsuarioActual) {
+                                    return '#3b82f6';
+                                  }
+                                  return conteo?.usuario2Nombre ? colores.accent : '#94a3b8';
+                                })(),
+                                boxShadow: (() => {
+                                  const esUsuarioActual = conteo?.usuario2Id === datosUsuario?.id;
+                                  if (esUsuarioActual) {
+                                    return '0 0 0 2px rgba(59, 130, 246, 0.3)';
+                                  }
+                                  return `0 0 0 2px ${conteo?.usuario2Nombre ? colores.accent + '30' : '#94a3b830'}`;
+                                })()
                               }}></div>
                               <span style={{
                                 fontSize: isMobile ? '0.75rem' : '0.8rem',
@@ -1608,11 +1695,32 @@ export default function InventarioCompleto() {
                             }}>
                               Usuario 2
                               </span>
+                              {/* ✅ DESTACADO VISUAL: Ícono especial para el usuario actual */}
+                              {conteo?.usuario2Id === datosUsuario?.id && (
+                                <span style={{
+                                  fontSize: '0.75rem',
+                                  color: '#3b82f6',
+                                  fontWeight: 'bold',
+                                  background: 'rgba(59, 130, 246, 0.1)',
+                                  padding: '0.125rem 0.375rem',
+                                  borderRadius: '0.375rem',
+                                  border: '1px solid rgba(59, 130, 246, 0.2)'
+                                }}>
+                                  TÚ
+                                </span>
+                              )}
                             </div>
                             <div style={{
                               fontSize: isMobile ? '0.85rem' : '0.9rem',
                               fontWeight: '600',
-                              color: conteo?.usuario2Nombre ? '#1e293b' : '#94a3b8',
+                              color: (() => {
+                                // ✅ DESTACADO VISUAL: Color especial para el nombre del usuario actual
+                                const esUsuarioActual = conteo?.usuario2Id === datosUsuario?.id;
+                                if (esUsuarioActual) {
+                                  return '#1e40af';
+                                }
+                                return conteo?.usuario2Nombre ? '#1e293b' : '#94a3b8';
+                              })(),
                               lineHeight: '1.3'
                             }}>
                               {conteo?.usuario2Nombre || 'No asignado'}
