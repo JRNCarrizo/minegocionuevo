@@ -460,10 +460,46 @@ public class InventarioCompletoController {
             UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
             Long usuarioId = usuarioPrincipal.getUsuario().getId();
             
-            List<Map<String, Object>> detallesComparacion = inventarioCompletoService.obtenerDetallesParaComparacion(conteoSectorId, usuarioId);
+            // ✅ NUEVA LÓGICA: Verificar si el sector está completado
+            boolean sectorCompletado = conteoSector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO;
             
-            System.out.println("✅ Detalles para comparación obtenidos: " + detallesComparacion.size());
-            return ResponseEntity.ok(detallesComparacion);
+            if (sectorCompletado) {
+                // ✅ SECTOR COMPLETADO: Usar el nuevo método que muestra TODOS los productos con valores finales correctos
+                System.out.println("🔍 Sector completado - obteniendo detalle final con TODOS los productos");
+                List<DetalleConteo> detallesFinales = inventarioCompletoService.obtenerDetalleFinalSectorCompletado(conteoSectorId);
+                System.out.println("🔍 DEBUG detalles finales obtenidos: " + detallesFinales.size());
+                
+                // Convertir DetalleConteo a Map para mantener compatibilidad
+                List<Map<String, Object>> detallesComparacion = detallesFinales.stream().map(detalle -> {
+                    Map<String, Object> dto = new HashMap<>();
+                    dto.put("id", detalle.getId());
+                    dto.put("productoId", detalle.getProducto().getId());
+                    dto.put("nombreProducto", detalle.getProducto().getNombre());
+                    dto.put("codigoProducto", detalle.getProducto().getCodigoPersonalizado());
+                    dto.put("unidad", detalle.getProducto().getUnidad());
+                    dto.put("stockSistema", detalle.getStockSistema());
+                    dto.put("cantidadConteo1", detalle.getCantidadConteo1());
+                    dto.put("cantidadConteo2", detalle.getCantidadConteo2());
+                    dto.put("formulaCalculo1", detalle.getFormulaCalculo1());
+                    dto.put("formulaCalculo2", detalle.getFormulaCalculo2());
+                    dto.put("cantidadFinal", detalle.getCantidadFinal());
+                    dto.put("diferenciaSistema", detalle.getDiferenciaSistema());
+                    dto.put("diferenciaEntreConteos", 0); // Sin diferencias en sector completado
+                    dto.put("hayDiferencias", false); // Sin diferencias en sector completado
+                    dto.put("estado", "COMPLETADO");
+                    return dto;
+                }).collect(Collectors.toList());
+                
+                System.out.println("✅ Detalles finales para sector completado obtenidos: " + detallesComparacion.size());
+                return ResponseEntity.ok(detallesComparacion);
+            } else {
+                // ✅ SECTOR NO COMPLETADO: Usar la lógica normal de comparación
+                System.out.println("🔍 Sector no completado - obteniendo detalles para comparación");
+                List<Map<String, Object>> detallesComparacion = inventarioCompletoService.obtenerDetallesParaComparacion(conteoSectorId, usuarioId);
+                
+                System.out.println("✅ Detalles para comparación obtenidos: " + detallesComparacion.size());
+                return ResponseEntity.ok(detallesComparacion);
+            }
             
         } catch (Exception e) {
             System.err.println("❌ Error obteniendo detalles para comparación: " + e.getMessage());
@@ -490,8 +526,26 @@ public class InventarioCompletoController {
             
             List<DetalleConteo> detalles;
             
-            // Si es modo reconteo, obtener detalles consolidados con cantidades de ambos usuarios
-            if (Boolean.TRUE.equals(modoReconteo)) {
+            // ✅ NUEVA LÓGICA: Verificar si el sector está completado
+            ConteoSector conteoSector = inventarioCompletoService.obtenerConteoSectorPorId(conteoSectorId);
+            boolean sectorCompletado = conteoSector != null && conteoSector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO;
+            
+            if (sectorCompletado) {
+                // ✅ SECTOR COMPLETADO: Usar el nuevo método que muestra TODOS los productos con valores finales correctos
+                System.out.println("🔍 Sector completado - obteniendo detalle final con TODOS los productos");
+                detalles = inventarioCompletoService.obtenerDetalleFinalSectorCompletado(conteoSectorId);
+                System.out.println("🔍 DEBUG detalles finales obtenidos: " + detalles.size());
+                for (DetalleConteo detalle : detalles) {
+                    // Forzar la carga de la entidad Producto para evitar lazy loading
+                    if (detalle.getProducto() != null) {
+                        System.out.println("  - Producto: " + detalle.getProducto().getNombre() + 
+                                         " - CantidadConteo1: " + detalle.getCantidadConteo1() + 
+                                         " - CantidadConteo2: " + detalle.getCantidadConteo2() +
+                                         " - CantidadFinal: " + detalle.getCantidadFinal());
+                    }
+                }
+            } else if (Boolean.TRUE.equals(modoReconteo)) {
+                // ✅ MODO RECONTEO: Obtener detalles consolidados con cantidades de ambos usuarios (solo productos con diferencias)
                 System.out.println("🔍 Modo reconteo activado - obteniendo detalles consolidados");
                 System.out.println("🔍 DEBUG llamando a obtenerDetallesConteoParaReconteo con conteoSectorId: " + conteoSectorId);
                 detalles = inventarioCompletoService.obtenerDetallesConteoParaReconteo(conteoSectorId);
@@ -505,7 +559,7 @@ public class InventarioCompletoController {
                     }
                 }
             } else {
-                // Modo normal - obtener detalles filtrados por usuario
+                // ✅ MODO NORMAL: Obtener detalles filtrados por usuario
                 System.out.println("🔍 Modo normal - obteniendo detalles por usuario: " + usuarioId);
                 detalles = inventarioCompletoService.obtenerDetallesConteoPorUsuario(conteoSectorId, usuarioId);
                 System.out.println("🔍 DEBUG detalles por usuario obtenidos: " + detalles.size());
@@ -639,7 +693,26 @@ public class InventarioCompletoController {
             UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
             Long usuarioId = usuarioPrincipal.getId();
             
-            Long productoId = Long.valueOf(request.get("productoId").toString());
+            // Debug: Mostrar el request completo
+            System.out.println("🔄 DEBUG agregarProductoAlReconteo - Request completo:");
+            System.out.println("  - Request: " + request);
+            System.out.println("  - Request keys: " + request.keySet());
+            
+            // Validar que productoId no sea null
+            Object productoIdObj = request.get("productoId");
+            if (productoIdObj == null) {
+                System.err.println("❌ Error: productoId es null en el request");
+                return ResponseEntity.badRequest().body(Map.of("error", "productoId es requerido y no puede ser null"));
+            }
+            
+            Long productoId;
+            try {
+                productoId = Long.valueOf(productoIdObj.toString());
+            } catch (NumberFormatException e) {
+                System.err.println("❌ Error: productoId no es un número válido: " + productoIdObj);
+                return ResponseEntity.badRequest().body(Map.of("error", "productoId debe ser un número válido: " + productoIdObj));
+            }
+            
             Integer cantidad = Integer.valueOf(request.get("cantidad").toString());
             String formulaCalculo = (String) request.get("formulaCalculo");
             
@@ -1236,6 +1309,10 @@ public class InventarioCompletoController {
             @PathVariable Long inventarioId) {
         try {
             System.out.println("🔍 Obteniendo productos consolidados del inventario: " + inventarioId);
+            
+            // ✅ FORZAR ACTUALIZACIÓN DEL PROGRESO DEL INVENTARIO
+            System.out.println("🔄 Forzando actualización del progreso del inventario antes de obtener productos consolidados...");
+            inventarioCompletoService.verificarYFinalizarInventarioCompleto(inventarioId);
             
             List<Map<String, Object>> productosConsolidados = inventarioCompletoService.obtenerProductosConsolidadosInventarioCompleto(inventarioId);
             

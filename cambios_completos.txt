@@ -1,0 +1,203 @@
+CAMBIOS NECESARIOS PARA COMPLETAR LA INTEGRACIÓN:
+
+1. AGREGAR AL FINAL DEL ARCHIVO (antes del cierre de la clase):
+    /**
+     * ✅ NUEVA LÓGICA SIMPLE: Establece la referencia inicial con los valores del conteo inicial
+     */
+    private void establecerReferenciaInicialSimple(ConteoSector conteoSector) {
+        System.out.println("🔍 [SIMPLE] Estableciendo referencia inicial para sector: " + conteoSector.getId());
+        
+        try {
+            // Obtener detalles del conteo inicial
+            List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
+            
+            // Crear JSON simple con los valores de referencia
+            StringBuilder referenciaJson = new StringBuilder();
+            referenciaJson.append("{");
+            
+            // Agrupar por producto
+            Map<Long, List<DetalleConteo>> detallesPorProducto = new HashMap<>();
+            for (DetalleConteo detalle : detalles) {
+                detallesPorProducto.computeIfAbsent(detalle.getProducto().getId(), k -> new ArrayList<>()).add(detalle);
+            }
+            
+            boolean primero = true;
+            for (Map.Entry<Long, List<DetalleConteo>> entry : detallesPorProducto.entrySet()) {
+                if (!primero) referenciaJson.append(",");
+                primero = false;
+                
+                List<DetalleConteo> detallesDelProducto = entry.getValue();
+                DetalleConteo primerDetalle = detallesDelProducto.get(0);
+                
+                int totalUsuario1 = 0;
+                int totalUsuario2 = 0;
+                List<String> formulasUsuario1 = new ArrayList<>();
+                List<String> formulasUsuario2 = new ArrayList<>();
+                
+                // Sumar todos los valores originales
+                for (DetalleConteo detalle : detallesDelProducto) {
+                    if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
+                        totalUsuario1 += detalle.getCantidadConteo1();
+                        if (detalle.getFormulaCalculo1() != null && !detalle.getFormulaCalculo1().trim().isEmpty()) {
+                            formulasUsuario1.add(detalle.getFormulaCalculo1());
+                        }
+                    }
+                    if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
+                        totalUsuario2 += detalle.getCantidadConteo2();
+                        if (detalle.getFormulaCalculo2() != null && !detalle.getFormulaCalculo2().trim().isEmpty()) {
+                            formulasUsuario2.add(detalle.getFormulaCalculo2());
+                        }
+                    }
+                }
+                
+                referenciaJson.append("\"").append(primerDetalle.getProducto().getId()).append("\":{");
+                referenciaJson.append("\"nombre\":\"").append(primerDetalle.getProducto().getNombre().replace("\"", "\\\"")).append("\",");
+                referenciaJson.append("\"usuario1\":").append(totalUsuario1).append(",");
+                referenciaJson.append("\"usuario2\":").append(totalUsuario2).append(",");
+                referenciaJson.append("\"formulas1\":\"").append(String.join(" | ", formulasUsuario1).replace("\"", "\\\"")).append("\",");
+                referenciaJson.append("\"formulas2\":\"").append(String.join(" | ", formulasUsuario2).replace("\"", "\\\"")).append("\"");
+                referenciaJson.append("}");
+            }
+            
+            referenciaJson.append("}");
+            
+            conteoSector.setReferenciaActual(referenciaJson.toString());
+            System.out.println("✅ [SIMPLE] Referencia inicial establecida: " + referenciaJson.toString());
+            
+        } catch (Exception e) {
+            System.err.println("❌ [SIMPLE] Error estableciendo referencia inicial: " + e.getMessage());
+        }
+    }
+
+    /**
+     * ✅ NUEVA LÓGICA SIMPLE: Actualiza la referencia actual con los valores del reconteo
+     */
+    private void actualizarReferenciaActualSimple(ConteoSector conteoSector) {
+        System.out.println("🔍 [SIMPLE] Actualizando referencia actual para sector: " + conteoSector.getId());
+        
+        try {
+            // Obtener detalles del reconteo (valores más recientes)
+            List<DetalleConteo> detalles = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
+            
+            // Crear JSON simple con los valores de referencia actualizados
+            StringBuilder referenciaJson = new StringBuilder();
+            referenciaJson.append("{");
+            
+            // Agrupar por producto
+            Map<Long, List<DetalleConteo>> detallesPorProducto = new HashMap<>();
+            for (DetalleConteo detalle : detalles) {
+                detallesPorProducto.computeIfAbsent(detalle.getProducto().getId(), k -> new ArrayList<>()).add(detalle);
+            }
+            
+            boolean primero = true;
+            for (Map.Entry<Long, List<DetalleConteo>> entry : detallesPorProducto.entrySet()) {
+                if (!primero) referenciaJson.append(",");
+                primero = false;
+                
+                List<DetalleConteo> detallesDelProducto = entry.getValue();
+                DetalleConteo primerDetalle = detallesDelProducto.get(0);
+                
+                // Ordenar por fecha de actualización (más reciente primero) para obtener reconteos
+                detallesDelProducto.sort((d1, d2) -> d2.getFechaActualizacion().compareTo(d1.getFechaActualizacion()));
+                
+                int totalUsuario1 = 0;
+                int totalUsuario2 = 0;
+                List<String> formulasUsuario1 = new ArrayList<>();
+                List<String> formulasUsuario2 = new ArrayList<>();
+                
+                // Tomar solo el primer valor (más reciente) para cada usuario
+                for (DetalleConteo detalle : detallesDelProducto) {
+                    if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0 && totalUsuario1 == 0) {
+                        totalUsuario1 = detalle.getCantidadConteo1();
+                        if (detalle.getFormulaCalculo1() != null && !detalle.getFormulaCalculo1().trim().isEmpty()) {
+                            formulasUsuario1.add(detalle.getFormulaCalculo1());
+                        }
+                    }
+                    if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0 && totalUsuario2 == 0) {
+                        totalUsuario2 = detalle.getCantidadConteo2();
+                        if (detalle.getFormulaCalculo2() != null && !detalle.getFormulaCalculo2().trim().isEmpty()) {
+                            formulasUsuario2.add(detalle.getFormulaCalculo2());
+                        }
+                    }
+                    
+                    // Si ya tenemos ambos valores, salir del bucle
+                    if (totalUsuario1 > 0 && totalUsuario2 > 0) {
+                        break;
+                    }
+                }
+                
+                referenciaJson.append("\"").append(primerDetalle.getProducto().getId()).append("\":{");
+                referenciaJson.append("\"nombre\":\"").append(primerDetalle.getProducto().getNombre().replace("\"", "\\\"")).append("\",");
+                referenciaJson.append("\"usuario1\":").append(totalUsuario1).append(",");
+                referenciaJson.append("\"usuario2\":").append(totalUsuario2).append(",");
+                referenciaJson.append("\"formulas1\":\"").append(String.join(" | ", formulasUsuario1).replace("\"", "\\\"")).append("\",");
+                referenciaJson.append("\"formulas2\":\"").append(String.join(" | ", formulasUsuario2).replace("\"", "\\\"")).append("\"");
+                referenciaJson.append("}");
+            }
+            
+            referenciaJson.append("}");
+            
+            conteoSector.setReferenciaActual(referenciaJson.toString());
+            System.out.println("✅ [SIMPLE] Referencia actual actualizada: " + referenciaJson.toString());
+            
+        } catch (Exception e) {
+            System.err.println("❌ [SIMPLE] Error actualizando referencia actual: " + e.getMessage());
+        }
+    }
+
+2. MODIFICAR EN finalizarReconteoSector (línea ~3234):
+    CAMBIAR:
+        if (esReconteo) {
+            conteoSector.setObservaciones("Reconteo_" + LocalDateTime.now().toString()); // Marcar nuevo reconteo
+            System.out.println("⚠️ Diferencias persisten después del reconteo, iniciando nuevo reconteo");
+        } else {
+            conteoSector.setObservaciones("Diferencias_Encontradas");
+            System.out.println("⚠️ Diferencias encontradas en conteo inicial, estado cambiado a CON_DIFERENCIAS");
+        }
+    
+    POR:
+        if (esReconteo) {
+            // ✅ NUEVA LÓGICA: Actualizar referencia actual con los valores del reconteo
+            System.out.println("🔄 Actualizando referencia actual con valores del reconteo...");
+            actualizarReferenciaActualSimple(conteoSector);
+            
+            conteoSector.setObservaciones("Reconteo_" + LocalDateTime.now().toString()); // Marcar nuevo reconteo
+            System.out.println("⚠️ Diferencias persisten después del reconteo, iniciando nuevo reconteo");
+        } else {
+            // ✅ NUEVA LÓGICA: Establecer referencia inicial con valores del conteo inicial
+            System.out.println("🔄 Estableciendo referencia inicial con valores del conteo inicial...");
+            establecerReferenciaInicialSimple(conteoSector);
+            
+            conteoSector.setObservaciones("Diferencias_Encontradas");
+            System.out.println("⚠️ Diferencias encontradas en conteo inicial, estado cambiado a CON_DIFERENCIAS");
+        }
+
+3. MODIFICAR EN obtenerDetallesParaReconteo (línea ~1346):
+    AGREGAR DESPUÉS DE:
+        System.out.println("🔍 Estado del ConteoSector: " + conteoSector.getEstado());
+        System.out.println("🔍 Observaciones del ConteoSector: " + conteoSector.getObservaciones());
+    
+    AGREGAR:
+        System.out.println("🔍 Referencia Actual: " + conteoSector.getReferenciaActual());
+
+4. MODIFICAR EN obtenerDetallesParaReconteo (línea ~1350):
+    AGREGAR DESPUÉS DE:
+        // ✅ LÓGICA ESPECÍFICA POR USUARIO: Determinar qué datos mostrar según el usuario
+        boolean esUsuario1 = conteoSector.getUsuarioAsignado1() != null &&
+                            conteoSector.getUsuarioAsignado1().getId().equals(usuarioId);
+        boolean esUsuario2 = conteoSector.getUsuarioAsignado2() != null &&
+                            conteoSector.getUsuarioAsignado2().getId().equals(usuarioId);
+
+        System.out.println("🔍 RECONTEO: Usuario solicitando reconteo - esUsuario1: " + esUsuario1 + ", esUsuario2: " + esUsuario2);
+        System.out.println("🔍 DEBUG - Total detalles del producto: " + detallesDelProducto.size());
+
+        // ✅ DETERMINAR SI ES SEGUNDO RECONTEO (ambos usuarios ya recontaron)
+        boolean esSegundoReconteo = ambosUsuariosRecontaron;
+        System.out.println("🔍 RECONTEO: Es segundo reconteo: " + esSegundoReconteo);
+    
+    AGREGAR AL INICIO:
+        // ✅ NUEVA LÓGICA SIMPLE: Usar referencia actual si existe
+        if (conteoSector.getReferenciaActual() != null && !conteoSector.getReferenciaActual().isEmpty()) {
+            System.out.println("🔍 [SIMPLE] Usando referencia actual para reconteo");
+            return obtenerDetallesDesdeReferenciaActual(conteoSector, usuarioId);
+        }

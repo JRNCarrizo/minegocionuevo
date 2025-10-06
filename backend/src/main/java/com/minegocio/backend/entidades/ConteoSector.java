@@ -57,6 +57,9 @@ public class ConteoSector {
     @Column(name = "observaciones", length = 1000)
     private String observaciones;
 
+    @Column(name = "referencia_actual", length = 2000)
+    private String referenciaActual;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_asignado_1_id")
     private Usuario usuarioAsignado1;
@@ -226,6 +229,14 @@ public class ConteoSector {
 
     public void setObservaciones(String observaciones) {
         this.observaciones = observaciones;
+    }
+
+    public String getReferenciaActual() {
+        return referenciaActual;
+    }
+
+    public void setReferenciaActual(String referenciaActual) {
+        this.referenciaActual = referenciaActual;
     }
 
     public LocalDateTime getFechaCreacion() {

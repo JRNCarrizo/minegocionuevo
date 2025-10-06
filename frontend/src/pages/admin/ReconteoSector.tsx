@@ -201,12 +201,37 @@ export default function ReconteoSector() {
       console.log('🔍 [DEBUG] Token obtenido:', token ? 'presente' : 'ausente');
       
       const reconteosParaGuardar = Object.entries(reconteosSolidificados)
-        .filter(([_, formula]) => formula.trim())
-        .map(([productoId, formula]) => ({
-          productoId: parseInt(productoId),
-          cantidad: calcularFormula(formula),
-          formulaCalculo: formula
-        }));
+        .filter(([productoId, formula]) => {
+          const id = parseInt(productoId);
+          const isValidId = !isNaN(id) && id > 0;
+          const hasFormula = formula.trim();
+          
+          if (!isValidId) {
+            console.error('❌ ProductoId inválido:', productoId, 'parseado como:', id);
+          }
+          if (!hasFormula) {
+            console.log('⚠️ Fórmula vacía para producto:', productoId);
+          }
+          
+          return isValidId && hasFormula;
+        })
+        .map(([productoId, formula]) => {
+          const id = parseInt(productoId);
+          const cantidad = calcularFormula(formula);
+          
+          console.log('🔍 Preparando reconteo:', {
+            productoId: id,
+            formula,
+            cantidad,
+            isValidId: !isNaN(id) && id > 0
+          });
+          
+          return {
+            productoId: id,
+            cantidad: cantidad,
+            formulaCalculo: formula
+          };
+        });
 
       console.log('🔍 [DEBUG] Reconteos preparados para guardar:', {
         reconteosSolidificados,
@@ -473,10 +498,10 @@ export default function ReconteoSector() {
               producto: productoObj,
               stockSistema: productoRef.stockSistema || 0,
               // Usar datos del conteo original como referencia
-              cantidadConteo1: productoRef.cantidadConteo1 || 0,
-              cantidadConteo2: productoRef.cantidadConteo2 || 0,
-              formulaCalculo1: productoRef.formulaCalculo1 || 'Sin fórmula',
-              formulaCalculo2: productoRef.formulaCalculo2 || 'Sin fórmula',
+              cantidadConteo1: productoRef.cantidadConteo1Referencia || 0,
+              cantidadConteo2: productoRef.cantidadConteo2Referencia || 0,
+              formulaCalculo1: productoRef.formulaCalculo1Referencia || 'Sin fórmula',
+              formulaCalculo2: productoRef.formulaCalculo2Referencia || 'Sin fórmula',
               diferenciaSistema: productoRef.diferenciaSistema || 0,
               diferenciaEntreConteos: productoRef.diferenciaEntreConteos || 0, // Diferencia del conteo original
               estado: productoRef.estado || 'DIFERENCIA',
