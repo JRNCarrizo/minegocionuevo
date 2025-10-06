@@ -202,24 +202,31 @@ public class InventarioCompletoServiceSimple {
             throw new RuntimeException("El usuario no está asignado a este conteo");
         }
         
-        // Verificar que estamos en un estado válido para reconteo
-        // ✅ PERMITIR COMPLETADO si está en reconteo (se completó automáticamente)
-        boolean esReconteo = conteoSector.getObservaciones() != null && 
-                            (conteoSector.getObservaciones().contains("Usuario1_Finalizado") ||
-                             conteoSector.getObservaciones().contains("Usuario2_Finalizado") ||
-                             conteoSector.getObservaciones().startsWith("Reconteo_"));
+        // ✅ CORRECCIÓN: Verificar que estamos en un estado válido para reconteo
+        // Permitir COMPLETADO si está en reconteo (se completó automáticamente)
+        String observaciones = conteoSector.getObservaciones();
+        boolean esReconteo = observaciones != null && 
+                            (observaciones.contains("Usuario1_Finalizado") ||
+                             observaciones.contains("Usuario2_Finalizado") ||
+                             observaciones.contains("Reconteo completado") ||
+                             observaciones.startsWith("Reconteo_"));
         
-        if (conteoSector.getEstado() != ConteoSector.EstadoConteo.CON_DIFERENCIAS && 
-            conteoSector.getEstado() != ConteoSector.EstadoConteo.ESPERANDO_VERIFICACION &&
-            !(conteoSector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO && esReconteo)) {
-            System.out.println("⚠️ [SIMPLE] Estado actual del sector: " + conteoSector.getEstado() + 
-                             ", observaciones: " + conteoSector.getObservaciones() + 
-                             ", esReconteo: " + esReconteo);
+        System.out.println("🔍 [SIMPLE] Validando estado para reconteo:");
+        System.out.println("  - Estado actual: " + conteoSector.getEstado());
+        System.out.println("  - Observaciones: " + observaciones);
+        System.out.println("  - Es reconteo: " + esReconteo);
+        
+        // ✅ PERMITIR todos los estados válidos para reconteo
+        boolean estadoValidoParaReconteo = conteoSector.getEstado() == ConteoSector.EstadoConteo.CON_DIFERENCIAS || 
+                                          conteoSector.getEstado() == ConteoSector.EstadoConteo.ESPERANDO_VERIFICACION ||
+                                          (conteoSector.getEstado() == ConteoSector.EstadoConteo.COMPLETADO && esReconteo);
+        
+        if (!estadoValidoParaReconteo) {
+            System.out.println("❌ [SIMPLE] Estado no válido para reconteo");
             throw new RuntimeException("El sector no está en estado de reconteo. Estado actual: " + conteoSector.getEstado());
         }
         
         // Determinar si es reconteo o conteo inicial basándose en las observaciones
-        String observaciones = conteoSector.getObservaciones();
         // esReconteo ya fue declarado arriba, solo usar la lógica específica para observaciones
         boolean esReconteoPorObservaciones = observaciones != null && observaciones.startsWith("Reconteo_");
         

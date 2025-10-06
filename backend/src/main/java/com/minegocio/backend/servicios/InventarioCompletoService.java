@@ -2500,8 +2500,11 @@ public class InventarioCompletoService {
             InventarioCompleto inventario = inventarioActivo.get();
             System.out.println("  - ID: " + inventario.getId() + ", Estado: " + inventario.getEstado());
             
+            // ✅ CORRECCIÓN: Crear copia de la lista para evitar ConcurrentModificationException
+            List<ConteoSector> sectores = new ArrayList<>(inventario.getConteosSectores());
+            
             // Actualizar el progreso real de todos los sectores
-            for (ConteoSector conteoSector : inventario.getConteosSectores()) {
+            for (ConteoSector conteoSector : sectores) {
                 calcularProgresoReal(conteoSector);
             }
             
@@ -3488,6 +3491,10 @@ public class InventarioCompletoService {
         InventarioCompleto inventario = conteoSectorGuardado.getInventarioCompleto();
         inventario.calcularEstadisticas();
         inventarioCompletoRepository.save(inventario);
+        
+        // ✅ CORRECCIÓN: NO llamar automáticamente a verificarYFinalizarInventarioCompleto
+        // El inventario debe mantenerse EN_PROGRESO hasta que se haga la consolidación manual
+        System.out.println("✅ [LEGACY] Sector completado - Inventario mantenido en EN_PROGRESO para consolidación manual");
         
         System.out.println("✅ [LEGACY] Estado final del sector (reconteo): " + conteoSectorGuardado.getEstado());
         return conteoSectorGuardado;
@@ -5083,17 +5090,30 @@ public class InventarioCompletoService {
                     detalleReconteo.put("formulaCalculo1", formulasActual1);
                     detalleReconteo.put("formulaCalculo2", formulasActual2);
                     
-                    // Calcular diferencias (entre usuarios del reconteo, no con la referencia)
-                    int diferenciaEntreUsuarios = Math.abs(cantidadActual1 - cantidadActual2);
+                    // ✅ CORRECCIÓN: Calcular diferencia entre los valores de REFERENCIA (conteo original)
+                    Object usuario1Ref = valoresReferencia.get("usuario1");
+                    Object usuario2Ref = valoresReferencia.get("usuario2");
                     
-                    detalleReconteo.put("diferenciaEntreConteos", diferenciaEntreUsuarios);
+                    int diferenciaEntreUsuariosReferencia = 0;
+                    if (usuario1Ref != null && usuario2Ref != null) {
+                        try {
+                            int cantidadUsuario1Ref = Integer.parseInt(usuario1Ref.toString());
+                            int cantidadUsuario2Ref = Integer.parseInt(usuario2Ref.toString());
+                            diferenciaEntreUsuariosReferencia = Math.abs(cantidadUsuario1Ref - cantidadUsuario2Ref);
+                        } catch (NumberFormatException e) {
+                            System.out.println("⚠️ [SIMPLE] Error parseando cantidades de referencia para diferencia");
+                        }
+                    }
+                    
+                    detalleReconteo.put("diferenciaEntreConteos", diferenciaEntreUsuariosReferencia);
                     
                     // Marcar si hay diferencias entre los usuarios del reconteo
-                    boolean hayDiferencias = diferenciaEntreUsuarios > 0;
+                    boolean hayDiferencias = diferenciaEntreUsuariosReferencia > 0;
                     detalleReconteo.put("hayDiferencias", hayDiferencias);
                     
                     // Debug: Mostrar diferencias
-                    System.out.println("  - Diferencia entre usuarios: " + diferenciaEntreUsuarios + " (hayDiferencias: " + hayDiferencias + ")");
+                    System.out.println("  - Diferencia entre usuarios (REFERENCIA): " + diferenciaEntreUsuariosReferencia + " (hayDiferencias: " + hayDiferencias + ")");
+                    System.out.println("  - Valores referencia - Usuario1: " + usuario1Ref + ", Usuario2: " + usuario2Ref);
                     
                     detallesReconteo.add(detalleReconteo);
                 } else {
