@@ -252,6 +252,43 @@ export default function InventarioCompleto() {
       mostrarModalAsignacion, mostrarModalCancelacion, mostrarModalFinalizacion]);
 
 
+  // ✅ FUNCIÓN ESPECÍFICA: Solo actualizar datos del inventario (sin sectores ni usuarios)
+  const cargarInventarioEspecifico = async (inventarioId?: number) => {
+    try {
+      console.log('🔄 Actualizando solo datos del inventario específico...');
+      
+      if (!datosUsuario?.empresaId) {
+        console.error('❌ No se pudo obtener la información de la empresa');
+        return;
+      }
+
+      // Solo cargar el inventario activo
+      const token = localStorage.getItem('token');
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const inventarioResponse = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/activo`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (inventarioResponse.ok) {
+        const inventarioData = await inventarioResponse.json();
+        console.log('✅ Inventario actualizado:', inventarioData);
+        
+        // Actualizar solo los estados del inventario y conteos
+        setInventario(inventarioData);
+        setConteosSectores(inventarioData.conteosSectores || []);
+        
+        console.log('✅ Estados actualizados sin recargar página completa');
+      } else {
+        console.error('❌ Error actualizando inventario:', inventarioResponse.status);
+      }
+    } catch (error) {
+      console.error('❌ Error en cargarInventarioEspecifico:', error);
+    }
+  };
+
   const cargarDatos = async () => {
     try {
       setCargando(true);
@@ -663,11 +700,17 @@ export default function InventarioCompleto() {
       });
 
       if (response.ok) {
+        const responseData = await response.json();
+        console.log('✅ Respuesta del backend:', responseData);
         toast.success(`Sector "${sector.nombre}" vuelve a estado pendiente`);
-        // Recargar los datos del inventario
-        await cargarDatos();
+        
+        // ✅ RECARGA INTELIGENTE: Solo actualizar datos del inventario específico
+        console.log('🔄 Actualizando datos del inventario específico...');
+        await cargarInventarioEspecifico(inventario?.id);
+        
       } else {
         const errorData = await response.json();
+        console.error('❌ Error del backend:', errorData);
         toast.error(errorData.message || 'Error al cancelar el completado sin conteo');
       }
     } catch (error) {
@@ -699,11 +742,17 @@ export default function InventarioCompleto() {
       });
 
       if (response.ok) {
+        const responseData = await response.json();
+        console.log('✅ Respuesta del backend:', responseData);
         toast.success(`Sector "${sector.nombre}" marcado como completado sin conteo`);
-        // Recargar los datos del inventario
-        await cargarDatos();
+        
+        // ✅ RECARGA INTELIGENTE: Solo actualizar datos del inventario específico
+        console.log('🔄 Actualizando datos del inventario específico...');
+        await cargarInventarioEspecifico(inventario?.id);
+        
       } else {
         const errorData = await response.json();
+        console.error('❌ Error del backend:', errorData);
         toast.error(errorData.message || 'Error al marcar el sector como completado');
       }
     } catch (error) {
