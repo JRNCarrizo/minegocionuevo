@@ -76,6 +76,11 @@ export default function ReconteoSector() {
   const [mostrarBotonFinalizar, setMostrarBotonFinalizar] = useState(false);
   const [sectorCompletado, setSectorCompletado] = useState(false);
 
+  // ✅ NUEVOS ESTADOS PARA LA INTERFAZ MEJORADA
+  const [formulasMarcadas, setFormulasMarcadas] = useState<{[productoId: number]: Set<string>}>({});
+  const [camposReconteo, setCamposReconteo] = useState<{[productoId: number]: string}>({});
+  const [resultadosReconteo, setResultadosReconteo] = useState<{[productoId: number]: number}>({});
+
   useEffect(() => {
     if (id && datosUsuario?.empresaId) {
       cargarDatos();
@@ -109,9 +114,39 @@ export default function ReconteoSector() {
     });
   }, [reconteosSolidificados]);
 
+  // ✅ ELIMINADO: Ya no necesitamos este useEffect porque actualizamos directamente en toggleFormula
+
+  // ✅ NUEVO: Recalcular resultados cuando cambien los campos de reconteo
+  useEffect(() => {
+    console.log('🔍 DEBUG useEffect camposReconteo:', camposReconteo);
+    Object.keys(camposReconteo).forEach(productoId => {
+      const campo = camposReconteo[parseInt(productoId)];
+      if (campo) {
+        const resultado = calcularFormula(campo);
+        console.log('🔍 DEBUG calculando resultado:', {
+          productoId,
+          campo,
+          resultado
+        });
+        setResultadosReconteo(prev => ({ ...prev, [parseInt(productoId)]: resultado }));
+      }
+    });
+  }, [camposReconteo]);
+
   // Función para calcular el resultado de una fórmula
   const calcularFormula = (formula: string): number => {
     try {
+      // Si contiene identificadores únicos [formula=valor], extraer solo los valores
+      if (formula.includes('[') && formula.includes('=')) {
+        const valores = formula.match(/\[[^\]]+=(\d+)\]/g);
+        if (valores) {
+          return valores.reduce((total, match) => {
+            const valor = parseInt(match.match(/\[[^\]]+=(\d+)\]/)?.[1] || '0');
+            return total + valor;
+          }, 0);
+        }
+      }
+      
       // Reemplazar caracteres problemáticos y evaluar
       const formulaLimpia = formula.replace(/[^0-9+\-*/().]/g, '');
       return eval(formulaLimpia) || 0;
@@ -121,65 +156,183 @@ export default function ReconteoSector() {
     }
   };
 
-  // Función para solidificar el reconteo y pasar al siguiente
-  const solidificarReconteo = (productoId: number, formula: string) => {
-    console.log('🔍 solidificarReconteo llamado:', { productoId, formula });
+  // ✅ NUEVAS FUNCIONES PARA LA INTERFAZ MEJORADA
+  
+  // ✅ NUEVA FUNCIÓN: Descomponer fórmulas unificadas (ej: "10+8" → ["10", "8"])
+  const descomponerFormulaUnificada = (formula: string): string[] => {
+    try {
+      // Si contiene operadores matemáticos, descomponer
+      if (formula.includes('+') || formula.includes('-') || formula.includes('*') || formula.includes('/')) {
+        // Reemplazar operadores con | para poder hacer split
+        const formulaConSeparadores = formula
+          .replace(/\s*\+\s*/g, ' | ')
+          .replace(/\s*-\s*/g, ' | -')
+          .replace(/\s*\*\s*/g, ' | *')
+          .replace(/\s*\/\s*/g, ' | /');
+        
+        return formulaConSeparadores.split(' | ').filter(f => f.trim() !== '');
+      }
+      // Si no contiene operadores, devolver como está
+      return [formula];
+    } catch (error) {
+      console.error('Error descomponiendo fórmula:', formula, error);
+      return [formula];
+    }
+  };
+  
+  // Función para marcar/desmarcar una fórmula
+  const toggleFormula = (productoId: number, formula: string, usuarioId: number, index: number) => {
+    const clave = `${productoId}_${usuarioId}_${index}_${formula}`;
     
-    if (!formula.trim()) {
-      console.log('⚠️ Fórmula vacía, no se solidifica');
+    // ✅ CORREGIDO: Verificar el estado actual ANTES de cambiarlo
+    const marcadasActuales = formulasMarcadas[productoId] || new Set();
+    const estaMarcadaActual = marcadasActuales.has(clave);
+    
+    console.log('🔍 DEBUG toggleFormula ANTES:', {
+      clave,
+      estaMarcadaActual,
+      marcadasActuales: Array.from(marcadasActuales)
+    });
+    
+    setFormulasMarcadas(prev => {
+      const nuevasMarcadas = { ...prev };
+      if (!nuevasMarcadas[productoId]) {
+        nuevasMarcadas[productoId] = new Set();
+      }
+      
+      const marcadas = new Set(nuevasMarcadas[productoId]);
+      if (marcadas.has(clave)) {
+        marcadas.delete(clave);
+      } else {
+        marcadas.add(clave);
+      }
+      
+      nuevasMarcadas[productoId] = marcadas;
+      return nuevasMarcadas;
+    });
+    
+    // ✅ CORREGIDO: Usar el estado actual para determinar la acción
+    actualizarCampoReconteoIndividualConEstado(productoId, formula, usuarioId, index, !estaMarcadaActual);
+  };
+
+  // ✅ NUEVA FUNCIÓN: Actualizar campo con fórmula individual usando estado explícito
+  const actualizarCampoReconteoIndividualConEstado = (productoId: number, formula: string, usuarioId: number, index: number, debeAgregar: boolean) => {
+    const valorFormula = calcularFormula(formula);
+    const identificadorUnico = `[${formula}=${valorFormula}]`; // Para tracking interno
+    const valorParaCampo = valorFormula.toString(); // Solo el valor para mostrar
+    
+    console.log('🔍 DEBUG actualizarCampoReconteoIndividualConEstado:', {
+      productoId,
+      formula,
+      usuarioId,
+      index,
+      valorFormula,
+      identificadorUnico,
+      valorParaCampo,
+      debeAgregar
+    });
+    
+    setCamposReconteo(prev => {
+      const campoActual = prev[productoId] || '';
+      
+      if (debeAgregar) {
+        // Agregar solo el valor al campo
+        const nuevoCampo = campoActual ? `${campoActual} + ${valorParaCampo}` : valorParaCampo;
+        
+        console.log('🔍 DEBUG agregando:', {
+          campoActual,
+          valorFormula,
+          valorParaCampo,
+          nuevoCampo
+        });
+        
+        return { ...prev, [productoId]: nuevoCampo };
+      } else {
+        // Quitar el valor del campo
+        const nuevoCampo = campoActual
+          .replace(new RegExp(`\\+\\s*${valorParaCampo}`, 'g'), '') // Quitar " + valor"
+          .replace(new RegExp(`${valorParaCampo}\\s*\\+`, 'g'), '') // Quitar "valor + "
+          .replace(new RegExp(`^${valorParaCampo}$`, 'g'), '') // Quitar solo "valor"
+          .replace(/\s*\+\s*$/, '') // Quitar "+" al final
+          .replace(/^\s*\+\s*/, '') // Quitar "+" al inicio
+          .trim();
+        
+        console.log('🔍 DEBUG quitando:', {
+          campoActual,
+          valorFormula,
+          valorParaCampo,
+          nuevoCampo
+        });
+        
+        return { ...prev, [productoId]: nuevoCampo };
+      }
+    });
+  };
+
+  // Función para actualizar el campo de reconteo basado en fórmulas marcadas
+  const actualizarCampoReconteo = (productoId: number) => {
+    const marcadas = formulasMarcadas[productoId] || new Set();
+    const formulasArray = Array.from(marcadas);
+    
+    if (formulasArray.length === 0) {
+      setCamposReconteo(prev => ({ ...prev, [productoId]: '' }));
+      setResultadosReconteo(prev => ({ ...prev, [productoId]: 0 }));
+      return;
+    }
+    
+    // Extraer solo el valor numérico de cada fórmula marcada
+    const valores = formulasArray.map(clave => {
+      const partes = clave.split('_');
+      const formula = partes[2]; // La fórmula está en la tercera parte
+      return calcularFormula(formula);
+    });
+    
+    const campoTexto = valores.join(' + ');
+    const resultado = valores.reduce((total, valor) => total + valor, 0);
+    
+    setCamposReconteo(prev => ({ ...prev, [productoId]: campoTexto }));
+    setResultadosReconteo(prev => ({ ...prev, [productoId]: resultado }));
+  };
+
+  // Función para editar manualmente el campo de reconteo
+  const editarCampoReconteo = (productoId: number, nuevoTexto: string) => {
+    setCamposReconteo(prev => ({ ...prev, [productoId]: nuevoTexto }));
+    
+    // Calcular resultado del nuevo texto
+    const resultado = calcularFormula(nuevoTexto);
+    setResultadosReconteo(prev => ({ ...prev, [productoId]: resultado }));
+  };
+
+  // Función para verificar si una fórmula está marcada
+  const isFormulaMarcada = (productoId: number, formula: string, usuarioId: number, index: number): boolean => {
+    const clave = `${productoId}_${usuarioId}_${index}_${formula}`;
+    return formulasMarcadas[productoId]?.has(clave) || false;
+  };
+
+  // ✅ NUEVA FUNCIÓN: Solidificar reconteo usando el campo dinámico
+  const solidificarReconteo = (productoId: number) => {
+    const campoActual = camposReconteo[productoId] || '';
+    const resultado = resultadosReconteo[productoId] || 0;
+    
+    console.log('🔍 solidificarReconteo llamado:', { productoId, campoActual, resultado });
+    
+    if (!campoActual.trim()) {
+      console.log('⚠️ Campo vacío, no se solidifica');
+      toast.error('Debe ingresar un valor para el reconteo');
       return;
     }
 
     // Solidificar el valor (quedará visible en el campo)
     setReconteosSolidificados(prev => {
-      const nuevo = { ...prev, [productoId]: formula };
+      const nuevo = { ...prev, [productoId]: campoActual };
       console.log('✅ Reconteo solidificado:', nuevo);
       console.log('🔍 [DEBUG] Total reconteos solidificados:', Object.keys(nuevo).length);
       console.log('🔍 [DEBUG] mostrarBotonFinalizar será:', Object.keys(nuevo).length > 0);
       return nuevo;
     });
     
-    // Limpiar el campo de entrada
-    setReconteos(prev => ({ ...prev, [productoId]: '' }));
-    
     console.log('✅ Reconteo completado para producto:', productoId);
-    
-    // Buscar el siguiente campo disponible para hacer focus
-    const indiceActual = detallesConteo.findIndex(d => d.producto.id === productoId);
-    
-    // Buscar el siguiente producto que no esté completado
-    let siguienteProducto = null;
-    for (let i = indiceActual + 1; i < detallesConteo.length; i++) {
-      const producto = detallesConteo[i];
-      if (!reconteosSolidificados[producto.producto.id]) {
-        siguienteProducto = producto;
-        break;
-      }
-    }
-    
-    // Si no hay siguiente producto después del actual, buscar desde el inicio
-    if (!siguienteProducto) {
-      for (let i = 0; i < indiceActual; i++) {
-        const producto = detallesConteo[i];
-        if (!reconteosSolidificados[producto.producto.id]) {
-          siguienteProducto = producto;
-          break;
-        }
-      }
-    }
-    
-    if (siguienteProducto) {
-      // Hacer focus en el siguiente campo disponible después de un pequeño delay
-      setTimeout(() => {
-        const siguienteInput = document.querySelector(`input[data-producto-id="${siguienteProducto.producto.id}"]`) as HTMLInputElement;
-        if (siguienteInput) {
-          siguienteInput.focus();
-          console.log('🎯 Focus movido al siguiente producto disponible:', siguienteProducto.producto.id);
-        }
-      }, 100);
-    } else {
-      console.log('✅ Todos los productos han sido reconteados');
-    }
+    toast.success(`Reconteo completado: ${campoActual} = ${resultado}`);
   };
 
   // Función para guardar todos los reconteos solidificados
@@ -367,13 +520,9 @@ export default function ReconteoSector() {
   };
 
   // Función para manejar Enter en el input
-  const manejarEnter = (productoId: number, formula: string) => {
-    console.log('🔍 manejarEnter llamado:', { productoId, formula });
-    if (formula.trim()) {
-      solidificarReconteo(productoId, formula);
-    } else {
-      console.log('⚠️ Fórmula vacía en manejarEnter');
-    }
+  const manejarEnter = (productoId: number) => {
+    console.log('🔍 manejarEnter llamado:', { productoId });
+    solidificarReconteo(productoId);
   };
 
   const cargarDatos = async () => {
@@ -972,18 +1121,55 @@ export default function ReconteoSector() {
                           borderRadius: '0.25rem',
                           border: '1px solid #dbeafe'
                         }}>
-                          <div style={{ fontWeight: '600', marginBottom: '0.125rem' }}>Fórmulas:</div>
-                          {detalle.formulaCalculo1.split(' | ').map((formula, index) => (
-                            <div key={index} style={{ 
-                              marginBottom: '0.125rem',
-                              padding: '0.125rem 0.25rem',
-                              background: 'rgba(59, 130, 246, 0.1)',
-                              borderRadius: '0.25rem',
-                              fontSize: '0.6rem'
-                            }}>
-                              {formula}
-                            </div>
-                          ))}
+                          <div style={{ fontWeight: '600', marginBottom: '0.125rem' }}>
+                            Fórmulas {datosUsuario?.id === conteoInfo?.usuario1Id ? '(clic para usar)' : '(solo lectura)'}:
+                          </div>
+                          {(() => {
+                            // ✅ NUEVO: Descomponer fórmulas unificadas del usuario 1 también
+                            const formulasOriginales = detalle.formulaCalculo1.split(' | ');
+                            const formulasDescompuestas = formulasOriginales.flatMap(formula => 
+                              descomponerFormulaUnificada(formula)
+                            );
+                            
+                            console.log('🔍 DEBUG fórmulas usuario 1:', {
+                              formulasOriginales,
+                              formulasDescompuestas
+                            });
+                            
+                            return formulasDescompuestas.map((formula, index) => {
+                              const isMarcada = isFormulaMarcada(detalle.producto.id, formula, 1, index);
+                              const esUsuarioActual = datosUsuario?.id === conteoInfo?.usuario1Id;
+                              return (
+                                <div 
+                                  key={index} 
+                                  onClick={esUsuarioActual ? () => toggleFormula(detalle.producto.id, formula, 1, index) : undefined}
+                                  style={{ 
+                                    marginBottom: '0.125rem',
+                                    padding: '0.125rem 0.25rem',
+                                    background: isMarcada ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+                                    borderRadius: '0.25rem',
+                                    fontSize: '0.6rem',
+                                    cursor: esUsuarioActual ? 'pointer' : 'default',
+                                    border: isMarcada ? '1px solid #22c55e' : '1px solid transparent',
+                                    transition: 'all 0.2s ease',
+                                    position: 'relative',
+                                    opacity: esUsuarioActual ? 1 : 0.7
+                                  }}
+                                >
+                                  {formula}
+                                  {isMarcada && (
+                                    <span style={{ 
+                                      position: 'absolute', 
+                                      right: '2px', 
+                                      top: '2px', 
+                                      color: '#22c55e',
+                                      fontSize: '0.5rem'
+                                    }}>✓</span>
+                                  )}
+                                </div>
+                              );
+                            });
+                          })()}
                         </div>
                       )}
                     </div>
@@ -1021,18 +1207,55 @@ export default function ReconteoSector() {
                           borderRadius: '0.25rem',
                           border: '1px solid #bbf7d0'
                         }}>
-                          <div style={{ fontWeight: '600', marginBottom: '0.125rem' }}>Fórmulas:</div>
-                          {detalle.formulaCalculo2.split(' | ').map((formula, index) => (
-                            <div key={index} style={{ 
-                              marginBottom: '0.125rem',
-                              padding: '0.125rem 0.25rem',
-                              background: 'rgba(34, 197, 94, 0.1)',
-                              borderRadius: '0.25rem',
-                              fontSize: '0.6rem'
-                            }}>
-                              {formula}
-                            </div>
-                          ))}
+                          <div style={{ fontWeight: '600', marginBottom: '0.125rem' }}>
+                            Fórmulas {datosUsuario?.id === conteoInfo?.usuario2Id ? '(clic para usar)' : '(solo lectura)'}:
+                          </div>
+                          {(() => {
+                            // ✅ NUEVO: Descomponer fórmulas unificadas del usuario 2
+                            const formulasOriginales = detalle.formulaCalculo2.split(' | ');
+                            const formulasDescompuestas = formulasOriginales.flatMap(formula => 
+                              descomponerFormulaUnificada(formula)
+                            );
+                            
+                            console.log('🔍 DEBUG fórmulas usuario 2:', {
+                              formulasOriginales,
+                              formulasDescompuestas
+                            });
+                            
+                            return formulasDescompuestas.map((formula, index) => {
+                              const isMarcada = isFormulaMarcada(detalle.producto.id, formula, 2, index);
+                              const esUsuarioActual = datosUsuario?.id === conteoInfo?.usuario2Id;
+                              return (
+                                <div 
+                                  key={index} 
+                                  onClick={esUsuarioActual ? () => toggleFormula(detalle.producto.id, formula, 2, index) : undefined}
+                                  style={{ 
+                                    marginBottom: '0.125rem',
+                                    padding: '0.125rem 0.25rem',
+                                    background: isMarcada ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
+                                    borderRadius: '0.25rem',
+                                    fontSize: '0.6rem',
+                                    cursor: esUsuarioActual ? 'pointer' : 'default',
+                                    border: isMarcada ? '1px solid #22c55e' : '1px solid transparent',
+                                    transition: 'all 0.2s ease',
+                                    position: 'relative',
+                                    opacity: esUsuarioActual ? 1 : 0.7
+                                  }}
+                                >
+                                  {formula}
+                                  {isMarcada && (
+                                    <span style={{ 
+                                      position: 'absolute', 
+                                      right: '2px', 
+                                      top: '2px', 
+                                      color: '#22c55e',
+                                      fontSize: '0.5rem'
+                                    }}>✓</span>
+                                  )}
+                                </div>
+                              );
+                            });
+                          })()}
                         </div>
                       )}
                     </div>
@@ -1087,7 +1310,7 @@ export default function ReconteoSector() {
                       const esSolidificado = reconteosSolidificados[detalle.producto.id];
                       const esActivo = true; // Todos los productos están habilitados para reconteo
                       
-                        if (esSolidificado) {
+                      if (esSolidificado) {
                           // Campo solidificado (solo lectura) con opción de editar
                           return (
                             <div style={{ position: 'relative' }}>
@@ -1132,60 +1355,88 @@ export default function ReconteoSector() {
                               </div>
                             </div>
                           );
-                        } else if (esActivo) {
-                          // Campo activo (editable)
+                        } else {
+                          // ✅ NUEVA INTERFAZ: Campo dinámico con fórmulas marcadas
                           return (
-                            <input
-                              type="text"
-                              placeholder="Ej: 10, 5*2, 3+7, etc."
-                              value={reconteos[detalle.producto.id] || ''}
-                              onChange={(e) => {
-                                setReconteos(prev => ({ ...prev, [detalle.producto.id]: e.target.value }));
-                              }}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  manejarEnter(detalle.producto.id, reconteos[detalle.producto.id] || '');
-                                }
-                              }}
-                              disabled={guardando}
-                              data-producto-id={detalle.producto.id}
-                              style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                border: '2px solid #3b82f6',
-                                borderRadius: '0.25rem',
-                                fontSize: '0.875rem',
-                                background: '#eff6ff',
-                                opacity: guardando ? 0.6 : 1,
-                                boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onFocus={(e) => {
-                                e.target.style.borderColor = '#1d4ed8';
-                                e.target.style.boxShadow = '0 0 0 3px rgba(29, 78, 216, 0.2)';
-                              }}
-                              onBlur={(e) => {
-                                e.target.style.borderColor = '#3b82f6';
-                                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                              }}
-                            />
+                            <div style={{
+                              width: '100%',
+                              background: '#f8fafc',
+                              border: '2px solid #3b82f6',
+                              borderRadius: '0.5rem',
+                              padding: '0.75rem'
+                            }}>
+                              {/* Campo de reconteo dinámico */}
+                              <input
+                                type="text"
+                                placeholder="Clic en fórmulas arriba o escriba manualmente..."
+                                value={camposReconteo[detalle.producto.id] || ''}
+                                onChange={(e) => editarCampoReconteo(detalle.producto.id, e.target.value)}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') {
+                                    solidificarReconteo(detalle.producto.id);
+                                  }
+                                }}
+                                disabled={guardando}
+                                style={{
+                                  width: '100%',
+                                  padding: '0.5rem',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '0.25rem',
+                                  fontSize: '0.875rem',
+                                  background: 'white',
+                                  marginBottom: '0.5rem'
+                                }}
+                              />
+                              
+                              {/* Resultado en tiempo real */}
+                              {resultadosReconteo[detalle.producto.id] > 0 && (
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  background: 'rgba(59, 130, 246, 0.1)',
+                                  padding: '0.5rem',
+                                  borderRadius: '0.25rem',
+                                  fontSize: '0.875rem'
+                                }}>
+                                  <span style={{ fontWeight: '600', color: '#1e40af' }}>
+                                    Resultado:
+                                  </span>
+                                  <span style={{ 
+                                    fontWeight: '700', 
+                                    color: '#1d4ed8',
+                                    fontSize: '1rem'
+                                  }}>
+                                    {resultadosReconteo[detalle.producto.id]}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {/* Botón de confirmar */}
+                              {(camposReconteo[detalle.producto.id] || '').trim() && (
+                                <button
+                                  onClick={() => solidificarReconteo(detalle.producto.id)}
+                                  disabled={guardando}
+                                  style={{
+                                    width: '100%',
+                                    marginTop: '0.5rem',
+                                    padding: '0.5rem',
+                                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '0.25rem',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '600',
+                                    cursor: guardando ? 'not-allowed' : 'pointer',
+                                    opacity: guardando ? 0.6 : 1,
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                >
+                                  ✓ Confirmar Reconteo
+                                </button>
+                              )}
+                            </div>
                           );
-                      } else {
-                        // Campo pendiente
-                        return (
-                          <div style={{
-                            width: '100%',
-                            padding: '0.75rem',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '0.25rem',
-                            fontSize: '0.875rem',
-                            background: '#f9fafb',
-                            color: '#6b7280',
-                            textAlign: 'center'
-                          }}>
-                            ⏳ Pendiente
-                          </div>
-                        );
                       }
                     })()}
                   </div>
