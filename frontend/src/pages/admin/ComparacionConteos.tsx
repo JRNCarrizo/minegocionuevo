@@ -267,13 +267,13 @@ const ComparacionConteos: React.FC = () => {
                 📊 Comparación de Conteos
               </h1>
               {!isMobile && (
-                <p style={{
-                  margin: 0,
-                  color: '#6b7280',
-                  fontSize: '1.1rem'
-                }}>
-                  Análisis detallado de los conteos realizados por ambos usuarios
-                </p>
+              <p style={{
+                margin: 0,
+                color: '#6b7280',
+                fontSize: '1.1rem'
+              }}>
+                Análisis detallado de los conteos realizados por ambos usuarios
+              </p>
               )}
             </div>
           </div>
@@ -365,64 +365,64 @@ const ComparacionConteos: React.FC = () => {
                 </div>
               ) : (
                 /* Vista desktop - Original */
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                  <div>
-                    <h3 style={{
-                      margin: '0 0 0.5rem 0',
-                      fontSize: '1.25rem',
-                      fontWeight: '600',
-                      color: '#1e293b'
-                    }}>
-                      📍 {conteoInfo.sectorNombre}
-                    </h3>
-                    <p style={{
-                      margin: '0 0 1rem 0',
-                      color: '#6b7280',
-                      fontSize: '0.95rem'
-                    }}>
-                      {conteoInfo.sectorDescripcion}
-                    </p>
-                    <div style={{
-                      display: 'inline-block',
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '9999px',
-                      fontSize: '0.875rem',
-                      fontWeight: '500',
-                      background: conteoInfo.estado === 'COMPLETADO' ? '#dcfce7' : '#fef3c7',
-                      color: conteoInfo.estado === 'COMPLETADO' ? '#166534' : '#92400e'
-                    }}>
-                      {conteoInfo.estado === 'COMPLETADO' ? '✅ Completado' : '⚠️ Con Diferencias'}
-                    </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div>
+                  <h3 style={{
+                    margin: '0 0 0.5rem 0',
+                    fontSize: '1.25rem',
+                    fontWeight: '600',
+                    color: '#1e293b'
+                  }}>
+                    📍 {conteoInfo.sectorNombre}
+                  </h3>
+                  <p style={{
+                    margin: '0 0 1rem 0',
+                    color: '#6b7280',
+                    fontSize: '0.95rem'
+                  }}>
+                    {conteoInfo.sectorDescripcion}
+                  </p>
+                  <div style={{
+                    display: 'inline-block',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '9999px',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    background: conteoInfo.estado === 'COMPLETADO' ? '#dcfce7' : '#fef3c7',
+                    color: conteoInfo.estado === 'COMPLETADO' ? '#166534' : '#92400e'
+                  }}>
+                    {conteoInfo.estado === 'COMPLETADO' ? '✅ Completado' : '⚠️ Con Diferencias'}
                   </div>
-                  <div>
-                    <h4 style={{
-                      margin: '0 0 1rem 0',
-                      fontSize: '1.1rem',
-                      fontWeight: '600',
-                      color: '#374151'
+                </div>
+                <div>
+                  <h4 style={{
+                    margin: '0 0 1rem 0',
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    color: '#374151'
+                  }}>
+                    👥 Usuarios Asignados
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{
+                      padding: '0.75rem',
+                      background: '#eff6ff',
+                      borderRadius: '0.5rem',
+                      border: '1px solid #bfdbfe'
                     }}>
-                      👥 Usuarios Asignados
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <div style={{
-                        padding: '0.75rem',
-                        background: '#eff6ff',
-                        borderRadius: '0.5rem',
-                        border: '1px solid #bfdbfe'
-                      }}>
-                        <strong style={{ color: '#1e40af' }}>Usuario 1:</strong> {conteoInfo.usuario1Nombre}
-                      </div>
-                      <div style={{
-                        padding: '0.75rem',
-                        background: '#f0fdf4',
-                        borderRadius: '0.5rem',
-                        border: '1px solid #bbf7d0'
-                      }}>
-                        <strong style={{ color: '#166534' }}>Usuario 2:</strong> {conteoInfo.usuario2Nombre}
-                      </div>
+                      <strong style={{ color: '#1e40af' }}>Usuario 1:</strong> {conteoInfo.usuario1Nombre}
+                    </div>
+                    <div style={{
+                      padding: '0.75rem',
+                      background: '#f0fdf4',
+                      borderRadius: '0.5rem',
+                      border: '1px solid #bbf7d0'
+                    }}>
+                      <strong style={{ color: '#166534' }}>Usuario 2:</strong> {conteoInfo.usuario2Nombre}
                     </div>
                   </div>
                 </div>
+              </div>
               )}
             </div>
           )}
@@ -640,38 +640,38 @@ const ComparacionConteos: React.FC = () => {
               </div>
             ) : (
               /* Vista desktop - Tabla */
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: '0.9rem'
-                }}>
-                  <thead>
-                    <tr style={{
-                      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                      color: 'white'
-                    }}>
-                      <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #1e40af' }}>
-                        Producto
-                      </th>
-                      <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #1e40af' }}>
-                        Stock Sistema
-                      </th>
-                      <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #1e40af' }}>
-                        {conteoInfo?.usuario1Nombre}
-                      </th>
-                      <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #1e40af' }}>
-                        {conteoInfo?.usuario2Nombre}
-                      </th>
-                      <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #1e40af' }}>
-                        Diferencia
-                      </th>
-                      <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #1e40af' }}>
-                        Estado
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                fontSize: '0.9rem'
+              }}>
+                <thead>
+                  <tr style={{
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                    color: 'white'
+                  }}>
+                    <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #1e40af' }}>
+                      Producto
+                    </th>
+                    <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #1e40af' }}>
+                      Stock Sistema
+                    </th>
+                    <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #1e40af' }}>
+                      {conteoInfo?.usuario1Nombre}
+                    </th>
+                    <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #1e40af' }}>
+                      {conteoInfo?.usuario2Nombre}
+                    </th>
+                    <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #1e40af' }}>
+                      Diferencia
+                    </th>
+                    <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #1e40af' }}>
+                      Estado
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
                     {detallesFiltrados.map((detalle, index) => (
                     <tr key={`${detalle.producto?.id || 'unknown'}-${index}`} style={{
                       borderBottom: '1px solid #e5e7eb',

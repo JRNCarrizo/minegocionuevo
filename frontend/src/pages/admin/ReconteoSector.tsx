@@ -834,37 +834,37 @@ export default function ReconteoSector() {
                 🔍 Reconteo - {conteoInfo.sector?.nombre || 'Sector'}
               </h1>
               {!isMobile && (
-                <p style={{
-                  color: '#6b7280',
-                  margin: 0,
-                  fontSize: '0.875rem'
-                }}>
-                  {conteoInfo.estado === 'ESPERANDO_VERIFICACION' 
-                    ? 'Esperando que el segundo usuario complete su reconteo'
-                    : 'Ambos usuarios deben hacer el reconteo para resolver las diferencias'
-                  }
-                </p>
+              <p style={{
+                color: '#6b7280',
+                margin: 0,
+                fontSize: '0.875rem'
+              }}>
+                {conteoInfo.estado === 'ESPERANDO_VERIFICACION' 
+                  ? 'Esperando que el segundo usuario complete su reconteo'
+                  : 'Ambos usuarios deben hacer el reconteo para resolver las diferencias'
+                }
+              </p>
               )}
             </div>
             
             {!isMobile && (
-              <button
-                onClick={() => navigate('/admin/inventario-completo')}
-                style={{
-                  background: '#6b7280',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  padding: '0.75rem 1.5rem',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
+            <button
+              onClick={() => navigate('/admin/inventario-completo')}
+              style={{
+                background: '#6b7280',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                padding: '0.75rem 1.5rem',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
                 ← Volver
-              </button>
+            </button>
             )}
           </div>
 
@@ -928,81 +928,81 @@ export default function ReconteoSector() {
             </div>
           ) : (
             /* Vista desktop - Original */
-            <div style={{
-              display: 'grid',
+          <div style={{
+            display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '1rem',
-              marginBottom: '1.5rem'
+            gap: '1rem',
+            marginBottom: '1.5rem'
+          }}>
+            <div style={{
+              background: '#f3f4f6',
+              padding: '1rem',
+              borderRadius: '0.5rem'
             }}>
-              <div style={{
-                background: '#f3f4f6',
-                padding: '1rem',
-                borderRadius: '0.5rem'
+              <h3 style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                margin: '0 0 0.5rem 0'
               }}>
-                <h3 style={{
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  color: '#374151',
-                  margin: '0 0 0.5rem 0'
-                }}>
-                  Estado
-                </h3>
-                <p style={{
-                  fontSize: '1.125rem',
-                  fontWeight: 'bold',
-                  color: '#dc2626',
-                  margin: 0
-                }}>
-                  {obtenerTextoEstado(conteoInfo.estado)}
+                Estado
+              </h3>
+              <p style={{
+                fontSize: '1.125rem',
+                fontWeight: 'bold',
+                color: '#dc2626',
+                margin: 0
+              }}>
+                {obtenerTextoEstado(conteoInfo.estado)}
+              </p>
+            </div>
+
+            <div style={{
+              background: '#f3f4f6',
+              padding: '1rem',
+              borderRadius: '0.5rem'
+            }}>
+              <h3 style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                margin: '0 0 0.5rem 0'
+              }}>
+                Usuarios Asignados
+              </h3>
+              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                <p style={{ margin: '0.25rem 0' }}>
+                  <strong>Usuario 1:</strong> {conteoInfo.usuario1Nombre || 'No asignado'}
                 </p>
-              </div>
-
-              <div style={{
-                background: '#f3f4f6',
-                padding: '1rem',
-                borderRadius: '0.5rem'
-              }}>
-                <h3 style={{
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  color: '#374151',
-                  margin: '0 0 0.5rem 0'
-                }}>
-                  Usuarios Asignados
-                </h3>
-                <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                  <p style={{ margin: '0.25rem 0' }}>
-                    <strong>Usuario 1:</strong> {conteoInfo.usuario1Nombre || 'No asignado'}
-                  </p>
-                  <p style={{ margin: '0.25rem 0' }}>
-                    <strong>Usuario 2:</strong> {conteoInfo.usuario2Nombre || 'No asignado'}
-                  </p>
-                </div>
-              </div>
-
-              <div style={{
-                background: '#f3f4f6',
-                padding: '1rem',
-                borderRadius: '0.5rem'
-              }}>
-                <h3 style={{
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  color: '#374151',
-                  margin: '0 0 0.5rem 0'
-                }}>
-                  Productos con Diferencias
-                </h3>
-                <p style={{
-                  fontSize: '1.125rem',
-                  fontWeight: 'bold',
-                  color: '#dc2626',
-                  margin: 0
-                }}>
-                  {detallesConteo.length}
+                <p style={{ margin: '0.25rem 0' }}>
+                  <strong>Usuario 2:</strong> {conteoInfo.usuario2Nombre || 'No asignado'}
                 </p>
               </div>
             </div>
+
+            <div style={{
+              background: '#f3f4f6',
+              padding: '1rem',
+              borderRadius: '0.5rem'
+            }}>
+              <h3 style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                margin: '0 0 0.5rem 0'
+              }}>
+                Productos con Diferencias
+              </h3>
+              <p style={{
+                fontSize: '1.125rem',
+                fontWeight: 'bold',
+                color: '#dc2626',
+                margin: 0
+              }}>
+                {detallesConteo.length}
+              </p>
+            </div>
+          </div>
           )}
 
 
@@ -1165,7 +1165,7 @@ export default function ReconteoSector() {
                               color: '#7c3aed',
                               background: 'linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%)',
                               padding: '0.4rem 0.65rem',
-                              borderRadius: '0.5rem',
+                    borderRadius: '0.5rem',
                               display: 'inline-block',
                               marginBottom: '0.5rem',
                               border: '2px solid #c4b5fd',
@@ -1253,7 +1253,7 @@ export default function ReconteoSector() {
                             <div style={{
                               fontSize: '0.7rem',
                               color: '#4b5563',
-                              background: 'white',
+                    background: 'white',
                               padding: '0.4rem',
                               borderRadius: '0.375rem',
                               border: '1px solid #dbeafe',
@@ -1393,33 +1393,33 @@ export default function ReconteoSector() {
                     </>
                   ) : (
                     /* VISTA DESKTOP - Layout original */
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: '2fr 1fr 1fr 1fr',
-                      gap: '1rem',
-                      alignItems: 'center',
-                      marginBottom: '1rem'
-                    }}>
-                      {/* Información del producto */}
-                      <div>
-                        <h3 style={{
-                          fontSize: '0.875rem',
-                          fontWeight: '600',
-                          color: '#1f2937',
-                          margin: '0 0 0.25rem 0'
-                        }}>
-                          {detalle.producto?.nombre || 'Producto no encontrado'}
-                        </h3>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: '#6b7280'
-                        }}>
-                          <div><strong>Código:</strong> {detalle.producto?.codigoPersonalizado || 'N/A'}</div>
-                          <div><strong>Stock:</strong> {detalle.stockSistema || 0}</div>
-                        </div>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                    gap: '1rem',
+                    alignItems: 'center',
+                    marginBottom: '1rem'
+                  }}>
+                    {/* Información del producto */}
+                    <div>
+                      <h3 style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '600',
+                        color: '#1f2937',
+                        margin: '0 0 0.25rem 0'
+                      }}>
+                        {detalle.producto?.nombre || 'Producto no encontrado'}
+                      </h3>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280'
+                      }}>
+                        <div><strong>Código:</strong> {detalle.producto?.codigoPersonalizado || 'N/A'}</div>
+                        <div><strong>Stock:</strong> {detalle.stockSistema || 0}</div>
                       </div>
+                    </div>
 
-                      {/* Usuario 1 */}
+                    {/* Usuario 1 */}
                     <div style={{
                       background: '#eff6ff',
                       padding: '0.75rem',
@@ -1626,15 +1626,15 @@ export default function ReconteoSector() {
                     border: isMobile ? '2px solid #e2e8f0' : '1px solid #e2e8f0'
                   }}>
                     {reconteosSolidificados[detalle.producto.id] && (
-                      <label style={{
-                        display: 'block',
-                        fontSize: '0.75rem',
-                        fontWeight: '600',
-                        color: '#374151',
-                        marginBottom: '0.5rem'
-                      }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '0.5rem'
+                    }}>
                         ✅ Reconteo Completado
-                      </label>
+                    </label>
                     )}
                     
                     {(() => {

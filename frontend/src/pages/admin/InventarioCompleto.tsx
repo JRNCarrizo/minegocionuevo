@@ -599,12 +599,17 @@ export default function InventarioCompleto() {
       doc.setTextColor(...secondaryColor);
       
       const infoData = [
-        ['Fecha de Realización:', new Date(registro.fechaRealizacion).toLocaleDateString('es-ES', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        })],
+        ['Fecha de Realización:', (() => {
+          const fecha = new Date(registro.fechaRealizacion);
+          const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          return fecha.toLocaleDateString('es-ES', {
+            timeZone: zonaHorariaLocal,
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+        })()],
         ['Responsable:', registro.usuarioResponsable],
         ['Estado:', 'COMPLETADO'],
         ['Productos Procesados:', productosActualizados.length.toString()]
@@ -2909,12 +2914,17 @@ export default function InventarioCompleto() {
                               fontWeight: '600',
                               marginTop: '0.15rem'
                             }}>
-                              {new Date(registro.fechaRealizacion).toLocaleDateString('es-ES', {
-                                weekday: 'short',
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
+                              {(() => {
+                                const fecha = new Date(registro.fechaRealizacion);
+                                const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                                return fecha.toLocaleDateString('es-ES', {
+                                  timeZone: zonaHorariaLocal,
+                                  weekday: 'short',
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                });
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -3490,21 +3500,31 @@ export default function InventarioCompleto() {
                       color: '#1e293b',
                       fontWeight: '600'
                     }}>
-                      {new Date(registroSeleccionado.fechaRealizacion).toLocaleDateString('es-ES', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+                      {(() => {
+                        const fecha = new Date(registroSeleccionado.fechaRealizacion);
+                        const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                        return fecha.toLocaleDateString('es-ES', {
+                          timeZone: zonaHorariaLocal,
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        });
+                      })()}
                     </div>
                     <div style={{
                       fontSize: '0.85rem',
                       color: '#64748b',
                       marginTop: '0.25rem'
                     }}>
-                      {new Date(registroSeleccionado.fechaRealizacion).toLocaleTimeString('es-ES', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {(() => {
+                        const fecha = new Date(registroSeleccionado.fechaRealizacion);
+                        const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                        return fecha.toLocaleTimeString('es-ES', {
+                          timeZone: zonaHorariaLocal,
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        });
+                      })()}
                     </div>
                   </div>
 

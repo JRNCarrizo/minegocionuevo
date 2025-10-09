@@ -338,25 +338,25 @@ const DetalleConteo: React.FC = () => {
             </div>
             <div style={{ background: 'rgba(255,255,255,0.15)', padding: '0.75rem', borderRadius: '0.5rem' }}>
               <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.15rem' }}>Usuario 1</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>{conteoSectorInfo.usuario1Nombre}</div>
-            </div>
+            <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>{conteoSectorInfo.usuario1Nombre}</div>
+          </div>
             <div style={{ background: 'rgba(255,255,255,0.15)', padding: '0.75rem', borderRadius: '0.5rem' }}>
               <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.15rem' }}>Usuario 2</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>{conteoSectorInfo.usuario2Nombre}</div>
-            </div>
+            <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>{conteoSectorInfo.usuario2Nombre}</div>
+          </div>
             <div style={{ background: 'rgba(255,255,255,0.15)', padding: '0.75rem', borderRadius: '0.5rem' }}>
               <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.15rem' }}>Productos</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>
-                {conteoSectorInfo.productosContados} / {conteoSectorInfo.totalProductos}
-              </div>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.15)', padding: '0.75rem', borderRadius: '0.5rem' }}>
-              <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.15rem' }}>Fecha Finalización</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>
-                {formatearFecha(conteoSectorInfo.fechaFinalizacion)}
-              </div>
+            <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>
+              {conteoSectorInfo.productosContados} / {conteoSectorInfo.totalProductos}
             </div>
           </div>
+            <div style={{ background: 'rgba(255,255,255,0.15)', padding: '0.75rem', borderRadius: '0.5rem' }}>
+              <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.15rem' }}>Fecha Finalización</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>
+              {formatearFecha(conteoSectorInfo.fechaFinalizacion)}
+            </div>
+          </div>
+        </div>
         )}
       </div>
 
@@ -446,9 +446,9 @@ const DetalleConteo: React.FC = () => {
           flexDirection: isMobile ? 'column' : 'row'
         }}>
           {!isMobile && (
-            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#374151' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#374151' }}>
               🔍 Buscar:
-            </div>
+          </div>
           )}
           <input
             type="text"
