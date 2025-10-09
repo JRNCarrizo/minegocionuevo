@@ -33,6 +33,8 @@ export default function StockGeneral() {
   const [cargando, setCargando] = useState(true);
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'con_sector' | 'sin_sector' | 'sin_sectorizar'>('todos');
+  const [filtroSector, setFiltroSector] = useState<number | 'todos'>('todos');
+  const [sectoresDisponibles, setSectoresDisponibles] = useState<Array<{id: number, nombre: string}>>([]);
   const [ordenarPor, setOrdenarPor] = useState<'nombre' | 'codigo' | 'cantidad' | 'sector'>('nombre');
   const [ordenAscendente, setOrdenAscendente] = useState(true);
   
@@ -117,7 +119,11 @@ export default function StockGeneral() {
       cumpleTipo = true;
     }
     
-    return cumpleBusqueda && cumpleTipo;
+    // Filtro por sector específico
+    const cumpleSector = filtroSector === 'todos' || 
+      (item.sector && item.sector.id === filtroSector);
+    
+    return cumpleBusqueda && cumpleTipo && cumpleSector;
   });
 
   // Logs de debugging solo cuando hay cambios significativos
@@ -334,6 +340,18 @@ export default function StockGeneral() {
         console.log('🔍 STOCK GENERAL - Datos recibidos:', data);
         setStockData(data.data || []);
         console.log('🔍 STOCK GENERAL - Stock data establecido:', data.data?.length || 0, 'items');
+        
+        // Extraer sectores únicos del stock
+        const sectoresUnicos = new Map<number, string>();
+        (data.data || []).forEach((item: StockItem) => {
+          if (item.sector) {
+            sectoresUnicos.set(item.sector.id, item.sector.nombre);
+          }
+        });
+        const sectoresList = Array.from(sectoresUnicos, ([id, nombre]) => ({ id, nombre }))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
+        setSectoresDisponibles(sectoresList);
+        console.log('🔍 STOCK GENERAL - Sectores disponibles:', sectoresList.length);
       } else if (response.status === 403) {
         console.error('🔍 STOCK GENERAL - Error 403: No autorizado');
         toast.error('Error de autenticación. Por favor, inicia sesión nuevamente.');
@@ -521,7 +539,7 @@ export default function StockGeneral() {
           marginBottom: isMobile ? '1rem' : '1.5rem'
         }}>
           <div className="filters-container" style={{
-            gridTemplateColumns: isMobile ? '1fr' : '1fr auto',
+            gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr',
             gap: isMobile ? '1rem' : '1rem'
           }}>
             <div className="search-group">
@@ -549,7 +567,13 @@ export default function StockGeneral() {
             <div className="filter-group">
               <select
                 value={filtroTipo}
-                onChange={(e) => setFiltroTipo(e.target.value as any)}
+                onChange={(e) => {
+                  setFiltroTipo(e.target.value as any);
+                  // Resetear filtro de sector cuando se cambia el tipo
+                  if (e.target.value === 'sin_sector' || e.target.value === 'sin_sectorizar') {
+                    setFiltroSector('todos');
+                  }
+                }}
                 className="filter-select"
                 style={{
                   padding: isMobile ? '0.75rem 1rem' : '1rem 1.5rem',
@@ -561,6 +585,29 @@ export default function StockGeneral() {
                 <option value="con_sector">Con sector asignado</option>
                 <option value="sin_sector">Sin sector asignado</option>
                 <option value="sin_sectorizar">Sin sectorizar (consolidado)</option>
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <select
+                value={filtroSector}
+                onChange={(e) => setFiltroSector(e.target.value === 'todos' ? 'todos' : Number(e.target.value))}
+                className="filter-select"
+                disabled={filtroTipo === 'sin_sector' || filtroTipo === 'sin_sectorizar'}
+                style={{
+                  padding: isMobile ? '0.75rem 1rem' : '1rem 1.5rem',
+                  fontSize: isMobile ? '0.9rem' : '1rem',
+                  minHeight: isMobile ? '44px' : '48px',
+                  opacity: (filtroTipo === 'sin_sector' || filtroTipo === 'sin_sectorizar') ? 0.5 : 1,
+                  cursor: (filtroTipo === 'sin_sector' || filtroTipo === 'sin_sectorizar') ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <option value="todos">Todos los sectores</option>
+                {sectoresDisponibles.map(sector => (
+                  <option key={sector.id} value={sector.id}>
+                    {sector.nombre}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
