@@ -784,7 +784,8 @@ export default function ReconteoSector() {
       <NavbarAdmin />
       
       <div style={{
-        padding: isMobile ? '1rem' : '2rem',
+        padding: isMobile ? '0.5rem' : '2rem',
+        paddingTop: isMobile ? '140px' : '2rem',
         maxWidth: '1200px',
         margin: '0 auto'
       }}>
@@ -792,135 +793,217 @@ export default function ReconteoSector() {
         <div style={{
           background: 'white',
           borderRadius: '1rem',
-          padding: '2rem',
-          marginBottom: '2rem',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+          padding: isMobile ? '1rem' : '2rem',
+          marginBottom: isMobile ? '1rem' : '2rem',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+          position: 'relative'
         }}>
+          {/* Estado flotante arriba derecha (móvil) */}
+          {isMobile && (
+            <div style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: '#dc2626',
+              color: 'white',
+              padding: '0.4rem 0.75rem',
+              borderRadius: '0.5rem',
+              fontSize: '0.75rem',
+              fontWeight: '700',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            }}>
+              ⚠️ Diferencias
+            </div>
+          )}
+
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '1.5rem',
+            alignItems: 'flex-start',
+            marginBottom: isMobile ? '0.75rem' : '1.5rem',
             flexWrap: 'wrap',
-            gap: '1rem'
+            gap: '0.5rem'
           }}>
-            <div>
+            <div style={{ flex: 1, paddingRight: isMobile ? '3.5rem' : '0' }}>
               <h1 style={{
-                fontSize: isMobile ? '1.5rem' : '2rem',
+                fontSize: isMobile ? '1.1rem' : '2rem',
                 fontWeight: 'bold',
                 color: '#1f2937',
-                margin: 0,
-                marginBottom: '0.5rem'
+                margin: '0 0 0.25rem 0'
               }}>
                 🔍 Reconteo - {conteoInfo.sector?.nombre || 'Sector'}
               </h1>
-              <p style={{
-                color: '#6b7280',
-                margin: 0,
-                fontSize: '0.875rem'
-              }}>
-                {conteoInfo.estado === 'ESPERANDO_VERIFICACION' 
-                  ? 'Esperando que el segundo usuario complete su reconteo'
-                  : 'Ambos usuarios deben hacer el reconteo para resolver las diferencias'
-                }
-              </p>
+              {!isMobile && (
+                <p style={{
+                  color: '#6b7280',
+                  margin: 0,
+                  fontSize: '0.875rem'
+                }}>
+                  {conteoInfo.estado === 'ESPERANDO_VERIFICACION' 
+                    ? 'Esperando que el segundo usuario complete su reconteo'
+                    : 'Ambos usuarios deben hacer el reconteo para resolver las diferencias'
+                  }
+                </p>
+              )}
             </div>
             
-            <button
-              onClick={() => navigate('/admin/inventario-completo')}
-              style={{
-                background: '#6b7280',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.5rem',
-                padding: '0.75rem 1.5rem',
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              ← Volver al Inventario Completo
-            </button>
+            {!isMobile && (
+              <button
+                onClick={() => navigate('/admin/inventario-completo')}
+                style={{
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                ← Volver
+              </button>
+            )}
           </div>
 
           {/* Información del reconteo */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '1rem',
-            marginBottom: '1.5rem'
-          }}>
-            <div style={{
-              background: '#f3f4f6',
-              padding: '1rem',
-              borderRadius: '0.5rem'
-            }}>
-              <h3 style={{
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#374151',
-                margin: '0 0 0.5rem 0'
+          {isMobile ? (
+            /* Vista móvil compacta */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {/* Productos con diferencias */}
+              <div style={{
+                background: '#fef2f2',
+                padding: '0.75rem',
+                borderRadius: '0.5rem',
+                textAlign: 'center',
+                border: '1px solid #fecaca'
               }}>
-                Estado
-              </h3>
-              <p style={{
-                fontSize: '1.125rem',
-                fontWeight: 'bold',
-                color: '#dc2626',
-                margin: 0
-              }}>
-                {obtenerTextoEstado(conteoInfo.estado)}
-              </p>
-            </div>
+                <div style={{ fontSize: '0.75rem', color: '#991b1b', marginBottom: '0.15rem' }}>Productos con Diferencias</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#dc2626' }}>
+                  {detallesConteo.length}
+                </div>
+              </div>
 
-            <div style={{
-              background: '#f3f4f6',
-              padding: '1rem',
-              borderRadius: '0.5rem'
-            }}>
-              <h3 style={{
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#374151',
-                margin: '0 0 0.5rem 0'
+              {/* Usuarios horizontales */}
+              <div style={{
+                background: '#f3f4f6',
+                borderRadius: '0.5rem',
+                padding: '0.6rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                justifyContent: 'space-between'
               }}>
-                Usuarios Asignados
-              </h3>
-              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                <p style={{ margin: '0.25rem 0' }}>
-                  <strong>Usuario 1:</strong> {conteoInfo.usuario1Nombre || 'No asignado'}
+                <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600' }}>👥</div>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem',
+                  flex: 1,
+                  justifyContent: 'flex-end',
+                  fontSize: '0.75rem',
+                  fontWeight: '600'
+                }}>
+                  <div style={{
+                    background: '#3b82f6',
+                    color: 'white',
+                    padding: '0.3rem 0.6rem',
+                    borderRadius: '0.375rem'
+                  }}>
+                    {conteoInfo.usuario1Nombre?.split(' ')[0] || 'U1'}
+                  </div>
+                  <div style={{ color: '#94a3b8' }}>vs</div>
+                  <div style={{
+                    background: '#10b981',
+                    color: 'white',
+                    padding: '0.3rem 0.6rem',
+                    borderRadius: '0.375rem'
+                  }}>
+                    {conteoInfo.usuario2Nombre?.split(' ')[0] || 'U2'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Vista desktop - Original */
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                background: '#f3f4f6',
+                padding: '1rem',
+                borderRadius: '0.5rem'
+              }}>
+                <h3 style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#374151',
+                  margin: '0 0 0.5rem 0'
+                }}>
+                  Estado
+                </h3>
+                <p style={{
+                  fontSize: '1.125rem',
+                  fontWeight: 'bold',
+                  color: '#dc2626',
+                  margin: 0
+                }}>
+                  {obtenerTextoEstado(conteoInfo.estado)}
                 </p>
-                <p style={{ margin: '0.25rem 0' }}>
-                  <strong>Usuario 2:</strong> {conteoInfo.usuario2Nombre || 'No asignado'}
+              </div>
+
+              <div style={{
+                background: '#f3f4f6',
+                padding: '1rem',
+                borderRadius: '0.5rem'
+              }}>
+                <h3 style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#374151',
+                  margin: '0 0 0.5rem 0'
+                }}>
+                  Usuarios Asignados
+                </h3>
+                <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                  <p style={{ margin: '0.25rem 0' }}>
+                    <strong>Usuario 1:</strong> {conteoInfo.usuario1Nombre || 'No asignado'}
+                  </p>
+                  <p style={{ margin: '0.25rem 0' }}>
+                    <strong>Usuario 2:</strong> {conteoInfo.usuario2Nombre || 'No asignado'}
+                  </p>
+                </div>
+              </div>
+
+              <div style={{
+                background: '#f3f4f6',
+                padding: '1rem',
+                borderRadius: '0.5rem'
+              }}>
+                <h3 style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#374151',
+                  margin: '0 0 0.5rem 0'
+                }}>
+                  Productos con Diferencias
+                </h3>
+                <p style={{
+                  fontSize: '1.125rem',
+                  fontWeight: 'bold',
+                  color: '#dc2626',
+                  margin: 0
+                }}>
+                  {detallesConteo.length}
                 </p>
               </div>
             </div>
-
-            <div style={{
-              background: '#f3f4f6',
-              padding: '1rem',
-              borderRadius: '0.5rem'
-            }}>
-              <h3 style={{
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#374151',
-                margin: '0 0 0.5rem 0'
-              }}>
-                Productos con Diferencias
-              </h3>
-              <p style={{
-                fontSize: '1.125rem',
-                fontWeight: 'bold',
-                color: '#dc2626',
-                margin: 0
-              }}>
-                {detallesConteo.length}
-              </p>
-            </div>
-          </div>
+          )}
 
 
         </div>
@@ -1046,7 +1129,7 @@ export default function ReconteoSector() {
 
             <div style={{
               display: 'grid',
-              gap: '0.5rem'
+              gap: isMobile ? '1rem' : '0.5rem'
             }}>
               {detallesConteo
                 .filter(detalle => detalle.producto) // Filtrar detalles sin producto
@@ -1054,41 +1137,289 @@ export default function ReconteoSector() {
                 <div
                   key={detalle.id}
                   style={{
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '0.5rem',
-                    padding: '1rem',
+                    border: '2px solid #d1d5db',
+                    borderRadius: '0.75rem',
+                    padding: isMobile ? '1.25rem' : '1rem',
                     background: 'white',
-                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
                   }}
                 >
-                  {/* Fila compacta con información principal */}
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '2fr 1fr 1fr 1fr',
-                    gap: '1rem',
-                    alignItems: 'center',
-                    marginBottom: '1rem'
-                  }}>
-                    {/* Información del producto */}
-                    <div>
-                      <h3 style={{
-                        fontSize: '0.875rem',
-                        fontWeight: '600',
-                        color: '#1f2937',
-                        margin: '0 0 0.25rem 0'
-                      }}>
-                        {detalle.producto?.nombre || 'Producto no encontrado'}
-                      </h3>
+                  {isMobile ? (
+                    /* VISTA MÓVIL */
+                    <>
+                      {/* Fila 1: Nombre + Detalles del producto + Diferencia */}
                       <div style={{
-                        fontSize: '0.75rem',
-                        color: '#6b7280'
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '1rem',
+                        gap: '1rem'
                       }}>
-                        <div><strong>Código:</strong> {detalle.producto?.codigoPersonalizado || 'N/A'}</div>
-                        <div><strong>Stock:</strong> {detalle.stockSistema || 0}</div>
-                      </div>
-                    </div>
+                        {/* Información del producto */}
+                        <div style={{ flex: 1 }}>
+                          {/* Código destacado */}
+                          {detalle.producto?.codigoPersonalizado && (
+                            <div style={{ 
+                              fontSize: '0.95rem',
+                              fontWeight: '700',
+                              color: '#7c3aed',
+                              background: 'linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%)',
+                              padding: '0.4rem 0.65rem',
+                              borderRadius: '0.5rem',
+                              display: 'inline-block',
+                              marginBottom: '0.5rem',
+                              border: '2px solid #c4b5fd',
+                              letterSpacing: '0.025em'
+                            }}>
+                              {detalle.producto.codigoPersonalizado}
+                            </div>
+                          )}
+                          <h3 style={{
+                            fontSize: '1.1rem',
+                            fontWeight: '600',
+                            color: '#1f2937',
+                            margin: '0 0 0.5rem 0',
+                            lineHeight: '1.3'
+                          }}>
+                            {detalle.producto?.nombre || 'Producto no encontrado'}
+                          </h3>
+                          <div style={{
+                            fontSize: '0.9rem',
+                            color: '#6b7280',
+                            fontWeight: '500'
+                          }}>
+                            📦 Stock: {detalle.stockSistema || 0}
+                          </div>
+                        </div>
 
-                    {/* Usuario 1 */}
+                        {/* Diferencia */}
+                        <div style={{
+                          background: detalle.diferenciaEntreConteos === 0 ? '#f0fdf4' : '#fef2f2',
+                          border: `2px solid ${detalle.diferenciaEntreConteos === 0 ? '#bbf7d0' : '#fecaca'}`,
+                          borderRadius: '0.625rem',
+                          padding: '0.75rem',
+                          textAlign: 'center',
+                          minWidth: '85px'
+                        }}>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            color: detalle.diferenciaEntreConteos === 0 ? '#059669' : '#dc2626',
+                            marginBottom: '0.25rem'
+                          }}>
+                            Diferencia
+                          </div>
+                          <div style={{
+                            fontSize: '1.5rem',
+                            fontWeight: 'bold',
+                            color: detalle.diferenciaEntreConteos === 0 ? '#059669' : '#dc2626'
+                          }}>
+                            {Math.abs(detalle.diferenciaEntreConteos || 0)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Fila 2: Cards de Usuario 1 y Usuario 2 lado a lado */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '0.75rem',
+                        marginBottom: '1rem'
+                      }}>
+                        {/* Usuario 1 */}
+                        <div style={{
+                          background: '#eff6ff',
+                          padding: '0.75rem',
+                          borderRadius: '0.5rem',
+                          border: '2px solid #dbeafe'
+                        }}>
+                          <div style={{
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            color: '#1e40af',
+                            marginBottom: '0.4rem'
+                          }}>
+                            👤 {conteoInfo?.usuario1Nombre || 'Usuario 1'}
+                          </div>
+                          <div style={{
+                            fontSize: '1.5rem',
+                            fontWeight: 'bold',
+                            color: '#1e40af',
+                            marginBottom: '0.4rem'
+                          }}>
+                            {detalle.cantidadConteo1 || 0}
+                          </div>
+                          {detalle.formulaCalculo1 && detalle.formulaCalculo1 !== 'Sin fórmula' && (
+                            <div style={{
+                              fontSize: '0.7rem',
+                              color: '#4b5563',
+                              background: 'white',
+                              padding: '0.4rem',
+                              borderRadius: '0.375rem',
+                              border: '1px solid #dbeafe',
+                              maxHeight: '100px',
+                              overflowY: 'auto'
+                            }}>
+                              <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                                Fórmulas {datosUsuario?.id === conteoInfo?.usuario1Id ? '(tap)' : ''}:
+                              </div>
+                              {(() => {
+                                const formulasOriginales = detalle.formulaCalculo1.split(' | ');
+                                const formulasDescompuestas = formulasOriginales.flatMap(formula => 
+                                  descomponerFormulaUnificada(formula)
+                                );
+                                
+                                return formulasDescompuestas.map((formula, index) => {
+                                  const isMarcada = isFormulaMarcada(detalle.producto.id, formula, 1, index);
+                                  const esUsuarioActual = datosUsuario?.id === conteoInfo?.usuario1Id;
+                                  return (
+                                    <div 
+                                      key={index} 
+                                      onClick={esUsuarioActual ? () => toggleFormula(detalle.producto.id, formula, 1, index) : undefined}
+                                      style={{ 
+                                        marginBottom: '0.25rem',
+                                        padding: '0.35rem 0.5rem',
+                                        background: isMarcada ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+                                        borderRadius: '0.375rem',
+                                        fontSize: '0.7rem',
+                                        cursor: esUsuarioActual ? 'pointer' : 'default',
+                                        border: isMarcada ? '1.5px solid #22c55e' : '1px solid transparent',
+                                        transition: 'all 0.2s ease',
+                                        position: 'relative',
+                                        opacity: esUsuarioActual ? 1 : 0.7,
+                                        fontWeight: '500'
+                                      }}
+                                    >
+                                      {formula}
+                                      {isMarcada && (
+                                        <span style={{ 
+                                          position: 'absolute', 
+                                          right: '4px', 
+                                          top: '4px', 
+                                          color: '#22c55e',
+                                          fontSize: '0.65rem'
+                                        }}>✓</span>
+                                      )}
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Usuario 2 */}
+                        <div style={{
+                          background: '#f0fdf4',
+                          padding: '0.75rem',
+                          borderRadius: '0.5rem',
+                          border: '2px solid #bbf7d0'
+                        }}>
+                          <div style={{
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            color: '#059669',
+                            marginBottom: '0.4rem'
+                          }}>
+                            👤 {conteoInfo?.usuario2Nombre || 'Usuario 2'}
+                          </div>
+                          <div style={{
+                            fontSize: '1.5rem',
+                            fontWeight: 'bold',
+                            color: '#059669',
+                            marginBottom: '0.4rem'
+                          }}>
+                            {detalle.cantidadConteo2 || 0}
+                          </div>
+                          {detalle.formulaCalculo2 && detalle.formulaCalculo2 !== 'Sin fórmula' && (
+                            <div style={{
+                              fontSize: '0.7rem',
+                              color: '#4b5563',
+                              background: 'white',
+                              padding: '0.4rem',
+                              borderRadius: '0.375rem',
+                              border: '1px solid #bbf7d0',
+                              maxHeight: '100px',
+                              overflowY: 'auto'
+                            }}>
+                              <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                                Fórmulas {datosUsuario?.id === conteoInfo?.usuario2Id ? '(tap)' : ''}:
+                              </div>
+                              {(() => {
+                                const formulasOriginales = detalle.formulaCalculo2.split(' | ');
+                                const formulasDescompuestas = formulasOriginales.flatMap(formula => 
+                                  descomponerFormulaUnificada(formula)
+                                );
+                                
+                                return formulasDescompuestas.map((formula, index) => {
+                                  const isMarcada = isFormulaMarcada(detalle.producto.id, formula, 2, index);
+                                  const esUsuarioActual = datosUsuario?.id === conteoInfo?.usuario2Id;
+                                  return (
+                                    <div 
+                                      key={index} 
+                                      onClick={esUsuarioActual ? () => toggleFormula(detalle.producto.id, formula, 2, index) : undefined}
+                                      style={{ 
+                                        marginBottom: '0.25rem',
+                                        padding: '0.35rem 0.5rem',
+                                        background: isMarcada ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
+                                        borderRadius: '0.375rem',
+                                        fontSize: '0.7rem',
+                                        cursor: esUsuarioActual ? 'pointer' : 'default',
+                                        border: isMarcada ? '1.5px solid #22c55e' : '1px solid transparent',
+                                        transition: 'all 0.2s ease',
+                                        position: 'relative',
+                                        opacity: esUsuarioActual ? 1 : 0.7,
+                                        fontWeight: '500'
+                                      }}
+                                    >
+                                      {formula}
+                                      {isMarcada && (
+                                        <span style={{ 
+                                          position: 'absolute', 
+                                          right: '4px', 
+                                          top: '4px', 
+                                          color: '#22c55e',
+                                          fontSize: '0.65rem'
+                                        }}>✓</span>
+                                      )}
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    /* VISTA DESKTOP - Layout original */
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                      gap: '1rem',
+                      alignItems: 'center',
+                      marginBottom: '1rem'
+                    }}>
+                      {/* Información del producto */}
+                      <div>
+                        <h3 style={{
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          color: '#1f2937',
+                          margin: '0 0 0.25rem 0'
+                        }}>
+                          {detalle.producto?.nombre || 'Producto no encontrado'}
+                        </h3>
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: '#6b7280'
+                        }}>
+                          <div><strong>Código:</strong> {detalle.producto?.codigoPersonalizado || 'N/A'}</div>
+                          <div><strong>Stock:</strong> {detalle.stockSistema || 0}</div>
+                        </div>
+                      </div>
+
+                      {/* Usuario 1 */}
                     <div style={{
                       background: '#eff6ff',
                       padding: '0.75rem',
@@ -1285,26 +1616,26 @@ export default function ReconteoSector() {
                       </div>
                     </div>
                   </div>
+                  )}
 
-                  {/* Campo de reconteo abajo */}
+                  {/* Fila 3: Campo de reconteo abajo */}
                   <div style={{
                     background: '#f8fafc',
-                    padding: '0.75rem',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #e2e8f0'
+                    padding: isMobile ? '1rem' : '0.75rem',
+                    borderRadius: isMobile ? '0.5rem' : '0.375rem',
+                    border: isMobile ? '2px solid #e2e8f0' : '1px solid #e2e8f0'
                   }}>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      color: '#374151',
-                      marginBottom: '0.5rem'
-                    }}>
-                      {reconteosSolidificados[detalle.producto.id] 
-                        ? '✅ Reconteo Completado' 
-                        : '🔄 Reconteo Manual (Presiona Enter para continuar)'
-                      }
-                    </label>
+                    {reconteosSolidificados[detalle.producto.id] && (
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '0.5rem'
+                      }}>
+                        ✅ Reconteo Completado
+                      </label>
+                    )}
                     
                     {(() => {
                       const esSolidificado = reconteosSolidificados[detalle.producto.id];
@@ -1368,7 +1699,7 @@ export default function ReconteoSector() {
                               {/* Campo de reconteo dinámico */}
                               <input
                                 type="text"
-                                placeholder="Clic en fórmulas arriba o escriba manualmente..."
+                                placeholder={isMobile ? "Toca fórmulas o escribe..." : "Clic en fórmulas arriba o escriba manualmente..."}
                                 value={camposReconteo[detalle.producto.id] || ''}
                                 onChange={(e) => editarCampoReconteo(detalle.producto.id, e.target.value)}
                                 onKeyPress={(e) => {
@@ -1379,10 +1710,10 @@ export default function ReconteoSector() {
                                 disabled={guardando}
                                 style={{
                                   width: '100%',
-                                  padding: '0.5rem',
+                                  padding: isMobile ? '0.85rem' : '0.5rem',
                                   border: '1px solid #d1d5db',
-                                  borderRadius: '0.25rem',
-                                  fontSize: '0.875rem',
+                                  borderRadius: '0.375rem',
+                                  fontSize: isMobile ? '1.1rem' : '0.875rem',
                                   background: 'white',
                                   marginBottom: '0.5rem'
                                 }}
@@ -1395,9 +1726,9 @@ export default function ReconteoSector() {
                                   justifyContent: 'space-between',
                                   alignItems: 'center',
                                   background: 'rgba(59, 130, 246, 0.1)',
-                                  padding: '0.5rem',
-                                  borderRadius: '0.25rem',
-                                  fontSize: '0.875rem'
+                                  padding: isMobile ? '0.75rem' : '0.5rem',
+                                  borderRadius: '0.375rem',
+                                  fontSize: isMobile ? '1rem' : '0.875rem'
                                 }}>
                                   <span style={{ fontWeight: '600', color: '#1e40af' }}>
                                     Resultado:
@@ -1405,7 +1736,7 @@ export default function ReconteoSector() {
                                   <span style={{ 
                                     fontWeight: '700', 
                                     color: '#1d4ed8',
-                                    fontSize: '1rem'
+                                    fontSize: isMobile ? '1.4rem' : '1rem'
                                   }}>
                                     {resultadosReconteo[detalle.producto.id]}
                                   </span>
@@ -1420,12 +1751,12 @@ export default function ReconteoSector() {
                                   style={{
                                     width: '100%',
                                     marginTop: '0.5rem',
-                                    padding: '0.5rem',
+                                    padding: isMobile ? '0.85rem' : '0.5rem',
                                     background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                                     color: 'white',
                                     border: 'none',
-                                    borderRadius: '0.25rem',
-                                    fontSize: '0.875rem',
+                                    borderRadius: '0.5rem',
+                                    fontSize: isMobile ? '1.05rem' : '0.875rem',
                                     fontWeight: '600',
                                     cursor: guardando ? 'not-allowed' : 'pointer',
                                     opacity: guardando ? 0.6 : 1,

@@ -19,6 +19,12 @@ export const API_CONFIG = {
       return '/api'; // Usar proxy de Vite en desarrollo
     }
     
+    // ✅ NUEVO: Si accedemos desde IP de red local (ej: 192.168.x.x), usar la misma IP para el backend
+    if (window.location.hostname.startsWith('192.168.') || window.location.hostname.startsWith('10.') || window.location.hostname.startsWith('172.')) {
+      const port = '8080'; // Puerto del backend en desarrollo
+      return `http://${window.location.hostname}:${port}/api`;
+    }
+    
     // Si estamos en modo desarrollo pero no en localhost, usar localhost:8080
     if (import.meta.env.MODE === 'development') {
       return this.DEVELOPMENT.BASE_URL;
@@ -38,6 +44,12 @@ export const API_CONFIG = {
     // Si estamos en desarrollo local (localhost o subdominios de localhost), usar proxy de Vite
     if (window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost') || window.location.hostname === '127.0.0.1') {
       return '/api/super-admin'; // Usar proxy de Vite en desarrollo
+    }
+    
+    // ✅ NUEVO: Si accedemos desde IP de red local, usar la misma IP para el backend
+    if (window.location.hostname.startsWith('192.168.') || window.location.hostname.startsWith('10.') || window.location.hostname.startsWith('172.')) {
+      const port = '8080'; // Puerto del backend en desarrollo
+      return `http://${window.location.hostname}:${port}/api/super-admin`;
     }
     
     // Si estamos en modo desarrollo pero no en localhost, usar localhost:8080

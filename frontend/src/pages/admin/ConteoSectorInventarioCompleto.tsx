@@ -101,12 +101,55 @@ export default function ConteoSectorInventarioCompleto() {
   const [vieneConAutoStart, setVieneConAutoStart] = useState(false);
   const [nuevasCantidades, setNuevasCantidades] = useState<{[key: number]: {cantidad: string, resultado: number | null}}>({});
   const [progresoCargadoMostrado, setProgresoCargadoMostrado] = useState(false);
+  
+  // ✅ NUEVO: Estado para ocultar navbar al hacer scroll (solo móvil)
+  const [navbarVisible, setNavbarVisible] = useState(true);
+  const [ultimoScroll, setUltimoScroll] = useState(0);
 
   // Refs para el manejo de teclas y auto scroll
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
   const cantidadTemporalRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
   const listaProductosContadosRef = useRef<HTMLDivElement>(null);
+
+  // ✅ NUEVO: Ocultar/mostrar navbar al hacer scroll (solo en móvil)
+  useEffect(() => {
+    console.log('🔍 DEBUG Navbar Scroll - isMobile:', isMobile);
+    
+    if (!isMobile) {
+      console.log('⏭️ No es móvil, navbar siempre visible');
+      return; // Solo aplicar en móvil
+    }
+
+    const handleScroll = () => {
+      const scrollActual = window.pageYOffset;
+      
+      console.log('📜 Scroll actual:', scrollActual, 'Último:', ultimoScroll, 'Navbar visible:', navbarVisible);
+      
+      // Solo ocultar si hemos scrolleado más de 50px
+      if (scrollActual < 50) {
+        setNavbarVisible(true);
+        return;
+      }
+      
+      // Ocultar al bajar, mostrar al subir
+      if (scrollActual > ultimoScroll) {
+        console.log('⬇️ Ocultando navbar (scroll hacia abajo)');
+        setNavbarVisible(false); // Scrolleando hacia abajo
+      } else {
+        console.log('⬆️ Mostrando navbar (scroll hacia arriba)');
+        setNavbarVisible(true); // Scrolleando hacia arriba
+      }
+      
+      setUltimoScroll(scrollActual);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [ultimoScroll, isMobile]);
 
   // Manejador global de teclas para auto-scroll al buscador
   useEffect(() => {
@@ -1283,6 +1326,17 @@ export default function ConteoSectorInventarioCompleto() {
     } else if (e.key === 'Escape') {
       e.preventDefault();
       cancelarCantidad();
+    } else if (e.key === 'Backspace') {
+      // ✅ NUEVO: Si el campo está vacío y presionan backspace, volver al buscador
+      const inputElement = e.target as HTMLInputElement;
+      if (!inputElement.value || inputElement.value.trim() === '') {
+        e.preventDefault();
+        cancelarCantidad();
+        // Enfocar el buscador después de un pequeño delay
+        setTimeout(() => {
+          inputBusquedaRef.current?.focus();
+        }, 100);
+      }
     }
   };
 
@@ -1748,11 +1802,22 @@ export default function ConteoSectorInventarioCompleto() {
         minHeight: '100vh',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
       }}>
-        <NavbarAdmin
-          onCerrarSesion={cerrarSesion}
-          empresaNombre={datosUsuario?.empresaNombre}
-          nombreAdministrador={datosUsuario?.nombre}
-        />
+        {/* ✅ NUEVO: Navbar con animación de ocultamiento en móvil */}
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          transform: isMobile ? (navbarVisible ? 'translateY(0)' : 'translateY(-100%)') : 'translateY(0)',
+          transition: 'transform 0.3s ease-in-out'
+        }}>
+          <NavbarAdmin
+            onCerrarSesion={cerrarSesion}
+            empresaNombre={datosUsuario?.empresaNombre}
+            nombreAdministrador={datosUsuario?.nombre}
+          />
+        </div>
 
         <div style={{
           maxWidth: '1200px',
@@ -1910,53 +1975,58 @@ export default function ConteoSectorInventarioCompleto() {
               }}></div>
             </div>
 
-            {/* Usuarios asignados */}
+            {/* Usuarios asignados - Diseño compacto en una sola fila */}
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+              background: '#f8fafc',
+              borderRadius: '0.5rem',
+              padding: isMobile ? '0.75rem' : '1rem',
+              border: '1px solid #e2e8f0',
+              marginTop: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
               gap: '1rem',
-              marginTop: '1.5rem'
+              flexWrap: 'wrap'
             }}>
               <div style={{
-                background: '#f8fafc',
-                borderRadius: '0.5rem',
-                padding: '1rem',
-                border: '1px solid #e2e8f0'
+                fontSize: isMobile ? '0.75rem' : '0.8rem',
+                color: '#64748b',
+                fontWeight: '600'
               }}>
-                <div style={{
-                  fontSize: '0.8rem',
-                  color: '#64748b',
-                  marginBottom: '0.25rem'
-                }}>
-                  Usuario 1
-                </div>
-                <div style={{
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  color: '#1e293b'
-                }}>
-                  {conteoInfo.usuario1Nombre || 'No asignado'}
-                </div>
+                👥 Usuarios:
               </div>
               <div style={{
-                background: '#f8fafc',
-                borderRadius: '0.5rem',
-                padding: '1rem',
-                border: '1px solid #e2e8f0'
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                flex: isMobile ? '1 1 100%' : '0 1 auto'
               }}>
                 <div style={{
-                  fontSize: '0.8rem',
-                  color: '#64748b',
-                  marginBottom: '0.25rem'
-                }}>
-                  Usuario 2
-                </div>
-                <div style={{
-                  fontSize: '0.9rem',
+                  background: 'white',
+                  borderRadius: '0.375rem',
+                  padding: '0.4rem 0.75rem',
+                  border: '1px solid #cbd5e1',
+                  fontSize: isMobile ? '0.8rem' : '0.85rem',
                   fontWeight: '600',
                   color: '#1e293b'
                 }}>
-                  {conteoInfo.usuario2Nombre || 'No asignado'}
+                  {conteoInfo.usuario1Nombre || 'Usuario 1: No asignado'}
+                </div>
+                <div style={{
+                  color: '#94a3b8',
+                  fontSize: '0.75rem'
+                }}>
+                  •
+                </div>
+                <div style={{
+                  background: 'white',
+                  borderRadius: '0.375rem',
+                  padding: '0.4rem 0.75rem',
+                  border: '1px solid #cbd5e1',
+                  fontSize: isMobile ? '0.8rem' : '0.85rem',
+                  fontWeight: '600',
+                  color: '#1e293b'
+                }}>
+                  {conteoInfo.usuario2Nombre || 'Usuario 2: No asignado'}
                 </div>
               </div>
             </div>
@@ -2480,28 +2550,18 @@ export default function ConteoSectorInventarioCompleto() {
                 border: '1px solid #e2e8f0',
                 height: 'fit-content'
               }}>
-                <h2 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '600',
-                  color: '#1e293b',
-                  margin: '0 0 1.5rem 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  🛒 Agregar Productos
-                </h2>
-
-                {/* Búsqueda de productos */}
+                {/* Búsqueda de productos - Sin título redundante */}
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label style={{
-                    display: 'block',
-                    fontSize: isMobile ? '1rem' : '0.875rem',
+                    fontSize: isMobile ? '1.1rem' : '1rem',
                     fontWeight: '600',
-                    color: '#64748b',
-                    marginBottom: isMobile ? '0.75rem' : '0.5rem'
+                    color: '#1e293b',
+                    marginBottom: isMobile ? '0.75rem' : '0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                   }}>
-                    {mostrarCampoCantidad ? '📊 Cantidad' : '🔍 Buscar Producto'}
+                    {mostrarCampoCantidad ? '📊 Cantidad' : '🛒 Agregar Productos'}
                   </label>
                   <div style={{ 
                     display: 'grid',
@@ -2621,9 +2681,46 @@ export default function ConteoSectorInventarioCompleto() {
                     {/* Campo de cantidad temporal */}
                     {mostrarCampoCantidad && (
                       <div style={{ position: 'relative' }}>
+                        {/* Botón de cancelar (solo móvil) */}
+                        {isMobile && (
+                          <button
+                            onClick={cancelarCantidad}
+                            style={{
+                              position: 'absolute',
+                              right: '0.5rem',
+                              top: '0.5rem',
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '32px',
+                              height: '32px',
+                              fontSize: '1.2rem',
+                              fontWeight: '700',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              zIndex: 10,
+                              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onTouchStart={(e) => {
+                              e.currentTarget.style.transform = 'scale(0.9)';
+                            }}
+                            onTouchEnd={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                            }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                        
                         <input
                           ref={cantidadTemporalRef}
                           type="text"
+                          inputMode="decimal"
+                          pattern="[0-9+\-*/.x() ]*"
                           value={cantidadTemporalTexto || cantidadTemporal || ''}
                           onChange={(e) => {
                             const valor = e.target.value;
@@ -2649,12 +2746,58 @@ export default function ConteoSectorInventarioCompleto() {
                           style={{
                             width: '100%',
                             padding: isMobile ? '1rem' : '0.75rem',
+                            paddingRight: isMobile ? '3rem' : '0.75rem',
                             border: '2px solid #e2e8f0',
                             borderRadius: '0.5rem',
-                            fontSize: isMobile ? '1rem' : '0.875rem',
+                            fontSize: isMobile ? '1.2rem' : '0.875rem',
                             minHeight: isMobile ? '48px' : 'auto'
                           }}
                         />
+                      
+                      {/* Botones rápidos para operadores matemáticos (solo móvil) */}
+                      {isMobile && (
+                        <div style={{
+                          display: 'flex',
+                          gap: '0.5rem',
+                          marginTop: '0.5rem',
+                          justifyContent: 'center'
+                        }}>
+                          {['+', '-', '*', 'x', '(', ')'].map(op => (
+                            <button
+                              key={op}
+                              onClick={() => {
+                                const nuevoValor = (cantidadTemporalTexto || '') + op;
+                                setCantidadTemporalTexto(nuevoValor);
+                                // Evaluar si ya es una fórmula
+                                if (/[+\-*/x()]/.test(nuevoValor)) {
+                                  evaluarFormula(nuevoValor);
+                                }
+                              }}
+                              style={{
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '0.375rem',
+                                padding: '0.5rem 0.75rem',
+                                fontSize: '1.1rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                minWidth: '40px',
+                                boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onTouchStart={(e) => {
+                                e.currentTarget.style.transform = 'scale(0.95)';
+                              }}
+                              onTouchEnd={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                              }}
+                            >
+                              {op}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       
                       {/* Mostrar resultado del cálculo en tiempo real */}
                       {resultadoCalculo !== null && (
@@ -2776,23 +2919,11 @@ export default function ConteoSectorInventarioCompleto() {
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                 border: '1px solid #e2e8f0'
               }}>
-                <h2 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '600',
-                  color: '#1e293b',
-                  margin: '0 0 1rem 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  📦 Productos Contados ({productosContadosFiltrados.length}{filtroProductosContados && ` de ${detallesConteo.length}`})
-                </h2>
-
-                {/* Campo de filtrado */}
+                {/* Campo de filtrado - Sin título redundante */}
                 <div style={{ marginBottom: '1rem' }}>
                   <input
                     type="text"
-                    placeholder="🔍 Buscar productos contados..."
+                    placeholder={`🔍 Filtrar lista (${productosContadosFiltrados.length}${filtroProductosContados ? ` de ${detallesConteo.length}` : ''})...`}
                     value={filtroProductosContados}
                     onChange={(e) => filtrarProductosContados(e.target.value)}
                     style={{
@@ -2856,7 +2987,7 @@ export default function ConteoSectorInventarioCompleto() {
                       borderRadius: '0.75rem',
                       border: '1px solid #e2e8f0',
                       overflow: 'hidden',
-                      height: '350px',
+                      height: isMobile ? '450px' : '350px',
                       overflowY: 'auto',
                       overflowX: 'hidden'
                     }}>
@@ -2868,10 +2999,9 @@ export default function ConteoSectorInventarioCompleto() {
                           key={detalle.id}
                           data-product-index={index}
                           style={{
-                            padding: isMobile ? '1rem' : '0.75rem',
+                            padding: isMobile ? '0.75rem' : '0.75rem',
                             borderBottom: index < productosContadosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
                             background: estaEditando ? '#fef3c7' : (index % 2 === 0 ? 'white' : '#f8fafc'),
-                            minHeight: isMobile ? '70px' : 'auto',
                             border: estaEditando ? '2px solid #f59e0b' : '1px solid #e2e8f0',
                             borderRadius: '0.5rem',
                             marginBottom: '0.5rem'
@@ -2983,116 +3113,123 @@ export default function ConteoSectorInventarioCompleto() {
                               </div>
                             </div>
                           ) : (
-                            // Modo visualización
-                            <div style={{
-                              display: 'grid',
-                              gridTemplateColumns: isMobile ? '1fr' : '1fr auto auto',
-                              gap: '0.75rem',
-                              alignItems: 'center'
-                            }}>
-                              <div>
-                                <div style={{ 
-                                  fontWeight: '600', 
-                                  color: '#1e293b',
-                                  fontSize: isMobile ? '1rem' : '0.875rem',
-                                  lineHeight: '1.3'
-                                }}>
-                                  {detalle.producto?.nombre || 'Producto sin nombre'}
-                                </div>
-                                {detalle.producto?.codigoPersonalizado && (
-                                  <div style={{ 
-                                    fontSize: isMobile ? '0.8rem' : '0.7rem', 
-                                    color: '#64748b',
-                                    marginTop: '0.25rem'
-                                  }}>
-                                    Código: {detalle.producto?.codigoPersonalizado}
-                                  </div>
-                                )}
-                                {(detalle.formulaCalculo1 || detalle.formulaCalculo2 || detalle.formulaCalculo) && (
-                                  <div style={{ 
-                                    fontSize: isMobile ? '0.8rem' : '0.7rem', 
-                                    color: '#059669',
-                                    marginTop: '0.25rem',
-                                    background: '#ecfdf5',
-                                    padding: '0.25rem 0.5rem',
-                                    borderRadius: '0.25rem',
-                                    border: '1px solid #bbf7d0'
-                                  }}>
-                                    Fórmula: {detalle.formulaCalculo1 || detalle.formulaCalculo2 || detalle.formulaCalculo}
-                                  </div>
-                                )}
-                              </div>
-                              
+                            // Modo visualización - Diseño compacto para móvil
+                            <div>
+                              {/* Primera fila: Nombre + Cantidad */}
                               <div style={{
                                 display: 'flex',
+                                justifyContent: 'space-between',
                                 alignItems: 'center',
-                                gap: '0.5rem',
-                                flexShrink: 0
+                                marginBottom: '0.5rem'
                               }}>
+                                <div style={{ flex: 1 }}>
+                                  {/* Código personalizado arriba - MÁS DESTACADO */}
+                                  {detalle.producto?.codigoPersonalizado && (
+                                    <div style={{ 
+                                      fontSize: isMobile ? '0.85rem' : '0.75rem',
+                                      fontWeight: '700',
+                                      color: '#7c3aed',
+                                      background: 'linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%)',
+                                      padding: '0.25rem 0.5rem',
+                                      borderRadius: '0.375rem',
+                                      display: 'inline-block',
+                                      marginBottom: '0.35rem',
+                                      border: '1.5px solid #c4b5fd',
+                                      letterSpacing: '0.025em',
+                                      boxShadow: '0 1px 2px rgba(124, 58, 237, 0.1)'
+                                    }}>
+                                      {detalle.producto?.codigoPersonalizado}
+                                    </div>
+                                  )}
+                                  <div style={{ 
+                                    fontWeight: '600', 
+                                    color: '#1e293b',
+                                    fontSize: isMobile ? '0.9rem' : '0.875rem',
+                                    lineHeight: '1.3'
+                                  }}>
+                                    {detalle.producto?.nombre || 'Producto sin nombre'}
+                                  </div>
+                                </div>
+                                
+                                {/* Cantidad a la derecha del nombre */}
                                 <div style={{
-                                  textAlign: 'center',
                                   background: '#3b82f6',
                                   color: 'white',
-                                  padding: '0.5rem',
+                                  padding: isMobile ? '0.4rem 0.75rem' : '0.5rem',
                                   borderRadius: '0.5rem',
-                                  minWidth: '60px'
+                                  fontSize: isMobile ? '1.1rem' : '1.25rem',
+                                  fontWeight: '700',
+                                  minWidth: isMobile ? '50px' : '60px',
+                                  textAlign: 'center',
+                                  flexShrink: 0
                                 }}>
-                                  <div style={{ fontSize: '0.75rem', fontWeight: '600' }}>
-                                    Cantidad
-                                  </div>
-                                  <div style={{ fontSize: '1.25rem', fontWeight: '700' }}>
-                                    {detalle.cantidadConteo1 || detalle.cantidadConteo2 || detalle.cantidadContada || 0}
-                                  </div>
+                                  {detalle.cantidadConteo1 || detalle.cantidadConteo2 || detalle.cantidadContada || 0}
                                 </div>
                               </div>
-
+                              
+                              {/* Segunda fila: Fórmula (si existe) */}
+                              {(detalle.formulaCalculo1 || detalle.formulaCalculo2 || detalle.formulaCalculo) && (
+                                <div style={{ 
+                                  fontSize: isMobile ? '0.75rem' : '0.7rem', 
+                                  color: '#059669',
+                                  background: '#ecfdf5',
+                                  padding: '0.3rem 0.5rem',
+                                  borderRadius: '0.25rem',
+                                  border: '1px solid #bbf7d0',
+                                  marginBottom: '0.5rem'
+                                }}>
+                                  📐 {detalle.formulaCalculo1 || detalle.formulaCalculo2 || detalle.formulaCalculo}
+                                </div>
+                              )}
+                              
+                              {/* Tercera fila: Botones en horizontal */}
                               <div style={{
                                 display: 'flex',
-                                flexDirection: 'column',
-                                gap: '0.25rem',
-                                flexShrink: 0
+                                gap: '0.5rem'
                               }}>
                                 <button
                                   onClick={() => iniciarEdicion(detalle)}
                                   style={{
+                                    flex: 1,
                                     background: '#f59e0b',
                                     color: 'white',
                                     border: 'none',
-                                    borderRadius: '0.25rem',
-                                    padding: '0.5rem',
-                                    fontSize: '1rem',
+                                    borderRadius: '0.375rem',
+                                    padding: isMobile ? '0.6rem' : '0.5rem',
+                                    fontSize: isMobile ? '0.85rem' : '0.8rem',
                                     fontWeight: '600',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    minWidth: '32px',
-                                    minHeight: '32px'
+                                    gap: '0.25rem',
+                                    minHeight: isMobile ? '36px' : '32px'
                                   }}
                                   title="Editar entrada"
                                 >
-                                  ✏️
+                                  ✏️ Editar
                                 </button>
                                 <button
                                   onClick={() => borrarDetalle(detalle.id)}
                                   style={{
+                                    flex: 1,
                                     background: '#ef4444',
                                     color: 'white',
                                     border: 'none',
-                                    borderRadius: '0.25rem',
-                                    padding: '0.5rem',
-                                    fontSize: '1rem',
+                                    borderRadius: '0.375rem',
+                                    padding: isMobile ? '0.6rem' : '0.5rem',
+                                    fontSize: isMobile ? '0.85rem' : '0.8rem',
                                     fontWeight: '600',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    minWidth: '32px',
-                                    minHeight: '32px'
+                                    gap: '0.25rem',
+                                    minHeight: isMobile ? '36px' : '32px'
                                   }}
                                   title="Borrar entrada"
                                 >
-                                  🗑️
+                                  🗑️ Borrar
                                 </button>
                               </div>
                             </div>
