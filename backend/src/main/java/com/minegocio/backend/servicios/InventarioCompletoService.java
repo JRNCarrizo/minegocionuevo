@@ -297,6 +297,12 @@ public class InventarioCompletoService {
                     cantidadFinal = 0;
                     diferenciaStock = cantidadFinal - stockAnterior;
                     System.out.println("⚠️ Producto NO CONTADO - Dado por 0: " + producto.getNombre());
+                } else if ("EDITADO".equals(accionSeleccionada)) {
+                    // EDITADO - usar el valor editado manualmente por el usuario
+                    // La cantidadFinal ya viene del frontend con el valor editado
+                    diferenciaStock = cantidadFinal - stockAnterior;
+                    System.out.println("⚠️ Producto NO CONTADO - Editado manualmente: " + producto.getNombre() + 
+                                     " - Cantidad editada: " + cantidadFinal);
                 } else {
                     // OMITIR - conservar valor actual (no hacer nada)
                     cantidadFinal = stockAnterior;
@@ -607,6 +613,8 @@ public class InventarioCompletoService {
             Integer cantidadConteo2 = (Integer) producto.get("cantidadConteo2");
             Integer cantidadFinal = Math.max(cantidadConteo1 != null ? cantidadConteo1 : 0, cantidadConteo2 != null ? cantidadConteo2 : 0);
             
+            // ✅ AGREGAR cantidadFinal al producto para que se muestre correctamente en el frontend
+            producto.put("cantidadFinal", cantidadFinal);
             producto.put("diferenciaSistema", cantidadFinal - stockAjustado);
             
             System.out.println("  📊 Producto: " + producto.get("nombreProducto") + 

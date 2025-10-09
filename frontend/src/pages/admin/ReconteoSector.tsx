@@ -158,21 +158,16 @@ export default function ReconteoSector() {
 
   // ✅ NUEVAS FUNCIONES PARA LA INTERFAZ MEJORADA
   
-  // ✅ NUEVA FUNCIÓN: Descomponer fórmulas unificadas (ej: "10+8" → ["10", "8"])
+  // ✅ NUEVA FUNCIÓN: Descomponer fórmulas solo por sumas (ej: "2*5+3*4" → ["2*5", "3*4"])
   const descomponerFormulaUnificada = (formula: string): string[] => {
     try {
-      // Si contiene operadores matemáticos, descomponer
-      if (formula.includes('+') || formula.includes('-') || formula.includes('*') || formula.includes('/')) {
-        // Reemplazar operadores con | para poder hacer split
-        const formulaConSeparadores = formula
-          .replace(/\s*\+\s*/g, ' | ')
-          .replace(/\s*-\s*/g, ' | -')
-          .replace(/\s*\*\s*/g, ' | *')
-          .replace(/\s*\/\s*/g, ' | /');
-        
-        return formulaConSeparadores.split(' | ').filter(f => f.trim() !== '');
+      // Solo descomponer por el operador de suma (+)
+      // Mantener multiplicaciones (*), divisiones (/) y restas (-) intactas
+      if (formula.includes('+')) {
+        // Dividir solo por el operador +
+        return formula.split(/\s*\+\s*/).filter(f => f.trim() !== '');
       }
-      // Si no contiene operadores, devolver como está
+      // Si no contiene sumas, devolver como está (puede tener *, /, - pero se mantienen juntos)
       return [formula];
     } catch (error) {
       console.error('Error descomponiendo fórmula:', formula, error);
@@ -219,7 +214,7 @@ export default function ReconteoSector() {
   const actualizarCampoReconteoIndividualConEstado = (productoId: number, formula: string, usuarioId: number, index: number, debeAgregar: boolean) => {
     const valorFormula = calcularFormula(formula);
     const identificadorUnico = `[${formula}=${valorFormula}]`; // Para tracking interno
-    const valorParaCampo = valorFormula.toString(); // Solo el valor para mostrar
+    const valorParaCampo = formula; // ✅ MOSTRAR LA FÓRMULA COMPLETA (ej: "2*5") en lugar del resultado
     
     console.log('🔍 DEBUG actualizarCampoReconteoIndividualConEstado:', {
       productoId,
@@ -236,7 +231,7 @@ export default function ReconteoSector() {
       const campoActual = prev[productoId] || '';
       
       if (debeAgregar) {
-        // Agregar solo el valor al campo
+        // Agregar la fórmula completa al campo (ej: "2*5" en lugar de "10")
         const nuevoCampo = campoActual ? `${campoActual} + ${valorParaCampo}` : valorParaCampo;
         
         console.log('🔍 DEBUG agregando:', {
@@ -248,11 +243,12 @@ export default function ReconteoSector() {
         
         return { ...prev, [productoId]: nuevoCampo };
       } else {
-        // Quitar el valor del campo
+        // Quitar la fórmula del campo (escapar caracteres especiales de regex)
+        const formulaEscapada = valorParaCampo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const nuevoCampo = campoActual
-          .replace(new RegExp(`\\+\\s*${valorParaCampo}`, 'g'), '') // Quitar " + valor"
-          .replace(new RegExp(`${valorParaCampo}\\s*\\+`, 'g'), '') // Quitar "valor + "
-          .replace(new RegExp(`^${valorParaCampo}$`, 'g'), '') // Quitar solo "valor"
+          .replace(new RegExp(`\\+\\s*${formulaEscapada}`, 'g'), '') // Quitar " + formula"
+          .replace(new RegExp(`${formulaEscapada}\\s*\\+`, 'g'), '') // Quitar "formula + "
+          .replace(new RegExp(`^${formulaEscapada}$`, 'g'), '') // Quitar solo "formula"
           .replace(/\s*\+\s*$/, '') // Quitar "+" al final
           .replace(/^\s*\+\s*/, '') // Quitar "+" al inicio
           .trim();
@@ -280,15 +276,19 @@ export default function ReconteoSector() {
       return;
     }
     
-    // Extraer solo el valor numérico de cada fórmula marcada
-    const valores = formulasArray.map(clave => {
+    // ✅ CAMBIO: Extraer las fórmulas completas (no solo los valores calculados)
+    const formulas = formulasArray.map(clave => {
       const partes = clave.split('_');
-      const formula = partes[2]; // La fórmula está en la tercera parte
-      return calcularFormula(formula);
+      return partes[2]; // La fórmula está en la tercera parte (ej: "2*5", "10", etc.)
     });
     
-    const campoTexto = valores.join(' + ');
-    const resultado = valores.reduce((total, valor) => total + valor, 0);
+    // Mostrar las fórmulas unidas con +
+    const campoTexto = formulas.join(' + ');
+    
+    // Calcular el resultado total sumando los valores de cada fórmula
+    const resultado = formulas.reduce((total, formula) => {
+      return total + calcularFormula(formula);
+    }, 0);
     
     setCamposReconteo(prev => ({ ...prev, [productoId]: campoTexto }));
     setResultadosReconteo(prev => ({ ...prev, [productoId]: resultado }));

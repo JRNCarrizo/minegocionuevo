@@ -1593,11 +1593,8 @@ export default function ConteoSectorInventarioCompleto() {
 
         toast.success('Entrada eliminada exitosamente');
         
-        // ✅ SOLUCIÓN: Recargar datos desde backend para evitar IDs temporales
-        console.log('🔄 Recargando datos desde backend después de eliminar detalle temporal...');
-        setDetallesConteo([]);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        await cargarDatos();
+        // ✅ NO RECARGAR: El estado local ya se actualizó correctamente
+        console.log('✅ Detalle temporal eliminado del estado local, sin necesidad de recargar');
       } else {
         // Es un detalle real de base de datos, llamar al backend
         try {
@@ -1626,16 +1623,13 @@ export default function ConteoSectorInventarioCompleto() {
               };
               localStorage.setItem(`conteo-progreso-${id}`, JSON.stringify(progreso));
 
-              return nuevaLista;
-            });
+            return nuevaLista;
+          });
 
             toast.success('Entrada eliminada exitosamente');
             
-            // ✅ SOLUCIÓN: Recargar datos desde backend para evitar IDs temporales
-            console.log('🔄 Recargando datos desde backend después de eliminar detalle real...');
-            setDetallesConteo([]);
-            await new Promise(resolve => setTimeout(resolve, 500));
-            await cargarDatos();
+            // ✅ NO RECARGAR: El estado local ya se actualizó correctamente
+            console.log('✅ Detalle real eliminado del estado local, sin necesidad de recargar');
           } else {
             const errorData = await response.json();
             toast.error(`Error al eliminar: ${errorData.error || 'Error desconocido'}`);
