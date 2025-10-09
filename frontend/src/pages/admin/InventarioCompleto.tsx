@@ -7,6 +7,8 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { useResponsive } from '../../hooks/useResponsive';
 import ApiService from '../../services/api';
 import { API_CONFIG } from '../../config/api';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Sector {
   id: number;
@@ -504,6 +506,219 @@ export default function InventarioCompleto() {
       console.error('❌ Error cargando productos actualizados:', error);
       setRegistroSeleccionado(registro);
       setMostrarModalRegistro(true);
+    }
+  };
+
+  const exportarInventarioPDF = async (registro: any) => {
+    try {
+      toast.loading('Generando PDF...', { id: 'export-pdf' });
+      
+      // Cargar productos actualizados del inventario
+      const token = localStorage.getItem('token');
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const url = `${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${registro.inventarioId}/productos-actualizados`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      let productosActualizados = [];
+      if (response.ok) {
+        const data = await response.json();
+        productosActualizados = data.productosActualizados || [];
+      }
+
+      // Crear el PDF
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      
+      // Configurar colores
+      const primaryColor = [124, 58, 237]; // Morado
+      const secondaryColor = [100, 116, 139]; // Gris
+      const successColor = [16, 185, 129]; // Verde
+
+      // Header del documento
+      doc.setFillColor(...primaryColor);
+      doc.rect(0, 0, pageWidth, 50, 'F');
+      
+      // Logo de la empresa (si existe)
+      let yOffset = 15;
+      if (datosUsuario?.empresaLogoUrl) {
+        try {
+          // Cargar logo como imagen
+          const img = new Image();
+          img.crossOrigin = 'Anonymous';
+          await new Promise((resolve, reject) => {
+            img.onload = () => {
+              try {
+                doc.addImage(img, 'PNG', 14, 8, 30, 30);
+                resolve(true);
+              } catch (e) {
+                console.warn('No se pudo agregar el logo al PDF');
+                resolve(false);
+              }
+            };
+            img.onerror = () => resolve(false);
+            img.src = datosUsuario.empresaLogoUrl;
+          });
+          yOffset = 15;
+        } catch (error) {
+          console.warn('Error cargando logo para PDF');
+        }
+      }
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('REPORTE DE INVENTARIO', pageWidth / 2, yOffset, { align: 'center' });
+      
+      // Nombre de la empresa
+      if (datosUsuario?.empresaNombre) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.text(datosUsuario.empresaNombre, pageWidth / 2, yOffset + 10, { align: 'center' });
+      }
+      
+      doc.setFontSize(10);
+      doc.text(registro.nombreInventario, pageWidth / 2, yOffset + 18, { align: 'center' });
+
+      // Información general
+      let yPos = 65;
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Información General', 14, yPos);
+      
+      yPos += 10;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...secondaryColor);
+      
+      const infoData = [
+        ['Fecha de Realización:', new Date(registro.fechaRealizacion).toLocaleDateString('es-ES', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })],
+        ['Responsable:', registro.usuarioResponsable],
+        ['Estado:', 'COMPLETADO'],
+        ['Productos Procesados:', productosActualizados.length.toString()]
+      ];
+
+      infoData.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, 14, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(value, 70, yPos);
+        yPos += 7;
+      });
+
+      // Tabla de productos
+      if (productosActualizados.length > 0) {
+        yPos += 10;
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Detalle de Productos', 14, yPos);
+        
+        yPos += 5;
+
+        // Preparar datos de la tabla
+        const tableData = productosActualizados.map((item: any) => {
+          return [
+            item.codigoProducto || 'N/A',
+            item.nombreProducto || 'Sin nombre',
+            item.stockAnterior?.toString() || '0',
+            item.stockNuevo?.toString() || '0',
+            item.diferenciaStock?.toString() || '0'
+          ];
+        });
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Código', 'Producto', 'Stock Anterior', 'Stock Nuevo', 'Diferencia']],
+          body: tableData,
+          theme: 'grid',
+          headStyles: {
+            fillColor: primaryColor,
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            fontSize: 9,
+            halign: 'center'
+          },
+          bodyStyles: {
+            fontSize: 8,
+            textColor: [30, 41, 59]
+          },
+          alternateRowStyles: {
+            fillColor: [248, 250, 252]
+          },
+          columnStyles: {
+            0: { cellWidth: 25, halign: 'center' },
+            1: { cellWidth: 'auto' },
+            2: { cellWidth: 25, halign: 'center' },
+            3: { cellWidth: 25, halign: 'center' },
+            4: { 
+              cellWidth: 25, 
+              halign: 'center',
+              cellPadding: 2
+            }
+          },
+          didParseCell: function(data: any) {
+            // Colorear la columna de diferencia
+            if (data.column.index === 4 && data.section === 'body') {
+              const valor = parseInt(data.cell.text[0]);
+              if (valor !== 0) {
+                data.cell.styles.textColor = valor > 0 ? [16, 185, 129] : [239, 68, 68];
+                data.cell.styles.fontStyle = 'bold';
+              }
+            }
+          },
+          margin: { left: 14, right: 14 },
+          didDrawPage: function(data: any) {
+            // Footer en cada página
+            const pageCount = doc.getNumberOfPages();
+            doc.setFontSize(8);
+            doc.setTextColor(...secondaryColor);
+            
+            // Nombre de empresa en el footer
+            if (datosUsuario?.empresaNombre) {
+              doc.text(
+                datosUsuario.empresaNombre,
+                14,
+                pageHeight - 10
+              );
+            }
+            
+            doc.text(
+              `Página ${data.pageNumber} de ${pageCount}`,
+              pageWidth / 2,
+              pageHeight - 10,
+              { align: 'center' }
+            );
+            doc.text(
+              `Generado: ${new Date().toLocaleString('es-ES')}`,
+              pageWidth - 14,
+              pageHeight - 10,
+              { align: 'right' }
+            );
+          }
+        });
+      }
+
+      // Guardar el PDF
+      const filename = `inventario_${registro.nombreInventario.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+      doc.save(filename);
+      
+      toast.success('PDF generado exitosamente', { id: 'export-pdf' });
+    } catch (error) {
+      console.error('Error exportando PDF:', error);
+      toast.error('Error al generar el PDF', { id: 'export-pdf' });
     }
   };
 
@@ -2613,27 +2828,15 @@ export default function InventarioCompleto() {
                 {registrosInventarios.map((registro) => (
                   <div
                     key={registro.inventarioId}
-                    onClick={() => verRegistro(registro)}
                     style={{
                       background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                       borderRadius: '1rem',
                       padding: isMobile ? '1.25rem' : '1.5rem',
                       border: '2px solid #e2e8f0',
-                      cursor: 'pointer',
                       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
                       position: 'relative',
                       overflow: 'hidden'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-4px)';
-                      e.currentTarget.style.boxShadow = '0 12px 28px rgba(124, 58, 237, 0.15)';
-                      e.currentTarget.style.borderColor = '#7c3aed';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                      e.currentTarget.style.borderColor = '#e2e8f0';
                     }}
                   >
                     {/* Badge de estado en la esquina */}
@@ -2762,15 +2965,75 @@ export default function InventarioCompleto() {
                         paddingTop: '1rem',
                         borderTop: '1px solid #e2e8f0',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        color: '#7c3aed',
-                        fontSize: '0.85rem',
-                        fontWeight: '600'
+                        gap: '0.75rem',
+                        flexDirection: isMobile ? 'column' : 'row'
                       }}>
-                        <span>Ver Detalles Completos</span>
-                        <span style={{ fontSize: '1.2rem' }}>→</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            verRegistro(registro);
+                          }}
+                          style={{
+                            flex: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            color: '#7c3aed',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '0.5rem',
+                            borderRadius: '0.5rem',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#f3e8ff';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                        >
+                          <span>Ver Detalles</span>
+                          <span style={{ fontSize: '1.2rem' }}>👁️</span>
+                        </button>
+                        
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            exportarInventarioPDF(registro);
+                          }}
+                          style={{
+                            flex: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            color: 'white',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '0.5rem',
+                            borderRadius: '0.5rem',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.2)';
+                          }}
+                        >
+                          <span>Exportar PDF</span>
+                          <span style={{ fontSize: '1.1rem' }}>📄</span>
+                        </button>
                       </div>
                     </div>
                   </div>

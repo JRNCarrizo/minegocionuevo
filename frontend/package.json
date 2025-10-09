@@ -23,6 +23,8 @@
     "axios": "^1.10.0",
     "chart.js": "^4.5.0",
     "html5-qrcode": "^2.3.8",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "jwt-decode": "^4.0.0",
     "react": "^19.1.0",
     "react-barcode": "^1.6.1",
