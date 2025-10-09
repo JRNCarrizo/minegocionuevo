@@ -2561,77 +2561,217 @@ export default function InventarioCompleto() {
           {registrosInventarios.length > 0 && (
             <div style={{
               background: 'white',
-              borderRadius: '1rem',
-              padding: '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              border: '1px solid #e2e8f0',
+              borderRadius: '1.25rem',
+              padding: isMobile ? '1.5rem' : '2rem',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)',
+              border: '2px solid #f1f5f9',
               marginTop: '2rem'
             }}>
-              <h3 style={{
-                margin: '0 0 1.5rem 0',
-                color: '#1e293b',
-                fontSize: '1.3rem',
-                fontWeight: 'bold'
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1.75rem',
+                paddingBottom: '1rem',
+                borderBottom: '2px solid #f1f5f9'
               }}>
-                📋 Registros de Inventarios Completados
-              </h3>
+                <h3 style={{
+                  margin: 0,
+                  color: '#1e293b',
+                  fontSize: isMobile ? '1.15rem' : '1.4rem',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span style={{
+                    background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+                    borderRadius: '0.75rem',
+                    padding: '0.5rem',
+                    display: 'inline-flex',
+                    fontSize: '1.25rem'
+                  }}>📋</span>
+                  Historial de Inventarios
+                </h3>
+                <div style={{
+                  background: '#f0f4ff',
+                  color: '#5b21b6',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.75rem',
+                  fontSize: '0.85rem',
+                  fontWeight: '600'
+                }}>
+                  {registrosInventarios.length} {registrosInventarios.length === 1 ? 'registro' : 'registros'}
+                </div>
+              </div>
               
               <div style={{
                 display: 'grid',
-                gap: '1rem'
+                gap: isMobile ? '1rem' : '1.25rem',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(380px, 1fr))'
               }}>
                 {registrosInventarios.map((registro) => (
                   <div
                     key={registro.inventarioId}
                     onClick={() => verRegistro(registro)}
                     style={{
-                      background: '#f8fafc',
-                      borderRadius: '0.5rem',
-                      padding: '1rem',
-                      border: '1px solid #e2e8f0',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                      borderRadius: '1rem',
+                      padding: isMobile ? '1.25rem' : '1.5rem',
+                      border: '2px solid #e2e8f0',
                       cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                      position: 'relative',
+                      overflow: 'hidden'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#f1f5f9';
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 12px 28px rgba(124, 58, 237, 0.15)';
                       e.currentTarget.style.borderColor = '#7c3aed';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = '#f8fafc';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
                       e.currentTarget.style.borderColor = '#e2e8f0';
                     }}
                   >
+                    {/* Badge de estado en la esquina */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '1rem',
+                      right: '1rem',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      color: 'white',
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.7rem',
+                      fontWeight: '700',
+                      boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+                      letterSpacing: '0.5px'
+                    }}>
+                      ✓ COMPLETADO
+                    </div>
+
                     <div>
+                      {/* Título del inventario */}
                       <div style={{
-                        fontWeight: '600',
+                        fontWeight: '700',
                         color: '#1e293b',
-                        fontSize: '1rem'
+                        fontSize: isMobile ? '1rem' : '1.1rem',
+                        marginBottom: '0.75rem',
+                        paddingRight: '6rem',
+                        lineHeight: '1.4'
                       }}>
                         {registro.nombreInventario}
                       </div>
+
+                      {/* Información en grid */}
                       <div style={{
-                        fontSize: '0.9rem',
-                        color: '#64748b',
-                        marginTop: '0.25rem'
+                        display: 'grid',
+                        gap: '0.65rem',
+                        marginTop: '1rem'
                       }}>
-                        Realizado el {new Date(registro.fechaRealizacion).toLocaleDateString('es-ES')}
+                        {/* Fecha */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.65rem'
+                        }}>
+                          <div style={{
+                            background: 'linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%)',
+                            borderRadius: '0.5rem',
+                            padding: '0.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '2.5rem',
+                            minHeight: '2.5rem'
+                          }}>
+                            <span style={{ fontSize: '1.1rem' }}>📅</span>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              fontSize: '0.7rem',
+                              color: '#64748b',
+                              fontWeight: '500',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              Fecha de Realización
+                            </div>
+                            <div style={{
+                              fontSize: '0.9rem',
+                              color: '#1e293b',
+                              fontWeight: '600',
+                              marginTop: '0.15rem'
+                            }}>
+                              {new Date(registro.fechaRealizacion).toLocaleDateString('es-ES', {
+                                weekday: 'short',
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Usuario */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.65rem'
+                        }}>
+                          <div style={{
+                            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                            borderRadius: '0.5rem',
+                            padding: '0.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '2.5rem',
+                            minHeight: '2.5rem'
+                          }}>
+                            <span style={{ fontSize: '1.1rem' }}>👤</span>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              fontSize: '0.7rem',
+                              color: '#64748b',
+                              fontWeight: '500',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              Responsable
+                            </div>
+                            <div style={{
+                              fontSize: '0.9rem',
+                              color: '#1e293b',
+                              fontWeight: '600',
+                              marginTop: '0.15rem'
+                            }}>
+                              {registro.usuarioResponsable}
+                            </div>
+                          </div>
+                        </div>
                       </div>
+
+                      {/* Botón de ver detalle */}
                       <div style={{
-                        fontSize: '0.8rem',
-                        color: '#64748b',
-                        marginTop: '0.25rem'
+                        marginTop: '1.25rem',
+                        paddingTop: '1rem',
+                        borderTop: '1px solid #e2e8f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        color: '#7c3aed',
+                        fontSize: '0.85rem',
+                        fontWeight: '600'
                       }}>
-                        Por: {registro.usuarioResponsable}
+                        <span>Ver Detalles Completos</span>
+                        <span style={{ fontSize: '1.2rem' }}>→</span>
                       </div>
-                    </div>
-                    <div style={{
-                      color: '#7c3aed',
-                      fontSize: '1.5rem'
-                    }}>
-                      👁️
                     </div>
                   </div>
                 ))}
