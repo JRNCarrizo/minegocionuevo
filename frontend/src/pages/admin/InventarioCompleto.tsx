@@ -3359,250 +3359,523 @@ export default function InventarioCompleto() {
 
           {/* Modal de detalle de registro */}
           {mostrarModalRegistro && registroSeleccionado && (
-            <div style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              zIndex: 1000
-            }}>
-              <div style={{
-                background: 'white',
-                borderRadius: '1rem',
-                padding: '2rem',
-                maxWidth: '90vw',
-                maxHeight: '90vh',
-                width: '800px',
-                overflow: 'auto'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '1.5rem'
-                }}>
-                  <h2 style={{
-                    margin: 0,
-                    color: '#1e293b',
+            <div 
+              onClick={() => setMostrarModalRegistro(false)}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(4px)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 1000,
+                padding: isMobile ? '1rem' : '2rem'
+              }}
+            >
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  background: 'white',
+                  borderRadius: '1.5rem',
+                  padding: isMobile ? '1.5rem' : '2.5rem',
+                  maxWidth: '95vw',
+                  maxHeight: '90vh',
+                  width: isMobile ? '100%' : '900px',
+                  overflow: 'auto',
+                  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                  position: 'relative'
+                }}
+              >
+                {/* Botón cerrar flotante */}
+                <button
+                  onClick={() => setMostrarModalRegistro(false)}
+                  style={{
+                    position: 'absolute',
+                    top: '1.5rem',
+                    right: '1.5rem',
+                    background: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
                     fontSize: '1.5rem',
-                    fontWeight: 'bold'
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+                    zIndex: 10
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'rotate(90deg) scale(1.1)';
+                    e.currentTarget.style.background = '#dc2626';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'rotate(0deg) scale(1)';
+                    e.currentTarget.style.background = '#ef4444';
+                  }}
+                >
+                  ✕
+                </button>
+
+                {/* Header con gradiente */}
+                <div style={{
+                  marginBottom: '2rem',
+                  paddingRight: '3rem'
+                }}>
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '1rem',
+                    marginBottom: '1rem'
                   }}>
-                    📋 Detalle del Registro - {registroSeleccionado.nombreInventario}
-                  </h2>
-                  <button
-                    onClick={() => setMostrarModalRegistro(false)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      fontSize: '1.5rem',
-                      cursor: 'pointer',
-                      color: '#64748b'
-                    }}
-                  >
-                    ✕
-                  </button>
+                    <span style={{ fontSize: '2rem' }}>📋</span>
+                    <h2 style={{
+                      margin: 0,
+                      color: 'white',
+                      fontSize: isMobile ? '1.1rem' : '1.5rem',
+                      fontWeight: '700'
+                    }}>
+                      Detalle del Inventario
+                    </h2>
+                  </div>
+                  <div style={{
+                    fontSize: isMobile ? '1rem' : '1.2rem',
+                    color: '#1e293b',
+                    fontWeight: '600',
+                    marginTop: '0.75rem'
+                  }}>
+                    {registroSeleccionado.nombreInventario}
+                  </div>
                 </div>
 
-                {/* Información del registro */}
+                {/* Información del registro en cards */}
                 <div style={{
-                  background: '#f8fafc',
-                  borderRadius: '0.5rem',
-                  padding: '1rem',
-                  marginBottom: '1.5rem'
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                  gap: '1rem',
+                  marginBottom: '2rem'
                 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div>
-                      <strong>Fecha de realización:</strong><br/>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                    borderRadius: '1rem',
+                    padding: '1.25rem',
+                    border: '2px solid #93c5fd'
+                  }}>
+                    <div style={{ 
+                      fontSize: '2rem', 
+                      marginBottom: '0.5rem'
+                    }}>📅</div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#1e40af',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Fecha de Realización
+                    </div>
+                    <div style={{
+                      fontSize: '1rem',
+                      color: '#1e293b',
+                      fontWeight: '600'
+                    }}>
                       {new Date(registroSeleccionado.fechaRealizacion).toLocaleDateString('es-ES', {
                         year: 'numeric',
                         month: 'long',
-                        day: 'numeric',
+                        day: 'numeric'
+                      })}
+                    </div>
+                    <div style={{
+                      fontSize: '0.85rem',
+                      color: '#64748b',
+                      marginTop: '0.25rem'
+                    }}>
+                      {new Date(registroSeleccionado.fechaRealizacion).toLocaleTimeString('es-ES', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
                     </div>
-                    <div>
-                      <strong>Usuario responsable:</strong><br/>
+                  </div>
+
+                  <div style={{
+                    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                    borderRadius: '1rem',
+                    padding: '1.25rem',
+                    border: '2px solid #fbbf24'
+                  }}>
+                    <div style={{ 
+                      fontSize: '2rem', 
+                      marginBottom: '0.5rem'
+                    }}>👤</div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#92400e',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Responsable
+                    </div>
+                    <div style={{
+                      fontSize: '1rem',
+                      color: '#1e293b',
+                      fontWeight: '600'
+                    }}>
                       {registroSeleccionado.usuarioResponsable}
                     </div>
-                    <div>
-                      <strong>Total productos:</strong><br/>
-                      {registroSeleccionado.estadisticas?.totalProductos || 0}
+                  </div>
+
+                  <div style={{
+                    background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                    borderRadius: '1rem',
+                    padding: '1.25rem',
+                    border: '2px solid #86efac'
+                  }}>
+                    <div style={{ 
+                      fontSize: '2rem', 
+                      marginBottom: '0.5rem'
+                    }}>📦</div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#166534',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Total Productos
                     </div>
-                    <div>
-                      <strong>Productos con diferencias:</strong><br/>
-                      {registroSeleccionado.estadisticas?.productosConDiferencias || 0}
+                    <div style={{
+                      fontSize: '2rem',
+                      color: '#1e293b',
+                      fontWeight: '700'
+                    }}>
+                      {registroSeleccionado.estadisticas?.totalProductos || registroSeleccionado.productosActualizados?.length || 0}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+                    borderRadius: '1rem',
+                    padding: '1.25rem',
+                    border: '2px solid #fca5a5'
+                  }}>
+                    <div style={{ 
+                      fontSize: '2rem', 
+                      marginBottom: '0.5rem'
+                    }}>⚠️</div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#991b1b',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Con Diferencias
+                    </div>
+                    <div style={{
+                      fontSize: '2rem',
+                      color: '#1e293b',
+                      fontWeight: '700'
+                    }}>
+                      {registroSeleccionado.estadisticas?.productosConDiferencias || 
+                       registroSeleccionado.productosActualizados?.filter((p: any) => p.diferenciaStock !== 0).length || 0}
                     </div>
                   </div>
                 </div>
 
                 {/* Productos actualizados */}
-                <h3 style={{
-                  margin: '0 0 1rem 0',
-                  color: '#1e293b',
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold'
-                }}>
-                  Productos Actualizados
-                </h3>
-                
-                
                 <div style={{
-                  background: '#f8fafc',
-                  borderRadius: '0.5rem',
-                  padding: '1rem',
-                  border: '1px solid #e2e8f0'
+                  marginBottom: '2rem'
                 }}>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
-                    gap: '1rem',
-                    fontWeight: '600',
-                    color: '#374151',
-                    fontSize: '0.9rem',
-                    marginBottom: '0.5rem',
-                    paddingBottom: '0.5rem',
-                    borderBottom: '1px solid #e2e8f0'
+                  <h3 style={{
+                    margin: '0 0 1rem 0',
+                    color: '#1e293b',
+                    fontSize: '1.3rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                   }}>
-                    <div>Producto</div>
-                    <div style={{ textAlign: 'center' }}>Stock Anterior</div>
-                    <div style={{ textAlign: 'center' }}>Stock Nuevo</div>
-                    <div style={{ textAlign: 'center' }}>Diferencia</div>
-                    <div style={{ textAlign: 'center' }}>Estado</div>
-                  </div>
+                    <span>📊</span>
+                    Productos Actualizados
+                  </h3>
                   
-                  {registroSeleccionado.productosActualizados?.length > 0 ? (
-                    registroSeleccionado.productosActualizados.map((producto: any, index: number) => (
-                    <div
-                      key={index}
-                      style={{
+                  {isMobile ? (
+                    /* Vista móvil - Cards */
+                    <div style={{ display: 'grid', gap: '1rem' }}>
+                      {registroSeleccionado.productosActualizados?.length > 0 ? (
+                        registroSeleccionado.productosActualizados.map((producto: any, index: number) => (
+                          <div
+                            key={index}
+                            style={{
+                              background: 'white',
+                              borderRadius: '0.75rem',
+                              padding: '1rem',
+                              border: '2px solid #e2e8f0',
+                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                            }}
+                          >
+                            <div style={{
+                              fontWeight: '700',
+                              color: '#1e293b',
+                              fontSize: '1rem',
+                              marginBottom: '0.5rem'
+                            }}>
+                              {producto.nombreProducto}
+                            </div>
+                            <div style={{
+                              fontSize: '0.85rem',
+                              color: '#7c3aed',
+                              marginBottom: '0.75rem',
+                              fontWeight: '600'
+                            }}>
+                              Código: {producto.codigoProducto}
+                            </div>
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 1fr 1fr',
+                              gap: '0.5rem',
+                              marginTop: '0.75rem'
+                            }}>
+                              <div style={{
+                                background: '#f1f5f9',
+                                padding: '0.5rem',
+                                borderRadius: '0.5rem',
+                                textAlign: 'center'
+                              }}>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                                  Anterior
+                                </div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e293b' }}>
+                                  {producto.stockAnterior}
+                                </div>
+                              </div>
+                              <div style={{
+                                background: '#dbeafe',
+                                padding: '0.5rem',
+                                borderRadius: '0.5rem',
+                                textAlign: 'center'
+                              }}>
+                                <div style={{ fontSize: '0.7rem', color: '#1e40af', marginBottom: '0.25rem' }}>
+                                  Nuevo
+                                </div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e40af' }}>
+                                  {producto.stockNuevo}
+                                </div>
+                              </div>
+                              <div style={{
+                                background: producto.diferenciaStock === 0 ? '#dcfce7' : 
+                                           producto.diferenciaStock > 0 ? '#dbeafe' : '#fee2e2',
+                                padding: '0.5rem',
+                                borderRadius: '0.5rem',
+                                textAlign: 'center'
+                              }}>
+                                <div style={{ 
+                                  fontSize: '0.7rem', 
+                                  color: producto.diferenciaStock === 0 ? '#166534' :
+                                         producto.diferenciaStock > 0 ? '#1e40af' : '#991b1b',
+                                  marginBottom: '0.25rem'
+                                }}>
+                                  Diferencia
+                                </div>
+                                <div style={{ 
+                                  fontSize: '1.1rem', 
+                                  fontWeight: '700',
+                                  color: producto.diferenciaStock === 0 ? '#166534' :
+                                         producto.diferenciaStock > 0 ? '#1e40af' : '#ef4444'
+                                }}>
+                                  {producto.diferenciaStock > 0 ? '+' : ''}{producto.diferenciaStock}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '3rem',
+                          color: '#64748b',
+                          background: '#f8fafc',
+                          borderRadius: '1rem',
+                          border: '2px dashed #cbd5e1'
+                        }}>
+                          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
+                          <div style={{ fontSize: '1rem', fontWeight: '600' }}>
+                            No hay productos actualizados
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Vista desktop - Tabla mejorada */
+                    <div style={{
+                      background: 'white',
+                      borderRadius: '1rem',
+                      border: '2px solid #e2e8f0',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
+                    }}>
+                      <div style={{
                         display: 'grid',
                         gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
                         gap: '1rem',
-                        padding: '0.5rem 0',
-                        borderBottom: index < (registroSeleccionado.productosActualizados.length - 1) ? '1px solid #f1f5f9' : 'none'
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                          {producto.nombreProducto}
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                          {producto.codigoProducto}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'center', color: '#64748b' }}>
-                        {producto.stockAnterior}
-                      </div>
-                      <div style={{ textAlign: 'center', fontWeight: '600', color: '#1e293b' }}>
-                        {producto.stockNuevo}
-                      </div>
-                      <div style={{ 
-                        textAlign: 'center', 
-                        fontWeight: '600',
-                        color: producto.diferenciaStock === 0 ? '#10b981' : 
-                               producto.diferenciaStock > 0 ? '#3b82f6' : '#ef4444'
+                        fontWeight: '700',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        padding: '1rem 1.5rem',
+                        background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
                       }}>
-                        {producto.diferenciaStock > 0 ? '+' : ''}{producto.diferenciaStock}
+                        <div>Producto</div>
+                        <div style={{ textAlign: 'center' }}>Stock Anterior</div>
+                        <div style={{ textAlign: 'center' }}>Stock Nuevo</div>
+                        <div style={{ textAlign: 'center' }}>Diferencia</div>
+                        <div style={{ textAlign: 'center' }}>Estado</div>
                       </div>
-                      <div style={{ 
-                        textAlign: 'center',
-                        color: producto.diferenciaStock === 0 ? '#10b981' : 
-                               producto.diferenciaStock > 0 ? '#3b82f6' : '#ef4444'
-                      }}>
-                        {producto.diferenciaStock === 0 ? 'Sin cambios' : 
-                         producto.diferenciaStock > 0 ? 'Aumento' : 'Disminución'}
-                      </div>
-                    </div>
-                    ))
-                  ) : (
-                    <div style={{
-                      textAlign: 'center',
-                      padding: '2rem',
-                      color: '#64748b',
-                      fontStyle: 'italic'
-                    }}>
-                      No hay productos actualizados disponibles para este inventario.
-                      <br/>
-                      <small>Debug: productosActualizados = {JSON.stringify(registroSeleccionado?.productosActualizados)}</small>
+                      
+                      {registroSeleccionado.productosActualizados?.length > 0 ? (
+                        registroSeleccionado.productosActualizados.map((producto: any, index: number) => (
+                          <div
+                            key={index}
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+                              gap: '1rem',
+                              padding: '1rem 1.5rem',
+                              background: index % 2 === 0 ? '#ffffff' : '#f8fafc',
+                              borderBottom: index < (registroSeleccionado.productosActualizados.length - 1) ? '1px solid #e2e8f0' : 'none',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#f1f5f9';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
+                                {producto.nombreProducto}
+                              </div>
+                              <div style={{ fontSize: '0.85rem', color: '#7c3aed', fontWeight: '600' }}>
+                                {producto.codigoProducto}
+                              </div>
+                            </div>
+                            <div style={{ 
+                              textAlign: 'center', 
+                              color: '#64748b',
+                              fontWeight: '600',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              {producto.stockAnterior}
+                            </div>
+                            <div style={{ 
+                              textAlign: 'center', 
+                              fontWeight: '700', 
+                              color: '#1e40af',
+                              fontSize: '1.1rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              {producto.stockNuevo}
+                            </div>
+                            <div style={{ 
+                              textAlign: 'center', 
+                              fontWeight: '700',
+                              fontSize: '1.1rem',
+                              color: producto.diferenciaStock === 0 ? '#10b981' : 
+                                     producto.diferenciaStock > 0 ? '#3b82f6' : '#ef4444',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              {producto.diferenciaStock > 0 ? '+' : ''}{producto.diferenciaStock}
+                            </div>
+                            <div style={{ 
+                              textAlign: 'center',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              <span style={{
+                                padding: '0.25rem 0.75rem',
+                                borderRadius: '0.5rem',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                background: producto.diferenciaStock === 0 ? '#dcfce7' : 
+                                           producto.diferenciaStock > 0 ? '#dbeafe' : '#fee2e2',
+                                color: producto.diferenciaStock === 0 ? '#166534' : 
+                                       producto.diferenciaStock > 0 ? '#1e40af' : '#991b1b'
+                              }}>
+                                {producto.diferenciaStock === 0 ? '✓ Sin cambios' : 
+                                 producto.diferenciaStock > 0 ? '↑ Aumento' : '↓ Disminución'}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '3rem',
+                          color: '#64748b'
+                        }}>
+                          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
+                          <div style={{ fontSize: '1rem', fontWeight: '600' }}>
+                            No hay productos actualizados disponibles
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
 
-                {/* Información de sectores */}
-                <h3 style={{
-                  margin: '1.5rem 0 1rem 0',
-                  color: '#1e293b',
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold'
-                }}>
-                  Sectores Involucrados
-                </h3>
-                
-                <div style={{
-                  display: 'grid',
-                  gap: '0.5rem'
-                }}>
-                  {registroSeleccionado.sectoresInfo?.map((sector: any, index: number) => (
-                    <div
-                      key={index}
-                      style={{
-                        background: '#f8fafc',
-                        borderRadius: '0.25rem',
-                        padding: '0.75rem',
-                        border: '1px solid #e2e8f0',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: '600', color: '#1e293b' }}>
-                          {sector.nombreSector}
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                          {sector.productosContados} productos contados
-                        </div>
-                      </div>
-                      <div style={{
-                        color: '#10b981',
-                        fontWeight: '600',
-                        fontSize: '0.9rem'
-                      }}>
-                        {sector.estado}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
+                {/* Botón cerrar al final */}
                 <div style={{
                   display: 'flex',
-                  justifyContent: 'flex-end',
-                  marginTop: '2rem'
+                  justifyContent: 'center',
+                  marginTop: '2rem',
+                  paddingTop: '2rem',
+                  borderTop: '2px solid #e2e8f0'
                 }}>
                   <button
                     onClick={() => setMostrarModalRegistro(false)}
                     style={{
-                      background: '#6b7280',
+                      background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
                       color: 'white',
                       border: 'none',
-                      borderRadius: '0.5rem',
-                      padding: '0.75rem 1.5rem',
-                      fontSize: '0.9rem',
+                      borderRadius: '0.75rem',
+                      padding: '1rem 2rem',
+                      fontSize: '1rem',
                       fontWeight: '600',
                       cursor: 'pointer',
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 4px 12px rgba(107, 114, 128, 0.3)'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#4b5563';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(107, 114, 128, 0.4)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = '#6b7280';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(107, 114, 128, 0.3)';
                     }}
                   >
                     Cerrar
