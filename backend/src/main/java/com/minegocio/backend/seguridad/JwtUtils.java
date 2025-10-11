@@ -88,7 +88,14 @@ public class JwtUtils {
      * Genera un token JWT para un usuario específico
      */
     public String generarJwtToken(String email, Long userId, Long empresaId, String nombreCompleto, List<String> roles) {
-        return Jwts.builder()
+        System.out.println("🔑 === JwtUtils.generarJwtToken (Cliente) ===");
+        System.out.println("🔑 Email: " + email);
+        System.out.println("🔑 UserId: " + userId);
+        System.out.println("🔑 EmpresaId: " + empresaId);
+        System.out.println("🔑 Nombre: " + nombreCompleto);
+        System.out.println("🔑 Roles: " + roles);
+        
+        String token = Jwts.builder()
                 .subject(email)
                 .claim("userId", userId)
                 .claim("empresaId", empresaId)
@@ -98,6 +105,11 @@ public class JwtUtils {
                 .expiration(Date.from(Instant.now().plusMillis(jwtExpirationMs)))
                 .signWith(getSigningKey(), Jwts.SIG.HS256)
                 .compact();
+        
+        System.out.println("🔑 TOKEN JWT COMPLETO: " + token);
+        System.out.println("🔑 ==========================================");
+        
+        return token;
     }
 
     /**

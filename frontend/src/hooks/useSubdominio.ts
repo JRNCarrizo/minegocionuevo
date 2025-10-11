@@ -11,7 +11,10 @@ interface UseSubdominioReturn {
 }
 
 export const useSubdominio = (): UseSubdominioReturn => {
-  const [subdominio, setSubdominio] = useState<string | null>(null);
+  // Inicializar desde sessionStorage para evitar reset en navegación
+  const [subdominio, setSubdominio] = useState<string | null>(() => {
+    return sessionStorage.getItem('subdominio-actual') || null;
+  });
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +28,7 @@ export const useSubdominio = (): UseSubdominioReturn => {
       if (subdominioDesarrollo) {
         console.log('Usando subdominio de desarrollo:', subdominioDesarrollo);
         setSubdominio(subdominioDesarrollo);
+        sessionStorage.setItem('subdominio-actual', subdominioDesarrollo);
         return subdominioDesarrollo;
       }
       
@@ -51,6 +55,7 @@ export const useSubdominio = (): UseSubdominioReturn => {
       if (dominiosPrincipales.includes(hostname)) {
         console.log('Es dominio principal');
         setSubdominio(null);
+        sessionStorage.removeItem('subdominio-actual');
         setCargando(false);
         return null;
       }
@@ -71,12 +76,14 @@ export const useSubdominio = (): UseSubdominioReturn => {
         if (dominiosPrincipales.includes(dominio)) {
           console.log('Subdominio detectado:', posibleSubdominio);
           setSubdominio(posibleSubdominio);
+          sessionStorage.setItem('subdominio-actual', posibleSubdominio);
           return posibleSubdominio;
         }
       }
 
       console.log('No es dominio principal ni subdominio válido');
       setSubdominio(null);
+      sessionStorage.removeItem('subdominio-actual');
       setCargando(false);
       return null;
     };

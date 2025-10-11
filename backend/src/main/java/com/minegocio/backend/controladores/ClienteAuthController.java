@@ -55,6 +55,9 @@ public class ClienteAuthController {
     
     @Autowired
     private UsuarioRepository usuarioRepository;
+    
+    @Autowired
+    private com.minegocio.backend.servicios.LimiteService limiteService;
 
     /**
      * Registro de nuevo cliente
@@ -91,6 +94,16 @@ public class ClienteAuthController {
             }
             
             Empresa empresa = empresaOpt.get();
+            
+            // Verificar límites del plan ANTES de crear el cliente
+            System.out.println("🔍 Verificando límites del plan para la empresa...");
+            if (!limiteService.puedeCrearCliente(empresa.getId())) {
+                System.out.println("❌ Límite de clientes alcanzado para el plan actual");
+                return ResponseEntity.status(400).body(Map.of(
+                    "error", "Esta tienda ha alcanzado el límite máximo de clientes permitidos en su plan actual. Por favor, contacta con el administrador."
+                ));
+            }
+            System.out.println("✅ Límites del plan verificados - puede crear cliente");
             
             // Verificar que el email no esté en uso (incluyendo clientes no verificados)
             Optional<ClienteDTO> clienteExistente = clienteService.obtenerClientePorEmailCualquierEstado(empresa.getId(), registroDTO.getEmail());
@@ -143,7 +156,38 @@ public class ClienteAuthController {
             
             ClienteDTO clienteCreado = clienteService.crearCliente(empresa.getId(), nuevoClienteDTO);
             
-            // Enviar email de verificación
+            // MODO DESARROLLO: Auto-verificar y generar token (solo en dev-persistent)
+            String profileActivo = System.getProperty("spring.profiles.active", "");
+            boolean esDesarrollo = profileActivo.contains("dev");
+            
+            if (esDesarrollo) {
+                System.out.println("🔧 MODO DESARROLLO: Auto-verificando cliente...");
+                // Activar y verificar automáticamente
+                ClienteDTO clienteActualizado = clienteService.marcarClienteComoVerificado(empresa.getId(), clienteCreado.getId());
+                
+                // Generar token JWT para desarrollo
+                String tokenJWT = generarTokenCliente(clienteActualizado, empresa);
+                
+                System.out.println("✅ MODO DESARROLLO: Cliente auto-verificado y token generado");
+                
+                return ResponseEntity.status(201).body(Map.of(
+                    "mensaje", "Cliente registrado exitosamente (modo desarrollo - auto-verificado)",
+                    "requiereVerificacion", false,
+                    "token", tokenJWT,
+                    "cliente", Map.of(
+                        "id", clienteActualizado.getId(),
+                        "nombre", clienteActualizado.getNombre(),
+                        "apellidos", clienteActualizado.getApellidos(),
+                        "email", clienteActualizado.getEmail()
+                    ),
+                    "empresa", Map.of(
+                        "nombre", empresa.getNombre(),
+                        "subdominio", empresa.getSubdominio()
+                    )
+                ));
+            }
+            
+            // MODO PRODUCCIÓN: Enviar email de verificación
             try {
                 System.out.println("=== DEBUG ENVÍO EMAIL ===");
                 System.out.println("Email: " + clienteCreado.getEmail());
@@ -251,6 +295,10 @@ public class ClienteAuthController {
             // Generar token JWT
             String token = generarTokenCliente(cliente, empresa);
             
+            System.out.println("🔑 TOKEN JWT GENERADO (Login): " + token);
+            System.out.println("   Cliente: " + cliente.getEmail());
+            System.out.println("   Empresa: " + empresa.getSubdominio());
+            
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Login exitoso",
                 "token", token,
@@ -308,8 +356,17 @@ public class ClienteAuthController {
             ClienteDTO cliente;
             
             if (clienteOpt.isEmpty()) {
+                // Cliente no existe, verificar límites antes de crearlo
+                System.out.println("Cliente no encontrado, verificando límites antes de crear...");
+                if (!limiteService.puedeCrearCliente(empresa.getId())) {
+                    System.out.println("❌ Límite de clientes alcanzado para el plan actual");
+                    return ResponseEntity.status(400).body(Map.of(
+                        "error", "Esta tienda ha alcanzado el límite máximo de clientes permitidos en su plan actual."
+                    ));
+                }
+                
                 // Cliente no existe, crearlo automáticamente con Google
-                System.out.println("Cliente no encontrado, creando nuevo cliente con Google");
+                System.out.println("✅ Límites verificados, creando nuevo cliente con Google");
                 
                 // Extraer nombre y apellidos del nombre completo de Google
                 String[] nombreCompleto = name != null ? name.split(" ", 2) : new String[]{"Usuario", "Google"};
@@ -350,6 +407,10 @@ public class ClienteAuthController {
             
             // Generar token JWT
             String token = generarTokenCliente(cliente, empresa);
+            
+            System.out.println("🔑 TOKEN JWT GENERADO (Google Login): " + token);
+            System.out.println("   Cliente: " + cliente.getEmail());
+            System.out.println("   Empresa: " + empresa.getSubdominio());
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Login exitoso con Google",
@@ -462,13 +523,20 @@ public class ClienteAuthController {
      */
     private String generarTokenCliente(ClienteDTO cliente, Empresa empresa) {
         // Generar token JWT real para el cliente
-        return jwtUtils.generarJwtToken(
+        String token = jwtUtils.generarJwtToken(
             cliente.getEmail(), 
             cliente.getId(), 
             empresa.getId(), 
             cliente.getNombre() + " " + (cliente.getApellidos() != null ? cliente.getApellidos() : ""),
             List.of("CLIENTE") // Los clientes tienen rol CLIENTE
         );
+        
+        System.out.println("🔑 generarTokenCliente() ejecutado:");
+        System.out.println("   Token generado: " + token);
+        System.out.println("   ClienteId: " + cliente.getId());
+        System.out.println("   EmpresaId: " + empresa.getId());
+        
+        return token;
     }
 
     /**

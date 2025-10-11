@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import { useSubdominio } from '../hooks/useSubdominio';
 import NavbarCliente from '../components/NavbarCliente';
 import api from '../services/api';
-import LimitService from '../services/limitService';
 
 // Esquema de validación con Yup
 const esquemaValidacion = yup.object({
@@ -54,17 +53,9 @@ const RegistroCliente: React.FC = () => {
         return;
       }
 
-      // Verificar límites antes de crear el cliente
-      console.log('🔍 Verificando límites antes de crear cliente...');
-      const canProceed = await LimitService.checkLimitsBeforeAction('addClient');
-      
-      if (!canProceed) {
-        console.log('❌ Límite de clientes alcanzado');
-        setCargando(false);
-        return;
-      }
-
-      console.log('✅ Límites verificados, procediendo a crear cliente...');
+      // NOTA: No verificamos límites aquí porque es un registro público de cliente
+      // Los límites se verifican cuando un ADMINISTRADOR agrega clientes manualmente
+      console.log('✅ Procediendo a registrar cliente...');
 
       // Crear el cliente usando el método del servicio
       const datosCliente = {
@@ -82,9 +73,20 @@ const RegistroCliente: React.FC = () => {
         reset();
         navigate(`/confirmacion-registro?email=${encodeURIComponent(datos.email)}`);
       } else {
-        toast.success('¡Cuenta creada exitosamente!');
+        // Modo desarrollo: Cliente auto-verificado con token
+        toast.success('¡Cuenta creada exitosamente! (Modo desarrollo)');
+        
+        // Guardar token y datos del cliente
+        if (response.token) {
+          localStorage.setItem('clienteToken', response.token);
+          localStorage.setItem('clienteInfo', JSON.stringify(response.cliente));
+          
+          console.log('🔧 MODO DESARROLLO - Token guardado:', response.token);
+          console.log('🔧 Cliente info guardada:', response.cliente);
+        }
+        
         reset();
-        navigate('/login');
+        navigate('/');
       }
       
     } catch (error: unknown) {
