@@ -272,7 +272,8 @@ public class EmailService {
         System.out.println("👤 Usuario: " + nombreUsuario);
         System.out.println("🔑 Token: " + tokenVerificacion);
         
-        if (isDevelopmentMode() || mailSender == null) {
+        // Verificar si estamos en modo desarrollo O si el email no está configurado
+        if (isDevelopmentMode() || mailSender == null || fromEmail == null || fromEmail.trim().isEmpty()) {
             System.out.println("==========================================================");
             System.out.println("🚀 MODO DESARROLLO - EMAIL DE VERIFICACIÓN (ADMIN)");
             System.out.println("==========================================================");
@@ -281,6 +282,7 @@ public class EmailService {
             System.out.println("🔑 Token: " + tokenVerificacion);
             System.out.println("");
             System.out.println("🔗 ENLACE DE VERIFICACIÓN:");
+            System.out.println("   https://negocio360.org/verificar-email-admin?token=" + tokenVerificacion);
             System.out.println("   http://localhost:5173/verificar-email-admin?token=" + tokenVerificacion);
             System.out.println("");
             System.out.println("📋 INSTRUCCIONES:");
@@ -291,29 +293,37 @@ public class EmailService {
             return;
         }
         
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(emailDestinatario);
-        message.setSubject("Verifica tu cuenta - " + appNombre);
-        
-        String contenido = String.format(
-            "Hola %s,\n\n" +
-            "Gracias por registrarte en %s. Para completar tu registro, " +
-            "por favor verifica tu cuenta haciendo clic en el siguiente enlace:\n\n" +
-            "%s/verificar-email-admin?token=%s\n\n" +
-            "Este enlace expirará en 24 horas.\n\n" +
-            "Si no solicitaste este registro, puedes ignorar este email.\n\n" +
-            "Saludos,\n" +
-            "El equipo de %s",
-            nombreUsuario,
-            appNombre,
-            frontendUrl,
-            tokenVerificacion,
-            appNombre
-        );
-        
-        message.setText(contenido);
-        mailSender.send(message);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(emailDestinatario);
+            message.setSubject("Verifica tu cuenta - " + appNombre);
+            
+            String contenido = String.format(
+                "Hola %s,\n\n" +
+                "Gracias por registrarte en %s. Para completar tu registro, " +
+                "por favor verifica tu cuenta haciendo clic en el siguiente enlace:\n\n" +
+                "%s/verificar-email-admin?token=%s\n\n" +
+                "Este enlace expirará en 24 horas.\n\n" +
+                "Si no solicitaste este registro, puedes ignorar este email.\n\n" +
+                "Saludos,\n" +
+                "El equipo de %s",
+                nombreUsuario,
+                appNombre,
+                frontendUrl,
+                tokenVerificacion,
+                appNombre
+            );
+            
+            message.setText(contenido);
+            mailSender.send(message);
+            System.out.println("✅ Email enviado exitosamente a: " + emailDestinatario);
+        } catch (Exception e) {
+            System.err.println("❌ Error enviando email: " + e.getMessage());
+            System.err.println("🔗 ENLACE DE VERIFICACIÓN MANUAL:");
+            System.err.println("   https://negocio360.org/verificar-email-admin?token=" + tokenVerificacion);
+            // No lanzar la excepción para no fallar el registro
+        }
     }
 
     /**
