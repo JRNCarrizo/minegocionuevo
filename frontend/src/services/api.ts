@@ -733,7 +733,12 @@ class ApiService {
   }
 
   async registrarCliente(subdominio: string, datos: { nombre: string; apellidos?: string; email: string; telefono?: string; password: string }) {
+    console.log('📡 API.registrarCliente() llamado con:');
+    console.log('   Subdominio:', subdominio);
+    console.log('   Datos:', datos);
+    console.log('   URL final:', `/publico/${subdominio}/auth/registro`);
     const response = await this.api.post(`/publico/${subdominio}/auth/registro`, datos);
+    console.log('📡 Respuesta recibida:', response.data);
     return response.data;
   }
 

@@ -66,6 +66,10 @@ const RegistroCliente: React.FC = () => {
         password: datos.contraseña
       };
       
+      console.log('🔍 DATOS A ENVIAR:', datosCliente);
+      console.log('🔍 SUBDOMINIO:', subdominio);
+      console.log('🔍 URL que se va a llamar: /api/publico/' + subdominio + '/auth/registro');
+      
       const response = await api.registrarCliente(subdominio, datosCliente);
 
       if (response.requiereVerificacion) {
