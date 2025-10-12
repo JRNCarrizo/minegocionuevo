@@ -47,6 +47,9 @@ public class PedidoService {
     
     @Autowired
     private HistorialInventarioService historialInventarioService;
+    
+    @Autowired
+    private EmailService emailService;
 
     @Transactional
     public PedidoDTO crearPedido(Long empresaId, PedidoDTO pedidoDTO, Long usuarioId) {
@@ -333,6 +336,25 @@ public class PedidoService {
             
         if (estado == Pedido.EstadoPedido.CANCELADO) {
             notificacionService.crearNotificacionPedidoCancelado(empresaId, nombreCliente, "Pedido cancelado por el administrador");
+            
+            // Enviar email de cancelación al cliente
+            try {
+                String emailCliente = pedido.getClienteEmail();
+                if (emailCliente != null && !emailCliente.isEmpty()) {
+                    emailService.enviarNotificacionCancelacionCliente(
+                        emailCliente,
+                        nombreCliente,
+                        pedido.getEmpresa().getNombre(),
+                        pedido.getNumeroPedido(),
+                        pedido.getTotal(),
+                        "Pedido cancelado por el administrador"
+                    );
+                    System.out.println("✅ Email de cancelación enviado al cliente: " + emailCliente);
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Error enviando email de cancelación al cliente: " + e.getMessage());
+                // No lanzar excepción para no fallar la cancelación del pedido
+            }
         } else if (estado == Pedido.EstadoPedido.ENTREGADO) {
             notificacionService.crearNotificacionPedidoCompletado(empresaId, nombreCliente, pedido.getNumeroPedido());
         }

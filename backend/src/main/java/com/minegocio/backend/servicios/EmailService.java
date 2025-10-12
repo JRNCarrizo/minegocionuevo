@@ -703,19 +703,14 @@ public class EmailService {
      * Envía notificación de pedido cancelado al email de contacto de la empresa
      */
     public void enviarNotificacionPedidoCancelado(String emailEmpresa, String nombreEmpresa, String numeroPedido, String clienteNombre, String clienteEmail, BigDecimal total) {
-        if (isDevelopmentMode() || mailSender == null) {
-            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de notificación de pedido cancelado");
+        if (isDevelopmentMode()) {
+            System.out.println("🚀 MODO DESARROLLO: Simulando envío de notificación de pedido cancelado");
             System.out.println("📧 Email simulado enviado a: " + emailEmpresa);
             System.out.println("❌ Pedido cancelado: " + numeroPedido);
             return;
         }
         
-        SimpleMailMessage message = new SimpleMailMessage();
-        
-        message.setFrom(fromEmail);
-        message.setTo(emailEmpresa);
-        message.setSubject("❌ Pedido Cancelado - " + nombreEmpresa);
-        
+        String asunto = "❌ Pedido Cancelado - " + nombreEmpresa;
         String contenido = String.format(
             "Hola,\n\n" +
             "Un pedido ha sido cancelado en tu tienda %s.\n\n" +
@@ -736,13 +731,93 @@ public class EmailService {
             FechaUtil.ahoraFormateado()
         );
         
-        message.setText(contenido);
+        // Intentar primero con SendGrid API
+        if (sendGridApiKey != null && !sendGridApiKey.trim().isEmpty()) {
+            System.out.println("📧 Enviando notificación de cancelación con SendGrid API...");
+            boolean exitoso = enviarEmailConSendGridAPI(emailEmpresa, asunto, contenido);
+            if (exitoso) {
+                System.out.println("✅ Notificación de pedido cancelado enviada a: " + emailEmpresa);
+                return;
+            }
+            System.err.println("⚠️ SendGrid API falló, intentando con SMTP...");
+        }
         
-        try {
-            mailSender.send(message);
-            System.out.println("✅ Notificación de pedido cancelado enviada a: " + emailEmpresa);
-        } catch (Exception e) {
-            System.err.println("❌ Error al enviar notificación de pedido cancelado: " + e.getMessage());
+        // Fallback a SMTP
+        if (mailSender != null) {
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom(fromEmail);
+                message.setTo(emailEmpresa);
+                message.setSubject(asunto);
+                message.setText(contenido);
+                mailSender.send(message);
+                System.out.println("✅ Notificación de pedido cancelado enviada vía SMTP a: " + emailEmpresa);
+            } catch (Exception e) {
+                System.err.println("❌ Error al enviar notificación de pedido cancelado: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Envía notificación de cancelación al cliente
+     */
+    public void enviarNotificacionCancelacionCliente(String emailCliente, String nombreCliente, String nombreEmpresa, String numeroPedido, BigDecimal total, String motivoCancelacion) {
+        if (isDevelopmentMode()) {
+            System.out.println("🚀 MODO DESARROLLO: Simulando envío de notificación de cancelación al cliente");
+            System.out.println("📧 Email simulado enviado a: " + emailCliente);
+            System.out.println("❌ Pedido cancelado: " + numeroPedido);
+            return;
+        }
+        
+        String asunto = "❌ Pedido Cancelado - " + nombreEmpresa;
+        String motivoTexto = (motivoCancelacion != null && !motivoCancelacion.trim().isEmpty()) 
+            ? "\n💬 Motivo: " + motivoCancelacion + "\n" 
+            : "";
+        
+        String contenido = String.format(
+            "Hola %s,\n\n" +
+            "Lamentamos informarte que tu pedido en %s ha sido cancelado.\n\n" +
+            "📋 Detalles del pedido:\n" +
+            "• Número de pedido: %s\n" +
+            "• Total: $%.2f\n" +
+            "• Estado: Cancelado\n%s\n" +
+            "⏰ Fecha y hora de cancelación: %s\n\n" +
+            "Si tienes alguna pregunta sobre esta cancelación, no dudes en contactarnos.\n\n" +
+            "Saludos,\n" +
+            "Equipo de %s",
+            nombreCliente,
+            nombreEmpresa,
+            numeroPedido,
+            total,
+            motivoTexto,
+            FechaUtil.ahoraFormateado(),
+            nombreEmpresa
+        );
+        
+        // Intentar primero con SendGrid API
+        if (sendGridApiKey != null && !sendGridApiKey.trim().isEmpty()) {
+            System.out.println("📧 Enviando notificación de cancelación al cliente con SendGrid API...");
+            boolean exitoso = enviarEmailConSendGridAPI(emailCliente, asunto, contenido);
+            if (exitoso) {
+                System.out.println("✅ Notificación de cancelación enviada al cliente: " + emailCliente);
+                return;
+            }
+            System.err.println("⚠️ SendGrid API falló, intentando con SMTP...");
+        }
+        
+        // Fallback a SMTP
+        if (mailSender != null) {
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom(fromEmail);
+                message.setTo(emailCliente);
+                message.setSubject(asunto);
+                message.setText(contenido);
+                mailSender.send(message);
+                System.out.println("✅ Notificación de cancelación enviada vía SMTP al cliente: " + emailCliente);
+            } catch (Exception e) {
+                System.err.println("❌ Error al enviar notificación de cancelación al cliente: " + e.getMessage());
+            }
         }
     }
 
