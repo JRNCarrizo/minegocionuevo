@@ -355,6 +355,25 @@ public class PedidoService {
                 System.err.println("❌ Error enviando email de cancelación al cliente: " + e.getMessage());
                 // No lanzar excepción para no fallar la cancelación del pedido
             }
+        } else if (estado == Pedido.EstadoPedido.ENVIADO) {
+            // Enviar email al cliente notificando que el pedido fue enviado
+            try {
+                String emailCliente = pedido.getClienteEmail();
+                if (emailCliente != null && !emailCliente.isEmpty()) {
+                    emailService.enviarNotificacionPedidoEnviado(
+                        emailCliente,
+                        nombreCliente,
+                        pedido.getEmpresa().getNombre(),
+                        pedido.getNumeroPedido(),
+                        pedido.getTotal(),
+                        pedido.getDireccionEntrega()
+                    );
+                    System.out.println("✅ Email de pedido enviado al cliente: " + emailCliente);
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Error enviando email de pedido enviado al cliente: " + e.getMessage());
+                // No lanzar excepción para no fallar la actualización del estado
+            }
         } else if (estado == Pedido.EstadoPedido.ENTREGADO) {
             notificacionService.crearNotificacionPedidoCompletado(empresaId, nombreCliente, pedido.getNumeroPedido());
         }

@@ -720,7 +720,6 @@ public class EmailService {
             "• Email del cliente: %s\n" +
             "• Total: $%.2f\n\n" +
             "⏰ Fecha y hora de cancelación: %s\n\n" +
-            "El stock de los productos ha sido restaurado automáticamente.\n\n" +
             "Saludos,\n" +
             "negocio360",
             nombreEmpresa,
@@ -771,22 +770,22 @@ public class EmailService {
         
         String asunto = "❌ Pedido Cancelado - " + nombreEmpresa;
         String motivoTexto = (motivoCancelacion != null && !motivoCancelacion.trim().isEmpty()) 
-            ? "\n💬 Motivo: " + motivoCancelacion + "\n" 
+            ? "💬 Motivo: " + motivoCancelacion + "\n\n" 
             : "";
         
         String contenido = String.format(
             "Hola %s,\n\n" +
-            "Lamentamos informarte que tu pedido en %s ha sido cancelado.\n\n" +
+            "Lamentamos informarte que tu pedido ha sido cancelado.\n\n" +
             "📋 Detalles del pedido:\n" +
             "• Número de pedido: %s\n" +
             "• Total: $%.2f\n" +
-            "• Estado: Cancelado\n%s\n" +
+            "• Estado: Cancelado\n\n" +
+            "%s" +
             "⏰ Fecha y hora de cancelación: %s\n\n" +
             "Si tienes alguna pregunta sobre esta cancelación, no dudes en contactarnos.\n\n" +
             "Saludos,\n" +
-            "Equipo de %s",
+            "%s",
             nombreCliente,
-            nombreEmpresa,
             numeroPedido,
             total,
             motivoTexto,
@@ -817,6 +816,65 @@ public class EmailService {
                 System.out.println("✅ Notificación de cancelación enviada vía SMTP al cliente: " + emailCliente);
             } catch (Exception e) {
                 System.err.println("❌ Error al enviar notificación de cancelación al cliente: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Envía notificación al cliente cuando el pedido es enviado
+     */
+    public void enviarNotificacionPedidoEnviado(String emailCliente, String nombreCliente, String nombreEmpresa, String numeroPedido, BigDecimal total, String direccionEntrega) {
+        if (isDevelopmentMode()) {
+            System.out.println("🚀 MODO DESARROLLO: Simulando envío de notificación de pedido enviado");
+            System.out.println("📧 Email simulado enviado a: " + emailCliente);
+            System.out.println("🚚 Pedido enviado: " + numeroPedido);
+            return;
+        }
+        
+        String asunto = "🚚 Tu Pedido Ha Sido Enviado - " + nombreEmpresa;
+        String contenido = String.format(
+            "Hola %s,\n\n" +
+            "¡Buenas noticias! Tu pedido ha sido enviado y está en camino.\n\n" +
+            "📋 Detalles del pedido:\n" +
+            "• Número de pedido: %s\n" +
+            "• Total: $%.2f\n" +
+            "• Dirección de entrega: %s\n" +
+            "• Estado: En camino\n\n" +
+            "⏰ Fecha y hora de envío: %s\n\n" +
+            "Tu pedido llegará pronto a tu dirección. Si tienes alguna pregunta, no dudes en contactarnos.\n\n" +
+            "Saludos,\n" +
+            "%s",
+            nombreCliente,
+            numeroPedido,
+            total,
+            direccionEntrega,
+            FechaUtil.ahoraFormateado(),
+            nombreEmpresa
+        );
+        
+        // Intentar primero con SendGrid API
+        if (sendGridApiKey != null && !sendGridApiKey.trim().isEmpty()) {
+            System.out.println("📧 Enviando notificación de envío con SendGrid API...");
+            boolean exitoso = enviarEmailConSendGridAPI(emailCliente, asunto, contenido);
+            if (exitoso) {
+                System.out.println("✅ Notificación de envío enviada al cliente: " + emailCliente);
+                return;
+            }
+            System.err.println("⚠️ SendGrid API falló, intentando con SMTP...");
+        }
+        
+        // Fallback a SMTP
+        if (mailSender != null) {
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom(fromEmail);
+                message.setTo(emailCliente);
+                message.setSubject(asunto);
+                message.setText(contenido);
+                mailSender.send(message);
+                System.out.println("✅ Notificación de envío enviada vía SMTP al cliente: " + emailCliente);
+            } catch (Exception e) {
+                System.err.println("❌ Error al enviar notificación de envío al cliente: " + e.getMessage());
             }
         }
     }
