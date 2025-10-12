@@ -8,11 +8,13 @@ import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.ClienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Servicio para verificar límites de suscripción
  */
 @Service
+@Transactional(readOnly = true)
 public class LimiteService {
 
     @Autowired
