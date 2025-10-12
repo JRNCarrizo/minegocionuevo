@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUsers, FaStore, FaChartLine, FaBell, FaBox, FaMoneyBillWave, FaExclamationTriangle, FaCreditCard } from 'react-icons/fa';
-import {  MdInventory, MdPeople, MdSettings, MdNotifications, MdLogout } from 'react-icons/md';
+import { FaUsers, FaStore, FaChartLine, FaBell, FaBox, FaMoneyBillWave, FaExclamationTriangle, FaCreditCard, FaTrendingUp, FaCheckCircle } from 'react-icons/fa';
+import {  MdInventory, MdPeople, MdSettings, MdNotifications, MdLogout, MdDashboard } from 'react-icons/md';
 import { superAdminService } from '../services/superAdminService';
 import type { DashboardStats } from '../services/superAdminService';
 import toast from 'react-hot-toast';
+import { useResponsive } from '../hooks/useResponsive';
 
 const DashboardSuperAdmin: React.FC = () => {
   const navigate = useNavigate();
+  const { isMobile } = useResponsive();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalEmpresas: 0,
     totalUsuarios: 0,
@@ -37,7 +40,6 @@ const DashboardSuperAdmin: React.FC = () => {
     empresasNuevasEstaSemana: 0
   });
 
-  // Obtener información del usuario desde localStorage
   const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
@@ -45,25 +47,6 @@ const DashboardSuperAdmin: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 Verificando token antes de cargar dashboard...');
-        const token = localStorage.getItem('token');
-        console.log('🔍 Token en localStorage:', token);
-        console.log('🔍 Longitud del token:', token?.length);
-        console.log('🔍 Token completo:', token);
-        
-        if (token) {
-          // Verificar si el token es válido (decodificar)
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            console.log('🔍 Token payload:', payload);
-            console.log('🔍 Token expira:', new Date(payload.exp * 1000));
-            console.log('🔍 Token ahora:', new Date());
-            console.log('🔍 ¿Token expirado?', new Date() > new Date(payload.exp * 1000));
-          } catch (e) {
-            console.log('🔍 Error decodificando token:', e);
-          }
-        }
-        
         const stats = await superAdminService.obtenerDashboard();
         setStats(stats);
       } catch (error) {
@@ -77,7 +60,6 @@ const DashboardSuperAdmin: React.FC = () => {
     cargarDashboard();
   }, []);
 
-  // Cerrar menú cuando se hace clic fuera de él
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -93,154 +75,44 @@ const DashboardSuperAdmin: React.FC = () => {
   }, [showUserMenu]);
 
   const cerrarSesion = () => {
-    // Limpiar localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    
-    // Mostrar mensaje de confirmación
     toast.success('Sesión cerrada correctamente');
-    
-    // Redirigir al login
     navigate('/admin/login');
-  };
-
-  const containerStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    backgroundColor: 'var(--color-fondo)',
-    fontFamily: 'var(--fuente-principal)',
-    color: 'var(--color-texto)',
-    padding: '20px'
-  };
-
-  const headerStyle: React.CSSProperties = {
-    background: 'var(--gradiente-primario)',
-    borderRadius: 'var(--border-radius)',
-    padding: '20px',
-    marginBottom: '30px',
-    boxShadow: 'var(--sombra)',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  };
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: '2.5rem',
-    fontWeight: 'bold',
-    color: 'white',
-    margin: 0
-  };
-
-  const statsGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '20px',
-    marginBottom: '30px'
-  };
-
-  const statCardStyle: React.CSSProperties = {
-    background: 'white',
-    borderRadius: 'var(--border-radius)',
-    padding: '25px',
-    boxShadow: 'var(--sombra)',
-    border: '1px solid var(--color-borde)',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease'
-  };
-
-  const statCardHoverStyle: React.CSSProperties = {
-    ...statCardStyle,
-    transform: 'translateY(-5px)',
-    boxShadow: 'var(--sombra-hover)'
-  };
-
-  const statIconStyle: React.CSSProperties = {
-    fontSize: '3rem',
-    marginBottom: '15px',
-    display: 'block'
-  };
-
-  const statNumberStyle: React.CSSProperties = {
-    fontSize: '2.5rem',
-    fontWeight: 'bold',
-    color: 'var(--color-primario)',
-    marginBottom: '5px'
-  };
-
-  const statLabelStyle: React.CSSProperties = {
-    fontSize: '1.1rem',
-    color: 'var(--color-texto-secundario)',
-    fontWeight: '500'
-  };
-
-  const actionsGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '20px',
-    marginBottom: '30px'
-  };
-
-  const actionCardStyle: React.CSSProperties = {
-    background: 'white',
-    borderRadius: 'var(--border-radius)',
-    padding: '25px',
-    boxShadow: 'var(--sombra)',
-    border: '1px solid var(--color-borde)',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    textAlign: 'center'
-  };
-
-  const actionCardHoverStyle: React.CSSProperties = {
-    ...actionCardStyle,
-    transform: 'translateY(-3px)',
-    boxShadow: 'var(--sombra-hover)',
-    borderColor: 'var(--color-primario)'
-  };
-
-  const actionIconStyle: React.CSSProperties = {
-    fontSize: '2.5rem',
-    color: 'var(--color-primario)',
-    marginBottom: '15px',
-    display: 'block'
-  };
-
-  const actionTitleStyle: React.CSSProperties = {
-    fontSize: '1.3rem',
-    fontWeight: 'bold',
-    color: 'var(--color-texto)',
-    marginBottom: '10px'
-  };
-
-  const actionDescStyle: React.CSSProperties = {
-    fontSize: '1rem',
-    color: 'var(--color-texto-secundario)',
-    lineHeight: '1.5'
-  };
-
-  const loadingStyle: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '400px',
-    fontSize: '1.2rem',
-    color: 'var(--color-texto-secundario)'
-  };
-
-  const spinnerStyle: React.CSSProperties = {
-    border: '4px solid var(--color-borde)',
-    borderTop: '4px solid var(--color-primario)',
-    borderRadius: '50%',
-    width: '40px',
-    height: '40px',
-    animation: 'spin 1s linear infinite',
-    marginRight: '15px'
   };
 
   if (loading) {
     return (
-      <div style={containerStyle}>
-        <div style={loadingStyle}>
-          <div style={spinnerStyle}></div>
-          Cargando dashboard del Super Administrador...
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          background: 'white',
+          borderRadius: '20px',
+          padding: '3rem',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            border: '4px solid #f3f4f6',
+            borderTop: '4px solid #667eea',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1.5rem'
+          }} />
+          <div style={{
+            fontSize: '1.2rem',
+            color: '#1f2937',
+            fontWeight: '600'
+          }}>
+            Cargando dashboard...
+          </div>
         </div>
       </div>
     );
@@ -248,301 +120,619 @@ const DashboardSuperAdmin: React.FC = () => {
 
   if (error) {
     return (
-      <div style={containerStyle}>
-        <div style={loadingStyle}>
-          <div style={{ color: '#ef4444', fontSize: '1.5rem', marginBottom: '15px' }}>⚠️</div>
-          <div style={{ color: '#ef4444', fontSize: '1.2rem', marginBottom: '10px' }}>Error</div>
-          <div style={{ color: 'var(--color-texto-secundario)', fontSize: '1rem' }}>{error}</div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem'
+      }}>
+        <div style={{
+          background: 'white',
+          borderRadius: '20px',
+          padding: '3rem',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          textAlign: 'center',
+          maxWidth: '500px'
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚠️</div>
+          <div style={{ fontSize: '1.5rem', color: '#ef4444', marginBottom: '1rem', fontWeight: '700' }}>Error</div>
+          <div style={{ color: '#6b7280', fontSize: '1.1rem' }}>{error}</div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div style={containerStyle}>
-      {/* Header */}
-      <div style={headerStyle}>
-        <div>
-          <h1 style={titleStyle}>Panel Super Administrador</h1>
-          <p style={{ color: 'white', margin: '5px 0 0 0', fontSize: '1.1rem' }}>
-            Gestión global de la plataforma Mi Negocio
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          {/* Notificaciones */}
-          <button style={{
-            background: 'rgba(255,255,255,0.2)',
-            border: 'none',
-            borderRadius: '50%',
-            width: '45px',
-            height: '45px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            cursor: 'pointer',
-            fontSize: '1.2rem',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
-            e.currentTarget.style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-          title="Notificaciones"
-          >
-            <MdNotifications />
-          </button>
+  const statsCards = [
+    { 
+      icon: <FaStore size={40} />, 
+      value: stats.totalEmpresas, 
+      label: 'Empresas Registradas',
+      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      bgLight: 'rgba(102, 126, 234, 0.1)',
+      id: 'empresas'
+    },
+    { 
+      icon: <FaUsers size={40} />, 
+      value: stats.totalUsuarios, 
+      label: 'Usuarios Activos',
+      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      bgLight: 'rgba(245, 87, 108, 0.1)',
+      id: 'usuarios'
+    },
+    { 
+      icon: <FaBox size={40} />, 
+      value: stats.totalProductos, 
+      label: 'Productos Totales',
+      gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      bgLight: 'rgba(79, 172, 254, 0.1)',
+      id: 'productos'
+    },
+    { 
+      icon: <FaMoneyBillWave size={40} />, 
+      value: stats.totalVentasRapidas, 
+      label: 'Ventas Rápidas',
+      gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      bgLight: 'rgba(67, 233, 123, 0.1)',
+      id: 'ventas'
+    }
+  ];
 
-          {/* Menú de usuario */}
-          <div style={{ position: 'relative' }} data-user-menu>
-            <button 
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: 'none',
+  const actionCards = [
+    {
+      icon: <MdPeople size={50} />,
+      title: 'Gestionar Empresas',
+      description: 'Administrar empresas registradas y configurar permisos',
+      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      path: '/super-admin/empresas',
+      id: 'empresas-action'
+    },
+    {
+      icon: <FaCreditCard size={50} />,
+      title: 'Gestionar Suscripciones',
+      description: 'Administrar planes, suscripciones y facturación',
+      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      path: '/super-admin/suscripciones',
+      id: 'suscripciones-action'
+    },
+    {
+      icon: <MdInventory size={50} />,
+      title: 'Control de Inventarios',
+      description: 'Monitorear inventarios globales y reportes',
+      gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      path: '/super-admin/inventarios',
+      id: 'inventarios-action'
+    },
+    {
+      icon: <FaChartLine size={50} />,
+      title: 'Reportes Globales',
+      description: 'Analizar métricas y generar estadísticas',
+      gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      path: '/super-admin/reportes',
+      id: 'reportes-action'
+    },
+    {
+      icon: <FaExclamationTriangle size={50} />,
+      title: 'Soporte Técnico',
+      description: 'Gestionar tickets y resolver problemas',
+      gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+      path: '/super-admin/soporte',
+      id: 'soporte-action'
+    },
+    {
+      icon: <MdSettings size={50} />,
+      title: 'Configuración Global',
+      description: 'Configurar parámetros del sistema',
+      gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+      path: '/super-admin/configuracion',
+      id: 'config-action'
+    }
+  ];
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: isMobile ? '1rem' : '2rem',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    }}>
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+      `}</style>
+
+      {/* Header Glassmorphism */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.15)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '24px',
+        padding: isMobile ? '1.5rem' : '2rem',
+        marginBottom: '2rem',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        animation: 'fadeIn 0.6s ease'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          gap: '1rem'
+        }}>
+          <div style={{ flex: 1 }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              marginBottom: '0.5rem'
+            }}>
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '16px',
+                padding: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <MdDashboard size={isMobile ? 28 : 36} color="white" />
+              </div>
+              <h1 style={{
+                fontSize: isMobile ? '1.5rem' : '2.5rem',
+                fontWeight: '800',
+                color: 'white',
+                margin: 0,
+                textShadow: '0 2px 10px rgba(0,0,0,0.2)'
+              }}>
+                Panel Super Administrador
+              </h1>
+            </div>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.9)',
+              margin: 0,
+              fontSize: isMobile ? '0.9rem' : '1.1rem',
+              fontWeight: '500',
+              paddingLeft: isMobile ? '0' : '4.5rem'
+            }}>
+              Gestión global de la plataforma Mi Negocio
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            {/* Notificaciones */}
+            <button style={{
+              background: 'rgba(255,255,255,0.2)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.3)',
+              borderRadius: '14px',
+              width: '50px',
+              height: '50px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '1.3rem',
+              transition: 'all 0.3s ease',
+              position: 'relative'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+              e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+            }}
+            title="Notificaciones"
+            >
+              <MdNotifications />
+              <span style={{
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                background: '#ef4444',
                 borderRadius: '50%',
-                width: '45px',
-                height: '45px',
+                width: '10px',
+                height: '10px',
+                animation: 'pulse 2s infinite'
+              }} />
+            </button>
+
+            {/* Menú de usuario */}
+            <div style={{ position: 'relative' }} data-user-menu>
+              <button 
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '14px',
+                  width: '50px',
+                  height: '50px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '1.3rem',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                }}
+                title="Menú de usuario"
+              >
+                <FaUsers />
+              </button>
+
+              {/* Menú desplegable */}
+              {showUserMenu && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 10px)',
+                  right: 0,
+                  background: 'white',
+                  borderRadius: '16px',
+                  boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
+                  minWidth: '250px',
+                  zIndex: 1000,
+                  overflow: 'hidden',
+                  animation: 'fadeIn 0.3s ease'
+                }}>
+                  <div style={{
+                    padding: '1.5rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    textAlign: 'center',
+                    color: 'white'
+                  }}>
+                    <div style={{
+                      width: '60px',
+                      height: '60px',
+                      background: 'rgba(255,255,255,0.3)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 1rem',
+                      fontSize: '2rem'
+                    }}>
+                      👤
+                    </div>
+                    <div style={{ fontWeight: '700', marginBottom: '0.25rem', fontSize: '1.1rem' }}>
+                      {userInfo.nombre || 'Super'} {userInfo.apellidos || 'Administrador'}
+                    </div>
+                    <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
+                      {userInfo.email || 'admin@minegocio.com'}
+                    </div>
+                    <div style={{
+                      background: 'rgba(255,255,255,0.2)',
+                      borderRadius: '20px',
+                      padding: '0.25rem 0.75rem',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      marginTop: '0.75rem',
+                      display: 'inline-block'
+                    }}>
+                      SUPER ADMIN
+                    </div>
+                  </div>
+                  
+                  <div style={{ padding: '0.5rem' }}>
+                    <button 
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        navigate('/super-admin/perfil');
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '0.875rem 1rem',
+                        border: 'none',
+                        background: 'transparent',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        color: '#374151',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        borderRadius: '10px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#f3f4f6';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <MdSettings size={18} color="#667eea" />
+                      Configuración
+                    </button>
+                    
+                    <button 
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        cerrarSesion();
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '0.875rem 1rem',
+                        border: 'none',
+                        background: 'transparent',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        color: '#ef4444',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        borderRadius: '10px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#fef2f2';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <MdLogout size={18} />
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: isMobile ? '1rem' : '1.5rem',
+        marginBottom: '2rem'
+      }}>
+        {statsCards.map((card, index) => (
+          <div
+            key={card.id}
+            onMouseEnter={() => setHoveredCard(card.id)}
+            onMouseLeave={() => setHoveredCard(null)}
+            style={{
+              background: 'white',
+              borderRadius: '20px',
+              padding: '2rem',
+              boxShadow: hoveredCard === card.id 
+                ? '0 20px 60px rgba(0, 0, 0, 0.15)' 
+                : '0 10px 30px rgba(0, 0, 0, 0.1)',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: hoveredCard === card.id ? 'translateY(-8px)' : 'translateY(0)',
+              cursor: 'pointer',
+              position: 'relative',
+              overflow: 'hidden',
+              animation: `fadeIn 0.6s ease ${index * 0.1}s both`
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              top: '-50px',
+              right: '-50px',
+              width: '150px',
+              height: '150px',
+              background: card.bgLight,
+              borderRadius: '50%',
+              transition: 'all 0.4s ease',
+              transform: hoveredCard === card.id ? 'scale(1.5)' : 'scale(1)'
+            }} />
+            
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{
+                background: card.gradient,
+                width: '70px',
+                height: '70px',
+                borderRadius: '18px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
-                cursor: 'pointer',
-                fontSize: '1.2rem',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
-                e.currentTarget.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                e.currentTarget.style.transform = 'scale(1)';
-              }}
-              title="Menú de usuario"
-            >
-              <FaUsers />
-            </button>
+                marginBottom: '1.5rem',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                transform: hoveredCard === card.id ? 'scale(1.1) rotate(5deg)' : 'scale(1) rotate(0deg)',
+                transition: 'all 0.4s ease'
+              }}>
+                {card.icon}
+              </div>
+              
+              <div style={{
+                fontSize: isMobile ? '2.2rem' : '2.8rem',
+                fontWeight: '800',
+                background: card.gradient,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                marginBottom: '0.5rem',
+                lineHeight: '1'
+              }}>
+                {(card.value || 0).toLocaleString()}
+              </div>
+              
+              <div style={{
+                fontSize: '1rem',
+                color: '#6b7280',
+                fontWeight: '600',
+                letterSpacing: '0.3px'
+              }}>
+                {card.label}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
-            {/* Menú desplegable */}
-            {showUserMenu && (
+      {/* Actions Section */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.15)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '24px',
+        padding: isMobile ? '1.5rem' : '2rem',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        animation: 'fadeIn 0.8s ease'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          marginBottom: '2rem'
+        }}>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '14px',
+            padding: '0.75rem',
+            display: 'flex'
+          }}>
+            <FaTrendingUp size={28} color="white" />
+          </div>
+          <h2 style={{
+            fontSize: isMobile ? '1.5rem' : '2rem',
+            fontWeight: '700',
+            color: 'white',
+            margin: 0
+          }}>
+            Acciones Rápidas
+          </h2>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: isMobile ? '1rem' : '1.5rem'
+        }}>
+          {actionCards.map((card, index) => (
+            <div
+              key={card.id}
+              onMouseEnter={() => setHoveredCard(card.id)}
+              onMouseLeave={() => setHoveredCard(null)}
+              onClick={() => navigate(card.path)}
+              style={{
+                background: 'white',
+                borderRadius: '20px',
+                padding: '2rem',
+                cursor: 'pointer',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: hoveredCard === card.id 
+                  ? '0 20px 60px rgba(0, 0, 0, 0.15)' 
+                  : '0 10px 30px rgba(0, 0, 0, 0.1)',
+                transform: hoveredCard === card.id ? 'translateY(-8px)' : 'translateY(0)',
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                animation: `fadeIn 0.6s ease ${index * 0.1}s both`
+              }}
+            >
               <div style={{
                 position: 'absolute',
-                top: '100%',
+                top: 0,
+                left: 0,
                 right: 0,
-                background: 'white',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                minWidth: '200px',
-                zIndex: 1000,
-                marginTop: '5px',
-                border: '1px solid #e5e7eb'
-              }}>
+                height: '5px',
+                background: card.gradient,
+                transform: hoveredCard === card.id ? 'scaleX(1)' : 'scaleX(0)',
+                transformOrigin: 'left',
+                transition: 'transform 0.4s ease'
+              }} />
+
+              <div style={{
+                position: 'absolute',
+                top: '-50px',
+                right: '-50px',
+                width: '150px',
+                height: '150px',
+                background: card.gradient,
+                opacity: 0.05,
+                borderRadius: '50%',
+                transition: 'all 0.4s ease',
+                transform: hoveredCard === card.id ? 'scale(1.5)' : 'scale(1)'
+              }} />
+
+              <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{
-                  padding: '15px',
-                  borderBottom: '1px solid #e5e7eb',
-                  textAlign: 'center'
+                  background: card.gradient,
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  marginBottom: '1.5rem',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+                  transform: hoveredCard === card.id ? 'scale(1.1) rotate(-5deg)' : 'scale(1) rotate(0deg)',
+                  transition: 'all 0.4s ease'
                 }}>
-                  <div style={{ fontWeight: 'bold', color: '#374151', marginBottom: '5px' }}>
-                    {userInfo.nombre || 'Super'} {userInfo.apellidos || 'Administrador'}
-                  </div>
-                  <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                    {userInfo.email || 'jrncarrizo@gmail.com'}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '5px' }}>
-                    Super Administrador
-                  </div>
+                  {card.icon}
                 </div>
-                
-                <div style={{ padding: '8px 0' }}>
-                  <button 
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      navigate('/super-admin/perfil');
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '10px 15px',
-                      border: 'none',
-                      background: 'transparent',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem',
-                      color: '#374151',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      transition: 'background-color 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#f3f4f6';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    <MdSettings size={16} />
-                    Configuración
-                  </button>
-                  
-                  <button 
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      cerrarSesion();
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '10px 15px',
-                      border: 'none',
-                      background: 'transparent',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem',
-                      color: '#ef4444',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      transition: 'background-color 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#fef2f2';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    <MdLogout size={16} />
-                    Cerrar sesión
-                  </button>
+
+                <h3 style={{
+                  fontSize: '1.3rem',
+                  fontWeight: '700',
+                  color: '#1f2937',
+                  marginBottom: '0.75rem',
+                  lineHeight: '1.3'
+                }}>
+                  {card.title}
+                </h3>
+
+                <p style={{
+                  fontSize: '0.95rem',
+                  color: '#6b7280',
+                  lineHeight: '1.6',
+                  margin: 0
+                }}>
+                  {card.description}
+                </p>
+
+                <div style={{
+                  marginTop: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  background: card.gradient,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  opacity: hoveredCard === card.id ? 1 : 0,
+                  transform: hoveredCard === card.id ? 'translateX(0)' : 'translateX(-10px)',
+                  transition: 'all 0.3s ease'
+                }}>
+                  Acceder →
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Estadísticas */}
-      <div style={statsGridStyle}>
-        <div style={statCardStyle}>
-          <div style={{ marginBottom: '15px' }}>
-            <FaStore color="#4CAF50" size={48} />
-          </div>
-          <div style={statNumberStyle}>{(stats.totalEmpresas || 0).toLocaleString()}</div>
-          <div style={statLabelStyle}>Empresas Registradas</div>
-        </div>
-        
-        <div style={statCardStyle}>
-          <div style={{ marginBottom: '15px' }}>
-            <FaUsers color="#2196F3" size={48} />
-          </div>
-          <div style={statNumberStyle}>{(stats.totalUsuarios || 0).toLocaleString()}</div>
-          <div style={statLabelStyle}>Usuarios Activos</div>
-        </div>
-        
-        <div style={statCardStyle}>
-          <div style={{ marginBottom: '15px' }}>
-            <FaBox color="#FF9800" size={48} />
-          </div>
-          <div style={statNumberStyle}>{(stats.totalProductos || 0).toLocaleString()}</div>
-          <div style={statLabelStyle}>Productos Totales</div>
-        </div>
-        
-        <div style={statCardStyle}>
-          <div style={{ marginBottom: '15px' }}>
-            <FaMoneyBillWave color="#9C27B0" size={48} />
-          </div>
-          <div style={statNumberStyle}>${(stats.totalVentasRapidas || 0).toLocaleString()}</div>
-          <div style={statLabelStyle}>Ventas Rápidas</div>
-        </div>
-      </div>
-
-      {/* Acciones Rápidas */}
-      <div style={actionsGridStyle}>
-        <div 
-          style={actionCardStyle}
-          onClick={() => navigate('/super-admin/empresas')}
-        >
-          <div style={{ marginBottom: '15px' }}>
-            <MdPeople color="var(--color-primario)" size={40} />
-          </div>
-          <div style={actionTitleStyle}>Gestionar Empresas</div>
-          <div style={actionDescStyle}>
-            Administrar empresas registradas, aprobar solicitudes y configurar permisos
-          </div>
-        </div>
-        
-        <div 
-          style={actionCardStyle}
-          onClick={() => {
-            console.log('🔍 DashboardSuperAdmin - Navegando a /super-admin/suscripciones');
-            navigate('/super-admin/suscripciones');
-          }}
-        >
-          <div style={{ marginBottom: '15px' }}>
-            <FaCreditCard color="var(--color-primario)" size={40} />
-          </div>
-          <div style={actionTitleStyle}>Gestionar Suscripciones</div>
-          <div style={actionDescStyle}>
-            Administrar planes, suscripciones y facturación de empresas
-          </div>
-        </div>
-        
-        <div style={actionCardStyle}>
-          <div style={{ marginBottom: '15px' }}>
-            <MdInventory color="var(--color-primario)" size={40} />
-          </div>
-          <div style={actionTitleStyle}>Control de Inventarios</div>
-          <div style={actionDescStyle}>
-            Monitorear inventarios globales y generar reportes de stock
-          </div>
-        </div>
-        
-        <div style={actionCardStyle}>
-          <div style={{ marginBottom: '15px' }}>
-            <FaChartLine color="var(--color-primario)" size={40} />
-          </div>
-          <div style={actionTitleStyle}>Reportes Globales</div>
-          <div style={actionDescStyle}>
-            Analizar métricas de la plataforma y generar estadísticas
-          </div>
-        </div>
-        
-        <div style={actionCardStyle}>
-          <div style={{ marginBottom: '15px' }}>
-            <FaExclamationTriangle color="var(--color-primario)" size={40} />
-          </div>
-          <div style={actionTitleStyle}>Soporte Técnico</div>
-          <div style={actionDescStyle}>
-            Gestionar tickets de soporte y resolver problemas de usuarios
-          </div>
-        </div>
-        
-        <div style={actionCardStyle}>
-          <div style={{ marginBottom: '15px' }}>
-            <MdSettings color="var(--color-primario)" size={40} />
-          </div>
-          <div style={actionTitleStyle}>Configuración Global</div>
-          <div style={actionDescStyle}>
-            Configurar parámetros del sistema y políticas de la plataforma
-          </div>
-        </div>
-        
-        <div style={actionCardStyle}>
-          <div style={{ marginBottom: '15px' }}>
-            <FaBell color="var(--color-primario)" size={40} />
-          </div>
-          <div style={actionTitleStyle}>Notificaciones</div>
-          <div style={actionDescStyle}>
-            Gestionar notificaciones del sistema y alertas importantes
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
 
-export default DashboardSuperAdmin; 
+export default DashboardSuperAdmin;
