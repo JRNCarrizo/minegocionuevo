@@ -9,6 +9,7 @@ import ApiService from '../../services/api';
 import { API_CONFIG } from '../../config/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatearFechaConHora } from '../../utils/dateUtils';
 
 interface Sector {
   id: number;
@@ -599,17 +600,7 @@ export default function InventarioCompleto() {
       doc.setTextColor(...secondaryColor);
       
       const infoData = [
-        ['Fecha de Realización:', (() => {
-          const fecha = new Date(registro.fechaRealizacion);
-          const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          return fecha.toLocaleDateString('es-ES', {
-            timeZone: zonaHorariaLocal,
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          });
-        })()],
+        ['Fecha de Realización:', formatearFechaConHora(registro.fechaRealizacion)],
         ['Responsable:', registro.usuarioResponsable],
         ['Estado:', 'COMPLETADO'],
         ['Productos Procesados:', productosActualizados.length.toString()]
@@ -2914,17 +2905,7 @@ export default function InventarioCompleto() {
                               fontWeight: '600',
                               marginTop: '0.15rem'
                             }}>
-                              {(() => {
-                                const fecha = new Date(registro.fechaRealizacion);
-                                const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                                return fecha.toLocaleDateString('es-ES', {
-                                  timeZone: zonaHorariaLocal,
-                                  weekday: 'short',
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
-                                });
-                              })()}
+                              {formatearFechaConHora(registro.fechaRealizacion)}
                             </div>
                           </div>
                         </div>
@@ -3500,16 +3481,7 @@ export default function InventarioCompleto() {
                       color: '#1e293b',
                       fontWeight: '600'
                     }}>
-                      {(() => {
-                        const fecha = new Date(registroSeleccionado.fechaRealizacion);
-                        const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                        return fecha.toLocaleDateString('es-ES', {
-                          timeZone: zonaHorariaLocal,
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        });
-                      })()}
+                      {formatearFechaConHora(registroSeleccionado.fechaRealizacion)}
                     </div>
                     <div style={{
                       fontSize: '0.85rem',
