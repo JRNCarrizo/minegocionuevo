@@ -27,3 +27,4 @@ ALTER TABLE conteo_sector ADD COLUMN productos_contados_usuario_2 INTEGER DEFAUL
 
 
 
+

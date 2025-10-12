@@ -30,3 +30,4 @@ AND COLUMN_NAME = 'ELIMINADO';
 
 
 
+

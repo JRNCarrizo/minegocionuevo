@@ -50,6 +50,14 @@ public class EmailService {
         System.out.println("Modo desarrollo: " + (isDevelopmentMode() ? "SÍ" : "NO"));
         System.out.println("Perfiles activos: " + String.join(", ", environment.getActiveProfiles()));
         System.out.println("Mail habilitado: " + (mailSender != null ? "SÍ" : "NO"));
+        
+        // Debug adicional para variables de entorno
+        System.out.println("=== DEBUG VARIABLES EMAIL ===");
+        System.out.println("MAIL_USERNAME existe: " + (System.getenv("MAIL_USERNAME") != null));
+        System.out.println("MAIL_PASSWORD existe: " + (System.getenv("MAIL_PASSWORD") != null));
+        System.out.println("MAIL_FROM existe: " + (System.getenv("MAIL_FROM") != null));
+        System.out.println("fromEmail valor: " + (fromEmail != null ? fromEmail : "NULL"));
+        System.out.println("fromEmail vacío: " + (fromEmail != null && fromEmail.trim().isEmpty()));
         System.out.println("==========================");
     }
 
@@ -294,6 +302,11 @@ public class EmailService {
         }
         
         try {
+            System.out.println("📧 Preparando email para envío real...");
+            System.out.println("From Email: " + fromEmail);
+            System.out.println("To Email: " + emailDestinatario);
+            System.out.println("MailSender configurado: " + (mailSender != null));
+            
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(emailDestinatario);
@@ -316,10 +329,16 @@ public class EmailService {
             );
             
             message.setText(contenido);
+            
+            System.out.println("📤 Intentando enviar email...");
             mailSender.send(message);
             System.out.println("✅ Email enviado exitosamente a: " + emailDestinatario);
         } catch (Exception e) {
-            System.err.println("❌ Error enviando email: " + e.getMessage());
+            System.err.println("❌ ERROR DETALLADO AL ENVIAR EMAIL:");
+            System.err.println("   Tipo de error: " + e.getClass().getName());
+            System.err.println("   Mensaje: " + e.getMessage());
+            System.err.println("   Causa: " + (e.getCause() != null ? e.getCause().getMessage() : "N/A"));
+            e.printStackTrace();
             System.err.println("🔗 ENLACE DE VERIFICACIÓN MANUAL:");
             System.err.println("   https://negocio360.org/verificar-email-admin?token=" + tokenVerificacion);
             // No lanzar la excepción para no fallar el registro
