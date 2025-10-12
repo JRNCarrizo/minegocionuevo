@@ -9,7 +9,6 @@ import ProductoDetalleModal from '../components/ProductoDetalleModal';
 import api from '../services/api';
 import * as cookies from '../utils/cookies';
 import { formatearFechaConHora, formatearFecha } from '../utils/dateUtils';
-import TimeZoneInfo from '../components/TimeZoneInfo';
 import type { Pedido, DetallePedido, ProductoFavorito, Producto } from '../types';
 
 interface ClienteInfo {
@@ -1508,41 +1507,6 @@ export default function AreaPersonalCliente() {
               {/* Pestaña: Mis Pedidos */}
               {tabActiva === 'pedidos' && (
                 <div>
-                  {/* Información de zona horaria */}
-                  <div style={{
-                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    marginBottom: '20px',
-                    border: '1px solid #e2e8f0'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexDirection: isMobile ? 'column' : 'row',
-                      gap: '12px'
-                    }}>
-                      <div>
-                        <h3 style={{
-                          margin: '0 0 8px 0',
-                          fontSize: '16px',
-                          fontWeight: '600',
-                          color: '#1e293b'
-                        }}>
-                          📅 Información de Fechas
-                        </h3>
-                        <p style={{
-                          margin: 0,
-                          fontSize: '14px',
-                          color: '#64748b'
-                        }}>
-                          Las fechas se muestran en tu zona horaria local
-                        </p>
-                      </div>
-                      <TimeZoneInfo showDetails={true} />
-                    </div>
-                  </div>
                 {cargandoPedidos ? (
                     <div style={{
                       textAlign: 'center',
