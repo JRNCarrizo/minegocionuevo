@@ -43,13 +43,20 @@ export function useUsuarioActual(): UseUsuarioActualReturn {
     // También considerar la página principal como no protegida
     const esPaginaPrincipal = window.location.pathname === '/';
     
+    // Páginas de cliente que no requieren token de admin
+    const esPaginaCliente = window.location.pathname.includes('/cuenta') ||
+                           window.location.pathname.includes('/producto/') ||
+                           window.location.pathname.includes('/carrito') ||
+                           window.location.pathname.includes('/confirmacion-registro');
+    
     if (!token || !userStr) {
-      if (!esPaginaLogin && !esPaginaPrincipal) {
+      if (!esPaginaLogin && !esPaginaPrincipal && !esPaginaCliente) {
         console.log('🚨 [USUARIO] No hay token o user, redirigiendo al login desde:', window.location.pathname);
         navigate('/admin/login');
       } else {
-        console.log('✅ [USUARIO] En página de login/principal, no redirigiendo');
+        console.log('✅ [USUARIO] En página de login/principal/cliente, no redirigiendo');
       }
+      setCargando(false);
       return;
     }
 
