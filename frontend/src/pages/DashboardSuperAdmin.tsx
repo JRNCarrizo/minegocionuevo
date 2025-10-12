@@ -391,7 +391,7 @@ const DashboardSuperAdmin: React.FC = () => {
                   borderRadius: '16px',
                   boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
                   minWidth: '250px',
-                  zIndex: 1000,
+                  zIndex: 9999,
                   overflow: 'hidden',
                   animation: 'fadeIn 0.3s ease'
                 }}>

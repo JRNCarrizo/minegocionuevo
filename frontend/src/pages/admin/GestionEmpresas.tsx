@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUsers, FaStore, FaBox, FaShoppingCart, FaEye, FaEdit, FaTrash, FaSearch, FaFilter, FaSort, FaBuilding } from 'react-icons/fa';
-import { MdBusiness, MdEmail, MdPhone, MdCalendarToday, MdWarning, MdCheckCircle, MdBlock } from 'react-icons/md';
+import { FaUsers, FaStore, FaBox, FaShoppingCart, FaEye, FaArrowLeft, FaSearch, FaFilter, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { MdBusiness, MdEmail, MdCalendarToday, MdWarning, MdCheckCircle as MdCheck, MdBlock, MdShoppingCart } from 'react-icons/md';
 import { superAdminService } from '../../services/superAdminService';
 import { formatearFechaConHora } from '../../utils/dateUtils';
-import TimeZoneInfo from '../../components/TimeZoneInfo';
+import { useResponsive } from '../../hooks/useResponsive';
+import toast from 'react-hot-toast';
 
 interface Empresa {
   id: number;
@@ -29,13 +30,13 @@ interface Empresa {
 
 const GestionEmpresas: React.FC = () => {
   const navigate = useNavigate();
+  const { isMobile } = useResponsive();
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState('TODOS');
-  const [sortBy, setSortBy] = useState('fechaCreacion');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -47,33 +48,18 @@ const GestionEmpresas: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔍 Iniciando carga de empresas...');
       const empresas = await superAdminService.obtenerEmpresas();
-      console.log('🔍 Respuesta del backend:', empresas);
-      console.log('🔍 Cantidad de empresas:', empresas?.length || 0);
-      
-      // Debug de las nuevas estadísticas
-      if (empresas && empresas.length > 0) {
-        console.log('🔍 Debug nuevas estadísticas:');
-        empresas.forEach((empresa: any, index: number) => {
-          console.log(`  Empresa ${index + 1}: ${empresa.nombre}`);
-          console.log(`    - Ventas Rápidas: ${empresa.totalVentasRapidas}`);
-          console.log(`    - Transacciones: ${empresa.totalTransacciones}`);
-          console.log(`    - Última Conexión: ${empresa.ultimaConexion}`);
-        });
-      }
-      
       setEmpresas(empresas || []);
     } catch (err) {
       console.error('Error al cargar empresas:', err);
       setError('Error al cargar las empresas');
+      toast.error('Error al cargar las empresas');
     } finally {
       setLoading(false);
     }
   };
 
-  const empresasFiltradas = empresas
-    .filter(empresa => {
+  const empresasFiltradas = empresas.filter(empresa => {
       const matchesSearch = empresa.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            empresa.subdominio.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            empresa.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -81,171 +67,94 @@ const GestionEmpresas: React.FC = () => {
       const matchesFilter = filterEstado === 'TODOS' || empresa.estadoSuscripcion === filterEstado;
       
       return matchesSearch && matchesFilter;
-    })
-    .sort((a, b) => {
-      let aValue: any = a[sortBy as keyof Empresa];
-      let bValue: any = b[sortBy as keyof Empresa];
-      
-      if (sortBy === 'fechaCreacion') {
-        aValue = new Date(aValue).getTime();
-        bValue = new Date(bValue).getTime();
+  });
+
+  const getEstadoBadge = (estado: string) => {
+    const configs: Record<string, { color: string; bg: string; text: string; icon: JSX.Element }> = {
+      'ACTIVA': { 
+        color: '#10B981', 
+        bg: 'rgba(16, 185, 129, 0.1)', 
+        text: 'Activa',
+        icon: <FaCheckCircle />
+      },
+      'PRUEBA': { 
+        color: '#F59E0B', 
+        bg: 'rgba(245, 158, 11, 0.1)', 
+        text: 'Prueba',
+        icon: <MdWarning />
+      },
+      'SUSPENDIDA': { 
+        color: '#EF4444', 
+        bg: 'rgba(239, 68, 68, 0.1)', 
+        text: 'Suspendida',
+        icon: <FaTimesCircle />
+      },
+      'CANCELADA': { 
+        color: '#6B7280', 
+        bg: 'rgba(107, 114, 128, 0.1)', 
+        text: 'Cancelada',
+        icon: <MdBlock />
       }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
+    };
 
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case 'ACTIVA': return '#10B981';
-      case 'PRUEBA': return '#F59E0B';
-      case 'SUSPENDIDA': return '#EF4444';
-      case 'CANCELADA': return '#6B7280';
-      default: return '#6B7280';
-    }
+    const config = configs[estado] || configs['PRUEBA'];
+    
+    return (
+      <div style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        padding: '0.5rem 1rem',
+        borderRadius: '20px',
+        background: config.bg,
+        color: config.color,
+        fontSize: '0.875rem',
+        fontWeight: '600',
+        border: `1.5px solid ${config.color}`
+      }}>
+        {config.icon}
+        {config.text}
+      </div>
+    );
   };
 
-  const getEstadoIcon = (estado: string) => {
-    switch (estado) {
-      case 'ACTIVA': return <MdCheckCircle />;
-      case 'PRUEBA': return <MdWarning />;
-      case 'SUSPENDIDA': return <MdBlock />;
-      case 'CANCELADA': return <MdBlock />;
-      default: return <MdWarning />;
-    }
-  };
-
-  const containerStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    backgroundColor: 'var(--color-fondo)',
-    fontFamily: 'var(--fuente-principal)',
-    color: 'var(--color-texto)',
-    padding: '20px'
-  };
-
-  const headerStyle: React.CSSProperties = {
-    background: 'var(--gradiente-primario)',
-    borderRadius: 'var(--border-radius)',
-    padding: '25px',
-    marginBottom: '30px',
-    boxShadow: 'var(--sombra)',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  };
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: '2.5rem',
-    fontWeight: 'bold',
-    color: 'white',
-    margin: 0
-  };
-
-  const controlsStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: '15px',
-    marginBottom: '25px',
-    flexWrap: 'wrap',
-    alignItems: 'center'
-  };
-
-  const searchInputStyle: React.CSSProperties = {
-    padding: '12px 15px',
-    border: '1px solid var(--color-borde)',
-    borderRadius: 'var(--border-radius)',
-    fontSize: '1rem',
-    minWidth: '300px',
-    backgroundColor: 'white'
-  };
-
-  const selectStyle: React.CSSProperties = {
-    padding: '12px 15px',
-    border: '1px solid var(--color-borde)',
-    borderRadius: 'var(--border-radius)',
-    fontSize: '1rem',
-    backgroundColor: 'white',
-    cursor: 'pointer'
-  };
-
-  const statsGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '20px',
-    marginBottom: '30px'
-  };
-
-  const statCardStyle: React.CSSProperties = {
-    background: 'white',
-    borderRadius: 'var(--border-radius)',
-    padding: '20px',
-    boxShadow: 'var(--sombra)',
-    border: '1px solid var(--color-borde)',
-    textAlign: 'center'
-  };
-
-  const empresasGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-    gap: '20px'
-  };
-
-  const empresaCardStyle: React.CSSProperties = {
-    background: 'white',
-    borderRadius: 'var(--border-radius)',
-    padding: '25px',
-    boxShadow: 'var(--sombra)',
-    border: '1px solid var(--color-borde)',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-    cursor: 'pointer'
-  };
-
-  const empresaCardHoverStyle: React.CSSProperties = {
-    ...empresaCardStyle,
-    transform: 'translateY(-5px)',
-    boxShadow: 'var(--sombra-hover)'
-  };
-
-  const logoStyle: React.CSSProperties = {
-    width: '60px',
-    height: '60px',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    border: '2px solid var(--color-borde)',
-    marginBottom: '15px'
-  };
-
-  const modalStyle: React.CSSProperties = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000
-  };
-
-  const modalContentStyle: React.CSSProperties = {
-    background: 'white',
-    borderRadius: 'var(--border-radius)',
-    padding: '30px',
-    maxWidth: '600px',
-    width: '90%',
-    maxHeight: '80vh',
-    overflow: 'auto',
-    boxShadow: 'var(--sombra-hover)'
+  const estadosCount = {
+    total: empresas.length,
+    activas: empresas.filter(e => e.estadoSuscripcion === 'ACTIVA').length,
+    prueba: empresas.filter(e => e.estadoSuscripcion === 'PRUEBA').length,
+    suspendidas: empresas.filter(e => e.estadoSuscripcion === 'SUSPENDIDA').length
   };
 
   if (loading) {
     return (
-      <div style={containerStyle}>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-          <div style={{ fontSize: '1.2rem', color: 'var(--color-texto-secundario)' }}>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+    background: 'white',
+          borderRadius: '20px',
+          padding: '3rem',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    textAlign: 'center'
+        }}>
+          <div style={{
+    width: '60px',
+    height: '60px',
+            border: '4px solid #f3f4f6',
+            borderTop: '4px solid #667eea',
+    borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1.5rem'
+          }} />
+          <div style={{
+            fontSize: '1.2rem',
+            color: '#1f2937',
+            fontWeight: '600'
+          }}>
             Cargando empresas...
           </div>
         </div>
@@ -255,158 +164,315 @@ const GestionEmpresas: React.FC = () => {
 
   if (error) {
     return (
-      <div style={containerStyle}>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ color: '#ef4444', fontSize: '2rem', marginBottom: '15px' }}>⚠️</div>
-            <div style={{ color: '#ef4444', fontSize: '1.2rem', marginBottom: '10px' }}>Error</div>
-            <div style={{ color: 'var(--color-texto-secundario)' }}>{error}</div>
-          </div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem'
+      }}>
+        <div style={{
+          background: 'white',
+          borderRadius: '20px',
+          padding: '3rem',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          textAlign: 'center',
+          maxWidth: '500px'
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚠️</div>
+          <div style={{ fontSize: '1.5rem', color: '#ef4444', marginBottom: '1rem', fontWeight: '700' }}>Error</div>
+          <div style={{ color: '#6b7280', fontSize: '1.1rem' }}>{error}</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={containerStyle}>
-      {/* Header */}
-      <div style={headerStyle}>
-        <div>
-          <h1 
-            style={{ 
-              ...titleStyle, 
-              cursor: 'pointer',
-              transition: 'opacity 0.3s ease'
-            }}
-            onClick={() => navigate('/dashboard-super-admin')}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '0.8';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '1';
-            }}
-          >
-            ← Gestión de Empresas
-          </h1>
-          <p style={{ color: 'white', margin: '5px 0 0 0', fontSize: '1.1rem' }}>
-            Administra todas las empresas registradas en la plataforma
-          </p>
-        </div>
-        <div style={{ color: 'white', textAlign: 'right' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{empresas.length}</div>
-          <div style={{ fontSize: '1rem' }}>Empresas Totales</div>
-        </div>
-      </div>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: isMobile ? '1rem' : '2rem',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    }}>
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
-      {/* Información de zona horaria */}
+      {/* Header */}
       <div style={{
-        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-        borderRadius: '12px',
-        padding: '16px',
-        marginBottom: '20px',
-        border: '1px solid #e2e8f0'
+        background: 'rgba(255, 255, 255, 0.15)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '24px',
+        padding: isMobile ? '1.5rem' : '2rem',
+        marginBottom: '2rem',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        animation: 'fadeIn 0.6s ease'
       }}>
         <div style={{
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '12px'
+          alignItems: 'center',
+          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          gap: '1rem'
         }}>
-          <div>
-            <h3 style={{
-              margin: '0 0 8px 0',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#1e293b'
-            }}>
-              📅 Información de Fechas
-            </h3>
+          <div style={{ flex: 1 }}>
+            <button
+              onClick={() => navigate('/dashboard-super-admin')}
+            style={{ 
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '12px',
+                padding: '0.5rem 1rem',
+                color: 'white',
+              cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                marginBottom: '1rem',
+                transition: 'all 0.3s ease'
+              }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              <FaArrowLeft /> Volver al Dashboard
+            </button>
+            
+      <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              marginBottom: '0.5rem'
+      }}>
+        <div style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '16px',
+                padding: '0.75rem',
+          display: 'flex',
+          alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <FaStore size={isMobile ? 28 : 36} color="white" />
+              </div>
+              <h1 style={{
+                fontSize: isMobile ? '1.5rem' : '2.5rem',
+                fontWeight: '800',
+                color: 'white',
+                margin: 0,
+                textShadow: '0 2px 10px rgba(0,0,0,0.2)'
+              }}>
+                Gestión de Empresas
+              </h1>
+            </div>
             <p style={{
+              color: 'rgba(255, 255, 255, 0.9)',
               margin: 0,
-              fontSize: '14px',
-              color: '#64748b'
+              fontSize: isMobile ? '0.9rem' : '1.1rem',
+              fontWeight: '500',
+              paddingLeft: isMobile ? '0' : '4.5rem'
             }}>
-              Las fechas se muestran en tu zona horaria local
+              Administra todas las empresas registradas en la plataforma
             </p>
-          </div>
-          <TimeZoneInfo showDetails={true} />
-        </div>
       </div>
 
-      {/* Estadísticas Rápidas */}
-      <div style={statsGridStyle}>
-        <div style={statCardStyle}>
-          <div style={{ marginBottom: '10px' }}>
-            <FaStore color="#10B981" size={32} />
+          <div style={{
+            textAlign: 'center',
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '16px',
+            padding: '1rem 2rem',
+            minWidth: '120px'
+          }}>
+            <div style={{
+              fontSize: isMobile ? '2rem' : '3rem',
+              fontWeight: '800',
+              color: 'white',
+              lineHeight: '1'
+            }}>
+              {empresas.length}
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-texto)' }}>
-            {empresas.filter(e => e.estadoSuscripcion === 'ACTIVA').length}
+            <div style={{
+              fontSize: '0.9rem',
+              color: 'rgba(255, 255, 255, 0.9)',
+              marginTop: '0.25rem',
+              fontWeight: '600'
+            }}>
+              Empresas
           </div>
-          <div style={{ color: 'var(--color-texto-secundario)' }}>Empresas Activas</div>
+        </div>
+          </div>
         </div>
         
-        <div style={statCardStyle}>
-          <div style={{ marginBottom: '10px' }}>
-            <MdWarning color="#F59E0B" size={32} />
+      {/* Stats Cards */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '1rem',
+        marginBottom: '2rem'
+      }}>
+        {[
+          { label: 'Total', value: estadosCount.total, color: '#667eea', icon: <FaStore /> },
+          { label: 'Activas', value: estadosCount.activas, color: '#10B981', icon: <FaCheckCircle /> },
+          { label: 'En Prueba', value: estadosCount.prueba, color: '#F59E0B', icon: <MdWarning /> },
+          { label: 'Suspendidas', value: estadosCount.suspendidas, color: '#EF4444', icon: <FaTimesCircle /> }
+        ].map((stat, index) => (
+          <div
+            key={index}
+            style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+              animation: `fadeIn 0.6s ease ${index * 0.1}s both`,
+              transition: 'transform 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '0.75rem'
+            }}>
+              <div style={{
+                width: '50px',
+                height: '50px',
+                borderRadius: '12px',
+                background: `${stat.color}15`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: stat.color,
+                fontSize: '1.5rem'
+              }}>
+                {stat.icon}
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-texto)' }}>
-            {empresas.filter(e => e.estadoSuscripcion === 'PRUEBA').length}
           </div>
-          <div style={{ color: 'var(--color-texto-secundario)' }}>En Prueba</div>
+            <div style={{
+              fontSize: '2rem',
+              fontWeight: '800',
+              color: stat.color,
+              marginBottom: '0.25rem'
+            }}>
+              {stat.value}
+        </div>
+            <div style={{
+              fontSize: '0.875rem',
+              color: '#6b7280',
+              fontWeight: '600'
+            }}>
+              {stat.label}
+          </div>
+          </div>
+        ))}
         </div>
         
-        <div style={statCardStyle}>
-          <div style={{ marginBottom: '10px' }}>
-            <FaUsers color="#3B82F6" size={32} />
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-texto)' }}>
-            {empresas.reduce((total, e) => total + (e.totalClientes || 0), 0).toLocaleString()}
-          </div>
-          <div style={{ color: 'var(--color-texto-secundario)' }}>Total Clientes</div>
-        </div>
-        
-        <div style={statCardStyle}>
-          <div style={{ marginBottom: '10px' }}>
-            <FaBox color="#8B5CF6" size={32} />
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-texto)' }}>
-            {empresas.reduce((total, e) => total + (e.totalProductos || 0), 0).toLocaleString()}
-          </div>
-          <div style={{ color: 'var(--color-texto-secundario)' }}>Total Productos</div>
-        </div>
-        
-        <div style={statCardStyle}>
-          <div style={{ marginBottom: '10px' }}>
-            <FaShoppingCart color="#10B981" size={32} />
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-texto)' }}>
-            {empresas.reduce((total, e) => total + (e.totalVentasRapidas || 0), 0).toLocaleString()}
-          </div>
-          <div style={{ color: 'var(--color-texto-secundario)' }}>Total Ventas Rápidas</div>
-        </div>
-      </div>
-
-      {/* Controles de Filtrado */}
-      <div style={controlsStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FaSearch color="var(--color-texto-secundario)" />
+      {/* Filters */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.15)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '20px',
+        padding: isMobile ? '1rem' : '1.5rem',
+        marginBottom: '2rem',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        animation: 'fadeIn 0.8s ease'
+      }}>
+        <div style={{
+          display: 'flex',
+          gap: '1rem',
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
+          {/* Search */}
+          <div style={{ flex: isMobile ? '1 1 100%' : '1 1 300px', position: 'relative' }}>
+            <FaSearch style={{
+              position: 'absolute',
+              left: '1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#9ca3af',
+              fontSize: '1rem'
+            }} />
           <input
             type="text"
-            placeholder="Buscar por nombre, subdominio o email..."
+              placeholder="Buscar por nombre, email o subdominio..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={searchInputStyle}
+              style={{
+                width: '100%',
+                padding: '0.875rem 1rem 0.875rem 3rem',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '14px',
+                fontSize: '0.95rem',
+                background: 'rgba(255, 255, 255, 0.9)',
+                transition: 'all 0.3s ease',
+                fontFamily: 'inherit'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.borderColor = '#667eea';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              }}
           />
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FaFilter color="var(--color-texto-secundario)" />
+          {/* Filter */}
+          <div style={{ position: 'relative' }}>
+            <FaFilter style={{
+              position: 'absolute',
+              left: '1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#9ca3af',
+              fontSize: '0.9rem',
+              pointerEvents: 'none',
+              zIndex: 1
+            }} />
           <select
             value={filterEstado}
             onChange={(e) => setFilterEstado(e.target.value)}
-            style={selectStyle}
-          >
-            <option value="TODOS">Todos los Estados</option>
+              style={{
+                padding: '0.875rem 3rem 0.875rem 3rem',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '14px',
+                fontSize: '0.95rem',
+                background: 'rgba(255, 255, 255, 0.9)',
+                cursor: 'pointer',
+                fontWeight: '600',
+                color: '#374151',
+                transition: 'all 0.3s ease',
+                fontFamily: 'inherit'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+              }}
+            >
+              <option value="TODOS">Todos los estados</option>
             <option value="ACTIVA">Activas</option>
             <option value="PRUEBA">En Prueba</option>
             <option value="SUSPENDIDA">Suspendidas</option>
@@ -414,279 +480,547 @@ const GestionEmpresas: React.FC = () => {
           </select>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FaSort color="var(--color-texto-secundario)" />
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            style={selectStyle}
-          >
-            <option value="fechaCreacion">Ordenar por Fecha (más recientes)</option>
-            <option value="nombre">Ordenar por Nombre</option>
-            <option value="totalClientes">Ordenar por Clientes</option>
-            <option value="totalProductos">Ordenar por Productos</option>
-          </select>
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            style={{
-              padding: '8px 12px',
-              border: '1px solid var(--color-borde)',
-              borderRadius: 'var(--border-radius)',
-              backgroundColor: 'white',
-              cursor: 'pointer'
-            }}
-          >
-            {sortOrder === 'asc' ? '↑' : '↓'}
-          </button>
+          <div style={{
+            marginLeft: 'auto',
+            color: 'white',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            background: 'rgba(255, 255, 255, 0.2)',
+            padding: '0.875rem 1.5rem',
+            borderRadius: '14px'
+          }}>
+            {empresasFiltradas.length} {empresasFiltradas.length === 1 ? 'empresa' : 'empresas'}
+          </div>
         </div>
       </div>
 
-      {/* Lista de Empresas */}
-      <div style={empresasGridStyle}>
-        {empresasFiltradas.map((empresa) => (
+      {/* Empresas Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(380px, 1fr))',
+        gap: '1.5rem'
+      }}>
+        {empresasFiltradas.map((empresa, index) => (
           <div
             key={empresa.id}
-            style={empresaCardStyle}
+            onMouseEnter={() => setHoveredCard(empresa.id)}
+            onMouseLeave={() => setHoveredCard(null)}
             onClick={() => {
               setSelectedEmpresa(empresa);
               setShowModal(true);
             }}
+            style={{
+              background: 'white',
+              borderRadius: '20px',
+              padding: '2rem',
+              boxShadow: hoveredCard === empresa.id 
+                ? '0 20px 60px rgba(0, 0, 0, 0.15)' 
+                : '0 10px 30px rgba(0, 0, 0, 0.1)',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: hoveredCard === empresa.id ? 'translateY(-8px)' : 'translateY(0)',
+              cursor: 'pointer',
+              position: 'relative',
+              overflow: 'hidden',
+              animation: `fadeIn 0.6s ease ${index * 0.05}s both`
+            }}
           >
-            {/* Header de la Empresa */}
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
+            {/* Decorative gradient bar */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '5px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            }} />
+
+            {/* Header with logo and status */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
               {empresa.logoUrl ? (
                 <img
                   src={empresa.logoUrl}
-                  alt={`Logo de ${empresa.nombre}`}
-                  style={logoStyle}
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    target.style.display = 'none';
-                    const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
-                    if (fallback) {
-                      fallback.style.display = 'flex';
-                    }
-                  }}
-                />
-              ) : null}
-              <div 
-                className="logo-fallback"
-                style={{
-                  ...logoStyle,
-                  display: empresa.logoUrl ? 'none' : 'flex',
+                    alt={empresa.nombre}
+                    style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '14px',
+                      objectFit: 'cover',
+                      border: '2px solid #f3f4f6',
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '14px',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: 'var(--color-primario)',
                   color: 'white',
                   fontSize: '1.5rem',
-                  fontWeight: 'bold'
-                }}
-              >
-                {empresa.nombre.charAt(0).toUpperCase()}
+                    fontWeight: '700',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+                  }}>
+                    {empresa.nombre.charAt(0)}
               </div>
-              <div style={{ flex: 1, marginLeft: '15px' }}>
-                <h3 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', fontWeight: 'bold' }}>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h3 style={{
+                    margin: 0,
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    color: '#1f2937',
+                    marginBottom: '0.25rem',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
                   {empresa.nombre}
                 </h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ 
-                    color: getEstadoColor(empresa.estadoSuscripcion),
+                  <div style={{
+                    fontSize: '0.85rem',
+                    color: '#6b7280',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '5px',
-                    fontSize: '0.9rem',
-                    fontWeight: '500'
+                    gap: '0.25rem'
                   }}>
-                    {getEstadoIcon(empresa.estadoSuscripcion)}
-                    {empresa.estadoSuscripcion}
-                  </span>
-                  {!empresa.activa && (
-                    <span style={{ color: '#EF4444', fontSize: '0.8rem' }}>INACTIVA</span>
-                  )}
+                    <MdBusiness size={14} />
+                    {empresa.subdominio}.negocio360.org
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Información de Contacto */}
-            <div style={{ marginBottom: '15px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
-                <MdBusiness color="var(--color-texto-secundario)" />
-                <span style={{ fontSize: '0.9rem', color: 'var(--color-texto-secundario)' }}>
-                  {empresa.subdominio}.minegocio.com
+            {/* Status badge */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              {getEstadoBadge(empresa.estadoSuscripcion)}
+              </div>
+
+            {/* Stats */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                background: 'rgba(102, 126, 234, 0.05)',
+                borderRadius: '12px',
+                padding: '1rem',
+                border: '1px solid rgba(102, 126, 234, 0.1)'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  <FaBox size={16} color="#667eea" />
+                  <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '600' }}>
+                    Productos
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
-                <MdEmail color="var(--color-texto-secundario)" />
-                <span style={{ fontSize: '0.9rem', color: 'var(--color-texto-secundario)' }}>
-                  {empresa.email}
-                </span>
-              </div>
-              {empresa.telefono && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <MdPhone color="var(--color-texto-secundario)" />
-                  <span style={{ fontSize: '0.9rem', color: 'var(--color-texto-secundario)' }}>
-                    {empresa.telefono}
+                <div style={{
+                  fontSize: '1.75rem',
+                  fontWeight: '800',
+                  color: '#667eea'
+                }}>
+                  {empresa.totalProductos || 0}
+                </div>
+            </div>
+
+              <div style={{
+                background: 'rgba(16, 185, 129, 0.05)',
+                borderRadius: '12px',
+                padding: '1rem',
+                border: '1px solid rgba(16, 185, 129, 0.1)'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  <FaUsers size={16} color="#10B981" />
+                  <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '600' }}>
+                    Clientes
                   </span>
                 </div>
-              )}
-            </div>
+                <div style={{
+                  fontSize: '1.75rem',
+                  fontWeight: '800',
+                  color: '#10B981'
+                }}>
+                  {empresa.totalClientes || 0}
+              </div>
+                </div>
 
-            {/* Estadísticas */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '15px' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-primario)' }}>
-                  {(empresa.totalClientes || 0).toLocaleString()}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--color-texto-secundario)' }}>Clientes</div>
+              <div style={{
+                background: 'rgba(245, 158, 11, 0.05)',
+                borderRadius: '12px',
+                padding: '1rem',
+                border: '1px solid rgba(245, 158, 11, 0.1)'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  <FaShoppingCart size={16} color="#F59E0B" />
+                  <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '600' }}>
+                    Pedidos
+                  </span>
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-primario)' }}>
-                  {(empresa.totalProductos || 0).toLocaleString()}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--color-texto-secundario)' }}>Productos</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-primario)' }}>
-                  {(empresa.totalPedidos || 0).toLocaleString()}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--color-texto-secundario)' }}>Pedidos</div>
-              </div>
-            </div>
-
-            {/* Nuevas Estadísticas */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '15px' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#10B981' }}>
-                  {(empresa.totalVentasRapidas || 0).toLocaleString()}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--color-texto-secundario)' }}>Ventas Rápidas</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#8B5CF6' }}>
-                  {(empresa.totalTransacciones || 0).toLocaleString()}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--color-texto-secundario)' }}>Transacciones</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#F59E0B' }}>
-                  {empresa.ultimaConexion ? (() => {
-                    console.log('🔍 [GestionEmpresas] Procesando ultimaConexion:', empresa.ultimaConexion, 'tipo:', typeof empresa.ultimaConexion);
-                    return formatearFechaConHora(empresa.ultimaConexion);
-                  })() : 'N/A'}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--color-texto-secundario)' }}>Última Conexión</div>
+                <div style={{
+                  fontSize: '1.75rem',
+                  fontWeight: '800',
+                  color: '#F59E0B'
+                }}>
+                  {empresa.totalPedidos || 0}
               </div>
             </div>
 
-            {/* Fecha de Registro */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--color-texto-secundario)' }}>
-              <MdCalendarToday color="var(--color-texto-secundario)" />
-              <span>Registrada: {(() => {
-                console.log('🔍 [GestionEmpresas] Procesando fechaCreacion:', empresa.fechaCreacion, 'tipo:', typeof empresa.fechaCreacion);
-                return formatearFechaConHora(empresa.fechaCreacion);
-              })()}</span>
+              <div style={{
+                background: 'rgba(239, 68, 68, 0.05)',
+                borderRadius: '12px',
+                padding: '1rem',
+                border: '1px solid rgba(239, 68, 68, 0.1)'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  <MdShoppingCart size={16} color="#EF4444" />
+                  <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '600' }}>
+                    Ventas
+                  </span>
+                </div>
+                <div style={{
+                  fontSize: '1.75rem',
+                  fontWeight: '800',
+                  color: '#EF4444'
+                }}>
+                  {empresa.totalVentasRapidas || 0}
+              </div>
+                </div>
+              </div>
+
+            {/* Footer info */}
+            <div style={{
+              paddingTop: '1rem',
+              borderTop: '1px solid #f3f4f6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.75rem',
+              color: '#9ca3af'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <MdCalendarToday size={12} />
+                {formatearFechaConHora(empresa.fechaCreacion)}
+                </div>
+              <div style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontWeight: '700',
+                fontSize: '0.8rem',
+                opacity: hoveredCard === empresa.id ? 1 : 0,
+                transition: 'opacity 0.3s ease'
+              }}>
+                Ver detalles →
+              </div>
             </div>
           </div>
         ))}
-      </div>
+            </div>
 
-      {/* Modal de Detalles */}
+      {/* Empty state */}
+      {empresasFiltradas.length === 0 && (
+        <div style={{
+          background: 'white',
+          borderRadius: '20px',
+          padding: '4rem 2rem',
+          textAlign: 'center',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔍</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
+            No se encontraron empresas
+            </div>
+          <div style={{ color: '#6b7280', fontSize: '1rem' }}>
+            Intenta ajustar los filtros de búsqueda
+          </div>
+      </div>
+      )}
+
+      {/* Modal */}
       {showModal && selectedEmpresa && (
-        <div style={modalStyle} onClick={() => setShowModal(false)}>
-          <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginBottom: '20px', color: 'var(--color-texto)' }}>
-              Detalles de {selectedEmpresa.nombre}
-            </h2>
-            
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10000,
+            padding: '1rem',
+            animation: 'fadeIn 0.3s ease'
+          }}
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: '24px',
+              padding: '2rem',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              boxShadow: '0 25px 80px rgba(0,0,0,0.3)',
+              position: 'relative'
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '1.5rem',
+                background: '#ef4444',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)';
+                e.currentTarget.style.background = '#dc2626';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.background = '#ef4444';
+              }}
+            >
+              ✕
+            </button>
+
+            {/* Modal content */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              marginBottom: '2rem',
+              paddingRight: '3rem'
+            }}>
               {selectedEmpresa.logoUrl ? (
                 <img
                   src={selectedEmpresa.logoUrl}
-                  alt={`Logo de ${selectedEmpresa.nombre}`}
-                  style={{ ...logoStyle, width: '80px', height: '80px' }}
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    target.style.display = 'none';
-                    const fallback = target.parentElement?.querySelector('.modal-logo-fallback') as HTMLElement;
-                    if (fallback) {
-                      fallback.style.display = 'flex';
-                    }
+                  alt={selectedEmpresa.nombre}
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '18px',
+                    objectFit: 'cover',
+                    border: '3px solid #f3f4f6',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                   }}
                 />
-              ) : null}
-              <div 
-                className="modal-logo-fallback"
-                style={{
-                  ...logoStyle,
+              ) : (
+                <div style={{
                   width: '80px',
                   height: '80px',
-                  display: selectedEmpresa.logoUrl ? 'none' : 'flex',
+                  borderRadius: '18px',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: 'var(--color-primario)',
                   color: 'white',
                   fontSize: '2rem',
-                  fontWeight: 'bold'
-                }}
-              >
-                {selectedEmpresa.nombre.charAt(0).toUpperCase()}
+                  fontWeight: '700',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                }}>
+                  {selectedEmpresa.nombre.charAt(0)}
               </div>
-              <div style={{ marginLeft: '20px' }}>
-                <h3 style={{ margin: '0 0 10px 0' }}>{selectedEmpresa.nombre}</h3>
-                <p style={{ margin: '0', color: 'var(--color-texto-secundario)' }}>
-                  {selectedEmpresa.descripcion || 'Sin descripción'}
-                </p>
+              )}
+              <div>
+                <h2 style={{
+                  margin: 0,
+                  fontSize: '2rem',
+                  fontWeight: '800',
+                  color: '#1f2937',
+                  marginBottom: '0.5rem'
+                }}>
+                  {selectedEmpresa.nombre}
+                </h2>
+                {getEstadoBadge(selectedEmpresa.estadoSuscripcion)}
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '20px' }}>
-              <div>
-                <h4 style={{ marginBottom: '10px' }}>Información de Contacto</h4>
-                <p><strong>Subdominio:</strong> {selectedEmpresa.subdominio}.minegocio.com</p>
-                <p><strong>Email:</strong> {selectedEmpresa.email}</p>
-                <p><strong>Teléfono:</strong> {selectedEmpresa.telefono || 'No especificado'}</p>
-                <p><strong>Moneda:</strong> {selectedEmpresa.moneda}</p>
+            {/* Details */}
+            <div style={{
+              display: 'grid',
+              gap: '1.5rem'
+            }}>
+              <div style={{
+                background: '#f9fafb',
+                borderRadius: '14px',
+                padding: '1.5rem',
+                border: '1px solid #e5e7eb'
+              }}>
+                <h3 style={{
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  color: '#374151',
+                  marginBottom: '1rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  Información General
+                </h3>
+                <div style={{ display: 'grid', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <MdBusiness size={18} color="#667eea" />
+                    <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>Subdominio:</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1f2937' }}>
+                      {selectedEmpresa.subdominio}.negocio360.org
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <MdEmail size={18} color="#667eea" />
+                    <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>Email:</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1f2937' }}>
+                      {selectedEmpresa.email}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <MdCalendarToday size={18} color="#667eea" />
+                    <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>Creada:</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1f2937' }}>
+                      {formatearFechaConHora(selectedEmpresa.fechaCreacion)}
+                    </span>
+                  </div>
+                </div>
               </div>
               
-              <div>
-                <h4 style={{ marginBottom: '10px' }}>Estadísticas</h4>
-                <p><strong>Clientes:</strong> {(selectedEmpresa.totalClientes || 0).toLocaleString()}</p>
-                <p><strong>Productos:</strong> {(selectedEmpresa.totalProductos || 0).toLocaleString()}</p>
-                <p><strong>Pedidos:</strong> {(selectedEmpresa.totalPedidos || 0).toLocaleString()}</p>
-                <p><strong>Ventas Rápidas:</strong> {(selectedEmpresa.totalVentasRapidas || 0).toLocaleString()}</p>
-                <p><strong>Transacciones:</strong> {(selectedEmpresa.totalTransacciones || 0).toLocaleString()}</p>
-                <p><strong>Última Conexión:</strong> {selectedEmpresa.ultimaConexion ? (() => {
-                  console.log('🔍 [GestionEmpresas Modal] Procesando ultimaConexion:', selectedEmpresa.ultimaConexion, 'tipo:', typeof selectedEmpresa.ultimaConexion);
-                  return formatearFechaConHora(selectedEmpresa.ultimaConexion);
-                })() : 'N/A'}</p>
-                <p><strong>Estado:</strong> {selectedEmpresa.estadoSuscripcion}</p>
+              <div style={{
+                background: '#f9fafb',
+                borderRadius: '14px',
+                padding: '1.5rem',
+                border: '1px solid #e5e7eb'
+              }}>
+                <h3 style={{
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  color: '#374151',
+                  marginBottom: '1rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  Estadísticas
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '1rem'
+                }}>
+                  {[
+                    { label: 'Productos', value: selectedEmpresa.totalProductos, icon: <FaBox />, color: '#667eea' },
+                    { label: 'Clientes', value: selectedEmpresa.totalClientes, icon: <FaUsers />, color: '#10B981' },
+                    { label: 'Pedidos', value: selectedEmpresa.totalPedidos, icon: <FaShoppingCart />, color: '#F59E0B' },
+                    { label: 'Ventas', value: selectedEmpresa.totalVentasRapidas, icon: <MdShoppingCart />, color: '#EF4444' }
+                  ].map((stat, i) => (
+                    <div key={i} style={{
+                      background: 'white',
+                      borderRadius: '12px',
+                      padding: '1rem',
+                      textAlign: 'center',
+                      border: `2px solid ${stat.color}15`
+                    }}>
+                      <div style={{
+                        fontSize: '1.5rem',
+                        color: stat.color,
+                        marginBottom: '0.5rem'
+                      }}>
+                        {stat.icon}
+                      </div>
+                      <div style={{
+                        fontSize: '2rem',
+                        fontWeight: '800',
+                        color: stat.color,
+                        marginBottom: '0.25rem'
+                      }}>
+                        {stat.value || 0}
+                      </div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280',
+                        fontWeight: '600'
+                      }}>
+                        {stat.label}
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => window.open(`https://${selectedEmpresa.subdominio}.negocio360.org`, '_blank')}
                 style={{
-                  padding: '10px 20px',
-                  border: '1px solid var(--color-borde)',
-                  borderRadius: 'var(--border-radius)',
-                  backgroundColor: 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                Cerrar
-              </button>
-              <button
-                style={{
-                  padding: '10px 20px',
-                  border: 'none',
-                  borderRadius: 'var(--border-radius)',
-                  backgroundColor: 'var(--color-primario)',
+                  padding: '1rem 2rem',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   color: 'white',
-                  cursor: 'pointer'
+                  border: 'none',
+                  borderRadius: '14px',
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.75rem',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
                 }}
               >
-                Editar Empresa
+                <FaEye /> Visitar sitio web
               </button>
             </div>
           </div>
