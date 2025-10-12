@@ -3445,7 +3445,7 @@ export default function InventarioCompleto() {
                     fontWeight: '600',
                     marginTop: '0.75rem'
                   }}>
-                    {registroSeleccionado.nombreInventario}
+                    Inventario Completo
                   </div>
                 </div>
 
@@ -3482,21 +3482,6 @@ export default function InventarioCompleto() {
                       fontWeight: '600'
                     }}>
                       {formatearFechaConHora(registroSeleccionado.fechaRealizacion)}
-                    </div>
-                    <div style={{
-                      fontSize: '0.85rem',
-                      color: '#64748b',
-                      marginTop: '0.25rem'
-                    }}>
-                      {(() => {
-                        const fecha = new Date(registroSeleccionado.fechaRealizacion);
-                        const zonaHorariaLocal = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                        return fecha.toLocaleTimeString('es-ES', {
-                          timeZone: zonaHorariaLocal,
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        });
-                      })()}
                     </div>
                   </div>
 
