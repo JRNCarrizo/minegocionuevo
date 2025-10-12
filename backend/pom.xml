@@ -127,6 +127,13 @@
 			<version>1.36.0</version>
 		</dependency>
 		
+		<!-- SendGrid para envío de emails vía API -->
+		<dependency>
+			<groupId>com.sendgrid</groupId>
+			<artifactId>sendgrid-java</artifactId>
+			<version>4.10.2</version>
+		</dependency>
+		
 		<!-- Spring Boot DevTools para recarga automática -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

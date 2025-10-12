@@ -9,6 +9,11 @@ import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import com.minegocio.backend.utilidades.FechaUtil;
 import org.springframework.core.env.Environment;
+import com.sendgrid.*;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
+import java.io.IOException;
 
 /**
  * Servicio para el envío de emails
@@ -30,6 +35,9 @@ public class EmailService {
 
     @Value("${minegocio.app.nombre}")
     private String appNombre;
+    
+    @Value("${sendgrid.api.key:}")
+    private String sendGridApiKey;
 
     private boolean isDevelopmentMode() {
         String[] activeProfiles = environment.getActiveProfiles();
@@ -40,6 +48,62 @@ public class EmailService {
         }
         return false;
     }
+    
+    /**
+     * Envía email usando la API de SendGrid (no SMTP)
+     */
+    private boolean enviarEmailConSendGridAPI(String destinatario, String asunto, String contenido) {
+        try {
+            // Verificar si tenemos API Key de SendGrid
+            if (sendGridApiKey == null || sendGridApiKey.trim().isEmpty()) {
+                System.err.println("❌ SendGrid API Key no configurada");
+                return false;
+            }
+            
+            System.out.println("📧 Usando SendGrid API para enviar email...");
+            System.out.println("  Destinatario: " + destinatario);
+            System.out.println("  Asunto: " + asunto);
+            
+            Email from = new Email(fromEmail);
+            Email to = new Email(destinatario);
+            Content content = new Content("text/plain", contenido);
+            Mail mail = new Mail(from, asunto, to, content);
+            
+            SendGrid sg = new SendGrid(sendGridApiKey);
+            Request request = new Request();
+            
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            
+            Response response = sg.api(request);
+            
+            System.out.println("📤 Respuesta de SendGrid:");
+            System.out.println("  Status Code: " + response.getStatusCode());
+            System.out.println("  Body: " + response.getBody());
+            System.out.println("  Headers: " + response.getHeaders());
+            
+            if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
+                System.out.println("✅ Email enviado exitosamente vía SendGrid API");
+                return true;
+            } else {
+                System.err.println("❌ Error al enviar email vía SendGrid API. Status: " + response.getStatusCode());
+                return false;
+            }
+            
+        } catch (IOException e) {
+            System.err.println("❌ Error de IO al enviar email con SendGrid API:");
+            System.err.println("  Mensaje: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } catch (Exception e) {
+            System.err.println("❌ Error general al enviar email con SendGrid API:");
+            System.err.println("  Tipo: " + e.getClass().getName());
+            System.err.println("  Mensaje: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     @PostConstruct
     public void init() {
@@ -49,15 +113,27 @@ public class EmailService {
         System.out.println("JavaMailSender: " + (mailSender != null ? "Configurado" : "NO CONFIGURADO"));
         System.out.println("Modo desarrollo: " + (isDevelopmentMode() ? "SÍ" : "NO"));
         System.out.println("Perfiles activos: " + String.join(", ", environment.getActiveProfiles()));
-        System.out.println("Mail habilitado: " + (mailSender != null ? "SÍ" : "NO"));
         
         // Debug adicional para variables de entorno
         System.out.println("=== DEBUG VARIABLES EMAIL ===");
         System.out.println("MAIL_USERNAME existe: " + (System.getenv("MAIL_USERNAME") != null));
         System.out.println("MAIL_PASSWORD existe: " + (System.getenv("MAIL_PASSWORD") != null));
         System.out.println("MAIL_FROM existe: " + (System.getenv("MAIL_FROM") != null));
+        System.out.println("SENDGRID_API_KEY existe: " + (System.getenv("SENDGRID_API_KEY") != null));
         System.out.println("fromEmail valor: " + (fromEmail != null ? fromEmail : "NULL"));
-        System.out.println("fromEmail vacío: " + (fromEmail != null && fromEmail.trim().isEmpty()));
+        System.out.println("sendGridApiKey configurado: " + (sendGridApiKey != null && !sendGridApiKey.trim().isEmpty()));
+        
+        // Determinar método de envío
+        System.out.println("=== MÉTODO DE ENVÍO ===");
+        if (isDevelopmentMode()) {
+            System.out.println("MODO DESARROLLO: Emails simulados en consola");
+        } else if (sendGridApiKey != null && !sendGridApiKey.trim().isEmpty()) {
+            System.out.println("✅ SENDGRID API: Emails se enviarán vía SendGrid API (recomendado)");
+        } else if (mailSender != null) {
+            System.out.println("⚠️ SMTP: Emails se enviarán vía SMTP (puede estar bloqueado en Railway)");
+        } else {
+            System.out.println("❌ EMAIL DESHABILITADO: No hay método de envío configurado");
+        }
         System.out.println("==========================");
     }
 
@@ -301,8 +377,41 @@ public class EmailService {
             return;
         }
         
+        // Contenido del email
+        String contenido = String.format(
+            "Hola %s,\n\n" +
+            "Gracias por registrarte en %s. Para completar tu registro, " +
+            "por favor verifica tu cuenta haciendo clic en el siguiente enlace:\n\n" +
+            "%s/verificar-email-admin?token=%s\n\n" +
+            "Este enlace expirará en 24 horas.\n\n" +
+            "Si no solicitaste este registro, puedes ignorar este email.\n\n" +
+            "Saludos,\n" +
+            "El equipo de %s",
+            nombreUsuario,
+            appNombre,
+            frontendUrl,
+            tokenVerificacion,
+            appNombre
+        );
+        
+        String asunto = "Verifica tu cuenta - " + appNombre;
+        
+        // Intentar primero con SendGrid API si está configurado
+        if (sendGridApiKey != null && !sendGridApiKey.trim().isEmpty()) {
+            System.out.println("📧 Intentando enviar email con SendGrid API...");
+            boolean exitoso = enviarEmailConSendGridAPI(emailDestinatario, asunto, contenido);
+            
+            if (exitoso) {
+                System.out.println("✅ Email enviado exitosamente a: " + emailDestinatario);
+                return;
+            } else {
+                System.err.println("⚠️ SendGrid API falló, intentando con SMTP...");
+            }
+        }
+        
+        // Si SendGrid API no está disponible o falló, intentar con SMTP
         try {
-            System.out.println("📧 Preparando email para envío real...");
+            System.out.println("📧 Preparando email para envío vía SMTP...");
             System.out.println("From Email: " + fromEmail);
             System.out.println("To Email: " + emailDestinatario);
             System.out.println("MailSender configurado: " + (mailSender != null));
@@ -310,29 +419,12 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(emailDestinatario);
-            message.setSubject("Verifica tu cuenta - " + appNombre);
-            
-            String contenido = String.format(
-                "Hola %s,\n\n" +
-                "Gracias por registrarte en %s. Para completar tu registro, " +
-                "por favor verifica tu cuenta haciendo clic en el siguiente enlace:\n\n" +
-                "%s/verificar-email-admin?token=%s\n\n" +
-                "Este enlace expirará en 24 horas.\n\n" +
-                "Si no solicitaste este registro, puedes ignorar este email.\n\n" +
-                "Saludos,\n" +
-                "El equipo de %s",
-                nombreUsuario,
-                appNombre,
-                frontendUrl,
-                tokenVerificacion,
-                appNombre
-            );
-            
+            message.setSubject(asunto);
             message.setText(contenido);
             
-            System.out.println("📤 Intentando enviar email...");
+            System.out.println("📤 Intentando enviar email vía SMTP...");
             mailSender.send(message);
-            System.out.println("✅ Email enviado exitosamente a: " + emailDestinatario);
+            System.out.println("✅ Email enviado exitosamente vía SMTP a: " + emailDestinatario);
         } catch (Exception e) {
             System.err.println("❌ ERROR DETALLADO AL ENVIAR EMAIL:");
             System.err.println("   Tipo de error: " + e.getClass().getName());
