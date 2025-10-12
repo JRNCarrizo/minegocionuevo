@@ -1139,7 +1139,7 @@ export default function MovimientosDia() {
                     padding: '0.75rem 1.5rem',
                     background: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)',
                     color: 'white',
-                    border: 'none',
+                    border: '2px solid rgba(255, 255, 255, 0.2)',
                     borderRadius: '0.5rem',
                     fontSize: '0.875rem',
                     fontWeight: '700',
@@ -1149,8 +1149,7 @@ export default function MovimientosDia() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)',
-                    border: '2px solid rgba(255, 255, 255, 0.2)'
+                    boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)'
                   }}
                   onMouseOver={(e) => {
                     if (!isMobile && movimientos && !transicionando && !modoRango) {

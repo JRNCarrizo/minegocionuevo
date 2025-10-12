@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUsers, FaStore, FaChartLine, FaBell, FaBox, FaMoneyBillWave, FaExclamationTriangle, FaCreditCard, FaTrendingUp, FaCheckCircle } from 'react-icons/fa';
+import { FaUsers, FaStore, FaChartLine, FaBell, FaBox, FaMoneyBillWave, FaExclamationTriangle, FaCreditCard, FaArrowUp } from 'react-icons/fa';
 import {  MdInventory, MdPeople, MdSettings, MdNotifications, MdLogout, MdDashboard } from 'react-icons/md';
 import { superAdminService } from '../services/superAdminService';
 import type { DashboardStats } from '../services/superAdminService';
@@ -609,7 +609,7 @@ const DashboardSuperAdmin: React.FC = () => {
             padding: '0.75rem',
             display: 'flex'
           }}>
-            <FaTrendingUp size={28} color="white" />
+            <FaArrowUp size={28} color="white" />
           </div>
           <h2 style={{
             fontSize: isMobile ? '1.5rem' : '2rem',
