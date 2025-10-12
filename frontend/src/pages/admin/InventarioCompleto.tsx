@@ -2862,7 +2862,7 @@ export default function InventarioCompleto() {
                         paddingRight: '6rem',
                         lineHeight: '1.4'
                       }}>
-                        {registro.nombreInventario}
+                        Inventario Completo
                       </div>
 
                       {/* Información en grid */}
