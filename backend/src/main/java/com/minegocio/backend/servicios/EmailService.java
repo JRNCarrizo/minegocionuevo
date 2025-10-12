@@ -471,12 +471,6 @@ public class EmailService {
             return;
         }
         
-        SimpleMailMessage message = new SimpleMailMessage();
-        
-        message.setFrom(fromEmail);
-        message.setTo(emailDestinatario);
-        message.setSubject("Verifica tu cuenta - " + nombreEmpresa);
-        
         // Construir el enlace dinámicamente basado en el subdominio y la URL del frontend
         String baseUrl = frontendUrl;
         if (baseUrl.contains("localhost")) {
@@ -491,23 +485,49 @@ public class EmailService {
         
         String contenido = String.format(
             "Hola %s,\n\n" +
-            "Gracias por registrarte en nuestra tienda.\n\n" +
+            "Gracias por registrarte en %s.\n\n" +
             "Para activar tu cuenta, haz clic en el siguiente enlace:\n" +
             "%s\n\n" +
             "Este enlace expirará en 24 horas.\n\n" +
             "Si no creaste esta cuenta, puedes ignorar este email.\n\n" +
             "Saludos,\n" +
-            "negocio360",
-            nombreUsuario, enlaceVerificacion
+            "El equipo de %s",
+            nombreUsuario, 
+            nombreEmpresa,
+            enlaceVerificacion,
+            nombreEmpresa
         );
         
-        message.setText(contenido);
+        String asunto = "Verifica tu cuenta - " + nombreEmpresa;
         
+        // Intentar primero con SendGrid API si está configurado
+        if (sendGridApiKey != null && !sendGridApiKey.trim().isEmpty()) {
+            System.out.println("📧 Intentando enviar email con SendGrid API...");
+            boolean exitoso = enviarEmailConSendGridAPI(emailDestinatario, asunto, contenido);
+            
+            if (exitoso) {
+                System.out.println("✅ Email enviado exitosamente a: " + emailDestinatario);
+                return;
+            } else {
+                System.err.println("⚠️ SendGrid API falló, intentando con SMTP...");
+            }
+        }
+        
+        // Fallback a SMTP si SendGrid API no está disponible o falló
         try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(emailDestinatario);
+            message.setSubject(asunto);
+            message.setText(contenido);
+            
             mailSender.send(message);
-            System.out.println("✅ Email de verificación de cliente enviado exitosamente a: " + emailDestinatario);
+            System.out.println("✅ Email de verificación de cliente enviado exitosamente vía SMTP a: " + emailDestinatario);
         } catch (Exception e) {
             System.err.println("❌ Error al enviar email de verificación de cliente: " + e.getMessage());
+            System.err.println("🔗 ENLACE DE VERIFICACIÓN MANUAL:");
+            System.err.println("   " + enlaceVerificacion);
+            e.printStackTrace();
         }
     }
 
