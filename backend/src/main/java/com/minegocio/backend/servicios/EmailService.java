@@ -640,19 +640,14 @@ public class EmailService {
      * Envía notificación de nuevo pedido al email de contacto de la empresa
      */
     public void enviarNotificacionNuevoPedido(String emailEmpresa, String nombreEmpresa, String numeroPedido, String clienteNombre, String clienteEmail, BigDecimal total, String direccionEntrega) {
-        if (isDevelopmentMode() || mailSender == null) {
-            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de notificación de nuevo pedido");
+        if (isDevelopmentMode()) {
+            System.out.println("🚀 MODO DESARROLLO: Simulando envío de notificación de nuevo pedido");
             System.out.println("📧 Email simulado enviado a: " + emailEmpresa);
             System.out.println("🛒 Pedido: " + numeroPedido);
             return;
         }
         
-        SimpleMailMessage message = new SimpleMailMessage();
-        
-        message.setFrom(fromEmail);
-        message.setTo(emailEmpresa);
-        message.setSubject("🛒 Nuevo Pedido Recibido - " + nombreEmpresa);
-        
+        String asunto = "🛒 Nuevo Pedido Recibido - " + nombreEmpresa;
         String contenido = String.format(
             "Hola,\n\n" +
             "Has recibido un nuevo pedido en tu tienda %s.\n\n" +
@@ -677,13 +672,30 @@ public class EmailService {
             frontendUrl
         );
         
-        message.setText(contenido);
+        // Intentar primero con SendGrid API
+        if (sendGridApiKey != null && !sendGridApiKey.trim().isEmpty()) {
+            System.out.println("📧 Enviando notificación de pedido con SendGrid API...");
+            boolean exitoso = enviarEmailConSendGridAPI(emailEmpresa, asunto, contenido);
+            if (exitoso) {
+                System.out.println("✅ Notificación de nuevo pedido enviada a: " + emailEmpresa);
+                return;
+            }
+            System.err.println("⚠️ SendGrid API falló, intentando con SMTP...");
+        }
         
-        try {
-            mailSender.send(message);
-            System.out.println("✅ Notificación de nuevo pedido enviada a: " + emailEmpresa);
-        } catch (Exception e) {
-            System.err.println("❌ Error al enviar notificación de nuevo pedido: " + e.getMessage());
+        // Fallback a SMTP
+        if (mailSender != null) {
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom(fromEmail);
+                message.setTo(emailEmpresa);
+                message.setSubject(asunto);
+                message.setText(contenido);
+                mailSender.send(message);
+                System.out.println("✅ Notificación de nuevo pedido enviada vía SMTP a: " + emailEmpresa);
+            } catch (Exception e) {
+                System.err.println("❌ Error al enviar notificación de nuevo pedido: " + e.getMessage());
+            }
         }
     }
 
@@ -738,19 +750,14 @@ public class EmailService {
      * Envía confirmación de compra al cliente
      */
     public void enviarConfirmacionCompraCliente(String emailCliente, String nombreCliente, String nombreEmpresa, String numeroPedido, BigDecimal total, String direccionEntrega) {
-        if (isDevelopmentMode() || mailSender == null) {
-            System.out.println("🚀 MODO DESARROLLO O EMAIL DESHABILITADO: Simulando envío de confirmación de compra al cliente");
+        if (isDevelopmentMode()) {
+            System.out.println("🚀 MODO DESARROLLO: Simulando envío de confirmación de compra al cliente");
             System.out.println("📧 Email simulado enviado a: " + emailCliente);
             System.out.println("🛒 Pedido: " + numeroPedido);
             return;
         }
         
-        SimpleMailMessage message = new SimpleMailMessage();
-        
-        message.setFrom(fromEmail);
-        message.setTo(emailCliente);
-        message.setSubject("🛒 Confirmación de Compra - " + nombreEmpresa);
-        
+        String asunto = "🛒 Confirmación de Compra - " + nombreEmpresa;
         String contenido = String.format(
             "Hola %s,\n\n" +
             "¡Gracias por tu compra en %s!\n\n" +
@@ -773,13 +780,30 @@ public class EmailService {
             nombreEmpresa
         );
         
-        message.setText(contenido);
+        // Intentar primero con SendGrid API
+        if (sendGridApiKey != null && !sendGridApiKey.trim().isEmpty()) {
+            System.out.println("📧 Enviando confirmación de compra con SendGrid API...");
+            boolean exitoso = enviarEmailConSendGridAPI(emailCliente, asunto, contenido);
+            if (exitoso) {
+                System.out.println("✅ Confirmación de compra enviada al cliente: " + emailCliente);
+                return;
+            }
+            System.err.println("⚠️ SendGrid API falló, intentando con SMTP...");
+        }
         
-        try {
-            mailSender.send(message);
-            System.out.println("✅ Confirmación de compra enviada al cliente: " + emailCliente);
-        } catch (Exception e) {
-            System.err.println("❌ Error al enviar confirmación de compra al cliente: " + e.getMessage());
+        // Fallback a SMTP
+        if (mailSender != null) {
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom(fromEmail);
+                message.setTo(emailCliente);
+                message.setSubject(asunto);
+                message.setText(contenido);
+                mailSender.send(message);
+                System.out.println("✅ Confirmación de compra enviada vía SMTP al cliente: " + emailCliente);
+            } catch (Exception e) {
+                System.err.println("❌ Error al enviar confirmación de compra al cliente: " + e.getMessage());
+            }
         }
     }
 
