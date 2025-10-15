@@ -346,6 +346,7 @@ public class SectorService {
      * Obtener stock general de la empresa
      * Incluye productos con sector asignado y sin sector asignado
      */
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> obtenerStockGeneral(Long empresaId) {
         
         Empresa empresa = empresaRepository.findById(empresaId)
@@ -364,12 +365,22 @@ public class SectorService {
             
             Map<String, Object> item = new HashMap<>();
             item.put("id", stock.getId()); // ID único para el frontend
+            // Forzar carga de imágenes lazy
+            List<String> imagenes = new ArrayList<>();
+            try {
+                if (stock.getProducto().getImagenes() != null) {
+                    imagenes.addAll(stock.getProducto().getImagenes());
+                }
+            } catch (Exception e) {
+                System.err.println("Error cargando imágenes para producto " + stock.getProducto().getId() + ": " + e.getMessage());
+            }
+            
             item.put("producto", Map.of(
                 "id", stock.getProducto().getId(),
                 "nombre", stock.getProducto().getNombre(),
                 "codigoPersonalizado", stock.getProducto().getCodigoPersonalizado() != null ? stock.getProducto().getCodigoPersonalizado() : "",
                 "unidadMedida", stock.getProducto().getUnidad() != null ? stock.getProducto().getUnidad() : "",
-                "imagenes", stock.getProducto().getImagenes() != null ? stock.getProducto().getImagenes() : new ArrayList<>()
+                "imagenes", imagenes
             ));
             item.put("sector", Map.of(
                 "id", stock.getSector().getId(),
@@ -423,12 +434,22 @@ public class SectorService {
                 if (tieneStockSinSectorizar || tieneStockCero) {
                     Map<String, Object> item = new HashMap<>();
                     item.put("id", producto.getId() + "_sin_sector"); // ID único para el frontend
+                    // Forzar carga de imágenes lazy
+                    List<String> imagenes = new ArrayList<>();
+                    try {
+                        if (producto.getImagenes() != null) {
+                            imagenes.addAll(producto.getImagenes());
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error cargando imágenes para producto " + producto.getId() + ": " + e.getMessage());
+                    }
+                    
                     item.put("producto", Map.of(
                         "id", producto.getId(),
                         "nombre", producto.getNombre(),
                         "codigoPersonalizado", producto.getCodigoPersonalizado() != null ? producto.getCodigoPersonalizado() : "",
                         "unidadMedida", producto.getUnidad() != null ? producto.getUnidad() : "",
-                        "imagenes", producto.getImagenes() != null ? producto.getImagenes() : new ArrayList<>()
+                        "imagenes", imagenes
                     ));
                     item.put("sector", null); // Sin sector asignado
                     item.put("cantidad", tieneStockCero ? producto.getStock() : stockSinSectorizar); // Stock sin sectorizar o stock total si es cero
@@ -454,6 +475,7 @@ public class SectorService {
      * Obtener stock detallado de la empresa
      * Formato requerido por el frontend para RecibirProductos
      */
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> obtenerStockDetallado(Long empresaId) {
         // System.out.println("🔍 SECTOR SERVICE - Iniciando obtenerStockDetallado para empresa: " + empresaId);
         
