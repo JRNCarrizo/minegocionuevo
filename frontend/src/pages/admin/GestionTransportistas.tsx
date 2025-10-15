@@ -423,7 +423,7 @@ const GestionTransportistas: React.FC = () => {
   }, [mostrarModalVehiculos]);
 
   // Función para manejar navegación con Enter en el modal de vehículos
-  const manejarEnterVehiculo = (e: React.KeyboardEvent, campoActual: string) => {
+  const manejarEnterVehiculo = async (e: React.KeyboardEvent, campoActual: string) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       
@@ -439,8 +439,14 @@ const GestionTransportistas: React.FC = () => {
           }
           break;
         case 'patente':
-          // En el último campo, guardar el vehículo
-          crearVehiculo();
+          // En el último campo, guardar el vehículo y luego mover el cursor al campo marca
+          await crearVehiculo();
+          // Después de guardar, mover el cursor al campo marca para agregar otro vehículo
+          setTimeout(() => {
+            if (marcaRef.current) {
+              marcaRef.current.focus();
+            }
+          }, 100);
           break;
       }
     }

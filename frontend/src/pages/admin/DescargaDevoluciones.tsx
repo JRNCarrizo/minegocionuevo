@@ -22,7 +22,7 @@ interface PlanillaDevolucion {
 interface DetallePlanillaDevolucion {
   id: number;
   productoId?: number;
-  codigoPersonalizado?: string;
+  numeroPersonalizado?: string;
   descripcion: string;
   cantidad: number;
   observaciones?: string;
@@ -1209,6 +1209,16 @@ export default function DescargaDevoluciones() {
                       alignItems: 'center'
                     }}>
                       <div>
+                        {detalle.numeroPersonalizado && (
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: '#2563eb',
+                            fontWeight: '600',
+                            marginBottom: '0.25rem'
+                          }}>
+                            Código: {detalle.numeroPersonalizado}
+                          </div>
+                        )}
                         <div style={{
                           fontWeight: '600',
                           color: '#1e293b',
@@ -1217,14 +1227,6 @@ export default function DescargaDevoluciones() {
                         }}>
                           {detalle.descripcion}
                         </div>
-                        {detalle.codigoPersonalizado && (
-                          <div style={{
-                            fontSize: '0.75rem',
-                            color: '#64748b'
-                          }}>
-                            Código: {detalle.codigoPersonalizado}
-                          </div>
-                        )}
                       </div>
                       <div>
                         <div style={{
@@ -1456,7 +1458,7 @@ export default function DescargaDevoluciones() {
                             color: '#64748b',
                             marginBottom: '0.5rem'
                           }}>
-                            Código: {producto.codigoPersonalizado || 'N/A'}
+                            Código: {producto.numeroPersonalizado || 'N/A'}
                           </div>
                         </div>
                         <div style={{

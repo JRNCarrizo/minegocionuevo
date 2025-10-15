@@ -1692,61 +1692,128 @@ export default function GestionSectores() {
               }
 
               return (
-                <div className="tabla-productos">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Código</th>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        <th>Última Actualización</th>
-                        <th>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                <div className="contenedor-productos">
+                  {window.innerWidth <= 768 ? (
+                    // Vista móvil con tarjetas
+                    <div className="productos-mobile-cards">
                       {productosFiltrados.map((stock, index) => (
-                        <tr 
+                        <div 
                           key={stock.id}
-                          className={filaSeleccionada === index ? 'fila-seleccionada' : ''}
+                          className={`producto-mobile-card ${filaSeleccionada === index ? 'fila-seleccionada' : ''}`}
                         >
-                          <td className="codigo-producto-tabla">
-                            {stock.producto.codigoPersonalizado || '-'}
-                          </td>
-                          <td>
-                            <div className="nombre-producto-tabla">
-                              {stock.producto.nombre}
+                          {/* Primera fila: Código y Nombre */}
+                          <div className="producto-card-row">
+                            <div className="producto-codigo-container">
+                              <div className="producto-label">Código</div>
+                              <div className="producto-codigo-value">
+                                {stock.producto.codigoPersonalizado || 'Sin código'}
+                              </div>
                             </div>
-                          </td>
-                          <td>
-                            <span className="cantidad-producto-tabla">
-                              {stock.cantidad}
-                            </span>
-                          </td>
-                          <td className="fecha-producto-tabla">
-                            {new Date(stock.fechaActualizacion).toLocaleDateString()}
-                          </td>
-                          <td className="acciones-producto-tabla">
-                            <div className="botones-accion-producto">
+                            <div className="producto-nombre-container">
+                              <div className="producto-label">Producto</div>
+                              <div className="producto-nombre-value">
+                                {stock.producto.nombre}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Segunda fila: Cantidad, Fecha y Acciones */}
+                          <div className="producto-card-row">
+                            <div className="producto-cantidad-container">
+                              <div className="producto-label">Cantidad</div>
+                              <div className="producto-cantidad-value">
+                                {stock.cantidad}
+                              </div>
+                            </div>
+                            <div className="producto-fecha-container">
+                              <div className="producto-label">Actualizado</div>
+                              <div className="producto-fecha-value">
+                                {new Date(stock.fechaActualizacion).toLocaleDateString('es-ES', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: '2-digit'
+                                })}
+                              </div>
+                            </div>
+                            <div className="producto-acciones-container">
                               <button
                                 onClick={() => abrirModalTransferirProducto(stock)}
-                                className={`boton-transferir-producto ${filaSeleccionada === index && accionSeleccionada === 0 ? 'accion-seleccionada' : ''}`}
+                                className={`boton-accion-mobile boton-transferir-mobile ${filaSeleccionada === index && accionSeleccionada === 0 ? 'accion-seleccionada' : ''}`}
                                 title="Transferir stock"
                               >
                                 🔄
                               </button>
                               <button
                                 onClick={() => quitarProductoDelSector(stock.id, stock.producto.nombre)}
-                                className={`boton-quitar-producto ${filaSeleccionada === index && accionSeleccionada === 1 ? 'accion-seleccionada' : ''}`}
-                                title="Quitar producto del sector"
+                                className={`boton-accion-mobile boton-quitar-mobile ${filaSeleccionada === index && accionSeleccionada === 1 ? 'accion-seleccionada' : ''}`}
+                                title="Quitar producto"
                               >
                                 🗑️
                               </button>
                             </div>
-                          </td>
-                        </tr>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
+                    </div>
+                  ) : (
+                    // Vista desktop con tabla
+                    <div className="tabla-productos">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Última Actualización</th>
+                            <th>Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {productosFiltrados.map((stock, index) => (
+                            <tr 
+                              key={stock.id}
+                              className={filaSeleccionada === index ? 'fila-seleccionada' : ''}
+                            >
+                              <td className="codigo-producto-tabla">
+                                {stock.producto.codigoPersonalizado || '-'}
+                              </td>
+                              <td>
+                                <div className="nombre-producto-tabla">
+                                  {stock.producto.nombre}
+                                </div>
+                              </td>
+                              <td>
+                                <span className="cantidad-producto-tabla">
+                                  {stock.cantidad}
+                                </span>
+                              </td>
+                              <td className="fecha-producto-tabla">
+                                {new Date(stock.fechaActualizacion).toLocaleDateString()}
+                              </td>
+                              <td className="acciones-producto-tabla">
+                                <div className="botones-accion-producto">
+                                  <button
+                                    onClick={() => abrirModalTransferirProducto(stock)}
+                                    className={`boton-transferir-producto ${filaSeleccionada === index && accionSeleccionada === 0 ? 'accion-seleccionada' : ''}`}
+                                    title="Transferir stock"
+                                  >
+                                    🔄
+                                  </button>
+                                  <button
+                                    onClick={() => quitarProductoDelSector(stock.id, stock.producto.nombre)}
+                                    className={`boton-quitar-producto ${filaSeleccionada === index && accionSeleccionada === 1 ? 'accion-seleccionada' : ''}`}
+                                    title="Quitar producto del sector"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               );
             })()}

@@ -981,3 +981,207 @@
   }
 }
 
+/* ===== FILAS CLICKEABLES PARA TRANSFERIR STOCK ===== */
+.table-row.clickeable-row {
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+/* Estilo para filas con sector */
+.table-row.clickeable-row:has(.sector-badge):hover {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+  border-left: 4px solid #0ea5e9 !important;
+}
+
+.table-row.clickeable-row:has(.sector-badge):hover::after {
+  content: "🔄 Transferir Stock";
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  background: rgba(14, 165, 233, 0.95);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+  animation: fadeInTooltip 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+}
+
+/* Estilo para filas sin sector */
+.table-row.clickeable-row:has(.no-sector-badge):hover {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+  border-left: 4px solid #f59e0b !important;
+}
+
+.table-row.clickeable-row:has(.no-sector-badge):hover::after {
+  content: "⚠️ Asignar a Sector";
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  background: rgba(245, 158, 11, 0.95);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+  animation: fadeInTooltip 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+@keyframes fadeInTooltip {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Asegurar que las filas clickeables mantengan su estilo en diferentes estados */
+.table-row.clickeable-row.fila-seleccionada:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white;
+}
+
+.table-row.clickeable-row.fila-seleccionada:hover::after {
+  background: rgba(255, 255, 255, 0.95);
+  color: #667eea;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
+}
+
+/* Estilos para filas consolidadas (sin sectorizar) */
+.table-row.clickeable-row:has(.consolidated-badge):hover {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  border-left: 4px solid #8b5cf6 !important;
+}
+
+.table-row.clickeable-row:has(.consolidated-badge):hover::after {
+  content: "📊 Ver Detalles";
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  background: rgba(139, 92, 246, 0.95);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+  animation: fadeInTooltip 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* ===== ESTILOS PARA TARJETAS MÓVILES ===== */
+.mobile-cards-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-radius: 12px;
+  margin: 0.5rem;
+}
+
+.mobile-cards-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mobile-cards-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-cards-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.mobile-cards-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.mobile-stock-card {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  margin-bottom: 1rem;
+}
+
+.mobile-stock-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 8px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+.mobile-stock-card.card-seleccionada {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.25), 0 4px 16px rgba(59, 130, 246, 0.15) !important;
+  transform: translateY(-2px);
+}
+
+.mobile-stock-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.mobile-stock-card:hover::before {
+  opacity: 1;
+}
+
+.clickeable-card {
+  position: relative;
+}
+
+.clickeable-card:hover::after {
+  content: "📱 Toca para transferir stock";
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.95) 0%, rgba(37, 99, 235, 0.95) 100%);
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  animation: fadeInTooltip 0.3s ease-out;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.clickeable-card.card-seleccionada:hover::after {
+  content: "⌨️ Presiona Enter para transferir stock";
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
+  color: #3b82f6;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+}
+

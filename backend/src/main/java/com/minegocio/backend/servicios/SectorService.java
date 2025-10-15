@@ -362,7 +362,9 @@ public class SectorService {
             item.put("producto", Map.of(
                 "id", stock.getProducto().getId(),
                 "nombre", stock.getProducto().getNombre(),
-                "codigoPersonalizado", stock.getProducto().getCodigoPersonalizado() != null ? stock.getProducto().getCodigoPersonalizado() : ""
+                "codigoPersonalizado", stock.getProducto().getCodigoPersonalizado() != null ? stock.getProducto().getCodigoPersonalizado() : "",
+                "unidadMedida", stock.getProducto().getUnidad() != null ? stock.getProducto().getUnidad() : "",
+                "imagenes", stock.getProducto().getImagenes() != null ? stock.getProducto().getImagenes() : new ArrayList<>()
             ));
             item.put("sector", Map.of(
                 "id", stock.getSector().getId(),
@@ -419,7 +421,9 @@ public class SectorService {
                     item.put("producto", Map.of(
                         "id", producto.getId(),
                         "nombre", producto.getNombre(),
-                        "codigoPersonalizado", producto.getCodigoPersonalizado() != null ? producto.getCodigoPersonalizado() : ""
+                        "codigoPersonalizado", producto.getCodigoPersonalizado() != null ? producto.getCodigoPersonalizado() : "",
+                        "unidadMedida", producto.getUnidad() != null ? producto.getUnidad() : "",
+                        "imagenes", producto.getImagenes() != null ? producto.getImagenes() : new ArrayList<>()
                     ));
                     item.put("sector", null); // Sin sector asignado
                     item.put("cantidad", tieneStockCero ? producto.getStock() : stockSinSectorizar); // Stock sin sectorizar o stock total si es cero
