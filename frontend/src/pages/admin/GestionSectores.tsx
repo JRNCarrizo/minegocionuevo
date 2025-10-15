@@ -47,6 +47,24 @@ interface AsignacionProducto {
   cantidad: number;
 }
 
+interface HistorialMovimiento {
+  id: number;
+  productoId: number;
+  nombreProducto: string;
+  codigoPersonalizado?: string;
+  sectorOrigenId?: number;
+  nombreSectorOrigen?: string;
+  sectorDestinoId?: number;
+  nombreSectorDestino?: string;
+  cantidad: number;
+  tipoMovimiento: string;
+  descripcionTipoMovimiento?: string;
+  usuarioId?: number;
+  nombreUsuario?: string;
+  fechaMovimiento: string;
+  observaciones?: string;
+}
+
 export default function GestionSectores() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const navigate = useNavigate();
@@ -59,7 +77,14 @@ export default function GestionSectores() {
   const [mostrarModalDetalle, setMostrarModalDetalle] = useState(false);
   const [mostrarModalAsignar, setMostrarModalAsignar] = useState(false);
   const [mostrarModalTransferir, setMostrarModalTransferir] = useState(false);
+  const [mostrarModalHistorial, setMostrarModalHistorial] = useState(false);
+  const [mostrarModalHistorialGeneral, setMostrarModalHistorialGeneral] = useState(false);
   const [sectorSeleccionado, setSectorSeleccionado] = useState<Sector | null>(null);
+  const [historialMovimientos, setHistorialMovimientos] = useState<HistorialMovimiento[]>([]);
+  const [historialGeneral, setHistorialGeneral] = useState<HistorialMovimiento[]>([]);
+  const [cargandoHistorial, setCargandoHistorial] = useState(false);
+  const [cargandoHistorialGeneral, setCargandoHistorialGeneral] = useState(false);
+  const [filtroHistorialGeneral, setFiltroHistorialGeneral] = useState('');
   const [productosEnSector, setProductosEnSector] = useState<StockPorSector[]>([]);
   const [productosDisponibles, setProductosDisponibles] = useState<ProductoDisponible[]>([]);
   const [asignaciones, setAsignaciones] = useState<AsignacionProducto[]>([]);
@@ -328,6 +353,48 @@ export default function GestionSectores() {
     } catch (error) {
       console.error('Error al cargar productos del sector:', error);
       toast.error('Error al cargar productos del sector');
+    }
+  };
+
+  const cargarHistorialMovimientos = async (sectorId: number) => {
+    try {
+      setCargandoHistorial(true);
+      const response = await apiCall(`/historial-movimientos/sector/${sectorId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setHistorialMovimientos(data || []);
+      } else {
+        toast.error('Error al cargar historial de movimientos');
+        setHistorialMovimientos([]);
+      }
+    } catch (error) {
+      console.error('Error al cargar historial de movimientos:', error);
+      toast.error('Error al cargar historial de movimientos');
+      setHistorialMovimientos([]);
+    } finally {
+      setCargandoHistorial(false);
+    }
+  };
+
+  const cargarHistorialGeneral = async () => {
+    try {
+      setCargandoHistorialGeneral(true);
+      const response = await apiCall('/historial-movimientos/hoy');
+      
+      if (response.ok) {
+        const data = await response.json();
+        setHistorialGeneral(data || []);
+      } else {
+        toast.error('Error al cargar historial general');
+        setHistorialGeneral([]);
+      }
+    } catch (error) {
+      console.error('Error al cargar historial general:', error);
+      toast.error('Error al cargar historial general');
+      setHistorialGeneral([]);
+    } finally {
+      setCargandoHistorialGeneral(false);
     }
   };
 
@@ -623,6 +690,28 @@ export default function GestionSectores() {
     setMostrarModalTransferir(true);
   };
 
+  const abrirModalHistorial = async (sector: Sector) => {
+    setSectorSeleccionado(sector);
+    await cargarHistorialMovimientos(sector.id);
+    setMostrarModalHistorial(true);
+  };
+
+  const abrirModalHistorialGeneral = async () => {
+    setFiltroHistorialGeneral('');
+    await cargarHistorialGeneral();
+    setMostrarModalHistorialGeneral(true);
+  };
+
+  // Filtrar historial general por producto
+  const historialGeneralFiltrado = historialGeneral.filter(movimiento => {
+    if (!filtroHistorialGeneral.trim()) return true;
+    const busqueda = filtroHistorialGeneral.toLowerCase();
+    return (
+      movimiento.nombreProducto.toLowerCase().includes(busqueda) ||
+      (movimiento.codigoPersonalizado && movimiento.codigoPersonalizado.toLowerCase().includes(busqueda))
+    );
+  });
+
   const limpiarFormulario = () => {
     setFormData({
       nombre: '',
@@ -640,12 +729,15 @@ export default function GestionSectores() {
     setMostrarModalDetalle(false);
     setMostrarModalAsignar(false);
     setMostrarModalTransferir(false);
+    setMostrarModalHistorial(false);
+    setMostrarModalHistorialGeneral(false);
     setSectorSeleccionado(null);
     setProductosEnSector([]);
     setProductosDisponibles([]);
     setAsignaciones([]);
     setFiltroBusquedaAsignacion('');
     setFiltroBusquedaProductos('');
+    setFiltroHistorialGeneral('');
     setProductosConStock([]);
     setProductoSeleccionado(null);
     setSectorDestino('');
@@ -850,7 +942,8 @@ export default function GestionSectores() {
 
       // Si hay otros modales abiertos, solo manejar Escape
       if (mostrarModalCrear || mostrarModalEditar || 
-          mostrarModalDetalle || mostrarModalAsignar || mostrarModalTransferir) {
+          mostrarModalDetalle || mostrarModalAsignar || mostrarModalTransferir ||
+          mostrarModalHistorial || mostrarModalHistorialGeneral) {
         if (event.key === 'Escape') {
           event.preventDefault();
           event.stopPropagation();
@@ -964,6 +1057,7 @@ export default function GestionSectores() {
     };
   }, [mostrarModalCrear, mostrarModalEditar, mostrarModalProductos, 
       mostrarModalDetalle, mostrarModalAsignar, mostrarModalTransferir, 
+      mostrarModalHistorial, mostrarModalHistorialGeneral,
       navigate, modoNavegacion, elementoSeleccionado, sectoresActivos, 
       sectoresInactivos, mostrarSectoresInactivos, migrarSectores, abrirModalProductos, 
       setMostrarModalCrear, productosEnSector, filtroBusquedaProductos, filaSeleccionada, 
@@ -1006,15 +1100,22 @@ export default function GestionSectores() {
             Ver Stock General
           </button>
           <button
+            onClick={() => abrirModalHistorialGeneral()}
+            className={`boton-historial-general ${modoNavegacion && elementoSeleccionado === 1 ? 'seleccionado' : ''}`}
+          >
+            <span className="icono-boton">📈</span>
+            Historial General
+          </button>
+          <button
             onClick={() => setMostrarModalCrear(true)}
-            className={`boton-crear ${modoNavegacion && elementoSeleccionado === 1 ? 'seleccionado' : ''}`}
+            className={`boton-crear ${modoNavegacion && elementoSeleccionado === 2 ? 'seleccionado' : ''}`}
           >
             <span className="icono-boton">➕</span>
             Crear Nuevo Sector
           </button>
           <button
             onClick={migrarSectores}
-            className={`boton-migrar ${modoNavegacion && elementoSeleccionado === 2 ? 'seleccionado' : ''}`}
+            className={`boton-migrar ${modoNavegacion && elementoSeleccionado === 3 ? 'seleccionado' : ''}`}
           >
             <span className="icono-boton">🔄</span>
             Migrar Sectores Existentes
@@ -1179,6 +1280,16 @@ export default function GestionSectores() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              abrirModalHistorial(sector);
+                            }}
+                            className="boton-accion boton-historial"
+                            title="Ver historial de movimientos"
+                          >
+                            📊
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
                               abrirModalEditar(sector);
                             }}
                             className="boton-accion boton-editar"
@@ -1282,6 +1393,16 @@ export default function GestionSectores() {
 
                         {/* Botones de acción para sectores inactivos */}
                         <div className="botones-accion-sector">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              abrirModalHistorial(sector);
+                            }}
+                            className="boton-accion boton-historial"
+                            title="Ver historial de movimientos"
+                          >
+                            📊
+                          </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -2178,6 +2299,128 @@ export default function GestionSectores() {
         </div>
       )}
 
+      {/* Modal de Historial de Movimientos */}
+      {mostrarModalHistorial && (
+        <div className="modal-overlay">
+          <div className="modal-formulario modal-historial">
+            <div className="header-modal">
+              <div className="contenido-header-modal">
+                <div className="icono-modal">📊</div>
+                <div>
+                  <h3 className="titulo-modal">Historial de Movimientos</h3>
+                  <p className="subtitulo-modal">Sector: {sectorSeleccionado?.nombre}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setMostrarModalHistorial(false)} 
+                className="boton-cerrar-modal"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="contenido-modal-historial">
+              {cargandoHistorial ? (
+                <div className="cargando-historial">
+                  <div className="spinner"></div>
+                  <p>Cargando historial de movimientos...</p>
+                </div>
+              ) : historialMovimientos.length === 0 ? (
+                <div className="sin-datos-historial">
+                  <div className="icono-sin-datos">📋</div>
+                  <h4>Sin movimientos registrados</h4>
+                  <p>Este sector aún no tiene movimientos de stock registrados.</p>
+                </div>
+              ) : (
+                <div className="lista-historial">
+                  {historialMovimientos.map((movimiento) => (
+                    <div key={movimiento.id} className="item-historial">
+                      <div className="header-item-historial">
+                        <div className="tipo-movimiento">
+                          <span className={`icono-tipo ${movimiento.tipoMovimiento.toLowerCase()}`}>
+                            {movimiento.tipoMovimiento === 'TRANSFERENCIA' && '🔄'}
+                            {movimiento.tipoMovimiento === 'RECEPCION' && '📦'}
+                            {movimiento.tipoMovimiento === 'ASIGNACION' && '🔗'}
+                            {movimiento.tipoMovimiento === 'REMOCION' && '🗑️'}
+                          </span>
+                          <span className="nombre-tipo">
+                            {movimiento.descripcionTipoMovimiento || movimiento.tipoMovimiento}
+                          </span>
+                        </div>
+                        <div className="fecha-movimiento">
+                          {new Date(movimiento.fechaMovimiento).toLocaleString('es-ES', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                      
+                      <div className="detalles-movimiento">
+                        <div className="producto-movimiento">
+                          <div className="producto-nombre-codigo">
+                            {movimiento.codigoPersonalizado && (
+                              <span className="codigo-producto">
+                                {movimiento.codigoPersonalizado}
+                              </span>
+                            )}
+                            <strong>{movimiento.nombreProducto}</strong>
+                          </div>
+                        </div>
+                        
+                        <div className="cantidad-movimiento">
+                          <span className="cantidad">Cantidad: {movimiento.cantidad}</span>
+                        </div>
+                        
+                        <div className="sectores-movimiento">
+                          {movimiento.nombreSectorOrigen && (
+                            <div className="sector-info">
+                              <span className="label">Desde:</span>
+                              <span className="sector-nombre">{movimiento.nombreSectorOrigen}</span>
+                            </div>
+                          )}
+                          {movimiento.nombreSectorDestino && (
+                            <div className="sector-info">
+                              <span className="label">Hacia:</span>
+                              <span className="sector-nombre">{movimiento.nombreSectorDestino}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {movimiento.nombreUsuario && (
+                          <div className="usuario-movimiento">
+                            <span className="label">Usuario:</span>
+                            <span className="usuario-nombre">{movimiento.nombreUsuario}</span>
+                          </div>
+                        )}
+                        
+                        {movimiento.observaciones && (
+                          <div className="observaciones-movimiento">
+                            <span className="label">Observaciones:</span>
+                            <span className="observaciones-texto">{movimiento.observaciones}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="footer-modal">
+              <button
+                onClick={() => setMostrarModalHistorial(false)}
+                className="boton-primario"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de confirmación para eliminar sector */}
       {mostrarModalConfirmarEliminar && (
         <div className="modal-overlay">
@@ -2210,6 +2453,142 @@ export default function GestionSectores() {
                 disabled={eliminandoSector}
               >
                 {eliminandoSector ? '⏳ Eliminando...' : '🗑️ Eliminar Sector'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Historial General */}
+      {mostrarModalHistorialGeneral && (
+        <div className="modal-overlay">
+          <div className="modal-formulario modal-historial-general">
+            <div className="header-modal">
+              <h2 className="titulo-modal">
+                <span className="icono-titulo">📈</span>
+                Historial General - Movimientos del Día
+              </h2>
+              <button 
+                onClick={() => setMostrarModalHistorialGeneral(false)}
+                className="boton-cerrar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="contenido-modal-historial-general">
+              {/* Filtro de búsqueda */}
+              <div className="filtro-historial-general">
+                <div className="campo-filtro">
+                  <label htmlFor="filtroHistorialGeneral">🔍 Buscar por producto:</label>
+                  <input
+                    id="filtroHistorialGeneral"
+                    type="text"
+                    value={filtroHistorialGeneral}
+                    onChange={(e) => setFiltroHistorialGeneral(e.target.value)}
+                    placeholder="Escribe el nombre o código del producto..."
+                    className="input-filtro"
+                  />
+                </div>
+                {filtroHistorialGeneral && (
+                  <div className="info-filtro">
+                    Mostrando {historialGeneralFiltrado.length} de {historialGeneral.length} movimientos
+                  </div>
+                )}
+              </div>
+
+              {/* Lista de movimientos */}
+              {cargandoHistorialGeneral ? (
+                <div className="cargando-historial-general">
+                  <div className="spinner"></div>
+                  <p>Cargando movimientos del día...</p>
+                </div>
+              ) : historialGeneral.length === 0 ? (
+                <div className="sin-datos-historial-general">
+                  <div className="icono-sin-datos">📊</div>
+                  <h4>No hay movimientos hoy</h4>
+                  <p>Los movimientos de stock aparecerán aquí cuando realices transferencias o recepciones.</p>
+                </div>
+              ) : (
+                <div className="lista-historial-general">
+                  {historialGeneralFiltrado.map((movimiento) => (
+                    <div key={movimiento.id} className="item-historial-general">
+                      <div className="header-item-historial-general">
+                        <div className="tipo-movimiento-general">
+                          <span className={`icono-tipo-general ${movimiento.tipoMovimiento.toLowerCase()}`}>
+                            {movimiento.tipoMovimiento === 'TRANSFERENCIA' && '🔄'}
+                            {movimiento.tipoMovimiento === 'RECEPCION' && '📦'}
+                            {movimiento.tipoMovimiento === 'ASIGNACION' && '🔗'}
+                            {movimiento.tipoMovimiento === 'REMOCION' && '🗑️'}
+                          </span>
+                          <span className="nombre-tipo-general">
+                            {movimiento.descripcionTipoMovimiento || movimiento.tipoMovimiento}
+                          </span>
+                        </div>
+                        <div className="fecha-movimiento-general">
+                          {new Date(movimiento.fechaMovimiento).toLocaleString('es-ES', {
+                            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                      
+                      <div className="detalles-movimiento-general">
+                        <div className="producto-movimiento-general">
+                          <div className="producto-nombre-codigo-general">
+                            {movimiento.codigoPersonalizado && (
+                              <span className="codigo-producto-general">
+                                {movimiento.codigoPersonalizado}
+                              </span>
+                            )}
+                            <strong>{movimiento.nombreProducto}</strong>
+                          </div>
+                        </div>
+                        
+                        <div className="cantidad-movimiento-general">
+                          <span className="cantidad-general">Cantidad: {movimiento.cantidad}</span>
+                        </div>
+                        
+                        <div className="sectores-movimiento-general">
+                          {movimiento.nombreSectorOrigen && (
+                            <div className="sector-info-general">
+                              <span className="label-general">Desde:</span>
+                              <span className="sector-nombre-general">{movimiento.nombreSectorOrigen}</span>
+                            </div>
+                          )}
+                          {movimiento.nombreSectorDestino && (
+                            <div className="sector-info-general">
+                              <span className="label-general">Hacia:</span>
+                              <span className="sector-nombre-general">{movimiento.nombreSectorDestino}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {movimiento.nombreUsuario && (
+                          <div className="usuario-movimiento-general">
+                            <span className="label-general">Usuario:</span>
+                            <span className="usuario-nombre-general">{movimiento.nombreUsuario}</span>
+                          </div>
+                        )}
+                        
+                        {movimiento.observaciones && (
+                          <div className="observaciones-movimiento-general">
+                            <span className="label-general">Observaciones:</span>
+                            <span className="observaciones-texto-general">{movimiento.observaciones}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="footer-modal">
+              <button 
+                onClick={() => setMostrarModalHistorialGeneral(false)}
+                className="boton-primario"
+              >
+                Cerrar
               </button>
             </div>
           </div>

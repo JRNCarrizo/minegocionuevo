@@ -4,6 +4,8 @@ import com.minegocio.backend.entidades.Sector;
 import com.minegocio.backend.entidades.StockPorSector;
 import com.minegocio.backend.entidades.Producto;
 import com.minegocio.backend.entidades.Empresa;
+import com.minegocio.backend.entidades.HistorialMovimientoStock;
+import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.repositorios.SectorRepository;
 import com.minegocio.backend.repositorios.StockPorSectorRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
@@ -38,6 +40,9 @@ public class SectorService {
     
     @Autowired
     private EmpresaRepository empresaRepository;
+    
+    @Autowired
+    private HistorialMovimientoStockService historialMovimientoStockService;
     
     /**
      * Crear un nuevo sector
@@ -637,7 +642,7 @@ public class SectorService {
      * Recibir productos en un sector (transferir desde otras ubicaciones)
      */
     @Transactional
-    public void recibirProductosEnSector(Long sectorId, Long empresaId, List<Map<String, Object>> recepciones) {
+    public void recibirProductosEnSector(Long sectorId, Long empresaId, List<Map<String, Object>> recepciones, Usuario usuario) {
         // System.out.println("🔍 SECTOR SERVICE - Iniciando recepción de productos en el sector: " + sectorId);
         // System.out.println("🔍 SECTOR SERVICE - Empresa: " + empresaId);
         // System.out.println("🔍 SECTOR SERVICE - Recepciones: " + recepciones.size());
@@ -762,6 +767,14 @@ public class SectorService {
                     System.out.println("🔄 SINCRONIZAR - Producto " + producto.getNombre() + " ahora tiene sector: " + sector.getNombre());
                 }
                 
+                // Registrar movimiento en el historial
+                String observaciones = String.format("Recepción de %d unidades en %s", 
+                    cantidad, sector.getNombre());
+                historialMovimientoStockService.registrarMovimiento(
+                    producto, null, sector, cantidad, 
+                    HistorialMovimientoStock.TipoMovimiento.RECEPCION, 
+                    usuario, sector.getEmpresa(), observaciones);
+                
             } catch (NumberFormatException e) {
                 throw new RuntimeException("Formato inválido en recepción: " + recepcion);
             } catch (Exception e) {
@@ -782,7 +795,7 @@ public class SectorService {
      * Quitar un producto de un sector
      */
     @Transactional
-    public Map<String, Object> quitarProductoDeSector(Long sectorId, Long empresaId, Long stockId) {
+    public Map<String, Object> quitarProductoDeSector(Long sectorId, Long empresaId, Long stockId, Usuario usuario) {
         // System.out.println("🔍 SECTOR SERVICE - Iniciando quitar producto del sector: " + sectorId);
         // System.out.println("🔍 SECTOR SERVICE - Empresa: " + empresaId);
         // System.out.println("🔍 SECTOR SERVICE - Stock ID: " + stockId);
@@ -838,6 +851,14 @@ public class SectorService {
         // sincronizarStockProductos(empresaId);
         // System.out.println("🔄 SINCRONIZAR - Sincronización completada");
         
+        // Registrar movimiento en el historial
+        String observaciones = String.format("Remoción de %d unidades desde %s", 
+            stockPorSector.getCantidad(), sector.getNombre());
+        historialMovimientoStockService.registrarMovimiento(
+            stockPorSector.getProducto(), sector, null, stockPorSector.getCantidad(), 
+            HistorialMovimientoStock.TipoMovimiento.REMOCION, 
+            usuario, sector.getEmpresa(), observaciones);
+        
         // Devolver información para que el frontend pueda refrescar
         Map<String, Object> resultado = new HashMap<>();
         resultado.put("success", true);
@@ -857,7 +878,7 @@ public class SectorService {
      * Transferir stock entre sectores
      */
     @Transactional
-    public void transferirStockEntreSectores(Long empresaId, Long productoId, Long sectorOrigenId, Long sectorDestinoId, Integer cantidad) {
+    public void transferirStockEntreSectores(Long empresaId, Long productoId, Long sectorOrigenId, Long sectorDestinoId, Integer cantidad, Usuario usuario) {
         System.out.println("🔍 TRANSFERIR STOCK - Iniciando transferencia");
         System.out.println("🔍 TRANSFERIR STOCK - Empresa: " + empresaId);
         System.out.println("🔍 TRANSFERIR STOCK - Producto: " + productoId);
@@ -953,6 +974,14 @@ public class SectorService {
             stockPorSectorRepository.save(stockOrigenEntity);
             System.out.println("🔍 TRANSFERIR STOCK - Stock actualizado en sector origen: " + stockOrigenEntity.getCantidad());
         }
+        
+        // Registrar movimiento en el historial
+        String observaciones = String.format("Transferencia de %d unidades desde %s hacia %s", 
+            cantidad, sectorOrigen.getNombre(), sectorDestino.getNombre());
+        historialMovimientoStockService.registrarMovimiento(
+            producto, sectorOrigen, sectorDestino, cantidad, 
+            HistorialMovimientoStock.TipoMovimiento.TRANSFERENCIA, 
+            usuario, sectorOrigen.getEmpresa(), observaciones);
         
         System.out.println("🔍 TRANSFERIR STOCK - Transferencia completada exitosamente");
         System.out.println("🔍 TRANSFERIR STOCK - Producto: " + producto.getNombre());
@@ -1421,5 +1450,75 @@ public class SectorService {
         System.out.println("🔄 SINCRONIZACIÓN ADICIONAL - Limpiando productos con sectores eliminados...");
         limpiarProductosConSectoresEliminados(empresaId);
         System.out.println("🔄 SINCRONIZACIÓN ADICIONAL - Completada");
+    }
+    
+    /**
+     * Asignar producto desde Stock General a un sector
+     */
+    @Transactional
+    public void asignarProductoASector(Long empresaId, Long productoId, Long sectorId, Integer cantidad, Usuario usuario) {
+        System.out.println("🔍 ASIGNAR PRODUCTO A SECTOR - Iniciando asignación");
+        System.out.println("🔍 ASIGNAR PRODUCTO A SECTOR - Empresa: " + empresaId);
+        System.out.println("🔍 ASIGNAR PRODUCTO A SECTOR - Producto: " + productoId);
+        System.out.println("🔍 ASIGNAR PRODUCTO A SECTOR - Sector: " + sectorId);
+        System.out.println("🔍 ASIGNAR PRODUCTO A SECTOR - Cantidad: " + cantidad);
+        
+        // Validaciones básicas
+        if (cantidad <= 0) {
+            throw new RuntimeException("La cantidad a asignar debe ser mayor a 0");
+        }
+        
+        // Verificar que el producto existe y pertenece a la empresa
+        Producto producto = productoRepository.findById(productoId)
+            .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productoId));
+        
+        if (!producto.getEmpresa().getId().equals(empresaId)) {
+            throw new RuntimeException("El producto no pertenece a la empresa especificada");
+        }
+        
+        if (!producto.getActivo()) {
+            throw new RuntimeException("No se pueden asignar productos inactivos: " + producto.getNombre());
+        }
+        
+        // Verificar que el sector existe y pertenece a la empresa
+        Sector sector = sectorRepository.findById(sectorId)
+            .orElseThrow(() -> new RuntimeException("Sector no encontrado: " + sectorId));
+        
+        if (!sector.getEmpresa().getId().equals(empresaId)) {
+            throw new RuntimeException("El sector no pertenece a la empresa especificada");
+        }
+        
+        if (!sector.getActivo()) {
+            throw new RuntimeException("El sector está inactivo: " + sector.getNombre());
+        }
+        
+        // Buscar si ya existe stock del producto en el sector
+        Optional<StockPorSector> stockExistente = stockPorSectorRepository.findByProductoIdAndSectorId(productoId, sectorId);
+        
+        if (stockExistente.isPresent()) {
+            // Actualizar stock existente
+            StockPorSector stock = stockExistente.get();
+            stock.setCantidad(stock.getCantidad() + cantidad);
+            stockPorSectorRepository.save(stock);
+            System.out.println("🔍 ASIGNAR PRODUCTO A SECTOR - Stock actualizado: " + stock.getCantidad());
+        } else {
+            // Crear nueva asignación
+            StockPorSector nuevoStock = new StockPorSector(producto, sector, cantidad);
+            stockPorSectorRepository.save(nuevoStock);
+            System.out.println("🔍 ASIGNAR PRODUCTO A SECTOR - Nueva asignación creada: " + cantidad);
+        }
+        
+        // Registrar movimiento en el historial
+        String observaciones = String.format("Asignación de %d unidades desde Stock General a %s", 
+            cantidad, sector.getNombre());
+        historialMovimientoStockService.registrarMovimiento(
+            producto, null, sector, cantidad, 
+            HistorialMovimientoStock.TipoMovimiento.ASIGNACION, 
+            usuario, sector.getEmpresa(), observaciones);
+        
+        System.out.println("🔍 ASIGNAR PRODUCTO A SECTOR - Asignación completada exitosamente");
+        System.out.println("🔍 ASIGNAR PRODUCTO A SECTOR - Producto: " + producto.getNombre());
+        System.out.println("🔍 ASIGNAR PRODUCTO A SECTOR - Sector: " + sector.getNombre());
+        System.out.println("🔍 ASIGNAR PRODUCTO A SECTOR - Cantidad: " + cantidad);
     }
 }

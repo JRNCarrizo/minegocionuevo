@@ -4,8 +4,11 @@ import com.minegocio.backend.dto.SectorDTO;
 import com.minegocio.backend.dto.StockPorSectorDTO;
 import com.minegocio.backend.entidades.Sector;
 import com.minegocio.backend.entidades.StockPorSector;
+import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.servicios.SectorService;
 import com.minegocio.backend.servicios.StockSincronizacionService;
+import com.minegocio.backend.repositorios.UsuarioRepository;
+import com.minegocio.backend.seguridad.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,6 +51,12 @@ public class SectorController {
     
     @Autowired
     private StockSincronizacionService stockSincronizacionService;
+    
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+    
+    @Autowired
+    private JwtUtils jwtUtil;
     
     // Métodos de conversión
     private SectorDTO convertirASectorDTO(Sector sector) {
@@ -510,7 +519,8 @@ public class SectorController {
     public ResponseEntity<?> recibirProductosEnSector(
             @PathVariable Long empresaId,
             @PathVariable Long sectorId,
-            @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request,
+            @RequestHeader("Authorization") String token) {
         try {
             // System.out.println("🔍 RECIBIR PRODUCTOS - Endpoint llamado");
             // System.out.println("🔍 RECIBIR PRODUCTOS - Empresa: " + empresaId);
@@ -525,9 +535,16 @@ public class SectorController {
                 ));
             }
             
+            // Obtener el usuario del token
+            // Limpiar el token removiendo el prefijo "Bearer " si existe
+            String cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+            String email = jwtUtil.extractUsername(cleanToken);
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
             // System.out.println("🔍 RECIBIR PRODUCTOS - Recepciones recibidas: " + recepciones.size());
             
-            sectorService.recibirProductosEnSector(sectorId, empresaId, recepciones);
+            sectorService.recibirProductosEnSector(sectorId, empresaId, recepciones, usuario);
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Productos recibidos exitosamente en el sector",
@@ -551,14 +568,22 @@ public class SectorController {
     public ResponseEntity<?> quitarProductoDeSector(
             @PathVariable Long empresaId,
             @PathVariable Long sectorId,
-            @PathVariable Long stockId) {
+            @PathVariable Long stockId,
+            @RequestHeader("Authorization") String token) {
         try {
             // System.out.println("🔍 QUITAR PRODUCTO - Endpoint llamado");
             // System.out.println("🔍 QUITAR PRODUCTO - Empresa: " + empresaId);
             // System.out.println("🔍 QUITAR PRODUCTO - Sector: " + sectorId);
             // System.out.println("🔍 QUITAR PRODUCTO - Stock ID: " + stockId);
             
-            Map<String, Object> resultado = sectorService.quitarProductoDeSector(sectorId, empresaId, stockId);
+            // Obtener el usuario del token
+            // Limpiar el token removiendo el prefijo "Bearer " si existe
+            String cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+            String email = jwtUtil.extractUsername(cleanToken);
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+            Map<String, Object> resultado = sectorService.quitarProductoDeSector(sectorId, empresaId, stockId, usuario);
             
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
@@ -577,7 +602,8 @@ public class SectorController {
     @PostMapping("/transferir-stock")
     public ResponseEntity<?> transferirStockEntreSectores(
             @PathVariable Long empresaId,
-            @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request,
+            @RequestHeader("Authorization") String token) {
         try {
             // System.out.println("🔍 TRANSFERIR STOCK - Endpoint llamado");
             // System.out.println("🔍 TRANSFERIR STOCK - Empresa: " + empresaId);
@@ -587,12 +613,19 @@ public class SectorController {
             Long sectorDestinoId = Long.valueOf(request.get("sectorDestinoId").toString());
             Integer cantidad = Integer.valueOf(request.get("cantidad").toString());
             
+            // Obtener el usuario del token
+            // Limpiar el token removiendo el prefijo "Bearer " si existe
+            String cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+            String email = jwtUtil.extractUsername(cleanToken);
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
             // System.out.println("🔍 TRANSFERIR STOCK - Producto: " + productoId);
             // System.out.println("🔍 TRANSFERIR STOCK - Sector Origen: " + sectorOrigenId);
             // System.out.println("🔍 TRANSFERIR STOCK - Sector Destino: " + sectorDestinoId);
             // System.out.println("🔍 TRANSFERIR STOCK - Cantidad: " + cantidad);
             
-            sectorService.transferirStockEntreSectores(empresaId, productoId, sectorOrigenId, sectorDestinoId, cantidad);
+            sectorService.transferirStockEntreSectores(empresaId, productoId, sectorOrigenId, sectorDestinoId, cantidad, usuario);
             
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Stock transferido exitosamente entre sectores",
@@ -607,6 +640,44 @@ public class SectorController {
             
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Error al transferir stock: " + e.getMessage()
+            ));
+        }
+    }
+    
+    /**
+     * Asignar producto desde Stock General a un sector
+     */
+    @PostMapping("/asignar-producto")
+    public ResponseEntity<?> asignarProductoASector(
+            @PathVariable Long empresaId,
+            @RequestBody Map<String, Object> request,
+            @RequestHeader("Authorization") String token) {
+        try {
+            Long productoId = Long.valueOf(request.get("productoId").toString());
+            Long sectorId = Long.valueOf(request.get("sectorId").toString());
+            Integer cantidad = Integer.valueOf(request.get("cantidad").toString());
+            
+            // Obtener el usuario del token
+            // Limpiar el token removiendo el prefijo "Bearer " si existe
+            String cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+            String email = jwtUtil.extractUsername(cleanToken);
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+            sectorService.asignarProductoASector(empresaId, productoId, sectorId, cantidad, usuario);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Producto asignado exitosamente al sector",
+                "productoId", productoId,
+                "sectorId", sectorId,
+                "cantidad", cantidad
+            ));
+        } catch (Exception e) {
+            System.err.println("🔍 ASIGNAR PRODUCTO - Error: " + e.getMessage());
+            e.printStackTrace();
+            
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Error al asignar producto: " + e.getMessage()
             ));
         }
     }
