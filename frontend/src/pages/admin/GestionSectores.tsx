@@ -364,7 +364,13 @@ export default function GestionSectores() {
       
       if (response.ok) {
         const data = await response.json();
-        setHistorialMovimientos(data || []);
+        // Ordenar por fecha descendente (más recientes primero)
+        const movimientosOrdenados = (data || []).sort((a: HistorialMovimiento, b: HistorialMovimiento) => {
+          const fechaA = new Date(a.fechaMovimiento);
+          const fechaB = new Date(b.fechaMovimiento);
+          return fechaB.getTime() - fechaA.getTime();
+        });
+        setHistorialMovimientos(movimientosOrdenados);
       } else {
         toast.error('Error al cargar historial de movimientos');
         setHistorialMovimientos([]);
@@ -385,7 +391,13 @@ export default function GestionSectores() {
       
       if (response.ok) {
         const data = await response.json();
-        setHistorialGeneral(data || []);
+        // Ordenar por fecha descendente (más recientes primero)
+        const movimientosOrdenados = (data || []).sort((a: HistorialMovimiento, b: HistorialMovimiento) => {
+          const fechaA = new Date(a.fechaMovimiento);
+          const fechaB = new Date(b.fechaMovimiento);
+          return fechaB.getTime() - fechaA.getTime();
+        });
+        setHistorialGeneral(movimientosOrdenados);
       } else {
         toast.error('Error al cargar historial general');
         setHistorialGeneral([]);
