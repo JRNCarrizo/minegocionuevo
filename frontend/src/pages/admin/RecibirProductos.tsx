@@ -449,8 +449,16 @@ const RecibirProductos: React.FC = () => {
   // Seleccionar producto
   const seleccionarProducto = (producto: StockDetallado) => {
     setProductoSeleccionado(producto);
-    // Filtrar solo ubicaciones con stock disponible
-    const ubicacionesConStock = producto.ubicaciones.filter(ubicacion => ubicacion.cantidad > 0);
+    // Filtrar ubicaciones con stock disponible que NO sean del sector actual
+    const ubicacionesConStock = producto.ubicaciones.filter(ubicacion => {
+      const tieneStock = ubicacion.cantidad > 0;
+      const noEsSectorActual = ubicacion.ubicacion !== sector?.nombre;
+      return tieneStock && noEsSectorActual;
+    });
+    
+    console.log('🔍 [DEBUG] Ubicaciones filtradas para recibir:', ubicacionesConStock.map(u => `${u.ubicacion}: ${u.cantidad}`));
+    console.log('🔍 [DEBUG] Sector actual excluido:', sector?.nombre);
+    
     setUbicacionesFiltradas(ubicacionesConStock);
     setUbicacionSeleccionadaIndex(ubicacionesConStock.length > 0 ? 0 : -1);
     setFiltroBusqueda(producto.productoNombre);
