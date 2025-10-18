@@ -395,6 +395,127 @@ export const formatearFechaConHora = (fechaString: any): string => {
 };
 
 /**
+ * Formatea una fecha con hora para planillas (fechas locales del servidor)
+ * Las fechas de planillas vienen del backend como hora local del servidor, no UTC
+ * @param fechaString - String en formato YYYY-MM-DDTHH:mm:ss (sin Z)
+ */
+export const formatearFechaConHoraPlanilla = (fechaString: any): string => {
+  try {
+    console.log('🔍 formatearFechaConHoraPlanilla - Input:', fechaString, 'Tipo:', typeof fechaString);
+    
+    // Si es null o undefined
+    if (fechaString == null) {
+      return 'N/A';
+    }
+    
+    // Si es un array (formato [year, month, day, hour, minute, second])
+    if (Array.isArray(fechaString)) {
+      console.log('🔍 Procesando array de fecha planilla:', fechaString);
+      const [year, month, day, hour = 0, minute = 0, second = 0] = fechaString;
+      
+      // Crear fecha local (no UTC) para evitar conversión automática
+      const fechaLocal = new Date(year, month - 1, day, hour, minute, second);
+      
+      if (isNaN(fechaLocal.getTime())) {
+        console.log('🔍 Fecha inválida desde array planilla:', fechaString);
+        return 'Fecha inválida';
+      }
+      
+      return fechaLocal.toLocaleString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+    
+    // Si es un string
+    if (typeof fechaString === 'string') {
+      console.log('🔍 Procesando string de fecha planilla:', fechaString);
+      
+      // Si tiene formato ISO con T (YYYY-MM-DDTHH:mm:ss)
+      if (fechaString.includes('T')) {
+        // IMPORTANTE: Las fechas de planillas vienen como hora local del servidor
+        // NO agregar 'Z' - parsear como fecha local
+        const partes = fechaString.split('T');
+        const fechaParte = partes[0].split('-');
+        const horaParte = partes[1].split(':');
+        
+        const year = parseInt(fechaParte[0]);
+        const month = parseInt(fechaParte[1]) - 1; // Meses van de 0-11
+        const day = parseInt(fechaParte[2]);
+        const hour = parseInt(horaParte[0]);
+        const minute = parseInt(horaParte[1]);
+        const second = parseInt(horaParte[2]) || 0;
+        
+        const fechaLocal = new Date(year, month, day, hour, minute, second);
+        
+        if (isNaN(fechaLocal.getTime())) {
+          console.log('🔍 Fecha inválida desde string planilla:', fechaString);
+          return 'Fecha inválida';
+        }
+        
+        console.log('🔍 String planilla procesado como fecha local:', {
+          fechaString,
+          fechaLocal: fechaLocal.toLocaleString('es-AR')
+        });
+        
+        return fechaLocal.toLocaleString('es-AR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+      }
+      
+      // Otros formatos, usar Date constructor
+      const fechaLocal = new Date(fechaString);
+      
+      if (isNaN(fechaLocal.getTime())) {
+        console.log('🔍 Fecha inválida desde string planilla:', fechaString);
+        return 'Fecha inválida';
+      }
+      
+      return fechaLocal.toLocaleString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+    
+    // Si es un objeto Date
+    if (fechaString instanceof Date) {
+      if (isNaN(fechaString.getTime())) {
+        return 'Fecha inválida';
+      }
+      
+      return fechaString.toLocaleString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+    
+    console.log('🔍 Tipo de fecha planilla no reconocido:', typeof fechaString, fechaString);
+    return 'Fecha inválida';
+    
+  } catch (error) {
+    console.error('Error formateando fecha planilla:', error, 'Input:', fechaString);
+    return 'Fecha inválida';
+  }
+};
+
+/**
  * Formatea una fecha con hora en formato más detallado
  * Incluye información de la zona horaria
  */
