@@ -5,7 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha, formatearFechaCorta, formatearFechaConHora, formatearFechaConHoraPlanilla } from '../../utils/dateUtils';
+import { formatearFecha, formatearFechaCorta, formatearFechaConHora } from '../../utils/dateUtils';
 
 interface PlanillaDevolucion {
   id: number;
@@ -847,7 +847,7 @@ export default function DescargaDevoluciones() {
                                   {planilla.totalProductos}
                                 </span> unidades</span>
                                 <span>🛒 {planilla.detalles.length} productos</span>
-                                <span>⏰ {formatearFechaConHoraPlanilla(planilla.fechaPlanilla)}</span>
+                                <span>⏰ {formatearFechaConHora(planilla.fechaPlanilla)}</span>
                               </div>
                             </div>
                             <div style={{

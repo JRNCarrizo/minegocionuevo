@@ -316,36 +316,62 @@ export const formatearFechaConHora = (fechaString: any): string => {
       
       // Si tiene formato ISO con T (YYYY-MM-DDTHH:mm:ss)
       if (fechaString.includes('T')) {
-        // IMPORTANTE: Las fechas del backend vienen en UTC pero SIN el sufijo 'Z'
-        // Necesitamos agregarle 'Z' para que JavaScript las interprete correctamente como UTC
-        const fechaUTC = fechaString.endsWith('Z') ? fechaString : fechaString + 'Z';
-        
         console.log('🔍 Fecha original:', fechaString);
-        console.log('🔍 Fecha con Z agregada:', fechaUTC);
         
-        const fechaObj = new Date(fechaUTC);
-        
-        if (isNaN(fechaObj.getTime())) {
-          console.log('🔍 Fecha inválida desde string ISO:', fechaString);
-          return 'Fecha inválida';
+        // DETECCIÓN AUTOMÁTICA: Si la fecha termina en 'Z', es UTC; si no, es fecha local del servidor
+        if (fechaString.endsWith('Z')) {
+          // Es UTC, convertir a local
+          console.log('🔍 Detectado como UTC, convirtiendo a local');
+          const fechaObj = new Date(fechaString);
+          
+          if (isNaN(fechaObj.getTime())) {
+            console.log('🔍 Fecha inválida desde string UTC:', fechaString);
+            return 'Fecha inválida';
+          }
+          
+          return fechaObj.toLocaleString('es-AR', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: false 
+          });
+        } else {
+          // Es fecha local del servidor (planillas), parsear como fecha local
+          console.log('🔍 Detectado como fecha local del servidor, parseando como local');
+          const partes = fechaString.split('T');
+          const fechaParte = partes[0].split('-');
+          const horaParte = partes[1].split(':');
+          
+          const year = parseInt(fechaParte[0]);
+          const month = parseInt(fechaParte[1]) - 1; // Meses van de 0-11
+          const day = parseInt(fechaParte[2]);
+          const hour = parseInt(horaParte[0]);
+          const minute = parseInt(horaParte[1]);
+          const second = parseInt(horaParte[2]) || 0;
+          
+          const fechaLocal = new Date(year, month, day, hour, minute, second);
+          
+          if (isNaN(fechaLocal.getTime())) {
+            console.log('🔍 Fecha inválida desde string local:', fechaString);
+            return 'Fecha inválida';
+          }
+          
+          console.log('🔍 String local procesado:', {
+            fechaString,
+            fechaLocal: fechaLocal.toLocaleString('es-AR')
+          });
+          
+          return fechaLocal.toLocaleString('es-AR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
         }
-        
-        console.log('🔍 String ISO procesado como UTC y convertido a local:', {
-          fechaString,
-          fechaUTC,
-          fechaObjUTC: fechaObj.toISOString(),
-          fechaLocal: fechaObj.toLocaleString('es-AR')
-        });
-        
-        // toLocaleString convierte automáticamente de UTC a la zona horaria local del navegador
-        return fechaObj.toLocaleString('es-AR', { 
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit', 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          hour12: false 
-        });
       }
       
       // Otros formatos, usar Date constructor

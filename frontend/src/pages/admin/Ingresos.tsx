@@ -5,7 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha, formatearFechaCorta, formatearFechaConHora, formatearFechaConHoraPlanilla } from '../../utils/dateUtils';
+import { formatearFecha, formatearFechaCorta, formatearFechaConHora } from '../../utils/dateUtils';
 
 interface RemitoIngreso {
   id: number;
@@ -770,7 +770,7 @@ export default function Ingresos() {
                                   {remito.totalProductos}
                                 </span> unidades</span>
                                 <span>🛒 {remito.detalles.length} productos</span>
-                                <span>⏰ {formatearFechaConHoraPlanilla(remito.fechaRemito)}</span>
+                                <span>⏰ {formatearFechaConHora(remito.fechaRemito)}</span>
                                 {/* Debug: {console.log('Fecha creación remito:', remito.fechaCreacion, 'Tipo:', typeof remito.fechaCreacion, 'Es array:', Array.isArray(remito.fechaCreacion))} */}
                               </div>
                             </div>
