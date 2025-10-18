@@ -421,6 +421,124 @@ export const formatearFechaConHora = (fechaString: any): string => {
 };
 
 /**
+ * Formatea una fecha con hora para movimientos de stock (fechas UTC del servidor)
+ * Las fechas de movimientos vienen del backend como UTC pero sin 'Z'
+ * @param fechaString - String en formato YYYY-MM-DDTHH:mm:ss (sin Z, pero es UTC)
+ */
+export const formatearFechaConHoraMovimiento = (fechaString: any): string => {
+  try {
+    console.log('🔍 formatearFechaConHoraMovimiento - Input:', fechaString, 'Tipo:', typeof fechaString);
+    
+    // Si es null o undefined
+    if (fechaString == null) {
+      return 'N/A';
+    }
+    
+    // Si es un array (formato [year, month, day, hour, minute, second])
+    if (Array.isArray(fechaString)) {
+      console.log('🔍 Procesando array de fecha movimiento:', fechaString);
+      const [year, month, day, hour = 0, minute = 0, second = 0] = fechaString;
+      
+      // Crear fecha local (no UTC) para evitar conversión automática
+      const fechaLocal = new Date(year, month - 1, day, hour, minute, second);
+      
+      if (isNaN(fechaLocal.getTime())) {
+        console.log('🔍 Fecha inválida desde array movimiento:', fechaString);
+        return 'Fecha inválida';
+      }
+      
+      return fechaLocal.toLocaleString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+    
+    // Si es un string
+    if (typeof fechaString === 'string') {
+      console.log('🔍 Procesando string de fecha movimiento:', fechaString);
+      
+      // Si tiene formato ISO con T (YYYY-MM-DDTHH:mm:ss)
+      if (fechaString.includes('T')) {
+        // IMPORTANTE: Las fechas de movimientos vienen como UTC del servidor
+        // Agregar 'Z' para que JavaScript las interprete correctamente como UTC
+        const fechaUTC = fechaString.endsWith('Z') ? fechaString : fechaString + 'Z';
+        
+        console.log('🔍 Fecha movimiento original:', fechaString);
+        console.log('🔍 Fecha movimiento con Z agregada:', fechaUTC);
+        
+        const fechaObj = new Date(fechaUTC);
+        
+        if (isNaN(fechaObj.getTime())) {
+          console.log('🔍 Fecha inválida desde string movimiento:', fechaString);
+          return 'Fecha inválida';
+        }
+        
+        console.log('🔍 String movimiento procesado como UTC y convertido a local:', {
+          fechaString,
+          fechaUTC,
+          fechaObjUTC: fechaObj.toISOString(),
+          fechaLocal: fechaObj.toLocaleString('es-AR')
+        });
+        
+        // toLocaleString convierte automáticamente de UTC a la zona horaria local del navegador
+        return fechaObj.toLocaleString('es-AR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+      }
+      
+      // Otros formatos, usar Date constructor
+      const fechaLocal = new Date(fechaString);
+      
+      if (isNaN(fechaLocal.getTime())) {
+        console.log('🔍 Fecha inválida desde string movimiento:', fechaString);
+        return 'Fecha inválida';
+      }
+      
+      return fechaLocal.toLocaleString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+    
+    // Si es un objeto Date
+    if (fechaString instanceof Date) {
+      if (isNaN(fechaString.getTime())) {
+        return 'Fecha inválida';
+      }
+      
+      return fechaString.toLocaleString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+    
+    console.log('🔍 Tipo de fecha movimiento no reconocido:', typeof fechaString, fechaString);
+    return 'Fecha inválida';
+    
+  } catch (error) {
+    console.error('Error formateando fecha movimiento:', error, 'Input:', fechaString);
+    return 'Fecha inválida';
+  }
+};
+
+/**
  * Formatea una fecha con hora para planillas (fechas locales del servidor)
  * Las fechas de planillas vienen del backend como hora local del servidor, no UTC
  * @param fechaString - String en formato YYYY-MM-DDTHH:mm:ss (sin Z)
