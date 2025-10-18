@@ -1,22 +1,37 @@
 package com.minegocio.backend.configuracion;
 
 import org.springframework.context.annotation.Configuration;
-import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.boot.CommandLineRunner;
 
+import javax.annotation.PostConstruct;
+import java.time.ZoneId;
 import java.util.TimeZone;
 
 @Configuration
-public class TimeZoneConfig {
+public class TimezoneConfig {
+
+    private static final String TIMEZONE = "America/Argentina/Buenos_Aires";
 
     @PostConstruct
     public void init() {
-        // NO configurar zona horaria del servidor
-        // Permitir que las fechas se manejen exactamente como las envía el frontend
-        // Esto permite que usuarios de cualquier zona horaria usen la aplicación
-        System.out.println("🌍 Zona horaria del servidor: " + TimeZone.getDefault().getID());
-        System.out.println("🌍 Configuración: Las fechas se manejan sin conversiones de zona horaria");
-        System.out.println("🌍 Sistema usando zona horaria: " + System.getProperty("user.timezone"));
-        System.out.println("🌍 IMPORTANTE: Las fechas se procesan como vienen del frontend (sin conversiones)");
-        System.out.println("🌍 USUARIOS: Cualquier zona horaria del mundo puede usar la aplicación");
+        // Establecer la zona horaria del sistema Java
+        TimeZone.setDefault(TimeZone.getTimeZone(TIMEZONE));
+        System.out.println("🌍 [TIMEZONE] Zona horaria del sistema establecida a: " + TIMEZONE);
+        System.out.println("🌍 [TIMEZONE] Zona horaria actual del sistema: " + TimeZone.getDefault().getID());
+        System.out.println("🌍 [TIMEZONE] Offset actual: " + TimeZone.getDefault().getRawOffset() / (1000 * 60 * 60) + " horas");
+    }
+
+    @Bean
+    @Primary
+    public CommandLineRunner timezoneInfo() {
+        return args -> {
+            System.out.println("🌍 [TIMEZONE] Información de zona horaria al inicio:");
+            System.out.println("🌍 [TIMEZONE] Zona horaria del sistema: " + TimeZone.getDefault().getID());
+            System.out.println("🌍 [TIMEZONE] Zona horaria de Java: " + ZoneId.systemDefault());
+            System.out.println("🌍 [TIMEZONE] Hora actual del sistema: " + java.time.LocalDateTime.now());
+            System.out.println("🌍 [TIMEZONE] Hora actual UTC: " + java.time.Instant.now());
+        };
     }
 }
