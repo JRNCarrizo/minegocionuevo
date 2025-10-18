@@ -1015,7 +1015,7 @@ export default function CargaPedidos() {
                                   {planilla.totalProductos}
                                 </span> unidades</span>
                                 <span>🛒 {planilla.detalles.length} productos</span>
-                                <span>⏰ {formatearFechaConHoraLocal(planilla.fechaPlanilla)}</span>
+                                <span>⏰ {formatearFechaConHora(planilla.fechaPlanilla)}</span>
                               </div>
                             </div>
                             <div style={{
