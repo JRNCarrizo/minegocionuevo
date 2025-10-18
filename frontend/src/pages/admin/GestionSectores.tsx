@@ -2345,7 +2345,10 @@ export default function GestionSectores() {
                           </span>
                         </div>
                         <div className="fecha-movimiento">
-                          {formatearFechaConHora(movimiento.fechaMovimiento)}
+                          {(() => {
+                            console.log('🔍 [DEBUG] fechaMovimiento recibida:', movimiento.fechaMovimiento, 'tipo:', typeof movimiento.fechaMovimiento);
+                            return formatearFechaConHora(movimiento.fechaMovimiento);
+                          })()}
                         </div>
                       </div>
                       
