@@ -5,6 +5,7 @@ import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { API_CONFIG } from '../../config/api';
+import { formatearFechaConHora } from '../../utils/dateUtils';
 import './StockGeneral.css';
 import './GestionSectores.css';
 
@@ -1276,13 +1277,7 @@ export default function StockGeneral() {
                       boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
                     }}>
                       <span style={{ fontWeight: '600', color: '#475569' }}>🕒 Actualizado:</span>{' '}
-                      {new Date(item.fechaActualizacion).toLocaleDateString('es-ES', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {formatearFechaConHora(item.fechaActualizacion)}
                     </div>
                   </div>
                 ))}

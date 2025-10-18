@@ -5,6 +5,7 @@ import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { API_CONFIG } from '../../config/api';
 import ApiService from '../../services/api';
+import { formatearFechaConHora } from '../../utils/dateUtils';
 import './GestionSectores.css';
 
 interface Sector {
@@ -1849,11 +1850,7 @@ export default function GestionSectores() {
                             <div className="producto-fecha-container">
                               <div className="producto-label">Actualizado</div>
                               <div className="producto-fecha-value">
-                                {new Date(stock.fechaActualizacion).toLocaleDateString('es-ES', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: '2-digit'
-                                })}
+                                {formatearFechaConHora(stock.fechaActualizacion)}
                               </div>
                             </div>
                             <div className="producto-acciones-container">
@@ -1909,7 +1906,7 @@ export default function GestionSectores() {
                                 </span>
                               </td>
                               <td className="fecha-producto-tabla">
-                                {new Date(stock.fechaActualizacion).toLocaleDateString()}
+                                {formatearFechaConHora(stock.fechaActualizacion)}
                               </td>
                               <td className="acciones-producto-tabla">
                                 <div className="botones-accion-producto">
@@ -2348,13 +2345,7 @@ export default function GestionSectores() {
                           </span>
                         </div>
                         <div className="fecha-movimiento">
-                          {new Date(movimiento.fechaMovimiento).toLocaleString('es-ES', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {formatearFechaConHora(movimiento.fechaMovimiento)}
                         </div>
                       </div>
                       
@@ -2526,9 +2517,7 @@ export default function GestionSectores() {
                           </span>
                         </div>
                         <div className="fecha-movimiento-general">
-                          {new Date(movimiento.fechaMovimiento).toLocaleString('es-ES', {
-                            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                          })}
+                          {formatearFechaConHora(movimiento.fechaMovimiento)}
                         </div>
                       </div>
                       

@@ -5,7 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
-import { formatearFecha, formatearFechaCorta, obtenerFechaActual, compararFechas } from '../../utils/dateUtils';
+import { formatearFecha, formatearFechaCorta, formatearFechaConHora, obtenerFechaActual, compararFechas } from '../../utils/dateUtils';
 import ModalAgregarRoturaPerdida from '../../components/ModalAgregarRoturaPerdida';
 
 interface RoturaPerdida {
@@ -1037,7 +1037,7 @@ export default function RoturasPerdidas() {
                                    fontSize: isMobile ? '0.8rem' : '0.875rem',
                                    color: '#374151'
                                  }}>
-                                   {formatearFechaCorta(roturaPerdida.fechaCreacion)}
+                                   {formatearFechaConHora(roturaPerdida.fechaCreacion)}
                                  </div>
                                </div>
                              </div>
@@ -1307,7 +1307,7 @@ export default function RoturasPerdidas() {
                                   borderRadius: '0.5rem',
                                   border: '1px solid #bbf7d0'
                                 }}>
-                                  🕒 {formatearFechaCorta(roturaPerdida.fechaCreacion)}
+                                  🕒 {formatearFechaConHora(roturaPerdida.fechaCreacion)}
                                 </span>
                                 <span style={{
                                   fontSize: '0.75rem',

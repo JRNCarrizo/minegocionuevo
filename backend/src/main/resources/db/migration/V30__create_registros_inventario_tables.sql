@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS registros_inventario (
     productos_con_diferencias INTEGER NOT NULL DEFAULT 0,
     productos_sin_diferencias INTEGER NOT NULL DEFAULT 0,
     total_sectores INTEGER NOT NULL DEFAULT 0,
-    FOREIGN KEY (inventario_completo_id) REFERENCES inventarios_completos(id),
+    FOREIGN KEY (inventario_completo_id) REFERENCES inventario_completo(id),
     FOREIGN KEY (empresa_id) REFERENCES empresas(id),
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
