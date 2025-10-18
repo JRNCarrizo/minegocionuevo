@@ -207,17 +207,12 @@ const RecibirProductos: React.FC = () => {
       
       if (!coincideBusqueda) return false;
       
-      // Verificar que el producto NO esté en el sector actual
-      const tieneStockEnSectorActual = producto.ubicaciones.some(ubicacion => 
-        ubicacion.ubicacion === sector?.nombre
-      );
-      
-      if (tieneStockEnSectorActual) return false;
-      
       // Verificar que el producto tenga stock disponible en al menos una ubicación
       const tieneStockDisponible = producto.ubicaciones.some(ubicacion => ubicacion.cantidad > 0);
       
-      // Solo incluir productos que NO estén en el sector actual Y tengan stock disponible
+      // Incluir TODOS los productos que coincidan con la búsqueda y tengan stock disponible
+      // Esto permite recibir productos que ya están en el sector actual (para aumentar stock)
+      // y también productos de otros sectores o sin sectores asignados
       return tieneStockDisponible;
     }).sort((a, b) => {
       const busqueda = filtroBusqueda.toLowerCase();
