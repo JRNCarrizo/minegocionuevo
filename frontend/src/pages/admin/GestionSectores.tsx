@@ -5,7 +5,7 @@ import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { API_CONFIG } from '../../config/api';
 import ApiService from '../../services/api';
-import { formatearFechaConHora, formatearFechaConHoraMovimiento } from '../../utils/dateUtils';
+import { formatearFechaConHora } from '../../utils/dateUtils';
 import './GestionSectores.css';
 
 interface Sector {
@@ -2345,7 +2345,7 @@ export default function GestionSectores() {
                           </span>
                         </div>
                         <div className="fecha-movimiento">
-                          {formatearFechaConHoraMovimiento(movimiento.fechaMovimiento)}
+                          {formatearFechaConHora(movimiento.fechaMovimiento)}
                         </div>
                       </div>
                       
@@ -2517,7 +2517,7 @@ export default function GestionSectores() {
                           </span>
                         </div>
                         <div className="fecha-movimiento-general">
-                          {formatearFechaConHoraMovimiento(movimiento.fechaMovimiento)}
+                          {formatearFechaConHora(movimiento.fechaMovimiento)}
                         </div>
                       </div>
                       
