@@ -2,10 +2,9 @@ package com.minegocio.backend.configuracion;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.boot.CommandLineRunner;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.time.ZoneId;
 import java.util.TimeZone;
 
@@ -24,7 +23,6 @@ public class TimezoneConfig {
     }
 
     @Bean
-    @Primary
     public CommandLineRunner timezoneInfo() {
         return args -> {
             System.out.println("🌍 [TIMEZONE] Información de zona horaria al inicio:");
