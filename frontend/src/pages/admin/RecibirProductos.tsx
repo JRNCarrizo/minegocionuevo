@@ -198,6 +198,10 @@ const RecibirProductos: React.FC = () => {
       return;
     }
 
+    console.log('🔍 [DEBUG] Total productos en stockDetallado:', stockDetallado.length);
+    console.log('🔍 [DEBUG] Sector actual:', sector?.nombre);
+    console.log('🔍 [DEBUG] Búsqueda:', filtroBusqueda);
+
     const filtrados = stockDetallado.filter(producto => {
       // Filtrar por código personalizado, código de barras o nombre (priorizando código personalizado)
       const matchCodigo = producto.codigoPersonalizado && producto.codigoPersonalizado.toLowerCase().includes(filtroBusqueda.toLowerCase());
@@ -209,6 +213,13 @@ const RecibirProductos: React.FC = () => {
       
       // Verificar que el producto tenga stock disponible en al menos una ubicación
       const tieneStockDisponible = producto.ubicaciones.some(ubicacion => ubicacion.cantidad > 0);
+      
+      // Log para debug
+      console.log('🔍 [DEBUG] Producto:', producto.productoNombre, {
+        coincideBusqueda,
+        tieneStockDisponible,
+        ubicaciones: producto.ubicaciones.map(u => `${u.ubicacion}: ${u.cantidad}`)
+      });
       
       // Incluir TODOS los productos que coincidan con la búsqueda y tengan stock disponible
       // Esto permite recibir productos que ya están en el sector actual (para aumentar stock)
@@ -238,6 +249,9 @@ const RecibirProductos: React.FC = () => {
       // Prioridad 4: Coincidencia en nombre (orden alfabético)
       return a.productoNombre.localeCompare(b.productoNombre);
     });
+
+    console.log('🔍 [DEBUG] Productos filtrados:', filtrados.length);
+    console.log('🔍 [DEBUG] Productos filtrados:', filtrados.map(p => p.productoNombre));
 
     setProductosFiltrados(filtrados);
     setProductoSeleccionadoIndex(-1);
