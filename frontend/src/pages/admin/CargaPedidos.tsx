@@ -1015,7 +1015,10 @@ export default function CargaPedidos() {
                                   {planilla.totalProductos}
                                 </span> unidades</span>
                                 <span>🛒 {planilla.detalles.length} productos</span>
-                                <span>⏰ {formatearFechaConHora(planilla.fechaPlanilla)}</span>
+                                <span>⏰ {(() => {
+                                  console.log('🔍 [DEBUG] fechaPlanilla recibida:', planilla.fechaPlanilla, 'tipo:', typeof planilla.fechaPlanilla);
+                                  return formatearFechaConHora(planilla.fechaPlanilla);
+                                })()}</span>
                               </div>
                             </div>
                             <div style={{
