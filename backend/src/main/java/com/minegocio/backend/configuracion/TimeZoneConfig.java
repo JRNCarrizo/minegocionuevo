@@ -9,7 +9,7 @@ import java.time.ZoneId;
 import java.util.TimeZone;
 
 @Configuration
-public class TimezoneConfig {
+public class TimeZoneConfig {
 
     private static final String TIMEZONE = "America/Argentina/Buenos_Aires";
 
