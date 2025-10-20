@@ -27,6 +27,13 @@ public class PlanillaDevolucionResponseDTO {
     private LocalDateTime fechaActualizacion;
     
     private List<DetallePlanillaDevolucionResponseDTO> detalles;
+    
+    // Campos de verificación
+    private String estado;
+    private String usuarioVerificacion;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime fechaVerificacion;
 
     // Constructores
     public PlanillaDevolucionResponseDTO() {}
@@ -41,6 +48,21 @@ public class PlanillaDevolucionResponseDTO {
         this.fechaCreacion = fechaCreacion;
         this.fechaActualizacion = fechaActualizacion;
         this.detalles = detalles;
+    }
+
+    public PlanillaDevolucionResponseDTO(Long id, String numeroPlanilla, String observaciones, String transporte, LocalDateTime fechaPlanilla, Integer totalProductos, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion, List<DetallePlanillaDevolucionResponseDTO> detalles, String estado, String usuarioVerificacion, LocalDateTime fechaVerificacion) {
+        this.id = id;
+        this.numeroPlanilla = numeroPlanilla;
+        this.observaciones = observaciones;
+        this.transporte = transporte;
+        this.fechaPlanilla = fechaPlanilla;
+        this.totalProductos = totalProductos;
+        this.fechaCreacion = fechaCreacion;
+        this.fechaActualizacion = fechaActualizacion;
+        this.detalles = detalles;
+        this.estado = estado;
+        this.usuarioVerificacion = usuarioVerificacion;
+        this.fechaVerificacion = fechaVerificacion;
     }
 
     // Getters y Setters
@@ -70,4 +92,13 @@ public class PlanillaDevolucionResponseDTO {
 
     public List<DetallePlanillaDevolucionResponseDTO> getDetalles() { return detalles; }
     public void setDetalles(List<DetallePlanillaDevolucionResponseDTO> detalles) { this.detalles = detalles; }
+
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
+
+    public String getUsuarioVerificacion() { return usuarioVerificacion; }
+    public void setUsuarioVerificacion(String usuarioVerificacion) { this.usuarioVerificacion = usuarioVerificacion; }
+
+    public LocalDateTime getFechaVerificacion() { return fechaVerificacion; }
+    public void setFechaVerificacion(LocalDateTime fechaVerificacion) { this.fechaVerificacion = fechaVerificacion; }
 }

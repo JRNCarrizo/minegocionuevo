@@ -2082,6 +2082,28 @@ class ApiService {
     }
   }
 
+  // Editar detalles de planilla de devolución
+  async editarDetallesPlanillaDevolucion(id: number, dto: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.put(`/devoluciones/${id}/detalles`, dto);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al editar detalles de planilla de devolución:', error);
+      throw error;
+    }
+  }
+
+  // Finalizar verificación de planilla de devolución
+  async finalizarVerificacionPlanillaDevolucion(id: number): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.api.post(`/devoluciones/${id}/finalizar-verificacion`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al finalizar verificación de planilla de devolución:', error);
+      throw error;
+    }
+  }
+
   // Exportar roturas y pérdidas del día
   async exportarRoturasPerdidasDelDia(): Promise<Blob> {
     try {

@@ -17,6 +17,9 @@ interface PlanillaDevolucion {
   fechaCreacion: string;
   fechaActualizacion: string;
   detalles: DetallePlanillaDevolucion[];
+  estado: string;
+  usuarioVerificacion?: string;
+  fechaVerificacion?: string;
 }
 
 interface DetallePlanillaDevolucion {
@@ -44,6 +47,30 @@ export default function DescargaDevoluciones() {
   const [productosPerdidos, setProductosPerdidos] = useState<any[]>([]);
   const [cargandoProductosPerdidos, setCargandoProductosPerdidos] = useState(false);
   const [modalProductosPerdidos, setModalProductosPerdidos] = useState<string | null>(null);
+
+  // Función para obtener el color del estado
+  const obtenerColorEstado = (estado: string) => {
+    switch (estado) {
+      case 'PENDIENTE_VERIFICACION':
+        return '#f59e0b'; // Amarillo
+      case 'VERIFICADO':
+        return '#10b981'; // Verde
+      default:
+        return '#6b7280'; // Gris
+    }
+  };
+
+  // Función para obtener el texto del estado
+  const obtenerTextoEstado = (estado: string) => {
+    switch (estado) {
+      case 'PENDIENTE_VERIFICACION':
+        return 'Pendiente de Verificación';
+      case 'VERIFICADO':
+        return 'Verificado';
+      default:
+        return estado;
+    }
+  };
 
   // Función helper para convertir fechaPlanilla a string de fecha
   const obtenerFechaPlanillaString = (fechaPlanilla: any): string => {
@@ -230,10 +257,21 @@ export default function DescargaDevoluciones() {
 
     // Filtrar por búsqueda
     if (filtroBusqueda) {
-      planillasFiltradas = planillasFiltradas.filter(p =>
-        p.numeroPlanilla.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
-        (p.observaciones && p.observaciones.toLowerCase().includes(filtroBusqueda.toLowerCase()))
-      );
+      planillasFiltradas = planillasFiltradas.filter(p => {
+        const busqueda = filtroBusqueda.toLowerCase();
+        
+        // Buscar en número de planilla y observaciones
+        const coincideBasico = p.numeroPlanilla.toLowerCase().includes(busqueda) ||
+                              (p.observaciones && p.observaciones.toLowerCase().includes(busqueda));
+        
+        // Buscar en detalles de productos (nombre, código personalizado, código de barras)
+        const coincideEnProductos = p.detalles && p.detalles.some(detalle => 
+          detalle.descripcion.toLowerCase().includes(busqueda) ||
+          (detalle.numeroPersonalizado && detalle.numeroPersonalizado.toLowerCase().includes(busqueda))
+        );
+        
+        return coincideBasico || coincideEnProductos;
+      });
     }
 
     return planillasFiltradas;
@@ -401,6 +439,22 @@ export default function DescargaDevoluciones() {
     } catch (error) {
       console.error('Error al exportar planilla:', error);
       toast.error('Error al exportar la planilla');
+    }
+  };
+
+  const verificarPlanilla = (planilla: PlanillaDevolucion) => {
+    console.log('🔍 [DEBUG] Verificando planilla:', planilla);
+    console.log('🔍 [DEBUG] Estado de la planilla:', planilla.estado);
+    console.log('🔍 [DEBUG] ID de la planilla:', planilla.id);
+    
+    if (planilla.estado === 'PENDIENTE_VERIFICACION') {
+      const ruta = `/admin/verificar-devolucion/${planilla.id}`;
+      console.log('🔍 [DEBUG] Navegando a:', ruta);
+      // Navegar a la página de verificación
+      navigate(ruta);
+    } else {
+      console.log('🔍 [DEBUG] Planilla ya verificada, mostrando error');
+      toast.error('Esta planilla ya ha sido verificada');
     }
   };
 
@@ -595,7 +649,7 @@ export default function DescargaDevoluciones() {
               </label>
                              <input
                  type="text"
-                 placeholder="Buscar por número de planilla o observaciones..."
+                 placeholder="Buscar por número de planilla, observaciones, nombre de producto o código..."
                  value={filtroBusqueda}
                  onChange={(e) => setFiltroBusqueda(e.target.value)}
                  style={{
@@ -848,6 +902,18 @@ export default function DescargaDevoluciones() {
                                 </span> unidades</span>
                                 <span>🛒 {planilla.detalles.length} productos</span>
                                 <span>⏰ {formatearFechaConHora(planilla.fechaPlanilla)}</span>
+                                <span style={{
+                                  background: obtenerColorEstado(planilla.estado),
+                                  color: 'white',
+                                  padding: '0.125rem 0.5rem',
+                                  borderRadius: '0.375rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '600',
+                                  display: 'inline-block',
+                                  width: 'fit-content'
+                                }}>
+                                  {obtenerTextoEstado(planilla.estado)}
+                                </span>
                               </div>
                             </div>
                             <div style={{
@@ -894,6 +960,27 @@ export default function DescargaDevoluciones() {
                                >
                                  👁️ Ver
                                </button>
+                               {planilla.estado === 'PENDIENTE_VERIFICACION' && (
+                                 <button
+                                   onClick={() => verificarPlanilla(planilla)}
+                                   style={{
+                                     background: '#f59e0b',
+                                     color: 'white',
+                                     border: 'none',
+                                     borderRadius: '0.5rem',
+                                     padding: isMobile ? '6px 10px' : '0.5rem 1rem',
+                                     fontSize: isMobile ? '0.65rem' : '0.75rem',
+                                     cursor: 'pointer',
+                                     display: 'flex',
+                                     alignItems: 'center',
+                                     gap: '0.25rem',
+                                     justifyContent: 'center',
+                                     minWidth: isMobile ? 'fit-content' : 'auto'
+                                   }}
+                                 >
+                                   ✅ Verificar
+                                 </button>
+                               )}
                                <button
                                  onClick={() => eliminarPlanilla(planilla.id)}
                                  style={{

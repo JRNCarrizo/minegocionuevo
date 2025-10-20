@@ -39,6 +39,21 @@ public class PlanillaDevolucion {
     @Column(name = "total_productos", nullable = false)
     private Integer totalProductos = 0;
 
+    // Estado de la planilla de devolución
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false)
+    private EstadoPlanilla estado = EstadoPlanilla.PENDIENTE_VERIFICACION;
+
+    // Usuario que verificó la planilla (opcional)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_verificacion_id")
+    @JsonIgnore
+    private Usuario usuarioVerificacion;
+
+    // Fecha de verificación (opcional)
+    @Column(name = "fecha_verificacion")
+    private LocalDateTime fechaVerificacion;
+
     // Relación con empresa
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
@@ -53,7 +68,6 @@ public class PlanillaDevolucion {
 
     // Detalles de la planilla
     @OneToMany(mappedBy = "planillaDevolucion", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
     private List<DetallePlanillaDevolucion> detalles = new ArrayList<>();
 
     // Timestamps
@@ -139,4 +153,31 @@ public class PlanillaDevolucion {
 
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
     public void setFechaActualizacion(LocalDateTime fechaActualizacion) { this.fechaActualizacion = fechaActualizacion; }
+
+    public EstadoPlanilla getEstado() { return estado; }
+    public void setEstado(EstadoPlanilla estado) { this.estado = estado; }
+
+    public Usuario getUsuarioVerificacion() { return usuarioVerificacion; }
+    public void setUsuarioVerificacion(Usuario usuarioVerificacion) { this.usuarioVerificacion = usuarioVerificacion; }
+
+    public LocalDateTime getFechaVerificacion() { return fechaVerificacion; }
+    public void setFechaVerificacion(LocalDateTime fechaVerificacion) { this.fechaVerificacion = fechaVerificacion; }
+
+    /**
+     * Enum para el estado de la planilla de devolución
+     */
+    public enum EstadoPlanilla {
+        PENDIENTE_VERIFICACION("Pendiente de Verificación"),
+        VERIFICADO("Verificado");
+
+        private final String descripcion;
+
+        EstadoPlanilla(String descripcion) {
+            this.descripcion = descripcion;
+        }
+
+        public String getDescripcion() {
+            return descripcion;
+        }
+    }
 }

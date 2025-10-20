@@ -260,6 +260,49 @@ public class MovimientoDiaController {
     }
 
     /**
+     * Limpiar cache del stock inicial (útil para testing o reinicio del día)
+     */
+    @PostMapping("/limpiar-cache-stock-inicial")
+    public ResponseEntity<String> limpiarCacheStockInicial() {
+        try {
+            System.out.println("🔍 [CONTROLLER] Limpiando cache del stock inicial");
+            movimientoDiaService.limpiarCacheStockInicial();
+            return ResponseEntity.ok("Cache del stock inicial limpiado exitosamente");
+        } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER] Error al limpiar cache del stock inicial: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error al limpiar cache del stock inicial");
+        }
+    }
+
+    /**
+     * Capturar manualmente el stock inicial para una fecha específica
+     */
+    @PostMapping("/capturar-stock-inicial/{fecha}")
+    public ResponseEntity<String> capturarStockInicial(@PathVariable String fecha) {
+        try {
+            System.out.println("🔍 [CONTROLLER] Capturando stock inicial para fecha: " + fecha);
+            
+            // Validar formato de fecha
+            if (fecha == null || fecha.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Fecha requerida");
+            }
+            
+            // Convertir string a LocalDate
+            java.time.LocalDate fechaLocal = java.time.LocalDate.parse(fecha, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            
+            // Capturar stock inicial
+            movimientoDiaService.capturarStockInicialParaFecha(fechaLocal);
+            
+            return ResponseEntity.ok("Stock inicial capturado exitosamente para la fecha: " + fecha);
+        } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER] Error al capturar stock inicial: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error al capturar stock inicial: " + e.getMessage());
+        }
+    }
+
+    /**
      * Exportar reporte completo del día a Excel con 5 pestañas
      * Pestañas: Ingresos, Planillas, Retornos, Pérdidas, Stock
      */

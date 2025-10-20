@@ -223,4 +223,113 @@ public class PlanillaDevolucionController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    /**
+     * Obtener planillas pendientes de verificación
+     */
+    @GetMapping("/pendientes-verificacion")
+    public ResponseEntity<?> obtenerPlanillasPendientesVerificacion() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
+            }
+
+            if (!esAdministrador(authentication)) {
+                return ResponseEntity.status(403).body(Map.of(
+                    "error", "Usuario no autorizado. Verifique que tenga permisos para acceder a esta funcionalidad."
+                ));
+            }
+
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long empresaId = usuarioPrincipal.getEmpresaId();
+
+            if (empresaId == null) {
+                return ResponseEntity.status(400).body(Map.of("error", "ID de empresa no válido"));
+            }
+
+            List<PlanillaDevolucionResponseDTO> planillas = planillaDevolucionService.obtenerPlanillasPendientesVerificacion(empresaId);
+            
+            return ResponseEntity.ok(planillas);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Error al obtener las planillas pendientes de verificación: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Editar detalles de una planilla de devolución (solo si está pendiente de verificación)
+     */
+    @PutMapping("/{id}/detalles")
+    public ResponseEntity<?> editarDetallesPlanilla(@PathVariable Long id, @RequestBody PlanillaDevolucionDTO dto) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
+            }
+
+            if (!esAdministrador(authentication)) {
+                return ResponseEntity.status(403).body(Map.of(
+                    "error", "Usuario no autorizado. Verifique que tenga permisos para acceder a esta funcionalidad."
+                ));
+            }
+
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long empresaId = usuarioPrincipal.getEmpresaId();
+
+            if (empresaId == null) {
+                return ResponseEntity.status(400).body(Map.of("error", "ID de empresa no válido"));
+            }
+
+            PlanillaDevolucion planilla = planillaDevolucionService.editarDetallesPlanilla(id, dto, empresaId);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Detalles de la planilla actualizados exitosamente",
+                "planilla", planilla
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Error al editar los detalles de la planilla: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Finalizar verificación de una planilla de devolución
+     */
+    @PostMapping("/{id}/finalizar-verificacion")
+    public ResponseEntity<?> finalizarVerificacion(@PathVariable Long id) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
+            }
+
+            if (!esAdministrador(authentication)) {
+                return ResponseEntity.status(403).body(Map.of(
+                    "error", "Usuario no autorizado. Verifique que tenga permisos para acceder a esta funcionalidad."
+                ));
+            }
+
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Long empresaId = usuarioPrincipal.getEmpresaId();
+            Long usuarioId = usuarioPrincipal.getId();
+
+            if (empresaId == null) {
+                return ResponseEntity.status(400).body(Map.of("error", "ID de empresa no válido"));
+            }
+
+            PlanillaDevolucion planilla = planillaDevolucionService.finalizarVerificacion(id, empresaId, usuarioId);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Verificación finalizada exitosamente",
+                "planilla", planilla
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Error al finalizar la verificación: " + e.getMessage()
+            ));
+        }
+    }
 }

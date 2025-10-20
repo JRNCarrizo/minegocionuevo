@@ -27,6 +27,10 @@ public class DetallePlanillaDevolucion {
     @Column(nullable = false)
     private Integer cantidad;
 
+    // Cantidad original que se sumó al stock al crear la planilla
+    @Column(name = "cantidad_original_stock")
+    private Integer cantidadOriginalStock;
+
     @Column(name = "numero_personalizado", length = 100)
     private String numeroPersonalizado;
 
@@ -73,6 +77,9 @@ public class DetallePlanillaDevolucion {
 
     public Integer getCantidad() { return cantidad; }
     public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
+
+    public Integer getCantidadOriginalStock() { return cantidadOriginalStock; }
+    public void setCantidadOriginalStock(Integer cantidadOriginalStock) { this.cantidadOriginalStock = cantidadOriginalStock; }
 
     public String getNumeroPersonalizado() { return numeroPersonalizado; }
     public void setNumeroPersonalizado(String numeroPersonalizado) { this.numeroPersonalizado = numeroPersonalizado; }

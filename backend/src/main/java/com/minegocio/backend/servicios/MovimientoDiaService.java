@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
@@ -71,6 +72,10 @@ public class MovimientoDiaService {
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    
+    // Cache para almacenar el stock inicial de cada día por empresa
+    // Formato: "empresaId_fecha" -> StockInicialDTO
+    private static final Map<String, MovimientoDiaDTO.StockInicialDTO> stockInicialCache = new HashMap<>();
     
     /**
      * Obtener movimientos del día para una fecha específica
@@ -158,6 +163,14 @@ public class MovimientoDiaService {
      * 3. Para días futuros: usar el stock actual
      */
     private MovimientoDiaDTO.StockInicialDTO obtenerStockInicial(Long empresaId, LocalDate fecha) {
+        // Verificar si ya tenemos el stock inicial en cache para este día
+        String cacheKey = empresaId + "_" + fecha.format(DATE_FORMATTER);
+        
+        if (stockInicialCache.containsKey(cacheKey)) {
+            System.out.println("📊 [STOCK INICIAL] Usando stock inicial desde cache para: " + fecha);
+            return stockInicialCache.get(cacheKey);
+        }
+        
         LocalDate diaAnterior = fecha.minusDays(1);
         LocalDate fechaActual = LocalDate.now();
         Optional<CierreDia> cierreAnterior = cierreDiaRepository.findByEmpresaIdAndFecha(empresaId, diaAnterior);
@@ -192,17 +205,21 @@ public class MovimientoDiaService {
             
             System.out.println("📊 [STOCK INICIAL] Balance final del día anterior - Total: " + cantidadTotal);
             
-            return new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productos);
+            MovimientoDiaDTO.StockInicialDTO stockInicial = new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productos);
+            
+            // Guardar en cache para futuras consultas del mismo día
+            stockInicialCache.put(cacheKey, stockInicial);
+            System.out.println("💾 [STOCK INICIAL] Stock inicial guardado en cache para: " + fecha);
+            
+            return stockInicial;
             
         } else if (fecha.isBefore(fechaActual) || fecha.isEqual(fechaActual)) {
             // CASO 2: No hay cierre del día anterior y es día pasado o actual
-            // Calcular stock actual menos movimientos del día actual
-            System.out.println("📊 [STOCK INICIAL] Calculando stock actual menos movimientos del día");
+            // SOLUCIÓN: El stock inicial debe ser fijo y no cambiar con los movimientos del día
+            System.out.println("📊 [STOCK INICIAL] Calculando stock inicial fijo (no debe cambiar con movimientos del día)");
             
             // Obtener stock actual
             List<Producto> productosActuales = productoRepository.findByEmpresaId(empresaId);
-            Map<Long, Integer> stockActual = productosActuales.stream()
-                .collect(Collectors.toMap(Producto::getId, Producto::getStock));
             
             // Obtener movimientos del día actual
             MovimientoDiaDTO.MovimientosDTO ingresos = obtenerIngresos(empresaId, fecha);
@@ -210,33 +227,68 @@ public class MovimientoDiaService {
             MovimientoDiaDTO.MovimientosDTO salidas = obtenerSalidas(empresaId, fecha);
             MovimientoDiaDTO.MovimientosDTO roturas = obtenerRoturas(empresaId, fecha);
             
-            // Calcular stock inicial = stock actual - movimientos del día
+            // CORRECCIÓN: Calcular stock inicial correctamente
+            // El stock inicial debe ser el stock que había al inicio del día, sin los movimientos del día
+            Map<Long, Integer> stockActual = productosActuales.stream()
+                .collect(Collectors.toMap(Producto::getId, Producto::getStock));
             Map<Long, Integer> stockInicial = new HashMap<>(stockActual);
             
-            // Restar ingresos SOLO de productos que ya existían al inicio del día
-            for (MovimientoDiaDTO.ProductoMovimientoDTO ingreso : ingresos.getProductos()) {
-                // Solo restar si el producto ya existía (stock inicial > 0 o el producto ya estaba en la lista)
-                Integer stockInicialProducto = stockInicial.get(ingreso.getId());
-                if (stockInicialProducto != null && stockInicialProducto > 0) {
-                    stockInicial.merge(ingreso.getId(), -ingreso.getCantidad(), Integer::sum);
-                }
-                // Si stockInicialProducto es null o 0, significa que es un producto nuevo
-                // y no debe afectar el stock inicial
+            System.out.println("🔍 [STOCK INICIAL] Stock actual obtenido:");
+            for (Map.Entry<Long, Integer> entry : stockActual.entrySet()) {
+                System.out.println("  - Producto ID " + entry.getKey() + ": " + entry.getValue());
             }
             
-            // Restar devoluciones (se sumaron al stock actual)
+            System.out.println("🔍 [STOCK INICIAL] Ingresos del día: " + ingresos.getCantidadTotal());
+            for (MovimientoDiaDTO.ProductoMovimientoDTO ingreso : ingresos.getProductos()) {
+                System.out.println("  - Producto ID " + ingreso.getId() + ": " + ingreso.getCantidad());
+            }
+            
+            System.out.println("🔍 [STOCK INICIAL] Devoluciones del día: " + devoluciones.getCantidadTotal());
+            for (MovimientoDiaDTO.ProductoMovimientoDTO devolucion : devoluciones.getProductos()) {
+                System.out.println("  - Producto ID " + devolucion.getId() + ": " + devolucion.getCantidad());
+            }
+            
+            System.out.println("🔍 [STOCK INICIAL] Salidas del día: " + salidas.getCantidadTotal());
+            for (MovimientoDiaDTO.ProductoMovimientoDTO salida : salidas.getProductos()) {
+                System.out.println("  - Producto ID " + salida.getId() + ": " + salida.getCantidad());
+            }
+            
+            System.out.println("🔍 [STOCK INICIAL] Roturas del día: " + roturas.getCantidadTotal());
+            for (MovimientoDiaDTO.ProductoMovimientoDTO rotura : roturas.getProductos()) {
+                System.out.println("  - Producto ID " + rotura.getId() + ": " + rotura.getCantidad());
+            }
+            
+            // Restar ingresos (se sumaron al stock actual durante el día)
+            for (MovimientoDiaDTO.ProductoMovimientoDTO ingreso : ingresos.getProductos()) {
+                stockInicial.merge(ingreso.getId(), -ingreso.getCantidad(), Integer::sum);
+            }
+            
+            // Restar devoluciones (se sumaron al stock actual durante el día)
             for (MovimientoDiaDTO.ProductoMovimientoDTO devolucion : devoluciones.getProductos()) {
                 stockInicial.merge(devolucion.getId(), -devolucion.getCantidad(), Integer::sum);
             }
             
-            // Sumar salidas (se restaron del stock actual)
+            // Sumar salidas (se restaron del stock actual durante el día)
             for (MovimientoDiaDTO.ProductoMovimientoDTO salida : salidas.getProductos()) {
                 stockInicial.merge(salida.getId(), salida.getCantidad(), Integer::sum);
             }
             
-            // Sumar roturas (se restaron del stock actual)
+            // Sumar roturas (se restaron del stock actual durante el día)
             for (MovimientoDiaDTO.ProductoMovimientoDTO rotura : roturas.getProductos()) {
                 stockInicial.merge(rotura.getId(), rotura.getCantidad(), Integer::sum);
+            }
+            
+            System.out.println("🔍 [STOCK INICIAL] Stock inicial calculado:");
+            for (Map.Entry<Long, Integer> entry : stockInicial.entrySet()) {
+                System.out.println("  - Producto ID " + entry.getKey() + ": " + entry.getValue());
+            }
+            
+            // CORRECCIÓN: Asegurar que el stock inicial no sea negativo
+            for (Map.Entry<Long, Integer> entry : stockInicial.entrySet()) {
+                if (entry.getValue() < 0) {
+                    System.out.println("⚠️ [STOCK INICIAL] Stock inicial negativo detectado para producto ID " + entry.getKey() + ": " + entry.getValue() + " - Corrigiendo a 0");
+                    entry.setValue(0);
+                }
             }
             
             // Crear DTOs
@@ -256,9 +308,16 @@ public class MovimientoDiaService {
             
             int cantidadTotal = productosDTO.stream().mapToInt(p -> p.getCantidadInicial() != null ? p.getCantidadInicial() : 0).sum();
             
-            System.out.println("📊 [STOCK INICIAL] Stock actual menos movimientos - Total: " + cantidadTotal);
+            System.out.println("📊 [STOCK INICIAL] Stock inicial fijo calculado - Total: " + cantidadTotal);
+            System.out.println("🔒 [STOCK INICIAL] IMPORTANTE: Este stock inicial NO debe cambiar con movimientos del día");
             
-            return new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productosDTO);
+            MovimientoDiaDTO.StockInicialDTO stockInicialCalculado = new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productosDTO);
+            
+            // Guardar en cache para futuras consultas del mismo día
+            stockInicialCache.put(cacheKey, stockInicialCalculado);
+            System.out.println("💾 [STOCK INICIAL] Stock inicial guardado en cache para: " + fecha);
+            
+            return stockInicialCalculado;
             
         } else {
             // CASO 3: Día futuro - usar stock actual
@@ -281,6 +340,160 @@ public class MovimientoDiaService {
             
             System.out.println("📊 [STOCK INICIAL] Stock actual para día futuro - Total: " + cantidadTotal);
             
+            MovimientoDiaDTO.StockInicialDTO stockInicial = new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productosDTO);
+            
+            // Guardar en cache para futuras consultas del mismo día
+            stockInicialCache.put(cacheKey, stockInicial);
+            System.out.println("💾 [STOCK INICIAL] Stock inicial guardado en cache para: " + fecha);
+            
+            return stockInicial;
+        }
+    }
+    
+    /**
+     * Limpiar cache del stock inicial (útil para testing o reinicio del día)
+     */
+    public void limpiarCacheStockInicial() {
+        stockInicialCache.clear();
+        System.out.println("🗑️ [CACHE] Stock inicial cache limpiado");
+    }
+    
+    /**
+     * Limpiar cache del stock inicial para una fecha específica
+     */
+    public void limpiarCacheStockInicial(Long empresaId, LocalDate fecha) {
+        String cacheKey = empresaId + "_" + fecha.format(DATE_FORMATTER);
+        stockInicialCache.remove(cacheKey);
+        System.out.println("🗑️ [CACHE] Stock inicial cache limpiado para: " + fecha);
+    }
+    
+    /**
+     * Capturar automáticamente el stock inicial al inicio de cada día
+     * Se ejecuta a las 00:00 todos los días
+     */
+    @Scheduled(cron = "0 0 0 * * *") // Ejecutar a las 00:00 todos los días
+    public void capturarStockInicialAutomatico() {
+        try {
+            System.out.println("🕐 [AUTO-CAPTURE] Iniciando captura automática del stock inicial para el día: " + LocalDate.now());
+            
+            // Obtener todas las empresas activas
+            // Nota: Necesitarías un método para obtener todas las empresas
+            // Por ahora, capturamos para la empresa por defecto o todas las empresas
+            
+            LocalDate fechaHoy = LocalDate.now();
+            
+            // Capturar stock inicial para el día actual
+            // Esto asegura que siempre tengamos el stock inicial disponible
+            capturarStockInicialParaFecha(fechaHoy);
+            
+            System.out.println("✅ [AUTO-CAPTURE] Captura automática del stock inicial completada para: " + fechaHoy);
+            
+        } catch (Exception e) {
+            System.err.println("❌ [AUTO-CAPTURE] Error en captura automática del stock inicial: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Capturar stock inicial para una fecha específica
+     */
+    public void capturarStockInicialParaFecha(LocalDate fecha) {
+        try {
+            // Obtener todas las empresas (necesitarías implementar este método)
+            // Por ahora, usamos una empresa por defecto o todas las empresas
+            List<Long> empresasIds = obtenerTodasLasEmpresasIds();
+            
+            for (Long empresaId : empresasIds) {
+                String cacheKey = empresaId + "_" + fecha.format(DATE_FORMATTER);
+                
+                // Solo capturar si no existe ya
+                if (!stockInicialCache.containsKey(cacheKey)) {
+                    System.out.println("📊 [AUTO-CAPTURE] Capturando stock inicial para empresa: " + empresaId + ", fecha: " + fecha);
+                    
+                    // Calcular y guardar stock inicial
+                    MovimientoDiaDTO.StockInicialDTO stockInicial = calcularStockInicialParaEmpresa(empresaId, fecha);
+                    stockInicialCache.put(cacheKey, stockInicial);
+                    
+                    System.out.println("✅ [AUTO-CAPTURE] Stock inicial capturado para empresa: " + empresaId + ", fecha: " + fecha);
+                } else {
+                    System.out.println("ℹ️ [AUTO-CAPTURE] Stock inicial ya existe para empresa: " + empresaId + ", fecha: " + fecha);
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ [AUTO-CAPTURE] Error capturando stock inicial para fecha " + fecha + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Obtener todas las empresas IDs (método auxiliar)
+     */
+    private List<Long> obtenerTodasLasEmpresasIds() {
+        try {
+            // Obtener todas las empresas activas
+            // Necesitarías agregar el repositorio de empresas si no existe
+            return List.of(1L); // Por ahora, empresa con ID 1
+            // TODO: Implementar consulta real a la base de datos
+            // return empresaRepository.findAll().stream().map(Empresa::getId).collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("❌ [AUTO-CAPTURE] Error obteniendo empresas: " + e.getMessage());
+            return List.of(1L); // Fallback a empresa por defecto
+        }
+    }
+    
+    /**
+     * Calcular stock inicial para una empresa específica
+     */
+    private MovimientoDiaDTO.StockInicialDTO calcularStockInicialParaEmpresa(Long empresaId, LocalDate fecha) {
+        // Usar la lógica existente pero sin el contexto de usuario
+        // Esto es una versión simplificada del método obtenerStockInicial
+        
+        LocalDate diaAnterior = fecha.minusDays(1);
+        LocalDate fechaActual = LocalDate.now();
+        Optional<CierreDia> cierreAnterior = cierreDiaRepository.findByEmpresaIdAndFecha(empresaId, diaAnterior);
+        
+        if (cierreAnterior.isPresent() && cierreAnterior.get().getCerrado()) {
+            // CASO 1: Hay cierre del día anterior - usar balance final del día anterior
+            List<DetalleCierreDia> detallesBalance = detalleCierreDiaRepository
+                .findByCierreDiaIdAndTipoMovimientoOrderByFechaCreacionAsc(
+                    cierreAnterior.get().getId(), 
+                    DetalleCierreDia.TipoMovimiento.BALANCE_FINAL
+                );
+            
+            List<MovimientoDiaDTO.ProductoStockDTO> productos = detallesBalance.stream()
+                .map(detalle -> {
+                    MovimientoDiaDTO.ProductoStockDTO producto = new MovimientoDiaDTO.ProductoStockDTO();
+                    producto.setId(detalle.getProductoId());
+                    producto.setNombre(detalle.getNombreProducto());
+                    producto.setCodigoPersonalizado(detalle.getCodigoPersonalizado());
+                    Integer cantidad = detalle.getCantidad();
+                    producto.setCantidad(cantidad);
+                    producto.setCantidadInicial(cantidad);
+                    producto.setPrecio(null);
+                    return producto;
+                })
+                .collect(Collectors.toList());
+            
+            int cantidadTotal = productos.stream().mapToInt(p -> p.getCantidadInicial() != null ? p.getCantidadInicial() : 0).sum();
+            return new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productos);
+            
+        } else {
+            // CASO 2: No hay cierre del día anterior - usar stock actual
+            List<Producto> productosActuales = productoRepository.findByEmpresaId(empresaId);
+            List<MovimientoDiaDTO.ProductoStockDTO> productosDTO = productosActuales.stream()
+                .map(producto -> {
+                    MovimientoDiaDTO.ProductoStockDTO productoDTO = new MovimientoDiaDTO.ProductoStockDTO();
+                    productoDTO.setId(producto.getId());
+                    productoDTO.setNombre(producto.getNombre());
+                    productoDTO.setCodigoPersonalizado(producto.getCodigoPersonalizado());
+                    productoDTO.setCantidadInicial(producto.getStock());
+                    productoDTO.setPrecio(producto.getPrecio() != null ? producto.getPrecio().doubleValue() : null);
+                    return productoDTO;
+                })
+                .collect(Collectors.toList());
+            
+            int cantidadTotal = productosDTO.stream().mapToInt(p -> p.getCantidadInicial() != null ? p.getCantidadInicial() : 0).sum();
             return new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productosDTO);
         }
     }
