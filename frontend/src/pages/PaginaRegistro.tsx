@@ -226,7 +226,7 @@ export default function PaginaRegistro() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <h3 className="text-blue-800 font-semibold mb-2">📧 Verifica tu email</h3>
               <p className="text-blue-700 text-sm">
-                Para activar tu cuenta y comenzar a usar MiNegocio, debes verificar tu email haciendo clic en el enlace que se envió a tu bandeja de entrada.
+                Para activar tu cuenta y comenzar a usar N360CIO, debes verificar tu email haciendo clic en el enlace que se envió a tu bandeja de entrada.
               </p>
             </div>
             <div className="flex flex-columna" style={{ gap: '1rem' }}>
@@ -259,7 +259,19 @@ export default function PaginaRegistro() {
         <div className="contenedor">
           <div className="navbar-contenido">
             <Link to="/" className="logo">
-              MiNegocio
+              <img 
+                src="/images/n360cio-logo.png" 
+                alt="N360CIO Logo" 
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  objectFit: 'contain'
+                }}
+                onError={(e) => {
+                  e.currentTarget.src = '/images/logo.png';
+                  e.currentTarget.alt = 'Logo';
+                }}
+              />
             </Link>
             <Link to="/login" className="boton boton-secundario">
               ¿Ya tienes cuenta?

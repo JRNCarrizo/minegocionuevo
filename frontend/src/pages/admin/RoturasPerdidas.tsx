@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
@@ -32,6 +32,7 @@ export default function RoturasPerdidas() {
   
   const [roturasPerdidas, setRoturasPerdidas] = useState<RoturaPerdida[]>([]);
   const [cargando, setCargando] = useState(true);
+  const datosCargadosRef = useRef(false);
   const [filtroFechaDesde, setFiltroFechaDesde] = useState('');
   const [filtroFechaHasta, setFiltroFechaHasta] = useState('');
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
@@ -50,10 +51,12 @@ export default function RoturasPerdidas() {
       return;
     }
     
-    if (datosUsuario) {
+    // Solo cargar datos una vez cuando el componente se monta
+    if (!datosCargadosRef.current) {
       cargarDatos();
+      datosCargadosRef.current = true;
     }
-  }, [navigate, datosUsuario]);
+  }, []);
 
   const cargarDatos = async () => {
     try {

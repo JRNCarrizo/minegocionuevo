@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ApiService from '../services/api';
 
 interface DatosUsuario {
   id: number;
@@ -8,6 +9,7 @@ interface DatosUsuario {
   email: string;
   empresaId: number;
   empresaNombre: string;
+  empresaLogoUrl?: string;
   rol: 'ADMINISTRADOR' | 'ASIGNADO';
 }
 
@@ -15,6 +17,7 @@ interface UseUsuarioActualReturn {
   datosUsuario: DatosUsuario | null;
   cargando: boolean;
   actualizarEmpresaNombre: (nuevoNombre: string) => void;
+  actualizarLogoEmpresa: (nuevoLogoUrl: string) => void;
   cerrarSesion: () => void;
 }
 
@@ -22,6 +25,24 @@ export function useUsuarioActual(): UseUsuarioActualReturn {
   const navigate = useNavigate();
   const [datosUsuario, setDatosUsuario] = useState<DatosUsuario | null>(null);
   const [cargando, setCargando] = useState(true);
+
+  // Función para cargar el logo de la empresa
+  const cargarLogoEmpresa = async (empresaId: number) => {
+    try {
+      console.log('🔍 Cargando logo de la empresa...');
+      const response = await ApiService.obtenerEmpresaAdmin();
+      console.log('🔍 Respuesta del endpoint empresa:', response);
+      
+      if (response.data?.logoUrl) {
+        console.log('✅ Logo encontrado:', response.data.logoUrl);
+        setDatosUsuario(prev => prev ? { ...prev, empresaLogoUrl: response.data.logoUrl } : null);
+      } else {
+        console.log('⚠️ No se encontró logo en la respuesta');
+      }
+    } catch (error) {
+      console.error('Error al cargar logo de la empresa:', error);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -119,6 +140,11 @@ export function useUsuarioActual(): UseUsuarioActualReturn {
         empresaNombre: user.empresaNombre || 'Tu Empresa',
         rol: user.rol || 'ASIGNADO'
       });
+
+      // Cargar logo de la empresa si existe empresaId
+      if (user.empresaId) {
+        cargarLogoEmpresa(user.empresaId);
+      }
     } catch (error) {
       console.error('Error al parsear datos del usuario:', error);
       navigate('/admin/login');
@@ -145,6 +171,12 @@ export function useUsuarioActual(): UseUsuarioActualReturn {
     }
   };
 
+  const actualizarLogoEmpresa = (nuevoLogoUrl: string) => {
+    // Actualizar el estado local
+    setDatosUsuario(prev => prev ? { ...prev, empresaLogoUrl: nuevoLogoUrl } : null);
+    console.log('✅ Logo de empresa actualizado:', nuevoLogoUrl);
+  };
+
   const cerrarSesion = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -155,6 +187,7 @@ export function useUsuarioActual(): UseUsuarioActualReturn {
     datosUsuario,
     cargando,
     actualizarEmpresaNombre,
+    actualizarLogoEmpresa,
     cerrarSesion
   };
 }

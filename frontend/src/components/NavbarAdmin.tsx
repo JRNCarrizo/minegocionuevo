@@ -28,11 +28,11 @@ export default function NavbarAdmin({
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: isMobile ? '0.75rem 1rem' : '0 1rem',
+        padding: isMobile ? '0.25rem 1rem' : '0.125rem 1rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        minHeight: isMobile ? 'auto' : '4rem',
+        minHeight: isMobile ? 'auto' : '3rem',
         flexDirection: isMobile ? 'column' : 'row',
         gap: isMobile ? '0.75rem' : '0'
       }}>
@@ -63,20 +63,18 @@ export default function NavbarAdmin({
               onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
               >
                 <img 
-                  src="/images/logo.png" 
-                  alt="Negocio360 Logo" 
+                  src="/images/n360cio-logo.png" 
+                  alt="N360CIO Logo" 
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '80px',
+                    height: '80px',
                     objectFit: 'contain'
                   }}
+                  onError={(e) => {
+                    e.currentTarget.src = '/images/logo.png';
+                    e.currentTarget.alt = 'Logo';
+                  }}
                 />
-                <span style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}>Negocio360</span>
               </Link>
               <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
                 {nombreAdministrador && (
@@ -178,20 +176,18 @@ export default function NavbarAdmin({
               onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
               >
                 <img 
-                  src="/images/logo.png" 
-                  alt="Negocio360 Logo" 
+                  src="/images/n360cio-logo.png" 
+                  alt="N360CIO Logo" 
                   style={{
-                    width: '32px',
-                    height: '32px',
+                    width: '80px',
+                    height: '80px',
                     objectFit: 'contain'
                   }}
+                  onError={(e) => {
+                    e.currentTarget.src = '/images/logo.png';
+                    e.currentTarget.alt = 'Logo';
+                  }}
                 />
-                <span style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}>Negocio360</span>
                 {empresaNombre && (
                   <span style={{
                     color: '#3b82f6',

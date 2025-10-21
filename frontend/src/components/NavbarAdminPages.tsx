@@ -78,15 +78,18 @@ export default function NavbarAdminPages({
         <div className="navbar-admin-pages-logo">
           <Link to="/admin/dashboard" className="navbar-admin-pages-brand">
             <img 
-              src="/images/logo.png" 
-              alt="Negocio360 Logo" 
+              src="/images/n360cio-logo.png" 
+              alt="N360CIO Logo" 
               style={{
-                width: '32px',
-                height: '32px',
+                width: '80px',
+                height: '80px',
                 objectFit: 'contain'
               }}
+              onError={(e) => {
+                e.currentTarget.src = '/images/logo.png';
+                e.currentTarget.alt = 'Logo';
+              }}
             />
-            <span className="navbar-admin-pages-brand-text">Negocio360</span>
             {empresaNombre && (
               <span className="navbar-admin-pages-empresa">{empresaNombre}</span>
             )}

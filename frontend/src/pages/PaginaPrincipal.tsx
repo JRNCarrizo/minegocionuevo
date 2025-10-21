@@ -116,12 +116,13 @@ export default function PaginaPrincipal() {
           padding: isMobile ? '0 1rem' : '0 1rem'
         }}>
           <div style={{
-            display: isMobile ? 'flex' : 'flex',
-            alignItems: isMobile ? 'center' : 'center',
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: isMobile ? 'space-between' : 'space-between',
-            padding: isMobile ? '0.75rem 0' : '1rem 0',
+            padding: isMobile ? '0.5rem 0' : '0.5rem 0',
             flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? '0.75rem' : '0'
+            gap: isMobile ? '0.5rem' : '0',
+            position: 'relative'
           }}>
             <Link to="/" style={{
               fontSize: isMobile ? '1.25rem' : '1.5rem',
@@ -138,22 +139,28 @@ export default function PaginaPrincipal() {
               gap: '0.5rem'
             }}>
               <img 
-                src="/images/logo.png" 
-                alt="Negocio360 Logo" 
+                src="/images/n360cio-logo.png" 
+                alt="N360CIO Logo" 
                 style={{
-                  width: isMobile ? '45px' : '55px',
-                  height: isMobile ? '45px' : '55px',
+                  width: isMobile ? '60px' : '70px',
+                  height: isMobile ? '60px' : '70px',
                   objectFit: 'contain'
                 }}
+                onError={(e) => {
+                  e.currentTarget.src = '/images/logo.png';
+                  e.currentTarget.alt = 'Logo';
+                }}
               />
-              Negocio360
             </Link>
             <div style={{ 
               display: 'flex', 
               alignItems: 'center', 
               gap: isMobile ? '0.5rem' : '1rem',
-              justifyContent: isMobile ? 'center' : 'flex-end',
-              width: isMobile ? '100%' : 'auto'
+              justifyContent: 'center',
+              width: isMobile ? '100%' : 'auto',
+              position: isMobile ? 'static' : 'absolute',
+              left: isMobile ? 'auto' : '50%',
+              transform: isMobile ? 'none' : 'translateX(-50%)'
             }}>
               <Link to="/login" style={{
                 padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
@@ -212,12 +219,12 @@ export default function PaginaPrincipal() {
       </nav>
 
       {/* Contenido principal con padding-top para compensar navbar fijo */}
-      <div style={{ paddingTop: isMobile ? '120px' : '80px' }}>
+      <div style={{ paddingTop: isMobile ? '80px' : '60px' }}>
         {/* Hero Section */}
         <section style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
-          padding: '6rem 0',
+          padding: '3rem 0',
           position: 'relative',
           overflow: 'hidden'
         }}>
@@ -243,7 +250,7 @@ export default function PaginaPrincipal() {
                 fontWeight: '800',
                 lineHeight: '1.1',
                 marginBottom: '1.5rem',
-                animation: 'slideInUp 0.8s ease-out'
+                animation: 'slideInUp 0.8s ease-out 0.2s both'
               }}>
                 La plataforma completa para gestionar tu negocio
               </h1>
@@ -785,15 +792,34 @@ export default function PaginaPrincipal() {
             }}>
               <div>
                 <div style={{
-                  fontSize: '1.5rem',
-                  fontWeight: '700',
-                  marginBottom: '0.5rem',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  marginBottom: '0.5rem'
                 }}>
-                  miNegocio
+                  <img 
+                    src="/images/n360cio-logo.png" 
+                    alt="N360CIO Logo" 
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      objectFit: 'contain'
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.src = '/images/logo.png';
+                      e.currentTarget.alt = 'Logo';
+                    }}
+                  />
+                  <span style={{
+                    fontSize: '1.5rem',
+                    fontWeight: '700',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}>
+                    N360CIO
+                  </span>
                 </div>
                 <p style={{
                   fontSize: '0.875rem',
@@ -849,7 +875,7 @@ export default function PaginaPrincipal() {
                 fontSize: '0.875rem',
                 color: '#64748b'
               }}>
-                © 2024 miNegocio. Todos los derechos reservados.
+                © 2024 N360CIO. Todos los derechos reservados.
               </p>
             </div>
           </div>

@@ -1007,6 +1007,8 @@ export default function DashboardAdministrador() {
   }
 
   console.log('🔍 Dashboard - Renderizando contenido principal con responsive:', { isMobile, isTablet, width });
+  console.log('🔍 Dashboard - Datos usuario:', datosUsuario);
+  console.log('🔍 Dashboard - Logo URL:', datosUsuario?.empresaLogoUrl);
   
   return (
     <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
@@ -35,6 +35,7 @@ export default function CargaPedidos() {
   
   const [planillas, setPlanillas] = useState<PlanillaPedido[]>([]);
   const [cargando, setCargando] = useState(true);
+  const datosCargadosRef = useRef(false);
   const [planillaSeleccionada, setPlanillaSeleccionada] = useState<PlanillaPedido | null>(null);
   const [filtroFecha, setFiltroFecha] = useState('');
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
@@ -199,10 +200,12 @@ export default function CargaPedidos() {
       return;
     }
     
-    if (datosUsuario) {
+    // Solo cargar datos una vez cuando el componente se monta
+    if (!datosCargadosRef.current) {
       cargarDatos();
+      datosCargadosRef.current = true;
     }
-  }, [navigate, datosUsuario]);
+  }, []);
 
   // Inicializar el día actual como expandido
   useEffect(() => {

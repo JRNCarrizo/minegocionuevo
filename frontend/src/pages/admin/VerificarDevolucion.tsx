@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
@@ -64,6 +64,7 @@ export default function VerificarDevolucion() {
   const [planilla, setPlanilla] = useState<PlanillaDevolucion | null>(null);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const datosCargadosRef = useRef(false);
   const [detallesEditados, setDetallesEditados] = useState<DetallePlanillaDevolucion[]>([]);
   const [productosAprobados, setProductosAprobados] = useState<Set<number>>(new Set());
   
@@ -95,48 +96,24 @@ export default function VerificarDevolucion() {
   console.log('🔍 [DEBUG] Productos cargados actualmente:', productos.length);
 
   useEffect(() => {
-    console.log('🔍 [DEBUG] ===== PRIMER useEffect EJECUTADO =====');
-    console.log('🔍 [DEBUG] VerificarDevolucion - useEffect ejecutado');
-    console.log('🔍 [DEBUG] ID recibido:', id);
-    console.log('🔍 [DEBUG] datosUsuario:', datosUsuario);
-    console.log('🔍 [DEBUG] datosUsuario?.empresaId:', datosUsuario?.empresaId);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/admin/login');
+      return;
+    }
     
-    if (id && datosUsuario?.empresaId) {
-      console.log('🔍 [DEBUG] Condiciones cumplidas, cargando planilla y productos...');
+    // Solo cargar datos una vez cuando el componente se monta y hay datos de usuario
+    if (!datosCargadosRef.current && datosUsuario?.empresaId) {
+      console.log('🔍 [DEBUG] Cargando planilla y productos...');
       cargarPlanilla();
       cargarProductos();
-    } else {
-      console.log('🔍 [DEBUG] No se puede cargar - ID o datosUsuario faltantes');
-      console.log('🔍 [DEBUG] ID existe?', !!id);
-      console.log('🔍 [DEBUG] datosUsuario existe?', !!datosUsuario);
-      console.log('🔍 [DEBUG] empresaId existe?', !!datosUsuario?.empresaId);
+      datosCargadosRef.current = true;
+    } else if (datosUsuario && !datosUsuario.empresaId) {
+      console.log('🔍 [DEBUG] Usuario autenticado pero sin empresaId');
+      toast.error('Error: No se pudo obtener la información de la empresa');
     }
-  }, [id, datosUsuario]);
+  }, [datosUsuario, navigate]);
 
-  // useEffect separado para cargar productos cuando datosUsuario esté disponible
-  useEffect(() => {
-    console.log('🔍 [DEBUG] useEffect datosUsuario - datosUsuario cambió:', datosUsuario);
-    if (datosUsuario?.empresaId) {
-      console.log('🔍 [DEBUG] datosUsuario disponible, cargando productos...');
-      cargarProductos();
-    }
-  }, [datosUsuario]);
-
-  // useEffect de prueba para verificar que los useEffect funcionan
-  useEffect(() => {
-    console.log('🔍 [DEBUG] useEffect de prueba - se ejecutó');
-  }, []);
-
-  // useEffect para cargar productos cuando el componente esté completamente inicializado
-  useEffect(() => {
-    console.log('🔍 [DEBUG] useEffect carga productos - datosUsuario:', datosUsuario);
-    console.log('🔍 [DEBUG] useEffect carga productos - productos.length:', productos.length);
-    
-    if (datosUsuario?.empresaId && productos.length === 0) {
-      console.log('🔍 [DEBUG] Cargando productos desde useEffect...');
-      cargarProductos();
-    }
-  }, [datosUsuario, productos.length]);
 
   const cargarPlanilla = async () => {
     console.log('🔍 [DEBUG] cargarPlanilla - Iniciando carga de planilla');

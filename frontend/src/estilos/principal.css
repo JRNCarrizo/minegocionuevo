@@ -1,4 +1,4 @@
-/* Estilos modernos para miNegocio */
+/* Estilos modernos para N360CIO */
 
 /* Variables CSS para colores y medidas */
 :root {
@@ -2804,11 +2804,11 @@ input[type="color"] {
 .navbar-admin-pages-contenedor {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0.25rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 4rem;
+  min-height: 3rem;
 }
 
 .navbar-admin-pages-logo {

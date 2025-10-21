@@ -259,28 +259,19 @@ export default function LoginAdministrador() {
               marginBottom: '1.5rem'
             }}>
               <img 
-                src="/images/logo.png" 
-                alt="Negocio360 Logo" 
+                src="/images/n360cio-logo.png" 
+                alt="N360CIO Logo" 
                 style={{
-                  width: '80px',
-                  height: '80px',
+                  width: '150px',
+                  height: '150px',
                   objectFit: 'contain',
                   marginBottom: '1rem'
                 }}
+                onError={(e) => {
+                  e.currentTarget.src = '/images/logo.png';
+                  e.currentTarget.alt = 'Logo';
+                }}
               />
-              <Link to="/" style={{
-                fontSize: '1.75rem',
-                fontWeight: '700',
-                color: '#1e293b',
-                textDecoration: 'none',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                display: 'block'
-              }}>
-                Negocio360
-              </Link>
             </div>
             <h1 style={{
               fontSize: '2rem',

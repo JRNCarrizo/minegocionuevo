@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
@@ -38,8 +38,12 @@ export default function DescargaDevoluciones() {
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
   
+  console.log('🔍 [DEBUG] DescargaDevoluciones - Componente renderizado');
+  console.log('🔍 [DEBUG] datosUsuario:', datosUsuario);
+  
   const [planillas, setPlanillas] = useState<PlanillaDevolucion[]>([]);
   const [cargando, setCargando] = useState(true);
+  const datosCargadosRef = useRef(false);
   const [planillaSeleccionada, setPlanillaSeleccionada] = useState<PlanillaDevolucion | null>(null);
   const [filtroFecha, setFiltroFecha] = useState('');
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
@@ -47,6 +51,10 @@ export default function DescargaDevoluciones() {
   const [productosPerdidos, setProductosPerdidos] = useState<any[]>([]);
   const [cargandoProductosPerdidos, setCargandoProductosPerdidos] = useState(false);
   const [modalProductosPerdidos, setModalProductosPerdidos] = useState<string | null>(null);
+  const [modalResumenProductos, setModalResumenProductos] = useState<string | null>(null);
+  const [resumenProductos, setResumenProductos] = useState<any[]>([]);
+  const [cargandoResumen, setCargandoResumen] = useState(false);
+  const [fechaResumenAnterior, setFechaResumenAnterior] = useState<string | null>(null);
 
   // Función para obtener el color del estado
   const obtenerColorEstado = (estado: string) => {
@@ -144,16 +152,23 @@ export default function DescargaDevoluciones() {
   };
 
   useEffect(() => {
+    console.log('🔍 [DEBUG] useEffect principal ejecutado');
     const token = localStorage.getItem('token');
     if (!token) {
+      console.log('🔍 [DEBUG] No hay token, redirigiendo a login');
       navigate('/admin/login');
       return;
     }
     
-    if (datosUsuario) {
+    // Solo cargar datos una vez cuando el componente se monta
+    if (!datosCargadosRef.current) {
+      console.log('🔍 [DEBUG] Cargando datos por primera vez');
       cargarDatos();
+      datosCargadosRef.current = true;
+    } else {
+      console.log('🔍 [DEBUG] Datos ya cargados, saltando carga');
     }
-  }, [navigate, datosUsuario]);
+  }, []);
 
   // Manejar teclas globales para abrir modal con Enter
   const manejarTeclasGlobales = (e: KeyboardEvent) => {
@@ -474,6 +489,74 @@ export default function DescargaDevoluciones() {
     }
   };
 
+  const obtenerResumenProductos = async (fecha: string) => {
+    try {
+      setCargandoResumen(true);
+      // Obtener todas las planillas del día
+      const planillasDelDia = planillas.filter(p => {
+        const fechaPlanilla = obtenerFechaPlanillaString(p.fechaPlanilla);
+        return fechaPlanilla === fecha;
+      });
+
+      // Agrupar productos por descripción y manejar estados correctamente
+      const productosAgrupados = new Map();
+      
+      planillasDelDia.forEach(planilla => {
+        planilla.detalles.forEach(detalle => {
+          const key = detalle.descripcion;
+          const estado = detalle.estadoProducto || 'BUEN_ESTADO';
+          
+          if (productosAgrupados.has(key)) {
+            const producto = productosAgrupados.get(key);
+            producto.planillas.add(planilla.numeroPlanilla);
+            
+            // Solo sumar productos en buen estado (que ingresan al stock)
+            if (estado === 'BUEN_ESTADO') {
+              producto.cantidadBuenEstado += detalle.cantidad;
+              producto.cantidadTotal += detalle.cantidad;
+            } else {
+              // Los productos rotos/mal estado no suman al stock
+              producto.cantidadRotoMalEstado += detalle.cantidad;
+              producto.cantidadTotal += 0; // No suman al stock
+            }
+            
+            // Actualizar contadores por estado
+            if (!producto.estados) {
+              producto.estados = {};
+            }
+            producto.estados[estado] = (producto.estados[estado] || 0) + detalle.cantidad;
+          } else {
+            productosAgrupados.set(key, {
+              descripcion: detalle.descripcion,
+              numeroPersonalizado: detalle.numeroPersonalizado,
+              cantidadBuenEstado: estado === 'BUEN_ESTADO' ? detalle.cantidad : 0,
+              cantidadRotoMalEstado: estado !== 'BUEN_ESTADO' ? detalle.cantidad : 0,
+              cantidadTotal: estado === 'BUEN_ESTADO' ? detalle.cantidad : 0,
+              planillas: new Set([planilla.numeroPlanilla]),
+              estados: {
+                [estado]: detalle.cantidad
+              }
+            });
+          }
+        });
+      });
+
+      // Convertir a array y ordenar por cantidad total (solo productos en buen estado)
+      const resumen = Array.from(productosAgrupados.values()).map(item => ({
+        ...item,
+        planillas: Array.from(item.planillas).sort()
+      })).sort((a, b) => b.cantidadTotal - a.cantidadTotal);
+
+      setResumenProductos(resumen);
+      setModalResumenProductos(fecha);
+    } catch (error) {
+      console.error('Error al obtener resumen de productos:', error);
+      toast.error('Error al obtener resumen de productos');
+    } finally {
+      setCargandoResumen(false);
+    }
+  };
+
   const eliminarPlanilla = async (id: number) => {
     if (!window.confirm('¿Está seguro de que desea eliminar esta planilla? Esta acción no se puede deshacer.')) {
       return;
@@ -737,7 +820,7 @@ export default function DescargaDevoluciones() {
                    <div style={{
                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                      color: 'white',
-                     padding: isMobile ? '16px' : '24px',
+                     padding: isMobile ? '12px 16px' : '24px',
                      borderRadius: '16px',
                      marginBottom: '1rem',
                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
@@ -750,37 +833,88 @@ export default function DescargaDevoluciones() {
                          display: 'flex',
                          justifyContent: 'space-between',
                          alignItems: 'center',
-                         flexDirection: isMobile ? 'column' : 'row',
-                         gap: isMobile ? '12px' : '0',
-                         marginBottom: isMobile ? '12px' : '0'
+                         flexDirection: 'row',
+                         gap: '0.5rem',
+                         marginBottom: isMobile ? '8px' : '0'
                        }}
                      >
                        <div style={{
                          display: 'flex',
                          alignItems: 'center',
-                         gap: isMobile ? '8px' : '1rem'
+                         gap: isMobile ? '6px' : '1rem',
+                         flex: 1
                        }}>
-                         <span style={{ fontSize: isMobile ? '1rem' : '1.25rem' }}>📅</span>
-                         <div>
-                           <div style={{ fontWeight: '600', fontSize: isMobile ? '1rem' : '1.125rem' }}>
+                         <span style={{ fontSize: isMobile ? '1.125rem' : '1.25rem' }}>📅</span>
+                         <div style={{ flex: 1 }}>
+                           <div style={{ 
+                             fontWeight: '600', 
+                             fontSize: isMobile ? '1rem' : '1.125rem',
+                             lineHeight: '1.2'
+                           }}>
                              {formatearFechaGrupoConHoy(grupo.fecha)}
                            </div>
-                           <div style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', opacity: 0.9 }}>
+                           <div style={{ 
+                             fontSize: isMobile ? '0.875rem' : '0.875rem', 
+                             opacity: 0.9,
+                             lineHeight: '1.2'
+                           }}>
                              {grupo.planillas.length} planillas • {grupo.planillas.reduce((total, p) => total + p.totalProductos, 0)} productos
                            </div>
                          </div>
                        </div>
-                       <span style={{ fontSize: '1.5rem' }}>
+                       <span style={{ 
+                         fontSize: isMobile ? '1.25rem' : '1.5rem',
+                         flexShrink: 0
+                       }}>
                          {estaDiaExpandido(grupo.fecha) ? '▼' : '▶'}
                        </span>
                      </div>
                      
-                     {/* Botón para ver productos perdidos */}
+                     {/* Botones para ver productos perdidos y resumen */}
                      <div style={{
                        display: 'flex',
                        justifyContent: 'flex-end',
-                       marginTop: isMobile ? '8px' : '0'
+                       gap: '0.5rem',
+                       marginTop: isMobile ? '6px' : '0',
+                       flexWrap: 'wrap'
                      }}>
+                       <button
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           obtenerResumenProductos(grupo.fecha);
+                         }}
+                         disabled={cargandoResumen}
+                         style={{
+                           padding: '0.5rem 1rem',
+                           background: 'rgba(255, 255, 255, 0.2)',
+                           color: 'white',
+                           border: '1px solid rgba(255, 255, 255, 0.3)',
+                           borderRadius: '0.5rem',
+                           fontSize: '0.875rem',
+                           fontWeight: '600',
+                           cursor: cargandoResumen ? 'not-allowed' : 'pointer',
+                           opacity: cargandoResumen ? 0.6 : 1,
+                           transition: 'all 0.2s ease',
+                           display: 'flex',
+                           alignItems: 'center',
+                           gap: '0.5rem'
+                         }}
+                         onMouseOver={(e) => {
+                           if (!cargandoResumen) {
+                             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                           }
+                         }}
+                         onMouseOut={(e) => {
+                           if (!cargandoResumen) {
+                             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                           }
+                         }}
+                       >
+                         {cargandoResumen ? '⏳' : '📊'} Ver Resumen
+                       </button>
+                       
                        <button
                          onClick={(e) => {
                            e.stopPropagation();
@@ -868,9 +1002,9 @@ export default function DescargaDevoluciones() {
                                 <span style={{
                                   background: '#f59e0b',
                                   color: 'white',
-                                  padding: '0.25rem 0.75rem',
+                                  padding: isMobile ? '0.5rem 1rem' : '0.25rem 0.75rem',
                                   borderRadius: '1rem',
-                                  fontSize: '0.75rem',
+                                  fontSize: isMobile ? '0.875rem' : '0.75rem',
                                   fontWeight: '600'
                                 }}>
                                   📋 {planilla.numeroPlanilla}
@@ -878,9 +1012,9 @@ export default function DescargaDevoluciones() {
                                 <span style={{
                                   background: '#059669',
                                   color: 'white',
-                                  padding: '0.25rem 0.75rem',
+                                  padding: isMobile ? '0.5rem 1rem' : '0.25rem 0.75rem',
                                   borderRadius: '1rem',
-                                  fontSize: '0.75rem',
+                                  fontSize: isMobile ? '0.875rem' : '0.75rem',
                                   fontWeight: '600'
                                 }}>
                                   {formatearFechaConHoy(planilla.fechaPlanilla, 'corta')}
@@ -889,25 +1023,47 @@ export default function DescargaDevoluciones() {
                               
                               <div style={{
                                 display: 'flex',
+                                flexDirection: isMobile ? 'column' : 'row',
                                 flexWrap: 'wrap',
                                 gap: isMobile ? '8px' : '1rem',
-                                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                                fontSize: isMobile ? '1rem' : '0.875rem',
                                 color: '#64748b'
                               }}>
-                                <span>📦 <span style={{
-                                  color: '#059669', 
-                                  fontWeight: '700'
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  fontSize: isMobile ? '1rem' : '0.875rem'
                                 }}>
-                                  {planilla.totalProductos}
-                                </span> unidades</span>
-                                <span>🛒 {planilla.detalles.length} productos</span>
-                                <span>⏰ {formatearFechaConHora(planilla.fechaPlanilla)}</span>
+                                  📦 <span style={{
+                                    color: '#059669', 
+                                    fontWeight: '700'
+                                  }}>
+                                    {planilla.totalProductos}
+                                  </span> unidades
+                                </div>
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  fontSize: isMobile ? '1rem' : '0.875rem'
+                                }}>
+                                  🛒 {planilla.detalles.length} productos
+                                </div>
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  fontSize: isMobile ? '1rem' : '0.875rem'
+                                }}>
+                                  ⏰ {formatearFechaConHora(planilla.fechaPlanilla)}
+                                </div>
                                 <span style={{
                                   background: obtenerColorEstado(planilla.estado),
                                   color: 'white',
-                                  padding: '0.125rem 0.5rem',
-                                  borderRadius: '0.375rem',
-                                  fontSize: '0.75rem',
+                                  padding: isMobile ? '0.375rem 0.75rem' : '0.125rem 0.5rem',
+                                  borderRadius: '0.5rem',
+                                  fontSize: isMobile ? '0.875rem' : '0.75rem',
                                   fontWeight: '600',
                                   display: 'inline-block',
                                   width: 'fit-content'
@@ -918,88 +1074,104 @@ export default function DescargaDevoluciones() {
                             </div>
                             <div style={{
                               display: 'flex',
-                              gap: isMobile ? '6px' : '0.5rem',
+                              gap: isMobile ? '8px' : '0.5rem',
                               flexDirection: 'row',
-                              flexWrap: 'wrap'
+                              flexWrap: 'wrap',
+                              width: isMobile ? '100%' : 'auto'
                             }}>
-                                                             <button
-                                 onClick={() => exportarPlanilla(planilla)}
-                                 style={{
-                                   background: '#10b981',
-                                   color: 'white',
-                                   border: 'none',
-                                   borderRadius: '0.5rem',
-                                   padding: isMobile ? '6px 10px' : '0.5rem 1rem',
-                                   fontSize: isMobile ? '0.65rem' : '0.75rem',
-                                   cursor: 'pointer',
-                                   display: 'flex',
-                                   alignItems: 'center',
-                                   gap: '0.25rem',
-                                   justifyContent: 'center',
-                                   minWidth: isMobile ? 'fit-content' : 'auto'
-                                 }}
-                               >
-                                 📄 Exportar
-                               </button>
-                                                             <button
-                                 onClick={() => setPlanillaSeleccionada(planilla)}
-                                 style={{
-                                   background: '#059669',
-                                   color: 'white',
-                                   border: 'none',
-                                   borderRadius: '0.5rem',
-                                   padding: isMobile ? '6px 10px' : '0.5rem 1rem',
-                                   fontSize: isMobile ? '0.65rem' : '0.75rem',
-                                   cursor: 'pointer',
-                                   display: 'flex',
-                                   alignItems: 'center',
-                                   gap: '0.25rem',
-                                   justifyContent: 'center',
-                                   minWidth: isMobile ? 'fit-content' : 'auto'
-                                 }}
-                               >
-                                 👁️ Ver
-                               </button>
-                               {planilla.estado === 'PENDIENTE_VERIFICACION' && (
-                                 <button
-                                   onClick={() => verificarPlanilla(planilla)}
-                                   style={{
-                                     background: '#f59e0b',
-                                     color: 'white',
-                                     border: 'none',
-                                     borderRadius: '0.5rem',
-                                     padding: isMobile ? '6px 10px' : '0.5rem 1rem',
-                                     fontSize: isMobile ? '0.65rem' : '0.75rem',
-                                     cursor: 'pointer',
-                                     display: 'flex',
-                                     alignItems: 'center',
-                                     gap: '0.25rem',
-                                     justifyContent: 'center',
-                                     minWidth: isMobile ? 'fit-content' : 'auto'
-                                   }}
-                                 >
-                                   ✅ Verificar
-                                 </button>
-                               )}
-                               <button
-                                 onClick={() => eliminarPlanilla(planilla.id)}
-                                 style={{
-                                   background: '#ef4444',
-                                   color: 'white',
-                                   border: 'none',
-                                   borderRadius: '0.5rem',
-                                   padding: isMobile ? '6px 10px' : '0.5rem 1rem',
-                                   fontSize: isMobile ? '0.65rem' : '0.75rem',
-                                   cursor: 'pointer',
-                                   display: 'flex',
-                                   alignItems: 'center',
-                                   gap: '0.25rem',
-                                   justifyContent: 'center',
-                                   minWidth: isMobile ? 'fit-content' : 'auto'
-                                 }}
-                               >
-                                 🗑️ Eliminar
-                               </button>
+                              <button
+                                onClick={() => exportarPlanilla(planilla)}
+                                style={{
+                                  background: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '0.75rem',
+                                  padding: isMobile ? '12px 16px' : '0.5rem 1rem',
+                                  fontSize: isMobile ? '0.875rem' : '0.75rem',
+                                  fontWeight: isMobile ? '600' : '500',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  justifyContent: 'center',
+                                  width: isMobile ? 'calc(50% - 4px)' : 'auto',
+                                  minHeight: isMobile ? '44px' : 'auto',
+                                  transition: 'all 0.2s ease'
+                                }}
+                              >
+                                📄 Exportar
+                              </button>
+                              
+                              <button
+                                onClick={() => setPlanillaSeleccionada(planilla)}
+                                style={{
+                                  background: '#059669',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '0.75rem',
+                                  padding: isMobile ? '12px 16px' : '0.5rem 1rem',
+                                  fontSize: isMobile ? '0.875rem' : '0.75rem',
+                                  fontWeight: isMobile ? '600' : '500',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  justifyContent: 'center',
+                                  width: isMobile ? 'calc(50% - 4px)' : 'auto',
+                                  minHeight: isMobile ? '44px' : 'auto',
+                                  transition: 'all 0.2s ease'
+                                }}
+                              >
+                                👁️ Ver
+                              </button>
+                              
+                              {planilla.estado === 'PENDIENTE_VERIFICACION' && (
+                                <button
+                                  onClick={() => verificarPlanilla(planilla)}
+                                  style={{
+                                    background: '#f59e0b',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '0.75rem',
+                                    padding: isMobile ? '12px 16px' : '0.5rem 1rem',
+                                    fontSize: isMobile ? '0.875rem' : '0.75rem',
+                                    fontWeight: isMobile ? '600' : '500',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    justifyContent: 'center',
+                                    width: isMobile ? 'calc(50% - 4px)' : 'auto',
+                                    minHeight: isMobile ? '44px' : 'auto',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                >
+                                  ✅ Verificar
+                                </button>
+                              )}
+                              
+                              <button
+                                onClick={() => eliminarPlanilla(planilla.id)}
+                                style={{
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '0.75rem',
+                                  padding: isMobile ? '12px 16px' : '0.5rem 1rem',
+                                  fontSize: isMobile ? '0.875rem' : '0.75rem',
+                                  fontWeight: isMobile ? '600' : '500',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  justifyContent: 'center',
+                                  width: isMobile ? 'calc(50% - 4px)' : 'auto',
+                                  minHeight: isMobile ? '44px' : 'auto',
+                                  transition: 'all 0.2s ease'
+                                }}
+                              >
+                                🗑️ Eliminar
+                              </button>
                             </div>
                           </div>
                           
@@ -1076,7 +1248,14 @@ export default function DescargaDevoluciones() {
           zIndex: 1000,
           padding: '1rem'
         }}
-        onClick={() => setPlanillaSeleccionada(null)}
+        onClick={() => {
+          setPlanillaSeleccionada(null);
+          // Si había un resumen abierto anteriormente, volver a abrirlo
+          if (fechaResumenAnterior) {
+            setModalResumenProductos(fechaResumenAnterior);
+            setFechaResumenAnterior(null);
+          }
+        }}
         >
           <div style={{
             background: 'white',
@@ -1113,7 +1292,14 @@ export default function DescargaDevoluciones() {
                  </p>
               </div>
               <button
-                onClick={() => setPlanillaSeleccionada(null)}
+                onClick={() => {
+                  setPlanillaSeleccionada(null);
+                  // Si había un resumen abierto anteriormente, volver a abrirlo
+                  if (fechaResumenAnterior) {
+                    setModalResumenProductos(fechaResumenAnterior);
+                    setFechaResumenAnterior(null);
+                  }
+                }}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -1399,7 +1585,14 @@ export default function DescargaDevoluciones() {
                 📄 Exportar Planilla
               </button>
               <button
-                onClick={() => setPlanillaSeleccionada(null)}
+                onClick={() => {
+                  setPlanillaSeleccionada(null);
+                  // Si había un resumen abierto anteriormente, volver a abrirlo
+                  if (fechaResumenAnterior) {
+                    setModalResumenProductos(fechaResumenAnterior);
+                    setFechaResumenAnterior(null);
+                  }
+                }}
                 style={{
                   background: '#6b7280',
                   color: 'white',
@@ -1627,6 +1820,257 @@ export default function DescargaDevoluciones() {
                     fontSize: isMobile ? '1rem' : '1.125rem'
                   }}>
                     No se registraron productos perdidos en devoluciones para esta fecha
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de resumen de productos */}
+      {modalResumenProductos && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+          animation: 'modalSlideIn 0.3s ease-out'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            width: isMobile ? '95%' : '800px',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <div style={{
+              padding: isMobile ? '20px' : '24px',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h2 style={{
+                margin: 0,
+                fontSize: isMobile ? '1.25rem' : '1.5rem',
+                fontWeight: '600',
+                color: '#1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                📊 Resumen de Productos - {formatearFechaGrupoConHoy(modalResumenProductos)}
+              </h2>
+              <button
+                onClick={() => setModalResumenProductos(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  padding: '0.5rem',
+                  borderRadius: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f1f5f9';
+                  e.currentTarget.style.color = '#1e293b';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.color = '#64748b';
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div style={{
+              padding: isMobile ? '16px' : '24px',
+              overflow: 'auto',
+              flex: 1
+            }}>
+              {resumenProductos.length > 0 ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem'
+                }}>
+                  {resumenProductos.map((producto, index) => (
+                    <div key={index} style={{
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '0.75rem',
+                      padding: isMobile ? '1rem' : '1.25rem',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '0.75rem'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontSize: isMobile ? '1rem' : '1.125rem',
+                            fontWeight: '600',
+                            color: '#1e293b',
+                            marginBottom: '0.25rem'
+                          }}>
+                            {producto.descripcion}
+                          </div>
+                          {producto.numeroPersonalizado && (
+                            <div style={{
+                              fontSize: isMobile ? '0.875rem' : '1rem',
+                              color: '#64748b',
+                              marginBottom: '0.5rem'
+                            }}>
+                              Código: {producto.numeroPersonalizado}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-end',
+                          gap: '0.25rem'
+                        }}>
+                          <div style={{
+                            fontSize: isMobile ? '1.25rem' : '1.5rem',
+                            fontWeight: '700',
+                            color: '#059669'
+                          }}>
+                            +{producto.cantidadTotal}
+                          </div>
+                          <div style={{
+                            fontSize: isMobile ? '0.75rem' : '0.875rem',
+                            color: '#64748b',
+                            textAlign: 'right'
+                          }}>
+                            Ingresado al stock
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div style={{
+                        fontSize: isMobile ? '0.8rem' : '0.875rem',
+                        color: '#64748b',
+                        marginBottom: '0.5rem'
+                      }}>
+                        <span style={{ fontWeight: '600' }}>Planillas:</span>{' '}
+                        {producto.planillas.map((numeroPlanilla, index) => (
+                          <span key={numeroPlanilla}>
+                            <button
+                              onClick={() => {
+                                // Buscar la planilla por número y abrir el modal de detalles
+                                const planilla = planillas.find(p => p.numeroPlanilla === numeroPlanilla);
+                                if (planilla) {
+                                  // Recordar la fecha del resumen para volver a abrirlo después
+                                  setFechaResumenAnterior(modalResumenProductos);
+                                  // Cerrar el modal del resumen primero
+                                  setModalResumenProductos(null);
+                                  // Abrir el modal de detalles
+                                  setPlanillaSeleccionada(planilla);
+                                }
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#f59e0b',
+                                textDecoration: 'underline',
+                                cursor: 'pointer',
+                                fontSize: isMobile ? '0.8rem' : '0.875rem',
+                                fontWeight: '600',
+                                padding: '0',
+                                margin: '0'
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.color = '#d97706';
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.color = '#f59e0b';
+                              }}
+                            >
+                              {numeroPlanilla}
+                            </button>
+                            {index < producto.planillas.length - 1 && ', '}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      {/* Desglose por estados */}
+                      {producto.estados && Object.keys(producto.estados).length > 0 && (
+                        <div style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '0.5rem',
+                          marginTop: '0.5rem'
+                        }}>
+                          {Object.entries(producto.estados).map(([estado, cantidad]) => {
+                            const colorEstado = estado === 'BUEN_ESTADO' ? '#10b981' :
+                                             estado === 'ROTO' ? '#ef4444' :
+                                             estado === 'MAL_ESTADO' ? '#f59e0b' :
+                                             estado === 'DEFECTUOSO' ? '#8b5cf6' : '#6b7280';
+                            
+                            const textoEstado = estado === 'BUEN_ESTADO' ? 'Bueno' :
+                                              estado === 'ROTO' ? 'Roto' :
+                                              estado === 'MAL_ESTADO' ? 'Mal Estado' :
+                                              estado === 'DEFECTUOSO' ? 'Defectuoso' : estado;
+                            
+                            return (
+                              <span
+                                key={estado}
+                                style={{
+                                  padding: '0.25rem 0.5rem',
+                                  borderRadius: '0.375rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '600',
+                                  color: 'white',
+                                  background: colorEstado
+                                }}
+                              >
+                                {textoEstado}: {cantidad}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: isMobile ? '2rem' : '3rem',
+                  color: '#64748b'
+                }}>
+                  <div style={{ fontSize: isMobile ? '3rem' : '4rem', marginBottom: '1rem' }}>
+                    📦
+                  </div>
+                  <h3 style={{
+                    margin: '0 0 0.5rem 0',
+                    fontSize: isMobile ? '1.125rem' : '1.25rem',
+                    fontWeight: '600'
+                  }}>
+                    No hay productos
+                  </h3>
+                  <p style={{
+                    margin: 0,
+                    fontSize: isMobile ? '1rem' : '1.125rem'
+                  }}>
+                    No se encontraron productos en las devoluciones de esta fecha
                   </p>
                 </div>
               )}

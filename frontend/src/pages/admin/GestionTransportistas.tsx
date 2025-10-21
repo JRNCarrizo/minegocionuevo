@@ -39,6 +39,7 @@ const GestionTransportistas: React.FC = () => {
   // Estados principales
   const [transportistas, setTransportistas] = useState<Transportista[]>([]);
   const [cargando, setCargando] = useState(true);
+  const datosCargadosRef = useRef(false);
   const [busqueda, setBusqueda] = useState('');
   const [filtroActivos, setFiltroActivos] = useState(true);
   const [cardSeleccionada, setCardSeleccionada] = useState<number>(-1); // Para navegación por teclado
@@ -472,17 +473,16 @@ const GestionTransportistas: React.FC = () => {
       return;
     }
     
-    console.log('datosUsuario:', datosUsuario);
-    console.log('empresaId:', datosUsuario?.empresaId);
-    
-    if (datosUsuario?.empresaId) {
+    // Solo cargar datos una vez cuando el componente se monta y hay datos de usuario
+    if (!datosCargadosRef.current && datosUsuario?.empresaId) {
       console.log('Cargando transportistas...');
       cargarTransportistas();
+      datosCargadosRef.current = true;
     } else if (datosUsuario && !datosUsuario.empresaId) {
       console.log('Usuario autenticado pero sin empresaId');
       toast.error('Error: No se pudo obtener la información de la empresa');
     }
-  }, [datosUsuario, navigate]);
+  }, [datosUsuario]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
