@@ -334,11 +334,9 @@ export default function LoginCliente() {
                  console.log('URL completa actual:', window.location.href);
                  console.log('==========================');
                  
-                 // Agregar un pequeño delay para ver los logs
-                 setTimeout(() => {
-                   console.log('Redirigiendo a:', loginUrl);
-                   window.location.href = loginUrl;
-                 }, 100);
+                 // Redirigir al dominio principal
+                 console.log('Redirigiendo a:', loginUrl);
+                 window.location.href = loginUrl;
                }}
                disabled={cargando}
                style={{

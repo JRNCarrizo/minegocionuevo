@@ -111,6 +111,9 @@ export default function GoogleLogin() {
           console.log('Subdominio del query param:', subdominioParam);
           console.log('URL de redirección:', subdominioUrl);
           console.log('========================');
+          
+          // Redirigir inmediatamente
+          console.log('Redirigiendo a:', subdominioUrl);
           window.location.href = subdominioUrl;
         } else {
           console.error('No se recibió token en la respuesta (Google)');
@@ -149,10 +152,20 @@ export default function GoogleLogin() {
     
     console.log('GoogleLogin - Subdominio:', subdominioParam);
     console.log('Has started:', hasStarted.current);
+    console.log('URL completa:', window.location.href);
     
     // Iniciar automáticamente el flujo de Google solo una vez
     if (subdominioParam && !hasStarted.current) {
-      console.log('Iniciando flujo de Google automáticamente...');
+      console.log('Iniciando flujo de Google automáticamente para cliente...');
+      hasStarted.current = true;
+      
+      // Pequeño delay para que la página se cargue completamente
+      setTimeout(() => {
+        console.log('Ejecutando login()...');
+        login();
+      }, 100);
+    } else if (!subdominioParam && !hasStarted.current) {
+      console.log('Iniciando flujo de Google automáticamente para registro de empresa...');
       hasStarted.current = true;
       
       // Pequeño delay para que la página se cargue completamente
@@ -277,15 +290,6 @@ export default function GoogleLogin() {
           🔄 Continuar sin popup
         </button>
 
-        {!searchParams.get('subdominio') && (
-          <p style={{
-            color: '#ef4444',
-            fontSize: '0.875rem',
-            marginTop: '1rem'
-          }}>
-            Error: No se pudo identificar la tienda
-          </p>
-        )}
       </div>
 
       <style>{`

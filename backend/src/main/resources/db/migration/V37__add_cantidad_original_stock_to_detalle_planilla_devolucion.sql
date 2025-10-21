@@ -7,3 +7,5 @@ UPDATE detalle_planillas_devoluciones
 SET cantidad_original_stock = cantidad 
 WHERE cantidad_original_stock IS NULL;
 
+
+

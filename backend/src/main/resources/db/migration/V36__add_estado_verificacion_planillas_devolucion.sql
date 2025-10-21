@@ -17,3 +17,5 @@ COMMENT ON COLUMN planillas_devoluciones.estado IS 'Estado de la planilla: PENDI
 COMMENT ON COLUMN planillas_devoluciones.usuario_verificacion_id IS 'Usuario que verificó la planilla';
 COMMENT ON COLUMN planillas_devoluciones.fecha_verificacion IS 'Fecha y hora de verificación';
 
+
+
