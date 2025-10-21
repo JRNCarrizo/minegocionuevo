@@ -426,12 +426,40 @@ export default function CatalogoPublico() {
             'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          borderRadius: isMobile ? '16px' : '20px',
+          borderRadius: isMobile ? '24px' : '32px',
           color: 'white',
-          boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
+          boxShadow: empresa?.imagenFondoUrl ? 
+            '0 20px 60px rgba(0, 0, 0, 0.4), 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' :
+            empresa?.colorPrimario ? 
+            `0 20px 60px ${empresa.colorPrimario}40, 0 8px 32px ${empresa.colorPrimario}20, inset 0 1px 0 rgba(255, 255, 255, 0.1)` :
+            '0 20px 60px rgba(102, 126, 234, 0.4), 0 8px 32px rgba(102, 126, 234, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
           marginTop: '0px',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          border: empresa?.imagenFondoUrl ? 
+            '2px solid rgba(255, 255, 255, 0.2)' :
+            empresa?.colorPrimario ? 
+            `2px solid ${empresa.colorPrimario}30` :
+            '2px solid rgba(102, 126, 234, 0.3)',
+          backdropFilter: empresa?.imagenFondoUrl ? 'blur(1px)' : 'none',
+          transform: 'translateY(0)',
+          transition: 'all 0.3s ease'
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.transform = 'translateY(-4px)';
+          e.currentTarget.style.boxShadow = empresa?.imagenFondoUrl ? 
+            '0 25px 80px rgba(0, 0, 0, 0.5), 0 12px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)' :
+            empresa?.colorPrimario ? 
+            `0 25px 80px ${empresa.colorPrimario}50, 0 12px 40px ${empresa.colorPrimario}30, inset 0 1px 0 rgba(255, 255, 255, 0.15)` :
+            '0 25px 80px rgba(102, 126, 234, 0.5), 0 12px 40px rgba(102, 126, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = empresa?.imagenFondoUrl ? 
+            '0 20px 60px rgba(0, 0, 0, 0.4), 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' :
+            empresa?.colorPrimario ? 
+            `0 20px 60px ${empresa.colorPrimario}40, 0 8px 32px ${empresa.colorPrimario}20, inset 0 1px 0 rgba(255, 255, 255, 0.1)` :
+            '0 20px 60px rgba(102, 126, 234, 0.4), 0 8px 32px rgba(102, 126, 234, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
         }}>
           {/* Overlay para mejorar legibilidad del contenido */}
           {empresa?.imagenFondoUrl && (
@@ -445,6 +473,7 @@ export default function CatalogoPublico() {
               zIndex: 1
             }} />
           )}
+          
           
           {/* Enlaces de redes sociales - esquina superior izquierda */}
           {(empresa.instagramUrl || empresa.facebookUrl) && (
@@ -563,16 +592,16 @@ export default function CatalogoPublico() {
             }}>
               <h1 style={{ 
                 margin: '0 0 12px 0', 
-                fontSize: isMobile ? '24px' : isTablet ? '28px' : '32px', 
-                fontWeight: '700',
+                fontSize: isMobile ? '28px' : isTablet ? '32px' : '36px', 
+                fontWeight: '800',
                 color: empresa?.colorTituloPrincipal || 'white',
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                background: empresa?.colorTituloPrincipal ? `linear-gradient(135deg, ${empresa.colorTituloPrincipal} 0%, ${empresa.colorTituloPrincipal}dd 100%)` : 'none',
-                WebkitBackgroundClip: empresa?.colorTituloPrincipal ? 'text' : 'unset',
-                WebkitTextFillColor: empresa?.colorTituloPrincipal ? 'transparent' : 'white',
-                backgroundClip: empresa?.colorTituloPrincipal ? 'text' : 'unset',
-                fontFamily: "'Libre Baskerville', serif",
-                letterSpacing: '0.8px'
+                textShadow: empresa?.colorTituloPrincipal ? 
+                  `0 4px 8px ${empresa.colorTituloPrincipal}40, 0 2px 4px ${empresa.colorTituloPrincipal}20` :
+                  '0 4px 8px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3)',
+                fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
+                letterSpacing: '-0.5px',
+                lineHeight: '1.1',
+                textAlign: 'center'
               }}>
                 {empresa.textoBienvenida || `Bienvenido a ${empresa.nombre}`}
                 {/* Debug: {empresa.textoBienvenida ? `✅ Texto personalizado: "${empresa.textoBienvenida}"` : `❌ Sin texto personalizado`} */}
@@ -585,16 +614,19 @@ export default function CatalogoPublico() {
                   margin: isMobile ? '0 auto 12px' : '0 auto 16px'
                 }}>
                   <p style={{ 
-                    margin: 0, 
-                    fontSize: isMobile ? '14px' : '16px', 
-                    lineHeight: '1.6',
-                    fontWeight: '400',
+                    margin: '0 auto', 
+                    fontSize: isMobile ? '16px' : '18px', 
+                    lineHeight: '1.5',
+                    fontWeight: '500',
                     textAlign: 'center',
                     color: empresa?.colorTituloPrincipal || 'white',
-                    textShadow: '0 2px 4px rgba(0,0,0,0.4)',
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontStyle: 'italic',
-                    letterSpacing: '0.3px'
+                    textShadow: empresa?.colorTituloPrincipal ? 
+                      `0 3px 6px ${empresa.colorTituloPrincipal}30, 0 1px 2px ${empresa.colorTituloPrincipal}15` :
+                      '0 3px 6px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.2)',
+                    fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
+                    letterSpacing: '0.2px',
+                    maxWidth: '600px',
+                    opacity: '0.95'
                   }}>
                     {empresa.descripcion}
                   </p>
