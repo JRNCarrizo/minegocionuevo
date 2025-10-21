@@ -590,22 +590,23 @@ export default function CatalogoPublico() {
             <div style={{
               marginBottom: isMobile ? '20px' : '24px'
             }}>
-              <h1 style={{ 
-                margin: '0 0 12px 0', 
-                fontSize: isMobile ? '28px' : isTablet ? '32px' : '36px', 
-                fontWeight: '800',
-                color: empresa?.colorTituloPrincipal || 'white',
-                textShadow: empresa?.colorTituloPrincipal ? 
-                  `0 4px 8px ${empresa.colorTituloPrincipal}40, 0 2px 4px ${empresa.colorTituloPrincipal}20` :
-                  '0 4px 8px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3)',
-                fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-                letterSpacing: '-0.5px',
-                lineHeight: '1.1',
-                textAlign: 'center'
-              }}>
-                {empresa.textoBienvenida || `Bienvenido a ${empresa.nombre}`}
-                {/* Debug: {empresa.textoBienvenida ? `✅ Texto personalizado: "${empresa.textoBienvenida}"` : `❌ Sin texto personalizado`} */}
-              </h1>
+              {empresa.textoBienvenida && (
+                <h1 style={{ 
+                  margin: '0 0 12px 0', 
+                  fontSize: isMobile ? '28px' : isTablet ? '32px' : '36px', 
+                  fontWeight: '800',
+                  color: empresa?.colorTituloPrincipal || 'white',
+                  textShadow: empresa?.colorTituloPrincipal ? 
+                    `0 4px 8px ${empresa.colorTituloPrincipal}40, 0 2px 4px ${empresa.colorTituloPrincipal}20` :
+                    '0 4px 8px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3)',
+                  fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
+                  letterSpacing: '-0.5px',
+                  lineHeight: '1.1',
+                  textAlign: 'center'
+                }}>
+                  {empresa.textoBienvenida}
+                </h1>
+              )}
               
               {empresa.descripcion && (
                 <div style={{
