@@ -1287,26 +1287,6 @@ export default function VerificarDevolucion() {
             flexWrap: 'wrap'
           }}>
             <button
-              onClick={guardarCambios}
-              disabled={guardando}
-              style={{
-                background: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.5rem',
-                padding: '1rem 2rem',
-                fontSize: '1rem',
-                cursor: guardando ? 'not-allowed' : 'pointer',
-                opacity: guardando ? 0.6 : 1,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              {guardando ? '⏳' : '💾'} Guardar Cambios
-            </button>
-            
-            <button
               onClick={finalizarVerificacion}
               disabled={guardando || detallesEditados.length === 0 || productosAprobados.size !== detallesEditados.length}
               style={{
