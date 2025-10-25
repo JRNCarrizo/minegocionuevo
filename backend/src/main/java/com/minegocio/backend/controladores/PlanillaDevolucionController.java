@@ -117,6 +117,9 @@ public class PlanillaDevolucionController {
             
             return ResponseEntity.ok(planillas);
         } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER DEVOLUCIONES] Error al obtener planillas de devolución: " + e.getMessage());
+            System.err.println("❌ [CONTROLLER DEVOLUCIONES] Stack trace completo:");
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Error al obtener las planillas de devolución: " + e.getMessage()
             ));
