@@ -41,7 +41,7 @@ public class PlanillaDevolucion {
 
     // Estado de la planilla de devolución
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
+    @Column(name = "estado", nullable = true)
     private EstadoPlanilla estado = EstadoPlanilla.PENDIENTE_VERIFICACION;
 
     // Usuario que verificó la planilla (opcional)
@@ -154,7 +154,9 @@ public class PlanillaDevolucion {
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
     public void setFechaActualizacion(LocalDateTime fechaActualizacion) { this.fechaActualizacion = fechaActualizacion; }
 
-    public EstadoPlanilla getEstado() { return estado; }
+    public EstadoPlanilla getEstado() { 
+        return estado != null ? estado : EstadoPlanilla.PENDIENTE_VERIFICACION; 
+    }
     public void setEstado(EstadoPlanilla estado) { this.estado = estado; }
 
     public Usuario getUsuarioVerificacion() { return usuarioVerificacion; }
