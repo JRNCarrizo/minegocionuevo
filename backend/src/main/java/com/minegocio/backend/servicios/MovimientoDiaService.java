@@ -121,8 +121,11 @@ public class MovimientoDiaService {
             
         } catch (Exception e) {
             System.err.println("❌ [MOVIMIENTOS] Error al obtener movimientos: " + e.getMessage());
+            System.err.println("❌ [MOVIMIENTOS] Stack trace completo:");
             e.printStackTrace();
-            throw new RuntimeException("Error al obtener movimientos del día", e);
+            System.err.println("❌ [MOVIMIENTOS] Empresa ID: " + empresaId);
+            System.err.println("❌ [MOVIMIENTOS] Fecha recibida: " + fechaStr);
+            throw new RuntimeException("Error al obtener movimientos del día: " + e.getMessage(), e);
         }
     }
     
@@ -227,10 +230,17 @@ public class MovimientoDiaService {
             System.out.println("📊 [STOCK INICIAL] Calculando stock inicial fijo (no debe cambiar con movimientos del día)");
             
             // Obtener stock actual
-            List<Producto> productosActuales = productoRepository.findByEmpresaId(empresaId);
-            System.out.println("🔍 [STOCK INICIAL] Productos encontrados en la empresa: " + productosActuales.size());
-            if (productosActuales.isEmpty()) {
-                System.out.println("⚠️ [STOCK INICIAL] NO HAY PRODUCTOS EN LA EMPRESA - Esto causará que no se muestren las cards");
+            List<Producto> productosActuales;
+            try {
+                productosActuales = productoRepository.findByEmpresaId(empresaId);
+                System.out.println("🔍 [STOCK INICIAL] Productos encontrados en la empresa: " + productosActuales.size());
+                if (productosActuales.isEmpty()) {
+                    System.out.println("⚠️ [STOCK INICIAL] NO HAY PRODUCTOS EN LA EMPRESA - Esto causará que no se muestren las cards");
+                }
+            } catch (Exception e) {
+                System.err.println("❌ [STOCK INICIAL] Error al consultar productos: " + e.getMessage());
+                e.printStackTrace();
+                throw new RuntimeException("Error al consultar productos de la empresa", e);
             }
             
             // Obtener movimientos del día actual

@@ -28,8 +28,10 @@ public class MovimientoDiaController {
             return ResponseEntity.ok(movimientos);
         } catch (Exception e) {
             System.err.println("❌ [CONTROLLER] Error al obtener movimientos: " + e.getMessage());
+            System.err.println("❌ [CONTROLLER] Fecha recibida: " + fecha);
+            System.err.println("❌ [CONTROLLER] Stack trace completo:");
             e.printStackTrace();
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body("Error al obtener movimientos: " + e.getMessage());
         }
     }
 
