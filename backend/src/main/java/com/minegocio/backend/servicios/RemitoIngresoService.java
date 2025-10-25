@@ -266,14 +266,6 @@ public class RemitoIngresoService {
                     producto.setStock(nuevoStock);
                     productoRepository.save(producto);
                     
-                    // Sincronizar con sectores para distribuir el stock correctamente
-                    stockSincronizacionService.sincronizarStockConSectores(
-                        empresaId,
-                        producto.getId(),
-                        nuevoStock,
-                        "Eliminación de remito de ingreso"
-                    );
-                    
                     System.out.println("✅ ELIMINACIÓN REMITO - Stock restaurado y sincronizado: " + stockAnterior + " - " + detalle.getCantidad() + " = " + nuevoStock);
                 }
             }
