@@ -246,7 +246,7 @@ public class PlanillaDevolucionService {
                 planilla.getFechaCreacion(),
                 planilla.getFechaActualizacion(),
                 detallesDTO,
-                planilla.getEstado() != null ? planilla.getEstado().name() : "PENDIENTE_VERIFICACION",
+                planilla.getEstado().name(),
                 planilla.getUsuarioVerificacion() != null ? planilla.getUsuarioVerificacion().getNombre() : null,
                 planilla.getFechaVerificacion()
             );
@@ -634,7 +634,7 @@ public class PlanillaDevolucionService {
                 planilla.getFechaCreacion(),
                 planilla.getFechaActualizacion(),
                 detallesDTO,
-                planilla.getEstado() != null ? planilla.getEstado().name() : "PENDIENTE_VERIFICACION",
+                planilla.getEstado().name(),
                 planilla.getUsuarioVerificacion() != null ? planilla.getUsuarioVerificacion().getNombre() : null,
                 planilla.getFechaVerificacion()
             );

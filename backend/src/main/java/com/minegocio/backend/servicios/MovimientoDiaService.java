@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
@@ -69,6 +70,9 @@ public class MovimientoDiaService {
     
     @Autowired
     private DetalleRemitoIngresoRepository detalleRemitoIngresoRepository;
+    
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
@@ -399,6 +403,58 @@ public class MovimientoDiaService {
         String cacheKey = empresaId + "_" + fecha.format(DATE_FORMATTER);
         stockInicialCache.remove(cacheKey);
         System.out.println("🗑️ [CACHE] Stock inicial cache limpiado para: " + fecha);
+    }
+    
+    /**
+     * Ejecutar migración V36 para agregar columna estado a planillas_devoluciones
+     * SOLO PARA USAR EN PRODUCCIÓN - Ejecutar una sola vez
+     */
+    public String ejecutarMigracionV36() {
+        try {
+            System.out.println("🔧 [MIGRACIÓN] Ejecutando migración V36...");
+            
+            // Verificar si la columna ya existe
+            try {
+                String checkQuery = "SELECT estado FROM planillas_devoluciones LIMIT 1";
+                jdbcTemplate.queryForObject(checkQuery, String.class);
+                System.out.println("⚠️ [MIGRACIÓN] La columna 'estado' ya existe en planillas_devoluciones");
+                return "La columna 'estado' ya existe en la tabla planillas_devoluciones";
+            } catch (Exception e) {
+                System.out.println("🔧 [MIGRACIÓN] La columna 'estado' no existe, procediendo con la migración...");
+            }
+            
+            // Ejecutar la migración V36
+            System.out.println("🔧 [MIGRACIÓN] Agregando columna 'estado'...");
+            jdbcTemplate.execute("ALTER TABLE planillas_devoluciones ADD COLUMN estado VARCHAR(50) NOT NULL DEFAULT 'PENDIENTE_VERIFICACION'");
+            
+            System.out.println("🔧 [MIGRACIÓN] Agregando columna 'usuario_verificacion_id'...");
+            jdbcTemplate.execute("ALTER TABLE planillas_devoluciones ADD COLUMN usuario_verificacion_id BIGINT");
+            
+            System.out.println("🔧 [MIGRACIÓN] Agregando columna 'fecha_verificacion'...");
+            jdbcTemplate.execute("ALTER TABLE planillas_devoluciones ADD COLUMN fecha_verificacion TIMESTAMP");
+            
+            System.out.println("🔧 [MIGRACIÓN] Agregando foreign key...");
+            try {
+                jdbcTemplate.execute("ALTER TABLE planillas_devoluciones ADD CONSTRAINT fk_planilla_devolucion_usuario_verificacion FOREIGN KEY (usuario_verificacion_id) REFERENCES usuarios(id)");
+            } catch (Exception e) {
+                System.out.println("⚠️ [MIGRACIÓN] Foreign key ya existe o no se pudo crear: " + e.getMessage());
+            }
+            
+            System.out.println("🔧 [MIGRACIÓN] Creando índice...");
+            try {
+                jdbcTemplate.execute("CREATE INDEX idx_planillas_devoluciones_estado ON planillas_devoluciones(estado)");
+            } catch (Exception e) {
+                System.out.println("⚠️ [MIGRACIÓN] Índice ya existe o no se pudo crear: " + e.getMessage());
+            }
+            
+            System.out.println("✅ [MIGRACIÓN] Migración V36 completada exitosamente");
+            return "Migración V36 completada: columnas estado, usuario_verificacion_id y fecha_verificacion agregadas a planillas_devoluciones";
+            
+        } catch (Exception e) {
+            System.err.println("❌ [MIGRACIÓN] Error al ejecutar migración V36: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al ejecutar migración V36: " + e.getMessage(), e);
+        }
     }
     
     /**

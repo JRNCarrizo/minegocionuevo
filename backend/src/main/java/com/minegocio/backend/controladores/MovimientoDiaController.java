@@ -278,6 +278,28 @@ public class MovimientoDiaController {
     }
 
     /**
+     * Ejecutar migración V36 para agregar columna estado a planillas_devoluciones
+     * SOLO PARA USAR EN PRODUCCIÓN - Ejecutar una sola vez
+     */
+    @PostMapping("/ejecutar-migracion-v36")
+    public ResponseEntity<String> ejecutarMigracionV36() {
+        try {
+            System.out.println("🔧 [MIGRACIÓN] Iniciando ejecución de migración V36...");
+            
+            // Ejecutar la migración V36
+            String resultado = movimientoDiaService.ejecutarMigracionV36();
+            
+            System.out.println("✅ [MIGRACIÓN] Migración V36 ejecutada exitosamente");
+            return ResponseEntity.ok("✅ Migración V36 ejecutada exitosamente: " + resultado);
+            
+        } catch (Exception e) {
+            System.err.println("❌ [MIGRACIÓN] Error al ejecutar migración V36: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("❌ Error al ejecutar migración V36: " + e.getMessage());
+        }
+    }
+
+    /**
      * Capturar manualmente el stock inicial para una fecha específica
      */
     @PostMapping("/capturar-stock-inicial/{fecha}")

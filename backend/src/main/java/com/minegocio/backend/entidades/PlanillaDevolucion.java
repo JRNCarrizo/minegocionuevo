@@ -39,9 +39,9 @@ public class PlanillaDevolucion {
     @Column(name = "total_productos", nullable = false)
     private Integer totalProductos = 0;
 
-    // Estado de la planilla de devolución (opcional para compatibilidad con bases de datos sin migración V36)
+    // Estado de la planilla de devolución
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = true)
+    @Column(name = "estado", nullable = false)
     private EstadoPlanilla estado = EstadoPlanilla.PENDIENTE_VERIFICACION;
 
     // Usuario que verificó la planilla (opcional)
@@ -154,10 +154,7 @@ public class PlanillaDevolucion {
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
     public void setFechaActualizacion(LocalDateTime fechaActualizacion) { this.fechaActualizacion = fechaActualizacion; }
 
-    public EstadoPlanilla getEstado() { 
-        // Si la columna no existe en la base de datos, retornar valor por defecto
-        return estado != null ? estado : EstadoPlanilla.PENDIENTE_VERIFICACION; 
-    }
+    public EstadoPlanilla getEstado() { return estado; }
     public void setEstado(EstadoPlanilla estado) { this.estado = estado; }
 
     public Usuario getUsuarioVerificacion() { return usuarioVerificacion; }
