@@ -2276,6 +2276,16 @@ class ApiService {
     }
   }
 
+  async cerrarDia(fecha: string): Promise<string> {
+    try {
+      const response = await this.api.post(`/movimientos-dia/cerrar-dia/${fecha}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al cerrar el día:', error);
+      throw error;
+    }
+  }
+
   // Exportar movimientos por rango de fechas a Excel
   async exportarMovimientosRangoExcel(fechaInicio: string, fechaFin: string): Promise<Blob> {
     try {

@@ -616,6 +616,45 @@ export default function MovimientosDia() {
     }
   };
 
+  const cerrarDia = async () => {
+    if (!movimientos || modoRango) return;
+    
+    // Verificar que es el día actual
+    const fechaActual = obtenerFechaActual();
+    if (fechaSeleccionada !== fechaActual) {
+      toast.error('Solo se puede cerrar el día actual');
+      return;
+    }
+    
+    // Verificar que el día no esté ya cerrado
+    if (movimientos.diaCerrado) {
+      toast.error('El día ya está cerrado');
+      return;
+    }
+    
+    // Confirmar acción
+    if (!confirm('¿Está seguro de que desea cerrar el día? Esta acción guardará el balance final y no se podrá deshacer.')) {
+      return;
+    }
+    
+    try {
+      toast.loading('Cerrando día...');
+      
+      const resultado = await ApiService.cerrarDia(fechaSeleccionada);
+      
+      toast.dismiss();
+      toast.success(resultado);
+      
+      // Recargar movimientos para mostrar el estado cerrado
+      cargarMovimientosDia(fechaSeleccionada, false);
+      
+    } catch (error) {
+      console.error('Error al cerrar el día:', error);
+      toast.dismiss();
+      toast.error('Error al cerrar el día');
+    }
+  };
+
 
   const obtenerProductosPerdidosDevoluciones = async () => {
     if (!fechaSeleccionada) return;
@@ -1113,7 +1152,9 @@ export default function MovimientosDia() {
                     ? '🔄 Cambiando modo...'
                     : modoRango 
                       ? `Balance acumulado del ${formatearFecha(fechaInicio)} al ${formatearFecha(fechaFin)}`
-                      : 'Balance diario de inventario y movimientos'
+                      : movimientos?.diaCerrado 
+                        ? `🔒 Día cerrado - Balance final guardado para ${formatearFecha(fechaSeleccionada)}`
+                        : 'Balance diario de inventario y movimientos'
                   }
                 </p>
              </div>
@@ -1131,6 +1172,48 @@ export default function MovimientosDia() {
                 alignItems: 'center',
                 flexWrap: 'wrap'
               }}>
+                {/* Botón de cerrar día - DESTACADO */}
+                <button
+                  onClick={cerrarDia}
+                  disabled={!movimientos || transicionando || modoRango || movimientos?.diaCerrado || fechaSeleccionada !== obtenerFechaActual()}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: movimientos?.diaCerrado ? 
+                      'linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)' :
+                      'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
+                    color: 'white',
+                    border: '2px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '700',
+                    cursor: (!movimientos || transicionando || modoRango || movimientos?.diaCerrado || fechaSeleccionada !== obtenerFechaActual()) ? 'not-allowed' : 'pointer',
+                    opacity: (!movimientos || transicionando || modoRango || movimientos?.diaCerrado || fechaSeleccionada !== obtenerFechaActual()) ? 0.6 : 1,
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    boxShadow: movimientos?.diaCerrado ? 
+                      '0 4px 12px rgba(107, 114, 128, 0.3)' :
+                      '0 4px 12px rgba(220, 38, 38, 0.3)'
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isMobile && movimientos && !transicionando && !modoRango && !movimientos?.diaCerrado && fechaSeleccionada === obtenerFechaActual()) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(220, 38, 38, 0.4)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isMobile) {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = movimientos?.diaCerrado ? 
+                        '0 4px 12px rgba(107, 114, 128, 0.3)' :
+                        '0 4px 12px rgba(220, 38, 38, 0.3)';
+                    }
+                  }}
+                >
+                  {movimientos?.diaCerrado ? '🔒 Día Cerrado' : '🔒 Cerrar Día'}
+                </button>
+
                 {/* Botón de reporte completo - DESTACADO */}
                 <button
                   onClick={exportarReporteCompletoExcel}

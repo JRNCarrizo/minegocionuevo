@@ -278,6 +278,31 @@ public class MovimientoDiaController {
     }
 
     /**
+     * Cerrar el día y guardar el balance final
+     */
+    @PostMapping("/cerrar-dia/{fecha}")
+    public ResponseEntity<String> cerrarDia(@PathVariable String fecha) {
+        try {
+            System.out.println("🔒 [CONTROLLER] Cerrando día para fecha: " + fecha);
+            
+            // Validar formato de fecha
+            if (fecha == null || fecha.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Fecha requerida");
+            }
+            
+            String resultado = movimientoDiaService.cerrarDia(fecha);
+            
+            System.out.println("✅ [CONTROLLER] Día cerrado exitosamente: " + resultado);
+            return ResponseEntity.ok(resultado);
+            
+        } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER] Error al cerrar el día: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error al cerrar el día: " + e.getMessage());
+        }
+    }
+
+    /**
      * Ejecutar migración V36 para agregar columna estado a planillas_devoluciones
      * SOLO PARA USAR EN PRODUCCIÓN - Ejecutar una sola vez
      */
