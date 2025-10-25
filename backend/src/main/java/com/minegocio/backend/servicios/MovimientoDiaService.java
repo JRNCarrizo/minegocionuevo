@@ -479,6 +479,111 @@ public class MovimientoDiaService {
     }
 
     /**
+     * Debug: Obtener información detallada del stock para una fecha específica
+     */
+    public Map<String, Object> debugStock(String fechaStr) {
+        try {
+            Long empresaId = obtenerEmpresaId();
+            LocalDate fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
+            
+            Map<String, Object> debug = new HashMap<>();
+            
+            // 1. Stock actual de productos
+            List<Producto> productosActuales = productoRepository.findByEmpresaId(empresaId);
+            Map<Long, Integer> stockActual = productosActuales.stream()
+                .collect(Collectors.toMap(Producto::getId, Producto::getStock));
+            
+            debug.put("stockActual", stockActual);
+            debug.put("totalStockActual", stockActual.values().stream().mapToInt(Integer::intValue).sum());
+            
+            // 2. Movimientos del día
+            MovimientoDiaDTO.MovimientosDTO ingresos = obtenerIngresos(empresaId, fecha);
+            MovimientoDiaDTO.MovimientosDTO devoluciones = obtenerDevoluciones(empresaId, fecha);
+            MovimientoDiaDTO.MovimientosDTO salidas = obtenerSalidas(empresaId, fecha);
+            MovimientoDiaDTO.MovimientosDTO roturas = obtenerRoturas(empresaId, fecha);
+            
+            debug.put("ingresos", ingresos.getProductos().stream().collect(Collectors.toMap(
+                p -> p.getId(), p -> p.getCantidad()
+            )));
+            debug.put("totalIngresos", ingresos.getCantidadTotal());
+            
+            debug.put("devoluciones", devoluciones.getProductos().stream().collect(Collectors.toMap(
+                p -> p.getId(), p -> p.getCantidad()
+            )));
+            debug.put("totalDevoluciones", devoluciones.getCantidadTotal());
+            
+            debug.put("salidas", salidas.getProductos().stream().collect(Collectors.toMap(
+                p -> p.getId(), p -> p.getCantidad()
+            )));
+            debug.put("totalSalidas", salidas.getCantidadTotal());
+            
+            debug.put("roturas", roturas.getProductos().stream().collect(Collectors.toMap(
+                p -> p.getId(), p -> p.getCantidad()
+            )));
+            debug.put("totalRoturas", roturas.getCantidadTotal());
+            
+            // 3. Cálculo del stock inicial
+            Map<Long, Integer> stockInicial = new HashMap<>(stockActual);
+            
+            // Restar ingresos
+            for (MovimientoDiaDTO.ProductoMovimientoDTO ingreso : ingresos.getProductos()) {
+                stockInicial.merge(ingreso.getId(), -ingreso.getCantidad(), Integer::sum);
+            }
+            
+            // Restar devoluciones
+            for (MovimientoDiaDTO.ProductoMovimientoDTO devolucion : devoluciones.getProductos()) {
+                stockInicial.merge(devolucion.getId(), -devolucion.getCantidad(), Integer::sum);
+            }
+            
+            // Sumar salidas
+            for (MovimientoDiaDTO.ProductoMovimientoDTO salida : salidas.getProductos()) {
+                stockInicial.merge(salida.getId(), salida.getCantidad(), Integer::sum);
+            }
+            
+            // Sumar roturas
+            for (MovimientoDiaDTO.ProductoMovimientoDTO rotura : roturas.getProductos()) {
+                stockInicial.merge(rotura.getId(), rotura.getCantidad(), Integer::sum);
+            }
+            
+            debug.put("stockInicial", stockInicial);
+            debug.put("totalStockInicial", stockInicial.values().stream().mapToInt(Integer::intValue).sum());
+            
+            // 4. Cálculo del balance final
+            Map<Long, Integer> balanceFinal = new HashMap<>(stockInicial);
+            
+            // Sumar ingresos
+            for (MovimientoDiaDTO.ProductoMovimientoDTO ingreso : ingresos.getProductos()) {
+                balanceFinal.merge(ingreso.getId(), ingreso.getCantidad(), Integer::sum);
+            }
+            
+            // Sumar devoluciones
+            for (MovimientoDiaDTO.ProductoMovimientoDTO devolucion : devoluciones.getProductos()) {
+                balanceFinal.merge(devolucion.getId(), devolucion.getCantidad(), Integer::sum);
+            }
+            
+            // Restar salidas
+            for (MovimientoDiaDTO.ProductoMovimientoDTO salida : salidas.getProductos()) {
+                balanceFinal.merge(salida.getId(), -salida.getCantidad(), Integer::sum);
+            }
+            
+            // Restar roturas
+            for (MovimientoDiaDTO.ProductoMovimientoDTO rotura : roturas.getProductos()) {
+                balanceFinal.merge(rotura.getId(), -rotura.getCantidad(), Integer::sum);
+            }
+            
+            debug.put("balanceFinal", balanceFinal);
+            debug.put("totalBalanceFinal", balanceFinal.values().stream().mapToInt(Integer::intValue).sum());
+            
+            return debug;
+            
+        } catch (Exception e) {
+            System.err.println("❌ [DEBUG] Error al obtener información de debug: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al obtener información de debug: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Ejecutar migración V36 para agregar columna estado a planillas_devoluciones
      * SOLO PARA USAR EN PRODUCCIÓN - Ejecutar una sola vez
      */

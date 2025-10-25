@@ -12,7 +12,6 @@ import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.RemitoIngresoRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
-import com.minegocio.backend.servicios.StockSincronizacionService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -265,6 +264,14 @@ public class RemitoIngresoService {
                     // Usar el sistema de sincronización para restaurar el stock correctamente
                     producto.setStock(nuevoStock);
                     productoRepository.save(producto);
+                    
+                    // Sincronizar con sectores para restaurar el stock correctamente
+                    stockSincronizacionService.sincronizarStockConSectores(
+                        empresaId,
+                        producto.getId(),
+                        nuevoStock,
+                        "Eliminación de remito de ingreso"
+                    );
                     
                     System.out.println("✅ ELIMINACIÓN REMITO - Stock restaurado y sincronizado: " + stockAnterior + " - " + detalle.getCantidad() + " = " + nuevoStock);
                 }

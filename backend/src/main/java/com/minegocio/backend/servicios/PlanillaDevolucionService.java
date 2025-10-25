@@ -10,7 +10,6 @@ import com.minegocio.backend.repositorios.EmpresaRepository;
 import com.minegocio.backend.repositorios.PlanillaDevolucionRepository;
 import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.UsuarioRepository;
-import com.minegocio.backend.servicios.StockSincronizacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -335,9 +334,22 @@ public class PlanillaDevolucionService {
             System.out.println("   Cantidad a restar: " + cantidad);
             System.out.println("   Nuevo stock: " + nuevoStock);
             
-            // Restar directamente del stock del producto (sin afectar sectores)
+            // Restar directamente del stock del producto y sincronizar con sectores
             producto.setStock(nuevoStock);
             productoRepository.save(producto);
+            
+            // Sincronizar con sectores para restaurar el stock correctamente
+            try {
+                stockSincronizacionService.sincronizarStockConSectores(
+                    producto.getEmpresa().getId(),
+                    producto.getId(),
+                    nuevoStock,
+                    "Eliminación de planilla de devolución"
+                );
+            } catch (Exception e) {
+                System.err.println("⚠️ [DEVOLUCION] Error al sincronizar con sectores: " + e.getMessage());
+                // No fallar la operación principal si hay error en sincronización
+            }
             
             System.out.println("✅ [DEVOLUCION] Stock revertido exitosamente: " + stockAnterior + " - " + cantidad + " = " + nuevoStock);
         }

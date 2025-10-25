@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/movimientos-dia")
@@ -274,6 +275,22 @@ public class MovimientoDiaController {
             System.err.println("❌ [CONTROLLER] Error al limpiar cache del stock inicial: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Error al limpiar cache del stock inicial");
+        }
+    }
+
+    /**
+     * Debug: Obtener información detallada del stock para una fecha específica
+     */
+    @GetMapping("/debug/{fecha}")
+    public ResponseEntity<Map<String, Object>> debugStock(@PathVariable String fecha) {
+        try {
+            System.out.println("🔍 [DEBUG] Obteniendo información de debug para fecha: " + fecha);
+            Map<String, Object> debug = movimientoDiaService.debugStock(fecha);
+            return ResponseEntity.ok(debug);
+        } catch (Exception e) {
+            System.err.println("❌ [DEBUG] Error al obtener información de debug: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
         }
     }
 

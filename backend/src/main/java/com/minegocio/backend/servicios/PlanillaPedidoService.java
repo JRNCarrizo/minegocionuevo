@@ -421,6 +421,19 @@ public class PlanillaPedidoService {
             int nuevoStock = producto.getStock() + cantidad;
             producto.setStock(nuevoStock);
             productoRepository.save(producto);
+            
+            // Sincronizar con sectores para restaurar el stock correctamente
+            try {
+                stockSincronizacionService.sincronizarStockConSectores(
+                    producto.getEmpresa().getId(),
+                    producto.getId(),
+                    nuevoStock,
+                    "Eliminación de planilla de pedido"
+                );
+            } catch (Exception e) {
+                System.err.println("⚠️ [PLANILLA PEDIDO] Error al sincronizar con sectores: " + e.getMessage());
+                // No fallar la operación principal si hay error en sincronización
+            }
         }
     }
 
