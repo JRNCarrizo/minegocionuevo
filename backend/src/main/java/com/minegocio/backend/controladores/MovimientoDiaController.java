@@ -278,12 +278,14 @@ public class MovimientoDiaController {
     }
 
     /**
-     * Cerrar el día y guardar el balance final
+     * Cerrar o reabrir el día
+     * Si está abierto: lo cierra y guarda el balance final
+     * Si está cerrado: lo reabre eliminando el cierre
      */
     @PostMapping("/cerrar-dia/{fecha}")
     public ResponseEntity<String> cerrarDia(@PathVariable String fecha) {
         try {
-            System.out.println("🔒 [CONTROLLER] Cerrando día para fecha: " + fecha);
+            System.out.println("🔒 [CONTROLLER] Procesando día para fecha: " + fecha);
             
             // Validar formato de fecha
             if (fecha == null || fecha.trim().isEmpty()) {
@@ -292,13 +294,13 @@ public class MovimientoDiaController {
             
             String resultado = movimientoDiaService.cerrarDia(fecha);
             
-            System.out.println("✅ [CONTROLLER] Día cerrado exitosamente: " + resultado);
+            System.out.println("✅ [CONTROLLER] Día procesado exitosamente: " + resultado);
             return ResponseEntity.ok(resultado);
             
         } catch (Exception e) {
-            System.err.println("❌ [CONTROLLER] Error al cerrar el día: " + e.getMessage());
+            System.err.println("❌ [CONTROLLER] Error al procesar el día: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.badRequest().body("Error al cerrar el día: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al procesar el día: " + e.getMessage());
         }
     }
 

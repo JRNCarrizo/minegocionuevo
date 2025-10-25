@@ -622,36 +622,36 @@ export default function MovimientosDia() {
     // Verificar que es el día actual
     const fechaActual = obtenerFechaActual();
     if (fechaSeleccionada !== fechaActual) {
-      toast.error('Solo se puede cerrar el día actual');
+      toast.error('Solo se puede cerrar/reabrir el día actual');
       return;
     }
     
-    // Verificar que el día no esté ya cerrado
-    if (movimientos.diaCerrado) {
-      toast.error('El día ya está cerrado');
-      return;
-    }
+    const esCierre = !movimientos.diaCerrado;
+    const accion = esCierre ? 'cerrar' : 'reabrir';
+    const mensaje = esCierre 
+      ? '¿Está seguro de que desea cerrar el día? Esta acción guardará el balance final.'
+      : '¿Está seguro de que desea reabrir el día? Esto eliminará el cierre y permitirá hacer más movimientos.';
     
     // Confirmar acción
-    if (!confirm('¿Está seguro de que desea cerrar el día? Esta acción guardará el balance final y no se podrá deshacer.')) {
+    if (!confirm(mensaje)) {
       return;
     }
     
     try {
-      toast.loading('Cerrando día...');
+      toast.loading(esCierre ? 'Cerrando día...' : 'Reabriendo día...');
       
       const resultado = await ApiService.cerrarDia(fechaSeleccionada);
       
       toast.dismiss();
       toast.success(resultado);
       
-      // Recargar movimientos para mostrar el estado cerrado
+      // Recargar movimientos para mostrar el nuevo estado
       cargarMovimientosDia(fechaSeleccionada, false);
       
     } catch (error) {
-      console.error('Error al cerrar el día:', error);
+      console.error(`Error al ${accion} el día:`, error);
       toast.dismiss();
-      toast.error('Error al cerrar el día');
+      toast.error(`Error al ${accion} el día`);
     }
   };
 
@@ -1172,46 +1172,48 @@ export default function MovimientosDia() {
                 alignItems: 'center',
                 flexWrap: 'wrap'
               }}>
-                {/* Botón de cerrar día - DESTACADO */}
+                {/* Botón de cerrar/reabrir día - DESTACADO */}
                 <button
                   onClick={cerrarDia}
-                  disabled={!movimientos || transicionando || modoRango || movimientos?.diaCerrado || fechaSeleccionada !== obtenerFechaActual()}
+                  disabled={!movimientos || transicionando || modoRango || fechaSeleccionada !== obtenerFechaActual()}
                   style={{
                     padding: '0.75rem 1.5rem',
                     background: movimientos?.diaCerrado ? 
-                      'linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)' :
+                      'linear-gradient(135deg, #059669 0%, #10b981 100%)' :
                       'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
                     color: 'white',
                     border: '2px solid rgba(255, 255, 255, 0.2)',
                     borderRadius: '0.5rem',
                     fontSize: '0.875rem',
                     fontWeight: '700',
-                    cursor: (!movimientos || transicionando || modoRango || movimientos?.diaCerrado || fechaSeleccionada !== obtenerFechaActual()) ? 'not-allowed' : 'pointer',
-                    opacity: (!movimientos || transicionando || modoRango || movimientos?.diaCerrado || fechaSeleccionada !== obtenerFechaActual()) ? 0.6 : 1,
+                    cursor: (!movimientos || transicionando || modoRango || fechaSeleccionada !== obtenerFechaActual()) ? 'not-allowed' : 'pointer',
+                    opacity: (!movimientos || transicionando || modoRango || fechaSeleccionada !== obtenerFechaActual()) ? 0.6 : 1,
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
                     boxShadow: movimientos?.diaCerrado ? 
-                      '0 4px 12px rgba(107, 114, 128, 0.3)' :
+                      '0 4px 12px rgba(5, 150, 105, 0.3)' :
                       '0 4px 12px rgba(220, 38, 38, 0.3)'
                   }}
                   onMouseOver={(e) => {
-                    if (!isMobile && movimientos && !transicionando && !modoRango && !movimientos?.diaCerrado && fechaSeleccionada === obtenerFechaActual()) {
+                    if (!isMobile && movimientos && !transicionando && !modoRango && fechaSeleccionada === obtenerFechaActual()) {
                       e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(220, 38, 38, 0.4)';
+                      e.currentTarget.style.boxShadow = movimientos?.diaCerrado ? 
+                        '0 6px 20px rgba(5, 150, 105, 0.4)' :
+                        '0 6px 20px rgba(220, 38, 38, 0.4)';
                     }
                   }}
                   onMouseOut={(e) => {
                     if (!isMobile) {
                       e.currentTarget.style.transform = 'translateY(0)';
                       e.currentTarget.style.boxShadow = movimientos?.diaCerrado ? 
-                        '0 4px 12px rgba(107, 114, 128, 0.3)' :
+                        '0 4px 12px rgba(5, 150, 105, 0.3)' :
                         '0 4px 12px rgba(220, 38, 38, 0.3)';
                     }
                   }}
                 >
-                  {movimientos?.diaCerrado ? '🔒 Día Cerrado' : '🔒 Cerrar Día'}
+                  {movimientos?.diaCerrado ? '🔓 Reabrir Día' : '🔒 Cerrar Día'}
                 </button>
 
                 {/* Botón de reporte completo - DESTACADO */}

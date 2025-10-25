@@ -406,8 +406,9 @@ public class MovimientoDiaService {
     }
     
     /**
-     * Cerrar el día y guardar el balance final
-     * Este método calcula los movimientos del día y los guarda como cierre
+     * Cerrar o reabrir el día
+     * Si el día está abierto: lo cierra y guarda el balance final
+     * Si el día está cerrado: lo reabre eliminando el cierre
      */
     @Transactional
     public String cerrarDia(String fechaStr) {
@@ -415,47 +416,65 @@ public class MovimientoDiaService {
             Long empresaId = obtenerEmpresaId();
             LocalDate fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
             
-            System.out.println("🔒 [CIERRE DÍA] Iniciando cierre para empresa: " + empresaId + ", fecha: " + fecha);
+            System.out.println("🔒 [CIERRE DÍA] Procesando día para empresa: " + empresaId + ", fecha: " + fecha);
             
             // Verificar si ya existe un cierre para esta fecha
             Optional<CierreDia> cierreExistente = cierreDiaRepository.findByEmpresaIdAndFecha(empresaId, fecha);
-            if (cierreExistente.isPresent()) {
-                if (cierreExistente.get().getCerrado()) {
-                    return "El día " + fecha + " ya está cerrado";
-                } else {
-                    // Si existe pero no está cerrado, eliminarlo para recrearlo
+            
+            if (cierreExistente.isPresent() && cierreExistente.get().getCerrado()) {
+                // DÍA CERRADO - REABRIR
+                System.out.println("🔓 [REABRIR DÍA] Reabriendo día cerrado");
+                
+                // Eliminar detalles del cierre
+                detalleCierreDiaRepository.deleteByCierreDiaId(cierreExistente.get().getId());
+                
+                // Eliminar el cierre
+                cierreDiaRepository.delete(cierreExistente.get());
+                
+                // Limpiar cache del stock inicial
+                limpiarCacheStockInicial();
+                
+                System.out.println("✅ [REABRIR DÍA] Día reabierto exitosamente para: " + fecha);
+                return "Día reabierto exitosamente para " + fecha + ". Ahora puedes hacer más movimientos.";
+                
+            } else {
+                // DÍA ABIERTO - CERRAR
+                System.out.println("🔒 [CIERRE DÍA] Cerrando día abierto");
+                
+                // Si existe pero no está cerrado, eliminarlo para recrearlo
+                if (cierreExistente.isPresent()) {
                     System.out.println("🔒 [CIERRE DÍA] Eliminando cierre existente no cerrado");
                     detalleCierreDiaRepository.deleteByCierreDiaId(cierreExistente.get().getId());
                     cierreDiaRepository.delete(cierreExistente.get());
                 }
+                
+                // Calcular movimientos en tiempo real
+                MovimientoDiaDTO movimientos = calcularMovimientosEnTiempoReal(empresaId, fecha);
+                
+                // Crear el cierre
+                CierreDia cierre = new CierreDia(empresaId, fecha);
+                cierre.setCerrado(true);
+                cierre.setFechaCreacion(LocalDateTime.now());
+                cierre.setFechaActualizacion(LocalDateTime.now());
+                
+                // Guardar el cierre
+                cierre = cierreDiaRepository.save(cierre);
+                System.out.println("🔒 [CIERRE DÍA] Cierre guardado con ID: " + cierre.getId());
+                
+                // Guardar los detalles del cierre
+                guardarDetallesCierre(cierre, movimientos);
+                
+                // Limpiar cache del stock inicial para que se recalcule
+                limpiarCacheStockInicial();
+                
+                System.out.println("✅ [CIERRE DÍA] Día cerrado exitosamente para: " + fecha);
+                return "Día cerrado exitosamente para " + fecha + ". Balance final guardado.";
             }
             
-            // Calcular movimientos en tiempo real
-            MovimientoDiaDTO movimientos = calcularMovimientosEnTiempoReal(empresaId, fecha);
-            
-            // Crear el cierre
-            CierreDia cierre = new CierreDia(empresaId, fecha);
-            cierre.setCerrado(true);
-            cierre.setFechaCreacion(LocalDateTime.now());
-            cierre.setFechaActualizacion(LocalDateTime.now());
-            
-            // Guardar el cierre
-            cierre = cierreDiaRepository.save(cierre);
-            System.out.println("🔒 [CIERRE DÍA] Cierre guardado con ID: " + cierre.getId());
-            
-            // Guardar los detalles del cierre
-            guardarDetallesCierre(cierre, movimientos);
-            
-            // Limpiar cache del stock inicial para que se recalcule
-            limpiarCacheStockInicial();
-            
-            System.out.println("✅ [CIERRE DÍA] Día cerrado exitosamente para: " + fecha);
-            return "Día cerrado exitosamente para " + fecha + ". Balance final guardado.";
-            
         } catch (Exception e) {
-            System.err.println("❌ [CIERRE DÍA] Error al cerrar el día: " + e.getMessage());
+            System.err.println("❌ [CIERRE DÍA] Error al procesar el día: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException("Error al cerrar el día: " + e.getMessage(), e);
+            throw new RuntimeException("Error al procesar el día: " + e.getMessage(), e);
         }
     }
 
