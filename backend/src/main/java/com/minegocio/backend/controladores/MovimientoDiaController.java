@@ -31,7 +31,7 @@ public class MovimientoDiaController {
             System.err.println("❌ [CONTROLLER] Fecha recibida: " + fecha);
             System.err.println("❌ [CONTROLLER] Stack trace completo:");
             e.printStackTrace();
-            return ResponseEntity.badRequest().body("Error al obtener movimientos: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
         }
     }
 

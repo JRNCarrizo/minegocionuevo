@@ -82,8 +82,9 @@ public class MovimientoDiaService {
      */
     @Transactional(readOnly = true)
     public MovimientoDiaDTO obtenerMovimientosDia(String fechaStr) {
+        Long empresaId = null;
         try {
-            Long empresaId = obtenerEmpresaId();
+            empresaId = obtenerEmpresaId();
             LocalDate fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
             LocalDate fechaActual = LocalDate.now();
             
