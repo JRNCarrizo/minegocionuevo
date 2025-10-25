@@ -252,7 +252,15 @@ public class RemitoIngresoService {
                 if (detalle.getProducto() != null) {
                     Producto producto = detalle.getProducto();
                     Integer stockAnterior = producto.getStock();
-                    Integer nuevoStock = stockAnterior + detalle.getCantidad();
+                    Integer nuevoStock = stockAnterior - detalle.getCantidad();
+                    
+                    // Validar que el stock no se vuelva negativo
+                    if (nuevoStock < 0) {
+                        throw new RuntimeException("No se puede eliminar el remito. El producto '" + producto.getNombre() + 
+                            "' no tiene suficiente stock. Stock actual: " + stockAnterior + 
+                            ", Cantidad a restar: " + detalle.getCantidad() + 
+                            ". Posible causa: El stock fue modificado después de crear el remito.");
+                    }
                     
                     // Usar el sistema de sincronización para restaurar el stock correctamente
                     producto.setStock(nuevoStock);
@@ -266,7 +274,7 @@ public class RemitoIngresoService {
                         "Eliminación de remito de ingreso"
                     );
                     
-                    System.out.println("✅ ELIMINACIÓN REMITO - Stock restaurado y sincronizado: " + stockAnterior + " + " + detalle.getCantidad() + " = " + nuevoStock);
+                    System.out.println("✅ ELIMINACIÓN REMITO - Stock restaurado y sincronizado: " + stockAnterior + " - " + detalle.getCantidad() + " = " + nuevoStock);
                 }
             }
             
