@@ -108,6 +108,14 @@ public class MovimientoDiaService {
                     System.out.println("🔒 [MOVIMIENTOS] Día pasado detectado, marcando como cerrado automáticamente");
                 }
                 
+                System.out.println("📊 [MOVIMIENTOS] Movimientos calculados:");
+                System.out.println("  - Stock Inicial: " + movimientos.getStockInicial().getCantidadTotal() + " productos");
+                System.out.println("  - Ingresos: " + movimientos.getIngresos().getCantidadTotal());
+                System.out.println("  - Devoluciones: " + movimientos.getDevoluciones().getCantidadTotal());
+                System.out.println("  - Salidas: " + movimientos.getSalidas().getCantidadTotal());
+                System.out.println("  - Roturas: " + movimientos.getRoturas().getCantidadTotal());
+                System.out.println("  - Balance Final: " + movimientos.getBalanceFinal().getCantidadTotal());
+                
                 return movimientos;
             }
             
@@ -220,6 +228,10 @@ public class MovimientoDiaService {
             
             // Obtener stock actual
             List<Producto> productosActuales = productoRepository.findByEmpresaId(empresaId);
+            System.out.println("🔍 [STOCK INICIAL] Productos encontrados en la empresa: " + productosActuales.size());
+            if (productosActuales.isEmpty()) {
+                System.out.println("⚠️ [STOCK INICIAL] NO HAY PRODUCTOS EN LA EMPRESA - Esto causará que no se muestren las cards");
+            }
             
             // Obtener movimientos del día actual
             MovimientoDiaDTO.MovimientosDTO ingresos = obtenerIngresos(empresaId, fecha);
@@ -291,7 +303,7 @@ public class MovimientoDiaService {
                 }
             }
             
-            // Crear DTOs
+            // Crear DTOs - Asegurar que se incluyan TODOS los productos, incluso con stock 0
             List<MovimientoDiaDTO.ProductoStockDTO> productosDTO = productosActuales.stream()
                 .map(producto -> {
                     MovimientoDiaDTO.ProductoStockDTO productoDTO = new MovimientoDiaDTO.ProductoStockDTO();
@@ -304,11 +316,16 @@ public class MovimientoDiaService {
                     productoDTO.setPrecio(producto.getPrecio() != null ? producto.getPrecio().doubleValue() : null);
                     return productoDTO;
                 })
+                // Remover filtro que podría estar eliminando productos con stock 0
                 .collect(Collectors.toList());
             
             int cantidadTotal = productosDTO.stream().mapToInt(p -> p.getCantidadInicial() != null ? p.getCantidadInicial() : 0).sum();
             
             System.out.println("📊 [STOCK INICIAL] Stock inicial fijo calculado - Total: " + cantidadTotal);
+            System.out.println("📊 [STOCK INICIAL] Productos incluidos: " + productosDTO.size());
+            for (MovimientoDiaDTO.ProductoStockDTO producto : productosDTO) {
+                System.out.println("  - " + producto.getCodigoPersonalizado() + " | " + producto.getNombre() + " | Stock: " + producto.getCantidadInicial());
+            }
             System.out.println("🔒 [STOCK INICIAL] IMPORTANTE: Este stock inicial NO debe cambiar con movimientos del día");
             
             MovimientoDiaDTO.StockInicialDTO stockInicialCalculado = new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productosDTO);
@@ -330,15 +347,21 @@ public class MovimientoDiaService {
                     productoDTO.setId(producto.getId());
                     productoDTO.setNombre(producto.getNombre());
                     productoDTO.setCodigoPersonalizado(producto.getCodigoPersonalizado());
+                    productoDTO.setCantidad(producto.getStock());
                     productoDTO.setCantidadInicial(producto.getStock());
                     productoDTO.setPrecio(producto.getPrecio() != null ? producto.getPrecio().doubleValue() : null);
                     return productoDTO;
                 })
+                .filter(producto -> producto.getCantidadInicial() != null && producto.getCantidadInicial() >= 0) // Incluir productos con stock 0
                 .collect(Collectors.toList());
             
             int cantidadTotal = productosDTO.stream().mapToInt(p -> p.getCantidadInicial() != null ? p.getCantidadInicial() : 0).sum();
             
             System.out.println("📊 [STOCK INICIAL] Stock actual para día futuro - Total: " + cantidadTotal);
+            System.out.println("📊 [STOCK INICIAL] Productos incluidos: " + productosDTO.size());
+            for (MovimientoDiaDTO.ProductoStockDTO producto : productosDTO) {
+                System.out.println("  - " + producto.getCodigoPersonalizado() + " | " + producto.getNombre() + " | Stock: " + producto.getCantidadInicial());
+            }
             
             MovimientoDiaDTO.StockInicialDTO stockInicial = new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productosDTO);
             
