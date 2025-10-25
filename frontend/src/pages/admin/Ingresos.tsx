@@ -121,6 +121,8 @@ export default function Ingresos() {
   const [filtroFecha, setFiltroFecha] = useState('');
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
   const [diasExpandidos, setDiasExpandidos] = useState<Set<string>>(new Set());
+  const [modalRemitosDia, setModalRemitosDia] = useState<string | null>(null);
+  const [remitoSeleccionadoIndex, setRemitoSeleccionadoIndex] = useState<number>(0);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -138,14 +140,17 @@ export default function Ingresos() {
 
 
 
-  // Manejar teclas globales para abrir modal con Enter
+  // Manejar teclas globales para abrir modal con Enter (solo si no hay modales abiertos)
   const manejarTeclasGlobales = (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
       // Verificar que no esté en un input o textarea
       const target = e.target as HTMLElement;
       if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-        e.preventDefault();
-        navigate('/admin/crear-ingreso');
+        // Solo crear ingreso si no hay modales abiertos
+        if (!modalRemitosDia && !remitoSeleccionado) {
+          e.preventDefault();
+          navigate('/admin/crear-ingreso');
+        }
       }
     }
   };
@@ -156,13 +161,16 @@ export default function Ingresos() {
     return () => {
       document.removeEventListener('keydown', manejarTeclasGlobales);
     };
-  }, [navigate]);
+  }, [navigate, modalRemitosDia, remitoSeleccionado]);
 
-  // Manejar tecla Escape para volver a la vista principal
+  // Manejar tecla Escape para volver a la vista principal (solo si no hay modales abiertos)
   useEffect(() => {
     const manejarEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        navigate('/admin/gestion-empresa');
+        // Solo salir de la sección si no hay modales abiertos
+        if (!modalRemitosDia && !remitoSeleccionado) {
+          navigate('/admin/gestion-empresa');
+        }
       }
     };
 
@@ -170,7 +178,8 @@ export default function Ingresos() {
     return () => {
       document.removeEventListener('keydown', manejarEscape);
     };
-  }, [navigate]);
+  }, [navigate, modalRemitosDia, remitoSeleccionado]);
+
 
   const cargarDatos = async () => {
     try {
@@ -260,6 +269,56 @@ export default function Ingresos() {
   };
 
   const gruposPorFecha = agruparRemitosPorFecha();
+
+  // Manejar teclas para el modal de remitos del día
+  useEffect(() => {
+    if (!modalRemitosDia) return;
+
+    const manejarTeclasModal = (e: KeyboardEvent) => {
+      const grupo = gruposPorFecha.find(g => g.fecha === modalRemitosDia);
+      if (!grupo || grupo.remitos.length === 0) return;
+
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          if (remitoSeleccionado) {
+            // Si hay un remito seleccionado (modal de detalle abierto), volver al modal de remitos
+            setRemitoSeleccionado(null);
+          } else {
+            // Si no hay remito seleccionado, cerrar el modal de remitos
+            setModalRemitosDia(null);
+            setRemitoSeleccionadoIndex(0);
+          }
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setRemitoSeleccionadoIndex(prev => 
+            prev > 0 ? prev - 1 : grupo.remitos.length - 1
+          );
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setRemitoSeleccionadoIndex(prev => 
+            prev < grupo.remitos.length - 1 ? prev + 1 : 0
+          );
+          break;
+        case 'Enter':
+          e.preventDefault();
+          const remitoSeleccionado = grupo.remitos[remitoSeleccionadoIndex];
+          if (remitoSeleccionado) {
+            setModalRemitosDia(null);
+            setRemitoSeleccionado(remitoSeleccionado);
+            setRemitoSeleccionadoIndex(0);
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', manejarTeclasModal);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclasModal);
+    };
+  }, [modalRemitosDia, remitoSeleccionadoIndex, gruposPorFecha, remitoSeleccionado]);
 
   const formatearFechaConHoy = (fechaRemito: any, formato: 'corta' | 'completa' = 'corta') => {
     const fechaRemitoString = obtenerFechaRemitoString(fechaRemito);
@@ -681,11 +740,50 @@ export default function Ingresos() {
                       </div>
                     </div>
                     <div style={{
-                      fontSize: '1.25rem',
-                      color: '#64748b',
-                      transition: 'transform 0.3s ease'
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem'
                     }}>
-                      {estaDiaExpandido(grupo.fecha) ? '▼' : '▶'}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModalRemitosDia(grupo.fecha);
+                          setRemitoSeleccionadoIndex(0);
+                        }}
+                        style={{
+                          background: '#1e293b',
+                          color: 'white',
+                          border: '1px solid #334155',
+                          borderRadius: '6px',
+                          padding: '0.5rem 1rem',
+                          fontSize: '0.75rem',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          if (!isMobile) {
+                            e.currentTarget.style.background = '#334155';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (!isMobile) {
+                            e.currentTarget.style.background = '#1e293b';
+                          }
+                        }}
+                      >
+                        📋 Ver Remitos
+                      </button>
+                      <div style={{
+                        fontSize: '1.25rem',
+                        color: '#64748b',
+                        transition: 'transform 0.3s ease'
+                      }}>
+                        {estaDiaExpandido(grupo.fecha) ? '▼' : '▶'}
+                      </div>
                     </div>
                   </div>
 
@@ -1144,6 +1242,193 @@ export default function Ingresos() {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Remitos del Día */}
+      {modalRemitosDia && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+          animation: 'modalSlideIn 0.3s ease-out'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            width: isMobile ? '95%' : '600px',
+            maxHeight: '80vh',
+            overflow: 'hidden',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <div style={{
+              padding: isMobile ? '20px' : '24px',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <h2 style={{
+                  margin: 0,
+                  fontSize: isMobile ? '1.25rem' : '1.5rem',
+                  fontWeight: '600',
+                  color: '#1e293b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  📋 Remitos del Día - {formatearFechaGrupoConHoy(modalRemitosDia)}
+                </h2>
+                <p style={{
+                  margin: '0.25rem 0 0 0',
+                  fontSize: '0.75rem',
+                  color: '#64748b'
+                }}>
+                  ↑↓ Navegar • Enter Abrir • ESC Cerrar
+                </p>
+              </div>
+              <button
+                onClick={() => setModalRemitosDia(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  padding: '0.5rem',
+                  borderRadius: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f1f5f9';
+                  e.currentTarget.style.color = '#1e293b';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.color = '#64748b';
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div style={{
+              padding: isMobile ? '16px' : '24px',
+              overflow: 'auto',
+              flex: 1
+            }}>
+              {(() => {
+                const grupo = gruposPorFecha.find(g => g.fecha === modalRemitosDia);
+                if (!grupo || grupo.remitos.length === 0) {
+                  return (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '2rem',
+                      color: '#64748b'
+                    }}>
+                      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📋</div>
+                      <p>No hay remitos para este día</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem'
+                  }}>
+                    {grupo.remitos.map((remito, index) => (
+                      <div key={remito.id} style={{
+                        background: index === remitoSeleccionadoIndex ? '#f0fdf4' : '#f8fafc',
+                        border: index === remitoSeleccionadoIndex ? '2px solid #059669' : '1px solid #e2e8f0',
+                        borderRadius: '0.5rem',
+                        padding: isMobile ? '0.75rem' : '1rem',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer',
+                        position: 'relative'
+                      }}
+                      onClick={() => {
+                        setModalRemitosDia(null);
+                        setRemitoSeleccionado(remito);
+                        setRemitoSeleccionadoIndex(0);
+                      }}
+                      onMouseOver={(e) => {
+                        if (!isMobile) {
+                          e.currentTarget.style.borderColor = '#059669';
+                          e.currentTarget.style.boxShadow = '0 2px 8px rgba(5, 150, 105, 0.1)';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (!isMobile) {
+                          e.currentTarget.style.borderColor = '#e2e8f0';
+                          e.currentTarget.style.boxShadow = 'none';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }
+                      }}
+                      >
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem'
+                        }}>
+                          <div style={{
+                            background: '#059669',
+                            color: 'white',
+                            borderRadius: '0.375rem',
+                            padding: '0.375rem 0.75rem',
+                            fontSize: '0.875rem',
+                            fontWeight: '700',
+                            minWidth: 'fit-content'
+                          }}>
+                            #{remito.numeroRemito}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            {remito.observaciones ? (
+                              <div style={{
+                                fontSize: isMobile ? '0.8rem' : '0.875rem',
+                                color: '#64748b',
+                                fontStyle: 'italic'
+                              }}>
+                                {remito.observaciones}
+                              </div>
+                            ) : (
+                              <div style={{
+                                fontSize: isMobile ? '0.8rem' : '0.875rem',
+                                color: '#9ca3af',
+                                fontStyle: 'italic'
+                              }}>
+                                Sin observaciones
+                              </div>
+                            )}
+                          </div>
+                          <div style={{
+                            fontSize: '1rem',
+                            color: index === remitoSeleccionadoIndex ? '#059669' : '#64748b',
+                            fontWeight: index === remitoSeleccionadoIndex ? 'bold' : 'normal'
+                          }}>
+                            {index === remitoSeleccionadoIndex ? '👁️' : '👁️'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

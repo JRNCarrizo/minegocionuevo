@@ -576,7 +576,7 @@ export default function DescargaDevoluciones() {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: '#f8fafc',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -606,7 +606,7 @@ export default function DescargaDevoluciones() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      background: '#f8fafc'
     }}>
       <NavbarAdmin
         onCerrarSesion={cerrarSesion}
@@ -656,31 +656,28 @@ export default function DescargaDevoluciones() {
                          <button
                onClick={abrirModalCrear}
                style={{
-                 background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                 background: '#1e293b',
                  color: 'white',
-                 border: 'none',
-                 borderRadius: '12px',
+                 border: '1px solid #334155',
+                 borderRadius: '8px',
                  padding: isMobile ? '12px 16px' : '0.75rem 1.5rem',
                  fontSize: isMobile ? '0.8rem' : '1rem',
-                 fontWeight: '600',
+                 fontWeight: '500',
                  cursor: 'pointer',
                  display: 'flex',
                  alignItems: 'center',
                  gap: '0.5rem',
-                 boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
                  transition: 'all 0.2s ease',
                  justifyContent: 'center'
                }}
                onMouseEnter={(e) => {
                  if (!isMobile) {
-                   e.currentTarget.style.transform = 'translateY(-2px)';
-                   e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.4)';
+                   e.currentTarget.style.background = '#334155';
                  }
                }}
                onMouseLeave={(e) => {
                  if (!isMobile) {
-                   e.currentTarget.style.transform = 'translateY(0)';
-                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.3)';
+                   e.currentTarget.style.background = '#1e293b';
                  }
                }}
              >
@@ -787,7 +784,7 @@ export default function DescargaDevoluciones() {
               <button
                 onClick={abrirModalCrear}
                 style={{
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  background: '#1e293b',
                   color: 'white',
                   border: 'none',
                   borderRadius: '0.75rem',
@@ -818,7 +815,7 @@ export default function DescargaDevoluciones() {
               {gruposPorFecha.map((grupo) => (
                 <div key={grupo.fecha} style={{ marginBottom: '2rem' }}>
                    <div style={{
-                     background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                     background: '#1e293b',
                      color: 'white',
                      padding: isMobile ? '12px 16px' : '24px',
                      borderRadius: '16px',
@@ -886,9 +883,9 @@ export default function DescargaDevoluciones() {
                          disabled={cargandoResumen}
                          style={{
                            padding: '0.5rem 1rem',
-                           background: 'rgba(255, 255, 255, 0.2)',
+                           background: '#1e293b',
                            color: 'white',
-                           border: '1px solid rgba(255, 255, 255, 0.3)',
+                           border: '1px solid #334155',
                            borderRadius: '0.5rem',
                            fontSize: '0.875rem',
                            fontWeight: '600',
@@ -901,14 +898,12 @@ export default function DescargaDevoluciones() {
                          }}
                          onMouseOver={(e) => {
                            if (!cargandoResumen) {
-                             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-                             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                             e.currentTarget.style.background = '#334155';
                            }
                          }}
                          onMouseOut={(e) => {
                            if (!cargandoResumen) {
-                             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                             e.currentTarget.style.background = '#1e293b';
                            }
                          }}
                        >
@@ -923,9 +918,9 @@ export default function DescargaDevoluciones() {
                          disabled={cargandoProductosPerdidos}
                          style={{
                            padding: '0.5rem 1rem',
-                           background: 'rgba(255, 255, 255, 0.2)',
+                           background: '#1e293b',
                            color: 'white',
-                           border: '1px solid rgba(255, 255, 255, 0.3)',
+                           border: '1px solid #334155',
                            borderRadius: '0.5rem',
                            fontSize: '0.875rem',
                            fontWeight: '600',
@@ -938,14 +933,12 @@ export default function DescargaDevoluciones() {
                          }}
                          onMouseOver={(e) => {
                            if (!cargandoProductosPerdidos) {
-                             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-                             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                             e.currentTarget.style.background = '#334155';
                            }
                          }}
                          onMouseOut={(e) => {
                            if (!cargandoProductosPerdidos) {
-                             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                             e.currentTarget.style.background = '#1e293b';
                            }
                          }}
                        >
@@ -962,17 +955,17 @@ export default function DescargaDevoluciones() {
                     }}>
                       {grupo.planillas.map((planilla) => (
                         <div key={planilla.id} style={{
-                          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                          borderRadius: '16px',
-                          border: '2px solid #e2e8f0',
+                          background: 'white',
+                          borderRadius: '8px',
+                          border: '1px solid #e2e8f0',
                           padding: isMobile ? '16px' : '24px',
                           boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                           transition: 'all 0.2s ease'
                         }}
                         onMouseOver={(e) => {
                           if (!isMobile) {
-                            e.currentTarget.style.borderColor = '#f59e0b';
-                            e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,158,11,0.15)';
+                            e.currentTarget.style.borderColor = '#334155';
+                            e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)';
                             e.currentTarget.style.transform = 'translateY(-2px)';
                           }
                         }}
@@ -1036,7 +1029,7 @@ export default function DescargaDevoluciones() {
                                   fontSize: isMobile ? '1rem' : '0.875rem'
                                 }}>
                                   📦 <span style={{
-                                    color: '#059669', 
+                                    color: '#1e293b', 
                                     fontWeight: '700'
                                   }}>
                                     {planilla.totalProductos}
@@ -1082,7 +1075,7 @@ export default function DescargaDevoluciones() {
                               <button
                                 onClick={() => exportarPlanilla(planilla)}
                                 style={{
-                                  background: '#10b981',
+                                  background: '#1e293b',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '0.75rem',
@@ -1105,7 +1098,7 @@ export default function DescargaDevoluciones() {
                               <button
                                 onClick={() => setPlanillaSeleccionada(planilla)}
                                 style={{
-                                  background: '#059669',
+                                  background: '#1e293b',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '0.75rem',
@@ -1200,7 +1193,7 @@ export default function DescargaDevoluciones() {
                                       if (patenteMatch && patenteMatch[2]) {
                                         return (
                                           <span style={{
-                                            color: '#059669',
+                                            color: '#1e293b',
                                             fontSize: '0.75rem',
                                             fontWeight: '600',
                                             display: 'block',
@@ -1370,7 +1363,7 @@ export default function DescargaDevoluciones() {
                 <p style={{
                   fontSize: '1rem',
                   fontWeight: '600',
-                  color: '#059669',
+                  color: '#1e293b',
                   margin: 0
                 }}>
                   {planillaSeleccionada.totalProductos}
@@ -1427,7 +1420,7 @@ export default function DescargaDevoluciones() {
                                 borderRadius: '0.375rem'
                               }}>
                                 <span style={{
-                                  color: '#059669',
+                                  color: '#1e293b',
                                   fontSize: '0.75rem',
                                   fontWeight: '600'
                                 }}>
@@ -1508,7 +1501,7 @@ export default function DescargaDevoluciones() {
                           <div style={{
                             fontSize: '1.25rem',
                             fontWeight: '700',
-                            color: '#059669'
+                            color: '#1e293b'
                           }}>
                             {detalle.cantidad}
                           </div>
@@ -1569,7 +1562,7 @@ export default function DescargaDevoluciones() {
               <button
                 onClick={() => exportarPlanilla(planillaSeleccionada)}
                 style={{
-                  background: '#10b981',
+                  background: '#1e293b',
                   color: 'white',
                   border: 'none',
                   borderRadius: '0.5rem',
@@ -1644,9 +1637,9 @@ export default function DescargaDevoluciones() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+              background: '#1e293b',
               color: 'white',
-              borderRadius: '1rem 1rem 0 0'
+              borderRadius: '8px 8px 0 0'
             }}>
               <div style={{
                 display: 'flex',
@@ -1674,7 +1667,7 @@ export default function DescargaDevoluciones() {
               <button
                 onClick={() => setModalProductosPerdidos(null)}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
+                  background: '#1e293b',
                   border: 'none',
                   borderRadius: '0.5rem',
                   color: 'white',
@@ -1688,10 +1681,10 @@ export default function DescargaDevoluciones() {
                   transition: 'all 0.2s ease'
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                  e.currentTarget.style.background = '#334155';
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                  e.currentTarget.style.background = '#1e293b';
                 }}
               >
                 ×
@@ -1950,7 +1943,7 @@ export default function DescargaDevoluciones() {
                           <div style={{
                             fontSize: isMobile ? '1.25rem' : '1.5rem',
                             fontWeight: '700',
-                            color: '#059669'
+                            color: '#1e293b'
                           }}>
                             +{producto.cantidadTotal}
                           </div>
@@ -1988,7 +1981,7 @@ export default function DescargaDevoluciones() {
                               style={{
                                 background: 'none',
                                 border: 'none',
-                                color: '#f59e0b',
+                                color: '#1e293b',
                                 textDecoration: 'underline',
                                 cursor: 'pointer',
                                 fontSize: isMobile ? '0.8rem' : '0.875rem',
@@ -1997,10 +1990,10 @@ export default function DescargaDevoluciones() {
                                 margin: '0'
                               }}
                               onMouseOver={(e) => {
-                                e.currentTarget.style.color = '#d97706';
+                                e.currentTarget.style.color = '#334155';
                               }}
                               onMouseOut={(e) => {
-                                e.currentTarget.style.color = '#f59e0b';
+                                e.currentTarget.style.color = '#1e293b';
                               }}
                             >
                               {numeroPlanilla}
