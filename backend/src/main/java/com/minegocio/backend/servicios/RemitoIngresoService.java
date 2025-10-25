@@ -252,7 +252,7 @@ public class RemitoIngresoService {
                 if (detalle.getProducto() != null) {
                     Producto producto = detalle.getProducto();
                     Integer stockAnterior = producto.getStock();
-                    Integer nuevoStock = stockAnterior - detalle.getCantidad();
+                    Integer nuevoStock = stockAnterior + detalle.getCantidad();
                     
                     // Usar el sistema de sincronización para restaurar el stock correctamente
                     producto.setStock(nuevoStock);
@@ -266,7 +266,7 @@ public class RemitoIngresoService {
                         "Eliminación de remito de ingreso"
                     );
                     
-                    System.out.println("✅ ELIMINACIÓN REMITO - Stock restaurado y sincronizado: " + stockAnterior + " - " + detalle.getCantidad() + " = " + nuevoStock);
+                    System.out.println("✅ ELIMINACIÓN REMITO - Stock restaurado y sincronizado: " + stockAnterior + " + " + detalle.getCantidad() + " = " + nuevoStock);
                 }
             }
             
