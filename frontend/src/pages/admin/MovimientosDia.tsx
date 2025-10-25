@@ -747,43 +747,6 @@ export default function MovimientosDia() {
     }
   };
 
-  // Función para calcular totales de productos en ingresos
-  const calcularTotalesIngresos = () => {
-    if (!movimientos || !movimientos.ingresos.productos) return { totalProductos: 0, totalesPorRemito: {} };
-    
-    const productos = movimientos.ingresos.productos;
-    let totalProductos = 0;
-    const totalesPorRemito: { [key: string]: number } = {};
-    
-    productos.forEach(producto => {
-      totalProductos += producto.cantidad;
-      
-      // Extraer información del remito de las observaciones
-      const observaciones = producto.observaciones || '';
-      let remito = 'Sin remito';
-      
-      // Buscar patrones comunes de remito en las observaciones
-      if (observaciones.includes('Remito') || observaciones.includes('remito')) {
-        const match = observaciones.match(/(?:Remito|remito)[\s:]*([A-Za-z0-9\-_]+)/i);
-        if (match && match[1]) {
-          remito = match[1];
-        }
-      } else if (observaciones.trim()) {
-        // Si hay observaciones pero no menciona remito, usar las primeras palabras
-        const palabras = observaciones.trim().split(' ').slice(0, 2).join(' ');
-        if (palabras.length > 0) {
-          remito = palabras;
-        }
-      }
-      
-      if (!totalesPorRemito[remito]) {
-        totalesPorRemito[remito] = 0;
-      }
-      totalesPorRemito[remito] += producto.cantidad;
-    });
-    
-    return { totalProductos, totalesPorRemito };
-  };
 
   const renderizarProducto = (producto: any, seccion: string) => {
     if (seccion === 'stockInicial') {
@@ -2272,83 +2235,6 @@ export default function MovimientosDia() {
                     renderizarProducto(producto, modalAbierto)
                   )}
                   
-                  {/* Fila de totales solo para la sección de ingresos */}
-                  {modalAbierto === 'ingresos' && (
-                    <div style={{
-                      marginTop: '1rem',
-                      padding: isMobile ? '0.75rem' : '1rem',
-                      background: '#f8fafc',
-                      borderRadius: '0.5rem',
-                      border: '2px solid #059669',
-                      borderTop: '3px solid #059669'
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '0.5rem'
-                      }}>
-                        <div style={{
-                          fontSize: isMobile ? '1rem' : '1.125rem',
-                          fontWeight: '700',
-                          color: '#059669'
-                        }}>
-                          📊 Totales
-                        </div>
-                        <div style={{
-                          fontSize: isMobile ? '1.25rem' : '1.5rem',
-                          fontWeight: '800',
-                          color: '#059669'
-                        }}>
-                          +{movimientos.ingresos.cantidadTotal}
-                        </div>
-                      </div>
-                      
-                      {/* Totales por remito */}
-                      {(() => {
-                        const { totalesPorRemito } = calcularTotalesIngresos();
-                        const remitos = Object.entries(totalesPorRemito);
-                        
-                        if (remitos.length > 1) {
-                          return (
-                            <div style={{
-                              borderTop: '1px solid #e2e8f0',
-                              paddingTop: '0.5rem'
-                            }}>
-                              <div style={{
-                                fontSize: isMobile ? '0.875rem' : '1rem',
-                                fontWeight: '600',
-                                color: '#64748b',
-                                marginBottom: '0.25rem'
-                              }}>
-                                Por remito:
-                              </div>
-                              {remitos.map(([remito, cantidad]) => (
-                                <div key={remito} style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  padding: '0.125rem 0',
-                                  fontSize: isMobile ? '0.8rem' : '0.875rem'
-                                }}>
-                                  <span style={{ color: '#64748b' }}>
-                                    {remito}
-                                  </span>
-                                  <span style={{ 
-                                    fontWeight: '600', 
-                                    color: '#059669' 
-                                  }}>
-                                    +{cantidad}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </div>
-                  )}
                 </>
               ) : (
                 <div style={{
