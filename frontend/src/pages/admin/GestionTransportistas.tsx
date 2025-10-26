@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
+import { useTheme } from '../../hooks/useTheme';
 import { API_CONFIG } from '../../config/api';
 import toast from 'react-hot-toast';
 import './GestionTransportistas.css';
@@ -34,6 +35,7 @@ interface Transportista {
 const GestionTransportistas: React.FC = () => {
   const { datosUsuario, cargando: cargandoUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile } = useResponsive();
+  const { isDarkMode } = useTheme();
   const navigate = useNavigate();
 
   // Estados principales
@@ -572,7 +574,7 @@ const GestionTransportistas: React.FC = () => {
       />
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        background: 'var(--gradiente-fondo)'
       }}>
         <div style={{
           maxWidth: '1600px',
@@ -581,12 +583,12 @@ const GestionTransportistas: React.FC = () => {
         }}>
           {/* Header */}
           <div style={{
-            background: 'white',
+            background: 'var(--color-card)',
             borderRadius: '16px',
             padding: isMobile ? '16px' : '24px',
             marginBottom: isMobile ? '1.5rem' : '2rem',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-            border: '2px solid #e2e8f0'
+            boxShadow: '0 10px 25px var(--color-sombra)',
+            border: '2px solid var(--color-borde)'
           }}>
             <div style={{
               display: 'flex',
@@ -628,13 +630,13 @@ const GestionTransportistas: React.FC = () => {
                 <h1 style={{
                   fontSize: isMobile ? '1.5rem' : '2rem',
                   fontWeight: '700',
-                  color: '#1e293b',
+                  color: 'var(--color-texto-principal)',
                   margin: '0 0 0.5rem 0'
                 }}>
                   🚛 Gestión de Transportistas
                 </h1>
                 <p style={{
-                  color: '#64748b',
+                  color: 'var(--color-texto-secundario)',
                   margin: 0,
                   fontSize: isMobile ? '0.875rem' : '1rem'
                 }}>
@@ -706,7 +708,7 @@ const GestionTransportistas: React.FC = () => {
                     border: '2px solid #d1d5db',
                     borderRadius: '8px',
                     fontSize: isMobile ? '1rem' : '1rem',
-                    background: 'white',
+                    background: 'var(--color-card)',
                     transition: 'all 0.2s ease',
                     minHeight: isMobile ? '48px' : 'auto'
                   }}
@@ -763,10 +765,10 @@ const GestionTransportistas: React.FC = () => {
               justifyContent: 'center',
               padding: '2rem 1rem',
               textAlign: 'center',
-              background: 'white',
+              background: 'var(--color-card)',
               borderRadius: '16px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-              border: '2px solid #e2e8f0'
+              boxShadow: '0 2px 8px var(--color-sombra)',
+              border: '2px solid var(--color-borde)'
             }}>
               <div style={{
                 width: '3rem',
@@ -784,10 +786,10 @@ const GestionTransportistas: React.FC = () => {
               textAlign: 'center',
               padding: '2rem 1rem',
               color: '#64748b',
-              background: 'white',
+              background: 'var(--color-card)',
               borderRadius: '16px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-              border: '2px solid #e2e8f0',
+              boxShadow: '0 2px 8px var(--color-sombra)',
+              border: '2px solid var(--color-borde)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -835,12 +837,12 @@ const GestionTransportistas: React.FC = () => {
                 <div
                   key={transportista.id}
                   style={{
-                    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                    background: 'var(--color-card)',
                     borderRadius: '24px',
                     padding: isMobile ? '1.25rem' : '1.5rem',
                     transition: 'all 0.3s ease',
                     cursor: 'pointer',
-                    border: cardSeleccionada === index ? '2px solid #000000' : '2px solid #e2e8f0',
+                    border: cardSeleccionada === index ? '2px solid #000000' : '2px solid var(--color-borde)',
                     position: 'relative',
                     overflow: 'hidden',
                     minHeight: isMobile ? '160px' : '180px',
@@ -849,21 +851,21 @@ const GestionTransportistas: React.FC = () => {
                     textAlign: 'center',
                     opacity: !transportista.activo ? 0.7 : 1,
                     transform: cardSeleccionada === index ? 'translateY(-2px)' : 'none',
-                    boxShadow: cardSeleccionada === index ? '0 0 0 3px rgba(0, 0, 0, 0.3)' : '0 4px 20px rgba(0, 0, 0, 0.08)'
+                    boxShadow: cardSeleccionada === index ? '0 0 0 3px rgba(0, 0, 0, 0.3)' : '0 4px 20px var(--color-sombra)'
                   }}
                   onClick={() => abrirModalVehiculos(transportista)}
                   onMouseEnter={(e) => {
                     if (cardSeleccionada !== index) {
                       e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1)';
+                      e.currentTarget.style.boxShadow = '0 4px 16px var(--color-sombra-fuerte)';
                       e.currentTarget.style.borderColor = '#667eea';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (cardSeleccionada !== index) {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.08)';
-                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.boxShadow = '0 4px 20px var(--color-sombra)';
+                      e.currentTarget.style.borderColor = 'var(--color-borde)';
                     }
                   }}
                 >
@@ -938,7 +940,7 @@ const GestionTransportistas: React.FC = () => {
                     <h3 style={{
                       fontSize: isMobile ? '1.1rem' : '1.2rem',
                       fontWeight: '700',
-                      color: '#1e293b',
+                      color: 'var(--color-texto-principal)',
                       margin: '0 0 0.75rem 0',
                       textAlign: 'center'
                     }}>
@@ -951,7 +953,7 @@ const GestionTransportistas: React.FC = () => {
                       borderRadius: '20px',
                       border: '1px solid #bae6fd',
                       textAlign: 'center',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                      boxShadow: '0 2px 8px var(--color-sombra)'
                     }}>
                       <span style={{
                         color: '#0369a1',
@@ -983,7 +985,7 @@ const GestionTransportistas: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                        boxShadow: '0 2px 8px var(--color-sombra)',
                         margin: '0 0.25rem',
                         background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                         color: 'white'
@@ -995,11 +997,11 @@ const GestionTransportistas: React.FC = () => {
                       title="Editar transportista"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                        e.currentTarget.style.boxShadow = '0 4px 15px var(--color-sombra-fuerte)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px var(--color-sombra)';
                       }}
                     >
                       ✏️
@@ -1016,7 +1018,7 @@ const GestionTransportistas: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                        boxShadow: '0 2px 8px var(--color-sombra)',
                         margin: '0 0.25rem',
                         background: transportista.activo 
                           ? 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
@@ -1030,11 +1032,11 @@ const GestionTransportistas: React.FC = () => {
                       title={transportista.activo ? 'Desactivar transportista' : 'Activar transportista'}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                        e.currentTarget.style.boxShadow = '0 4px 15px var(--color-sombra-fuerte)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px var(--color-sombra)';
                       }}
                     >
                       {transportista.activo ? '⏸️' : '▶️'}
@@ -1051,7 +1053,7 @@ const GestionTransportistas: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                        boxShadow: '0 2px 8px var(--color-sombra)',
                         margin: '0 0.25rem',
                         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                         color: 'white'
@@ -1063,11 +1065,11 @@ const GestionTransportistas: React.FC = () => {
                       title="Eliminar transportista"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                        e.currentTarget.style.boxShadow = '0 4px 15px var(--color-sombra-fuerte)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px var(--color-sombra)';
                       }}
                     >
                       🗑️
@@ -1273,14 +1275,14 @@ const GestionTransportistas: React.FC = () => {
           padding: '1rem'
         }}>
           <div style={{
-            background: 'white',
+            background: 'var(--color-card)',
             borderRadius: '1rem',
             width: '100%',
             maxWidth: '600px',
             maxHeight: '90vh',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            boxShadow: '0 25px 50px -12px var(--color-sombra-fuerte)'
           }}>
             {/* Header Simple */}
             <div style={{
@@ -1300,7 +1302,7 @@ const GestionTransportistas: React.FC = () => {
                   border: 'none',
                   fontSize: '1.5rem',
                   cursor: 'pointer',
-                  color: '#64748b',
+                  color: 'var(--color-texto-secundario)',
                   padding: '0.5rem',
                   borderRadius: '0.5rem',
                   transition: 'all 0.2s ease'
@@ -1326,11 +1328,11 @@ const GestionTransportistas: React.FC = () => {
             }}>
               {/* Formulario Simple */}
               <div style={{
-                background: '#f8fafc',
+                background: 'var(--color-fondo-secundario)',
                 padding: '1.5rem',
                 borderRadius: '0.75rem',
                 marginBottom: '1.5rem',
-                border: '1px solid #e2e8f0'
+                border: '1px solid var(--color-borde)'
               }}>
                 <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.125rem', fontWeight: '600', color: '#1e293b' }}>
                   Agregar Vehículo
@@ -1351,7 +1353,7 @@ const GestionTransportistas: React.FC = () => {
                       style={{
                         width: '100%',
                         padding: '0.75rem',
-                        border: errors.marca ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                        border: errors.marca ? '2px solid #ef4444' : '2px solid var(--color-borde)',
                         borderRadius: '0.75rem',
                         fontSize: '1rem',
                         transition: 'all 0.2s ease',
@@ -1363,7 +1365,7 @@ const GestionTransportistas: React.FC = () => {
                         e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
                       }}
                       onBlur={(e) => {
-                        e.target.style.borderColor = errors.marca ? '#ef4444' : '#e2e8f0';
+                        e.target.style.borderColor = errors.marca ? '#ef4444' : 'var(--color-borde)';
                         e.target.style.boxShadow = 'none';
                       }}
                     />
@@ -1384,7 +1386,7 @@ const GestionTransportistas: React.FC = () => {
                       style={{
                         width: '100%',
                         padding: '0.75rem',
-                        border: errors.modelo ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                        border: errors.modelo ? '2px solid #ef4444' : '2px solid var(--color-borde)',
                         borderRadius: '0.75rem',
                         fontSize: '1rem',
                         transition: 'all 0.2s ease',
@@ -1396,7 +1398,7 @@ const GestionTransportistas: React.FC = () => {
                         e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
                       }}
                       onBlur={(e) => {
-                        e.target.style.borderColor = errors.modelo ? '#ef4444' : '#e2e8f0';
+                        e.target.style.borderColor = errors.modelo ? '#ef4444' : 'var(--color-borde)';
                         e.target.style.boxShadow = 'none';
                       }}
                     />
@@ -1417,7 +1419,7 @@ const GestionTransportistas: React.FC = () => {
                       style={{
                         width: '100%',
                         padding: '0.75rem',
-                        border: errors.patente ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                        border: errors.patente ? '2px solid #ef4444' : '2px solid var(--color-borde)',
                         borderRadius: '0.75rem',
                         fontSize: '1rem',
                         transition: 'all 0.2s ease',
@@ -1429,7 +1431,7 @@ const GestionTransportistas: React.FC = () => {
                         e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
                       }}
                       onBlur={(e) => {
-                        e.target.style.borderColor = errors.patente ? '#ef4444' : '#e2e8f0';
+                        e.target.style.borderColor = errors.patente ? '#ef4444' : 'var(--color-borde)';
                         e.target.style.boxShadow = 'none';
                       }}
                     />
@@ -1455,7 +1457,7 @@ const GestionTransportistas: React.FC = () => {
                       onMouseEnter={(e) => {
                         if (!guardando) {
                           e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                          e.currentTarget.style.boxShadow = '0 4px 15px var(--color-sombra-fuerte)';
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -1479,9 +1481,9 @@ const GestionTransportistas: React.FC = () => {
                   <div style={{
                     textAlign: 'center',
                     padding: '2rem',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     fontStyle: 'italic',
-                    background: '#f8fafc',
+                    background: 'var(--color-fondo-secundario)',
                     borderRadius: '0.75rem',
                     border: '2px dashed #cbd5e1'
                   }}>
@@ -1495,8 +1497,8 @@ const GestionTransportistas: React.FC = () => {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         padding: '1rem',
-                        background: vehiculo.activo ? 'white' : '#f8fafc',
-                        border: vehiculo.activo ? '2px solid #e2e8f0' : '2px solid #d1d5db',
+                        background: vehiculo.activo ? 'var(--color-card)' : 'var(--color-fondo-secundario)',
+                        border: vehiculo.activo ? '2px solid var(--color-borde)' : '2px solid var(--color-borde-secundario)',
                         borderRadius: '0.75rem',
                         transition: 'all 0.2s ease',
                         opacity: vehiculo.activo ? 1 : 0.7
@@ -1504,12 +1506,12 @@ const GestionTransportistas: React.FC = () => {
                       onMouseEnter={(e) => {
                         if (vehiculo.activo) {
                           e.currentTarget.style.borderColor = '#667eea';
-                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.1)';
+                          e.currentTarget.style.boxShadow = '0 4px 15px var(--color-sombra)';
                           e.currentTarget.style.transform = 'translateY(-2px)';
                         }
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = vehiculo.activo ? '#e2e8f0' : '#d1d5db';
+                        e.currentTarget.style.borderColor = vehiculo.activo ? 'var(--color-borde)' : 'var(--color-borde-secundario)';
                         e.currentTarget.style.boxShadow = 'none';
                         e.currentTarget.style.transform = 'none';
                       }}>
@@ -1587,7 +1589,7 @@ const GestionTransportistas: React.FC = () => {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                          e.currentTarget.style.boxShadow = '0 4px 15px var(--color-sombra-fuerte)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'none';

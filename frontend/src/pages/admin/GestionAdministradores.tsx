@@ -4,6 +4,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import GestionPermisosModal from '../../components/GestionPermisosModal';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
+import { useTheme } from '../../hooks/useTheme';
 import '../../styles/gestion-administradores.css';
 
 interface Administrador {
@@ -30,6 +31,7 @@ interface NuevoAdministrador {
 
 export default function GestionAdministradores() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
+  const { isDarkMode } = useTheme();
   const [administradores, setAdministradores] = useState<Administrador[]>([]);
   const [cargando, setCargando] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);

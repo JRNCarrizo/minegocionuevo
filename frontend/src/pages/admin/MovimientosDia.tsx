@@ -5,6 +5,7 @@ import ApiService from '../../services/api';
 import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
+import { useTheme } from '../../hooks/useTheme';
 import { formatearFecha, formatearFechaConHora } from '../../utils/dateUtils';
 
 interface MovimientoDia {
@@ -51,6 +52,7 @@ interface ProductoMovimientoDTO {
 export default function MovimientosDia() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile } = useResponsive();
+  const { isDarkMode } = useTheme();
   const navigate = useNavigate();
   
   const [fechaSeleccionada, setFechaSeleccionada] = useState<string>('');
@@ -208,14 +210,14 @@ export default function MovimientosDia() {
   // Función para obtener estilos de la card con efecto de escala cuando está seleccionada
   const obtenerEstilosCard = (_index: number, esSeleccionada: boolean) => {
     const baseStyles = {
-      background: 'white',
+      background: 'var(--color-card)',
       borderRadius: '1rem',
       paddingTop: isMobile ? '1.5rem' : '2rem',
       paddingBottom: isMobile ? '1.5rem' : '2rem',
       paddingLeft: isMobile ? '1.5rem' : '2rem',
       paddingRight: isMobile ? '1.5rem' : '2rem',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-      border: '1px solid #e2e8f0',
+      boxShadow: '0 4px 6px -1px var(--color-sombra)',
+           border: '1px solid var(--color-borde)',
       cursor: 'pointer',
       transition: 'all 0.3s ease',
       position: 'relative' as const
@@ -225,7 +227,7 @@ export default function MovimientosDia() {
       return {
         ...baseStyles,
         transform: 'scale(1.05)',
-        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+        boxShadow: '0 8px 25px var(--color-sombra-fuerte)',
         zIndex: 5
       };
     }
@@ -758,17 +760,17 @@ export default function MovimientosDia() {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: isMobile ? '0.6rem' : '0.75rem',
-          background: '#f8fafc',
+          background: 'var(--color-fondo-secundario)',
           borderRadius: '0.5rem',
           marginBottom: isMobile ? '0.4rem' : '0.5rem',
-          border: '2px solid #e2e8f0',
+          border: '2px solid var(--color-borde)',
           position: 'relative',
           transition: 'all 0.2s ease'
         }}>
           <div style={{ flex: 1 }}>
             <div style={{ 
               fontWeight: '600', 
-              color: '#1e293b',
+              color: 'var(--color-texto-principal)',
               display: 'flex',
               alignItems: 'center',
               gap: isMobile ? '0.4rem' : '0.5rem',
@@ -778,7 +780,7 @@ export default function MovimientosDia() {
               {producto.codigoPersonalizado && (
                 <span style={{ 
                   fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                  color: '#64748b',
+                  color: 'var(--color-texto-secundario)',
                   fontWeight: '500',
                   fontFamily: 'monospace'
                 }}>
@@ -860,7 +862,7 @@ export default function MovimientosDia() {
           <div style={{ flex: 1 }}>
                          <div style={{ 
                fontWeight: '600', 
-               color: '#1e293b',
+               color: 'var(--color-texto-principal)',
                display: 'flex',
                alignItems: 'center',
                gap: isMobile ? '0.4rem' : '0.5rem',
@@ -870,7 +872,7 @@ export default function MovimientosDia() {
                {producto.codigoPersonalizado && (
                  <span style={{ 
                    fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                   color: '#64748b',
+                   color: 'var(--color-texto-secundario)',
                    fontWeight: '500',
                    fontFamily: 'monospace'
                  }}>
@@ -949,7 +951,7 @@ export default function MovimientosDia() {
              <div style={{ flex: 1 }}>
                <div style={{ 
                  fontWeight: '600', 
-                 color: '#1e293b',
+                 color: 'var(--color-texto-principal)',
                  fontSize: isMobile ? '0.9rem' : '1rem'
                }}>
                  {producto.nombre}
@@ -965,7 +967,7 @@ export default function MovimientosDia() {
                {producto.observaciones && (
                  <div style={{ 
                    fontSize: isMobile ? '0.7rem' : '0.75rem', 
-                   color: '#64748b',
+                   color: 'var(--color-texto-secundario)',
                    fontStyle: 'italic',
                    marginTop: '0.25rem'
                  }}>
@@ -1000,7 +1002,7 @@ export default function MovimientosDia() {
            <div style={{ flex: 1 }}>
              <div style={{ 
                fontWeight: '600', 
-               color: '#1e293b',
+               color: 'var(--color-texto-principal)',
                fontSize: isMobile ? '0.9rem' : '1rem'
              }}>
                {producto.nombre}
@@ -1039,10 +1041,10 @@ export default function MovimientosDia() {
         justifyContent: 'center'
       }}>
         <div style={{
-          background: 'white',
+          background: 'var(--color-card)',
           borderRadius: '1rem',
           padding: '2rem',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 20px 40px var(--color-sombra)',
           textAlign: 'center'
         }}>
           <div style={{
@@ -1063,7 +1065,7 @@ export default function MovimientosDia() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      background: 'var(--gradiente-fondo)'
     }}>
       <NavbarAdmin
         onCerrarSesion={cerrarSesion}
@@ -1081,12 +1083,12 @@ export default function MovimientosDia() {
       }}>
         {/* Header */}
                  <div style={{
-           background: 'white',
+           background: 'var(--color-card)',
            borderRadius: '1rem',
            padding: '2rem',
            marginBottom: '2rem',
-           boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-           border: '1px solid #e2e8f0',
+           boxShadow: '0 10px 25px var(--color-sombra)',
+           border: '1px solid var(--color-borde)',
            opacity: transicionando ? 0.8 : 1,
            transition: 'opacity 0.3s ease'
          }}>
@@ -1101,13 +1103,13 @@ export default function MovimientosDia() {
                                <h1 style={{
                   fontSize: isMobile ? '1.5rem' : '2rem',
                   fontWeight: '700',
-                  color: '#1e293b',
+                  color: 'var(--color-texto-principal)',
                   margin: '0 0 0.5rem 0'
                 }}>
                   📊 {modoRango ? 'Movimientos por Rango' : 'Movimientos del Día'}
                 </h1>
                                 <p style={{
-                  color: '#64748b',
+                  color: 'var(--color-texto-secundario)',
                   margin: 0,
                   fontSize: '1rem'
                 }}>
@@ -1202,13 +1204,13 @@ export default function MovimientosDia() {
                   onMouseOver={(e) => {
                     if (!isMobile && movimientos && !transicionando && !modoRango) {
                       e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(124, 58, 237, 0.4)';
+                      e.currentTarget.style.boxShadow = '0 6px 20px var(--color-sombra-fuerte)';
                     }
                   }}
                   onMouseOut={(e) => {
                     if (!isMobile) {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(124, 58, 237, 0.3)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px var(--color-sombra)';
                     }
                   }}
                 >
@@ -1255,10 +1257,10 @@ export default function MovimientosDia() {
                       fontSize: '0.875rem',
                       border: 'none',
                       cursor: transicionando ? 'not-allowed' : 'pointer',
-                      background: !modoRango ? 'white' : 'transparent',
-                      color: !modoRango ? '#374151' : '#64748b',
+                      background: !modoRango ? 'var(--color-card)' : 'transparent',
+                      color: !modoRango ? 'var(--color-texto-principal)' : 'var(--color-texto-secundario)',
                       fontWeight: !modoRango ? '600' : '400',
-                      boxShadow: !modoRango ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
+                      boxShadow: !modoRango ? '0 1px 3px var(--color-sombra)' : 'none',
                       transition: 'all 0.2s ease',
                       opacity: transicionando ? 0.6 : 1
                     }}
@@ -1274,10 +1276,10 @@ export default function MovimientosDia() {
                       fontSize: '0.875rem',
                       border: 'none',
                       cursor: transicionando ? 'not-allowed' : 'pointer',
-                      background: modoRango ? 'white' : 'transparent',
-                      color: modoRango ? '#374151' : '#64748b',
+                      background: modoRango ? 'var(--color-card)' : 'transparent',
+                      color: modoRango ? 'var(--color-texto-principal)' : 'var(--color-texto-secundario)',
                       fontWeight: modoRango ? '600' : '400',
-                      boxShadow: modoRango ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
+                      boxShadow: modoRango ? '0 1px 3px var(--color-sombra)' : 'none',
                       transition: 'all 0.2s ease',
                       opacity: transicionando ? 0.6 : 1
                     }}
@@ -1298,7 +1300,7 @@ export default function MovimientosDia() {
                     border: '1px solid #d1d5db',
                     borderRadius: '0.5rem',
                     fontSize: '1rem',
-                    background: 'white',
+                    background: 'var(--color-card)',
                     minWidth: '200px'
                   }}
                 />
@@ -1317,7 +1319,7 @@ export default function MovimientosDia() {
                       border: '1px solid #d1d5db',
                       borderRadius: '0.5rem',
                       fontSize: '1rem',
-                      background: 'white',
+                      background: 'var(--color-card)',
                       minWidth: '150px'
                     }}
                   />
@@ -1331,7 +1333,7 @@ export default function MovimientosDia() {
                       border: '1px solid #d1d5db',
                       borderRadius: '0.5rem',
                       fontSize: '1rem',
-                      background: 'white',
+                      background: 'var(--color-card)',
                       minWidth: '150px'
                     }}
                   />
@@ -1365,7 +1367,7 @@ export default function MovimientosDia() {
                  // Solo aplicar hover si no está seleccionada por teclado
                  if (indiceSeleccionado !== 0) {
                    e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                   e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
+                   e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                    e.currentTarget.style.borderColor = '#3b82f6';
                  }
                }}
@@ -1373,8 +1375,8 @@ export default function MovimientosDia() {
                  // Solo resetear si no está seleccionada por teclado
                  if (indiceSeleccionado !== 0) {
                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                   e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                   e.currentTarget.style.borderColor = '#e2e8f0';
+                   e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra)';
+                   e.currentTarget.style.borderColor = 'var(--color-borde)';
                  }
                }}
              >
@@ -1403,7 +1405,7 @@ export default function MovimientosDia() {
                    <h3 style={{
                      fontSize: '1.125rem',
                      fontWeight: '600',
-                     color: '#1e293b',
+                     color: 'var(--color-texto-principal)',
                      margin: '0 0 0.5rem 0'
                    }}>
                      Stock Inicial
@@ -1478,15 +1480,15 @@ export default function MovimientosDia() {
                onMouseOver={(e) => {
                  if (indiceSeleccionado !== 1) {
                    e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                   e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
+                   e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                    e.currentTarget.style.borderColor = '#059669';
                  }
                }}
                onMouseOut={(e) => {
                  if (indiceSeleccionado !== 1) {
                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                   e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                   e.currentTarget.style.borderColor = '#e2e8f0';
+                   e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra)';
+                   e.currentTarget.style.borderColor = 'var(--color-borde)';
                  }
                }}
              >
@@ -1515,7 +1517,7 @@ export default function MovimientosDia() {
                    <h3 style={{
                      fontSize: '1.125rem',
                      fontWeight: '600',
-                     color: '#1e293b',
+                     color: 'var(--color-texto-principal)',
                      margin: '0 0 0.5rem 0'
                    }}>
                      Ingresos
@@ -1590,15 +1592,15 @@ export default function MovimientosDia() {
                onMouseOver={(e) => {
                  if (indiceSeleccionado !== 2) {
                    e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                   e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
+                   e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                    e.currentTarget.style.borderColor = '#f59e0b';
                  }
                }}
                onMouseOut={(e) => {
                  if (indiceSeleccionado !== 2) {
                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                   e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                   e.currentTarget.style.borderColor = '#e2e8f0';
+                   e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra)';
+                   e.currentTarget.style.borderColor = 'var(--color-borde)';
                  }
                }}
              >
@@ -1627,7 +1629,7 @@ export default function MovimientosDia() {
                    <h3 style={{
                      fontSize: '1.125rem',
                      fontWeight: '600',
-                     color: '#1e293b',
+                     color: 'var(--color-texto-principal)',
                      margin: '0 0 0.5rem 0'
                    }}>
                      Retornos y Devoluciones
@@ -1747,15 +1749,15 @@ export default function MovimientosDia() {
                onMouseOver={(e) => {
                  if (indiceSeleccionado !== 3) {
                    e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                   e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
+                   e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                    e.currentTarget.style.borderColor = '#ef4444';
                  }
                }}
                onMouseOut={(e) => {
                  if (indiceSeleccionado !== 3) {
                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                   e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                   e.currentTarget.style.borderColor = '#e2e8f0';
+                   e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra)';
+                   e.currentTarget.style.borderColor = 'var(--color-borde)';
                  }
                }}
              >
@@ -1784,7 +1786,7 @@ export default function MovimientosDia() {
                    <h3 style={{
                      fontSize: '1.125rem',
                      fontWeight: '600',
-                     color: '#1e293b',
+                     color: 'var(--color-texto-principal)',
                      margin: '0 0 0.5rem 0'
                    }}>
                      Carga de Planillas
@@ -1856,15 +1858,15 @@ export default function MovimientosDia() {
                onMouseOver={(e) => {
                  if (indiceSeleccionado !== 4) {
                    e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                   e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
+                   e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                    e.currentTarget.style.borderColor = '#7c3aed';
                  }
                }}
                onMouseOut={(e) => {
                  if (indiceSeleccionado !== 4) {
                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                   e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                   e.currentTarget.style.borderColor = '#e2e8f0';
+                   e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra)';
+                   e.currentTarget.style.borderColor = 'var(--color-borde)';
                  }
                }}
              >
@@ -1893,7 +1895,7 @@ export default function MovimientosDia() {
                    <h3 style={{
                      fontSize: '1.125rem',
                      fontWeight: '600',
-                     color: '#1e293b',
+                     color: 'var(--color-texto-principal)',
                      margin: '0 0 0.5rem 0'
                    }}>
                      Roturas y Pérdidas
@@ -1922,15 +1924,15 @@ export default function MovimientosDia() {
                onMouseOver={(e) => {
                  if (indiceSeleccionado !== 5) {
                    e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                   e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
+                   e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                    e.currentTarget.style.borderColor = '#8b5cf6';
                  }
                }}
                onMouseOut={(e) => {
                  if (indiceSeleccionado !== 5) {
                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                   e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                   e.currentTarget.style.borderColor = '#e2e8f0';
+                   e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra)';
+                   e.currentTarget.style.borderColor = 'var(--color-borde)';
                  }
                }}
              >
@@ -1959,7 +1961,7 @@ export default function MovimientosDia() {
                    <h3 style={{
                      fontSize: '1.125rem',
                      fontWeight: '600',
-                     color: '#1e293b',
+                     color: 'var(--color-texto-principal)',
                      margin: '0 0 0.5rem 0'
                    }}>
                      Balance Final
@@ -1995,11 +1997,11 @@ export default function MovimientosDia() {
 
         {!movimientos && !cargando && (
           <div style={{
-            background: 'white',
+            background: 'var(--color-card)',
             borderRadius: '1rem',
             padding: '3rem',
             textAlign: 'center',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 4px 6px -1px var(--color-sombra)',
             border: '1px solid #e2e8f0'
           }}>
             <div style={{
@@ -2044,7 +2046,7 @@ export default function MovimientosDia() {
         onClick={cerrarModal}
         >
           <div style={{
-            background: 'white',
+            background: 'var(--color-card)',
             borderRadius: isMobile ? '0.75rem' : '1rem',
             padding: isMobile ? '1rem' : '2rem',
             maxWidth: isMobile ? '100%' : '600px',
@@ -2088,13 +2090,13 @@ export default function MovimientosDia() {
                   <h2 style={{
                     fontSize: isMobile ? '1.25rem' : '1.5rem',
                     fontWeight: '700',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     margin: 0
                   }}>
                     {obtenerTituloModal(modalAbierto)}
                   </h2>
                   <p style={{
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     margin: '0.25rem 0 0 0',
                     fontSize: isMobile ? '0.8rem' : '1rem'
                   }}>
@@ -2117,11 +2119,11 @@ export default function MovimientosDia() {
                     style={{
                       width: '100%',
                       padding: isMobile ? '0.6rem 0.8rem 0.6rem 2rem' : '0.75rem 1rem 0.75rem 2.5rem',
-                      border: '2px solid #e2e8f0',
+                      border: '2px solid var(--color-borde)',
                       borderRadius: '0.5rem',
                       fontSize: isMobile ? '0.8rem' : '0.875rem',
-                      background: '#f8fafc',
-                      color: '#1e293b',
+                      background: 'var(--color-fondo-secundario)',
+                      color: 'var(--color-texto-principal)',
                       outline: 'none',
                       transition: 'all 0.2s ease'
                     }}
@@ -2141,7 +2143,7 @@ export default function MovimientosDia() {
                     left: isMobile ? '0.6rem' : '0.75rem',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     fontSize: isMobile ? '0.9rem' : '1rem'
                   }}>
                     🔍
@@ -2156,7 +2158,7 @@ export default function MovimientosDia() {
                         transform: 'translateY(-50%)',
                         background: 'none',
                         border: 'none',
-                        color: '#64748b',
+                        color: 'var(--color-texto-secundario)',
                         cursor: 'pointer',
                         fontSize: isMobile ? '0.9rem' : '1rem',
                         padding: isMobile ? '0.2rem' : '0.25rem',
@@ -2184,7 +2186,7 @@ export default function MovimientosDia() {
                   border: 'none',
                   fontSize: isMobile ? '1.25rem' : '1.5rem',
                   cursor: 'pointer',
-                  color: '#64748b',
+                  color: 'var(--color-texto-secundario)',
                   padding: isMobile ? '0.25rem' : '0.5rem',
                   borderRadius: '0.5rem',
                   transition: 'all 0.2s ease'
@@ -2275,7 +2277,7 @@ export default function MovimientosDia() {
           padding: isMobile ? '1rem' : '2rem'
         }}>
           <div style={{
-            background: 'white',
+            background: 'var(--color-card)',
             borderRadius: '1rem',
             width: '100%',
             maxWidth: isMobile ? '100%' : '800px',
@@ -2376,14 +2378,14 @@ export default function MovimientosDia() {
                           <div style={{
                             fontSize: isMobile ? '1rem' : '1.125rem',
                             fontWeight: '600',
-                            color: '#1e293b',
+                            color: 'var(--color-texto-principal)',
                             marginBottom: '0.25rem'
                           }}>
                             {producto.nombre}
                           </div>
                           <div style={{
                             fontSize: isMobile ? '0.875rem' : '1rem',
-                            color: '#64748b',
+                            color: 'var(--color-texto-secundario)',
                             marginBottom: '0.5rem'
                           }}>
                             Código: {producto.codigoPersonalizado || 'N/A'}

@@ -3,7 +3,7 @@
 /* Página principal */
 .pagina-admin {
   min-height: 100vh;
-  background: #e9ecef;
+  background: var(--gradiente-fondo);
   padding-top: 64px; /* Espacio para el navbar */
   margin-top: 0;
 }
@@ -22,7 +22,7 @@
 }
 
 .header-content {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradiente-titulo);
   padding: 2rem;
   border-radius: 16px;
   border: 2px solid #7c3aed;
@@ -183,13 +183,13 @@
 
 /* Cards de transportistas */
 .card-transportista {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  background: var(--color-card);
   border-radius: 24px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px var(--color-sombra);
   transition: all 0.3s ease;
   cursor: pointer;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-borde);
   position: relative;
   overflow: hidden;
   min-height: 180px;
@@ -288,7 +288,7 @@
 .card-content h3 {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-texto-principal);
   margin: 0 0 0.75rem 0;
   text-align: center;
 }
@@ -387,10 +387,10 @@
   justify-content: center;
   padding: 2rem 1rem;
   text-align: center;
-  background: white;
+  background: var(--color-card);
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 2px solid #e2e8f0;
+  box-shadow: 0 2px 8px var(--color-sombra);
+  border: 2px solid var(--color-borde);
 }
 
 .spinner {
@@ -411,11 +411,11 @@
 .sin-datos {
   text-align: center;
   padding: 2rem 1rem;
-  color: #64748b;
-  background: white;
+  color: var(--color-texto-secundario);
+  background: var(--color-card);
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 2px solid #e2e8f0;
+  box-shadow: 0 2px 8px var(--color-sombra);
+  border: 2px solid var(--color-borde);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -448,13 +448,13 @@
 }
 
 .modal {
-  background: white;
+  background: var(--color-card);
   border-radius: 1.5rem;
   max-width: 500px;
   width: 100%;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 50px -12px var(--color-sombra-fuerte);
 }
 
 .modal-grande {
@@ -466,14 +466,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 2px solid var(--color-borde);
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-texto-principal);
 }
 
 .btn-cerrar {
@@ -514,7 +514,7 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-texto-principal);
   margin-bottom: 0.5rem;
 }
 
@@ -522,11 +522,13 @@
 .form-group textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-borde);
   border-radius: 0.75rem;
   font-size: 1rem;
   transition: all 0.2s ease;
   box-sizing: border-box;
+  background: var(--color-card);
+  color: var(--color-texto-principal);
 }
 
 .form-group input:focus,
@@ -605,18 +607,18 @@
 
 /* Formulario de vehículos */
 .formulario-vehiculo {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: var(--color-fondo-secundario);
   padding: 1.5rem;
   border-radius: 1rem;
   margin-bottom: 2rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-borde);
 }
 
 .formulario-vehiculo h3 {
   margin: 0 0 1rem 0;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-texto-principal);
 }
 
 .btn-agregar {
@@ -653,17 +655,17 @@
   margin: 0 0 1rem 0;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-texto-principal);
 }
 
 .sin-vehiculos {
   text-align: center;
   padding: 2rem;
-  color: #64748b;
+  color: var(--color-texto-secundario);
   font-style: italic;
-  background: #f8fafc;
+  background: var(--color-fondo-secundario);
   border-radius: 0.75rem;
-  border: 2px dashed #cbd5e1;
+  border: 2px dashed var(--color-borde);
 }
 
 .vehiculos-grid {
@@ -677,8 +679,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: white;
-  border: 2px solid #e2e8f0;
+  background: var(--color-card);
+  border: 2px solid var(--color-borde);
   border-radius: 0.75rem;
   transition: all 0.2s ease;
 }
@@ -700,13 +702,13 @@
 
 .vehiculo-marca-modelo {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-texto-principal);
   margin-bottom: 0.25rem;
 }
 
 .vehiculo-patente {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--color-texto-secundario);
   margin-bottom: 0.25rem;
 }
 

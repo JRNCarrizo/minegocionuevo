@@ -3,7 +3,7 @@
 /* ====== CONTENEDOR PRINCIPAL ====== */
 .gestion-administradores {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: var(--gradiente-fondo);
   padding-top: 5rem; /* Espacio para navbar fijo */
 }
 
@@ -15,16 +15,16 @@
 
 /* ====== TARJETA PRINCIPAL ====== */
 .gestion-administradores .card-principal {
-  background: white;
+  background: var(--color-card);
   border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 25px var(--color-sombra);
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-borde);
 }
 
 /* ====== HEADER DE LA CARD ====== */
 .gestion-administradores .header-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradiente-titulo);
   color: white;
   padding: 2rem;
   position: relative;
@@ -104,8 +104,8 @@
 
 /* ====== FORMULARIO DE ASIGNACIÓN ====== */
 .gestion-administradores .formulario-asignacion {
-  background: linear-gradient(to right, #f8fafc, #f1f5f9);
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--color-fondo-secundario);
+  border-bottom: 1px solid var(--color-borde);
   padding: 2rem;
 }
 
@@ -131,7 +131,7 @@
 .gestion-administradores .titulo-formulario {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-texto-principal);
   margin: 0;
 }
 
@@ -150,18 +150,19 @@
 
 .gestion-administradores .label-campo {
   font-weight: 600;
-  color: #374151;
+  color: var(--color-texto-principal);
   font-size: 0.875rem;
 }
 
 .gestion-administradores .input-campo {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--color-borde);
   border-radius: 10px;
   font-size: 0.875rem;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--color-card);
+  color: var(--color-texto-principal);
 }
 
 .gestion-administradores .input-campo:focus {
@@ -325,26 +326,26 @@
 .gestion-administradores .tabla-scroll {
   overflow-x: auto;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-borde);
+  background: var(--color-card);
+  box-shadow: 0 4px 6px -1px var(--color-sombra);
 }
 
 .gestion-administradores .tabla-contenedor {
   overflow-x: auto;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: white;
+  border: 1px solid var(--color-borde);
+  background: var(--color-card);
 }
 
 .gestion-administradores .tabla {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: var(--color-card);
 }
 
 .gestion-administradores .tabla-header {
-  background: linear-gradient(to right, #f8fafc, #f1f5f9);
+  background: var(--color-fondo-secundario);
 }
 
 .gestion-administradores .th {
@@ -352,10 +353,10 @@
   text-align: left;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #374151;
+  color: var(--color-texto-principal);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-borde);
 }
 
 .gestion-administradores .fila-admin {
@@ -364,7 +365,7 @@
 }
 
 .gestion-administradores .fila-admin:hover {
-  background: #f8fafc;
+  background: var(--color-fondo-secundario);
 }
 
 .gestion-administradores .fila-admin.inactiva {
@@ -443,7 +444,7 @@
 .gestion-administradores .admin-nombre {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-texto-principal);
   margin-bottom: 0.25rem;
   display: flex;
   align-items: center;
@@ -479,11 +480,11 @@
 .gestion-administradores .email-contenedor {
   font-family: 'Courier New', monospace;
   font-size: 0.875rem;
-  color: #4b5563;
-  background: #f9fafb;
+  color: var(--color-texto-secundario);
+  background: var(--color-fondo-secundario);
   padding: 0.75rem;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-borde);
   text-align: center;
   max-width: 200px;
   margin: 0 auto;
@@ -493,12 +494,12 @@
 .gestion-administradores .documento-badge {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
-  background: #f3f4f6;
+  color: var(--color-texto-principal);
+  background: var(--color-fondo-secundario);
   padding: 0.5rem 0.75rem;
   border-radius: 20px;
   display: inline-block;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-borde);
   text-align: center;
 }
 
@@ -830,9 +831,9 @@
 }
 
 .modal-content {
-  background: white;
+  background: var(--color-card);
   border-radius: 12px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 50px -12px var(--color-sombra-fuerte);
   max-width: 1000px;
   width: 95%;
   max-height: 90vh;
@@ -849,10 +850,10 @@
 .section-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-texto-principal);
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--color-borde);
 }
 
 .sub-permission {
