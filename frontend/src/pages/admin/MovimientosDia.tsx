@@ -1297,10 +1297,11 @@ export default function MovimientosDia() {
                   onChange={(e) => setFechaSeleccionada(e.target.value)}
                   style={{
                     padding: '0.75rem',
-                    border: '1px solid #d1d5db',
+                    border: '1px solid var(--color-borde)',
                     borderRadius: '0.5rem',
                     fontSize: '1rem',
                     background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
                     minWidth: '200px'
                   }}
                 />
@@ -1316,24 +1317,26 @@ export default function MovimientosDia() {
                     onChange={(e) => setFechaInicio(e.target.value)}
                     style={{
                       padding: '0.75rem',
-                      border: '1px solid #d1d5db',
+                      border: '1px solid var(--color-borde)',
                       borderRadius: '0.5rem',
                       fontSize: '1rem',
                       background: 'var(--color-card)',
+                      color: 'var(--color-texto-principal)',
                       minWidth: '150px'
                     }}
                   />
-                  <span style={{ color: '#64748b', fontSize: '0.875rem' }}>a</span>
+                  <span style={{ color: 'var(--color-texto-secundario)', fontSize: '0.875rem' }}>a</span>
                   <input
                     type="date"
                     value={fechaFin}
                     onChange={(e) => setFechaFin(e.target.value)}
                     style={{
                       padding: '0.75rem',
-                      border: '1px solid #d1d5db',
+                      border: '1px solid var(--color-borde)',
                       borderRadius: '0.5rem',
                       fontSize: '1rem',
                       background: 'var(--color-card)',
+                      color: 'var(--color-texto-principal)',
                       minWidth: '150px'
                     }}
                   />
