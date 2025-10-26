@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import './estilos/principal.css';
+import './styles/theme.css';
 import { useSubdominio } from './hooks/useSubdominio';
 import { CartProvider } from './hooks/useCart';
 import { UsuarioProvider } from './contexts/UsuarioContext';

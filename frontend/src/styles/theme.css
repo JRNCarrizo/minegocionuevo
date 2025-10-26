@@ -1,0 +1,99 @@
+/* Variables de tema claro */
+:root {
+  --color-fondo: #f8fafc;
+  --color-fondo-secundario: #ffffff;
+  --color-texto-principal: #1e293b;
+  --color-texto-secundario: #64748b;
+  --color-texto-terciario: #94a3b8;
+  --color-borde: #e2e8f0;
+  --color-borde-secundario: #cbd5e1;
+  --color-sombra: rgba(0, 0, 0, 0.1);
+  --color-sombra-fuerte: rgba(0, 0, 0, 0.2);
+  --color-navbar: rgba(255, 255, 255, 0.95);
+  --color-card: #ffffff;
+  --color-card-hover: #f8fafc;
+  --gradiente-fondo: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --gradiente-titulo: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Variables de tema oscuro */
+:root.dark {
+  --color-fondo: #0f172a;
+  --color-fondo-secundario: #1e293b;
+  --color-texto-principal: #f1f5f9;
+  --color-texto-secundario: #94a3b8;
+  --color-texto-terciario: #64748b;
+  --color-borde: #334155;
+  --color-borde-secundario: #475569;
+  --color-sombra: rgba(0, 0, 0, 0.3);
+  --color-sombra-fuerte: rgba(0, 0, 0, 0.5);
+  --color-navbar: rgba(15, 23, 42, 0.95);
+  --color-card: #1e293b;
+  --color-card-hover: #334155;
+  --gradiente-fondo: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --gradiente-titulo: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+}
+
+/* Aplicar tema por defecto */
+:root.light {
+  --color-fondo: #f8fafc;
+  --color-fondo-secundario: #ffffff;
+  --color-texto-principal: #1e293b;
+  --color-texto-secundario: #64748b;
+  --color-texto-terciario: #94a3b8;
+  --color-borde: #e2e8f0;
+  --color-borde-secundario: #cbd5e1;
+  --color-sombra: rgba(0, 0, 0, 0.1);
+  --color-sombra-fuerte: rgba(0, 0, 0, 0.2);
+  --color-navbar: rgba(255, 255, 255, 0.95);
+  --color-card: #ffffff;
+  --color-card-hover: #f8fafc;
+  --gradiente-fondo: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --gradiente-titulo: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Transiciones suaves para cambios de tema */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Estilos para el body */
+body {
+  background-color: var(--color-fondo);
+  color: var(--color-texto-principal);
+}
+
+/* Estilos para elementos comunes */
+.card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-borde);
+  box-shadow: 0 4px 6px -1px var(--color-sombra);
+}
+
+.text-primary {
+  color: var(--color-texto-principal);
+}
+
+.text-secondary {
+  color: var(--color-texto-secundario);
+}
+
+.text-tertiary {
+  color: var(--color-texto-terciario);
+}
+
+.bg-primary {
+  background-color: var(--color-fondo);
+}
+
+.bg-secondary {
+  background-color: var(--color-fondo-secundario);
+}
+
+.border-primary {
+  border-color: var(--color-borde);
+}
+
+.border-secondary {
+  border-color: var(--color-borde-secundario);
+}

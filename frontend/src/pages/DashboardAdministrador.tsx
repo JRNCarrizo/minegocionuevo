@@ -6,12 +6,14 @@ import NavbarAdmin from '../components/NavbarAdmin';
 import { useUsuarioActual } from '../hooks/useUsuarioActual';
 import { useResponsive } from '../hooks/useResponsive';
 import { usePermissions } from '../hooks/usePermissions';
+import { useTheme } from '../hooks/useTheme';
 import type { Notificacion, Cliente, Pedido } from '../types';
 
 export default function DashboardAdministrador() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile, isTablet, width } = useResponsive();
   const { hasPermission } = usePermissions();
+  const { isDarkMode } = useTheme();
   const navigate = useNavigate();
   
   // TODOS los hooks deben ir antes del return condicional
@@ -647,14 +649,18 @@ export default function DashboardAdministrador() {
         <h3 style={{
           fontSize: '1rem',
           fontWeight: '600',
-          color: tieneAcceso ? '#1e293b' : '#6b7280',
+          color: tieneAcceso 
+            ? 'var(--color-texto-principal)' 
+            : 'var(--color-texto-terciario)',
           margin: '0 0 0.5rem 0'
         }}>
           {config.titulo}
         </h3>
         <p style={{
           fontSize: '0.875rem',
-          color: tieneAcceso ? '#64748b' : '#9ca3af',
+          color: tieneAcceso 
+            ? 'var(--color-texto-secundario)' 
+            : 'var(--color-texto-terciario)',
           margin: 0
         }}>
           {tieneAcceso ? config.descripcion : 'Sin acceso'}
@@ -668,11 +674,11 @@ export default function DashboardAdministrador() {
           to={config.enlace}
           data-card-index={config.cardIndex.toString()}
           style={{
-            background: 'white',
+            background: 'var(--color-card)',
             borderRadius: isMobile ? '0.75rem' : '1rem',
             padding: isMobile ? '1rem' : '2rem',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+            border: '1px solid var(--color-borde)',
             textDecoration: 'none',
             color: 'inherit',
             transition: 'all 0.3s ease',
@@ -687,8 +693,8 @@ export default function DashboardAdministrador() {
           }}
           onMouseOut={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-            e.currentTarget.style.borderColor = '#e2e8f0';
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
+            e.currentTarget.style.borderColor = 'var(--color-borde)';
           }}
           onClick={() => {
             if (config.onClick) config.onClick();
@@ -705,11 +711,11 @@ export default function DashboardAdministrador() {
         <div 
           data-card-index={config.cardIndex.toString()}
           style={{
-            background: 'white',
+            background: 'var(--color-card)',
             borderRadius: isMobile ? '0.75rem' : '1rem',
             padding: isMobile ? '1rem' : '2rem',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+            border: '1px solid var(--color-borde)',
             transition: 'all 0.3s ease',
             display: 'block',
             animation: `slideInUp 0.6s ease-out ${config.animationDelay} both`,
@@ -719,11 +725,11 @@ export default function DashboardAdministrador() {
           }}
           onMouseOver={(e) => {
             e.currentTarget.style.transform = 'translateY(-4px)';
-            e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.1)';
+            e.currentTarget.style.boxShadow = '0 8px 16px var(--color-sombra-fuerte)';
           }}
           onMouseOut={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
           }}
           onClick={(e) => {
             e.preventDefault();
@@ -1011,7 +1017,10 @@ export default function DashboardAdministrador() {
   console.log('🔍 Dashboard - Logo URL:', datosUsuario?.empresaLogoUrl);
   
   return (
-    <div className="h-pantalla-minimo pagina-con-navbar" style={{ backgroundColor: 'var(--color-fondo)' }}>
+    <div className="h-pantalla-minimo pagina-con-navbar" style={{ 
+      backgroundColor: 'var(--color-fondo)',
+      background: 'var(--gradiente-fondo)'
+    }}>
       {/* Navegación */}
       <NavbarAdmin 
         onCerrarSesion={cerrarSesionConToast}
@@ -1026,7 +1035,9 @@ export default function DashboardAdministrador() {
           maxWidth: '1400px',
           margin: '0 auto',
           padding: isMobile ? '1rem 0.5rem' : isTablet ? '1.5rem 1rem' : '2rem 1rem',
-          paddingTop: isMobile ? '120px' : '80px'
+          paddingTop: isMobile ? '120px' : '80px',
+          minHeight: '100vh',
+          background: 'var(--gradiente-fondo)'
         }}
       >
         {/* Instrucciones de navegación por teclado */}
@@ -1099,9 +1110,9 @@ export default function DashboardAdministrador() {
           <h1 style={{
             fontSize: isMobile ? '2rem' : isTablet ? '2.25rem' : '2.5rem',
             fontWeight: '700',
-            color: '#1e293b',
+            color: 'var(--color-texto-principal)',
             marginBottom: '0.5rem',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'var(--gradiente-titulo)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
@@ -1111,7 +1122,7 @@ export default function DashboardAdministrador() {
           </h1>
           <p style={{
             fontSize: isMobile ? '1rem' : '1.125rem',
-            color: '#64748b',
+            color: 'var(--color-texto-secundario)',
             lineHeight: '1.6',
             textAlign: 'center'
           }}>
@@ -1207,7 +1218,7 @@ export default function DashboardAdministrador() {
           <h2 style={{
             fontSize: '1.875rem',
                 fontWeight: '600',
-                color: '#1e293b',
+                color: 'var(--color-texto-principal)',
             marginBottom: '1.5rem',
             textAlign: 'center'
           }}>
@@ -1270,14 +1281,14 @@ export default function DashboardAdministrador() {
               <h3 style={{
                         fontSize: '1.25rem',
                 fontWeight: '600',
-                        color: tieneAcceso ? '#1e293b' : '#6b7280',
+                        color: tieneAcceso ? 'var(--color-texto-principal)' : 'var(--color-texto-terciario)',
                         marginBottom: '0.25rem'
               }}>
                         {accion.titulo}
               </h3>
               <p style={{
                 fontSize: '0.875rem',
-                        color: tieneAcceso ? '#64748b' : '#9ca3af',
+                        color: tieneAcceso ? 'var(--color-texto-secundario)' : 'var(--color-texto-terciario)',
                         margin: 0,
                         lineHeight: '1.5'
               }}>
@@ -1304,13 +1315,13 @@ export default function DashboardAdministrador() {
                     to={accion.enlace}
                     data-card-index={cardIndex.toString()}
             style={{
-              background: 'white',
+              background: 'var(--color-card)',
               borderRadius: isMobile ? '0.75rem' : '1rem',
               padding: isMobile ? '1.5rem' : '2rem',
               textDecoration: 'none',
               color: 'inherit',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+                      border: '1px solid var(--color-borde)',
               transition: 'all 0.3s ease',
               display: 'block',
                       animation: `slideInUp 0.6s ease-out ${(index + 4) * 0.1}s both`,
@@ -1318,13 +1329,13 @@ export default function DashboardAdministrador() {
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.transform = 'translateY(-8px)';
-                      e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                      e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                       e.currentTarget.style.borderColor = accion.color;
             }}
             onMouseOut={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-              e.currentTarget.style.borderColor = '#e2e8f0';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
+              e.currentTarget.style.borderColor = 'var(--color-borde)';
             }}
                     onClick={() => setIndiceSeleccionado(cardIndex)}
           >
@@ -1339,11 +1350,11 @@ export default function DashboardAdministrador() {
                   key={index}
                   data-card-index={cardIndex.toString()}
                   style={{
-                    background: 'white',
+                    background: 'var(--color-card)',
                     borderRadius: isMobile ? '0.75rem' : '1rem',
                     padding: isMobile ? '1.5rem' : '2rem',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+                    border: '1px solid var(--color-borde)',
                     transition: 'all 0.3s ease',
                     display: 'block',
                     animation: `slideInUp 0.6s ease-out ${(index + 4) * 0.1}s both`,
@@ -1353,11 +1364,11 @@ export default function DashboardAdministrador() {
                   }}
                   onMouseOver={(e) => {
                       e.currentTarget.style.transform = 'translateY(-4px)';
-                      e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.1)';
+                      e.currentTarget.style.boxShadow = '0 8px 16px var(--color-sombra-fuerte)';
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                    e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
                   }}
                     onClick={(e) => {
                       e.preventDefault();

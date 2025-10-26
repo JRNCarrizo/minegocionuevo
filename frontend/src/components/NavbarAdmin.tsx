@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useResponsive } from '../hooks/useResponsive';
+import { useTheme } from '../hooks/useTheme';
 
 interface NavbarAdminProps {
   onCerrarSesion: () => void;
@@ -13,17 +14,18 @@ export default function NavbarAdmin({
   nombreAdministrador
 }: NavbarAdminProps) {
   const { isMobile, isTablet, isDesktop } = useResponsive();
+  const { isDarkMode, toggleTheme } = useTheme();
   return (
     <nav style={{
-      background: 'rgba(255, 255, 255, 0.95)',
+      background: 'var(--color-navbar)',
       backdropFilter: 'blur(20px)',
-      borderBottom: '1px solid #e2e8f0',
+      borderBottom: '1px solid var(--color-borde)',
       position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
       zIndex: 100,
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+      boxShadow: '0 4px 6px -1px var(--color-sombra)'
     }}>
       <div style={{
         maxWidth: '1400px',
@@ -56,7 +58,7 @@ export default function NavbarAdmin({
                 textDecoration: 'none',
                 fontSize: '1.25rem',
                 fontWeight: '700',
-                color: '#1e293b',
+                color: 'var(--color-texto-principal)',
                 transition: 'all 0.2s ease'
               }}
               onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
@@ -96,7 +98,7 @@ export default function NavbarAdmin({
               </div>
             </div>
 
-            {/* Segunda línea: Nombre de empresa y botón de salir */}
+            {/* Segunda línea: Nombre de empresa, botón de tema y botón de salir */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -115,41 +117,79 @@ export default function NavbarAdmin({
                 }}>{empresaNombre}</span>
               )}
               
-              <button 
-                onClick={onCerrarSesion}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  padding: '0.5rem 0.75rem',
-                  background: 'white',
-                  color: '#ef4444',
-                  border: '2px solid #ef4444',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  minWidth: '80px',
-                  justifyContent: 'center'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#ef4444';
-                  e.currentTarget.style.color = 'white';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.color = '#ef4444';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-                title="Cerrar sesión"
-              >
-                <span style={{ fontSize: '0.875rem' }}>🚪</span>
-                <span style={{ fontWeight: '600' }}>Salir</span>
-              </button>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                {/* Botón de cambio de tema */}
+                <button 
+                  onClick={toggleTheme}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '2.5rem',
+                    height: '2.5rem',
+                    background: isDarkMode ? 'rgba(59, 130, 246, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+                    color: isDarkMode ? '#3b82f6' : '#f59e0b',
+                    border: isDarkMode ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(251, 191, 36, 0.2)',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontSize: '1.125rem'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                    e.currentTarget.style.boxShadow = isDarkMode 
+                      ? '0 4px 12px rgba(59, 130, 246, 0.3)' 
+                      : '0 4px 12px rgba(251, 191, 36, 0.3)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                  title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                >
+                  {isDarkMode ? '☀️' : '🌙'}
+                </button>
+                
+                <button 
+                  onClick={onCerrarSesion}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    padding: '0.5rem 0.75rem',
+                    background: 'var(--color-card)',
+                    color: '#ef4444',
+                    border: '2px solid #ef4444',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    minWidth: '80px',
+                    justifyContent: 'center'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#ef4444';
+                    e.currentTarget.style.color = 'white';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'var(--color-card)';
+                    e.currentTarget.style.color = '#ef4444';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                  title="Cerrar sesión"
+                >
+                  <span style={{ fontSize: '0.875rem' }}>🚪</span>
+                  <span style={{ fontWeight: '600' }}>Salir</span>
+                </button>
+              </div>
             </div>
           </>
         ) : (
@@ -169,7 +209,7 @@ export default function NavbarAdmin({
                 textDecoration: 'none',
                 fontSize: '1.5rem',
                 fontWeight: '700',
-                color: '#1e293b',
+                color: 'var(--color-texto-principal)',
                 transition: 'all 0.2s ease'
               }}
               onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
@@ -203,7 +243,7 @@ export default function NavbarAdmin({
               </Link>
             </div>
 
-            {/* Usuario y cerrar sesión */}
+            {/* Usuario, botón de tema y cerrar sesión */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -237,11 +277,43 @@ export default function NavbarAdmin({
                   </div>
                   <span style={{
                     fontSize: '0.875rem',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     fontWeight: '500'
                   }}>{nombreAdministrador}</span>
                 </div>
               )}
+              
+              {/* Botón de cambio de tema */}
+              <button 
+                onClick={toggleTheme}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '2.75rem',
+                  height: '2.75rem',
+                  background: isDarkMode ? 'rgba(59, 130, 246, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+                  color: isDarkMode ? '#3b82f6' : '#f59e0b',
+                  border: isDarkMode ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(251, 191, 36, 0.2)',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: '1.25rem'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.boxShadow = isDarkMode 
+                    ? '0 4px 12px rgba(59, 130, 246, 0.3)' 
+                    : '0 4px 12px rgba(251, 191, 36, 0.3)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+                title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              >
+                {isDarkMode ? '☀️' : '🌙'}
+              </button>
               
               <button 
                 onClick={onCerrarSesion}
@@ -250,7 +322,7 @@ export default function NavbarAdmin({
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.75rem 1rem',
-                  background: 'white',
+                  background: 'var(--color-card)',
                   color: '#ef4444',
                   border: '2px solid #ef4444',
                   borderRadius: '0.375rem',
@@ -267,7 +339,7 @@ export default function NavbarAdmin({
                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.background = 'var(--color-card)';
                   e.currentTarget.style.color = '#ef4444';
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = 'none';

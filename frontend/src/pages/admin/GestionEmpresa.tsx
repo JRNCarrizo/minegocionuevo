@@ -6,6 +6,7 @@ import NavbarAdmin from '../../components/NavbarAdmin';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useTheme } from '../../hooks/useTheme';
 
 interface Empresa {
   id: number;
@@ -26,6 +27,7 @@ export default function GestionEmpresa() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile, isTablet } = useResponsive();
   const { hasPermission } = usePermissions();
+  const { isDarkMode } = useTheme();
   const navigate = useNavigate();
   
   // Estado para navegación por teclado
@@ -74,11 +76,11 @@ export default function GestionEmpresa() {
   // Función para obtener estilos de la card con efecto de escala cuando está seleccionada
   const obtenerEstilosCard = (index: number, esSeleccionada: boolean) => {
     const baseStyles = {
-      background: 'white',
+      background: 'var(--color-card)',
       borderRadius: '1rem',
       padding: isMobile ? '1.5rem' : '2rem',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-      border: '1px solid #e2e8f0',
+      boxShadow: '0 4px 6px -1px var(--color-sombra)',
+      border: '1px solid var(--color-borde)',
       cursor: 'pointer',
       transition: 'all 0.3s ease',
       animation: `slideInUp 0.6s ease-out ${index * 0.1}s both`,
@@ -326,31 +328,31 @@ export default function GestionEmpresa() {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'var(--gradiente-fondo)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }}>
         <div style={{
-          background: 'white',
+          background: 'var(--color-card)',
           borderRadius: '1rem',
           paddingTop: '2rem',
           paddingBottom: '2rem',
           paddingLeft: '2rem',
           paddingRight: '2rem',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 20px 40px var(--color-sombra-fuerte)',
           textAlign: 'center'
         }}>
           <div style={{
             width: '3rem',
             height: '3rem',
-            border: '4px solid #e5e7eb',
+            border: '4px solid var(--color-borde)',
             borderTop: '4px solid #3b82f6',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
             margin: '0 auto 1rem'
           }}></div>
-          <p style={{ color: '#6b7280', margin: 0 }}>Cargando información de la empresa...</p>
+          <p style={{ color: 'var(--color-texto-secundario)', margin: 0 }}>Cargando información de la empresa...</p>
         </div>
       </div>
     );
@@ -359,7 +361,7 @@ export default function GestionEmpresa() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      background: 'var(--gradiente-fondo)'
     }}>
       <NavbarAdmin
         onCerrarSesion={cerrarSesion}
@@ -385,16 +387,16 @@ export default function GestionEmpresa() {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            background: 'white',
+            background: 'var(--color-card)',
             borderRadius: '1rem',
             padding: '2rem',
-            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+            boxShadow: '0 25px 50px var(--color-sombra-fuerte)',
             border: '2px solid #3b82f6',
             zIndex: 1000,
             maxWidth: '400px',
             textAlign: 'center'
           }}>
-            <h3 style={{ marginBottom: '1rem', color: '#1e293b' }}>🎮 Navegación por Teclado</h3>
+            <h3 style={{ marginBottom: '1rem', color: 'var(--color-texto-principal)' }}>🎮 Navegación por Teclado</h3>
             <div style={{ textAlign: 'left', lineHeight: '1.8' }}>
               <p><strong>← → ↑ ↓</strong> Navegar entre cards</p>
               <p><strong>Enter</strong> Acceder a la sección seleccionada</p>
@@ -442,15 +444,15 @@ export default function GestionEmpresa() {
         </div>
         {/* Header */}
         <div style={{
-          background: 'white',
+          background: 'var(--color-card)',
           borderRadius: '1rem',
           paddingTop: isMobile ? '1.5rem' : '2rem',
           paddingBottom: isMobile ? '1.5rem' : '2rem',
           paddingLeft: isMobile ? '1.5rem' : '2rem',
           paddingRight: isMobile ? '1.5rem' : '2rem',
           marginBottom: '2rem',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
+          boxShadow: '0 4px 6px -1px var(--color-sombra)',
+          border: '1px solid var(--color-borde)'
         }}>
           <div style={{
             display: 'flex',
@@ -476,13 +478,13 @@ export default function GestionEmpresa() {
               <h1 style={{
                 fontSize: isMobile ? '1.5rem' : '2rem',
                 fontWeight: '700',
-                color: '#1e293b',
+                color: 'var(--color-texto-principal)',
                 margin: 0
               }}>
                 Gestión de Empresa
               </h1>
               <p style={{
-                color: '#64748b',
+                color: 'var(--color-texto-secundario)',
                 margin: 0,
                 fontSize: '0.875rem'
               }}>
@@ -549,14 +551,14 @@ export default function GestionEmpresa() {
                        <h3 style={{
                          fontSize: '1.25rem',
                          fontWeight: '600',
-                         color: tieneAcceso ? '#1e293b' : '#6b7280',
+                         color: tieneAcceso ? 'var(--color-texto-principal)' : 'var(--color-texto-terciario)',
                          marginBottom: '0.25rem'
                        }}>
                          {card.titulo}
                        </h3>
                        <p style={{
                          fontSize: '0.875rem',
-                         color: tieneAcceso ? '#64748b' : '#9ca3af',
+                         color: tieneAcceso ? 'var(--color-texto-secundario)' : 'var(--color-texto-terciario)',
                          margin: 0,
                          lineHeight: '1.5'
                        }}>
@@ -586,7 +588,7 @@ export default function GestionEmpresa() {
                        // Solo aplicar hover si no está seleccionada por teclado
                        if (indiceSeleccionado !== index) {
                          e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                         e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
+                         e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                          e.currentTarget.style.borderColor = card.color;
                        }
                      }}
@@ -594,8 +596,8 @@ export default function GestionEmpresa() {
                        // Solo resetear si no está seleccionada por teclado
                        if (indiceSeleccionado !== index) {
                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                         e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                         e.currentTarget.style.borderColor = '#e2e8f0';
+                         e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra)';
+                         e.currentTarget.style.borderColor = 'var(--color-borde)';
                        }
                      }}
                      onClick={() => {
@@ -625,13 +627,13 @@ export default function GestionEmpresa() {
                      onMouseOver={(e) => {
                        if (indiceSeleccionado !== index) {
                          e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
-                         e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.1)';
+                         e.currentTarget.style.boxShadow = '0 8px 16px var(--color-sombra-fuerte)';
                        }
                      }}
                      onMouseOut={(e) => {
                        if (indiceSeleccionado !== index) {
                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                         e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                         e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra)';
                        }
                      }}
                      onClick={(e) => {
@@ -650,22 +652,22 @@ export default function GestionEmpresa() {
 
         {/* Información de la Empresa (Reducida) */}
         <div style={{
-          background: 'white',
+          background: 'var(--color-card)',
           borderRadius: '1rem',
           paddingTop: isMobile ? '1.5rem' : '2rem',
           paddingBottom: isMobile ? '1.5rem' : '2rem',
           paddingLeft: isMobile ? '1.5rem' : '2rem',
           paddingRight: isMobile ? '1.5rem' : '2rem',
           marginTop: '2rem',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
+          boxShadow: '0 4px 6px -1px var(--color-sombra)',
+          border: '1px solid var(--color-borde)'
         }}>
           <h2 style={{
             fontSize: '1.5rem',
             fontWeight: '600',
-            color: '#1e293b',
+            color: 'var(--color-texto-principal)',
             marginBottom: '1.5rem',
-            borderBottom: '2px solid #e2e8f0',
+            borderBottom: '2px solid var(--color-borde)',
             paddingBottom: '1rem'
           }}>
             Información de la Empresa
@@ -676,7 +678,7 @@ export default function GestionEmpresa() {
               display: 'block',
               fontSize: '0.875rem',
               fontWeight: '600',
-              color: '#374151',
+              color: 'var(--color-texto-principal)',
               marginBottom: '0.5rem'
             }}>
               Nombre de la Empresa
@@ -686,11 +688,11 @@ export default function GestionEmpresa() {
               paddingBottom: '0.75rem',
               paddingLeft: '0.75rem',
               paddingRight: '0.75rem',
-              background: '#f9fafb',
-              border: '2px solid #e5e7eb',
+              background: 'var(--color-fondo-secundario)',
+              border: '2px solid var(--color-borde)',
               borderRadius: '0.5rem',
               fontSize: '1rem',
-              color: '#374151'
+              color: 'var(--color-texto-principal)'
             }}>
               {empresa?.nombre || 'No especificado'}
             </div>

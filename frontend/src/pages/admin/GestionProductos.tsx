@@ -7,6 +7,7 @@ import BarcodeScanner from '../../components/BarcodeScanner';
 import ImportacionProductos from '../../components/ImportacionProductos';
 import { useResponsive } from '../../hooks/useResponsive';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
+import { useTheme } from '../../hooks/useTheme';
 import type { Producto } from '../../types';
 import '../../styles/gestion-productos.css';
 
@@ -34,6 +35,7 @@ const GestionProductos: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
   const { datosUsuario } = useUsuarioActual();
+  const { isDarkMode } = useTheme();
   const [productos, setProductos] = useState<Producto[]>([]);
 
   // Función para reproducir el sonido "pi"
@@ -549,8 +551,8 @@ const GestionProductos: React.FC = () => {
             <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
               <div style="text-align: center; margin-bottom: 1.5rem;">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">🗑️</div>
-                <h2 style="margin: 0; color: #1f2937; font-size: 1.5rem; font-weight: 600;">Eliminar Producto Definitivamente</h2>
-                <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 1rem;">"${producto.nombre}"</p>
+                <h2 style="margin: 0; color: var(--color-texto-principal); font-size: 1.5rem; font-weight: 600;">Eliminar Producto Definitivamente</h2>
+                <p style="margin: 0.5rem 0 0 0; color: var(--color-texto-secundario); font-size: 1rem;">"${producto.nombre}"</p>
               </div>
               
               <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
@@ -566,9 +568,9 @@ const GestionProductos: React.FC = () => {
               <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                 <button id="cancelar" style="
                   padding: 0.75rem 1.5rem;
-                  border: 1px solid #d1d5db;
-                  background: white;
-                  color: #374151;
+                  border: 1px solid var(--color-borde);
+                  background: var(--color-card);
+                  color: var(--color-texto-principal);
                   border-radius: 6px;
                   cursor: pointer;
                   font-weight: 500;
@@ -590,8 +592,8 @@ const GestionProductos: React.FC = () => {
             <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
               <div style="text-align: center; margin-bottom: 1.5rem;">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-                <h2 style="margin: 0; color: #1f2937; font-size: 1.5rem; font-weight: 600;">Desactivar Producto</h2>
-                <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 1rem;">"${producto.nombre}"</p>
+                <h2 style="margin: 0; color: var(--color-texto-principal); font-size: 1.5rem; font-weight: 600;">Desactivar Producto</h2>
+                <p style="margin: 0.5rem 0 0 0; color: var(--color-texto-secundario); font-size: 1rem;">"${producto.nombre}"</p>
               </div>
               
               <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
@@ -606,8 +608,8 @@ const GestionProductos: React.FC = () => {
               
               ${dependenciasEncontradas.length > 0 ? `
                 <div style="margin-bottom: 1.5rem;">
-                  <h4 style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.9rem; font-weight: 600;">Dependencias encontradas:</h4>
-                  <ul style="margin: 0; padding-left: 1.5rem; color: #6b7280; font-size: 0.9rem;">
+                  <h4 style="margin: 0 0 0.5rem 0; color: var(--color-texto-principal); font-size: 0.9rem; font-weight: 600;">Dependencias encontradas:</h4>
+                  <ul style="margin: 0; padding-left: 1.5rem; color: var(--color-texto-secundario); font-size: 0.9rem;">
                     ${dependenciasEncontradas.map((dep: string) => `<li>${dep}</li>`).join('')}
                   </ul>
                 </div>
@@ -616,9 +618,9 @@ const GestionProductos: React.FC = () => {
               <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                 <button id="cancelar" style="
                   padding: 0.75rem 1.5rem;
-                  border: 1px solid #d1d5db;
-                  background: white;
-                  color: #374151;
+                  border: 1px solid var(--color-borde);
+                  background: var(--color-card);
+                  color: var(--color-texto-principal);
                   border-radius: 6px;
                   cursor: pointer;
                   font-weight: 500;
@@ -640,8 +642,8 @@ const GestionProductos: React.FC = () => {
             <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
               <div style="text-align: center; margin-bottom: 1.5rem;">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">🚫</div>
-                <h2 style="margin: 0; color: #1f2937; font-size: 1.5rem; font-weight: 600;">No se puede eliminar</h2>
-                <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 1rem;">"${producto.nombre}"</p>
+                <h2 style="margin: 0; color: var(--color-texto-principal); font-size: 1.5rem; font-weight: 600;">No se puede eliminar</h2>
+                <p style="margin: 0.5rem 0 0 0; color: var(--color-texto-secundario); font-size: 1rem;">"${producto.nombre}"</p>
               </div>
               
               <div style="background: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
@@ -656,8 +658,8 @@ const GestionProductos: React.FC = () => {
               
               ${razonesBloqueo.length > 0 ? `
                 <div style="margin-bottom: 1.5rem;">
-                  <h4 style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.9rem; font-weight: 600;">Razones:</h4>
-                  <ul style="margin: 0; padding-left: 1.5rem; color: #6b7280; font-size: 0.9rem;">
+                  <h4 style="margin: 0 0 0.5rem 0; color: var(--color-texto-principal); font-size: 0.9rem; font-weight: 600;">Razones:</h4>
+                  <ul style="margin: 0; padding-left: 1.5rem; color: var(--color-texto-secundario); font-size: 0.9rem;">
                     ${razonesBloqueo.map((razon: string) => `<li>${razon}</li>`).join('')}
                   </ul>
                 </div>
@@ -666,9 +668,9 @@ const GestionProductos: React.FC = () => {
               <div style="display: flex; justify-content: flex-end;">
                 <button id="cancelar" style="
                   padding: 0.75rem 1.5rem;
-                  border: 1px solid #d1d5db;
-                  background: white;
-                  color: #374151;
+                  border: 1px solid var(--color-borde);
+                  background: var(--color-card);
+                  color: var(--color-texto-principal);
                   border-radius: 6px;
                   cursor: pointer;
                   font-weight: 500;
@@ -1083,9 +1085,9 @@ const GestionProductos: React.FC = () => {
           <h1 style={{
             fontSize: '2.5rem',
             fontWeight: '700',
-            color: '#1e293b',
+            color: 'var(--color-texto-principal)',
             marginBottom: '1rem',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+            background: 'var(--gradiente-titulo)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
@@ -1094,7 +1096,7 @@ const GestionProductos: React.FC = () => {
           </h1>
           <p style={{
             fontSize: '1.125rem',
-            color: '#64748b',
+            color: 'var(--color-texto-secundario)',
             lineHeight: '1.6'
           }}>
             Administra tu catálogo de productos, añade nuevos items y gestiona el inventario de tu negocio.
@@ -1109,7 +1111,7 @@ const GestionProductos: React.FC = () => {
           <h2 style={{
             fontSize: '1.875rem',
             fontWeight: '600',
-            color: '#1e293b',
+            color: 'var(--color-texto-principal)',
             marginBottom: '1.5rem'
           }}>
             Acciones Rápidas
@@ -1124,28 +1126,28 @@ const GestionProductos: React.FC = () => {
               data-card-index="0"
               onClick={() => navigate('/admin/productos/nuevo')}
               style={{
-                background: 'white',
+                background: 'var(--color-card)',
                 borderRadius: '1rem',
                 padding: '1.5rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: navegacionActiva && cardSeleccionada === 0 ? '2px solid #000' : '1px solid #e2e8f0',
+                boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+                border: navegacionActiva && cardSeleccionada === 0 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.3s both',
-                backgroundColor: navegacionActiva && cardSeleccionada === 0 ? '#f0f9ff' : 'white'
+                backgroundColor: navegacionActiva && cardSeleccionada === 0 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                 e.currentTarget.style.borderColor = '#667eea';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
+                e.currentTarget.style.borderColor = 'var(--color-borde)';
                 }
               }}
             >
@@ -1172,14 +1174,14 @@ const GestionProductos: React.FC = () => {
                   <h3 style={{
                     fontSize: '1.125rem',
                     fontWeight: '600',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     marginBottom: '0.25rem'
                   }}>
                     Nuevo Producto
                   </h3>
                   <p style={{
                     fontSize: '0.875rem',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     margin: 0,
                     lineHeight: '1.5'
                   }}>
@@ -1203,15 +1205,15 @@ const GestionProductos: React.FC = () => {
               data-card-index="1"
               onClick={() => navigate('/admin/control-inventario')}
               style={{
-                background: 'white',
+                background: 'var(--color-card)',
                 borderRadius: '1rem',
                 padding: '1.5rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: navegacionActiva && cardSeleccionada === 1 ? '2px solid #000' : '1px solid #e2e8f0',
+                boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+                border: navegacionActiva && cardSeleccionada === 1 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.4s both',
-                backgroundColor: navegacionActiva && cardSeleccionada === 1 ? '#f0f9ff' : 'white'
+                backgroundColor: navegacionActiva && cardSeleccionada === 1 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
@@ -1223,8 +1225,8 @@ const GestionProductos: React.FC = () => {
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                  e.currentTarget.style.borderColor = '#e2e8f0';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
+                  e.currentTarget.style.borderColor = 'var(--color-borde)';
                 }
               }}
             >
@@ -1251,14 +1253,14 @@ const GestionProductos: React.FC = () => {
                   <h3 style={{
                     fontSize: '1.125rem',
                     fontWeight: '600',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     marginBottom: '0.25rem'
                   }}>
                     Control de Inventario
                   </h3>
                   <p style={{
                     fontSize: '0.875rem',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     margin: 0,
                     lineHeight: '1.5'
                   }}>
@@ -1282,28 +1284,28 @@ const GestionProductos: React.FC = () => {
               data-card-index="2"
               onClick={abrirModalSeleccionScanner}
               style={{
-                background: 'white',
+                background: 'var(--color-card)',
                 borderRadius: '1rem',
                 padding: '1.5rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: navegacionActiva && cardSeleccionada === 2 ? '2px solid #000' : '1px solid #e2e8f0',
+                boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+                border: navegacionActiva && cardSeleccionada === 2 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.4s both',
-                backgroundColor: navegacionActiva && cardSeleccionada === 2 ? '#f0f9ff' : 'white'
+                backgroundColor: navegacionActiva && cardSeleccionada === 2 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                 e.currentTarget.style.borderColor = '#8b5cf6';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
+                e.currentTarget.style.borderColor = 'var(--color-borde)';
                 }
               }}
             >
@@ -1330,14 +1332,14 @@ const GestionProductos: React.FC = () => {
                   <h3 style={{
                     fontSize: '1.125rem',
                     fontWeight: '600',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     marginBottom: '0.25rem'
                   }}>
                     Scanner
                   </h3>
                   <p style={{
                     fontSize: '0.875rem',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     margin: 0,
                     lineHeight: '1.5'
                   }}>
@@ -1361,28 +1363,28 @@ const GestionProductos: React.FC = () => {
               data-card-index="3"
               onClick={irAHistorialCarga}
               style={{
-                background: 'white',
+                background: 'var(--color-card)',
                 borderRadius: '1rem',
                 padding: '1.5rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: navegacionActiva && cardSeleccionada === 3 ? '2px solid #000' : '1px solid #e2e8f0',
+                boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+                border: navegacionActiva && cardSeleccionada === 3 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.6s both',
-                backgroundColor: navegacionActiva && cardSeleccionada === 3 ? '#f0f9ff' : 'white'
+                backgroundColor: navegacionActiva && cardSeleccionada === 3 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                 e.currentTarget.style.borderColor = '#f59e0b';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
+                e.currentTarget.style.borderColor = 'var(--color-borde)';
                 }
               }}
             >
@@ -1409,14 +1411,14 @@ const GestionProductos: React.FC = () => {
                   <h3 style={{
                     fontSize: '1.125rem',
                     fontWeight: '600',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     marginBottom: '0.25rem'
                   }}>
                     Historial de Carga
                   </h3>
                   <p style={{
                     fontSize: '0.875rem',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     margin: 0,
                     lineHeight: '1.5'
                   }}>
@@ -1440,28 +1442,28 @@ const GestionProductos: React.FC = () => {
               data-card-index="4"
               onClick={abrirImportacion}
               style={{
-                background: 'white',
+                background: 'var(--color-card)',
                 borderRadius: '1rem',
                 padding: '1.5rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: navegacionActiva && cardSeleccionada === 4 ? '2px solid #000' : '1px solid #e2e8f0',
+                boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+                border: navegacionActiva && cardSeleccionada === 4 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.7s both',
-                backgroundColor: navegacionActiva && cardSeleccionada === 4 ? '#f0f9ff' : 'white'
+                backgroundColor: navegacionActiva && cardSeleccionada === 4 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                 e.currentTarget.style.borderColor = '#10b981';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
+                e.currentTarget.style.borderColor = 'var(--color-borde)';
                 }
               }}
             >
@@ -1488,14 +1490,14 @@ const GestionProductos: React.FC = () => {
                   <h3 style={{
                     fontSize: '1.125rem',
                     fontWeight: '600',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     marginBottom: '0.25rem'
                   }}>
                     Importación Masiva
                   </h3>
                   <p style={{
                     fontSize: '0.875rem',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     margin: 0,
                     lineHeight: '1.5'
                   }}>
@@ -1519,28 +1521,28 @@ const GestionProductos: React.FC = () => {
               data-card-index="5"
               onClick={irAImportacionInventario}
               style={{
-                background: 'white',
+                background: 'var(--color-card)',
                 borderRadius: '1rem',
                 padding: '1.5rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: navegacionActiva && cardSeleccionada === 5 ? '2px solid #000' : '1px solid #e2e8f0',
+                boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+                border: navegacionActiva && cardSeleccionada === 5 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.8s both',
-                backgroundColor: navegacionActiva && cardSeleccionada === 5 ? '#f0f9ff' : 'white'
+                backgroundColor: navegacionActiva && cardSeleccionada === 5 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                 e.currentTarget.style.borderColor = '#8b5cf6';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
+                e.currentTarget.style.borderColor = 'var(--color-borde)';
                 }
               }}
             >
@@ -1567,14 +1569,14 @@ const GestionProductos: React.FC = () => {
                   <h3 style={{
                     fontSize: '1.125rem',
                     fontWeight: '600',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     marginBottom: '0.25rem'
                   }}>
                     Importación de Inventario
                   </h3>
                   <p style={{
                     fontSize: '0.875rem',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     margin: 0,
                     lineHeight: '1.5'
                   }}>
@@ -1598,29 +1600,29 @@ const GestionProductos: React.FC = () => {
               data-card-index="6"
               onClick={cargando ? undefined : descargarReporteStock}
               style={{
-                background: 'white',
+                background: 'var(--color-card)',
                 borderRadius: '1rem',
                 padding: '1.5rem',
                 cursor: cargando ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: navegacionActiva && cardSeleccionada === 5 ? '2px solid #000' : '1px solid #e2e8f0',
+                boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+                border: navegacionActiva && cardSeleccionada === 5 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.8s both',
                 opacity: cargando ? 0.7 : 1,
-                backgroundColor: navegacionActiva && cardSeleccionada === 5 ? '#f0f9ff' : 'white'
+                backgroundColor: navegacionActiva && cardSeleccionada === 5 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!cargando && !navegacionActiva) {
                   e.currentTarget.style.transform = 'translateY(-8px)';
-                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                   e.currentTarget.style.borderColor = '#3b82f6';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
+                e.currentTarget.style.borderColor = 'var(--color-borde)';
                 }
               }}
             >
@@ -1647,14 +1649,14 @@ const GestionProductos: React.FC = () => {
                   <h3 style={{
                     fontSize: '1.125rem',
                     fontWeight: '600',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     marginBottom: '0.25rem'
                   }}>
                     Reporte de Stock
                   </h3>
                   <p style={{
                     fontSize: '0.875rem',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     margin: 0,
                     lineHeight: '1.5'
                   }}>
@@ -1678,29 +1680,29 @@ const GestionProductos: React.FC = () => {
               data-card-index="7"
               onClick={limpiandoDatos ? undefined : limpiarDatosInconsistentes}
               style={{
-                background: 'white',
+                background: 'var(--color-card)',
                 borderRadius: '1rem',
                 padding: '1.5rem',
                 cursor: limpiandoDatos ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: navegacionActiva && cardSeleccionada === 6 ? '2px solid #000' : '1px solid #e2e8f0',
+                boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+                border: navegacionActiva && cardSeleccionada === 6 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.9s both',
                 opacity: limpiandoDatos ? 0.7 : 1,
-                backgroundColor: navegacionActiva && cardSeleccionada === 6 ? '#f0f9ff' : 'white'
+                backgroundColor: navegacionActiva && cardSeleccionada === 6 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!limpiandoDatos && !navegacionActiva) {
                   e.currentTarget.style.transform = 'translateY(-8px)';
-                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                   e.currentTarget.style.borderColor = '#ef4444';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
+                e.currentTarget.style.borderColor = 'var(--color-borde)';
                 }
               }}
             >
@@ -1727,14 +1729,14 @@ const GestionProductos: React.FC = () => {
                   <h3 style={{
                     fontSize: '1.125rem',
                     fontWeight: '600',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     marginBottom: '0.25rem'
                   }}>
                     Limpiar Datos
                   </h3>
                   <p style={{
                     fontSize: '0.875rem',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     margin: 0,
                     lineHeight: '1.5'
                   }}>
@@ -1758,28 +1760,28 @@ const GestionProductos: React.FC = () => {
               data-card-index="8"
               onClick={sincronizandoStock ? undefined : sincronizarTodoStock}
               style={{
-                background: 'white',
+                background: 'var(--color-card)',
                 borderRadius: '1rem',
                 padding: '1.5rem',
                 cursor: sincronizandoStock ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: navegacionActiva && cardSeleccionada === 7 ? '2px solid #000' : '1px solid #e2e8f0',
+                boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
+                border: navegacionActiva && cardSeleccionada === 7 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.8s both',
-                backgroundColor: navegacionActiva && cardSeleccionada === 7 ? '#f0f9ff' : 'white'
+                backgroundColor: navegacionActiva && cardSeleccionada === 7 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva && !sincronizandoStock) {
                   e.currentTarget.style.transform = 'translateY(-8px)';
-                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px var(--color-sombra-fuerte)';
                   e.currentTarget.style.borderColor = '#3b82f6';
                 }
               }}
               onMouseOut={(e) => {
                 if (!navegacionActiva) {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                  e.currentTarget.style.borderColor = '#e2e8f0';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
+                  e.currentTarget.style.borderColor = 'var(--color-borde)';
                 }
               }}
             >
@@ -1806,14 +1808,14 @@ const GestionProductos: React.FC = () => {
                   <h3 style={{
                     fontSize: '1.125rem',
                     fontWeight: '600',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     marginBottom: '0.25rem'
                   }}>
                     Sincronizar Stock
                   </h3>
                   <p style={{
                     fontSize: '0.875rem',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     margin: 0,
                     lineHeight: '1.5'
                   }}>
@@ -1852,9 +1854,9 @@ const GestionProductos: React.FC = () => {
             <p style={{ margin: '0 0 12px 0', color: '#991b1b', fontSize: '14px' }}>
               {error}
             </p>
-            <details style={{ fontSize: '12px', color: '#7f1d1d' }}>
+            <details style={{ fontSize: '12px', color: 'var(--color-texto-secundario)' }}>
               <summary style={{ cursor: 'pointer', fontWeight: '500' }}>Información de debug</summary>
-              <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '4px' }}>
+              <div style={{ marginTop: '8px', padding: '8px', background: 'var(--color-fondo-secundario)', borderRadius: '4px' }}>
                 <p>EmpresaId: {empresaId}</p>
                 <p>Token: {localStorage.getItem('token') ? 'Presente' : 'Ausente'}</p>
                 {localStorage.getItem('token') && (
@@ -1873,17 +1875,17 @@ const GestionProductos: React.FC = () => {
         {/* Filtros y controles mejorados */}
         {productos.length > 0 && (
           <div className="tarjeta mb-6" style={{
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-            border: '1px solid #e2e8f0',
+            background: 'var(--color-card)',
+            border: '1px solid var(--color-borde)',
             borderRadius: '16px',
             padding: '24px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            boxShadow: '0 4px 12px var(--color-sombra)'
           }}>
             <div className="mb-6">
               <h3 className="titulo-3 mb-4" style={{
                 fontSize: '20px',
                 fontWeight: '600',
-                color: '#1e293b',
+                color: 'var(--color-texto-principal)',
                 marginBottom: '16px'
               }}>
                 🔍 Filtros y Búsqueda
@@ -1909,7 +1911,7 @@ const GestionProductos: React.FC = () => {
                           paddingLeft: '48px',
                           fontSize: '16px',
                           borderRadius: '12px',
-                          border: '2px solid #e2e8f0',
+                          border: '2px solid var(--color-borde)',
                           transition: 'all 0.2s ease',
                           width: '100%',
                           minHeight: '48px'
@@ -1919,7 +1921,7 @@ const GestionProductos: React.FC = () => {
                           e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
                         }}
                         onBlur={(e) => {
-                          e.target.style.borderColor = '#e2e8f0';
+                          e.target.style.borderColor = 'var(--color-borde)';
                           e.target.style.boxShadow = 'none';
                         }}
                       />
@@ -1941,7 +1943,7 @@ const GestionProductos: React.FC = () => {
                             paddingLeft: '36px',
                             fontSize: '14px',
                             borderRadius: '8px',
-                            border: '2px solid #e2e8f0',
+                            border: '2px solid var(--color-borde)',
                             transition: 'all 0.2s ease',
                             width: '100%',
                             minHeight: '44px'
@@ -1951,7 +1953,7 @@ const GestionProductos: React.FC = () => {
                             e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
                           }}
                           onBlur={(e) => {
-                            e.target.style.borderColor = '#e2e8f0';
+                            e.target.style.borderColor = 'var(--color-borde)';
                             e.target.style.boxShadow = 'none';
                           }}
                         />
@@ -2002,7 +2004,7 @@ const GestionProductos: React.FC = () => {
                             accentColor: '#ef4444'
                           }}
                         />
-                        <span style={{ fontSize: '14px', color: '#374151', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '14px', color: 'var(--color-texto-principal)', whiteSpace: 'nowrap' }}>
                           📉 Solo stock bajo
                         </span>
                       </label>
@@ -2026,7 +2028,7 @@ const GestionProductos: React.FC = () => {
                           paddingLeft: '48px',
                           fontSize: '16px',
                           borderRadius: '12px',
-                          border: '2px solid #e2e8f0',
+                          border: '2px solid var(--color-borde)',
                           transition: 'all 0.2s ease',
                           width: '100%'
                         }}
@@ -2035,7 +2037,7 @@ const GestionProductos: React.FC = () => {
                           e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
                         }}
                         onBlur={(e) => {
-                          e.target.style.borderColor = '#e2e8f0';
+                          e.target.style.borderColor = 'var(--color-borde)';
                           e.target.style.boxShadow = 'none';
                         }}
                       />
@@ -2057,7 +2059,7 @@ const GestionProductos: React.FC = () => {
                             paddingLeft: '36px',
                             fontSize: '14px',
                             borderRadius: '8px',
-                            border: '2px solid #e2e8f0',
+                            border: '2px solid var(--color-borde)',
                             transition: 'all 0.2s ease',
                             minWidth: '200px'
                           }}
@@ -2066,7 +2068,7 @@ const GestionProductos: React.FC = () => {
                             e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
                           }}
                           onBlur={(e) => {
-                            e.target.style.borderColor = '#e2e8f0';
+                            e.target.style.borderColor = 'var(--color-borde)';
                             e.target.style.boxShadow = 'none';
                           }}
                         />
@@ -2116,7 +2118,7 @@ const GestionProductos: React.FC = () => {
                             accentColor: '#ef4444'
                           }}
                         />
-                        <span style={{ fontSize: '14px', color: '#374151', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '14px', color: 'var(--color-texto-principal)', whiteSpace: 'nowrap' }}>
                           📉 Solo stock bajo
                         </span>
                       </label>
@@ -2139,8 +2141,9 @@ const GestionProductos: React.FC = () => {
                   style={{ 
                     fontSize: '14px',
                     borderRadius: '8px',
-                    border: '2px solid #e2e8f0',
-                    background: 'white',
+                    border: '2px solid var(--color-borde)',
+                    background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
                     padding: '10px 12px',
                     minHeight: '44px',
                     width: '100%',
@@ -2152,7 +2155,7 @@ const GestionProductos: React.FC = () => {
                     e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.borderColor = 'var(--color-borde)';
                     e.target.style.boxShadow = 'none';
                   }}
                 >
@@ -2169,8 +2172,9 @@ const GestionProductos: React.FC = () => {
                   style={{ 
                     fontSize: '14px',
                     borderRadius: '8px',
-                    border: '2px solid #e2e8f0',
-                    background: 'white',
+                    border: '2px solid var(--color-borde)',
+                    background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
                     padding: '10px 12px',
                     minHeight: '44px',
                     width: '100%',
@@ -2182,7 +2186,7 @@ const GestionProductos: React.FC = () => {
                     e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.borderColor = 'var(--color-borde)';
                     e.target.style.boxShadow = 'none';
                   }}
                 >
@@ -2200,8 +2204,9 @@ const GestionProductos: React.FC = () => {
                     style={{ 
                       fontSize: '14px',
                       borderRadius: '8px',
-                      border: '2px solid #e2e8f0',
-                      background: 'white',
+                      border: '2px solid var(--color-borde)',
+                      background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
                       padding: '10px 12px',
                       minHeight: '44px',
                       width: '100%',
@@ -2213,7 +2218,7 @@ const GestionProductos: React.FC = () => {
                       e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.borderColor = 'var(--color-borde)';
                       e.target.style.boxShadow = 'none';
                     }}
                   >
@@ -2232,8 +2237,9 @@ const GestionProductos: React.FC = () => {
                     style={{ 
                       fontSize: '14px',
                       borderRadius: '8px',
-                      border: '2px solid #e2e8f0',
-                      background: 'white',
+                      border: '2px solid var(--color-borde)',
+                      background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
                       padding: '10px 12px',
                       minHeight: '44px',
                       width: '100%',
@@ -2245,7 +2251,7 @@ const GestionProductos: React.FC = () => {
                       e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.borderColor = 'var(--color-borde)';
                       e.target.style.boxShadow = 'none';
                     }}
                   >
@@ -2263,8 +2269,9 @@ const GestionProductos: React.FC = () => {
                   style={{ 
                     fontSize: '14px',
                     borderRadius: '8px',
-                    border: '2px solid #e2e8f0',
-                    background: 'white',
+                    border: '2px solid var(--color-borde)',
+                    background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
                     padding: '10px 12px',
                     minHeight: '44px',
                     width: '100%',
@@ -2276,7 +2283,7 @@ const GestionProductos: React.FC = () => {
                     e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.borderColor = 'var(--color-borde)';
                     e.target.style.boxShadow = 'none';
                   }}
                 >
@@ -2307,7 +2314,7 @@ const GestionProductos: React.FC = () => {
                   <div className="flex items-center justify-center">
                     <div style={{
                       background: '#f1f5f9',
-                      color: '#64748b',
+                      color: 'var(--color-texto-secundario)',
                       padding: '8px 16px',
                       borderRadius: '20px',
                       fontSize: '14px',
@@ -2324,9 +2331,10 @@ const GestionProductos: React.FC = () => {
                         onClick={limpiarFiltros} 
                         className="boton boton-secundario"
                         style={{
-                          background: 'white',
-                          color: '#64748b',
-                          border: '2px solid #e2e8f0',
+                          background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
+                          color: 'var(--color-texto-secundario)',
+                          border: '2px solid var(--color-borde)',
                           borderRadius: '8px',
                           padding: '8px 16px',
                           fontSize: '14px',
@@ -2339,7 +2347,7 @@ const GestionProductos: React.FC = () => {
                           e.currentTarget.style.color = '#3b82f6';
                         }}
                         onMouseOut={(e) => {
-                          e.currentTarget.style.borderColor = '#e2e8f0';
+                          e.currentTarget.style.borderColor = 'var(--color-borde)';
                           e.currentTarget.style.color = '#64748b';
                         }}
                       >
@@ -2415,7 +2423,7 @@ const GestionProductos: React.FC = () => {
                   <div className="flex items-center gap-4" style={{flex: 1}}>
                     <div style={{
                       background: '#f1f5f9',
-                      color: '#64748b',
+                      color: 'var(--color-texto-secundario)',
                       padding: '8px 16px',
                       borderRadius: '20px',
                       fontSize: '14px',
@@ -2432,9 +2440,10 @@ const GestionProductos: React.FC = () => {
                         onClick={limpiarFiltros} 
                         className="boton boton-secundario"
                         style={{
-                          background: 'white',
-                          color: '#64748b',
-                          border: '2px solid #e2e8f0',
+                          background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
+                          color: 'var(--color-texto-secundario)',
+                          border: '2px solid var(--color-borde)',
                           borderRadius: '8px',
                           padding: '8px 16px',
                           fontSize: '14px',
@@ -2447,7 +2456,7 @@ const GestionProductos: React.FC = () => {
                           e.currentTarget.style.color = '#3b82f6';
                         }}
                         onMouseOut={(e) => {
-                          e.currentTarget.style.borderColor = '#e2e8f0';
+                          e.currentTarget.style.borderColor = 'var(--color-borde)';
                           e.currentTarget.style.color = '#64748b';
                         }}
                       >
@@ -2541,7 +2550,7 @@ const GestionProductos: React.FC = () => {
               onClick={limpiarFiltros} 
               className="boton boton-secundario"
               style={{
-                background: 'white',
+                background: 'var(--color-card)',
                 color: '#3b82f6',
                 border: '2px solid #3b82f6',
                 borderRadius: '8px',
@@ -2614,7 +2623,7 @@ const GestionProductos: React.FC = () => {
                     gap: '16px',
                     alignItems: 'center',
                     fontWeight: '600',
-                    color: '#374151',
+                    color: '#1e293b',
                     fontSize: '14px'
                   }}>
                     <div>🖼️ Imagen</div>
@@ -2665,7 +2674,7 @@ const GestionProductos: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        background: '#f8fafc',
+                        background: 'var(--color-fondo-secundario)',
                         borderRadius: '0',
                         border: 'none',
                         overflow: 'hidden',
@@ -2695,7 +2704,7 @@ const GestionProductos: React.FC = () => {
                             justifyContent: 'center',
                             color: '#cbd5e1',
                             fontSize: '1.5rem',
-                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                            background: 'var(--color-fondo-secundario)',
                             borderRadius: '0',
                             margin: 0,
                             padding: 0
@@ -2732,7 +2741,7 @@ const GestionProductos: React.FC = () => {
                         <p style={{
                           margin: 0,
                           fontSize: '13px',
-                          color: '#64748b',
+                          color: 'var(--color-texto-secundario)',
                           lineHeight: '1.4',
                           fontWeight: 500
                         }}>
@@ -2789,8 +2798,8 @@ const GestionProductos: React.FC = () => {
                       
                       <div className="columna-categoria">
                         <div style={{
-                          background: '#f1f5f9',
-                          color: '#374151',
+                          background: 'var(--color-fondo-secundario)',
+                          color: 'var(--color-texto-principal)',
                           padding: '4px 12px',
                           borderRadius: '12px',
                           fontSize: '12px',
@@ -2952,7 +2961,8 @@ const GestionProductos: React.FC = () => {
                     onClick={() => setVista('cuadricula')} 
                     className="boton boton-secundario"
                     style={{
-                      background: 'white',
+                      background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
                       color: '#3b82f6',
                       border: '2px solid #3b82f6',
                       borderRadius: '8px',
@@ -3001,7 +3011,7 @@ const GestionProductos: React.FC = () => {
                     }}
                     onMouseOut={(e) => {
                         if (!navegacionActiva) {
-                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.borderColor = 'var(--color-borde)';
                       e.currentTarget.style.transform = 'translateY(0)';
                       e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
                         }
@@ -3064,11 +3074,11 @@ const GestionProductos: React.FC = () => {
                             left: 0,
                             width: '100%',
                             height: '100%',
-                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                            background: 'var(--color-fondo-secundario)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#64748b',
+                            color: 'var(--color-texto-secundario)',
                             fontSize: '16px',
                             borderRadius: '12px 12px 0 0',
                             flexDirection: 'column',
@@ -3097,7 +3107,7 @@ const GestionProductos: React.FC = () => {
                         <p style={{
                           margin: '0 0 12px 0',
                           fontSize: '13px',
-                          color: '#64748b',
+                          color: 'var(--color-texto-secundario)',
                           lineHeight: '1.4',
                           fontWeight: '500'
                         }}>
@@ -3145,8 +3155,8 @@ const GestionProductos: React.FC = () => {
                         {/* Información secundaria */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                           <span style={{
-                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                            color: '#374151',
+                            background: 'var(--color-fondo-secundario)',
+                            color: 'var(--color-texto-principal)',
                             padding: '4px 8px',
                             borderRadius: '8px',
                             fontSize: '11px',
@@ -3291,7 +3301,7 @@ const GestionProductos: React.FC = () => {
                     }}
                     onMouseOut={(e) => {
                         if (!navegacionActiva) {
-                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.borderColor = 'var(--color-borde)';
                       e.currentTarget.style.transform = 'translateY(0)';
                       e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
                         }
@@ -3354,11 +3364,11 @@ const GestionProductos: React.FC = () => {
                             left: 0,
                             width: '100%',
                             height: '100%',
-                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                            background: 'var(--color-fondo-secundario)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#64748b',
+                            color: 'var(--color-texto-secundario)',
                             fontSize: '16px',
                             borderRadius: '12px 12px 0 0',
                             flexDirection: 'column',
@@ -3387,7 +3397,7 @@ const GestionProductos: React.FC = () => {
                         <p style={{
                           margin: '0 0 12px 0',
                           fontSize: '13px',
-                          color: '#64748b',
+                          color: 'var(--color-texto-secundario)',
                           lineHeight: '1.4',
                           fontWeight: '500'
                         }}>
@@ -3435,8 +3445,8 @@ const GestionProductos: React.FC = () => {
                         {/* Información secundaria */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                           <span style={{
-                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                            color: '#374151',
+                            background: 'var(--color-fondo-secundario)',
+                            color: 'var(--color-texto-principal)',
                             padding: '4px 8px',
                             borderRadius: '8px',
                             fontSize: '11px',
@@ -3694,7 +3704,7 @@ const GestionProductos: React.FC = () => {
                   <h3 style={{
                     fontSize: '22px',
                     fontWeight: '700',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     margin: '0 0 16px 0',
                     textAlign: 'center',
                     lineHeight: '1.3'
@@ -3766,7 +3776,7 @@ const GestionProductos: React.FC = () => {
                   <h4 style={{
                     fontSize: '16px',
                     fontWeight: '700',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     margin: '0 0 16px 0',
                     borderBottom: '2px solid #e2e8f0',
                     paddingBottom: '8px'
@@ -3783,7 +3793,7 @@ const GestionProductos: React.FC = () => {
                       <label style={{
                         fontSize: '11px',
                         fontWeight: '600',
-                        color: '#64748b',
+                        color: 'var(--color-texto-secundario)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         display: 'block',
@@ -3794,8 +3804,8 @@ const GestionProductos: React.FC = () => {
                       <div style={{
                         fontSize: '14px',
                         fontWeight: '600',
-                        color: '#1e293b',
-                        background: '#f8fafc',
+                        color: 'var(--color-texto-principal)',
+                        background: 'var(--color-fondo-secundario)',
                         padding: '8px 12px',
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0'
@@ -3808,7 +3818,7 @@ const GestionProductos: React.FC = () => {
                       <label style={{
                         fontSize: '11px',
                         fontWeight: '600',
-                        color: '#64748b',
+                        color: 'var(--color-texto-secundario)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         display: 'block',
@@ -3819,8 +3829,8 @@ const GestionProductos: React.FC = () => {
                       <div style={{
                         fontSize: '14px',
                         fontWeight: '600',
-                        color: '#1e293b',
-                        background: '#f8fafc',
+                        color: 'var(--color-texto-principal)',
+                        background: 'var(--color-fondo-secundario)',
                         padding: '8px 12px',
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0'
@@ -3833,7 +3843,7 @@ const GestionProductos: React.FC = () => {
                       <label style={{
                         fontSize: '11px',
                         fontWeight: '600',
-                        color: '#64748b',
+                        color: 'var(--color-texto-secundario)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         display: 'block',
@@ -3844,8 +3854,8 @@ const GestionProductos: React.FC = () => {
                       <div style={{
                         fontSize: '14px',
                         fontWeight: '600',
-                        color: '#1e293b',
-                        background: '#f8fafc',
+                        color: 'var(--color-texto-principal)',
+                        background: 'var(--color-fondo-secundario)',
                         padding: '8px 12px',
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0'
@@ -3858,7 +3868,7 @@ const GestionProductos: React.FC = () => {
                       <label style={{
                         fontSize: '11px',
                         fontWeight: '600',
-                        color: '#64748b',
+                        color: 'var(--color-texto-secundario)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         display: 'block',
@@ -3869,8 +3879,8 @@ const GestionProductos: React.FC = () => {
                       <div style={{
                         fontSize: '14px',
                         fontWeight: '600',
-                        color: '#1e293b',
-                        background: '#f8fafc',
+                        color: 'var(--color-texto-principal)',
+                        background: 'var(--color-fondo-secundario)',
                         padding: '8px 12px',
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0'
@@ -3886,7 +3896,7 @@ const GestionProductos: React.FC = () => {
                   <h4 style={{
                     fontSize: '16px',
                     fontWeight: '700',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     margin: '0 0 16px 0',
                     borderBottom: '2px solid #e2e8f0',
                     paddingBottom: '8px'
@@ -3903,7 +3913,7 @@ const GestionProductos: React.FC = () => {
                       <label style={{
                         fontSize: '11px',
                         fontWeight: '600',
-                        color: '#64748b',
+                        color: 'var(--color-texto-secundario)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         display: 'block',
@@ -3914,9 +3924,9 @@ const GestionProductos: React.FC = () => {
                       <div style={{
                         fontSize: '14px',
                         fontWeight: '600',
-                        color: '#1e293b',
+                        color: 'var(--color-texto-principal)',
                         fontFamily: 'monospace',
-                        background: '#f8fafc',
+                        background: 'var(--color-fondo-secundario)',
                         padding: '10px 12px',
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0',
@@ -3930,7 +3940,7 @@ const GestionProductos: React.FC = () => {
                       <label style={{
                         fontSize: '11px',
                         fontWeight: '600',
-                        color: '#64748b',
+                        color: 'var(--color-texto-secundario)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         display: 'block',
@@ -3941,9 +3951,9 @@ const GestionProductos: React.FC = () => {
                       <div style={{
                         fontSize: '14px',
                         fontWeight: '600',
-                        color: '#1e293b',
+                        color: 'var(--color-texto-principal)',
                         fontFamily: 'monospace',
-                        background: '#f8fafc',
+                        background: 'var(--color-fondo-secundario)',
                         padding: '10px 12px',
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0',
@@ -3961,7 +3971,7 @@ const GestionProductos: React.FC = () => {
                     <h4 style={{
                       fontSize: '16px',
                       fontWeight: '700',
-                      color: '#1e293b',
+                      color: 'var(--color-texto-principal)',
                       margin: '0 0 16px 0',
                       borderBottom: '2px solid #e2e8f0',
                       paddingBottom: '8px'
@@ -3970,9 +3980,9 @@ const GestionProductos: React.FC = () => {
                     </h4>
                     <div style={{
                       fontSize: '14px',
-                      color: '#374151',
+                      color: 'var(--color-texto-principal)',
                       lineHeight: '1.6',
-                      background: '#f8fafc',
+                      background: 'var(--color-fondo-secundario)',
                       padding: '16px',
                       borderRadius: '8px',
                       border: '1px solid #e2e8f0'
@@ -3987,7 +3997,7 @@ const GestionProductos: React.FC = () => {
                   <h4 style={{
                     fontSize: '16px',
                     fontWeight: '700',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     margin: '0 0 16px 0',
                     borderBottom: '2px solid #e2e8f0',
                     paddingBottom: '8px'
@@ -4004,7 +4014,7 @@ const GestionProductos: React.FC = () => {
                       <label style={{
                         fontSize: '11px',
                         fontWeight: '600',
-                        color: '#64748b',
+                        color: 'var(--color-texto-secundario)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         display: 'block',
@@ -4015,8 +4025,8 @@ const GestionProductos: React.FC = () => {
                       <div style={{
                         fontSize: '14px',
                         fontWeight: '600',
-                        color: '#1e293b',
-                        background: '#f8fafc',
+                        color: 'var(--color-texto-principal)',
+                        background: 'var(--color-fondo-secundario)',
                         padding: '8px 12px',
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0'
@@ -4029,7 +4039,7 @@ const GestionProductos: React.FC = () => {
                       <label style={{
                         fontSize: '11px',
                         fontWeight: '600',
-                        color: '#64748b',
+                        color: 'var(--color-texto-secundario)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         display: 'block',
@@ -4040,8 +4050,8 @@ const GestionProductos: React.FC = () => {
                       <div style={{
                         fontSize: '14px',
                         fontWeight: '600',
-                        color: '#1e293b',
-                        background: '#f8fafc',
+                        color: 'var(--color-texto-principal)',
+                        background: 'var(--color-fondo-secundario)',
                         padding: '8px 12px',
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0'
@@ -4199,7 +4209,7 @@ const GestionProductos: React.FC = () => {
                 <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
                   📋 Instrucciones:
                 </h3>
-                <ul style={{ margin: 0, paddingLeft: '20px', color: '#374151', lineHeight: '1.6' }}>
+                <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--color-texto-principal)', lineHeight: '1.6' }}>
                   <li>Conecta tu escáner USB/Bluetooth al dispositivo</li>
                   <li>Haz clic en el campo de texto de abajo</li>
                   <li>Escanea el código de barras del producto</li>
@@ -4235,9 +4245,10 @@ const GestionProductos: React.FC = () => {
                     width: '100%',
                     padding: '16px',
                     fontSize: '18px',
-                    border: '2px solid #e2e8f0',
+                    border: '2px solid var(--color-borde)',
                     borderRadius: '8px',
-                    background: 'white',
+                    background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
                     textAlign: 'center',
                     fontWeight: '600',
                     letterSpacing: '1px'
@@ -4247,7 +4258,7 @@ const GestionProductos: React.FC = () => {
                     e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)';
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.borderColor = 'var(--color-borde)';
                     e.target.style.boxShadow = 'none';
                   }}
                 />
@@ -4265,7 +4276,7 @@ const GestionProductos: React.FC = () => {
                   <div style={{ maxHeight: '150px', overflow: 'auto' }}>
                     {productosAgregados.map((item, index) => (
                       <div key={index} style={{
-                        background: '#f8fafc',
+                        background: 'var(--color-fondo-secundario)',
                         padding: '12px',
                         borderRadius: '8px',
                         marginBottom: '8px',
@@ -4274,7 +4285,7 @@ const GestionProductos: React.FC = () => {
                         justifyContent: 'space-between',
                         alignItems: 'center'
                       }}>
-                        <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                        <span style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>
                           {item.producto.nombre}
                         </span>
                         <span style={{ fontSize: '14px', fontWeight: '600', color: '#059669' }}>
@@ -4406,13 +4417,14 @@ const GestionProductos: React.FC = () => {
                   <div style={{
                     width: '60px',
                     height: '60px',
-                    background: 'white',
+                    background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
                     borderRadius: '8px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '24px',
-                    border: '2px solid #e2e8f0',
+                    border: '2px solid var(--color-borde)',
                     flexShrink: 0
                   }}>
                     {productoEscaneado.imagenes && productoEscaneado.imagenes.length > 0 ? (
@@ -4442,7 +4454,7 @@ const GestionProductos: React.FC = () => {
 
                 {/* Cantidad a agregar - integrada en la misma tarjeta */}
                 <div style={{
-                  background: 'white',
+                  background: 'var(--color-card)',
                   borderRadius: '8px',
                   padding: '16px',
                   border: '1px solid #e2e8f0'
@@ -4451,7 +4463,7 @@ const GestionProductos: React.FC = () => {
                     <label style={{
                       fontSize: '16px',
                       fontWeight: '600',
-                      color: '#1e293b',
+                      color: 'var(--color-texto-principal)',
                       whiteSpace: 'nowrap'
                     }}>
                       📊 Ajustar cantidad:
@@ -4465,9 +4477,10 @@ const GestionProductos: React.FC = () => {
                         flex: 1,
                         padding: '12px 16px',
                         fontSize: '18px',
-                        border: '2px solid #e2e8f0',
+                        border: '2px solid var(--color-borde)',
                         borderRadius: '8px',
-                        background: 'white',
+                        background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
                         textAlign: 'center',
                         fontWeight: '600',
                         maxWidth: '120px'
@@ -4477,7 +4490,7 @@ const GestionProductos: React.FC = () => {
                         e.target.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.1)';
                       }}
                       onBlur={(e) => {
-                        e.target.style.borderColor = '#e2e8f0';
+                        e.target.style.borderColor = 'var(--color-borde)';
                         e.target.style.boxShadow = 'none';
                       }}
                     />
@@ -4506,7 +4519,7 @@ const GestionProductos: React.FC = () => {
                   <div style={{ maxHeight: '100px', overflow: 'auto' }}>
                     {productosAgregados.map((item, index) => (
                       <div key={index} style={{
-                        background: '#f8fafc',
+                        background: 'var(--color-fondo-secundario)',
                         padding: '8px 12px',
                         borderRadius: '6px',
                         marginBottom: '6px',
@@ -4515,7 +4528,7 @@ const GestionProductos: React.FC = () => {
                         justifyContent: 'space-between',
                         alignItems: 'center'
                       }}>
-                        <span style={{ fontSize: '13px', fontWeight: '500', color: '#374151' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '500', color: '#1e293b' }}>
                           {item.producto.nombre}
                         </span>
                         <span style={{ fontSize: '13px', fontWeight: '600', color: '#059669' }}>
@@ -4666,7 +4679,7 @@ const GestionProductos: React.FC = () => {
               {productosAgregados.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                   <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>📦</div>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#374151' }}>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: 'var(--color-texto-principal)' }}>
                     No se agregaron productos
                   </h3>
                   <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
@@ -4682,7 +4695,7 @@ const GestionProductos: React.FC = () => {
                     <div style={{ maxHeight: '300px', overflow: 'auto' }}>
                       {productosAgregados.map((item, index) => (
                         <div key={index} style={{
-                          background: '#f8fafc',
+                          background: 'var(--color-fondo-secundario)',
                           padding: '16px',
                           borderRadius: '8px',
                           marginBottom: '12px',
@@ -4694,7 +4707,8 @@ const GestionProductos: React.FC = () => {
                           <div style={{
                             width: '40px',
                             height: '40px',
-                            background: 'white',
+                            background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
                             borderRadius: '6px',
                             display: 'flex',
                             alignItems: 'center',
@@ -4873,8 +4887,9 @@ const GestionProductos: React.FC = () => {
                 <button
                   onClick={seleccionarScannerCámara}
                   style={{
-                    background: 'white',
-                    border: '2px solid #e2e8f0',
+                    background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
+                    border: '2px solid var(--color-borde)',
                     borderRadius: '12px',
                     padding: '16px',
                     cursor: 'pointer',
@@ -4890,7 +4905,7 @@ const GestionProductos: React.FC = () => {
                     e.currentTarget.style.boxShadow = '0 8px 24px rgba(16, 185, 129, 0.15)';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.borderColor = 'var(--color-borde)';
                     e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
@@ -4923,8 +4938,9 @@ const GestionProductos: React.FC = () => {
                 <button
                   onClick={seleccionarScannerUSB}
                   style={{
-                    background: 'white',
-                    border: '2px solid #e2e8f0',
+                    background: 'var(--color-card)',
+                    color: 'var(--color-texto-principal)',
+                    border: '2px solid var(--color-borde)',
                     borderRadius: '12px',
                     padding: '16px',
                     cursor: 'pointer',
@@ -4940,7 +4956,7 @@ const GestionProductos: React.FC = () => {
                     e.currentTarget.style.boxShadow = '0 8px 24px rgba(59, 130, 246, 0.15)';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.borderColor = 'var(--color-borde)';
                     e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
@@ -5110,14 +5126,14 @@ const GestionProductos: React.FC = () => {
                   <div style={{
                     fontSize: '32px',
                     fontWeight: '700',
-                    color: '#1e293b',
+                    color: 'var(--color-texto-principal)',
                     marginBottom: '4px'
                   }}>
                     {resultadoSincronizacion.totalProductos}
                   </div>
                   <div style={{
                     fontSize: '14px',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     fontWeight: '500'
                   }}>
                     Total Productos
@@ -5134,7 +5150,7 @@ const GestionProductos: React.FC = () => {
                   </div>
                   <div style={{
                     fontSize: '14px',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     fontWeight: '500'
                   }}>
                     Corregidos
@@ -5151,7 +5167,7 @@ const GestionProductos: React.FC = () => {
                   </div>
                   <div style={{
                     fontSize: '14px',
-                    color: '#64748b',
+                    color: 'var(--color-texto-secundario)',
                     fontWeight: '500'
                   }}>
                     Ya Sincronizados
@@ -5160,7 +5176,7 @@ const GestionProductos: React.FC = () => {
               </div>
               
               <div style={{
-                background: 'white',
+                background: 'var(--color-card)',
                 borderRadius: '8px',
                 padding: '12px',
                 border: '1px solid #e2e8f0'
