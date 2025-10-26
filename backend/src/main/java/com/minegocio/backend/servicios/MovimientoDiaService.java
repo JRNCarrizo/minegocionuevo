@@ -94,6 +94,11 @@ public class MovimientoDiaService {
             
             System.out.println("🔍 [MOVIMIENTOS] Obteniendo movimientos para empresa: " + empresaId + ", fecha: " + fecha);
             
+            // Si es un día nuevo (después de medianoche), cerrar automáticamente el día anterior
+            if (fecha.isAfter(fechaActual.minusDays(1))) {
+                cerrarDiaAnteriorAutomaticamente(empresaId, fecha);
+            }
+            
             // Determinar si el día está cerrado automáticamente
             boolean diaCerrado = fecha.isBefore(fechaActual);
             
@@ -134,6 +139,52 @@ public class MovimientoDiaService {
         }
     }
     
+    /**
+     * Cerrar automáticamente el día anterior si no está cerrado
+     * Esto se ejecuta cuando se consulta un día nuevo para asegurar que el stock inicial sea correcto
+     */
+    @Transactional
+    public void cerrarDiaAnteriorAutomaticamente(Long empresaId, LocalDate fechaActual) {
+        LocalDate diaAnterior = fechaActual.minusDays(1);
+        
+        try {
+            // Verificar si el día anterior no está cerrado
+            Optional<CierreDia> cierreAnterior = cierreDiaRepository.findByEmpresaIdAndFecha(empresaId, diaAnterior);
+            
+            if (cierreAnterior.isEmpty() || !cierreAnterior.get().getCerrado()) {
+                System.out.println("🔄 [AUTO-CIERRE] Día anterior no cerrado, cerrando automáticamente: " + diaAnterior);
+                
+                // Calcular movimientos del día anterior
+                MovimientoDiaDTO movimientos = calcularMovimientosEnTiempoReal(empresaId, diaAnterior);
+                
+                // Crear el cierre automático
+                CierreDia cierre = new CierreDia(empresaId, diaAnterior);
+                cierre.setCerrado(true);
+                cierre.setCierreAutomatico(true);
+                cierre.setFechaCreacion(LocalDateTime.now());
+                cierre.setFechaActualizacion(LocalDateTime.now());
+                
+                // Guardar el cierre
+                cierre = cierreDiaRepository.save(cierre);
+                
+                // Guardar los detalles del cierre
+                guardarDetallesCierre(cierre, movimientos);
+                
+                // Limpiar cache del stock inicial para que se recalcule
+                limpiarCacheStockInicial();
+                
+                System.out.println("✅ [AUTO-CIERRE] Día anterior cerrado automáticamente: " + diaAnterior);
+                
+            } else {
+                System.out.println("ℹ️ [AUTO-CIERRE] Día anterior ya está cerrado: " + diaAnterior);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ [AUTO-CIERRE] Error al cerrar día anterior: " + e.getMessage());
+            e.printStackTrace();
+            // No lanzar excepción para no interrumpir el flujo normal
+        }
+    }
 
     
     /**

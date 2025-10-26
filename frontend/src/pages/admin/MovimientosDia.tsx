@@ -161,11 +161,34 @@ export default function MovimientosDia() {
     }
   }, [fechaInicio, fechaFin, modoRango, transicionando, movimientos]);
 
+  // Función para verificar si se cerró automáticamente el día anterior
+  const verificarCierreAutomatico = async (fechaActual: string) => {
+    try {
+      const fechaAnterior = new Date(fechaActual);
+      fechaAnterior.setDate(fechaAnterior.getDate() - 1);
+      const fechaAnteriorStr = fechaAnterior.toISOString().split('T')[0];
+      
+      // Verificar si el día anterior existe y está cerrado automáticamente
+      const movimientosAnterior = await ApiService.obtenerMovimientosDia(fechaAnteriorStr);
+      
+      if (movimientosAnterior && movimientosAnterior.diaCerrado) {
+        // Mostrar toast informativo (opcional, para que el usuario sepa que se cerró automáticamente)
+        console.log('ℹ️ [AUTO-CIERRE] Día anterior cerrado automáticamente:', fechaAnteriorStr);
+      }
+    } catch (error) {
+      // No mostrar error, es normal que no exista el día anterior
+      console.log('ℹ️ [AUTO-CIERRE] No se pudo verificar el día anterior:', error);
+    }
+  };
+
   // Efecto para manejar cambios manuales de fecha (con toast)
   useEffect(() => {
     if (fechaSeleccionada && !modoRango && !transicionando && movimientos) {
       // Si ya hay movimientos cargados, es un cambio manual de fecha
       cargarMovimientosDia(fechaSeleccionada, true); // Mostrar toast
+      
+      // Verificar si se cerró automáticamente el día anterior
+      verificarCierreAutomatico(fechaSeleccionada);
     }
   }, [fechaSeleccionada]);
 

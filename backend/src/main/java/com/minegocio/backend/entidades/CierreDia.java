@@ -40,6 +40,9 @@ public class CierreDia {
     @Column(name = "cerrado")
     private Boolean cerrado;
     
+    @Column(name = "cierre_automatico")
+    private Boolean cierreAutomatico;
+    
     @Column(name = "fecha_cierre")
     private LocalDateTime fechaCierre;
     
@@ -174,6 +177,14 @@ public class CierreDia {
     
     public void setDetalles(List<DetalleCierreDia> detalles) {
         this.detalles = detalles;
+    }
+    
+    public Boolean getCierreAutomatico() {
+        return cierreAutomatico;
+    }
+    
+    public void setCierreAutomatico(Boolean cierreAutomatico) {
+        this.cierreAutomatico = cierreAutomatico;
     }
     
     @PreUpdate
