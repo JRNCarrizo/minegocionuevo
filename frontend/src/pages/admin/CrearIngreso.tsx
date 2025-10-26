@@ -607,6 +607,8 @@ export default function CrearIngreso() {
     }, 100);
   };
 
+
+
   const manejarEnterCantidadTemporal = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -629,6 +631,7 @@ export default function CrearIngreso() {
       }
     }
   };
+
 
   const eliminarDetalle = (index: number) => {
     setDetalles(prev => prev.filter((_, i) => i !== index));
@@ -864,88 +867,8 @@ export default function CrearIngreso() {
     }
   };
 
-  const seleccionarSector = (sector: string) => {
-    setNuevoProducto(prev => ({ ...prev, sectorAlmacenamiento: sector }));
-    setMostrarSugerenciasSector(false);
-    setSectorSeleccionadoIndex(-1);
-  };
 
-  const crearNuevoSector = async (nombreSector: string) => {
-    try {
-      const response = await fetch(`/api/empresas/${datosUsuario!.empresaId}/sectores`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          nombre: nombreSector,
-          descripcion: `Sector creado automáticamente desde modal de crear producto en ingresos`,
-          ubicacion: '',
-          activo: true
-        })
-      });
-      
-      if (response.ok) {
-        // Agregar el nuevo sector a la lista local
-        setSectoresAlmacenamiento(prev => [...prev, nombreSector]);
-        toast.success(`Sector "${nombreSector}" creado exitosamente`);
-        return true;
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || 'Error al crear sector');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error al crear sector:', error);
-      toast.error('Error al crear sector');
-      return false;
-    }
-  };
 
-  const manejarTecladoSector = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!mostrarSugerenciasSector) return;
-
-    const totalOpciones = sectoresFiltrados.length + 
-      (nuevoProducto.sectorAlmacenamiento.trim() && 
-       !sectoresFiltrados.includes(nuevoProducto.sectorAlmacenamiento.trim()) ? 1 : 0);
-
-    if (totalOpciones === 0) return;
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSectorSeleccionadoIndex(prev => 
-          prev < totalOpciones - 1 ? prev + 1 : 0
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSectorSeleccionadoIndex(prev => 
-          prev > 0 ? prev - 1 : totalOpciones - 1
-        );
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (sectorSeleccionadoIndex >= 0 && sectorSeleccionadoIndex < sectoresFiltrados.length) {
-          seleccionarSector(sectoresFiltrados[sectorSeleccionadoIndex]);
-        } else if (sectorSeleccionadoIndex === sectoresFiltrados.length && 
-                   nuevoProducto.sectorAlmacenamiento.trim() && 
-                   !sectoresFiltrados.includes(nuevoProducto.sectorAlmacenamiento.trim())) {
-          // Crear nuevo sector
-          crearNuevoSector(nuevoProducto.sectorAlmacenamiento.trim()).then(success => {
-            if (success) {
-              seleccionarSector(nuevoProducto.sectorAlmacenamiento.trim());
-            }
-          });
-        }
-        break;
-      case 'Escape':
-        setMostrarSugerenciasSector(false);
-        setSectorSeleccionadoIndex(-1);
-        break;
-    }
-  };
 
   const manejarCambioSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -1759,6 +1682,7 @@ export default function CrearIngreso() {
                    </div>
                  </div>
                )}
+
               
               <button
                 onClick={() => setMostrarScanner(true)}
@@ -2616,154 +2540,9 @@ export default function CrearIngreso() {
                  />
                </div>
 
-                               {/* Stock - Siempre 0 para productos nuevos */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '0.875rem',
-                    fontWeight: '600',
-                    color: '#64748b',
-                    marginBottom: '0.5rem'
-                  }}>
-                    📦 Stock Inicial
-                  </label>
-                  <div style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.875rem',
-                    background: '#f8fafc',
-                    color: '#64748b',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
-                    <span>0</span>
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                      (Se agregará stock al ingresar al remito)
-                    </span>
-                  </div>
-                </div>
 
                
 
-               {/* Sector de Almacenamiento */}
-               <div style={{ position: 'relative' }}>
-                 <label style={{
-                   display: 'block',
-                   fontSize: '0.875rem',
-                   fontWeight: '600',
-                   color: '#64748b',
-                   marginBottom: '0.5rem'
-                 }}>
-                   🏪 Sector de Almacenamiento
-                 </label>
-                 <input
-                   ref={sectorProductoRef}
-                   type="text"
-                   value={nuevoProducto.sectorAlmacenamiento}
-                   onChange={(e) => manejarCambioSectorAlmacenamiento(e.target.value)}
-                   onKeyDown={manejarTecladoSector}
-                   onBlur={() => {
-                     // Pequeño delay para permitir que el click en las sugerencias funcione
-                     setTimeout(() => {
-                       setMostrarSugerenciasSector(false);
-                       setSectorSeleccionadoIndex(-1);
-                     }, 150);
-                   }}
-                   placeholder="Escribe el nombre del sector o selecciona uno existente"
-                   autoComplete="off"
-                   style={{
-                     width: '100%',
-                     padding: '0.75rem',
-                     border: '2px solid #e2e8f0',
-                     borderRadius: '0.5rem',
-                     fontSize: '0.875rem'
-                   }}
-                 />
-                 {mostrarSugerenciasSector && sectoresFiltrados && sectoresFiltrados.length > 0 && (
-                   <div style={{
-                     position: 'absolute',
-                     top: '100%',
-                     left: 0,
-                     right: 0,
-                     background: 'white',
-                     border: '1px solid #e5e7eb',
-                     borderTop: 'none',
-                     borderRadius: '0 0 0.5rem 0.5rem',
-                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                     zIndex: 1000,
-                     maxHeight: '200px',
-                     overflowY: 'auto'
-                   }}>
-                     {sectoresFiltrados.map((sector, index) => (
-                       <div
-                         key={index}
-                         style={{
-                           padding: '0.75rem',
-                           cursor: 'pointer',
-                           borderBottom: '1px solid #f3f4f6',
-                           transition: 'all 0.2s ease',
-                           display: 'flex',
-                           alignItems: 'center',
-                           gap: '0.5rem',
-                           backgroundColor: index === sectorSeleccionadoIndex ? '#eff6ff' : 'transparent',
-                           borderLeft: index === sectorSeleccionadoIndex ? '3px solid #3b82f6' : 'none'
-                         }}
-                         onClick={() => seleccionarSector(sector)}
-                         onMouseEnter={() => setSectorSeleccionadoIndex(index)}
-                       >
-                         <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>🏢</span>
-                         <span style={{ flex: 1, fontWeight: '500', fontSize: '0.875rem' }}>{sector}</span>
-                         <span style={{
-                           background: '#6b7280',
-                           color: 'white',
-                           padding: '0.25rem 0.5rem',
-                           borderRadius: '0.75rem',
-                           fontSize: '0.75rem',
-                           fontWeight: '600'
-                         }}>Existente</span>
-                       </div>
-                     ))}
-                     {nuevoProducto.sectorAlmacenamiento.trim() && 
-                      !sectoresFiltrados.includes(nuevoProducto.sectorAlmacenamiento.trim()) && (
-                       <div
-                         style={{
-                           padding: '0.75rem',
-                           cursor: 'pointer',
-                           borderTop: '2px solid #e5e7eb',
-                           transition: 'all 0.2s ease',
-                           display: 'flex',
-                           alignItems: 'center',
-                           gap: '0.5rem',
-                           backgroundColor: '#fef3c7',
-                           borderLeft: sectoresFiltrados.length === sectorSeleccionadoIndex ? '3px solid #3b82f6' : 'none'
-                         }}
-                         onClick={() => {
-                           crearNuevoSector(nuevoProducto.sectorAlmacenamiento.trim()).then(success => {
-                             if (success) {
-                               seleccionarSector(nuevoProducto.sectorAlmacenamiento.trim());
-                             }
-                           });
-                         }}
-                         onMouseEnter={() => setSectorSeleccionadoIndex(sectoresFiltrados.length)}
-                       >
-                         <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>➕</span>
-                         <span style={{ flex: 1, fontWeight: '500', fontSize: '0.875rem' }}>Crear sector "{nuevoProducto.sectorAlmacenamiento.trim()}"</span>
-                         <span style={{
-                           background: '#10b981',
-                           color: 'white',
-                           padding: '0.25rem 0.5rem',
-                           borderRadius: '0.75rem',
-                           fontSize: '0.75rem',
-                           fontWeight: '600'
-                         }}>Nuevo</span>
-                       </div>
-                     )}
-                   </div>
-                 )}
-               </div>
              </div>
 
              <div style={{
