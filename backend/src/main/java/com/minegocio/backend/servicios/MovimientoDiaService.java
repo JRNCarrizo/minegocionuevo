@@ -127,8 +127,10 @@ public class MovimientoDiaService {
             }
             
             // Si es un día nuevo (después de medianoche), cerrar automáticamente el día anterior
+            // NOTA: No se puede hacer dentro de una transacción de solo lectura
+            // El cierre automático se manejará en el controlador o en un método separado
             if (fecha.isAfter(fechaActual.minusDays(1))) {
-                cerrarDiaAnteriorAutomaticamente(empresaId, fecha);
+                System.out.println("ℹ️ [MOVIMIENTOS] Día nuevo detectado, pero no se puede cerrar automáticamente en transacción de solo lectura");
             }
             
             // Determinar si el día está cerrado automáticamente
@@ -172,11 +174,28 @@ public class MovimientoDiaService {
     }
     
     /**
-     * Cerrar automáticamente el día anterior si no está cerrado
-     * Esto se ejecuta cuando se consulta un día nuevo para asegurar que el stock inicial sea correcto
+     * Cerrar automáticamente el día anterior si no fue cerrado manualmente
+     * MÉTODO PÚBLICO para ser llamado desde el controlador
      */
     @Transactional
-    public void cerrarDiaAnteriorAutomaticamente(Long empresaId, LocalDate fechaActual) {
+    public void cerrarDiaAnteriorAutomaticamentePublico(String fechaStr) {
+        try {
+            Long empresaId = obtenerEmpresaId();
+            LocalDate fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
+            cerrarDiaAnteriorAutomaticamente(empresaId, fecha);
+        } catch (Exception e) {
+            System.err.println("❌ [AUTO-CIERRE PÚBLICO] Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Cerrar automáticamente el día anterior si no está cerrado
+     * Esto se ejecuta cuando se consulta un día nuevo para asegurar que el stock inicial sea correcto
+     * MÉTODO PRIVADO para uso interno
+     */
+    @Transactional
+    private void cerrarDiaAnteriorAutomaticamente(Long empresaId, LocalDate fechaActual) {
         LocalDate diaAnterior = fechaActual.minusDays(1);
         
         try {

@@ -47,6 +47,15 @@ public class MovimientoDiaController {
     public ResponseEntity<MovimientoDiaDTO> obtenerMovimientosDia(@PathVariable String fecha) {
         try {
             System.out.println("🔍 [CONTROLLER] Obteniendo movimientos para fecha: " + fecha);
+            
+            // Primero intentar cerrar automáticamente el día anterior si es necesario
+            try {
+                movimientoDiaService.cerrarDiaAnteriorAutomaticamentePublico(fecha);
+            } catch (Exception e) {
+                System.err.println("⚠️ [CONTROLLER] Error en cierre automático (continuando): " + e.getMessage());
+            }
+            
+            // Luego obtener los movimientos
             MovimientoDiaDTO movimientos = movimientoDiaService.obtenerMovimientosDia(fecha);
             return ResponseEntity.ok(movimientos);
         } catch (Exception e) {
