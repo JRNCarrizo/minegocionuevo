@@ -145,23 +145,14 @@ public class PlanillaDevolucionService {
                             detalle.setDescripcion(producto.getNombre());
                         }
                         
-                        // SUMAR al stock SOLO si está en buen estado
-                        if (detalle.getEstadoProducto() == DetallePlanillaDevolucion.EstadoProducto.BUEN_ESTADO) {
-                            sumarAlStock(producto, detalleDTO.getCantidad());
-                            // Guardar la cantidad original que se sumó al stock
-                            detalle.setCantidadOriginalStock(detalleDTO.getCantidad());
-                            System.out.println("✅ [DEVOLUCION] Sumando al stock (BUEN_ESTADO):");
-                            System.out.println("   Producto: " + producto.getNombre());
-                            System.out.println("   Cantidad: " + detalleDTO.getCantidad());
-                            System.out.println("   Cantidad original guardada: " + detalleDTO.getCantidad());
-                        } else {
-                            // No se suma al stock, pero guardamos 0 como cantidad original
-                            detalle.setCantidadOriginalStock(0);
-                            System.out.println("❌ [DEVOLUCION] NO sumando al stock (estado: " + detalle.getEstadoProducto().name() + "):");
-                            System.out.println("   Producto: " + producto.getNombre());
-                            System.out.println("   Cantidad: " + detalleDTO.getCantidad());
-                            System.out.println("   Cantidad original guardada: 0");
-                        }
+                        // NUEVA LÓGICA: NO sumar al stock durante la creación
+                        // Solo se sumará durante la verificación
+                        detalle.setCantidadOriginalStock(0); // Siempre 0 en la creación
+                        System.out.println("ℹ️ [DEVOLUCION] NO sumando al stock durante creación (nueva lógica):");
+                        System.out.println("   Producto: " + producto.getNombre());
+                        System.out.println("   Cantidad: " + detalleDTO.getCantidad());
+                        System.out.println("   Estado: " + detalle.getEstadoProducto().name());
+                        System.out.println("   Cantidad original guardada: 0 (se sumará en verificación)");
                     }
                 } else {
                     // No hay producto asociado, no se suma al stock
@@ -770,22 +761,13 @@ public class PlanillaDevolucionService {
                                      " - CantidadOriginalStock: 0");
                 }
                 
-                // SUMAR AL STOCK si el producto está en buen estado
-                // Tanto productos originales como nuevos deben sumarse al stock
-                if (detalle.getProducto() != null && detalle.getEstadoProducto() == DetallePlanillaDevolucion.EstadoProducto.BUEN_ESTADO) {
-                    System.out.println("✅ [EDICION] Sumando al stock (BUEN_ESTADO):");
-                    System.out.println("   Producto: " + detalle.getProducto().getNombre());
-                    System.out.println("   Cantidad: " + detalleDTO.getCantidad());
-                    System.out.println("   Estado: " + detalle.getEstadoProducto().name());
-                    System.out.println("   Cantidad original: " + cantidadOriginal);
-                    
-                    sumarAlStock(detalle.getProducto(), detalleDTO.getCantidad());
-                    System.out.println("✅ [EDICION] Stock actualizado exitosamente");
-                } else if (detalle.getProducto() != null) {
-                    System.out.println("⚠️ [EDICION] Producto NO sumado al stock (estado: " + detalle.getEstadoProducto().name() + "):");
-                    System.out.println("   Producto: " + detalle.getProducto().getNombre());
-                    System.out.println("   Cantidad: " + detalleDTO.getCantidad());
-                }
+                // NUEVA LÓGICA: NO sumar al stock durante la edición
+                // Solo se sumará durante la verificación
+                System.out.println("ℹ️ [EDICION] NO sumando al stock durante edición (nueva lógica):");
+                System.out.println("   Producto: " + detalle.getProducto().getNombre());
+                System.out.println("   Cantidad: " + detalleDTO.getCantidad());
+                System.out.println("   Estado: " + detalle.getEstadoProducto().name());
+                System.out.println("   Se sumará solo en verificación");
 
                 detalle.setPlanillaDevolucion(planilla);
                 planilla.agregarDetalle(detalle);
@@ -935,33 +917,20 @@ public class PlanillaDevolucionService {
             System.out.println("   - Stock anterior: " + stockAnterior);
             System.out.println("   - Cantidad original total sumada: " + totalCantidadOriginal);
             System.out.println("   - Cantidad final total verificada en buen estado: " + cantidadFinalEnStock);
+            System.out.println("   - Producto: " + producto.getNombre() + " (ID: " + producto.getId() + ")");
             
-            // LÓGICA CORREGIDA: Solo ajustar por la diferencia real
-            // Los productos nuevos ya se sumaron durante la edición, no hay que revertir y sumar de nuevo
+            // NUEVA LÓGICA SIMPLIFICADA: Solo sumar la cantidad verificada
+            // No hay que revertir nada porque la creación no suma al stock
             
-            System.out.println("   🔧 Aplicando corrección de stock...");
+            System.out.println("   🔧 Aplicando verificación de stock...");
             
-            // Calcular la diferencia real: cuánto más o menos debe estar en stock
-            int diferenciaReal = cantidadFinalEnStock - totalCantidadOriginal;
-            
-            System.out.println("   - Diferencia real a aplicar: " + diferenciaReal);
-            
-            // Solo aplicar la diferencia si es necesaria
-            // IMPORTANTE: Si totalCantidadOriginal = 0, significa que es un producto nuevo
-            // Los productos nuevos ya se sumaron durante la edición, no hay que sumar de nuevo
-            if (diferenciaReal > 0 && totalCantidadOriginal > 0) {
-                // Sumar la diferencia (productos que cambiaron de mal estado a buen estado)
-                // Solo si el producto tenía cantidad original (no es un producto nuevo)
-                System.out.println("   ➕ Sumando diferencia: " + diferenciaReal);
-                sumarAlStock(producto, diferenciaReal);
-            } else if (diferenciaReal < 0) {
-                // Descontar la diferencia (productos que cambiaron de buen estado a mal estado)
-                System.out.println("   ➖ Descontando diferencia: " + Math.abs(diferenciaReal));
-                descontarDelStock(producto, Math.abs(diferenciaReal));
-            } else if (totalCantidadOriginal == 0) {
-                System.out.println("   ⚖️ Producto nuevo - ya se sumó durante la edición, no hay cambios adicionales");
+            if (cantidadFinalEnStock > 0) {
+                // Solo sumar la cantidad verificada en buen estado
+                System.out.println("   ➕ Sumando cantidad verificada: " + cantidadFinalEnStock);
+                sumarAlStock(producto, cantidadFinalEnStock);
+                System.out.println("   ✅ Stock actualizado con cantidad verificada");
             } else {
-                System.out.println("   ⚖️ No hay cambios en el stock");
+                System.out.println("   ⚖️ No hay cantidad en buen estado para sumar al stock");
             }
             
             System.out.println("   ✅ Stock corregido: " + stockAnterior + " → " + producto.getStock());
