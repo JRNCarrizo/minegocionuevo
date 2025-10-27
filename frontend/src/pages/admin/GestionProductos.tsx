@@ -2320,7 +2320,7 @@ const GestionProductos: React.FC = () => {
                       fontSize: '14px',
                       fontWeight: '500'
                     }}>
-                      📊 {productosFiltrados.length} de {productos.length} productos
+                      📊 {productosFiltrados.length} de {productos.length} productos • 📦 {productosFiltrados.reduce((total, producto) => total + (producto.stock || 0), 0).toLocaleString()} unidades
                     </div>
                   </div>
                   
@@ -2429,7 +2429,7 @@ const GestionProductos: React.FC = () => {
                       fontSize: '14px',
                       fontWeight: '500'
                     }}>
-                      📊 {productosFiltrados.length} de {productos.length} productos
+                      📊 {productosFiltrados.length} de {productos.length} productos • 📦 {productosFiltrados.reduce((total, producto) => total + (producto.stock || 0), 0).toLocaleString()} unidades
                     </div>
                   </div>
                   
@@ -2613,14 +2613,14 @@ const GestionProductos: React.FC = () => {
                 boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                 overflow: 'hidden'
               }}>
-                <div className="tabla-productos">
+                <div className="tabla-productos" style={{ overflowX: 'hidden', maxHeight: '80vh', overflowY: 'auto', paddingBottom: '20px' }}>
                   <div className="encabezado-tabla" style={{
                     background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                    padding: '16px 24px',
+                    padding: '12px 16px',
                     borderBottom: '2px solid #e2e8f0',
                     display: 'grid',
-                    gridTemplateColumns: '80px 2fr 1fr 1fr 1fr 1fr 1fr',
-                    gap: '16px',
+                    gridTemplateColumns: '60px 1.5fr 0.8fr 0.8fr 1fr 0.8fr 1.2fr',
+                    gap: '10px',
                     alignItems: 'center',
                     fontWeight: '600',
                     color: '#1e293b',
@@ -2643,34 +2643,37 @@ const GestionProductos: React.FC = () => {
                       className="fila-producto" 
                       data-producto-id={producto.id}
                       style={{
-                      padding: '0 24px',
-                      borderBottom: '1px solid #f1f5f9',
+                      padding: '8px 16px',
+                      marginBottom: '8px',
                       display: 'grid',
-                      gridTemplateColumns: '80px 2fr 1fr 1fr 1fr 1fr 1fr',
-                      gap: '16px',
+                      gridTemplateColumns: '60px 1.5fr 0.8fr 0.8fr 1fr 0.8fr 1.2fr',
+                      gap: '10px',
                       alignItems: 'center',
                       transition: 'all 0.2s ease',
                       cursor: 'pointer',
-                        height: '80px',
+                        height: '70px',
                         border: isSelected ? '2px solid #000' : 'none',
-                        backgroundColor: isSelected ? '#f0f9ff' : 'transparent'
+                        backgroundColor: isSelected ? '#f0f9ff' : '#fafafa',
+                        borderRadius: '8px'
                     }}
                     onMouseOver={(e) => {
                         if (!navegacionActiva) {
-                      e.currentTarget.style.backgroundColor = '#f8fafc';
+                      e.currentTarget.style.backgroundColor = '#e0f2fe';
                       e.currentTarget.style.transform = 'translateX(4px)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.1)';
                         }
                     }}
                     onMouseOut={(e) => {
                         if (!navegacionActiva) {
-                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.backgroundColor = '#fafafa';
                       e.currentTarget.style.transform = 'translateX(0)';
+                      e.currentTarget.style.boxShadow = 'none';
                         }
                     }}
                     >
                       <div className="columna-imagen" style={{
                         height: '100%',
-                        width: '80px',
+                        width: '60px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

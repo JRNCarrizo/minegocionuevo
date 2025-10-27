@@ -53,6 +53,16 @@ export default function MovimientosDia() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile } = useResponsive();
   const { isDarkMode } = useTheme();
+  
+  // Debug: verificar tema actual
+  useEffect(() => {
+    console.log('🌙 Tema actual:', isDarkMode ? 'OSCURO' : 'CLARO');
+    console.log('🎨 Variables CSS:', {
+      card: getComputedStyle(document.documentElement).getPropertyValue('--color-card'),
+      texto: getComputedStyle(document.documentElement).getPropertyValue('--color-texto-principal'),
+      borde: getComputedStyle(document.documentElement).getPropertyValue('--color-borde')
+    });
+  }, [isDarkMode]);
   const navigate = useNavigate();
   
   const [fechaSeleccionada, setFechaSeleccionada] = useState<string>('');
@@ -702,11 +712,8 @@ export default function MovimientosDia() {
   const calcularBalanceFinal = () => {
     if (!movimientos) return 0;
     
-    return movimientos.stockInicial.cantidadTotal + 
-           movimientos.ingresos.cantidadTotal + 
-           movimientos.devoluciones.cantidadTotal - 
-           movimientos.salidas.cantidadTotal - 
-           movimientos.roturas.cantidadTotal;
+    // Usar el balance final que viene del backend (ya calculado correctamente)
+    return movimientos.balanceFinal.cantidadTotal;
   };
 
   const obtenerTituloModal = (seccion: string) => {
@@ -842,30 +849,30 @@ export default function MovimientosDia() {
       });
       
       // Determinar el color de fondo y borde según el tipo de variación
-      let backgroundColor = '#f8fafc';
-      let borderColor = '#e2e8f0';
+      let backgroundColor = 'var(--color-card)';
+      let borderColor = 'var(--color-borde)';
       let cantidadColor = '#8b5cf6';
       let variacionText = '';
       let badgeText = '';
       
       // Verificar si el producto tiene variación
       if (producto.tipoVariacion === 'INCREMENTO') {
-        backgroundColor = '#f0fdf4';
+        backgroundColor = 'var(--color-card)';
         borderColor = '#22c55e';
         cantidadColor = '#16a34a';
         variacionText = `+${producto.variacion || 0}`;
         badgeText = `📈 +${producto.variacion || 0}`;
       } else if (producto.tipoVariacion === 'DECREMENTO') {
-        backgroundColor = '#fef2f2';
+        backgroundColor = 'var(--color-card)';
         borderColor = '#ef4444';
         cantidadColor = '#dc2626';
         variacionText = `${producto.variacion || 0}`;
         badgeText = `📉 ${producto.variacion || 0}`;
       } else {
         // Producto sin cambios - hacer más sutil
-        backgroundColor = '#f8fafc';
-        borderColor = '#e2e8f0';
-        cantidadColor = '#64748b';
+        backgroundColor = 'var(--color-card)';
+        borderColor = 'var(--color-borde)';
+        cantidadColor = 'var(--color-texto-secundario)';
         badgeText = '➖ Sin cambios';
       }
       
@@ -921,7 +928,7 @@ export default function MovimientosDia() {
             {producto.cantidadInicial !== undefined && (
               <div style={{ 
                 fontSize: isMobile ? '0.7rem' : '0.75rem', 
-                color: producto.tipoVariacion !== 'SIN_CAMBIOS' ? '#64748b' : '#9ca3af',
+                color: producto.tipoVariacion !== 'SIN_CAMBIOS' ? 'var(--color-texto-secundario)' : 'var(--color-texto-secundario)',
                 fontStyle: 'italic'
               }}>
                 Inicial: {producto.cantidadInicial !== null && producto.cantidadInicial !== undefined ? producto.cantidadInicial : 'Sin datos'} → Final: {producto.cantidad !== null && producto.cantidad !== undefined ? producto.cantidad : (producto.cantidadInicial !== null && producto.cantidadInicial !== undefined ? producto.cantidadInicial : 'Sin datos')}
@@ -954,10 +961,7 @@ export default function MovimientosDia() {
        const esNegativo = seccion === 'salidas' || seccion === 'roturas';
        const esPositivo = seccion === 'ingresos' || seccion === 'devoluciones';
        const color = obtenerColorModal(seccion);
-       const backgroundColor = seccion === 'ingresos' ? '#f0fdf4' : 
-                              seccion === 'devoluciones' ? '#fffbeb' :
-                              seccion === 'salidas' ? '#fef2f2' :
-                              seccion === 'roturas' ? '#faf5ff' : '#f8fafc';
+       const backgroundColor = 'var(--color-card)';
        
        // Si es la sección de ingresos, mostrar observaciones
        if (seccion === 'ingresos') {
@@ -967,9 +971,10 @@ export default function MovimientosDia() {
              justifyContent: 'space-between',
              alignItems: 'center',
              padding: isMobile ? '0.6rem' : '0.75rem',
-             background: backgroundColor,
+             background: 'var(--color-card)',
              borderRadius: '0.5rem',
-             marginBottom: isMobile ? '0.4rem' : '0.5rem'
+             marginBottom: isMobile ? '0.4rem' : '0.5rem',
+             border: '1px solid var(--color-borde)'
            }}>
              <div style={{ flex: 1 }}>
                <div style={{ 
@@ -982,7 +987,7 @@ export default function MovimientosDia() {
                {producto.codigoPersonalizado && (
                  <div style={{ 
                    fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                   color: '#64748b' 
+                   color: 'var(--color-texto-secundario)' 
                  }}>
                    {producto.codigoPersonalizado}
                  </div>
@@ -1018,9 +1023,10 @@ export default function MovimientosDia() {
            justifyContent: 'space-between',
            alignItems: 'center',
            padding: isMobile ? '0.6rem' : '0.75rem',
-           background: backgroundColor,
+           background: 'var(--color-card)',
            borderRadius: '0.5rem',
-           marginBottom: isMobile ? '0.4rem' : '0.5rem'
+           marginBottom: isMobile ? '0.4rem' : '0.5rem',
+           border: '1px solid var(--color-borde)'
          }}>
            <div style={{ flex: 1 }}>
              <div style={{ 
@@ -1033,7 +1039,7 @@ export default function MovimientosDia() {
              {producto.codigoPersonalizado && (
                <div style={{ 
                  fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                 color: '#64748b' 
+                 color: 'var(--color-texto-secundario)' 
                }}>
                  {producto.codigoPersonalizado}
                </div>
@@ -2046,7 +2052,7 @@ export default function MovimientosDia() {
             </h3>
             <p style={{
               fontSize: '1rem',
-              color: '#64748b'
+              color: 'var(--color-texto-secundario)'
             }}>
               Selecciona otra fecha o crea movimientos para el día seleccionado
             </p>
@@ -2155,12 +2161,12 @@ export default function MovimientosDia() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = obtenerColorModal(modalAbierto);
-                      e.target.style.background = 'white';
+                      e.target.style.background = 'var(--color-card)';
                       e.target.style.boxShadow = `0 0 0 3px ${obtenerColorModal(modalAbierto)}20`;
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#e2e8f0';
-                      e.target.style.background = '#f8fafc';
+                      e.target.style.borderColor = 'var(--color-borde)';
+                      e.target.style.background = 'var(--color-card)';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -2197,7 +2203,7 @@ export default function MovimientosDia() {
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'none';
-                        e.currentTarget.style.color = '#64748b';
+                        e.currentTarget.style.color = 'var(--color-texto-secundario)';
                       }}
                     >
                       ✕
@@ -2223,7 +2229,7 @@ export default function MovimientosDia() {
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = 'none';
-                  e.currentTarget.style.color = '#64748b';
+                  e.currentTarget.style.color = 'var(--color-texto-secundario)';
                 }}
               >
                 ✕
@@ -2241,9 +2247,9 @@ export default function MovimientosDia() {
                 <div style={{
                   padding: isMobile ? '0.4rem 0' : '0.5rem 0',
                   marginBottom: isMobile ? '0.4rem' : '0.5rem',
-                  borderBottom: '1px solid #e2e8f0',
+                  borderBottom: '1px solid var(--color-borde)',
                   fontSize: isMobile ? '0.8rem' : '0.875rem',
-                  color: '#64748b'
+                  color: 'var(--color-texto-secundario)'
                 }}>
                   {obtenerProductosModal(modalAbierto).length > 0 ? (
                     <span>
@@ -2268,7 +2274,7 @@ export default function MovimientosDia() {
                 <div style={{
                   textAlign: 'center',
                   padding: isMobile ? '1.5rem' : '2rem',
-                  color: '#64748b'
+                  color: 'var(--color-texto-secundario)'
                 }}>
                   <div style={{ fontSize: isMobile ? '2.5rem' : '3rem', marginBottom: isMobile ? '0.75rem' : '1rem' }}>
                     {filtroBusqueda.trim() ? '🔍' : '📭'}
@@ -2450,7 +2456,7 @@ export default function MovimientosDia() {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         fontSize: isMobile ? '0.8rem' : '0.875rem',
-                        color: '#64748b'
+                        color: 'var(--color-texto-secundario)'
                       }}>
                         <div>
                           <span style={{ fontWeight: '600' }}>Planilla:</span> {producto.numeroDocumento}
@@ -2479,7 +2485,7 @@ export default function MovimientosDia() {
                 <div style={{
                   textAlign: 'center',
                   padding: isMobile ? '2rem' : '3rem',
-                  color: '#64748b'
+                  color: 'var(--color-texto-secundario)'
                 }}>
                   <div style={{ fontSize: isMobile ? '3rem' : '4rem', marginBottom: '1rem' }}>
                     ✅

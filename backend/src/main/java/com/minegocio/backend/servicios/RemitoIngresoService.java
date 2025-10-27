@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -264,39 +265,71 @@ public class RemitoIngresoService {
     public void eliminarRemito(Long id, Long empresaId) {
         Optional<RemitoIngreso> remito = remitoIngresoRepository.findById(id);
         if (remito.isPresent() && remito.get().getEmpresa().getId().equals(empresaId)) {
-            // Restaurar el stock de los productos usando el sistema de sincronización
+            // Obtener detalles del remito
             List<DetalleRemitoIngreso> detalles = detalleRemitoIngresoRepository.findByRemitoIngresoIdOrderByFechaCreacionAsc(id);
+            
+            // Lista para productos que se deben eliminar completamente (eran nuevos)
+            List<Long> productosAEliminar = new ArrayList<>();
+            
             for (DetalleRemitoIngreso detalle : detalles) {
                 if (detalle.getProducto() != null) {
                     Producto producto = detalle.getProducto();
-                    Integer stockAnterior = producto.getStock();
-                    Integer nuevoStock = stockAnterior - detalle.getCantidad();
                     
-                    // Validar que el stock no se vuelva negativo
-                    if (nuevoStock < 0) {
-                        throw new RuntimeException("No se puede eliminar el remito. El producto '" + producto.getNombre() + 
-                            "' no tiene suficiente stock. Stock actual: " + stockAnterior + 
-                            ", Cantidad a restar: " + detalle.getCantidad() + 
-                            ". Posible causa: El stock fue modificado después de crear el remito.");
+                    // Verificar si el producto era nuevo (creado en este remito)
+                    // Un producto es nuevo si su stock es igual a la cantidad del detalle
+                    // y fue creado recientemente (mismo día o muy cercano)
+                    boolean esProductoNuevo = producto.getStock().equals(detalle.getCantidad()) && 
+                                           producto.getFechaCreacion().toLocalDate().equals(remito.get().getFechaRemito().toLocalDate());
+                    
+                    if (esProductoNuevo) {
+                        // Producto nuevo: marcarlo para eliminación completa
+                        productosAEliminar.add(producto.getId());
+                        System.out.println("🗑️ ELIMINACIÓN REMITO - Producto nuevo marcado para eliminación: " + producto.getNombre() + " (ID: " + producto.getId() + ")");
+                    } else {
+                        // Producto existente: solo restar el stock
+                        Integer stockAnterior = producto.getStock();
+                        Integer nuevoStock = stockAnterior - detalle.getCantidad();
+                        
+                        // Validar que el stock no se vuelva negativo
+                        if (nuevoStock < 0) {
+                            throw new RuntimeException("No se puede eliminar el remito. El producto '" + producto.getNombre() + 
+                                "' no tiene suficiente stock. Stock actual: " + stockAnterior + 
+                                ", Cantidad a restar: " + detalle.getCantidad() + 
+                                ". Posible causa: El stock fue modificado después de crear el remito.");
+                        }
+                        
+                        // Restar del stock y sincronizar
+                        producto.setStock(nuevoStock);
+                        productoRepository.save(producto);
+                        
+                        // Sincronizar con sectores
+                        stockSincronizacionService.sincronizarStockConSectores(
+                            empresaId,
+                            producto.getId(),
+                            nuevoStock,
+                            "Eliminación de remito de ingreso"
+                        );
+                        
+                        System.out.println("✅ ELIMINACIÓN REMITO - Stock restaurado: " + stockAnterior + " - " + detalle.getCantidad() + " = " + nuevoStock + " (Producto: " + producto.getNombre() + ")");
                     }
-                    
-                    // Usar el sistema de sincronización para restaurar el stock correctamente
-                    producto.setStock(nuevoStock);
-                    productoRepository.save(producto);
-                    
-                    // Sincronizar con sectores para restaurar el stock correctamente
-                    stockSincronizacionService.sincronizarStockConSectores(
-                        empresaId,
-                        producto.getId(),
-                        nuevoStock,
-                        "Eliminación de remito de ingreso"
-                    );
-                    
-                    System.out.println("✅ ELIMINACIÓN REMITO - Stock restaurado y sincronizado: " + stockAnterior + " - " + detalle.getCantidad() + " = " + nuevoStock);
                 }
             }
             
+            // Eliminar productos nuevos completamente
+            for (Long productoId : productosAEliminar) {
+                try {
+                    // Eliminar el producto (esto eliminará automáticamente las referencias en sectores)
+                    productoRepository.deleteById(productoId);
+                    System.out.println("🗑️ ELIMINACIÓN REMITO - Producto eliminado completamente: ID " + productoId);
+                } catch (Exception e) {
+                    System.err.println("❌ ELIMINACIÓN REMITO - Error al eliminar producto " + productoId + ": " + e.getMessage());
+                    // Continuar con la eliminación del remito aunque falle la eliminación del producto
+                }
+            }
+            
+            // Eliminar el remito
             remitoIngresoRepository.deleteById(id);
+            System.out.println("✅ ELIMINACIÓN REMITO - Remito eliminado exitosamente: ID " + id);
         } else {
             throw new RuntimeException("Remito no encontrado");
         }

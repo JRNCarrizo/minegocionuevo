@@ -2,6 +2,11 @@ package com.minegocio.backend.controladores;
 
 import com.minegocio.backend.dto.MovimientoDiaDTO;
 import com.minegocio.backend.servicios.MovimientoDiaService;
+import com.minegocio.backend.repositorios.RemitoIngresoRepository;
+import com.minegocio.backend.repositorios.DetalleRemitoIngresoRepository;
+import com.minegocio.backend.repositorios.RoturaPerdidaRepository;
+import com.minegocio.backend.repositorios.PlanillaDevolucionRepository;
+import com.minegocio.backend.repositorios.PlanillaPedidoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +14,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import java.util.Map;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/movimientos-dia")
@@ -17,6 +24,21 @@ public class MovimientoDiaController {
     
     @Autowired
     private MovimientoDiaService movimientoDiaService;
+    
+    @Autowired
+    private RemitoIngresoRepository remitoIngresoRepository;
+    
+    @Autowired
+    private DetalleRemitoIngresoRepository detalleRemitoIngresoRepository;
+    
+    @Autowired
+    private RoturaPerdidaRepository roturaPerdidaRepository;
+    
+    @Autowired
+    private PlanillaDevolucionRepository planillaDevolucionRepository;
+    
+    @Autowired
+    private PlanillaPedidoRepository planillaPedidoRepository;
     
     /**
      * Obtener movimientos del día para una fecha específica
@@ -291,6 +313,113 @@ public class MovimientoDiaController {
             System.err.println("❌ [DEBUG] Error al obtener información de debug: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * DEBUG: Verificar registros en base de datos para una fecha específica
+     * ENDPOINT PÚBLICO - No requiere autenticación
+     */
+    @GetMapping("/debug-registros/{fecha}")
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<Map<String, Object>> debugRegistrosFecha(@PathVariable String fecha) {
+        try {
+            System.out.println("🔍 [DEBUG-REGISTROS] Verificando registros para fecha: " + fecha);
+            Map<String, Object> debug = movimientoDiaService.debugRegistrosFecha(fecha);
+            return ResponseEntity.ok(debug);
+        } catch (Exception e) {
+            System.err.println("❌ [DEBUG-REGISTROS] Error al verificar registros: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * DEBUG SIMPLE: Solo contar registros sin autenticación
+     */
+    @GetMapping("/debug-simple/{fecha}")
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<String> debugSimple(@PathVariable String fecha) {
+        try {
+            System.out.println("🔍 [DEBUG-SIMPLE] Verificando registros para fecha: " + fecha);
+            
+            // Usar empresaId fijo para debug
+            Long empresaId = 1L;
+            LocalDate fechaLocal = LocalDate.parse(fecha, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            LocalDateTime fechaInicio = fechaLocal.atStartOfDay();
+            LocalDateTime fechaFin = fechaLocal.atTime(23, 59, 59, 999999999);
+            
+            // Contar registros usando métodos que existen
+            long ingresos = remitoIngresoRepository.findByRangoFechasAndEmpresaId(fechaInicio, fechaFin, empresaId).size();
+            long roturas = roturaPerdidaRepository.findByEmpresaIdAndFechaBetweenOrderByFechaCreacionDesc(empresaId, fechaInicio, fechaFin).size();
+            long devoluciones = planillaDevolucionRepository.findByEmpresaIdAndFechaPlanillaBetweenOrderByFechaCreacionDesc(empresaId, fechaInicio, fechaFin).size();
+            long salidas = planillaPedidoRepository.findByEmpresaIdAndFechaPlanillaBetweenOrderByFechaCreacionDesc(empresaId, fechaInicio, fechaFin).size();
+            
+            String resultado = String.format(
+                "FECHA: %s | EMPRESA: %d | INGRESOS: %d | ROTURAS: %d | DEVOLUCIONES: %d | SALIDAS: %d",
+                fecha, empresaId, ingresos, roturas, devoluciones, salidas
+            );
+            
+            System.out.println("📊 [DEBUG-SIMPLE] " + resultado);
+            return ResponseEntity.ok(resultado);
+            
+        } catch (Exception e) {
+            System.err.println("❌ [DEBUG-SIMPLE] Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok("ERROR: " + e.getMessage());
+        }
+    }
+
+    /**
+     * DEBUG: Verificar productos antes y después de eliminar un remito
+     */
+    @GetMapping("/debug-productos-antes-eliminar/{remitoId}")
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<String> debugProductosAntesEliminar(@PathVariable Long remitoId) {
+        try {
+            System.out.println("🔍 [DEBUG-PRODUCTOS] Verificando productos del remito: " + remitoId);
+            
+            // Usar empresaId fijo para debug
+            Long empresaId = 1L;
+            
+            // Buscar el remito
+            var remito = remitoIngresoRepository.findById(remitoId);
+            if (!remito.isPresent()) {
+                return ResponseEntity.ok("ERROR: Remito no encontrado");
+            }
+            
+            // Obtener detalles
+            var detalles = detalleRemitoIngresoRepository.findByRemitoIngresoIdOrderByFechaCreacionAsc(remitoId);
+            
+            StringBuilder resultado = new StringBuilder();
+            resultado.append("REMITO ID: ").append(remitoId).append("\n");
+            resultado.append("FECHA: ").append(remito.get().getFechaRemito()).append("\n");
+            resultado.append("PRODUCTOS:\n");
+            
+            for (var detalle : detalles) {
+                if (detalle.getProducto() != null) {
+                    var producto = detalle.getProducto();
+                    boolean esProductoNuevo = producto.getStock().equals(detalle.getCantidad()) && 
+                                           producto.getFechaCreacion().toLocalDate().equals(remito.get().getFechaRemito().toLocalDate());
+                    
+                    resultado.append(String.format(
+                        "  - ID: %d | Nombre: %s | Stock: %d | Cantidad Detalle: %d | Es Nuevo: %s\n",
+                        producto.getId(),
+                        producto.getNombre(),
+                        producto.getStock(),
+                        detalle.getCantidad(),
+                        esProductoNuevo ? "SÍ" : "NO"
+                    ));
+                }
+            }
+            
+            System.out.println("📊 [DEBUG-PRODUCTOS] " + resultado.toString());
+            return ResponseEntity.ok(resultado.toString());
+            
+        } catch (Exception e) {
+            System.err.println("❌ [DEBUG-PRODUCTOS] Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok("ERROR: " + e.getMessage());
         }
     }
 

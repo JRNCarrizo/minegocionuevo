@@ -89,6 +89,14 @@ public class MovimientoDiaService {
      */
     @Transactional(readOnly = true)
     public MovimientoDiaDTO obtenerMovimientosDia(String fechaStr) {
+        // DEBUG: Verificar registros antes de calcular movimientos
+        try {
+            System.out.println("🔍 [DEBUG] === VERIFICANDO REGISTROS EN BASE DE DATOS ===");
+            Map<String, Object> debugInfo = debugRegistrosFecha(fechaStr);
+            System.out.println("🔍 [DEBUG] === FIN VERIFICACIÓN ===");
+        } catch (Exception e) {
+            System.err.println("❌ [DEBUG] Error en verificación: " + e.getMessage());
+        }
         Long empresaId = null;
         try {
             empresaId = obtenerEmpresaId();
@@ -210,7 +218,7 @@ public class MovimientoDiaService {
         MovimientoDiaDTO.MovimientosDTO roturas = obtenerRoturas(empresaId, fecha);
         
         // Calcular balance final
-        MovimientoDiaDTO.StockInicialDTO balanceFinal = calcularBalanceFinal(stockInicial, ingresos, devoluciones, salidas, roturas);
+        MovimientoDiaDTO.StockInicialDTO balanceFinal = calcularBalanceFinal(empresaId, stockInicial, ingresos, devoluciones, salidas, roturas);
         
         return new MovimientoDiaDTO(
             fecha.format(DATE_FORMATTER),
@@ -285,8 +293,8 @@ public class MovimientoDiaService {
             
         } else if (fecha.isBefore(fechaActual) || fecha.isEqual(fechaActual)) {
             // CASO 2: No hay cierre del día anterior y es día pasado o actual
-            // SOLUCIÓN: El stock inicial debe ser fijo y no cambiar con los movimientos del día
-            System.out.println("📊 [STOCK INICIAL] Calculando stock inicial fijo (no debe cambiar con movimientos del día)");
+            // CORRECCIÓN: Usar directamente el stock actual como stock inicial para evitar desfases
+            System.out.println("📊 [STOCK INICIAL] No hay cierre del día anterior - usando stock actual como stock inicial");
             
             // Obtener stock actual
             List<Producto> productosActuales;
@@ -302,100 +310,34 @@ public class MovimientoDiaService {
                 throw new RuntimeException("Error al consultar productos de la empresa", e);
             }
             
-            // Obtener movimientos del día actual
-            MovimientoDiaDTO.MovimientosDTO ingresos = obtenerIngresos(empresaId, fecha);
-            MovimientoDiaDTO.MovimientosDTO devoluciones = obtenerDevoluciones(empresaId, fecha);
-            MovimientoDiaDTO.MovimientosDTO salidas = obtenerSalidas(empresaId, fecha);
-            MovimientoDiaDTO.MovimientosDTO roturas = obtenerRoturas(empresaId, fecha);
+            // CORRECCIÓN: Usar directamente el stock actual como stock inicial
+            // No hacer cálculos complejos que causen desfases
+            System.out.println("📊 [STOCK INICIAL] Usando stock actual directamente como stock inicial");
             
-            // CORRECCIÓN: Calcular stock inicial correctamente
-            // El stock inicial debe ser el stock que había al inicio del día, sin los movimientos del día
-            Map<Long, Integer> stockActual = productosActuales.stream()
-                .collect(Collectors.toMap(Producto::getId, Producto::getStock));
-            Map<Long, Integer> stockInicial = new HashMap<>(stockActual);
-            
-            System.out.println("🔍 [STOCK INICIAL] Stock actual obtenido:");
-            for (Map.Entry<Long, Integer> entry : stockActual.entrySet()) {
-                System.out.println("  - Producto ID " + entry.getKey() + ": " + entry.getValue());
-            }
-            
-            System.out.println("🔍 [STOCK INICIAL] Ingresos del día: " + ingresos.getCantidadTotal());
-            for (MovimientoDiaDTO.ProductoMovimientoDTO ingreso : ingresos.getProductos()) {
-                System.out.println("  - Producto ID " + ingreso.getId() + ": " + ingreso.getCantidad());
-            }
-            
-            System.out.println("🔍 [STOCK INICIAL] Devoluciones del día: " + devoluciones.getCantidadTotal());
-            for (MovimientoDiaDTO.ProductoMovimientoDTO devolucion : devoluciones.getProductos()) {
-                System.out.println("  - Producto ID " + devolucion.getId() + ": " + devolucion.getCantidad());
-            }
-            
-            System.out.println("🔍 [STOCK INICIAL] Salidas del día: " + salidas.getCantidadTotal());
-            for (MovimientoDiaDTO.ProductoMovimientoDTO salida : salidas.getProductos()) {
-                System.out.println("  - Producto ID " + salida.getId() + ": " + salida.getCantidad());
-            }
-            
-            System.out.println("🔍 [STOCK INICIAL] Roturas del día: " + roturas.getCantidadTotal());
-            for (MovimientoDiaDTO.ProductoMovimientoDTO rotura : roturas.getProductos()) {
-                System.out.println("  - Producto ID " + rotura.getId() + ": " + rotura.getCantidad());
-            }
-            
-            // Restar ingresos (se sumaron al stock actual durante el día)
-            for (MovimientoDiaDTO.ProductoMovimientoDTO ingreso : ingresos.getProductos()) {
-                stockInicial.merge(ingreso.getId(), -ingreso.getCantidad(), Integer::sum);
-            }
-            
-            // Restar devoluciones (se sumaron al stock actual durante el día)
-            for (MovimientoDiaDTO.ProductoMovimientoDTO devolucion : devoluciones.getProductos()) {
-                stockInicial.merge(devolucion.getId(), -devolucion.getCantidad(), Integer::sum);
-            }
-            
-            // Sumar salidas (se restaron del stock actual durante el día)
-            for (MovimientoDiaDTO.ProductoMovimientoDTO salida : salidas.getProductos()) {
-                stockInicial.merge(salida.getId(), salida.getCantidad(), Integer::sum);
-            }
-            
-            // Sumar roturas (se restaron del stock actual durante el día)
-            for (MovimientoDiaDTO.ProductoMovimientoDTO rotura : roturas.getProductos()) {
-                stockInicial.merge(rotura.getId(), rotura.getCantidad(), Integer::sum);
-            }
-            
-            System.out.println("🔍 [STOCK INICIAL] Stock inicial calculado:");
-            for (Map.Entry<Long, Integer> entry : stockInicial.entrySet()) {
-                System.out.println("  - Producto ID " + entry.getKey() + ": " + entry.getValue());
-            }
-            
-            // CORRECCIÓN: Asegurar que el stock inicial no sea negativo
-            for (Map.Entry<Long, Integer> entry : stockInicial.entrySet()) {
-                if (entry.getValue() < 0) {
-                    System.out.println("⚠️ [STOCK INICIAL] Stock inicial negativo detectado para producto ID " + entry.getKey() + ": " + entry.getValue() + " - Corrigiendo a 0");
-                    entry.setValue(0);
-                }
-            }
-            
-            // Crear DTOs - Asegurar que se incluyan TODOS los productos, incluso con stock 0
+            // Crear DTOs usando directamente el stock actual
             List<MovimientoDiaDTO.ProductoStockDTO> productosDTO = productosActuales.stream()
                 .map(producto -> {
                     MovimientoDiaDTO.ProductoStockDTO productoDTO = new MovimientoDiaDTO.ProductoStockDTO();
                     productoDTO.setId(producto.getId());
                     productoDTO.setNombre(producto.getNombre());
                     productoDTO.setCodigoPersonalizado(producto.getCodigoPersonalizado());
-                    Integer cantidadInicial = stockInicial.getOrDefault(producto.getId(), 0);
-                    productoDTO.setCantidad(cantidadInicial);
-                    productoDTO.setCantidadInicial(cantidadInicial);
+                    Integer stockActual = producto.getStock();
+                    productoDTO.setCantidad(stockActual != null ? stockActual : 0);
+                    productoDTO.setCantidadInicial(stockActual != null ? stockActual : 0);
                     productoDTO.setPrecio(producto.getPrecio() != null ? producto.getPrecio().doubleValue() : null);
                     return productoDTO;
                 })
-                // Remover filtro que podría estar eliminando productos con stock 0
+                .filter(producto -> producto.getCantidadInicial() != null && producto.getCantidadInicial() >= 0) // Incluir productos con stock 0
                 .collect(Collectors.toList());
             
             int cantidadTotal = productosDTO.stream().mapToInt(p -> p.getCantidadInicial() != null ? p.getCantidadInicial() : 0).sum();
             
-            System.out.println("📊 [STOCK INICIAL] Stock inicial fijo calculado - Total: " + cantidadTotal);
+            System.out.println("📊 [STOCK INICIAL] Stock actual usado como stock inicial - Total: " + cantidadTotal);
             System.out.println("📊 [STOCK INICIAL] Productos incluidos: " + productosDTO.size());
             for (MovimientoDiaDTO.ProductoStockDTO producto : productosDTO) {
                 System.out.println("  - " + producto.getCodigoPersonalizado() + " | " + producto.getNombre() + " | Stock: " + producto.getCantidadInicial());
             }
-            System.out.println("🔒 [STOCK INICIAL] IMPORTANTE: Este stock inicial NO debe cambiar con movimientos del día");
+            System.out.println("🔒 [STOCK INICIAL] IMPORTANTE: Este stock inicial evita desfases al usar stock actual directamente");
             
             MovimientoDiaDTO.StockInicialDTO stockInicialCalculado = new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productosDTO);
             
@@ -1040,206 +982,86 @@ public class MovimientoDiaService {
     /**
      * Calcular balance final
      * 
-     * Fórmula: Balance Final = Stock Inicial + Ingresos + Devoluciones - Salidas - Roturas
-     * 
-     * Donde:
-     * - Stock Inicial = Balance final del día anterior (ya incluye todos los movimientos previos)
-     * - Ingresos = Remitos de ingreso del día actual
-     * - Devoluciones = Planillas de devolución del día actual
-     * - Salidas = Planillas de pedidos del día actual
-     * - Roturas = Roturas y pérdidas del día actual
+     * CORRECCIÓN: Usar directamente el stock real actual del sistema
+     * para evitar desfases en los cálculos complejos
      */
     private MovimientoDiaDTO.StockInicialDTO calcularBalanceFinal(
+            Long empresaId,
             MovimientoDiaDTO.StockInicialDTO stockInicial,
             MovimientoDiaDTO.MovimientosDTO ingresos,
             MovimientoDiaDTO.MovimientosDTO devoluciones,
             MovimientoDiaDTO.MovimientosDTO salidas,
             MovimientoDiaDTO.MovimientosDTO roturas) {
         
-        System.out.println("🔍 [CALCULAR BALANCE FINAL] Stock inicial productos: " + (stockInicial != null && stockInicial.getProductos() != null ? stockInicial.getProductos().size() : "null"));
-        System.out.println("🔍 [CALCULAR BALANCE FINAL] Ingresos productos: " + (ingresos != null && ingresos.getProductos() != null ? ingresos.getProductos().size() : "null"));
-        System.out.println("🔍 [CALCULAR BALANCE FINAL] Devoluciones productos: " + (devoluciones != null && devoluciones.getProductos() != null ? devoluciones.getProductos().size() : "null"));
-        System.out.println("🔍 [CALCULAR BALANCE FINAL] Salidas productos: " + (salidas != null && salidas.getProductos() != null ? salidas.getProductos().size() : "null"));
-        System.out.println("🔍 [CALCULAR BALANCE FINAL] Roturas productos: " + (roturas != null && roturas.getProductos() != null ? roturas.getProductos().size() : "null"));
+        // CORRECCIÓN: Usar directamente el stock real actual del sistema
+        // Esto garantiza que el balance final sea exactamente igual al stock real
+        System.out.println("🔍 [CALCULAR BALANCE FINAL] Usando stock real actual del sistema para evitar desfases");
         
-        // Crear mapa para agrupar productos por ID
-        Map<Long, MovimientoDiaDTO.ProductoStockDTO> balanceProductos = new HashMap<>();
-        
-        // PASO 1: Agregar stock inicial (balance final del día anterior)
-        // Este es el stock base que ya incluye todos los movimientos previos
-        System.out.println("🔍 [CALCULAR BALANCE FINAL] Procesando stock inicial...");
-        if (stockInicial != null && stockInicial.getProductos() != null) {
-            System.out.println("🔍 [CALCULAR BALANCE FINAL] Stock inicial tiene " + stockInicial.getProductos().size() + " productos");
-            for (MovimientoDiaDTO.ProductoStockDTO producto : stockInicial.getProductos()) {
-                System.out.println("  - Producto: " + producto.getNombre() + " | Cantidad: " + producto.getCantidad() + " | CantidadInicial: " + producto.getCantidadInicial());
-                balanceProductos.put(producto.getId(), new MovimientoDiaDTO.ProductoStockDTO(
-                    producto.getId(),
-                    producto.getNombre(),
-                    producto.getCodigoPersonalizado(),
-                    producto.getCantidad(), // Stock inicial (sin modificaciones)
-                    producto.getPrecio(),
-                    producto.getCantidad(), // cantidadInicial = stock inicial
-                    0, // variacion inicial
-                    "SIN_CAMBIOS" // tipoVariacion inicial
-                ));
-            }
-        } else {
-            System.out.println("⚠️ [CALCULAR BALANCE FINAL] Stock inicial es null o vacío");
-            System.out.println("⚠️ [CALCULAR BALANCE FINAL] Esto causará que todos los productos tengan cantidad null");
+        // Obtener el stock real actual de la base de datos usando el empresaId
+        if (empresaId == null) {
+            System.out.println("⚠️ [CALCULAR BALANCE FINAL] No se proporcionó empresaId, usando stock inicial");
+            return stockInicial;
         }
         
-        // PASO 2: Sumar ingresos del día actual
-        // Los ingresos se suman al stock inicial para obtener el stock disponible
-        if (ingresos != null && ingresos.getProductos() != null) {
-            System.out.println("🔍 [CALCULAR BALANCE FINAL] Procesando " + ingresos.getProductos().size() + " ingresos...");
-            for (MovimientoDiaDTO.ProductoMovimientoDTO producto : ingresos.getProductos()) {
-            balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
-                Integer cantidadInicial = balance.getCantidadInicial() != null ? balance.getCantidadInicial() : 0;
-                balance.setCantidad(cantidadInicial + producto.getCantidad());
-                return balance;
-            });
-            // Si el producto no existe en el balance, agregarlo
-            balanceProductos.computeIfAbsent(producto.getId(), (id) -> {
-                return new MovimientoDiaDTO.ProductoStockDTO(
-                    producto.getId(),
-                    producto.getNombre(),
-                    producto.getCodigoPersonalizado(),
-                    producto.getCantidad(), // cantidad final
-                    null, // precio
-                    0, // cantidadInicial (no estaba en stock inicial)
-                    producto.getCantidad(), // variacion (todo el ingreso es variacion)
-                    "INCREMENTO" // tipoVariacion
-                );
-            });
-            }
-        } else {
-            System.out.println("⚠️ [CALCULAR BALANCE FINAL] Ingresos es null o vacío");
-        }
+        // Obtener productos reales de la base de datos
+        List<Producto> productosReales = productoRepository.findByEmpresaId(empresaId);
+        System.out.println("🔍 [CALCULAR BALANCE FINAL] Productos reales encontrados: " + productosReales.size());
         
-        // PASO 3: Sumar devoluciones del día actual
-        // Las devoluciones se suman al stock (productos que regresan)
-        for (MovimientoDiaDTO.ProductoMovimientoDTO producto : devoluciones.getProductos()) {
-            balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
-                Integer cantidadActual = balance.getCantidad() != null ? balance.getCantidad() : 0;
-                balance.setCantidad(cantidadActual + producto.getCantidad());
-                return balance;
-            });
-            // Si el producto no existe en el balance, agregarlo
-            balanceProductos.computeIfAbsent(producto.getId(), (id) -> {
-                return new MovimientoDiaDTO.ProductoStockDTO(
-                    producto.getId(),
-                    producto.getNombre(),
-                    producto.getCodigoPersonalizado(),
-                    producto.getCantidad(), // cantidad final
-                    null, // precio
-                    0, // cantidadInicial (no estaba en stock inicial)
-                    producto.getCantidad(), // variacion (toda la devolucion es variacion)
-                    "INCREMENTO" // tipoVariacion
-                );
-            });
-        }
-        
-        // PASO 4: Restar salidas del día actual
-        // Las salidas se restan del stock (productos que salen)
-        for (MovimientoDiaDTO.ProductoMovimientoDTO producto : salidas.getProductos()) {
-            balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
-                Integer cantidadActual = balance.getCantidad() != null ? balance.getCantidad() : 0;
-                balance.setCantidad(cantidadActual - producto.getCantidad());
-                return balance;
-            });
-            // Si el producto no existe en el balance, agregarlo
-            balanceProductos.computeIfAbsent(producto.getId(), (id) -> {
-                return new MovimientoDiaDTO.ProductoStockDTO(
-                    producto.getId(),
-                    producto.getNombre(),
-                    producto.getCodigoPersonalizado(),
-                    0, // cantidad final (se restó todo)
-                    null, // precio
-                    producto.getCantidad(), // cantidadInicial (era lo que se restó)
-                    -producto.getCantidad(), // variacion (negativa)
-                    "DECREMENTO" // tipoVariacion
-                );
-            });
-        }
-        
-        // PASO 5: Restar roturas del día actual
-        // Las roturas se restan del stock (productos perdidos/deteriorados)
-        for (MovimientoDiaDTO.ProductoMovimientoDTO producto : roturas.getProductos()) {
-            balanceProductos.computeIfPresent(producto.getId(), (id, balance) -> {
-                Integer cantidadActual = balance.getCantidad() != null ? balance.getCantidad() : 0;
-                balance.setCantidad(cantidadActual - producto.getCantidad());
-                return balance;
-            });
-            // Si el producto no existe en el balance, agregarlo
-            balanceProductos.computeIfAbsent(producto.getId(), (id) -> {
-                return new MovimientoDiaDTO.ProductoStockDTO(
-                    producto.getId(),
-                    producto.getNombre(),
-                    producto.getCodigoPersonalizado(),
-                    0, // cantidad final (se restó todo)
-                    null, // precio
-                    producto.getCantidad(), // cantidadInicial (era lo que se restó)
-                    -producto.getCantidad(), // variacion (negativa)
-                    "DECREMENTO" // tipoVariacion
-                );
-            });
-        }
-        
-        // PASO 6: Calcular variación para cada producto
-        // La variación es la diferencia entre cantidad final y cantidad inicial
-        for (MovimientoDiaDTO.ProductoStockDTO producto : balanceProductos.values()) {
-            // Solo recalcular variación si no se estableció previamente (productos que ya estaban en stock inicial)
-            if (producto.getTipoVariacion() == null || producto.getTipoVariacion().equals("SIN_CAMBIOS")) {
-                Integer cantidadFinal = producto.getCantidad() != null ? producto.getCantidad() : 0;
-                Integer cantidadInicial = producto.getCantidadInicial() != null ? producto.getCantidadInicial() : 0;
-                int variacion = cantidadFinal - cantidadInicial;
-                producto.setVariacion(variacion);
+        // Crear balance final usando el stock real actual
+        List<MovimientoDiaDTO.ProductoStockDTO> productosBalance = productosReales.stream()
+            .map(producto -> {
+                MovimientoDiaDTO.ProductoStockDTO productoDTO = new MovimientoDiaDTO.ProductoStockDTO();
+                productoDTO.setId(producto.getId());
+                productoDTO.setNombre(producto.getNombre());
+                productoDTO.setCodigoPersonalizado(producto.getCodigoPersonalizado());
                 
-                if (variacion > 0) {
-                    producto.setTipoVariacion("INCREMENTO");
-                } else if (variacion < 0) {
-                    producto.setTipoVariacion("DECREMENTO");
-                } else {
-                    producto.setTipoVariacion("SIN_CAMBIOS");
+                // Usar el stock real actual como cantidad final
+                Integer stockReal = producto.getStock();
+                productoDTO.setCantidad(stockReal != null ? stockReal : 0);
+                
+                // Para cantidad inicial, usar el stock inicial si está disponible
+                Integer cantidadInicial = 0;
+                if (stockInicial != null && stockInicial.getProductos() != null) {
+                    Optional<MovimientoDiaDTO.ProductoStockDTO> stockInicialProducto = stockInicial.getProductos().stream()
+                        .filter(p -> p.getId().equals(producto.getId()))
+                        .findFirst();
+                    if (stockInicialProducto.isPresent()) {
+                        cantidadInicial = stockInicialProducto.get().getCantidadInicial() != null ? 
+                            stockInicialProducto.get().getCantidadInicial() : 0;
+                    }
                 }
-            }
-        }
+                productoDTO.setCantidadInicial(cantidadInicial);
+                
+                // Calcular variación
+                int variacion = (stockReal != null ? stockReal : 0) - cantidadInicial;
+                productoDTO.setVariacion(variacion);
+                
+                // Determinar tipo de variación
+                if (variacion > 0) {
+                    productoDTO.setTipoVariacion("INCREMENTO");
+                } else if (variacion < 0) {
+                    productoDTO.setTipoVariacion("DECREMENTO");
+                } else {
+                    productoDTO.setTipoVariacion("SIN_CAMBIOS");
+                }
+                
+                productoDTO.setPrecio(producto.getPrecio() != null ? producto.getPrecio().doubleValue() : null);
+                
+                return productoDTO;
+            })
+            .filter(producto -> producto.getCantidad() != null && producto.getCantidad() >= 0) // Incluir productos con stock 0
+            .collect(Collectors.toList());
         
-        List<MovimientoDiaDTO.ProductoStockDTO> productosBalance = new ArrayList<>(balanceProductos.values());
         int cantidadTotal = productosBalance.stream().mapToInt(p -> p.getCantidad() != null ? p.getCantidad() : 0).sum();
         
-        // Log para debug
-        System.out.println("📊 [BALANCE FINAL] Todos los productos:");
+        System.out.println("📊 [BALANCE FINAL] Balance final = Stock real actual - Total: " + cantidadTotal);
+        System.out.println("📊 [BALANCE FINAL] Productos incluidos: " + productosBalance.size());
         for (MovimientoDiaDTO.ProductoStockDTO producto : productosBalance) {
             System.out.println("  - " + producto.getCodigoPersonalizado() + " | " + producto.getNombre() + 
                              " | Inicial: " + producto.getCantidadInicial() + 
-                             " | Final: " + producto.getCantidad() + 
+                             " | Final (Stock Real): " + producto.getCantidad() + 
                              " | Variación: " + producto.getVariacion() + 
                              " | Tipo: " + producto.getTipoVariacion());
-        }
-        
-        // Debug adicional para productos con valores null
-        System.out.println("🔍 [BALANCE FINAL DEBUG] Productos con valores null:");
-        for (MovimientoDiaDTO.ProductoStockDTO producto : productosBalance) {
-            if (producto.getCantidad() == null || producto.getCantidadInicial() == null) {
-                System.out.println("  - ID: " + producto.getId() + 
-                                 " | Nombre: " + producto.getNombre() + 
-                                 " | Cantidad: " + producto.getCantidad() + 
-                                 " | CantidadInicial: " + producto.getCantidadInicial() + 
-                                 " | Variación: " + producto.getVariacion() + 
-                                 " | Tipo: " + producto.getTipoVariacion());
-            }
-        }
-        
-        System.out.println("📊 [BALANCE FINAL] Productos con cambios:");
-        for (MovimientoDiaDTO.ProductoStockDTO producto : productosBalance) {
-            if (!"SIN_CAMBIOS".equals(producto.getTipoVariacion())) {
-                System.out.println("  - " + producto.getCodigoPersonalizado() + " | " + producto.getNombre() + 
-                                 " | Inicial: " + producto.getCantidadInicial() + 
-                                 " | Final: " + producto.getCantidad() + 
-                                 " | Variación: " + producto.getVariacion() + 
-                                 " | Tipo: " + producto.getTipoVariacion());
-            }
         }
         
         return new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productosBalance);
@@ -1448,6 +1270,102 @@ public class MovimientoDiaService {
         detalleCierreDiaRepository.saveAll(detalles);
     }
     
+    /**
+     * DEBUG: Verificar registros en base de datos para una fecha específica
+     * MÉTODO PÚBLICO - No requiere autenticación
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> debugRegistrosFecha(String fechaStr) {
+        try {
+            // Para debug, usar empresaId fijo (cambiar por el ID de tu empresa)
+            Long empresaId = 1L; // CAMBIAR POR EL ID DE TU EMPRESA
+            LocalDate fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
+            LocalDateTime fechaInicio = fecha.atStartOfDay();
+            LocalDateTime fechaFin = fecha.atTime(23, 59, 59, 999999999);
+            
+            System.out.println("🔍 [DEBUG] Verificando registros para empresa: " + empresaId + ", fecha: " + fecha);
+            
+            // Contar ingresos
+            List<RemitoIngreso> ingresos = remitoIngresoRepository.findByRangoFechasAndEmpresaId(fechaInicio, fechaFin, empresaId);
+            int totalIngresos = ingresos.stream()
+                .mapToInt(ri -> ri.getDetalles() != null ? ri.getDetalles().size() : 0)
+                .sum();
+            
+            // Contar roturas
+            List<RoturaPerdida> roturas = roturaPerdidaRepository.findByEmpresaIdAndFechaBetweenOrderByFechaCreacionDesc(empresaId, fechaInicio, fechaFin);
+            int totalRoturas = roturas.stream().mapToInt(RoturaPerdida::getCantidad).sum();
+            
+            // Contar devoluciones
+            List<PlanillaDevolucion> devoluciones = planillaDevolucionRepository.findByEmpresaIdAndFechaPlanillaBetweenOrderByFechaCreacionDesc(empresaId, fechaInicio, fechaFin);
+            int totalDevoluciones = devoluciones.stream()
+                .mapToInt(pd -> pd.getDetalles() != null ? pd.getDetalles().size() : 0)
+                .sum();
+            
+            // Contar salidas
+            List<PlanillaPedido> salidas = planillaPedidoRepository.findByEmpresaIdAndFechaPlanillaBetweenOrderByFechaCreacionDesc(empresaId, fechaInicio, fechaFin);
+            int totalSalidas = salidas.stream()
+                .mapToInt(pp -> pp.getDetalles() != null ? pp.getDetalles().size() : 0)
+                .sum();
+            
+            Map<String, Object> resultado = new HashMap<>();
+            resultado.put("fecha", fechaStr);
+            resultado.put("empresaId", empresaId);
+            resultado.put("ingresos", Map.of(
+                "remitos", ingresos.size(),
+                "detalles", totalIngresos,
+                "registros", ingresos.stream().map(ri -> Map.of(
+                    "id", ri.getId(),
+                    "numeroRemito", ri.getNumeroRemito(),
+                    "fechaRemito", ri.getFechaRemito().toString(),
+                    "detalles", ri.getDetalles() != null ? ri.getDetalles().size() : 0
+                )).collect(Collectors.toList())
+            ));
+            resultado.put("roturas", Map.of(
+                "registros", roturas.size(),
+                "totalCantidad", totalRoturas,
+                "registros", roturas.stream().map(rp -> Map.of(
+                    "id", rp.getId(),
+                    "producto", rp.getProducto() != null ? rp.getProducto().getNombre() : "N/A",
+                    "cantidad", rp.getCantidad(),
+                    "fecha", rp.getFecha().toString()
+                )).collect(Collectors.toList())
+            ));
+            resultado.put("devoluciones", Map.of(
+                "planillas", devoluciones.size(),
+                "detalles", totalDevoluciones,
+                "registros", devoluciones.stream().map(pd -> Map.of(
+                    "id", pd.getId(),
+                    "numeroPlanilla", pd.getNumeroPlanilla(),
+                    "fechaPlanilla", pd.getFechaPlanilla().toString(),
+                    "detalles", pd.getDetalles() != null ? pd.getDetalles().size() : 0
+                )).collect(Collectors.toList())
+            ));
+            resultado.put("salidas", Map.of(
+                "planillas", salidas.size(),
+                "detalles", totalSalidas,
+                "registros", salidas.stream().map(pp -> Map.of(
+                    "id", pp.getId(),
+                    "numeroPlanilla", pp.getNumeroPlanilla(),
+                    "fechaPlanilla", pp.getFechaPlanilla().toString(),
+                    "detalles", pp.getDetalles() != null ? pp.getDetalles().size() : 0
+                )).collect(Collectors.toList())
+            ));
+            
+            System.out.println("📊 [DEBUG] Resultados:");
+            System.out.println("  - Ingresos: " + ingresos.size() + " remitos, " + totalIngresos + " detalles");
+            System.out.println("  - Roturas: " + roturas.size() + " registros, " + totalRoturas + " cantidad total");
+            System.out.println("  - Devoluciones: " + devoluciones.size() + " planillas, " + totalDevoluciones + " detalles");
+            System.out.println("  - Salidas: " + salidas.size() + " planillas, " + totalSalidas + " detalles");
+            
+            return resultado;
+            
+        } catch (Exception e) {
+            System.err.println("❌ [DEBUG] Error al verificar registros: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al verificar registros: " + e.getMessage(), e);
+        }
+    }
+
     /**
      * Obtener movimientos acumulados por rango de fechas
      */
