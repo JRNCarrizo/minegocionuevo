@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -214,17 +215,32 @@ public class RemitoIngresoService {
                         Integer stockAnterior = productoActualizado.getStock();
                         Integer nuevoStock = stockAnterior + detalleDTO.getCantidad();
                         
+                        System.out.println("📥 INGRESO - Producto: " + productoActualizado.getNombre());
+                        System.out.println("📥 INGRESO - Stock anterior: " + stockAnterior);
+                        System.out.println("📥 INGRESO - Cantidad a sumar: " + detalleDTO.getCantidad());
+                        System.out.println("📥 INGRESO - Nuevo stock calculado: " + nuevoStock);
+                        
                         // Usar el sistema de sincronización para distribuir el stock según el sector asignado
                         productoActualizado.setStock(nuevoStock);
                         productoRepository.save(productoActualizado);
                         
+                        System.out.println("📥 INGRESO - Stock guardado en BD: " + productoActualizado.getStock());
+                        
                         // Sincronizar con sectores para distribuir el stock correctamente
-                        stockSincronizacionService.sincronizarStockConSectores(
+                        Map<String, Object> resultadoSincronizacion = stockSincronizacionService.sincronizarStockConSectores(
                             remitoDTO.getEmpresaId(),
                             productoActualizado.getId(),
                             nuevoStock,
                             "Ingreso de mercadería - Remito: " + remitoDTO.getNumeroRemito()
                         );
+                        
+                        System.out.println("📥 INGRESO - Resultado sincronización: " + resultadoSincronizacion);
+                        
+                        // Verificar stock final después de sincronización
+                        Producto productoVerificacion = productoRepository.findById(productoActualizado.getId()).orElse(null);
+                        if (productoVerificacion != null) {
+                            System.out.println("📥 INGRESO - Stock final después de sincronización: " + productoVerificacion.getStock());
+                        }
                         
                         System.out.println("✅ INGRESO - Stock actualizado y sincronizado: " + stockAnterior + " + " + detalleDTO.getCantidad() + " = " + nuevoStock);
                     } else {
@@ -298,17 +314,32 @@ public class RemitoIngresoService {
                                 ". Posible causa: El stock fue modificado después de crear el remito.");
                         }
                         
+                        System.out.println("🗑️ ELIMINACIÓN - Producto: " + producto.getNombre());
+                        System.out.println("🗑️ ELIMINACIÓN - Stock anterior: " + stockAnterior);
+                        System.out.println("🗑️ ELIMINACIÓN - Cantidad a restar: " + detalle.getCantidad());
+                        System.out.println("🗑️ ELIMINACIÓN - Nuevo stock calculado: " + nuevoStock);
+                        
                         // Restar del stock y sincronizar
                         producto.setStock(nuevoStock);
                         productoRepository.save(producto);
                         
+                        System.out.println("🗑️ ELIMINACIÓN - Stock guardado en BD: " + producto.getStock());
+                        
                         // Sincronizar con sectores
-                        stockSincronizacionService.sincronizarStockConSectores(
+                        Map<String, Object> resultadoSincronizacion = stockSincronizacionService.sincronizarStockConSectores(
                             empresaId,
                             producto.getId(),
                             nuevoStock,
                             "Eliminación de remito de ingreso"
                         );
+                        
+                        System.out.println("🗑️ ELIMINACIÓN - Resultado sincronización: " + resultadoSincronizacion);
+                        
+                        // Verificar stock final después de sincronización
+                        Producto productoVerificacion = productoRepository.findById(producto.getId()).orElse(null);
+                        if (productoVerificacion != null) {
+                            System.out.println("🗑️ ELIMINACIÓN - Stock final después de sincronización: " + productoVerificacion.getStock());
+                        }
                         
                         System.out.println("✅ ELIMINACIÓN REMITO - Stock restaurado: " + stockAnterior + " - " + detalle.getCantidad() + " = " + nuevoStock + " (Producto: " + producto.getNombre() + ")");
                     }

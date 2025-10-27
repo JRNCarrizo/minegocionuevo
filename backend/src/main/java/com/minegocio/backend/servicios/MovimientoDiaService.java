@@ -104,6 +104,27 @@ public class MovimientoDiaService {
             LocalDate fechaActual = LocalDate.now();
             
             System.out.println("🔍 [MOVIMIENTOS] Obteniendo movimientos para empresa: " + empresaId + ", fecha: " + fecha);
+            System.out.println("🔍 [MOVIMIENTOS] EmpresaId obtenido: " + empresaId);
+            
+            // Verificar si la empresa existe y tiene productos
+            if (empresaId == null) {
+                System.err.println("❌ [MOVIMIENTOS] ERROR: empresaId es NULL - No se pudo obtener la empresa del usuario");
+                throw new RuntimeException("No se pudo obtener la empresa del usuario");
+            }
+            
+            // Verificar productos en la empresa
+            List<Producto> productosEmpresa = productoRepository.findByEmpresaId(empresaId);
+            System.out.println("🔍 [MOVIMIENTOS] Productos encontrados en empresa " + empresaId + ": " + productosEmpresa.size());
+            if (productosEmpresa.isEmpty()) {
+                System.out.println("⚠️ [MOVIMIENTOS] ADVERTENCIA: No hay productos en la empresa " + empresaId);
+            } else {
+                System.out.println("✅ [MOVIMIENTOS] Empresa tiene productos, continuando con el cálculo");
+                // Mostrar algunos productos como ejemplo
+                for (int i = 0; i < Math.min(3, productosEmpresa.size()); i++) {
+                    Producto p = productosEmpresa.get(i);
+                    System.out.println("  - Producto " + (i+1) + ": " + p.getId() + " | " + p.getNombre() + " | Stock: " + p.getStock());
+                }
+            }
             
             // Si es un día nuevo (después de medianoche), cerrar automáticamente el día anterior
             if (fecha.isAfter(fechaActual.minusDays(1))) {
@@ -302,7 +323,16 @@ public class MovimientoDiaService {
                 productosActuales = productoRepository.findByEmpresaId(empresaId);
                 System.out.println("🔍 [STOCK INICIAL] Productos encontrados en la empresa: " + productosActuales.size());
                 if (productosActuales.isEmpty()) {
-                    System.out.println("⚠️ [STOCK INICIAL] NO HAY PRODUCTOS EN LA EMPRESA - Esto causará que no se muestren las cards");
+                    System.out.println("⚠️ [STOCK INICIAL] NO HAY PRODUCTOS EN LA EMPRESA - Devolviendo datos vacíos para mostrar las cards");
+                    // Devolver datos vacíos pero válidos para que se muestren las cards
+                    List<MovimientoDiaDTO.ProductoStockDTO> productosVacios = new ArrayList<>();
+                    MovimientoDiaDTO.StockInicialDTO stockInicialVacio = new MovimientoDiaDTO.StockInicialDTO(0, productosVacios);
+                    
+                    // Guardar en cache
+                    stockInicialCache.put(cacheKey, stockInicialVacio);
+                    System.out.println("💾 [STOCK INICIAL] Stock inicial vacío guardado en cache para: " + fecha);
+                    
+                    return stockInicialVacio;
                 }
             } catch (Exception e) {
                 System.err.println("❌ [STOCK INICIAL] Error al consultar productos: " + e.getMessage());
@@ -352,6 +382,20 @@ public class MovimientoDiaService {
             System.out.println("📊 [STOCK INICIAL] Día futuro - usando stock actual");
             
             List<Producto> productos = productoRepository.findByEmpresaId(empresaId);
+            
+            if (productos.isEmpty()) {
+                System.out.println("⚠️ [STOCK INICIAL] NO HAY PRODUCTOS EN LA EMPRESA (día futuro) - Devolviendo datos vacíos para mostrar las cards");
+                // Devolver datos vacíos pero válidos para que se muestren las cards
+                List<MovimientoDiaDTO.ProductoStockDTO> productosVacios = new ArrayList<>();
+                MovimientoDiaDTO.StockInicialDTO stockInicialVacio = new MovimientoDiaDTO.StockInicialDTO(0, productosVacios);
+                
+                // Guardar en cache
+                stockInicialCache.put(cacheKey, stockInicialVacio);
+                System.out.println("💾 [STOCK INICIAL] Stock inicial vacío guardado en cache para: " + fecha);
+                
+                return stockInicialVacio;
+            }
+            
             List<MovimientoDiaDTO.ProductoStockDTO> productosDTO = productos.stream()
                 .map(producto -> {
                     MovimientoDiaDTO.ProductoStockDTO productoDTO = new MovimientoDiaDTO.ProductoStockDTO();
@@ -1057,11 +1101,11 @@ public class MovimientoDiaService {
         System.out.println("📊 [BALANCE FINAL] Balance final = Stock real actual - Total: " + cantidadTotal);
         System.out.println("📊 [BALANCE FINAL] Productos incluidos: " + productosBalance.size());
         for (MovimientoDiaDTO.ProductoStockDTO producto : productosBalance) {
-            System.out.println("  - " + producto.getCodigoPersonalizado() + " | " + producto.getNombre() + 
-                             " | Inicial: " + producto.getCantidadInicial() + 
+                System.out.println("  - " + producto.getCodigoPersonalizado() + " | " + producto.getNombre() + 
+                                 " | Inicial: " + producto.getCantidadInicial() + 
                              " | Final (Stock Real): " + producto.getCantidad() + 
-                             " | Variación: " + producto.getVariacion() + 
-                             " | Tipo: " + producto.getTipoVariacion());
+                                 " | Variación: " + producto.getVariacion() + 
+                                 " | Tipo: " + producto.getTipoVariacion());
         }
         
         return new MovimientoDiaDTO.StockInicialDTO(cantidadTotal, productosBalance);
@@ -1365,7 +1409,7 @@ public class MovimientoDiaService {
             throw new RuntimeException("Error al verificar registros: " + e.getMessage(), e);
         }
     }
-
+    
     /**
      * Obtener movimientos acumulados por rango de fechas
      */
@@ -4345,12 +4389,35 @@ public class MovimientoDiaService {
     }
 
     private Long obtenerEmpresaId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UsuarioPrincipal) {
-            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
-            return usuarioPrincipal.getEmpresaId();
+        try {
+            System.out.println("🔍 [EMPRESA ID] Obteniendo empresa ID...");
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            System.out.println("🔍 [EMPRESA ID] Authentication: " + (authentication != null ? "NO NULL" : "NULL"));
+            
+            if (authentication != null) {
+                System.out.println("🔍 [EMPRESA ID] Principal: " + (authentication.getPrincipal() != null ? authentication.getPrincipal().getClass().getSimpleName() : "NULL"));
+                System.out.println("🔍 [EMPRESA ID] Es UsuarioPrincipal: " + (authentication.getPrincipal() instanceof UsuarioPrincipal));
+                
+                if (authentication.getPrincipal() instanceof UsuarioPrincipal) {
+                    UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+                    Long empresaId = usuarioPrincipal.getEmpresaId();
+                    System.out.println("✅ [EMPRESA ID] Empresa ID obtenido: " + empresaId);
+                    return empresaId;
+                } else {
+                    System.err.println("❌ [EMPRESA ID] Principal no es UsuarioPrincipal: " + authentication.getPrincipal().getClass().getName());
+                }
+            } else {
+                System.err.println("❌ [EMPRESA ID] Authentication es NULL");
+            }
+            
+            System.err.println("❌ [EMPRESA ID] No se pudo obtener empresa ID - Authentication o Principal inválido");
+            throw new RuntimeException("No se pudo obtener el ID de la empresa - Usuario no autenticado correctamente");
+            
+        } catch (Exception e) {
+            System.err.println("❌ [EMPRESA ID] Error al obtener empresa ID: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al obtener el ID de la empresa: " + e.getMessage(), e);
         }
-        throw new RuntimeException("No se pudo obtener el ID de la empresa");
     }
     
     /**

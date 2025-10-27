@@ -356,14 +356,13 @@ public class StockSincronizacionService {
         Producto producto = productoRepository.findByIdAndEmpresaId(productoId, empresaId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
-        // Obtener stock actual en sectores
-        List<StockPorSector> stockEnSectores = stockPorSectorRepository.findByProductoIdAndSectorEmpresaId(productoId, empresaId);
-        Integer stockEnSectoresTotal = stockEnSectores.stream()
-                .mapToInt(stock -> stock.getCantidad() != null ? stock.getCantidad() : 0)
-                .sum();
-
-        Integer stockAnterior = (producto.getStock() != null ? producto.getStock() : 0) + stockEnSectoresTotal;
+        // Obtener stock actual del producto (sin sumar sectores)
+        Integer stockAnterior = producto.getStock() != null ? producto.getStock() : 0;
         Integer diferencia = nuevoStockTotal - stockAnterior;
+        
+        System.out.println("🔄 SINCRONIZACIÓN - Stock anterior del producto: " + stockAnterior);
+        System.out.println("🔄 SINCRONIZACIÓN - Nuevo stock total solicitado: " + nuevoStockTotal);
+        System.out.println("🔄 SINCRONIZACIÓN - Diferencia a aplicar: " + diferencia);
 
         Map<String, Object> resultado = new HashMap<>();
         resultado.put("productoId", productoId);
