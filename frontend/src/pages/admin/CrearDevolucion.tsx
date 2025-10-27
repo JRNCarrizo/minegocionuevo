@@ -1646,7 +1646,7 @@ export default function CrearDevolucion() {
                     marginTop: '0.5rem',
                     fontSize: isMobile ? '0.875rem' : '0.75rem',
                     cursor: isMobile ? 'pointer' : 'default',
-                    color: isMobile ? 'white' : 'inherit',
+                    color: isMobile ? 'white' : '#374151',
                     boxShadow: isMobile ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none',
                     transition: isMobile ? 'all 0.3s ease' : 'none'
                   }}
@@ -1685,7 +1685,8 @@ export default function CrearDevolucion() {
                     marginTop: isMobile ? '0.5rem' : '0',
                     padding: isMobile ? '0.5rem' : '0',
                     background: isMobile ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                    borderRadius: isMobile ? '0.25rem' : '0'
+                    borderRadius: isMobile ? '0.25rem' : '0',
+                    color: '#374151'
                   }}>
                     {isMobile ? (
                       mostrarCampoCantidad ? '👆 TOCA PARA CONTINUAR' : '👆 TOCA PARA AGREGAR'

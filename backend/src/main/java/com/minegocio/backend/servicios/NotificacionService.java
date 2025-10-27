@@ -273,6 +273,132 @@ public class NotificacionService {
         notificacionRepository.deleteAll(notificacionesAEliminar);
     }
     
+    // Crear notificación de nuevo ingreso
+    public void crearNotificacionIngresoNuevo(Long empresaId, String numeroRemito, Integer totalProductos, String observaciones) {
+        try {
+            System.out.println("🔔 [NOTIFICACION] Iniciando creación de notificación para remito #" + numeroRemito);
+            System.out.println("🔔 [NOTIFICACION] Empresa ID: " + empresaId + ", Productos: " + totalProductos);
+            
+            Map<String, Object> detalles = new HashMap<>();
+            detalles.put("numeroRemito", numeroRemito);
+            detalles.put("totalProductos", totalProductos);
+            detalles.put("observaciones", observaciones);
+            
+            Notificacion notificacion = new Notificacion(
+                "INGRESO_NUEVO",
+                "Nuevo ingreso registrado",
+                "Remito #" + numeroRemito + " - " + totalProductos + " productos",
+                empresaId
+            );
+            notificacion.setIcono("📥");
+            notificacion.setColor("#059669");
+            notificacion.setDetalles(objectMapper.writeValueAsString(detalles));
+            
+            notificacionRepository.save(notificacion);
+            System.out.println("🔔 [NOTIFICACION] Notificación guardada exitosamente para remito #" + numeroRemito);
+        } catch (Exception e) {
+            System.err.println("❌ [NOTIFICACION] Error al crear notificación de ingreso nuevo: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    // Crear notificación de planilla de pedido creada
+    public void crearNotificacionPlanillaPedido(Long empresaId, String numeroPlanilla, Integer totalProductos, String observaciones) {
+        try {
+            Map<String, Object> detalles = new HashMap<>();
+            detalles.put("numeroPlanilla", numeroPlanilla);
+            detalles.put("totalProductos", totalProductos);
+            detalles.put("observaciones", observaciones);
+            
+            Notificacion notificacion = new Notificacion(
+                "PLANILLA_PEDIDO",
+                "Nueva planilla de pedido",
+                "Planilla #" + numeroPlanilla + " - " + totalProductos + " productos",
+                empresaId
+            );
+            notificacion.setIcono("📋");
+            notificacion.setColor("#dc2626");
+            notificacion.setDetalles(objectMapper.writeValueAsString(detalles));
+            
+            notificacionRepository.save(notificacion);
+        } catch (Exception e) {
+            System.err.println("Error al crear notificación de planilla de pedido: " + e.getMessage());
+        }
+    }
+    
+    // Crear notificación de planilla de devolución creada
+    public void crearNotificacionPlanillaDevolucion(Long empresaId, String numeroPlanilla, Integer totalProductos, String observaciones) {
+        try {
+            Map<String, Object> detalles = new HashMap<>();
+            detalles.put("numeroPlanilla", numeroPlanilla);
+            detalles.put("totalProductos", totalProductos);
+            detalles.put("observaciones", observaciones);
+            
+            Notificacion notificacion = new Notificacion(
+                "PLANILLA_DEVOLUCION",
+                "Nueva planilla de devolución",
+                "Planilla #" + numeroPlanilla + " - " + totalProductos + " productos",
+                empresaId
+            );
+            notificacion.setIcono("🔄");
+            notificacion.setColor("#7c3aed");
+            notificacion.setDetalles(objectMapper.writeValueAsString(detalles));
+            
+            notificacionRepository.save(notificacion);
+        } catch (Exception e) {
+            System.err.println("Error al crear notificación de planilla de devolución: " + e.getMessage());
+        }
+    }
+    
+    // Crear notificación de rotura/pérdida registrada
+    public void crearNotificacionRoturaPerdida(Long empresaId, String nombreProducto, Integer cantidad, String tipo, String observaciones) {
+        try {
+            Map<String, Object> detalles = new HashMap<>();
+            detalles.put("producto", nombreProducto);
+            detalles.put("cantidad", cantidad);
+            detalles.put("tipo", tipo);
+            detalles.put("observaciones", observaciones);
+            
+            Notificacion notificacion = new Notificacion(
+                "ROTURA_PERDIDA",
+                "Rotura/Pérdida registrada",
+                tipo + ": " + nombreProducto + " - Cantidad: " + cantidad,
+                empresaId
+            );
+            notificacion.setIcono("⚠️");
+            notificacion.setColor("#dc2626");
+            notificacion.setDetalles(objectMapper.writeValueAsString(detalles));
+            
+            notificacionRepository.save(notificacion);
+        } catch (Exception e) {
+            System.err.println("Error al crear notificación de rotura/pérdida: " + e.getMessage());
+        }
+    }
+    
+    // Crear notificación de cierre de día
+    public void crearNotificacionCierreDia(Long empresaId, String fecha, Integer totalProductos, Double valorTotal) {
+        try {
+            Map<String, Object> detalles = new HashMap<>();
+            detalles.put("fecha", fecha);
+            detalles.put("totalProductos", totalProductos);
+            detalles.put("valorTotal", valorTotal);
+            
+            Notificacion notificacion = new Notificacion(
+                "CIERRE_DIA",
+                "Día cerrado exitosamente",
+                "Fecha: " + fecha + " - " + totalProductos + " productos - $" + String.format("%.2f", valorTotal),
+                empresaId
+            );
+            notificacion.setIcono("🔒");
+            notificacion.setColor("#059669");
+            notificacion.setDetalles(objectMapper.writeValueAsString(detalles));
+            
+            notificacionRepository.save(notificacion);
+        } catch (Exception e) {
+            System.err.println("Error al crear notificación de cierre de día: " + e.getMessage());
+        }
+    }
+    
     // Formatear tiempo transcurrido
     public String formatearTiempoTranscurrido(LocalDateTime fecha) {
         LocalDateTime ahora = LocalDateTime.now();

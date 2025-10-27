@@ -50,6 +50,9 @@ public class PlanillaPedidoService {
     
     @Autowired
     private StockSincronizacionService stockSincronizacionService;
+    
+    @Autowired
+    private NotificacionService notificacionService;
 
     /**
      * Crear una nueva planilla de pedido y descontar del stock
@@ -140,7 +143,22 @@ public class PlanillaPedidoService {
             }
         }
 
-        return planillaPedidoRepository.save(planilla);
+        planilla = planillaPedidoRepository.save(planilla);
+        
+        // Crear notificación de nueva planilla de pedido
+        try {
+            notificacionService.crearNotificacionPlanillaPedido(
+                empresaId,
+                planilla.getNumeroPlanilla(),
+                planilla.getTotalProductos(),
+                planilla.getObservaciones()
+            );
+            System.out.println("📋 Notificación de planilla de pedido creada para planilla #" + planilla.getNumeroPlanilla());
+        } catch (Exception e) {
+            System.err.println("Error al crear notificación de planilla de pedido: " + e.getMessage());
+        }
+        
+        return planilla;
     }
 
     /**

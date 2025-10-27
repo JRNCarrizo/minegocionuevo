@@ -48,6 +48,9 @@ public class RemitoIngresoService {
     @Autowired
     private StockSincronizacionService stockSincronizacionService;
     
+    @Autowired
+    private NotificacionService notificacionService;
+    
     // Obtener todos los remitos de una empresa
     public List<RemitoIngresoDTO> obtenerRemitosPorEmpresa(Long empresaId) {
         System.out.println("=== DEBUG RemitoIngresoService.obtenerRemitosPorEmpresa ===");
@@ -81,6 +84,7 @@ public class RemitoIngresoService {
     @Transactional
     public RemitoIngresoDTO crearRemito(RemitoIngresoDTO remitoDTO) {
         System.out.println("=== DEBUG RemitoIngresoService.crearRemito ===");
+        System.out.println("🔄 [INICIO] Método crearRemito ejecutándose - Timestamp: " + java.time.LocalDateTime.now());
         System.out.println("RemitoDTO recibido: " + remitoDTO);
         
         // Validaciones básicas
@@ -236,6 +240,21 @@ public class RemitoIngresoService {
         
         System.out.println("=== DEBUG RemitoIngresoService.crearRemito - FINALIZADO ===");
         System.out.println("Remito creado con ID: " + remito.getId());
+        
+        // Crear notificación de nuevo ingreso
+        try {
+            System.out.println("📥 [NOTIFICACION] Creando notificación para remito #" + remito.getNumeroRemito() + " - Empresa ID: " + remito.getEmpresa().getId());
+            notificacionService.crearNotificacionIngresoNuevo(
+                remito.getEmpresa().getId(),
+                remito.getNumeroRemito(),
+                remito.getTotalProductos(),
+                remito.getObservaciones()
+            );
+            System.out.println("📥 [NOTIFICACION] Notificación de ingreso creada exitosamente para remito #" + remito.getNumeroRemito());
+        } catch (Exception e) {
+            System.err.println("❌ [NOTIFICACION] Error al crear notificación de ingreso: " + e.getMessage());
+            e.printStackTrace();
+        }
         
         return convertirADTO(remito);
     }
@@ -454,6 +473,7 @@ public class RemitoIngresoService {
         );
         
         System.out.println("DTO creado: " + dto);
+        
         return dto;
     }
     

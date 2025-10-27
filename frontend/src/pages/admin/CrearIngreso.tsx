@@ -1046,6 +1046,11 @@ export default function CrearIngreso() {
   
 
   const guardarRemito = async () => {
+    if (guardando) {
+      console.log('⚠️ [GUARDAR] Ya se está guardando, ignorando clic duplicado');
+      return;
+    }
+
     if (!numeroRemito.trim()) {
       toast.error('El número de remito es obligatorio');
       return;
@@ -1062,6 +1067,7 @@ export default function CrearIngreso() {
     }
 
     try {
+      console.log('💾 [GUARDAR] Iniciando guardado de remito #' + numeroRemito);
       setGuardando(true);
       
       // Crear fecha en UTC para evitar problemas de zona horaria
@@ -1115,9 +1121,11 @@ export default function CrearIngreso() {
       const response = await ApiService.crearRemitoIngreso(remitoData);
       
       if (response && response.data) {
+        console.log('✅ [GUARDAR] Remito guardado exitosamente #' + numeroRemito);
         toast.success('Remito guardado exitosamente');
         navigate('/admin/ingresos');
       } else {
+        console.log('❌ [GUARDAR] Error en la respuesta del servidor');
         toast.error('Error al guardar el remito');
       }
     } catch (error: any) {
@@ -1133,6 +1141,7 @@ export default function CrearIngreso() {
       
       toast.error(mensajeError);
     } finally {
+      console.log('🔄 [GUARDAR] Finalizando proceso de guardado');
       setGuardando(false);
     }
   };
@@ -1290,24 +1299,6 @@ export default function CrearIngreso() {
                 }}
               >
                 Cancelar
-              </button>
-              <button
-                onClick={guardarRemito}
-                disabled={guardando}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: guardando ? '#9ca3af' : 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.75rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  cursor: guardando ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: guardando ? 'none' : '0 4px 12px rgba(5, 150, 105, 0.3)'
-                }}
-              >
-                {guardando ? '💾 Guardando...' : '💾 Guardar Remito'}
               </button>
             </div>
           </div>
@@ -1645,7 +1636,7 @@ export default function CrearIngreso() {
                      marginTop: '0.5rem',
                      fontSize: isMobile ? '0.875rem' : '0.75rem',
                      cursor: isMobile ? 'pointer' : 'default',
-                     color: isMobile ? 'white' : 'inherit',
+                     color: isMobile ? 'white' : '#374151',
                      boxShadow: isMobile ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none',
                      transition: isMobile ? 'all 0.3s ease' : 'none'
                    }}
@@ -1676,7 +1667,8 @@ export default function CrearIngreso() {
                      marginTop: isMobile ? '0.5rem' : '0',
                      padding: isMobile ? '0.5rem' : '0',
                      background: isMobile ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                     borderRadius: isMobile ? '0.25rem' : '0'
+                     borderRadius: isMobile ? '0.25rem' : '0',
+                     color: '#374151'
                    }}>
                      {isMobile ? '👆 TOCA PARA AGREGAR' : '💡 Enter para agregar • Escape para cancelar'}
                    </div>

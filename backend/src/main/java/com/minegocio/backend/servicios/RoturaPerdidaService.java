@@ -43,6 +43,9 @@ public class RoturaPerdidaService {
     
     @Autowired
     private StockSincronizacionService stockSincronizacionService;
+    
+    @Autowired
+    private NotificacionService notificacionService;
 
     /**
      * Crear una nueva rotura o pérdida
@@ -133,7 +136,27 @@ public class RoturaPerdidaService {
             roturaPerdida.setCodigoPersonalizado(dto.getCodigoPersonalizado());
         }
 
-        return roturaPerdidaRepository.save(roturaPerdida);
+        roturaPerdida = roturaPerdidaRepository.save(roturaPerdida);
+        
+        // Crear notificación de rotura/pérdida
+        try {
+            String nombreProducto = roturaPerdida.getProducto() != null ? 
+                roturaPerdida.getProducto().getNombre() : 
+                roturaPerdida.getDescripcionProducto();
+            
+            notificacionService.crearNotificacionRoturaPerdida(
+                empresaId,
+                nombreProducto,
+                roturaPerdida.getCantidad(),
+                "Rotura/Pérdida",
+                roturaPerdida.getObservaciones()
+            );
+            System.out.println("⚠️ Notificación de rotura/pérdida creada para: " + nombreProducto);
+        } catch (Exception e) {
+            System.err.println("Error al crear notificación de rotura/pérdida: " + e.getMessage());
+        }
+        
+        return roturaPerdida;
     }
 
     /**

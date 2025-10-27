@@ -53,6 +53,9 @@ public class PlanillaDevolucionService {
     
     @Autowired
     private StockSincronizacionService stockSincronizacionService;
+    
+    @Autowired
+    private NotificacionService notificacionService;
 
     /**
      * Crear una nueva planilla de devolución y SUMAR al stock
@@ -173,7 +176,9 @@ public class PlanillaDevolucionService {
             }
         }
 
-        return planillaDevolucionRepository.save(planilla);
+        planilla = planillaDevolucionRepository.save(planilla);
+        
+        return planilla;
     }
 
     /**
@@ -832,7 +837,23 @@ public class PlanillaDevolucionService {
         // Aplicar correcciones al stock basadas en el estado de los productos
         aplicarCorreccionesStock(planilla, empresaId);
 
-        return planillaDevolucionRepository.save(planilla);
+        // Guardar la planilla verificada
+        planilla = planillaDevolucionRepository.save(planilla);
+        
+        // Crear notificación de planilla de devolución verificada
+        try {
+            notificacionService.crearNotificacionPlanillaDevolucion(
+                empresaId,
+                planilla.getNumeroPlanilla(),
+                planilla.getTotalProductos(),
+                planilla.getObservaciones()
+            );
+            System.out.println("✅ [VERIFICACION] Notificación de devolución verificada creada para planilla #" + planilla.getNumeroPlanilla());
+        } catch (Exception e) {
+            System.err.println("❌ [VERIFICACION] Error al crear notificación de devolución verificada: " + e.getMessage());
+        }
+
+        return planilla;
     }
 
     /**

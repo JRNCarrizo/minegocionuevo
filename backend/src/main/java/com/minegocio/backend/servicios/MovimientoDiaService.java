@@ -74,6 +74,9 @@ public class MovimientoDiaService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
     
+    @Autowired
+    private NotificacionService notificacionService;
+    
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     
@@ -519,6 +522,25 @@ public class MovimientoDiaService {
                 limpiarCacheStockInicial();
                 
                 System.out.println("✅ [CIERRE DÍA] Día cerrado exitosamente para: " + fecha);
+                
+                // Crear notificación de cierre de día
+                try {
+                    int totalProductos = movimientos.getStockInicial().getProductos().size();
+                    double valorTotal = movimientos.getStockInicial().getProductos().stream()
+                        .mapToDouble(p -> p.getPrecio() * p.getCantidad())
+                        .sum();
+                    
+                    notificacionService.crearNotificacionCierreDia(
+                        empresaId,
+                        fecha.format(DATE_FORMATTER),
+                        totalProductos,
+                        valorTotal
+                    );
+                    System.out.println("🔒 Notificación de cierre de día creada para: " + fecha);
+                } catch (Exception e) {
+                    System.err.println("Error al crear notificación de cierre de día: " + e.getMessage());
+                }
+                
                 return "Día cerrado exitosamente para " + fecha + ". Balance final guardado.";
             }
             
