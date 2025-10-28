@@ -3791,13 +3791,18 @@ public class InventarioCompletoService {
                                      ", Usuario1: " + detalleReconteo.getCantidadConteo1() + 
                                      ", Usuario2: " + detalleReconteo.getCantidadConteo2());
                     
-                    if (detalleReconteo.getCantidadConteo1() != null && detalleReconteo.getCantidadConteo1() > 0) {
+                    // ✅ CORRECCIÓN: Solo usar valores si ambos usuarios tienen valores válidos en el mismo detalle
+                    if (detalleReconteo.getCantidadConteo1() != null && detalleReconteo.getCantidadConteo1() > 0 &&
+                        detalleReconteo.getCantidadConteo2() != null && detalleReconteo.getCantidadConteo2() > 0) {
+                        
                         totalUsuario1 = detalleReconteo.getCantidadConteo1();
-                        usuario1Conto = true;
-                    }
-                    if (detalleReconteo.getCantidadConteo2() != null && detalleReconteo.getCantidadConteo2() > 0) {
                         totalUsuario2 = detalleReconteo.getCantidadConteo2();
+                        usuario1Conto = true;
                         usuario2Conto = true;
+                        
+                        System.out.println("✅ [PROGRESO] Valores de reconteo válidos - Usuario1: " + totalUsuario1 + ", Usuario2: " + totalUsuario2);
+                    } else {
+                        System.out.println("⚠️ [PROGRESO] Detalle de reconteo no tiene valores válidos de ambos usuarios");
                     }
                 } else {
                     System.out.println("⚠️ [PROGRESO] Producto " + productoId + " - No se encontraron detalles de reconteo");
