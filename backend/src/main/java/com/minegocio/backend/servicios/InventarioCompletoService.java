@@ -3754,9 +3754,22 @@ public class InventarioCompletoService {
                 // Filtrar solo los detalles de reconteo (excluir los del conteo inicial)
                 List<DetalleConteo> detallesReconteo = new ArrayList<>();
                 for (DetalleConteo detalle : detallesDelProducto) {
-                    // Un detalle es de reconteo si tiene valores de ambos usuarios (no es del conteo inicial)
-                    if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo2() != null) {
+                    // Un detalle es de reconteo si:
+                    // 1. Tiene valores de ambos usuarios Y
+                    // 2. Ambos valores son mayores que 0 (no son del conteo inicial)
+                    boolean tieneValoresAmbosUsuarios = detalle.getCantidadConteo1() != null && detalle.getCantidadConteo2() != null;
+                    boolean ambosValoresPositivos = (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) && 
+                                                   (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0);
+                    
+                    if (tieneValoresAmbosUsuarios && ambosValoresPositivos) {
                         detallesReconteo.add(detalle);
+                        System.out.println("🔍 [PROGRESO] Detalle de reconteo encontrado - ID: " + detalle.getId() + 
+                                         ", Usuario1: " + detalle.getCantidadConteo1() + 
+                                         ", Usuario2: " + detalle.getCantidadConteo2());
+                    } else {
+                        System.out.println("🔍 [PROGRESO] Detalle de conteo inicial ignorado - ID: " + detalle.getId() + 
+                                         ", Usuario1: " + detalle.getCantidadConteo1() + 
+                                         ", Usuario2: " + detalle.getCantidadConteo2());
                     }
                 }
                 
