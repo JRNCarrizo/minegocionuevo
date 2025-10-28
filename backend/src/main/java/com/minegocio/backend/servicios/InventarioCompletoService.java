@@ -3205,26 +3205,53 @@ public class InventarioCompletoService {
             String nombreProducto = nombresProductos.get(productoId);
             
             if (estaEnReconteo) {
-                // ✅ EN RECONTEO: Solo usar los valores más recientes (del reconteo actual)
-                detallesDelProducto.sort((d1, d2) -> {
-                    if (d1.getFechaActualizacion() == null && d2.getFechaActualizacion() == null) return 0;
-                    if (d1.getFechaActualizacion() == null) return 1;
-                    if (d2.getFechaActualizacion() == null) return -1;
-                    return d2.getFechaActualizacion().compareTo(d1.getFechaActualizacion());
-                });
-                
-                // Tomar solo el primer detalle (el más reciente)
-                DetalleConteo detalleMasReciente = detallesDelProducto.get(0);
-                System.out.println("🔍 [VERIFICAR] Producto " + nombreProducto + " - Usando detalle más reciente ID: " + detalleMasReciente.getId() + 
-                                 ", Fecha: " + detalleMasReciente.getFechaActualizacion() + 
-                                 ", Usuario1: " + detalleMasReciente.getCantidadConteo1() + 
-                                 ", Usuario2: " + detalleMasReciente.getCantidadConteo2());
-                
-                if (detalleMasReciente.getCantidadConteo1() != null && detalleMasReciente.getCantidadConteo1() > 0) {
-                    totalesUsuario1.put(productoId, detalleMasReciente.getCantidadConteo1());
+                // ✅ EN RECONTEO: Solo usar los valores de reconteo (no del conteo inicial)
+                // Filtrar solo los detalles de reconteo (excluir los del conteo inicial)
+                List<DetalleConteo> detallesReconteo = new ArrayList<>();
+                for (DetalleConteo detalle : detallesDelProducto) {
+                    // Un detalle es de reconteo si:
+                    // 1. Tiene valores de ambos usuarios Y
+                    // 2. Ambos valores son mayores que 0 (no son del conteo inicial)
+                    boolean tieneValoresAmbosUsuarios = detalle.getCantidadConteo1() != null && detalle.getCantidadConteo2() != null;
+                    boolean ambosValoresPositivos = (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) && 
+                                                   (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0);
+                    
+                    if (tieneValoresAmbosUsuarios && ambosValoresPositivos) {
+                        detallesReconteo.add(detalle);
+                    }
                 }
-                if (detalleMasReciente.getCantidadConteo2() != null && detalleMasReciente.getCantidadConteo2() > 0) {
-                    totalesUsuario2.put(productoId, detalleMasReciente.getCantidadConteo2());
+                
+                System.out.println("🔍 [VERIFICAR] Producto " + nombreProducto + " - Detalles de reconteo encontrados: " + detallesReconteo.size());
+                
+                if (!detallesReconteo.isEmpty()) {
+                    // Ordenar por fecha de actualización descendente para obtener el más reciente
+                    detallesReconteo.sort((d1, d2) -> {
+                        if (d1.getFechaActualizacion() == null && d2.getFechaActualizacion() == null) return 0;
+                        if (d1.getFechaActualizacion() == null) return 1;
+                        if (d2.getFechaActualizacion() == null) return -1;
+                        return d2.getFechaActualizacion().compareTo(d1.getFechaActualizacion());
+                    });
+                    
+                    // Tomar solo el primer detalle de reconteo (el más reciente)
+                    DetalleConteo detalleReconteo = detallesReconteo.get(0);
+                    System.out.println("🔍 [VERIFICAR] Producto " + nombreProducto + " - Usando detalle de reconteo ID: " + detalleReconteo.getId() + 
+                                     ", Fecha: " + detalleReconteo.getFechaActualizacion() + 
+                                     ", Usuario1: " + detalleReconteo.getCantidadConteo1() + 
+                                     ", Usuario2: " + detalleReconteo.getCantidadConteo2());
+                    
+                    // Solo usar valores si ambos usuarios tienen valores válidos en el mismo detalle
+                    if (detalleReconteo.getCantidadConteo1() != null && detalleReconteo.getCantidadConteo1() > 0 &&
+                        detalleReconteo.getCantidadConteo2() != null && detalleReconteo.getCantidadConteo2() > 0) {
+                        
+                        totalesUsuario1.put(productoId, detalleReconteo.getCantidadConteo1());
+                        totalesUsuario2.put(productoId, detalleReconteo.getCantidadConteo2());
+                        
+                        System.out.println("✅ [VERIFICAR] Valores de reconteo válidos - Usuario1: " + detalleReconteo.getCantidadConteo1() + ", Usuario2: " + detalleReconteo.getCantidadConteo2());
+                    } else {
+                        System.out.println("⚠️ [VERIFICAR] Detalle de reconteo no tiene valores válidos de ambos usuarios");
+                    }
+                } else {
+                    System.out.println("⚠️ [VERIFICAR] Producto " + nombreProducto + " - No se encontraron detalles de reconteo");
                 }
             } else {
                 // ✅ CONTEO NORMAL: Sumar todas las cantidades (permitir conteos múltiples)
