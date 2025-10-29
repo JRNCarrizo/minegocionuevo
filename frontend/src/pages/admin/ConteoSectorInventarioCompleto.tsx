@@ -1232,15 +1232,11 @@ export default function ConteoSectorInventarioCompleto() {
       cantidadFinal = cantidadTemporal;
     }
 
+    // Guardar la posición actual del scroll antes de agregar el producto (solo en móvil)
+    const scrollPosition = isMobile ? window.pageYOffset : 0;
+    
     // Agregar el producto con la cantidad calculada
     agregarProductoAlConteo(productoSeleccionadoTemporal, cantidadFinal, cantidadTemporalTexto.trim() || undefined);
-    
-    // Hacer scroll al último producto agregado solo si hay más de 3 productos
-    if (detallesConteo.length > 3) {
-      setTimeout(() => {
-        scrollToLastProduct();
-      }, 100);
-    }
     
     // Limpiar el estado
     setMostrarCampoCantidad(false);
@@ -1250,25 +1246,49 @@ export default function ConteoSectorInventarioCompleto() {
     setResultadoCalculo(null);
     setErrorCalculo(null);
     
-    // Volver el focus al buscador
+    // Restaurar la posición del scroll y volver el focus al buscador (solo en móvil)
     setTimeout(() => {
+      if (isMobile) {
+        // Restaurar la posición del scroll para mantener el buscador en su lugar
+        window.scrollTo({
+          top: scrollPosition,
+          behavior: 'instant' // Cambio instantáneo para evitar animación
+        });
+      }
+      
+      // Volver el focus al buscador
       if (inputBusquedaRef.current) {
         inputBusquedaRef.current.focus();
       }
-    }, 100);
+    }, 150); // Aumentar el delay para móvil
   };
 
   const cancelarCantidad = () => {
+    // Guardar la posición actual del scroll antes de cancelar (solo en móvil)
+    const scrollPosition = isMobile ? window.pageYOffset : 0;
+    
     setMostrarCampoCantidad(false);
     setProductoSeleccionadoTemporal(null);
     setCantidadTemporal(0);
     setCantidadTemporalTexto('');
     setResultadoCalculo(null);
     setErrorCalculo(null);
-    // Enfocar el buscador después de cancelar
+    
+    // Restaurar la posición del scroll y enfocar el buscador después de cancelar (solo en móvil)
     setTimeout(() => {
-      inputBusquedaRef.current?.focus();
-    }, 100);
+      if (isMobile) {
+        // Restaurar la posición del scroll para mantener el buscador en su lugar
+        window.scrollTo({
+          top: scrollPosition,
+          behavior: 'instant' // Cambio instantáneo para evitar animación
+        });
+      }
+      
+      // Enfocar el buscador
+      if (inputBusquedaRef.current) {
+        inputBusquedaRef.current.focus();
+      }
+    }, 150); // Aumentar el delay para móvil
   };
 
   const manejarScan = (codigo: string) => {
@@ -1800,8 +1820,24 @@ export default function ConteoSectorInventarioCompleto() {
     <>
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
+        {/* Patrón de fondo sutil y profesional */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `
+            radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.05) 0%, transparent 50%)
+          `,
+          pointerEvents: 'none'
+        }}></div>
         {/* ✅ NUEVO: Navbar con animación de ocultamiento en móvil */}
         <div style={{
           position: 'fixed',
@@ -1825,7 +1861,9 @@ export default function ConteoSectorInventarioCompleto() {
           paddingTop: isMobile ? '8rem' : '9rem',
           paddingBottom: isMobile ? '1rem' : '2rem',
           paddingLeft: isMobile ? '1rem' : '2rem',
-          paddingRight: isMobile ? '1rem' : '2rem'
+          paddingRight: isMobile ? '1rem' : '2rem',
+          position: 'relative',
+          zIndex: 1
         }}>
           {/* Header */}
           <div style={{
@@ -1837,14 +1875,15 @@ export default function ConteoSectorInventarioCompleto() {
               fontSize: isMobile ? '1.8rem' : '2.5rem',
               fontWeight: 'bold',
               marginBottom: '0.5rem',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+              textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
             }}>
               {esModoReconteo ? '🔍 Reconteo de Productos con Diferencias' : `📊 Conteo de Sector - ${conteoInfo.sectorNombre}`}
             </h1>
             <p style={{
-              color: 'rgba(255, 255, 255, 0.9)',
+              color: 'rgba(255, 255, 255, 0.95)',
               fontSize: isMobile ? '1rem' : '1.2rem',
-              margin: 0
+              margin: 0,
+              textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)'
             }}>
               {esModoReconteo ? 'Revisa y corrige las cantidades de los productos que tuvieron diferencias' : 
                `Inventario Completo - Usuario: ${usuarioActual?.nombre} ${usuarioActual?.apellidos}`}
@@ -1853,12 +1892,13 @@ export default function ConteoSectorInventarioCompleto() {
 
           {/* Información del conteo */}
           <div style={{
-            background: 'white',
+            background: 'rgba(255, 255, 255, 0.98)',
             borderRadius: '1rem',
             padding: '2rem',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0',
-            marginBottom: '2rem'
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            marginBottom: '2rem',
+            backdropFilter: 'blur(10px)'
           }}>
             <div style={{
               display: 'flex',
@@ -2543,12 +2583,13 @@ export default function ConteoSectorInventarioCompleto() {
             }}>
               {/* Panel izquierdo - Búsqueda y creación de productos */}
               <div style={{
-                background: 'white',
+                background: 'rgba(255, 255, 255, 0.98)',
                 borderRadius: '1rem',
                 padding: isMobile ? '1.5rem' : '2rem',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                border: '1px solid #e2e8f0',
-                height: 'fit-content'
+                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                height: 'fit-content',
+                backdropFilter: 'blur(10px)'
               }}>
                 {/* Búsqueda de productos - Sin título redundante */}
                 <div style={{ marginBottom: '1.5rem' }}>
@@ -2923,11 +2964,12 @@ export default function ConteoSectorInventarioCompleto() {
 
               {/* Panel central - Lista de productos contados */}
               <div style={{
-                background: 'white',
+                background: 'rgba(255, 255, 255, 0.98)',
                 borderRadius: '1rem',
                 padding: isMobile ? '1.5rem' : '2rem',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                border: '1px solid #e2e8f0'
+                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(10px)'
               }}>
                 {/* Campo de filtrado - Sin título redundante */}
                 <div style={{ marginBottom: '1rem' }}>
@@ -2993,13 +3035,15 @@ export default function ConteoSectorInventarioCompleto() {
                   <div 
                     ref={listaProductosContadosRef}
                     style={{
-                      background: 'white',
+                      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
                       borderRadius: '0.75rem',
-                      border: '1px solid #e2e8f0',
+                      border: '2px solid #e2e8f0',
                       overflow: 'hidden',
                       height: isMobile ? '450px' : '350px',
                       overflowY: 'auto',
-                      overflowX: 'hidden'
+                      overflowX: 'hidden',
+                      padding: '0.5rem',
+                      boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.06)'
                     }}>
                     {productosContadosFiltrados.map((detalle, index) => {
                       const estaEditando = editandoDetalle === detalle.id;
@@ -3009,12 +3053,31 @@ export default function ConteoSectorInventarioCompleto() {
                           key={detalle.id}
                           data-product-index={index}
                           style={{
-                            padding: isMobile ? '0.75rem' : '0.75rem',
-                            borderBottom: index < productosContadosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
-                            background: estaEditando ? '#fef3c7' : (index % 2 === 0 ? 'white' : '#f8fafc'),
-                            border: estaEditando ? '2px solid #f59e0b' : '1px solid #e2e8f0',
-                            borderRadius: '0.5rem',
-                            marginBottom: '0.5rem'
+                            padding: isMobile ? '1rem' : '1rem',
+                            borderBottom: 'none',
+                            background: estaEditando ? '#fef3c7' : (index % 2 === 0 ? '#ffffff' : '#f8fafc'),
+                            border: estaEditando ? '2px solid #f59e0b' : '2px solid #e2e8f0',
+                            borderRadius: '0.75rem',
+                            marginBottom: '0.75rem',
+                            boxShadow: estaEditando ? '0 4px 12px rgba(245, 158, 11, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                            transition: 'all 0.2s ease',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            cursor: 'default'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!estaEditando) {
+                              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.12)';
+                              e.currentTarget.style.borderColor = '#cbd5e1';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!estaEditando) {
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+                              e.currentTarget.style.borderColor = '#e2e8f0';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                            }
                           }}
                         >
                           {estaEditando ? (
@@ -3253,12 +3316,13 @@ export default function ConteoSectorInventarioCompleto() {
 
               {/* Panel derecho - Información y acciones */}
               <div style={{
-                background: 'white',
+                background: 'rgba(255, 255, 255, 0.98)',
                 borderRadius: '1rem',
                 padding: isMobile ? '1.5rem' : '2rem',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                border: '1px solid #e2e8f0',
-                height: 'fit-content'
+                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                height: 'fit-content',
+                backdropFilter: 'blur(10px)'
               }}>
                 <h2 style={{
                   fontSize: '1.25rem',
@@ -3282,7 +3346,7 @@ export default function ConteoSectorInventarioCompleto() {
                 }}>
                   <div style={{ marginBottom: '0.75rem' }}>
                     <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.25rem' }}>
-                      Productos contados
+                      Registros cargados
                     </div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#059669' }}>
                       {detallesConteo.length}
@@ -3324,7 +3388,13 @@ export default function ConteoSectorInventarioCompleto() {
                 </div>
 
                 {/* Acciones */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: isMobile ? 'row' : 'column', 
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  gap: isMobile ? '0.75rem' : '0.75rem',
+                  justifyContent: isMobile ? 'space-between' : 'stretch'
+                }}>
                   {/* Botón Finalizar Conteo */}
                   <button
                     onClick={async () => {
@@ -3406,19 +3476,20 @@ export default function ConteoSectorInventarioCompleto() {
                     }}
                     disabled={guardando || detallesConteo.length === 0}
                     style={{
-                      width: '100%',
-                      padding: '0.75rem',
+                      width: isMobile ? '48%' : '100%',
+                      padding: isMobile ? '1rem 0.75rem' : '0.75rem',
                       background: (guardando || detallesConteo.length === 0) ? '#9ca3af' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                       color: 'white',
                       border: 'none',
                       borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
+                      fontSize: isMobile ? '0.9rem' : '0.875rem',
                       fontWeight: '600',
                       cursor: (guardando || detallesConteo.length === 0) ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '0.5rem'
+                      gap: '0.5rem',
+                      minHeight: isMobile ? '48px' : 'auto'
                     }}
                   >
                     {guardando ? '⏳ Finalizando...' : '🏁 Finalizar Conteo'}
@@ -3457,19 +3528,20 @@ export default function ConteoSectorInventarioCompleto() {
                       }
                     }}
                     style={{
-                      width: '100%',
-                      padding: '0.75rem',
+                      width: isMobile ? '48%' : '100%',
+                      padding: isMobile ? '1rem 0.75rem' : '0.75rem',
                       background: '#3b82f6',
                       color: 'white',
                       border: 'none',
                       borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
+                      fontSize: isMobile ? '0.9rem' : '0.875rem',
                       fontWeight: '600',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '0.5rem'
+                      gap: '0.5rem',
+                      minHeight: isMobile ? '48px' : 'auto'
                     }}
                   >
                     🔄 Sincronizar con Servidor
@@ -3485,19 +3557,20 @@ export default function ConteoSectorInventarioCompleto() {
                       toast.success('Progreso guardado localmente');
                     }}
                     style={{
-                      width: '100%',
-                      padding: '0.75rem',
+                      width: isMobile ? '48%' : '100%',
+                      padding: isMobile ? '1rem 0.75rem' : '0.75rem',
                       background: '#6b7280',
                       color: 'white',
                       border: 'none',
                       borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
+                      fontSize: isMobile ? '0.9rem' : '0.875rem',
                       fontWeight: '600',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '0.5rem'
+                      gap: '0.5rem',
+                      minHeight: isMobile ? '48px' : 'auto'
                     }}
                   >
                     💾 Guardar Localmente
@@ -3506,19 +3579,20 @@ export default function ConteoSectorInventarioCompleto() {
                   <button
                     onClick={() => navigate('/admin/inventario-completo')}
                     style={{
-                      width: '100%',
-                      padding: '0.75rem',
+                      width: isMobile ? '48%' : '100%',
+                      padding: isMobile ? '1rem 0.75rem' : '0.75rem',
                       background: '#ef4444',
                       color: 'white',
                       border: 'none',
                       borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
+                      fontSize: isMobile ? '0.9rem' : '0.875rem',
                       fontWeight: '600',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '0.5rem'
+                      gap: '0.5rem',
+                      minHeight: isMobile ? '48px' : 'auto'
                     }}
                   >
                     ← Volver a Inventario Completo
