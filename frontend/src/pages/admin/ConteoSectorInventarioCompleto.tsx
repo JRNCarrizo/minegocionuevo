@@ -2765,6 +2765,10 @@ export default function ConteoSectorInventarioCompleto() {
                           {['+', '-', '*', 'x', '(', ')'].map(op => (
                             <button
                               key={op}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault(); // Evita que el botón quite el foco
+                              }}
                               onClick={() => {
                                 const nuevoValor = (cantidadTemporalTexto || '') + op;
                                 setCantidadTemporalTexto(nuevoValor);
@@ -2772,6 +2776,12 @@ export default function ConteoSectorInventarioCompleto() {
                                 if (/[+\-*/x()]/.test(nuevoValor)) {
                                   evaluarFormula(nuevoValor);
                                 }
+                                // Mantener el foco en el input después de hacer clic
+                                setTimeout(() => {
+                                  if (inputCantidadRef.current) {
+                                    inputCantidadRef.current.focus();
+                                  }
+                                }, 10);
                               }}
                               style={{
                                 background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
