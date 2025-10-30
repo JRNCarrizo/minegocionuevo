@@ -413,6 +413,13 @@ public class SectorController {
                 Sheet sheet = workbook.createSheet("Productos del Sector");
                 
                 // Crear estilos
+                CellStyle titleStyle = workbook.createCellStyle();
+                Font titleFont = workbook.createFont();
+                titleFont.setBold(true);
+                titleFont.setFontHeightInPoints((short) 16);
+                titleStyle.setFont(titleFont);
+                titleStyle.setAlignment(HorizontalAlignment.CENTER);
+                
                 CellStyle headerStyle = workbook.createCellStyle();
                 Font headerFont = workbook.createFont();
                 headerFont.setBold(true);
@@ -425,8 +432,15 @@ public class SectorController {
                 headerStyle.setBorderRight(BorderStyle.THIN);
                 headerStyle.setBorderLeft(BorderStyle.THIN);
                 
+                // Crear título del sector
+                Row titleRow = sheet.createRow(0);
+                Cell titleCell = titleRow.createCell(0);
+                titleCell.setCellValue("PRODUCTOS DEL SECTOR: " + sector.getNombre().toUpperCase());
+                titleCell.setCellStyle(titleStyle);
+                sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 2));
+                
                 // Crear encabezados
-                Row headerRow = sheet.createRow(0);
+                Row headerRow = sheet.createRow(1);
                 String[] headers = {"Código", "Producto", "Cantidad"};
                 for (int i = 0; i < headers.length; i++) {
                     Cell cell = headerRow.createCell(i);
@@ -435,7 +449,7 @@ public class SectorController {
                 }
                 
                 // Llenar datos
-                int rowNum = 1;
+                int rowNum = 2;
                 for (StockPorSector stock : productosEnSector) {
                     Row row = sheet.createRow(rowNum++);
                     row.createCell(0).setCellValue(stock.getProducto().getCodigoPersonalizado() != null ? 
