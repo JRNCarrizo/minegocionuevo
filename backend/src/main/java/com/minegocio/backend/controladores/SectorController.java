@@ -385,15 +385,25 @@ public class SectorController {
             @PathVariable Long sectorId) {
         try {
             System.out.println("🔍 [CONTROLLER] Exportando productos del sector a Excel: " + sectorId);
+            System.out.println("🔍 [CONTROLLER] Empresa ID: " + empresaId);
             
             // Obtener productos del sector
             List<StockPorSector> productosEnSector = sectorService.obtenerProductosEnSector(sectorId, empresaId);
+            System.out.println("🔍 [CONTROLLER] Productos encontrados: " + productosEnSector.size());
             
             // Obtener información del sector
             Sector sector = sectorService.obtenerSectorPorId(sectorId);
-            if (sector == null || !sector.getEmpresa().getId().equals(empresaId)) {
+            if (sector == null) {
+                System.err.println("❌ [CONTROLLER] Sector no encontrado: " + sectorId);
                 return ResponseEntity.notFound().build();
             }
+            
+            if (!sector.getEmpresa().getId().equals(empresaId)) {
+                System.err.println("❌ [CONTROLLER] El sector no pertenece a la empresa. Sector empresa: " + sector.getEmpresa().getId() + ", Empresa solicitada: " + empresaId);
+                return ResponseEntity.badRequest().build();
+            }
+            
+            System.out.println("🔍 [CONTROLLER] Sector encontrado: " + sector.getNombre());
             
             // Crear el workbook de Excel
             try (XSSFWorkbook workbook = new XSSFWorkbook()) {
@@ -457,8 +467,12 @@ public class SectorController {
             
         } catch (Exception e) {
             System.err.println("❌ [CONTROLLER] Error al exportar productos del sector a Excel: " + e.getMessage());
+            System.err.println("❌ [CONTROLLER] Stack trace completo:");
             e.printStackTrace();
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error interno del servidor: " + e.getMessage(),
+                "details", e.getClass().getSimpleName()
+            ).toString().getBytes());
         }
     }
     
