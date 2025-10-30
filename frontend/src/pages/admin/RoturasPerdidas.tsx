@@ -351,7 +351,7 @@ export default function RoturasPerdidas() {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -381,7 +381,7 @@ export default function RoturasPerdidas() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)'
     }}>
       <NavbarAdmin
         onCerrarSesion={cerrarSesion}
