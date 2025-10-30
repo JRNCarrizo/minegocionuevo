@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useResponsive } from '../hooks/useResponsive';
 import { useTheme } from '../hooks/useTheme';
+import { useUsuarioActual } from '../hooks/useUsuarioActual';
 
 interface NavbarAdminProps {
   onCerrarSesion: () => void;
@@ -14,7 +15,8 @@ export default function NavbarAdmin({
   nombreAdministrador
 }: NavbarAdminProps) {
   const { isMobile, isTablet, isDesktop } = useResponsive();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { datosUsuario } = useUsuarioActual();
+  const { isDarkMode, toggleTheme } = useTheme(datosUsuario?.id);
   return (
     <nav style={{
       background: 'var(--color-navbar)',

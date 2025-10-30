@@ -1226,7 +1226,7 @@ export default function InventarioCompleto() {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -1257,7 +1257,7 @@ export default function InventarioCompleto() {
     <>
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)'
       }}>
         <NavbarAdmin
           onCerrarSesion={cerrarSesion}
@@ -1270,8 +1270,8 @@ export default function InventarioCompleto() {
           margin: '0 auto',
           paddingTop: isMobile ? '8rem' : '9rem',
           paddingBottom: isMobile ? '1rem' : '2rem',
-          paddingLeft: isMobile ? '1rem' : '2rem',
-          paddingRight: isMobile ? '1rem' : '2rem'
+          paddingLeft: isMobile ? '0.5rem' : '2rem',
+          paddingRight: isMobile ? '0.5rem' : '2rem'
         }}>
           {/* Header */}
           <div style={{
@@ -1279,16 +1279,16 @@ export default function InventarioCompleto() {
             marginBottom: '2rem'
           }}>
             <h1 style={{
-              color: 'white',
+              color: '#1e293b',
               fontSize: isMobile ? '1.8rem' : '2.5rem',
               fontWeight: 'bold',
               marginBottom: '0.5rem',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+              textShadow: 'none'
             }}>
               🏢 Inventario Completo
             </h1>
             <p style={{
-              color: 'rgba(255, 255, 255, 0.9)',
+              color: '#64748b',
               fontSize: isMobile ? '1rem' : '1.2rem',
               margin: 0
             }}>
@@ -1299,13 +1299,15 @@ export default function InventarioCompleto() {
             <div style={{
               marginTop: '1rem',
               padding: '0.75rem 1.5rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '0.5rem',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              background: 'rgba(255, 255, 255, 0.8)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '0.75rem',
+              border: '1px solid rgba(148, 163, 184, 0.4)',
+              boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
               display: 'inline-block'
             }}>
               <div style={{
-                color: 'rgba(255, 255, 255, 0.9)',
+                color: '#475569',
                 fontSize: '0.9rem',
                 display: 'flex',
                 gap: '1rem',
@@ -1653,8 +1655,8 @@ export default function InventarioCompleto() {
                 <div style={{ 
                   display: 'grid', 
                   gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(380px, 1fr))',
-                  gap: isMobile ? '1rem' : '1.5rem',
-                  padding: isMobile ? '0.5rem' : '0'
+                  gap: isMobile ? '0.5rem' : '1.5rem',
+                  padding: isMobile ? '0rem' : '0'
                 }}>
                   {sectores.map((sector) => {
                     const conteo = inventario.conteosSectores?.find(c => c.sectorId === sector.id);
@@ -1768,8 +1770,8 @@ export default function InventarioCompleto() {
                         {/* Información de usuarios asignados - Diseño moderno */}
                         <div style={{
                           display: 'grid',
-                          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                          gap: isMobile ? '0.75rem' : '1rem',
+                          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',
+                          gap: isMobile ? '0.5rem' : '1rem',
                           marginBottom: '1.25rem'
                         }}>
                           <div style={{
@@ -1816,13 +1818,19 @@ export default function InventarioCompleto() {
                             <div style={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.5rem',
-                              marginBottom: '0.5rem'
+                            gap: '0.5rem',
+                            marginBottom: '0.5rem',
+                            flexWrap: 'nowrap'
                             }}>
                               <div style={{
-                                width: '8px',
-                                height: '8px',
+                                width: '10px',
+                                height: '10px',
+                                minWidth: '10px',
+                                minHeight: '10px',
                                 borderRadius: '50%',
+                                flexShrink: 0,
+                                display: 'inline-block',
+                                aspectRatio: '1 / 1',
                                 background: (() => {
                                   // ✅ DESTACADO VISUAL: Color especial para el usuario actual
                                   const esUsuarioActual = conteo?.usuario1Id === datosUsuario?.id;
@@ -1841,10 +1849,11 @@ export default function InventarioCompleto() {
                               }}></div>
                               <span style={{
                                 fontSize: isMobile ? '0.75rem' : '0.8rem',
-                              color: '#64748b',
+                                color: '#64748b',
                                 fontWeight: '600',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.05em'
+                                letterSpacing: '0.05em',
+                                whiteSpace: 'nowrap'
                             }}>
                               Usuario 1
                               </span>
@@ -1923,13 +1932,19 @@ export default function InventarioCompleto() {
                             <div style={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.5rem',
-                              marginBottom: '0.5rem'
+                            gap: '0.5rem',
+                            marginBottom: '0.5rem',
+                            flexWrap: 'nowrap'
                             }}>
                               <div style={{
-                                width: '8px',
-                                height: '8px',
+                                width: '10px',
+                                height: '10px',
+                                minWidth: '10px',
+                                minHeight: '10px',
                                 borderRadius: '50%',
+                                flexShrink: 0,
+                                display: 'inline-block',
+                                aspectRatio: '1 / 1',
                                 background: (() => {
                                   // ✅ DESTACADO VISUAL: Color especial para el usuario actual
                                   const esUsuarioActual = conteo?.usuario2Id === datosUsuario?.id;
@@ -1951,7 +1966,8 @@ export default function InventarioCompleto() {
                               color: '#64748b',
                                 fontWeight: '600',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.05em'
+                                letterSpacing: '0.05em',
+                                whiteSpace: 'nowrap'
                             }}>
                               Usuario 2
                               </span>
@@ -2022,9 +2038,14 @@ export default function InventarioCompleto() {
                               gap: '0.5rem'
                             }}>
                               <div style={{
-                                width: '8px',
-                                height: '8px',
+                                width: '10px',
+                                height: '10px',
+                                minWidth: '10px',
+                                minHeight: '10px',
                                 borderRadius: '50%',
+                                flexShrink: 0,
+                                display: 'inline-block',
+                                aspectRatio: '1 / 1',
                                 background: conteo ? colores.accent : '#94a3b8',
                                 boxShadow: `0 0 0 2px ${conteo ? colores.accent + '30' : '#94a3b830'}`
                               }}></div>

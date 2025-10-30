@@ -27,7 +27,7 @@ export default function GestionEmpresa() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile, isTablet } = useResponsive();
   const { hasPermission } = usePermissions();
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useTheme(datosUsuario?.id);
   const navigate = useNavigate();
   
   // Estado para navegación por teclado

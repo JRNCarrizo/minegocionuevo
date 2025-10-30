@@ -35,7 +35,7 @@ const GestionProductos: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
   const { datosUsuario } = useUsuarioActual();
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useTheme(datosUsuario?.id);
   const [productos, setProductos] = useState<Producto[]>([]);
 
   // Función para reproducir el sonido "pi"

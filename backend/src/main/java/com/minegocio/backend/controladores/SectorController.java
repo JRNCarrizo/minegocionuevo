@@ -8,6 +8,7 @@ import com.minegocio.backend.entidades.Usuario;
 import com.minegocio.backend.servicios.SectorService;
 import com.minegocio.backend.servicios.StockSincronizacionService;
 import com.minegocio.backend.repositorios.UsuarioRepository;
+import com.minegocio.backend.repositorios.SectorRepository;
 import com.minegocio.backend.seguridad.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,12 @@ import java.util.HashMap;
 import java.util.Date;
 import java.util.ArrayList;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.io.ByteArrayOutputStream;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @RestController
 @RequestMapping("/api/empresas/{empresaId}/sectores")
@@ -45,6 +52,9 @@ public class SectorController {
     
     @Autowired
     private ProductoRepository productoRepository;
+    
+    @Autowired
+    private SectorRepository sectorRepository;
     
     @Autowired
     private StockPorSectorRepository stockPorSectorRepository;
@@ -363,6 +373,92 @@ public class SectorController {
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Error al obtener estadísticas: " + e.getMessage()
             ));
+        }
+    }
+    
+    /**
+     * Exportar productos del sector a Excel
+     */
+    @GetMapping("/{sectorId}/productos/exportar-excel")
+    public ResponseEntity<byte[]> exportarProductosSectorExcel(
+            @PathVariable Long empresaId,
+            @PathVariable Long sectorId) {
+        try {
+            System.out.println("🔍 [CONTROLLER] Exportando productos del sector a Excel: " + sectorId);
+            
+            // Obtener productos del sector
+            List<StockPorSector> productosEnSector = sectorService.obtenerProductosEnSector(sectorId, empresaId);
+            
+            // Obtener información del sector
+            Sector sector = sectorService.obtenerSectorPorId(sectorId);
+            if (sector == null || !sector.getEmpresa().getId().equals(empresaId)) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Crear el workbook de Excel
+            try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+                Sheet sheet = workbook.createSheet("Productos del Sector");
+                
+                // Crear estilos
+                CellStyle headerStyle = workbook.createCellStyle();
+                Font headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerFont.setFontHeightInPoints((short) 12);
+                headerStyle.setFont(headerFont);
+                headerStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+                headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                headerStyle.setBorderBottom(BorderStyle.THIN);
+                headerStyle.setBorderTop(BorderStyle.THIN);
+                headerStyle.setBorderRight(BorderStyle.THIN);
+                headerStyle.setBorderLeft(BorderStyle.THIN);
+                
+                // Crear encabezados
+                Row headerRow = sheet.createRow(0);
+                String[] headers = {"Código", "Producto", "Cantidad"};
+                for (int i = 0; i < headers.length; i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headers[i]);
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Llenar datos
+                int rowNum = 1;
+                for (StockPorSector stock : productosEnSector) {
+                    Row row = sheet.createRow(rowNum++);
+                    row.createCell(0).setCellValue(stock.getProducto().getCodigoPersonalizado() != null ? 
+                        stock.getProducto().getCodigoPersonalizado() : "-");
+                    row.createCell(1).setCellValue(stock.getProducto().getNombre());
+                    row.createCell(2).setCellValue(stock.getCantidad());
+                }
+                
+                // Autoajustar columnas
+                for (int i = 0; i < headers.length; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+                
+                // Convertir a bytes
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                workbook.write(outputStream);
+                byte[] excelBytes = outputStream.toByteArray();
+                
+                String nombreArchivo = "productos_sector_" + sector.getNombre() + ".xlsx";
+                
+                HttpHeaders responseHeaders = new HttpHeaders();
+                responseHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+                responseHeaders.setContentDispositionFormData("attachment", nombreArchivo);
+                responseHeaders.setContentLength(excelBytes.length);
+                
+                System.out.println("✅ [CONTROLLER] Excel exportado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+                
+                return ResponseEntity.ok()
+                        .headers(responseHeaders)
+                        .body(excelBytes);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER] Error al exportar productos del sector a Excel: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
         }
     }
     
@@ -1081,6 +1177,132 @@ public class SectorController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error en test: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Exportar stock general a Excel con pestañas por sector
+     */
+    @GetMapping("/exportar-stock-general-excel")
+    public ResponseEntity<byte[]> exportarStockGeneralExcel(@PathVariable Long empresaId) {
+        try {
+            System.out.println("🔍 [CONTROLLER] Exportando stock general a Excel con pestañas por sector");
+            
+            // Obtener todos los sectores de la empresa
+            List<Sector> sectores = sectorRepository.findByEmpresaIdOrderByNombre(empresaId);
+            if (sectores.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Crear el workbook de Excel
+            try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+                
+                // Crear estilos
+                CellStyle headerStyle = workbook.createCellStyle();
+                Font headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerFont.setFontHeightInPoints((short) 12);
+                headerStyle.setFont(headerFont);
+                headerStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+                headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                headerStyle.setBorderBottom(BorderStyle.THIN);
+                headerStyle.setBorderTop(BorderStyle.THIN);
+                headerStyle.setBorderRight(BorderStyle.THIN);
+                headerStyle.setBorderLeft(BorderStyle.THIN);
+                
+                CellStyle dataStyle = workbook.createCellStyle();
+                dataStyle.setBorderBottom(BorderStyle.THIN);
+                dataStyle.setBorderTop(BorderStyle.THIN);
+                dataStyle.setBorderRight(BorderStyle.THIN);
+                dataStyle.setBorderLeft(BorderStyle.THIN);
+                
+                // Crear pestaña para cada sector
+                for (Sector sector : sectores) {
+                    String nombrePestana = sector.getNombre().length() > 31 ? 
+                        sector.getNombre().substring(0, 31) : sector.getNombre();
+                    
+                    Sheet sheet = workbook.createSheet(nombrePestana);
+                    
+                    // Título del sector
+                    Row titleRow = sheet.createRow(0);
+                    Cell titleCell = titleRow.createCell(0);
+                    titleCell.setCellValue("SECTOR: " + sector.getNombre().toUpperCase());
+                    
+                    // Estilo para el título
+                    CellStyle titleStyle = workbook.createCellStyle();
+                    Font titleFont = workbook.createFont();
+                    titleFont.setBold(true);
+                    titleFont.setFontHeightInPoints((short) 14);
+                    titleStyle.setFont(titleFont);
+                    titleStyle.setAlignment(HorizontalAlignment.CENTER);
+                    titleCell.setCellStyle(titleStyle);
+                    sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 2));
+                    
+                    // Obtener productos del sector
+                    List<StockPorSector> productosEnSector = sectorService.obtenerProductosEnSector(sector.getId(), empresaId);
+                    
+                    if (productosEnSector.isEmpty()) {
+                        // Si no hay productos, crear una fila indicando que está vacío
+                        Row emptyRow = sheet.createRow(2);
+                        Cell emptyCell = emptyRow.createCell(0);
+                        emptyCell.setCellValue("No hay productos en este sector");
+                        emptyCell.setCellStyle(dataStyle);
+                        sheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 2));
+                    } else {
+                        // Crear encabezados
+                        Row headerRow = sheet.createRow(2);
+                        String[] headers = {"Código", "Producto", "Cantidad"};
+                        for (int i = 0; i < headers.length; i++) {
+                            Cell cell = headerRow.createCell(i);
+                            cell.setCellValue(headers[i]);
+                            cell.setCellStyle(headerStyle);
+                        }
+                        
+                        // Llenar datos
+                        int rowNum = 3;
+                        for (StockPorSector stock : productosEnSector) {
+                            Row row = sheet.createRow(rowNum++);
+                            row.createCell(0).setCellValue(stock.getProducto().getCodigoPersonalizado() != null ? 
+                                stock.getProducto().getCodigoPersonalizado() : "-");
+                            row.createCell(1).setCellValue(stock.getProducto().getNombre());
+                            row.createCell(2).setCellValue(stock.getCantidad());
+                            
+                            // Aplicar estilo a las celdas de datos
+                            for (int i = 0; i < 3; i++) {
+                                row.getCell(i).setCellStyle(dataStyle);
+                            }
+                        }
+                    }
+                    
+                    // Autoajustar columnas
+                    for (int i = 0; i < 3; i++) {
+                        sheet.autoSizeColumn(i);
+                    }
+                }
+                
+                // Convertir a bytes
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                workbook.write(outputStream);
+                byte[] excelBytes = outputStream.toByteArray();
+                
+                String nombreArchivo = "stock_general_por_sectores.xlsx";
+                
+                HttpHeaders responseHeaders = new HttpHeaders();
+                responseHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+                responseHeaders.setContentDispositionFormData("attachment", nombreArchivo);
+                responseHeaders.setContentLength(excelBytes.length);
+                
+                System.out.println("✅ [CONTROLLER] Excel con pestañas exportado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+                
+                return ResponseEntity.ok()
+                        .headers(responseHeaders)
+                        .body(excelBytes);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ [CONTROLLER] Error al exportar stock general a Excel: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
         }
     }
 }

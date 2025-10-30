@@ -2299,6 +2299,19 @@ class ApiService {
     }
   }
 
+  // Exportar stock general a Excel con pestañas por sector
+  async exportarStockGeneralExcel(empresaId: number): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/empresas/${empresaId}/sectores/exportar-stock-general-excel`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error al exportar stock general a Excel:', error);
+      throw error;
+    }
+  }
+
 
 
   // Exportar remito de ingreso

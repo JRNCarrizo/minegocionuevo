@@ -13,7 +13,7 @@ export default function DashboardAdministrador() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile, isTablet, width } = useResponsive();
   const { hasPermission } = usePermissions();
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useTheme(datosUsuario?.id);
   const navigate = useNavigate();
   
   // TODOS los hooks deben ir antes del return condicional

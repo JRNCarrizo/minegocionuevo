@@ -35,7 +35,7 @@ interface Transportista {
 const GestionTransportistas: React.FC = () => {
   const { datosUsuario, cargando: cargandoUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile } = useResponsive();
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useTheme(datosUsuario?.id);
   const navigate = useNavigate();
 
   // Estados principales

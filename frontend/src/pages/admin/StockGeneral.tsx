@@ -4,8 +4,11 @@ import { toast } from 'react-hot-toast';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import NavbarAdmin from '../../components/NavbarAdmin';
+import ApiService from '../../services/api';
 import { API_CONFIG } from '../../config/api';
 import { formatearFechaConHora } from '../../utils/dateUtils';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import './StockGeneral.css';
 import './GestionSectores.css';
 
@@ -72,6 +75,105 @@ export default function StockGeneral() {
   const sectorDestinoRef = useRef<HTMLSelectElement>(null);
   const cantidadTransferirRef = useRef<HTMLInputElement>(null);
   const [sectorSeleccionadoIndex, setSectorSeleccionadoIndex] = useState(0);
+
+  // Función para generar PDF con todos los sectores y sus productos
+  const generarPDFStockGeneral = () => {
+    try {
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text('Stock General - Todos los Sectores', 14, 22);
+      
+      // Agrupar productos por sector
+      const productosPorSector = new Map<string, StockItem[]>();
+      
+      datosOrdenados.forEach(item => {
+        const sectorNombre = item.sector?.nombre || 'Sin Sector';
+        if (!productosPorSector.has(sectorNombre)) {
+          productosPorSector.set(sectorNombre, []);
+        }
+        productosPorSector.get(sectorNombre)!.push(item);
+      });
+      
+      let yPos = 30;
+      
+      // Iterar por cada sector
+      productosPorSector.forEach((productos, sectorNombre) => {
+        // Título del sector
+        doc.setFontSize(14);
+        doc.setTextColor(59, 130, 246); // Azul
+        doc.text(`Sector: ${sectorNombre}`, 14, yPos);
+        yPos += 8;
+        
+        // Crear tabla para este sector
+        const tableData = productos.map(item => [
+          item.producto.codigoPersonalizado || '-',
+          item.producto.nombre,
+          item.cantidad.toString()
+        ]);
+        
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Código', 'Producto', 'Cantidad']],
+          body: tableData,
+          theme: 'grid',
+          headStyles: {
+            fillColor: [59, 130, 246],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+          },
+          margin: { left: 14, right: 14 }
+        });
+        
+        // Actualizar posición Y para el siguiente sector
+        yPos = (doc as any).lastAutoTable.finalY + 15;
+        
+        // Verificar si necesitamos una nueva página
+        if (yPos > 280) {
+          doc.addPage();
+          yPos = 20;
+        }
+      });
+      
+      // Guardar el PDF
+      doc.save('stock_general_todos_sectores.pdf');
+      
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      toast.error('Error al generar el PDF');
+    }
+  };
+
+  // Función para exportar Excel con pestañas por sector
+  const exportarExcelStockGeneral = async () => {
+    if (!datosUsuario?.empresaId) {
+      toast.error('No se pudo obtener la información de la empresa');
+      return;
+    }
+
+    try {
+      toast.loading('Exportando stock general a Excel...');
+      
+      const blob = await ApiService.exportarStockGeneralExcel(datosUsuario.empresaId);
+      
+      // Crear URL y descargar archivo
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stock_general_por_sectores.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Excel exportado exitosamente');
+      
+    } catch (error) {
+      console.error('Error al exportar Excel:', error);
+      toast.dismiss();
+      toast.error('Error al exportar Excel');
+    }
+  };
 
   // Función para consolidar productos
   const consolidarProductos = (items: StockItem[]): StockItem[] => {
@@ -951,8 +1053,9 @@ export default function StockGeneral() {
           marginBottom: isMobile ? '1rem' : '1.5rem'
         }}>
           <div className="filters-container" style={{
-            gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr',
-            gap: isMobile ? '1rem' : '1rem'
+            gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr auto',
+            gap: isMobile ? '1rem' : '1rem',
+            alignItems: 'center'
           }}>
             <div className="search-group">
               <div className="search-input-wrapper">
@@ -1021,6 +1124,77 @@ export default function StockGeneral() {
                   </option>
                 ))}
               </select>
+            </div>
+            
+            {/* Botones de descarga */}
+            <div className="download-buttons-group" style={{
+              display: 'flex',
+              gap: '1rem',
+              justifyContent: isMobile ? 'center' : 'flex-end',
+              marginTop: isMobile ? '1rem' : '0',
+              flexWrap: 'wrap'
+            }}>
+              <button
+                onClick={generarPDFStockGeneral}
+                className="pdf-download-btn"
+                style={{
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.75rem',
+                  padding: isMobile ? '0.75rem 1.5rem' : '1rem 2rem',
+                  fontSize: isMobile ? '0.9rem' : '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 14px 0 rgba(239, 68, 68, 0.3)',
+                  minHeight: isMobile ? '44px' : '48px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px 0 rgba(239, 68, 68, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(239, 68, 68, 0.3)';
+                }}
+              >
+                📄 PDF
+              </button>
+              
+              <button
+                onClick={exportarExcelStockGeneral}
+                className="excel-download-btn"
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.75rem',
+                  padding: isMobile ? '0.75rem 1.5rem' : '1rem 2rem',
+                  fontSize: isMobile ? '0.9rem' : '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.3)',
+                  minHeight: isMobile ? '44px' : '48px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px 0 rgba(16, 185, 129, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(16, 185, 129, 0.3)';
+                }}
+              >
+                📊 Excel
+              </button>
             </div>
           </div>
         </div>

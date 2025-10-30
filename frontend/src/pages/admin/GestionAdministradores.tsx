@@ -31,7 +31,7 @@ interface NuevoAdministrador {
 
 export default function GestionAdministradores() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useTheme(datosUsuario?.id);
   const [administradores, setAdministradores] = useState<Administrador[]>([]);
   const [cargando, setCargando] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);

@@ -52,7 +52,7 @@ interface ProductoMovimientoDTO {
 export default function MovimientosDia() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile } = useResponsive();
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useTheme(datosUsuario?.id);
   
   // Debug: verificar tema actual
   useEffect(() => {

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import NavbarAdmin from '../../components/NavbarAdmin';
@@ -169,6 +171,80 @@ export default function GestionSectores() {
       }, 100);
     }
   }, [mostrarModalProductos]);
+
+  // Descargar PDF con listado de productos del sector
+  const descargarPDFProductosSector = () => {
+    try {
+      const sectorNombre = sectorSeleccionado?.nombre || 'sector';
+      // Aplicar el mismo filtro que la vista
+      const productosFiltrados = productosEnSector.filter(stock => {
+        if (!filtroBusquedaProductos) return true;
+        const busqueda = filtroBusquedaProductos.toLowerCase();
+        return (
+          stock.producto.nombre.toLowerCase().includes(busqueda) ||
+          (stock.producto.codigoPersonalizado && stock.producto.codigoPersonalizado.toLowerCase().includes(busqueda))
+        );
+      });
+
+      const doc = new jsPDF();
+      doc.setFontSize(14);
+      doc.text(`Listado de productos - ${sectorNombre}`, 14, 16);
+
+      const body = productosFiltrados.map((stock) => [
+        stock.producto.codigoPersonalizado || '-',
+        stock.producto.nombre,
+        String(stock.cantidad)
+      ]);
+
+      autoTable(doc, {
+        startY: 22,
+        head: [['Código', 'Producto', 'Cantidad']],
+        body,
+        theme: 'grid'
+      });
+
+      doc.save(`productos_sector_${sectorNombre}.pdf`);
+    } catch (e) {
+      console.error('Error al generar PDF de productos del sector:', e);
+    }
+  };
+
+  // Descargar Excel real generado por el backend
+  const descargarExcelProductosSector = async () => {
+    if (!sectorSeleccionado?.id || !datosUsuario?.empresaId) return;
+    
+    try {
+      toast.loading('Exportando productos a Excel...');
+      
+      const response = await apiCall(`/empresas/${datosUsuario.empresaId}/sectores/${sectorSeleccionado.id}/productos/exportar-excel`, {
+        method: 'GET'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al exportar productos');
+      }
+      
+      const blob = await response.blob();
+      
+      // Crear URL y descargar archivo
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `productos_sector_${sectorSeleccionado.nombre}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Excel exportado exitosamente');
+      
+    } catch (error) {
+      console.error('Error al exportar productos del sector a Excel:', error);
+      toast.dismiss();
+      toast.error('Error al exportar productos a Excel');
+    }
+  };
 
   // Calcular resultado en tiempo real cuando se escribe en el campo de cantidad de transferencia
   useEffect(() => {
@@ -1761,6 +1837,22 @@ export default function GestionSectores() {
                     Lista completa de productos
                   </p>
                 </div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  onClick={descargarPDFProductosSector}
+                  className="boton-primario"
+                  title="Descargar PDF de productos"
+                >
+                  📄 PDF
+                </button>
+                <button
+                  onClick={descargarExcelProductosSector}
+                  className="boton-primario"
+                  title="Descargar Excel de productos"
+                >
+                  📊 Excel
+                </button>
               </div>
               <button
                 onClick={cerrarModal}
