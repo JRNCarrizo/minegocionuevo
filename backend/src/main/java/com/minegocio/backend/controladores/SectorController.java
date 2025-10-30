@@ -444,10 +444,10 @@ public class SectorController {
                     row.createCell(2).setCellValue(stock.getCantidad());
                 }
                 
-                // Autoajustar columnas
-                for (int i = 0; i < headers.length; i++) {
-                    sheet.autoSizeColumn(i);
-                }
+                // Configurar anchos de columnas fijos (evita problemas con autoSizeColumn en headless)
+                sheet.setColumnWidth(0, 15 * 256); // Código - 15 caracteres
+                sheet.setColumnWidth(1, 50 * 256); // Producto - 50 caracteres  
+                sheet.setColumnWidth(2, 12 * 256); // Cantidad - 12 caracteres
                 
                 // Convertir a bytes
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -1294,10 +1294,10 @@ public class SectorController {
                         }
                     }
                     
-                    // Autoajustar columnas
-                    for (int i = 0; i < 3; i++) {
-                        sheet.autoSizeColumn(i);
-                    }
+                    // Configurar anchos de columnas fijos (evita problemas con autoSizeColumn en headless)
+                    sheet.setColumnWidth(0, 15 * 256); // Código - 15 caracteres
+                    sheet.setColumnWidth(1, 50 * 256); // Producto - 50 caracteres  
+                    sheet.setColumnWidth(2, 12 * 256); // Cantidad - 12 caracteres
                 }
                 
                 // Convertir a bytes
