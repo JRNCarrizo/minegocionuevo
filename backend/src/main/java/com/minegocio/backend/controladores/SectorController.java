@@ -384,6 +384,9 @@ public class SectorController {
             @PathVariable Long empresaId,
             @PathVariable Long sectorId) {
         try {
+            // Configurar sistema para modo headless (sin interfaz gráfica)
+            System.setProperty("java.awt.headless", "true");
+            
             System.out.println("🔍 [CONTROLLER] Exportando productos del sector a Excel: " + sectorId);
             System.out.println("🔍 [CONTROLLER] Empresa ID: " + empresaId);
             
@@ -1200,6 +1203,9 @@ public class SectorController {
     @GetMapping("/exportar-stock-general-excel")
     public ResponseEntity<byte[]> exportarStockGeneralExcel(@PathVariable Long empresaId) {
         try {
+            // Configurar sistema para modo headless (sin interfaz gráfica)
+            System.setProperty("java.awt.headless", "true");
+            
             System.out.println("🔍 [CONTROLLER] Exportando stock general a Excel con pestañas por sector");
             
             // Obtener todos los sectores de la empresa
