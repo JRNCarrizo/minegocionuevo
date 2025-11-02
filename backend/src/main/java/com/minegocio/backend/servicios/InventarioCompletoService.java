@@ -3192,18 +3192,36 @@ public class InventarioCompletoService {
         } else {
             // Primer usuario finalizando
             System.out.println("🔍 [FINALIZAR] Primer usuario finalizando...");
-            conteoSector.setEstado(ConteoSector.EstadoConteo.ESPERANDO_VERIFICACION);
             
-            // Marcar qué usuario finalizó en las observaciones (temporal)
-            if (esUsuario1) {
-                conteoSector.setObservaciones("Usuario1_Finalizado");
-                System.out.println("🔍 [FINALIZAR] Marcado como Usuario1_Finalizado");
-            } else if (esUsuario2) {
-                conteoSector.setObservaciones("Usuario2_Finalizado");
-                System.out.println("🔍 [FINALIZAR] Marcado como Usuario2_Finalizado");
+            // ✅ CRÍTICO: Si ya estamos en reconteo (CON_DIFERENCIAS), NO sobrescribir las observaciones
+            // porque contienen la fecha de inicio del reconteo que necesitamos para filtrar correctamente
+            boolean yaEstaEnReconteo = conteoSector.getEstado() == ConteoSector.EstadoConteo.CON_DIFERENCIAS ||
+                                     (conteoSector.getObservaciones() != null && conteoSector.getObservaciones().startsWith("Reconteo_"));
+            
+            if (!yaEstaEnReconteo) {
+                // Solo establecer ESPERANDO_VERIFICACION si NO está en reconteo
+                conteoSector.setEstado(ConteoSector.EstadoConteo.ESPERANDO_VERIFICACION);
+                
+                // Marcar qué usuario finalizó en las observaciones (temporal)
+                if (esUsuario1) {
+                    conteoSector.setObservaciones("Usuario1_Finalizado");
+                    System.out.println("🔍 [FINALIZAR] Marcado como Usuario1_Finalizado");
+                } else if (esUsuario2) {
+                    conteoSector.setObservaciones("Usuario2_Finalizado");
+                    System.out.println("🔍 [FINALIZAR] Marcado como Usuario2_Finalizado");
+                }
+                System.out.println("⏳ [FINALIZAR] Primer usuario finalizado, estado cambiado a ESPERANDO_VERIFICACION");
+            } else {
+                // Ya está en reconteo, no cambiar nada, solo verificar diferencias
+                System.out.println("⚠️ [FINALIZAR] Ya está en reconteo, manteniendo observaciones y verificando diferencias...");
+                boolean hayDiferencias = verificarDiferenciasEnConteo(conteoSector);
+                System.out.println("🔍 [FINALIZAR] ¿Hay diferencias? " + hayDiferencias);
+                
+                if (!hayDiferencias) {
+                    conteoSector.setEstado(ConteoSector.EstadoConteo.COMPLETADO);
+                    System.out.println("✅ [FINALIZAR] Sin diferencias, estado cambiado a COMPLETADO");
+                }
             }
-            
-            System.out.println("⏳ [FINALIZAR] Primer usuario finalizado, estado cambiado a ESPERANDO_VERIFICACION");
         }
         
         System.out.println("🔍 [FINALIZAR] Guardando sector con estado: " + conteoSector.getEstado());
