@@ -2786,36 +2786,35 @@ public class InventarioCompletoService {
             if (!detallesExistentes.isEmpty()) {
                 System.out.println("✅ RECONTEO: Consolidando valores del otro usuario de " + detallesExistentes.size() + " entradas existentes");
                 
-                // Sumar todas las cantidades del otro usuario para consolidar
-                int totalOtroUsuario = 0;
-                List<String> formulasOtroUsuario = new ArrayList<>();
+                // ✅ CORRECCIÓN: NO sumar, sino encontrar el valor MÁS RECIENTE del otro usuario
+                // Ordenar por fecha descendente (más reciente primero)
+                detallesExistentes.sort((d1, d2) -> {
+                    if (d1.getFechaActualizacion() == null && d2.getFechaActualizacion() == null) return 0;
+                    if (d1.getFechaActualizacion() == null) return 1;
+                    if (d2.getFechaActualizacion() == null) return -1;
+                    return d2.getFechaActualizacion().compareTo(d1.getFechaActualizacion());
+                });
                 
                 if (conteoSector.getUsuarioAsignado1().getId().equals(usuarioId)) {
-                    // Usuario 1 haciendo reconteo - consolidar valores del usuario 2
+                    // Usuario 1 haciendo reconteo - buscar el valor más reciente del usuario 2
                     for (DetalleConteo det : detallesExistentes) {
                         if (det.getCantidadConteo2() != null && det.getCantidadConteo2() > 0) {
-                            totalOtroUsuario += det.getCantidadConteo2();
-                            if (det.getFormulaCalculo2() != null && !det.getFormulaCalculo2().isEmpty()) {
-                                formulasOtroUsuario.add(det.getFormulaCalculo2());
-                            }
+                            detalle.setCantidadConteo2(det.getCantidadConteo2());
+                            detalle.setFormulaCalculo2(det.getFormulaCalculo2());
+                            System.out.println("✅ RECONTEO: Usuario2 más reciente: " + det.getCantidadConteo2() + " (" + det.getFormulaCalculo2() + ")");
+                            break;
                         }
                     }
-                    detalle.setCantidadConteo2(totalOtroUsuario > 0 ? totalOtroUsuario : null);
-                    detalle.setFormulaCalculo2(formulasOtroUsuario.isEmpty() ? null : String.join(", ", formulasOtroUsuario));
-                    System.out.println("✅ RECONTEO: Usuario2 consolidado: " + totalOtroUsuario + " (" + String.join(", ", formulasOtroUsuario) + ")");
                 } else {
-                    // Usuario 2 haciendo reconteo - consolidar valores del usuario 1
+                    // Usuario 2 haciendo reconteo - buscar el valor más reciente del usuario 1
                     for (DetalleConteo det : detallesExistentes) {
                         if (det.getCantidadConteo1() != null && det.getCantidadConteo1() > 0) {
-                            totalOtroUsuario += det.getCantidadConteo1();
-                            if (det.getFormulaCalculo1() != null && !det.getFormulaCalculo1().isEmpty()) {
-                                formulasOtroUsuario.add(det.getFormulaCalculo1());
-                            }
+                            detalle.setCantidadConteo1(det.getCantidadConteo1());
+                            detalle.setFormulaCalculo1(det.getFormulaCalculo1());
+                            System.out.println("✅ RECONTEO: Usuario1 más reciente: " + det.getCantidadConteo1() + " (" + det.getFormulaCalculo1() + ")");
+                            break;
                         }
                     }
-                    detalle.setCantidadConteo1(totalOtroUsuario > 0 ? totalOtroUsuario : null);
-                    detalle.setFormulaCalculo1(formulasOtroUsuario.isEmpty() ? null : String.join(", ", formulasOtroUsuario));
-                    System.out.println("✅ RECONTEO: Usuario1 consolidado: " + totalOtroUsuario + " (" + String.join(", ", formulasOtroUsuario) + ")");
                 }
             }
         } else {
