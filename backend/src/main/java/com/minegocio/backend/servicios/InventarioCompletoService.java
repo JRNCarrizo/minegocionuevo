@@ -1109,36 +1109,44 @@ public class InventarioCompletoService {
                         .filter(detalle -> detalle.getFechaActualizacion() != null && detalle.getFechaActualizacion().isAfter(fechaInicioFinal))
                         .collect(java.util.stream.Collectors.toList());
                     
-                    // ✅ LÓGICA CORREGIDA: Para segunda serie, mostrar los valores de la serie anterior
-                    // Encontrar los reconteos más recientes de cada usuario (de la serie anterior completa)
-                    DetalleConteo reconteoAnteriorMasRecienteUsuario1 = null;
-                    DetalleConteo reconteoAnteriorMasRecienteUsuario2 = null;
+                    // ✅ CORRECCIÓN: Para segunda serie, encontrar el valor más reciente de cada usuario independientemente
+                    // Ordenar por fecha descendente (más reciente primero)
+                    reconteos.sort((d1, d2) -> {
+                        if (d1.getFechaActualizacion() == null && d2.getFechaActualizacion() == null) return 0;
+                        if (d1.getFechaActualizacion() == null) return 1;
+                        if (d2.getFechaActualizacion() == null) return -1;
+                        return d2.getFechaActualizacion().compareTo(d1.getFechaActualizacion());
+                    });
                     
-                    // Ordenar por fecha para procesar desde el más antiguo
-                    reconteos.sort(Comparator.comparing(DetalleConteo::getFechaActualizacion));
-                    
+                    // Buscar el valor más reciente de Usuario1
+                    Integer valorMasRecienteUsuario1 = null;
+                    String formulaMasRecienteUsuario1 = null;
                     for (DetalleConteo detalle : reconteos) {
-                        // Para usuario 1 - encontrar el más reciente de la serie anterior
                         if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
-                            reconteoAnteriorMasRecienteUsuario1 = detalle;
+                            valorMasRecienteUsuario1 = detalle.getCantidadConteo1();
+                            formulaMasRecienteUsuario1 = detalle.getFormulaCalculo1();
+                            System.out.println("✅ SERIE #" + numeroSerieReconteo + " - Usuario1 más reciente: " + valorMasRecienteUsuario1);
+                            break;
                         }
-                        
-                        // Para usuario 2 - encontrar el más reciente de la serie anterior
+                    }
+                    
+                    // Buscar el valor más reciente de Usuario2
+                    Integer valorMasRecienteUsuario2 = null;
+                    String formulaMasRecienteUsuario2 = null;
+                    for (DetalleConteo detalle : reconteos) {
                         if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
-                            reconteoAnteriorMasRecienteUsuario2 = detalle;
+                            valorMasRecienteUsuario2 = detalle.getCantidadConteo2();
+                            formulaMasRecienteUsuario2 = detalle.getFormulaCalculo2();
+                            System.out.println("✅ SERIE #" + numeroSerieReconteo + " - Usuario2 más reciente: " + valorMasRecienteUsuario2);
+                            break;
                         }
                     }
                     
-                    // Asignar solo los reconteos anteriores más recientes
-                    if (reconteoAnteriorMasRecienteUsuario1 != null) {
-                        detalleConsolidado.setCantidadConteo1(reconteoAnteriorMasRecienteUsuario1.getCantidadConteo1());
-                        detalleConsolidado.setFormulaCalculo1(reconteoAnteriorMasRecienteUsuario1.getFormulaCalculo1());
-                    }
-                    
-                    if (reconteoAnteriorMasRecienteUsuario2 != null) {
-                        detalleConsolidado.setCantidadConteo2(reconteoAnteriorMasRecienteUsuario2.getCantidadConteo2());
-                        detalleConsolidado.setFormulaCalculo2(reconteoAnteriorMasRecienteUsuario2.getFormulaCalculo2());
-                    }
+                    // Asignar los valores encontrados
+                    detalleConsolidado.setCantidadConteo1(valorMasRecienteUsuario1);
+                    detalleConsolidado.setFormulaCalculo1(formulaMasRecienteUsuario1);
+                    detalleConsolidado.setCantidadConteo2(valorMasRecienteUsuario2);
+                    detalleConsolidado.setFormulaCalculo2(formulaMasRecienteUsuario2);
                     
                     System.out.println("🔧 SERIE #" + numeroSerieReconteo + ": Reconteo anterior como referencia para " + primerDetalle.getProducto().getNombre() + 
                                      " - Usuario1: " + detalleConsolidado.getCantidadConteo1() + " (" + detalleConsolidado.getFormulaCalculo1() + ")" +
