@@ -2786,9 +2786,34 @@ public class InventarioCompletoService {
             if (!detallesExistentes.isEmpty()) {
                 System.out.println("✅ RECONTEO: Consolidando valores del otro usuario de " + detallesExistentes.size() + " entradas existentes");
                 
-                // ✅ CORRECCIÓN: NO sumar, sino encontrar el valor MÁS RECIENTE del otro usuario
+                // ✅ CRÍTICO: Determinar fecha de inicio del reconteo para filtrar solo detalles de reconteo
+                LocalDateTime fechaInicioReconteo = null;
+                if (conteoSector.getObservaciones() != null && conteoSector.getObservaciones().startsWith("Reconteo_")) {
+                    try {
+                        String fechaStr = conteoSector.getObservaciones().split("_")[1];
+                        fechaInicioReconteo = LocalDateTime.parse(fechaStr);
+                        System.out.println("✅ RECONTEO: Fecha de inicio del reconteo: " + fechaInicioReconteo);
+                    } catch (Exception e) {
+                        System.out.println("⚠️ No se pudo parsear fecha de reconteo, usando todos los detalles");
+                    }
+                }
+                
+                final LocalDateTime fechaInicioFinal = fechaInicioReconteo;
+                
+                // ✅ CORRECCIÓN: Filtrar solo detalles de reconteo (después de fechaInicioReconteo) o todos si no hay fecha
+                List<DetalleConteo> detallesReconteo = detallesExistentes.stream()
+                    .filter(det -> {
+                        if (fechaInicioFinal == null) return true; // Si no hay fecha, usar todos
+                        return det.getFechaActualizacion() != null && 
+                               det.getFechaActualizacion().isAfter(fechaInicioFinal);
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+                
+                System.out.println("✅ RECONTEO: Detalles de reconteo filtrados: " + detallesReconteo.size() + " de " + detallesExistentes.size());
+                
+                // ✅ CORRECCIÓN: NO sumar, sino encontrar el valor MÁS RECIENTE del otro usuario EN RECONTEO
                 // Ordenar por fecha descendente (más reciente primero)
-                detallesExistentes.sort((d1, d2) -> {
+                detallesReconteo.sort((d1, d2) -> {
                     if (d1.getFechaActualizacion() == null && d2.getFechaActualizacion() == null) return 0;
                     if (d1.getFechaActualizacion() == null) return 1;
                     if (d2.getFechaActualizacion() == null) return -1;
@@ -2796,23 +2821,47 @@ public class InventarioCompletoService {
                 });
                 
                 if (conteoSector.getUsuarioAsignado1().getId().equals(usuarioId)) {
-                    // Usuario 1 haciendo reconteo - buscar el valor más reciente del usuario 2
-                    for (DetalleConteo det : detallesExistentes) {
+                    // Usuario 1 haciendo reconteo - buscar el valor más reciente del usuario 2 EN RECONTEO
+                    for (DetalleConteo det : detallesReconteo) {
                         if (det.getCantidadConteo2() != null && det.getCantidadConteo2() > 0) {
                             detalle.setCantidadConteo2(det.getCantidadConteo2());
                             detalle.setFormulaCalculo2(det.getFormulaCalculo2());
-                            System.out.println("✅ RECONTEO: Usuario2 más reciente: " + det.getCantidadConteo2() + " (" + det.getFormulaCalculo2() + ")");
+                            System.out.println("✅ RECONTEO: Usuario2 más reciente (de reconteo): " + det.getCantidadConteo2() + " (" + det.getFormulaCalculo2() + ")");
                             break;
                         }
                     }
+                    // Si no se encontró en reconteo, usar el conteo inicial como referencia
+                    if (detalle.getCantidadConteo2() == null) {
+                        System.out.println("⚠️ RECONTEO: No se encontró reconteo de Usuario2, buscando en conteo inicial");
+                        for (DetalleConteo det : detallesExistentes) {
+                            if (det.getCantidadConteo2() != null && det.getCantidadConteo2() > 0) {
+                                detalle.setCantidadConteo2(det.getCantidadConteo2());
+                                detalle.setFormulaCalculo2(det.getFormulaCalculo2());
+                                System.out.println("✅ RECONTEO: Usuario2 del conteo inicial (referencia): " + det.getCantidadConteo2());
+                                break;
+                            }
+                        }
+                    }
                 } else {
-                    // Usuario 2 haciendo reconteo - buscar el valor más reciente del usuario 1
-                    for (DetalleConteo det : detallesExistentes) {
+                    // Usuario 2 haciendo reconteo - buscar el valor más reciente del usuario 1 EN RECONTEO
+                    for (DetalleConteo det : detallesReconteo) {
                         if (det.getCantidadConteo1() != null && det.getCantidadConteo1() > 0) {
                             detalle.setCantidadConteo1(det.getCantidadConteo1());
                             detalle.setFormulaCalculo1(det.getFormulaCalculo1());
-                            System.out.println("✅ RECONTEO: Usuario1 más reciente: " + det.getCantidadConteo1() + " (" + det.getFormulaCalculo1() + ")");
+                            System.out.println("✅ RECONTEO: Usuario1 más reciente (de reconteo): " + det.getCantidadConteo1() + " (" + det.getFormulaCalculo1() + ")");
                             break;
+                        }
+                    }
+                    // Si no se encontró en reconteo, usar el conteo inicial como referencia
+                    if (detalle.getCantidadConteo1() == null) {
+                        System.out.println("⚠️ RECONTEO: No se encontró reconteo de Usuario1, buscando en conteo inicial");
+                        for (DetalleConteo det : detallesExistentes) {
+                            if (det.getCantidadConteo1() != null && det.getCantidadConteo1() > 0) {
+                                detalle.setCantidadConteo1(det.getCantidadConteo1());
+                                detalle.setFormulaCalculo1(det.getFormulaCalculo1());
+                                System.out.println("✅ RECONTEO: Usuario1 del conteo inicial (referencia): " + det.getCantidadConteo1());
+                                break;
+                            }
                         }
                     }
                 }
@@ -3131,7 +3180,11 @@ public class InventarioCompletoService {
             
             if (hayDiferencias) {
                 conteoSector.setEstado(ConteoSector.EstadoConteo.CON_DIFERENCIAS);
+                // ✅ CORRECCIÓN: Marcar el inicio del reconteo con fecha para poder filtrar correctamente
+                String fechaReconteo = LocalDateTime.now().toString();
+                conteoSector.setObservaciones("Reconteo_" + fechaReconteo);
                 System.out.println("⚠️ [FINALIZAR] Diferencias encontradas, estado cambiado a CON_DIFERENCIAS");
+                System.out.println("⚠️ [FINALIZAR] Inicio de reconteo marcado: Reconteo_" + fechaReconteo);
             } else {
                 conteoSector.setEstado(ConteoSector.EstadoConteo.COMPLETADO);
                 System.out.println("✅ [FINALIZAR] Sin diferencias, estado cambiado a COMPLETADO");
