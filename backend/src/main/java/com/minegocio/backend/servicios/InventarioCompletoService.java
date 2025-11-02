@@ -3911,10 +3911,10 @@ public class InventarioCompletoService {
         // ✅ CORREGIDO: Solo completar automáticamente en casos muy específicos
         // 1. Durante reconteo cuando no hay diferencias
         // 2. NO completar automáticamente durante el conteo normal inicial
+        // ✅ CRÍTICO: Removido !estadoEsperandoVerificacion para permitir completar automáticamente durante reconteo
         if (estaEnReconteo && 
             productosConDiferencias == 0 && 
-            productosContados.size() == totalProductos &&
-            !estadoEsperandoVerificacion) {
+            productosContados.size() == totalProductos) {
             
             // 🔍 VERIFICACIÓN CORREGIDA: Usar el método correcto para verificar diferencias en cantidades
             boolean hayDiferenciasEnCantidades = verificarDiferenciasEnConteo(conteoSector);
