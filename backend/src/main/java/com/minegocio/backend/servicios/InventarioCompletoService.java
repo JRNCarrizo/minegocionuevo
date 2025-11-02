@@ -1057,14 +1057,21 @@ public class InventarioCompletoService {
                     // PRIMERA SERIE: Mostrar solo conteos iniciales como referencia
                     System.out.println("🔄 PRIMERA SERIE RECONTEO: Mostrando conteos iniciales como referencia");
                     
-                    // ✅ SOLUCIÓN: Incluir TODOS los detalles del producto para sumar correctamente
-                    // El problema era que se filtraban por fecha, pero necesitamos sumar TODAS las entradas
-                    // de cada usuario, independientemente de cuándo se crearon
-                    List<DetalleConteo> conteosIniciales = detallesDelProducto;
+                    // ✅ CRÍTICO: Filtrar solo conteos INICIALES (antes de fechaInicioReconteo)
+                    // NO incluir reconteos para no mezclar valores
+                    List<DetalleConteo> conteosIniciales = detallesDelProducto.stream()
+                        .filter(detalle -> {
+                            // Si no hay fecha de inicio, incluir todos (fallback)
+                            if (fechaInicioFinal == null) return true;
+                            // Incluir solo los que son ANTES del inicio del reconteo
+                            return detalle.getFechaActualizacion() == null || 
+                                   detalle.getFechaActualizacion().isBefore(fechaInicioFinal);
+                        })
+                        .collect(java.util.stream.Collectors.toList());
                     
-                    System.out.println("🔍 DEBUG - Usando TODOS los detalles del producto: " + conteosIniciales.size());
+                    System.out.println("🔍 DEBUG - Detalles iniciales (sin reconteos): " + conteosIniciales.size() + " de " + detallesDelProducto.size());
                     
-                    // ✅ SUMAR TODAS LAS ENTRADAS de cada usuario (no solo la más reciente)
+                    // ✅ SUMAR TODAS LAS ENTRADAS de cada usuario en conteos INICIALES
                     int totalUsuario1 = 0;
                     int totalUsuario2 = 0;
                     List<String> formulasUsuario1 = new ArrayList<>();
@@ -3071,6 +3078,63 @@ public class InventarioCompletoService {
         if (entradaExistente != null) {
             System.out.println("✅ RECONTEO: Actualizando entrada existente ID: " + entradaExistente.getId());
             System.out.println("🔍 RECONTEO DEBUG: ANTES de reemplazar - Cantidad1: " + entradaExistente.getCantidadConteo1() + ", Cantidad2: " + entradaExistente.getCantidadConteo2());
+            
+            // ✅ CRÍTICO: Si la entrada existente es del conteo inicial, debemos buscar el valor del otro usuario en reconteo
+            // Determinar fecha de inicio del reconteo
+            LocalDateTime fechaInicioReconteo = null;
+            if (conteoSector.getObservaciones() != null && conteoSector.getObservaciones().startsWith("Reconteo_")) {
+                try {
+                    String fechaStr = conteoSector.getObservaciones().split("_")[1];
+                    fechaInicioReconteo = LocalDateTime.parse(fechaStr);
+                    System.out.println("✅ RECONTEO: Fecha de inicio del reconteo: " + fechaInicioReconteo);
+                } catch (Exception e) {
+                    System.out.println("⚠️ No se pudo parsear fecha de reconteo");
+                }
+            }
+            
+            final LocalDateTime fechaInicioFinal = fechaInicioReconteo;
+            
+            // Si la entrada existente es de reconteo, ya tiene el valor del otro usuario, no hacer nada
+            // Si es del conteo inicial, buscar el valor del otro usuario en reconteo
+            boolean entradaEsDeReconteo = fechaInicioFinal != null && 
+                                           entradaExistente.getFechaActualizacion() != null && 
+                                           entradaExistente.getFechaActualizacion().isAfter(fechaInicioFinal);
+            
+            if (!entradaEsDeReconteo && fechaInicioFinal != null) {
+                System.out.println("⚠️ RECONTEO: Entrada existente es del conteo inicial, buscando reconteo del otro usuario");
+                
+                // Buscar reconteo del otro usuario
+                List<DetalleConteo> detallesReconteo = detallesExistentes.stream()
+                    .filter(det -> det.getProducto().getId().equals(productoId) &&
+                                   det.getFechaActualizacion() != null && 
+                                   det.getFechaActualizacion().isAfter(fechaInicioFinal))
+                    .collect(java.util.stream.Collectors.toList());
+                
+                // Ordenar por fecha descendente
+                detallesReconteo.sort((d1, d2) -> d2.getFechaActualizacion().compareTo(d1.getFechaActualizacion()));
+                
+                if (conteoSector.getUsuarioAsignado1().getId().equals(usuarioId)) {
+                    // Usuario 1 haciendo reconteo - buscar reconteo de Usuario 2
+                    for (DetalleConteo det : detallesReconteo) {
+                        if (det.getCantidadConteo2() != null && det.getCantidadConteo2() > 0) {
+                            entradaExistente.setCantidadConteo2(det.getCantidadConteo2());
+                            entradaExistente.setFormulaCalculo2(det.getFormulaCalculo2());
+                            System.out.println("✅ RECONTEO: Copiando Usuario2 de reconteo: " + det.getCantidadConteo2());
+                            break;
+                        }
+                    }
+                } else {
+                    // Usuario 2 haciendo reconteo - buscar reconteo de Usuario 1
+                    for (DetalleConteo det : detallesReconteo) {
+                        if (det.getCantidadConteo1() != null && det.getCantidadConteo1() > 0) {
+                            entradaExistente.setCantidadConteo1(det.getCantidadConteo1());
+                            entradaExistente.setFormulaCalculo1(det.getFormulaCalculo1());
+                            System.out.println("✅ RECONTEO: Copiando Usuario1 de reconteo: " + det.getCantidadConteo1());
+                            break;
+                        }
+                    }
+                }
+            }
             
             // REEMPLAZAR la cantidad (no sumar)
             if (conteoSector.getUsuarioAsignado1().getId().equals(usuarioId)) {
