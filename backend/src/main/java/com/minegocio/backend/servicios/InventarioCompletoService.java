@@ -3029,140 +3029,16 @@ public class InventarioCompletoService {
     }
 
     /**
-     * Agregar producto al reconteo (reemplaza cantidad existente)
+     * Agregar producto al reconteo
+     * NOTA: En reconteo siempre se debe crear una nueva entrada para mantener historial
+     * Por lo tanto, delegamos a agregarProductoAlConteo que ya maneja esto correctamente
      */
     public DetalleConteo agregarProductoAlReconteo(Long conteoSectorId, Long productoId, Integer cantidad, String formulaCalculo, Long usuarioId) {
         System.out.println("🔄 RECONTEO: Agregando producto - sector: " + conteoSectorId + ", producto: " + productoId + ", cantidad: " + cantidad);
         
-        ConteoSector conteoSector = conteoSectorRepository.findById(conteoSectorId)
-            .orElseThrow(() -> new RuntimeException("Conteo de sector no encontrado"));
-        
-        // Verificar que el producto existe
-        productoRepository.findById(productoId)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-        
-        // Verificar que el usuario está asignado al conteo
-        if (!conteoSector.getUsuarioAsignado1().getId().equals(usuarioId) && 
-            !conteoSector.getUsuarioAsignado2().getId().equals(usuarioId)) {
-            throw new RuntimeException("El usuario no está asignado a este conteo");
-        }
-        
-        // Buscar entrada existente del usuario para este producto
-        List<DetalleConteo> detallesExistentes = detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(conteoSector);
-        
-        System.out.println("🔍 RECONTEO DEBUG: Total detalles existentes: " + detallesExistentes.size());
-        System.out.println("🔍 RECONTEO DEBUG: Buscando producto ID: " + productoId + " para usuario: " + usuarioId);
-        
-        // Encontrar la entrada del producto para reconteo (cualquier entrada existente del producto)
-        DetalleConteo entradaExistente = null;
-        
-        // Debug de usuarios asignados
-        System.out.println("🔍 RECONTEO DEBUG: Usuario solicitante ID: " + usuarioId);
-        System.out.println("🔍 RECONTEO DEBUG: Usuario Asignado 1 ID: " + (conteoSector.getUsuarioAsignado1() != null ? conteoSector.getUsuarioAsignado1().getId() : "null"));
-        System.out.println("🔍 RECONTEO DEBUG: Usuario Asignado 2 ID: " + (conteoSector.getUsuarioAsignado2() != null ? conteoSector.getUsuarioAsignado2().getId() : "null"));
-        
-        for (DetalleConteo det : detallesExistentes) {
-            System.out.println("🔍 RECONTEO DEBUG: Revisando detalle ID: " + det.getId() + 
-                             ", Producto ID: " + det.getProducto().getId() + 
-                             ", Cantidad1: " + det.getCantidadConteo1() + 
-                             ", Cantidad2: " + det.getCantidadConteo2());
-            
-            if (det.getProducto().getId().equals(productoId)) {
-                System.out.println("🔍 RECONTEO DEBUG: Producto coincide, usando esta entrada para reconteo");
-                entradaExistente = det;
-                System.out.println("✅ RECONTEO DEBUG: Entrada encontrada para reconteo - ID: " + det.getId());
-                break; // Usar la primera entrada encontrada del producto
-            }
-        }
-        
-        if (entradaExistente != null) {
-            System.out.println("✅ RECONTEO: Actualizando entrada existente ID: " + entradaExistente.getId());
-            System.out.println("🔍 RECONTEO DEBUG: ANTES de reemplazar - Cantidad1: " + entradaExistente.getCantidadConteo1() + ", Cantidad2: " + entradaExistente.getCantidadConteo2());
-            
-            // ✅ CRÍTICO: Si la entrada existente es del conteo inicial, debemos buscar el valor del otro usuario en reconteo
-            // Determinar fecha de inicio del reconteo
-            LocalDateTime fechaInicioReconteo = null;
-            if (conteoSector.getObservaciones() != null && conteoSector.getObservaciones().startsWith("Reconteo_")) {
-                try {
-                    String fechaStr = conteoSector.getObservaciones().split("_")[1];
-                    fechaInicioReconteo = LocalDateTime.parse(fechaStr);
-                    System.out.println("✅ RECONTEO: Fecha de inicio del reconteo: " + fechaInicioReconteo);
-                } catch (Exception e) {
-                    System.out.println("⚠️ No se pudo parsear fecha de reconteo");
-                }
-            }
-            
-            final LocalDateTime fechaInicioFinal = fechaInicioReconteo;
-            
-            // Si la entrada existente es de reconteo, ya tiene el valor del otro usuario, no hacer nada
-            // Si es del conteo inicial, buscar el valor del otro usuario en reconteo
-            boolean entradaEsDeReconteo = fechaInicioFinal != null && 
-                                           entradaExistente.getFechaActualizacion() != null && 
-                                           entradaExistente.getFechaActualizacion().isAfter(fechaInicioFinal);
-            
-            if (!entradaEsDeReconteo && fechaInicioFinal != null) {
-                System.out.println("⚠️ RECONTEO: Entrada existente es del conteo inicial, buscando reconteo del otro usuario");
-                
-                // Buscar reconteo del otro usuario
-                List<DetalleConteo> detallesReconteo = detallesExistentes.stream()
-                    .filter(det -> det.getProducto().getId().equals(productoId) &&
-                                   det.getFechaActualizacion() != null && 
-                                   det.getFechaActualizacion().isAfter(fechaInicioFinal))
-                    .collect(java.util.stream.Collectors.toList());
-                
-                // Ordenar por fecha descendente
-                detallesReconteo.sort((d1, d2) -> d2.getFechaActualizacion().compareTo(d1.getFechaActualizacion()));
-                
-                if (conteoSector.getUsuarioAsignado1().getId().equals(usuarioId)) {
-                    // Usuario 1 haciendo reconteo - buscar reconteo de Usuario 2
-                    for (DetalleConteo det : detallesReconteo) {
-                        if (det.getCantidadConteo2() != null && det.getCantidadConteo2() > 0) {
-                            entradaExistente.setCantidadConteo2(det.getCantidadConteo2());
-                            entradaExistente.setFormulaCalculo2(det.getFormulaCalculo2());
-                            System.out.println("✅ RECONTEO: Copiando Usuario2 de reconteo: " + det.getCantidadConteo2());
-                            break;
-                        }
-                    }
-                } else {
-                    // Usuario 2 haciendo reconteo - buscar reconteo de Usuario 1
-                    for (DetalleConteo det : detallesReconteo) {
-                        if (det.getCantidadConteo1() != null && det.getCantidadConteo1() > 0) {
-                            entradaExistente.setCantidadConteo1(det.getCantidadConteo1());
-                            entradaExistente.setFormulaCalculo1(det.getFormulaCalculo1());
-                            System.out.println("✅ RECONTEO: Copiando Usuario1 de reconteo: " + det.getCantidadConteo1());
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            // REEMPLAZAR la cantidad (no sumar)
-            if (conteoSector.getUsuarioAsignado1().getId().equals(usuarioId)) {
-                System.out.println("🔄 RECONTEO DEBUG: Usuario 1 - Reemplazando cantidad de " + entradaExistente.getCantidadConteo1() + " a " + cantidad);
-                entradaExistente.setCantidadConteo1(cantidad);
-                entradaExistente.setFormulaCalculo1(formulaCalculo);
-                System.out.println("🔄 RECONTEO: Usuario 1 - Cantidad reemplazada: " + cantidad);
-            } else {
-                System.out.println("🔄 RECONTEO DEBUG: Usuario 2 - Reemplazando cantidad de " + entradaExistente.getCantidadConteo2() + " a " + cantidad);
-                entradaExistente.setCantidadConteo2(cantidad);
-                entradaExistente.setFormulaCalculo2(formulaCalculo);
-                System.out.println("🔄 RECONTEO: Usuario 2 - Cantidad reemplazada: " + cantidad);
-            }
-            
-            System.out.println("🔍 RECONTEO DEBUG: DESPUÉS de reemplazar - Cantidad1: " + entradaExistente.getCantidadConteo1() + ", Cantidad2: " + entradaExistente.getCantidadConteo2());
-            
-            DetalleConteo resultado = detalleConteoRepository.save(entradaExistente);
-            System.out.println("🔍 RECONTEO DEBUG: DESPUÉS de guardar - Cantidad1: " + resultado.getCantidadConteo1() + ", Cantidad2: " + resultado.getCantidadConteo2());
-            
-            // Actualizar el progreso real del sector
-            calcularProgresoReal(conteoSector);
-            conteoSectorRepository.save(conteoSector);
-            
-            return resultado;
-        } else {
-            System.out.println("❌ RECONTEO DEBUG: No se encontró entrada existente para producto ID: " + productoId + " y usuario: " + usuarioId);
-            throw new RuntimeException("No se encontró entrada existente para recontear este producto");
-        }
+        // ✅ CORRECCIÓN: En reconteo, delegar a agregarProductoAlConteo que ya maneja correctamente
+        // la creación de nuevas entradas y copia de valores del otro usuario
+        return agregarProductoAlConteo(conteoSectorId, productoId, cantidad, formulaCalculo, usuarioId);
     }
 
     /**
