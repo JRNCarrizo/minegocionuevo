@@ -20,6 +20,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -1382,8 +1383,11 @@ public class InventarioCompletoController {
                 // Información del inventario
                 rowNum++;
                 createInfoRow(sheet, rowNum++, "Nombre:", inventario.getNombre(), dataStyle);
-                createInfoRow(sheet, rowNum++, "Fecha:", inventario.getFechaInicio() != null ? 
-                    inventario.getFechaInicio().toString() : "N/A", dataStyle);
+                String fechaStr = "N/A";
+                if (inventario.getFechaInicio() != null) {
+                    fechaStr = inventario.getFechaInicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                }
+                createInfoRow(sheet, rowNum++, "Fecha:", fechaStr, dataStyle);
                 
                 // Línea en blanco
                 rowNum++;
