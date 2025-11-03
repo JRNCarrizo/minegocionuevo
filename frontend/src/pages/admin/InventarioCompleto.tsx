@@ -510,6 +510,43 @@ export default function InventarioCompleto() {
     }
   };
 
+  const exportarInventarioExcel = async (registro: any) => {
+    try {
+      toast.loading('Generando Excel...', { id: 'export-excel' });
+      
+      const token = localStorage.getItem('token');
+      const baseUrl = API_CONFIG.getBaseUrl();
+      const url = `${baseUrl}/empresas/${datosUsuario?.empresaId}/inventario-completo/${registro.inventarioId}/exportar-excel`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al generar Excel');
+      }
+
+      // Descargar el archivo
+      const blob = await response.blob();
+      const urlBlob = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = urlBlob;
+      a.download = `inventario_${registro.nombreInventario.replace(/\s+/g, '_')}_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(urlBlob);
+      document.body.removeChild(a);
+      
+      toast.success('Excel generado exitosamente', { id: 'export-excel' });
+    } catch (error) {
+      console.error('Error exportando Excel:', error);
+      toast.error('Error al generar el Excel', { id: 'export-excel' });
+    }
+  };
+
   const exportarInventarioPDF = async (registro: any) => {
     try {
       toast.loading('Generando PDF...', { id: 'export-pdf' });
@@ -3015,6 +3052,41 @@ export default function InventarioCompleto() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
+                            exportarInventarioExcel(registro);
+                          }}
+                          style={{
+                            flex: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            color: 'white',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '0.5rem',
+                            borderRadius: '0.5rem',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.2)';
+                          }}
+                        >
+                          <span>Excel</span>
+                          <span style={{ fontSize: '1.1rem' }}>📊</span>
+                        </button>
+                        
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
                             exportarInventarioPDF(registro);
                           }}
                           style={{
@@ -3043,7 +3115,7 @@ export default function InventarioCompleto() {
                             e.currentTarget.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.2)';
                           }}
                         >
-                          <span>Exportar PDF</span>
+                          <span>PDF</span>
                           <span style={{ fontSize: '1.1rem' }}>📄</span>
                         </button>
                       </div>

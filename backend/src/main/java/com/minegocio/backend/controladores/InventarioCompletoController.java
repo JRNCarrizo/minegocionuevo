@@ -12,7 +12,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -1327,6 +1333,163 @@ public class InventarioCompletoController {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
         }
+    }
+
+    /**
+     * Exportar registro de inventario a Excel
+     */
+    @GetMapping("/{inventarioId}/exportar-excel")
+    public ResponseEntity<byte[]> exportarInventarioExcel(
+            @PathVariable Long empresaId,
+            @PathVariable Long inventarioId) {
+        try {
+            System.setProperty("java.awt.headless", "true");
+            
+            System.out.println("🔍 Exportando registro de inventario a Excel: " + inventarioId);
+            
+            // Obtener los productos actualizados del inventario
+            List<Map<String, Object>> productosActualizados = inventarioCompletoService.obtenerProductosActualizadosInventario(inventarioId);
+            
+            // Obtener información del inventario
+            Optional<InventarioCompleto> inventarioOpt = inventarioCompletoService.obtenerInventarioCompleto(inventarioId);
+            if (inventarioOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            InventarioCompleto inventario = inventarioOpt.get();
+            
+            // Crear el workbook de Excel
+            try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+                Sheet sheet = workbook.createSheet("Inventario");
+                
+                // Crear estilos
+                CellStyle headerStyle = crearEstiloEncabezado(workbook);
+                CellStyle titleStyle = crearEstiloTitulo(workbook);
+                CellStyle dataStyle = workbook.createCellStyle();
+                dataStyle.setBorderBottom(BorderStyle.THIN);
+                dataStyle.setBorderTop(BorderStyle.THIN);
+                dataStyle.setBorderLeft(BorderStyle.THIN);
+                dataStyle.setBorderRight(BorderStyle.THIN);
+                
+                int rowNum = 0;
+                
+                // Título
+                Row titleRow = sheet.createRow(rowNum++);
+                Cell titleCell = titleRow.createCell(0);
+                titleCell.setCellValue("REGISTRO DE INVENTARIO COMPLETO");
+                titleCell.setCellStyle(titleStyle);
+                sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 7));
+                
+                // Información del inventario
+                rowNum++;
+                createInfoRow(sheet, rowNum++, "Nombre:", inventario.getNombre(), dataStyle);
+                createInfoRow(sheet, rowNum++, "Fecha:", inventario.getFechaInicio() != null ? 
+                    inventario.getFechaInicio().toString() : "N/A", dataStyle);
+                
+                // Línea en blanco
+                rowNum++;
+                
+                // Encabezados
+                Row headerRow = sheet.createRow(rowNum++);
+                String[] headers = {"Código", "Producto", "Stock Anterior", "Stock Nuevo", "Diferencia", "Acción", "Observaciones"};
+                for (int i = 0; i < headers.length; i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headers[i]);
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Datos
+                for (Map<String, Object> producto : productosActualizados) {
+                    Row row = sheet.createRow(rowNum++);
+                    
+                    row.createCell(0).setCellValue(producto.get("codigoProducto") != null ? 
+                        producto.get("codigoProducto").toString() : "-");
+                    row.createCell(1).setCellValue(producto.get("nombreProducto") != null ? 
+                        producto.get("nombreProducto").toString() : "-");
+                    row.createCell(2).setCellValue(((Number) producto.getOrDefault("stockAnterior", 0)).intValue());
+                    row.createCell(3).setCellValue(((Number) producto.getOrDefault("stockNuevo", 0)).intValue());
+                    row.createCell(4).setCellValue(((Number) producto.getOrDefault("diferenciaStock", 0)).intValue());
+                    row.createCell(5).setCellValue(producto.get("accion") != null ? 
+                        producto.get("accion").toString() : "-");
+                    row.createCell(6).setCellValue(producto.get("observaciones") != null ? 
+                        producto.get("observaciones").toString() : "-");
+                    
+                    // Aplicar estilo a todas las celdas
+                    for (int i = 0; i < headers.length; i++) {
+                        row.getCell(i).setCellStyle(dataStyle);
+                    }
+                }
+                
+                // Configurar anchos de columnas
+                sheet.setColumnWidth(0, 15 * 256); // Código
+                sheet.setColumnWidth(1, 50 * 256); // Producto
+                sheet.setColumnWidth(2, 15 * 256); // Stock Anterior
+                sheet.setColumnWidth(3, 15 * 256); // Stock Nuevo
+                sheet.setColumnWidth(4, 15 * 256); // Diferencia
+                sheet.setColumnWidth(5, 15 * 256); // Acción
+                sheet.setColumnWidth(6, 40 * 256); // Observaciones
+                
+                // Convertir a bytes
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                workbook.write(outputStream);
+                byte[] excelBytes = outputStream.toByteArray();
+                
+                String nombreArchivo = "inventario_" + inventarioId + "_" + LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".xlsx";
+                
+                HttpHeaders responseHeaders = new HttpHeaders();
+                responseHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+                responseHeaders.setContentDispositionFormData("attachment", nombreArchivo);
+                responseHeaders.setContentLength(excelBytes.length);
+                
+                System.out.println("✅ Excel exportado exitosamente. Tamaño: " + excelBytes.length + " bytes");
+                
+                return ResponseEntity.ok()
+                        .headers(responseHeaders)
+                        .body(excelBytes);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error al exportar inventario a Excel: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // Métodos auxiliares para estilos
+    private CellStyle crearEstiloEncabezado(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        font.setFontHeightInPoints((short) 12);
+        style.setFont(font);
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        return style;
+    }
+
+    private CellStyle crearEstiloTitulo(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        font.setFontHeightInPoints((short) 16);
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        return style;
+    }
+
+    private void createInfoRow(Sheet sheet, int rowNum, String label, String value, CellStyle style) {
+        Row row = sheet.createRow(rowNum);
+        Cell cellLabel = row.createCell(0);
+        cellLabel.setCellValue(label);
+        cellLabel.setCellStyle(style);
+        Cell cellValue = row.createCell(1);
+        cellValue.setCellValue(value);
+        cellValue.setCellStyle(style);
+        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 1, 7));
     }
 
     /**
