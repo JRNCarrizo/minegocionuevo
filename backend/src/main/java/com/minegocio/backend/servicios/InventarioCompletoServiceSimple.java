@@ -270,11 +270,17 @@ public class InventarioCompletoServiceSimple {
             // Primer usuario finalizando reconteo
             conteoSector.setEstado(ConteoSector.EstadoConteo.ESPERANDO_VERIFICACION);
             
-            // Marcar qué usuario finalizó el reconteo en las observaciones
-            if (esUsuario1) {
-                conteoSector.setObservaciones("Reconteo_Usuario1_Finalizado");
-            } else if (esUsuario2) {
-                conteoSector.setObservaciones("Reconteo_Usuario2_Finalizado");
+            // ✅ CRÍTICO: Si ya tenemos "Reconteo_" con fecha, NO sobrescribir
+            // porque necesitamos esa fecha para filtrar correctamente los reconteos
+            if (!esReconteoPorObservaciones) {
+                // Marcar qué usuario finalizó el reconteo en las observaciones
+                if (esUsuario1) {
+                    conteoSector.setObservaciones("Reconteo_Usuario1_Finalizado");
+                } else if (esUsuario2) {
+                    conteoSector.setObservaciones("Reconteo_Usuario2_Finalizado");
+                }
+            } else {
+                System.out.println("✅ [SIMPLE] Manteniendo observaciones con fecha de reconteo: " + conteoSector.getObservaciones());
             }
             
             System.out.println("⏳ [SIMPLE] Primer usuario finalizó reconteo, estado cambiado a ESPERANDO_VERIFICACION");
@@ -311,17 +317,20 @@ public class InventarioCompletoServiceSimple {
         Map<Long, Integer> reconteosUsuario2 = new HashMap<>();
         Map<Long, String> nombresProductos = new HashMap<>();
         
-        // Determinar fecha de inicio del reconteo (cuando se cambió a CON_DIFERENCIAS)
-        LocalDateTime fechaInicioReconteo = conteoSector.getFechaCreacion(); // Por defecto, usar fecha de creación
-        
-        // Buscar la fecha más reciente de actualización como referencia para reconteo
-        for (DetalleConteo detalle : detalles) {
-            if (detalle.getFechaActualizacion() != null && 
-                detalle.getFechaActualizacion().isAfter(fechaInicioReconteo)) {
-                fechaInicioReconteo = detalle.getFechaActualizacion().minusMinutes(1); // Un minuto antes
-                System.out.println("🔍 [SIMPLE] Nueva fecha de inicio del reconteo: " + fechaInicioReconteo);
-                break;
+        // ✅ CORRECCIÓN: Determinar fecha de inicio del reconteo desde las observaciones
+        LocalDateTime fechaInicioReconteo = null;
+        if (conteoSector.getObservaciones() != null && conteoSector.getObservaciones().startsWith("Reconteo_")) {
+            try {
+                String fechaStr = conteoSector.getObservaciones().split("_")[1];
+                fechaInicioReconteo = LocalDateTime.parse(fechaStr);
+                System.out.println("✅ [SIMPLE] Fecha de inicio del reconteo desde observaciones: " + fechaInicioReconteo);
+            } catch (Exception e) {
+                System.out.println("⚠️ [SIMPLE] No se pudo parsear fecha de reconteo, usando por defecto");
+                fechaInicioReconteo = conteoSector.getFechaCreacion(); // Fallback
             }
+        } else {
+            fechaInicioReconteo = conteoSector.getFechaCreacion(); // Por defecto, usar fecha de creación
+            System.out.println("🔍 [SIMPLE] No hay fecha de reconteo en observaciones, usando fecha de creación: " + fechaInicioReconteo);
         }
         
         // Debug: Mostrar todas las fechas de actualización

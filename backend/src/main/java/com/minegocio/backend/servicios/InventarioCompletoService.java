@@ -3909,12 +3909,14 @@ public class InventarioCompletoService {
         boolean estadoEsperandoVerificacion = conteoSector.getEstado() == ConteoSector.EstadoConteo.ESPERANDO_VERIFICACION;
         
         // ✅ CORREGIDO: Solo completar automáticamente en casos muy específicos
-        // 1. Durante reconteo cuando no hay diferencias
+        // 1. Durante reconteo cuando no hay diferencias y ambos usuarios ya recontaron
         // 2. NO completar automáticamente durante el conteo normal inicial
         // ✅ CRÍTICO: Removido !estadoEsperandoVerificacion para permitir completar automáticamente durante reconteo
+        // cuando ambos usuarios ya recontaron (cuando el segundo termina)
         if (estaEnReconteo && 
             productosConDiferencias == 0 && 
-            productosContados.size() == totalProductos) {
+            productosContados.size() == totalProductos &&
+            !estadoEsperandoVerificacion) {
             
             // 🔍 VERIFICACIÓN CORREGIDA: Usar el método correcto para verificar diferencias en cantidades
             boolean hayDiferenciasEnCantidades = verificarDiferenciasEnConteo(conteoSector);
