@@ -1599,6 +1599,60 @@ public class InventarioCompletoController {
     }
 
     /**
+     * Marcar un sector como completado vacío (descontar stock de productos)
+     */
+    @PostMapping("/{inventarioId}/marcar-sector-completo-vacio")
+    @Transactional
+    public ResponseEntity<?> marcarSectorCompletadoVacio(
+            @PathVariable Long empresaId,
+            @PathVariable Long inventarioId,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+        try {
+            System.out.println("🔄 === MARCAR SECTOR COMPLETADO VACÍO ===");
+            
+            // Obtener usuario autenticado
+            UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
+            Usuario usuario = usuarioRepository.findById(usuarioPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+            // Obtener empresa
+            Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+            
+            // Validar que el usuario pertenece a la empresa
+            if (!usuario.getEmpresa().getId().equals(empresaId)) {
+                return ResponseEntity.status(403).body(Map.of("error", "No tienes permisos para acceder a esta empresa"));
+            }
+            
+            // Obtener datos del request
+            Long sectorId = Long.valueOf(request.get("sectorId").toString());
+            String sectorNombre = request.get("sectorNombre").toString();
+            
+            System.out.println("🔍 Datos recibidos:");
+            System.out.println("  - Empresa ID: " + empresaId);
+            System.out.println("  - Inventario ID: " + inventarioId);
+            System.out.println("  - Sector ID: " + sectorId);
+            System.out.println("  - Sector Nombre: " + sectorNombre);
+            
+            // Marcar el sector como completado vacío
+            inventarioCompletoService.marcarSectorCompletadoVacio(inventarioId, sectorId, sectorNombre, usuario);
+            
+            System.out.println("✅ Sector marcado como completado vacío exitosamente");
+            return ResponseEntity.ok(Map.of(
+                "message", "Sector marcado como completado vacío exitosamente. El stock de los productos fue descontado.",
+                "sectorId", sectorId,
+                "sectorNombre", sectorNombre
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error marcando sector como completado vacío: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Obtener todos los detalles de un producto para mostrar conteos individuales
      */
     private List<Map<String, Object>> obtenerTodosLosDetallesDelProducto(Long conteoSectorId, Long productoId) {

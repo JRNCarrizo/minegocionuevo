@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -4884,6 +4885,167 @@ public class InventarioCompletoService {
             System.out.println("✅ Sector cancelado de completado sin conteo exitosamente");
         } catch (Exception e) {
             System.err.println("❌ Error cancelando sector completado sin conteo: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * Marcar un sector como completado vacío (descontar stock de productos)
+     * Si el sector tenía productos, los pone en 0 y descuenta del stock total
+     */
+    @Transactional
+    public void marcarSectorCompletadoVacio(Long inventarioId, Long sectorId, String sectorNombre, Usuario usuario) {
+        try {
+            System.out.println("🔄 === MARCAR SECTOR COMPLETADO VACÍO ===");
+            System.out.println("🔍 Inventario ID: " + inventarioId);
+            System.out.println("🔍 Sector ID: " + sectorId);
+            System.out.println("🔍 Sector Nombre: " + sectorNombre);
+            
+            // Obtener el inventario completo
+            InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId)
+                .orElseThrow(() -> new RuntimeException("Inventario no encontrado"));
+            
+            // Obtener el sector
+            Sector sector = sectorRepository.findById(sectorId)
+                .orElseThrow(() -> new RuntimeException("Sector no encontrado"));
+            
+            // Verificar si ya existe un conteo para este sector
+            Optional<ConteoSector> conteoExistente = conteoSectorRepository.findByInventarioCompletoAndSector(inventario, sector);
+            
+            ConteoSector conteo;
+            if (conteoExistente.isPresent()) {
+                // Si ya existe, actualizar el estado
+                conteo = conteoExistente.get();
+                conteo.setEstado(ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO);
+                conteo.setFechaFinalizacion(LocalDateTime.now());
+                conteo.setObservaciones("Sector marcado como VACÍO por " + usuario.getNombre() + " " + usuario.getApellidos() + 
+                    " - Todos los productos fueron descontados");
+            } else {
+                // Si no existe, crear un nuevo conteo
+                conteo = new ConteoSector();
+                conteo.setInventarioCompleto(inventario);
+                conteo.setSector(sector);
+                conteo.setEstado(ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO);
+                conteo.setFechaCreacion(LocalDateTime.now());
+                conteo.setFechaFinalizacion(LocalDateTime.now());
+                conteo.setObservaciones("Sector marcado como VACÍO por " + usuario.getNombre() + " " + usuario.getApellidos() + 
+                    " - Todos los productos fueron descontados");
+                conteo.setTotalProductos(0);
+                conteo.setProductosContados(0);
+                conteo.setProductosConDiferencias(0);
+                conteo.setPorcentajeCompletado(100.0);
+            }
+            
+            // PASO CRÍTICO: Obtener todos los productos con stock en este sector
+            System.out.println("🔄 === OBTENIENDO PRODUCTOS CON STOCK EN EL SECTOR ===");
+            List<StockPorSector> stocksEnSector = stockPorSectorRepository.findBySectorId(sectorId);
+            System.out.println("🔍 Productos encontrados en el sector: " + stocksEnSector.size());
+            
+            int productosDescontados = 0;
+            int cantidadTotalDescontada = 0;
+            
+            for (StockPorSector stock : stocksEnSector) {
+                if (stock.getCantidad() == null || stock.getCantidad() <= 0) {
+                    continue; // Saltar productos sin stock
+                }
+                
+                Producto producto = stock.getProducto();
+                Integer cantidadEnSector = stock.getCantidad();
+                
+                System.out.println("🔄 Procesando producto: " + producto.getNombre() + 
+                    " - Cantidad en sector: " + cantidadEnSector);
+                
+                // Crear DetalleConteo con cantidad 0 para ambos usuarios (sector vacío)
+                DetalleConteo detalleConteo;
+                Optional<DetalleConteo> detalleExistente = detalleConteoRepository
+                    .findByConteoSectorAndProducto(conteo, producto);
+                
+                if (detalleExistente.isPresent()) {
+                    detalleConteo = detalleExistente.get();
+                } else {
+                    detalleConteo = new DetalleConteo(conteo, producto);
+                }
+                
+                // Guardar el stock del sistema en este sector antes de descontarlo
+                Integer stockSistemaEnSector = cantidadEnSector;
+                
+                // Marcar ambos conteos en 0 (sector vacío)
+                detalleConteo.setCantidadConteo1(0);
+                detalleConteo.setCantidadConteo2(0);
+                detalleConteo.setCantidadFinal(0);
+                detalleConteo.setStockSistema(stockSistemaEnSector); // Guardar el stock que había en el sector
+                detalleConteo.setDiferenciaSistema(0 - stockSistemaEnSector); // Diferencia: 0 contado - stock que había en este sector
+                detalleConteo.setDiferenciaEntreConteos(0); // No hay diferencia entre conteos (ambos son 0)
+                detalleConteo.setEstado(DetalleConteo.EstadoDetalle.FINALIZADO);
+                detalleConteo.setObservaciones("Sector marcado como vacío - Stock descontado del sector: " + cantidadEnSector);
+                
+                // Calcular valor de la diferencia
+                if (producto.getPrecio() != null && cantidadEnSector > 0) {
+                    BigDecimal valorDiferencia = producto.getPrecio().multiply(BigDecimal.valueOf(-cantidadEnSector));
+                    detalleConteo.setValorDiferencia(valorDiferencia);
+                }
+                
+                detalleConteoRepository.save(detalleConteo);
+                
+                // Actualizar StockPorSector a 0 (solo del sector que se está vaciando)
+                stock.setCantidad(0);
+                stockPorSectorRepository.save(stock);
+                
+                // Recalcular el stock total del producto sumando todos los StockPorSector
+                // Esto asegura que solo se descuente lo del sector específico, no afecta otros sectores
+                List<StockPorSector> todosLosStocksDelProducto = stockPorSectorRepository.findByProductoId(producto.getId());
+                Integer stockTotalRecalculado = todosLosStocksDelProducto.stream()
+                    .mapToInt(s -> s.getCantidad() != null ? s.getCantidad() : 0)
+                    .sum();
+                
+                Integer stockAnterior = producto.getStock();
+                producto.setStock(stockTotalRecalculado);
+                productoRepository.save(producto);
+                
+                System.out.println("✅ Producto procesado:");
+                System.out.println("  - Producto: " + producto.getNombre());
+                System.out.println("  - Cantidad descontada del sector: " + cantidadEnSector);
+                System.out.println("  - Stock anterior total: " + stockAnterior);
+                System.out.println("  - Stock nuevo total (recalculado): " + stockTotalRecalculado);
+                System.out.println("  - Diferencia: " + (stockTotalRecalculado - stockAnterior));
+                
+                productosDescontados++;
+                cantidadTotalDescontada += cantidadEnSector;
+            }
+            
+            // Actualizar estadísticas del conteo
+            conteo.setProductosContados(productosDescontados);
+            conteo.setTotalProductos(productosDescontados);
+            conteo.setProductosConDiferencias(0);
+            conteo.setPorcentajeCompletado(100.0);
+            conteoSectorRepository.save(conteo);
+            
+            System.out.println("🔄 === RESUMEN DE DESCUENTO ===");
+            System.out.println("  - Productos procesados: " + productosDescontados);
+            System.out.println("  - Cantidad total descontada: " + cantidadTotalDescontada);
+            
+            // Actualizar el progreso del inventario completo
+            System.out.println("🔄 === ACTUALIZANDO PROGRESO DEL INVENTARIO ===");
+            boolean finalizado = verificarYFinalizarInventarioCompleto(inventario.getId());
+            System.out.println("🔄 Resultado de verificarYFinalizarInventarioCompleto: " + finalizado);
+            
+            // Recargar el inventario para obtener los datos actualizados
+            inventario = inventarioCompletoRepository.findById(inventarioId).orElse(null);
+            if (inventario != null) {
+                System.out.println("🔍 Estado final del inventario:");
+                System.out.println("  - ID: " + inventario.getId());
+                System.out.println("  - Estado: " + inventario.getEstado());
+                System.out.println("  - Sectores completados: " + inventario.getSectoresCompletados());
+                System.out.println("  - Total sectores: " + inventario.getTotalSectores());
+                System.out.println("  - Porcentaje completado: " + inventario.getPorcentajeCompletado());
+                System.out.println("  - Finalizado: " + finalizado);
+            }
+            
+            System.out.println("✅ Sector marcado como completado vacío exitosamente");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error marcando sector como completado vacío: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }

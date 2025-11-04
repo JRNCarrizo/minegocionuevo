@@ -1009,6 +1009,59 @@ export default function InventarioCompleto() {
     }
   };
 
+  const marcarSectorCompletadoVacio = async (sector: Sector) => {
+    try {
+      if (!datosUsuario?.empresaId || !inventario?.id) {
+        toast.error('No se pudo obtener la información del inventario');
+        return;
+      }
+
+      // Confirmar antes de marcar como vacío
+      const confirmar = window.confirm(
+        `¿Estás seguro de marcar el sector "${sector.nombre}" como vacío?\n\n` +
+        `Esto descontará el stock de todos los productos que había en este sector.\n` +
+        `Esta acción no se puede deshacer fácilmente.`
+      );
+
+      if (!confirmar) {
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const baseUrl = API_CONFIG.getBaseUrl();
+      
+      const response = await fetch(`${baseUrl}/empresas/${datosUsuario.empresaId}/inventario-completo/${inventario.id}/marcar-sector-completo-vacio`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          sectorId: sector.id,
+          sectorNombre: sector.nombre
+        })
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('✅ Respuesta del backend:', responseData);
+        toast.success(`Sector "${sector.nombre}" marcado como vacío. El stock de los productos fue descontado.`);
+        
+        // ✅ RECARGA INTELIGENTE: Solo actualizar datos del inventario específico
+        console.log('🔄 Actualizando datos del inventario específico...');
+        await cargarInventarioEspecifico(inventario?.id);
+        
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Error del backend:', errorData);
+        toast.error(errorData.error || 'Error al marcar el sector como vacío');
+      }
+    } catch (error) {
+      console.error('Error marcando sector como vacío:', error);
+      toast.error('Error al marcar el sector como vacío');
+    }
+  };
+
   const cancelarInventario = async () => {
     try {
       setCancelando(true);
@@ -2268,6 +2321,40 @@ export default function InventarioCompleto() {
                               >
                                 <span>✅</span>
                                 Dar por completado
+                              </button>
+                              <button
+                                onClick={() => marcarSectorCompletadoVacio(sector)}
+                                style={{
+                                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '0.75rem',
+                                  padding: isMobile ? '0.875rem 1.25rem' : '0.75rem 1.5rem',
+                                  fontSize: isMobile ? '0.9rem' : '0.85rem',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                  transform: 'translateY(0)',
+                                  boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)',
+                                  position: 'relative',
+                                  overflow: 'hidden',
+                                  width: isMobile ? '100%' : 'auto',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '0.5rem'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(-2px)';
+                                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.4)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(245, 158, 11, 0.3)';
+                                }}
+                              >
+                                <span>📦</span>
+                                Dar por vacío
                               </button>
                             </div>
                           ) : (

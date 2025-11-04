@@ -14,3 +14,4 @@ WHERE cantidad_original_stock IS NULL;
 
 
 
+
