@@ -479,17 +479,44 @@ export default function StockGeneral() {
         setStockData(data.data || []);
         console.log('🔍 STOCK GENERAL - Stock data establecido:', data.data?.length || 0, 'items');
         
-        // Extraer sectores únicos del stock
-        const sectoresUnicos = new Map<number, string>();
-        (data.data || []).forEach((item: StockItem) => {
-          if (item.sector) {
-            sectoresUnicos.set(item.sector.id, item.sector.nombre);
+        // Cargar TODOS los sectores activos de la empresa (no solo los que tienen productos)
+        // Esto es necesario para poder asignar productos sin sectorizar a cualquier sector
+        try {
+          const sectoresResponse = await apiCall(`/empresas/${datosUsuario?.empresaId}/sectores/todos`);
+          if (sectoresResponse.ok) {
+            const sectoresData = await sectoresResponse.json();
+            const todosLosSectores = (sectoresData.data || [])
+              .filter((sector: any) => sector.activo) // Solo sectores activos
+              .map((sector: any) => ({ id: sector.id, nombre: sector.nombre }))
+              .sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
+            setSectoresDisponibles(todosLosSectores);
+            console.log('🔍 STOCK GENERAL - Todos los sectores activos cargados:', todosLosSectores.length);
+          } else {
+            console.warn('⚠️ STOCK GENERAL - No se pudieron cargar todos los sectores, usando solo los del stock');
+            // Fallback: usar solo los sectores que aparecen en el stock
+            const sectoresUnicos = new Map<number, string>();
+            (data.data || []).forEach((item: StockItem) => {
+              if (item.sector) {
+                sectoresUnicos.set(item.sector.id, item.sector.nombre);
+              }
+            });
+            const sectoresList = Array.from(sectoresUnicos, ([id, nombre]) => ({ id, nombre }))
+              .sort((a, b) => a.nombre.localeCompare(b.nombre));
+            setSectoresDisponibles(sectoresList);
           }
-        });
-        const sectoresList = Array.from(sectoresUnicos, ([id, nombre]) => ({ id, nombre }))
-          .sort((a, b) => a.nombre.localeCompare(b.nombre));
-        setSectoresDisponibles(sectoresList);
-        console.log('🔍 STOCK GENERAL - Sectores disponibles:', sectoresList.length);
+        } catch (error) {
+          console.warn('⚠️ STOCK GENERAL - Error cargando todos los sectores, usando solo los del stock:', error);
+          // Fallback: usar solo los sectores que aparecen en el stock
+          const sectoresUnicos = new Map<number, string>();
+          (data.data || []).forEach((item: StockItem) => {
+            if (item.sector) {
+              sectoresUnicos.set(item.sector.id, item.sector.nombre);
+            }
+          });
+          const sectoresList = Array.from(sectoresUnicos, ([id, nombre]) => ({ id, nombre }))
+            .sort((a, b) => a.nombre.localeCompare(b.nombre));
+          setSectoresDisponibles(sectoresList);
+        }
       } else if (response.status === 403) {
         console.error('🔍 STOCK GENERAL - Error 403: No autorizado');
         toast.error('Error de autenticación. Por favor, inicia sesión nuevamente.');
