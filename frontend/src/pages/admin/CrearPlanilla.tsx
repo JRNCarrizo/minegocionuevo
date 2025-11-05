@@ -648,7 +648,7 @@ export default function CrearPlanilla() {
         const element = inputBusquedaRef.current;
         const rect = element.getBoundingClientRect();
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const targetPosition = scrollTop + rect.top - 140; // 140px de margen desde arriba
+        const targetPosition = scrollTop + rect.top - 170; // 170px de margen desde arriba
         
         window.scrollTo({
           top: targetPosition,
