@@ -494,7 +494,7 @@ export default function CrearIngreso() {
              const element = inputBusquedaRef.current;
              if (element) {
                const elementPosition = element.getBoundingClientRect().top;
-                              const offsetPosition = elementPosition + window.pageYOffset - 190; // 190px de offset desde arriba
+                              const offsetPosition = elementPosition + window.pageYOffset - 210; // 210px de offset desde arriba
                
                window.scrollTo({
                  top: offsetPosition,

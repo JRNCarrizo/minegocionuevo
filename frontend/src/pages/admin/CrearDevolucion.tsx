@@ -1362,7 +1362,7 @@ export default function CrearDevolucion() {
                           const rect = inputBusquedaRef.current.getBoundingClientRect();
                           const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                           window.scrollTo({
-                            top: scrollTop + rect.top - 185,
+                            top: scrollTop + rect.top - 210,
                             behavior: 'smooth'
                           });
                         }
