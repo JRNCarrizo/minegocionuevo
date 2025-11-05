@@ -10,6 +10,33 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&family=Libre+Baskerville:wght@400;700&family=Cinzel:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Script para aplicar tema antes de que React se monte (evita flash) -->
+    <script>
+      (function() {
+        // Función para obtener el tema desde localStorage
+        // NOTA: En este punto no tenemos el userId disponible, así que usamos la preferencia global
+        // El hook useTheme se encargará de aplicar la preferencia específica del usuario cuando se monte
+        function getThemeFromStorage() {
+          // Usar preferencia global (el hook useTheme aplicará la específica del usuario después)
+          const globalTheme = localStorage.getItem('theme');
+          if (globalTheme === 'dark' || globalTheme === 'light') {
+            return globalTheme;
+          }
+          // Si no hay preferencia global, usar preferencia del sistema
+          return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        
+        // Aplicar tema inmediatamente
+        const theme = getThemeFromStorage();
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+        } else {
+          document.documentElement.classList.add('light');
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
