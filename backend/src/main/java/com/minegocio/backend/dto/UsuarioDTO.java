@@ -26,6 +26,9 @@ public class UsuarioDTO {
     @Size(max = 20, message = "El número de documento no puede exceder 20 caracteres")
     private String numeroDocumento;
     
+    @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
+    private String telefono;
+    
     private String rol;
     
     private Boolean activo;
@@ -40,13 +43,14 @@ public class UsuarioDTO {
     public UsuarioDTO() {}
     
     public UsuarioDTO(Long id, String nombreUsuario, String email, String nombre, 
-                     String apellido, String numeroDocumento, String rol, Boolean activo, Long empresaId, String empresaNombre) {
+                     String apellido, String numeroDocumento, String telefono, String rol, Boolean activo, Long empresaId, String empresaNombre) {
         this.id = id;
         this.nombreUsuario = nombreUsuario;
         this.email = email;
         this.nombre = nombre;
         this.apellido = apellido;
         this.numeroDocumento = numeroDocumento;
+        this.telefono = telefono;
         this.rol = rol;
         this.activo = activo;
         this.empresaId = empresaId;
@@ -100,6 +104,14 @@ public class UsuarioDTO {
     
     public void setNumeroDocumento(String numeroDocumento) {
         this.numeroDocumento = numeroDocumento;
+    }
+    
+    public String getTelefono() {
+        return telefono;
+    }
+    
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
     }
     
     public String getRol() {

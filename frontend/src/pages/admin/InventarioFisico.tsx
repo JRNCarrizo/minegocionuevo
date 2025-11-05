@@ -14,7 +14,7 @@ export default function InventarioFisico() {
   const { hasPermission } = usePermissions();
 
   // Verificar permisos
-  if (!hasPermission('GESTION_INVENTARIO')) {
+  if (!hasPermission('INVENTARIO_COMPLETO')) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

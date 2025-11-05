@@ -423,16 +423,20 @@ export default function GestionAdministradores() {
                           </td>
                           <td className="td">
                             <div className="documento-badge">
-                              <div>{admin.numeroDocumento || 'N/A'}</div>
-                              {admin.telefono && (
-                                <div style={{ 
-                                  fontSize: '0.75rem', 
-                                  color: '#6b7280', 
-                                  marginTop: '0.25rem' 
-                                }}>
-                                  📞 {admin.telefono}
-                                </div>
-                              )}
+                              <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                                {admin.numeroDocumento || 'N/A'}
+                              </div>
+                              <div style={{ 
+                                fontSize: '0.875rem', 
+                                color: admin.telefono ? 'var(--color-texto-principal)' : '#9ca3af', 
+                                marginTop: '0.25rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
+                              }}>
+                                <span>📞</span>
+                                <span>{admin.telefono || 'Sin teléfono'}</span>
+                              </div>
                             </div>
                           </td>
                           <td className="td">

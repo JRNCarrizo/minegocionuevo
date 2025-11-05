@@ -468,6 +468,7 @@ public class GestionAdministradoresController {
             usuario.getNombre(),
             usuario.getApellidos(), // esto va a apellido en el DTO
             usuario.getNumeroDocumento(),
+            usuario.getTelefono(), // incluir teléfono
             usuario.getRol().toString(),
             usuario.getActivo(),
             usuario.getEmpresa() != null ? usuario.getEmpresa().getId() : null,

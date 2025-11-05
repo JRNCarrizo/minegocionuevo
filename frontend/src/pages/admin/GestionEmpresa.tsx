@@ -311,7 +311,7 @@ export default function GestionEmpresa() {
       color: '#7c3aed',
       enlace: '/admin/inventario-completo',
       gradiente: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-      permiso: 'GESTION_INVENTARIO'
+      permiso: 'INVENTARIO_COMPLETO'
     },
     {
       titulo: 'Movimientos del Día',

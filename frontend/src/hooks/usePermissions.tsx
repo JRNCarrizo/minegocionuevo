@@ -69,6 +69,7 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
           GESTION_RETORNOS: true,
           GESTION_SECTORES: true,
           GESTION_TRANSPORTISTAS: true,
+          INVENTARIO_COMPLETO: true,
           MOVIMIENTOS_DIA: true
         };
         setPermissions(allPermissions);

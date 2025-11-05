@@ -54,7 +54,6 @@ public class PermisoUsuario {
         CONFIGURACION("Configuración"),
         GESTION_ADMINISTRADORES("Gestión de Administradores"),
         GESTION_EMPRESA("Gestión de Empresa"),
-        INVENTARIO_COMPLETO("Inventario Completo"),
         CONSUMO_SUSCRIPCIONES("Consumo y Suscripciones"),
         // Sub-permisos de Gestión de Empresa
         CARGA_PLANILLAS("Carga de Planillas"),
@@ -63,7 +62,7 @@ public class PermisoUsuario {
         GESTION_RETORNOS("Gestión de Retornos"),
         GESTION_SECTORES("Gestión de Sectores"),
         GESTION_TRANSPORTISTAS("Gestión de Transportistas"),
-        GESTION_INVENTARIO("Gestión de Inventario"),
+        INVENTARIO_COMPLETO("Inventario Completo"),
         MOVIMIENTOS_DIA("Movimientos del Día");
 
         private final String descripcion;

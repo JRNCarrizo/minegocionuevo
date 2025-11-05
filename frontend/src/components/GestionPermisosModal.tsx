@@ -53,12 +53,12 @@ export default function GestionPermisosModal({
       // Organizar las secciones: principales primero, luego sub-secciones de Gestión de Empresa
       const seccionesPrincipales = seccionesArray.filter(s => 
         !['CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
-          'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'GESTION_INVENTARIO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
+          'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'INVENTARIO_COMPLETO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
       );
       
       const subSeccionesGestionEmpresa = seccionesArray.filter(s => 
         ['CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
-         'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'GESTION_INVENTARIO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
+         'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'INVENTARIO_COMPLETO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
       );
       
       // Reorganizar: mover GESTION_EMPRESA al final de las secciones principales
@@ -100,7 +100,7 @@ export default function GestionPermisosModal({
       if (funcionalidad === 'GESTION_EMPRESA' && !permitido) {
         const subSecciones = [
           'CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
-          'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'MOVIMIENTOS_DIA', 'GESTION_INVENTARIO'
+          'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'MOVIMIENTOS_DIA', 'INVENTARIO_COMPLETO'
         ];
         
         subSecciones.forEach(subSeccion => {
@@ -139,7 +139,7 @@ export default function GestionPermisosModal({
     if (nuevosPermisos['GESTION_EMPRESA']) {
       const subSecciones = [
         'CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
-        'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'MOVIMIENTOS_DIA', 'GESTION_INVENTARIO'
+        'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'MOVIMIENTOS_DIA', 'INVENTARIO_COMPLETO'
       ];
       
       subSecciones.forEach(subSeccion => {
@@ -229,7 +229,7 @@ export default function GestionPermisosModal({
                 <div className="permissions-list">
                   {secciones.filter(s => 
                     !['CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
-                      'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'GESTION_INVENTARIO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
+                      'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'INVENTARIO_COMPLETO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
                   ).map((seccion) => (
                     <div key={seccion.codigo} className="permission-item">
                       <div className="permission-info">
@@ -272,7 +272,7 @@ export default function GestionPermisosModal({
                   <div className="permissions-list">
                     {secciones.filter(s => 
                       ['CARGA_PLANILLAS', 'ROTURAS_PERDIDAS', 'INGRESOS', 'GESTION_RETORNOS', 
-                       'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'GESTION_INVENTARIO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
+                       'GESTION_SECTORES', 'GESTION_TRANSPORTISTAS', 'INVENTARIO_COMPLETO', 'MOVIMIENTOS_DIA'].includes(s.codigo)
                     ).map((seccion) => (
                     <div key={seccion.codigo} className="permission-item sub-permission">
                       <div className="permission-info">
