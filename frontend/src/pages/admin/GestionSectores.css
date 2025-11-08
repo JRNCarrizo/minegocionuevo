@@ -1236,6 +1236,16 @@
   border-bottom: 2px solid #f1f5f9;
 }
 
+.header-modal-productos {
+  gap: 1rem;
+}
+
+.acciones-exportacion-modal {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .contenido-header-modal {
   display: flex;
   align-items: center;
@@ -1819,6 +1829,54 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .header-modal-productos {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .header-modal-productos .contenido-header-modal {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .header-modal-productos .icono-modal {
+    margin: 0 auto;
+    width: 52px;
+    height: 52px;
+    font-size: 1.8rem;
+  }
+
+  .header-modal-productos .titulo-modal {
+    font-size: 1.125rem;
+  }
+
+  .header-modal-productos .subtitulo-modal {
+    font-size: 0.85rem;
+  }
+
+  .acciones-exportacion-modal {
+    width: 100%;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .acciones-exportacion-modal .boton-primario {
+    flex: 1;
+    min-width: 130px;
+    justify-content: center;
+    font-size: 0.85rem;
+  }
+
+  .header-modal-productos .boton-cerrar-modal {
+    align-self: flex-end;
+    width: 36px;
+    height: 36px;
+  }
+
   .contenedor-sectores {
     padding: 1rem;
   }
@@ -1958,6 +2016,16 @@
 }
 
 @media (max-width: 480px) {
+  .acciones-exportacion-modal {
+    gap: 0.4rem;
+  }
+
+  .acciones-exportacion-modal .boton-primario {
+    min-width: 120px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.8rem;
+  }
+
   .producto-card-row {
     flex-direction: column;
     align-items: stretch;

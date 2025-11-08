@@ -1913,7 +1913,7 @@ export default function GestionSectores() {
       {mostrarModalProductos && (
         <div className="modal-overlay">
           <div className="modal-productos">
-            <div className="header-modal">
+            <div className="header-modal header-modal-productos">
               <div className="contenido-header-modal">
                 <div className="icono-modal">
                   <span>📦</span>
@@ -1927,7 +1927,7 @@ export default function GestionSectores() {
                   </p>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <div className="acciones-exportacion-modal">
                 <button
                   onClick={descargarPDFProductosSector}
                   className="boton-primario"
