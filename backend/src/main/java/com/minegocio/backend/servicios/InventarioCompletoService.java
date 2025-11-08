@@ -2633,9 +2633,20 @@ public class InventarioCompletoService {
             
             // Actualizar estados por usuario si hay usuarios asignados
             if (conteoSector.getUsuarioAsignado1() != null && conteoSector.getUsuarioAsignado2() != null) {
-                String estadoUsuario1 = determinarEstadoUsuario(conteoSector, conteoSector.getUsuarioAsignado1().getId()).name();
-                String estadoUsuario2 = determinarEstadoUsuario(conteoSector, conteoSector.getUsuarioAsignado2().getId()).name();
+                ConteoSector.EstadoConteo estadoUsuario1Enum = determinarEstadoUsuario(conteoSector, conteoSector.getUsuarioAsignado1().getId());
+                ConteoSector.EstadoConteo estadoUsuario2Enum = determinarEstadoUsuario(conteoSector, conteoSector.getUsuarioAsignado2().getId());
+
+                String estadoUsuario1 = estadoUsuario1Enum.name();
+                String estadoUsuario2 = estadoUsuario2Enum.name();
                 dto.actualizarEstadosUsuario(estadoUsuario1, estadoUsuario2);
+
+                boolean usuario1Finalizo = estadoUsuario1Enum == ConteoSector.EstadoConteo.ESPERANDO_VERIFICACION
+                        || estadoUsuario1Enum == ConteoSector.EstadoConteo.COMPLETADO;
+                boolean usuario2Finalizo = estadoUsuario2Enum == ConteoSector.EstadoConteo.ESPERANDO_VERIFICACION
+                        || estadoUsuario2Enum == ConteoSector.EstadoConteo.COMPLETADO;
+
+                dto.setConteo1Finalizado(usuario1Finalizo);
+                dto.setConteo2Finalizado(usuario2Finalizo);
             }
             
             conteosSectorDTO.add(dto);
