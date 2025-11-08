@@ -316,6 +316,7 @@ public class InventarioCompletoServiceSimple {
         Map<Long, Integer> reconteosUsuario1 = new HashMap<>();
         Map<Long, Integer> reconteosUsuario2 = new HashMap<>();
         Map<Long, String> nombresProductos = new HashMap<>();
+        Map<Long, List<DetalleConteo>> detallesPorProducto = new HashMap<>();
         
         // ✅ CORRECCIÓN: Determinar fecha de inicio del reconteo desde las observaciones
         LocalDateTime fechaInicioReconteo = null;
@@ -355,6 +356,7 @@ public class InventarioCompletoServiceSimple {
             Long productoId = detalle.getProducto().getId();
             String nombreProducto = detalle.getProducto().getNombre();
             nombresProductos.put(productoId, nombreProducto);
+            detallesPorProducto.computeIfAbsent(productoId, k -> new ArrayList<>()).add(detalle);
             
             // Solo procesar valores que son del reconteo (más recientes que la fecha de inicio)
             LocalDateTime fechaValor = detalle.getFechaActualizacion() != null 
@@ -427,7 +429,73 @@ public class InventarioCompletoServiceSimple {
             }
         }
         
+        // Si llegamos aquí, no hay diferencias. Consolidar reconteos en los detalles
+        consolidarReconteoSinDiferencias(detallesPorProducto, reconteosUsuario1, reconteosUsuario2);
+        
         System.out.println("✅ [SIMPLE] No se encontraron diferencias entre los reconteos");
         return false;
+    }
+
+    /**
+     * ✅ Consolidar los detalles de conteo cuando no hay diferencias en el reconteo
+     */
+    private void consolidarReconteoSinDiferencias(
+            Map<Long, List<DetalleConteo>> detallesPorProducto,
+            Map<Long, Integer> reconteosUsuario1,
+            Map<Long, Integer> reconteosUsuario2
+    ) {
+        detallesPorProducto.forEach((productoId, listaDetalles) -> {
+            if (listaDetalles == null || listaDetalles.isEmpty()) {
+                return;
+            }
+
+            // Determinar los valores finales para cada usuario (preferir reconteo, fallback a 0)
+            Integer valorUsuario1 = reconteosUsuario1.containsKey(productoId)
+                    ? reconteosUsuario1.get(productoId)
+                    : reconteosUsuario2.getOrDefault(productoId, 0);
+            Integer valorUsuario2 = reconteosUsuario2.containsKey(productoId)
+                    ? reconteosUsuario2.get(productoId)
+                    : reconteosUsuario1.getOrDefault(productoId, 0);
+
+            if (valorUsuario1 == null) valorUsuario1 = 0;
+            if (valorUsuario2 == null) valorUsuario2 = 0;
+
+            // Ordenar detalles por fecha (más reciente primero)
+            listaDetalles.sort((d1, d2) -> {
+                LocalDateTime fecha1 = d1.getFechaActualizacion() != null ? d1.getFechaActualizacion() : d1.getFechaCreacion();
+                LocalDateTime fecha2 = d2.getFechaActualizacion() != null ? d2.getFechaActualizacion() : d2.getFechaCreacion();
+                if (fecha1 == null && fecha2 == null) return 0;
+                if (fecha1 == null) return 1;
+                if (fecha2 == null) return -1;
+                return fecha2.compareTo(fecha1);
+            });
+
+            // Mantener el detalle más reciente como consolidado
+            DetalleConteo detallePrincipal = listaDetalles.get(0);
+            detallePrincipal.setCantidadConteo1(valorUsuario1);
+            detallePrincipal.setCantidadConteo2(valorUsuario2);
+            detallePrincipal.setFormulaCalculo1(null);
+            detallePrincipal.setFormulaCalculo2(null);
+            detallePrincipal.setEliminado(false);
+            detallePrincipal.setEstado(DetalleConteo.EstadoDetalle.FINALIZADO);
+            int diferenciaEntre = (valorUsuario1 != null ? valorUsuario1 : 0) - (valorUsuario2 != null ? valorUsuario2 : 0);
+            detallePrincipal.setDiferenciaEntreConteos(diferenciaEntre);
+            int cantidadFinal = Math.max(valorUsuario1 != null ? valorUsuario1 : 0, valorUsuario2 != null ? valorUsuario2 : 0);
+            detallePrincipal.setCantidadFinal(cantidadFinal);
+            if (detallePrincipal.getStockSistema() != null) {
+                detallePrincipal.setDiferenciaSistema(detallePrincipal.getStockSistema() - cantidadFinal);
+            } else {
+                detallePrincipal.setDiferenciaSistema(0);
+            }
+            detalleConteoRepository.save(detallePrincipal);
+
+            // Marcar el resto como eliminados para que no sigan apareciendo como diferencias
+            for (int i = 1; i < listaDetalles.size(); i++) {
+                DetalleConteo detalleAntiguo = listaDetalles.get(i);
+                detalleAntiguo.setEliminado(true);
+                detalleAntiguo.setEstado(DetalleConteo.EstadoDetalle.ELIMINADO);
+                detalleConteoRepository.save(detalleAntiguo);
+            }
+        });
     }
 }
