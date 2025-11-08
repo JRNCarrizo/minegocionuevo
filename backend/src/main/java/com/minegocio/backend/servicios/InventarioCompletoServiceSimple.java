@@ -357,8 +357,16 @@ public class InventarioCompletoServiceSimple {
             nombresProductos.put(productoId, nombreProducto);
             
             // Solo procesar valores que son del reconteo (más recientes que la fecha de inicio)
-            boolean esValorReconteo = detalle.getFechaActualizacion() != null && 
-                                    detalle.getFechaActualizacion().isAfter(fechaInicioReconteo);
+            LocalDateTime fechaValor = detalle.getFechaActualizacion() != null 
+                ? detalle.getFechaActualizacion() 
+                : detalle.getFechaCreacion();
+            
+            boolean esValorReconteo = false;
+            if (fechaInicioReconteo == null) {
+                esValorReconteo = true;
+            } else if (fechaValor != null) {
+                esValorReconteo = !fechaValor.isBefore(fechaInicioReconteo); // incluye iguales
+            }
             
             System.out.println("🔍 [SIMPLE] Procesando detalle ID: " + detalle.getId() + 
                              ", Producto: " + nombreProducto + 
