@@ -431,6 +431,7 @@ public class InventarioCompletoServiceSimple {
         
         // Si llegamos aquí, no hay diferencias. Consolidar reconteos en los detalles
         consolidarReconteoSinDiferencias(detallesPorProducto, reconteosUsuario1, reconteosUsuario2);
+        regresarEstadoConteoSinDiferencias(conteoSector, detallesPorProducto);
         
         System.out.println("✅ [SIMPLE] No se encontraron diferencias entre los reconteos");
         return false;
@@ -516,5 +517,19 @@ public class InventarioCompletoServiceSimple {
                 detalleConteoRepository.save(detalleAntiguo);
             }
         });
+    }
+
+    /**
+     * ✅ Ajusta el estado del conteo y sus detalles cuando no quedan diferencias
+     */
+    private void regresarEstadoConteoSinDiferencias(
+            ConteoSector conteoSector,
+            Map<Long, List<DetalleConteo>> detallesPorProducto
+    ) {
+        // Ajustar detalles consolidados (limpiar textos y estados solo lectura)
+        // Recalcular y actualizar el estado del sector
+        conteoSector.setEstado(ConteoSector.EstadoConteo.COMPLETADO);
+        conteoSector.setObservaciones("Reconteo_Completado_Sin_Diferencias");
+        conteoSectorRepository.save(conteoSector);
     }
 }

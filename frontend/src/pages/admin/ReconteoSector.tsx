@@ -683,6 +683,11 @@ export default function ReconteoSector() {
     }
   };
 
+  const esUsuario1 = datosUsuario?.id === conteoInfo?.usuario1Id;
+  const esUsuario2 = datosUsuario?.id === conteoInfo?.usuario2Id;
+  const estadoEsperandoSegundo = conteoInfo?.estado === 'ESPERANDO_VERIFICACION';
+  const puedeEditarReconteo = !estadoEsperandoSegundo || esUsuario2;
+
   const obtenerTextoEstado = (estado: string) => {
     switch (estado) {
       case 'PENDIENTE':
@@ -839,10 +844,12 @@ export default function ReconteoSector() {
                 margin: 0,
                 fontSize: '0.875rem'
               }}>
-                {conteoInfo.estado === 'ESPERANDO_VERIFICACION' 
-                  ? 'Esperando que el segundo usuario complete su reconteo'
-                  : 'Ambos usuarios deben hacer el reconteo para resolver las diferencias'
-                }
+                {conteoInfo.estado === 'ESPERANDO_VERIFICACION'
+                  ? esUsuario2
+                    ? 'Debes completar tu reconteo para cerrar las diferencias.'
+                    : 'Ya completaste tu reconteo. Esperando al segundo usuario.'
+                  : 'Ambos usuarios deben hacer el reconteo para resolver las diferencias.'
+              }
               </p>
               )}
             </div>
@@ -1050,10 +1057,12 @@ export default function ReconteoSector() {
                 margin: 0,
                 lineHeight: '1.4'
               }}>
-                {conteoInfo.estado === 'ESPERANDO_VERIFICACION' 
-                  ? 'El primer usuario ya completó su reconteo. Ahora el segundo usuario debe hacer su reconteo para comparar y resolver las diferencias.'
+                {conteoInfo.estado === 'ESPERANDO_VERIFICACION'
+                  ? esUsuario2
+                    ? 'Eres el segundo usuario. Completa tu reconteo para comparar y resolver las diferencias.'
+                    : 'Ya finalizaste tu reconteo. Esperando al segundo usuario para continuar.'
                   : 'Ambos usuarios deben hacer el reconteo de los productos con diferencias. El sistema comparará los resultados para determinar las cantidades finales.'
-                }
+              }
               </p>
             </div>
             
@@ -1639,8 +1648,8 @@ export default function ReconteoSector() {
                     
                     {(() => {
                       const esSolidificado = reconteosSolidificados[detalle.producto.id];
-                      const esActivo = true; // Todos los productos están habilitados para reconteo
-                      
+                      const esActivo = puedeEditarReconteo;
+
                       if (esSolidificado) {
                           // Campo solidificado (solo lectura) con opción de editar
                           return (
@@ -1684,6 +1693,20 @@ export default function ReconteoSector() {
                               }}>
                                 ✏️
                               </div>
+                            </div>
+                          );
+                        } else if (!esActivo) {
+                          return (
+                            <div style={{
+                              padding: '0.75rem',
+                              border: '1px dashed #e5e7eb',
+                              borderRadius: '0.5rem',
+                              background: '#f8fafc',
+                              color: '#6b7280',
+                              fontSize: '0.875rem',
+                              textAlign: 'center'
+                            }}>
+                              Esperando el reconteo del segundo usuario.
                             </div>
                           );
                         } else {
@@ -1776,7 +1799,7 @@ export default function ReconteoSector() {
             </div>
 
             {/* Botón de Finalizar Reconteo */}
-            {mostrarBotonFinalizar && (
+            {mostrarBotonFinalizar && puedeEditarReconteo && (
               <div style={{
                 marginTop: '2rem',
                 textAlign: 'center'
