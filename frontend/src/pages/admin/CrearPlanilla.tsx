@@ -93,6 +93,7 @@ export default function CrearPlanilla() {
   const [inputBusquedaTransporte, setInputBusquedaTransporte] = useState('');
 
   // Referencias
+  const datosCargadosRef = useRef(false);
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
   const inputCantidadRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
@@ -158,7 +159,8 @@ export default function CrearPlanilla() {
     }
     
     // Solo cargar datos si el usuario ya está cargado
-    if (datosUsuario) {
+    if (datosUsuario && !datosCargadosRef.current) {
+      datosCargadosRef.current = true;
       cargarProductos();
       cargarTransportistas();
     }
@@ -175,8 +177,10 @@ export default function CrearPlanilla() {
         return matchCodigo || matchBarras || matchNombre;
       });
       
+      const filtradosConStock = filtrados.filter(producto => obtenerStockDisponible(producto) > 0);
+      
       // Ordenar resultados: primero códigos personalizados, luego códigos de barras, luego nombres
-      const productosOrdenados = filtrados.sort((a, b) => {
+      const productosOrdenados = filtradosConStock.sort((a, b) => {
         const busqueda = inputBusqueda.toLowerCase();
         
         // Prioridad 1: Coincidencia exacta en código personalizado

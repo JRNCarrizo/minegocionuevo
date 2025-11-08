@@ -541,6 +541,96 @@
   font-size: 1.2rem;
 }
 
+.buscador-sectores-avanzado {
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 1.25rem;
+  padding: clamp(1.25rem, 2vw, 1.75rem);
+  margin-bottom: 2rem;
+  color: #e2e8f0;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  backdrop-filter: blur(6px);
+}
+
+.buscador-sectores-campo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 0.85rem;
+  padding: 0.75rem 1rem;
+  gap: 0.75rem;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.buscador-sectores-campo:focus-within {
+  border-color: rgba(96, 165, 250, 0.9);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+.decorador-icono {
+  font-size: 1.25rem;
+}
+
+.input-buscador-sectores {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #f8fafc;
+  font-size: 1rem;
+  outline: none;
+}
+
+.input-buscador-sectores::placeholder {
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.boton-limpiar-buscador {
+  background: rgba(226, 232, 240, 0.2);
+  border: none;
+  color: #f8fafc;
+  border-radius: 9999px;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.boton-limpiar-buscador:hover {
+  background: rgba(248, 250, 252, 0.35);
+  transform: scale(1.05);
+}
+
+.ayuda-buscador {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.8);
+}
+
+.ayuda-buscador code {
+  background: rgba(15, 23, 42, 0.35);
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.35rem;
+  color: #dbeafe;
+  font-size: 0.8rem;
+}
+
+.resumen-busqueda-sectores {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: #f8fafc;
+  font-weight: 500;
+}
+
+.tarjeta-vacia-inactivos {
+  grid-column: 1 / -1;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  color: rgba(226, 232, 240, 0.85);
+}
+
 /* Grid de sectores */
 .contenedor-grid {
   display: grid;
@@ -620,13 +710,17 @@
 .header-tarjeta-sector {
   padding: 1rem;
   color: white;
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .contenido-header-sector {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex: 1;
 }
 
 .icono-sector {
@@ -649,9 +743,7 @@
 }
 
 .badge-estado {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
+  position: static;
 }
 
 .estado-sector {
@@ -1793,6 +1885,14 @@
     border-radius: 10px;
   }
   
+  .buscador-sectores-avanzado {
+    padding: 1rem;
+  }
+
+  .buscador-sectores-campo {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
   .modal-detalle,
   .modal-formulario {
     margin: 1rem;

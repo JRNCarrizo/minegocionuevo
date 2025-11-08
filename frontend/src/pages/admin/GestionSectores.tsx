@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useNavigate } from 'react-router-dom';
@@ -94,6 +94,7 @@ export default function GestionSectores() {
   const [guardandoAsignaciones, setGuardandoAsignaciones] = useState(false);
   const [filtroBusquedaAsignacion, setFiltroBusquedaAsignacion] = useState('');
   const [filtroBusquedaProductos, setFiltroBusquedaProductos] = useState('');
+  const [filtroBusquedaSectores, setFiltroBusquedaSectores] = useState('');
   
   // Estados para transferencia de stock
   const [productosConStock, setProductosConStock] = useState<StockPorSector[]>([]);
@@ -305,6 +306,27 @@ export default function GestionSectores() {
 
     console.log('🌐 API Call:', url); // Debug log
     return fetch(url, defaultOptions);
+  };
+
+  const normalizarTexto = (texto: string) =>
+    (texto || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+
+  const tokensBusquedaSectores = useMemo(() => {
+    return filtroBusquedaSectores
+      .split(/[\/\s,;<>]+/)
+      .map((token) => normalizarTexto(token))
+      .filter(Boolean);
+  }, [filtroBusquedaSectores]);
+
+  const coincideConBusquedaSectores = (sector: Sector) => {
+    if (tokensBusquedaSectores.length === 0) return true;
+    const textoComparacion = normalizarTexto(
+      `${sector.nombre} ${sector.descripcion || ''} ${sector.ubicacion || ''}`
+    );
+    return tokensBusquedaSectores.every((token) => textoComparacion.includes(token));
   };
 
   // Función para evaluar expresiones matemáticas de forma segura
@@ -954,6 +976,13 @@ export default function GestionSectores() {
   // Filtrar sectores activos e inactivos
   const sectoresActivos = sectores.filter(s => s.activo);
   const sectoresInactivos = sectores.filter(s => !s.activo);
+  const sectoresActivosFiltrados = sectoresActivos.filter(coincideConBusquedaSectores);
+  const sectoresInactivosFiltrados = sectoresInactivos.filter(coincideConBusquedaSectores);
+  const hayFiltroSectores = tokensBusquedaSectores.length > 0;
+  const totalSectoresCoincidencia = sectoresActivosFiltrados.length + sectoresInactivosFiltrados.length;
+  const totalSectoresCoincidenciaVisibles =
+    sectoresActivosFiltrados.length + (mostrarSectoresInactivos ? sectoresInactivosFiltrados.length : 0);
+  const hayCoincidenciasOcultas = hayFiltroSectores && !mostrarSectoresInactivos && sectoresInactivosFiltrados.length > 0;
 
   // Manejo de teclas para navegación
   useEffect(() => {
@@ -1079,8 +1108,8 @@ export default function GestionSectores() {
             } else if (elementoSeleccionado >= 4) {
               // Seleccionar sector
               const sectoresVisibles = mostrarSectoresInactivos 
-                ? [...sectoresActivos, ...sectoresInactivos]
-                : sectoresActivos;
+                ? [...sectoresActivosFiltrados, ...sectoresInactivosFiltrados]
+                : sectoresActivosFiltrados;
               const sectorIndex = elementoSeleccionado - 4;
               const sectorSeleccionado = sectoresVisibles[sectorIndex];
               if (sectorSeleccionado) {
@@ -1105,8 +1134,8 @@ export default function GestionSectores() {
           
           event.preventDefault();
           const sectoresVisibles = mostrarSectoresInactivos 
-            ? [...sectoresActivos, ...sectoresInactivos]
-            : sectoresActivos;
+            ? [...sectoresActivosFiltrados, ...sectoresInactivosFiltrados]
+            : sectoresActivosFiltrados;
           const totalElementos = 4 + sectoresVisibles.length; // 4 botones + sectores
           
           let nuevaSeleccion = elementoSeleccionado;
@@ -1147,8 +1176,8 @@ export default function GestionSectores() {
   }, [mostrarModalCrear, mostrarModalEditar, mostrarModalProductos, 
       mostrarModalDetalle, mostrarModalAsignar, mostrarModalTransferir, 
       mostrarModalHistorial, mostrarModalHistorialGeneral,
-      navigate, modoNavegacion, elementoSeleccionado, sectoresActivos, 
-      sectoresInactivos, mostrarSectoresInactivos, migrarSectores, abrirModalProductos, 
+      navigate, modoNavegacion, elementoSeleccionado, sectoresActivosFiltrados, 
+      sectoresInactivosFiltrados, mostrarSectoresInactivos, migrarSectores, abrirModalProductos, 
       setMostrarModalCrear, productosEnSector, filtroBusquedaProductos, filaSeleccionada, 
       accionSeleccionada, inputBusquedaRef, abrirModalTransferirProducto, quitarProductoDelSector]);
 
@@ -1270,6 +1299,49 @@ export default function GestionSectores() {
           </div>
         )}
 
+        {/* Buscador Avanzado */}
+        <div className="buscador-sectores-avanzado">
+          <div className="buscador-sectores-campo">
+            <div className="decorador-icono">🔍</div>
+            <input
+              type="text"
+              value={filtroBusquedaSectores}
+              onChange={(e) => setFiltroBusquedaSectores(e.target.value)}
+              placeholder="Buscar sectores por nombre, prefijo o subruta (ej: sectorA)"
+              className="input-buscador-sectores"
+            />
+            {filtroBusquedaSectores && (
+              <button
+                type="button"
+                className="boton-limpiar-buscador"
+                onClick={() => setFiltroBusquedaSectores('')}
+                title="Limpiar búsqueda"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          <div className="ayuda-buscador">
+            Usa separadores como `/`, espacios o comas para filtrar por varias palabras clave.
+            Ejemplo: <code>sectorA estante1</code>
+          </div>
+
+          {hayFiltroSectores && (
+            <div className="resumen-busqueda-sectores">
+              {totalSectoresCoincidencia === 0 ? (
+                'No se encontraron sectores con ese nombre.'
+              ) : (
+                <>
+                  {`Coinciden ${totalSectoresCoincidencia} sector${totalSectoresCoincidencia !== 1 ? 'es' : ''}. `}
+                  {hayCoincidenciasOcultas
+                    ? 'Activa la opción de sectores inactivos para ver el resto de coincidencias.'
+                    : `Se muestran ${totalSectoresCoincidenciaVisibles} en la vista actual.`}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Grid de Sectores */}
         {cargando ? (
           <div className="tarjeta-carga-sectores">
@@ -1281,22 +1353,32 @@ export default function GestionSectores() {
             {/* Sectores Activos */}
             <div className="seccion-sectores">
               <h2 className="titulo-seccion">Sectores Activos</h2>
-              {sectoresActivos.length === 0 ? (
+              {sectoresActivosFiltrados.length === 0 ? (
                 <div className="tarjeta-vacia">
                   <div className="icono-vacio">✅</div>
-                  <h3>No hay sectores activos</h3>
-                  <p>Activa algunos sectores para comenzar a usarlos</p>
-                  <button
-                    onClick={() => setMostrarModalCrear(true)}
-                    className="boton-primer-sector"
-                  >
-                    <span>➕</span>
-                    Crear Primer Sector
-                  </button>
+                  <h3>
+                    {hayFiltroSectores
+                      ? 'No hay sectores activos que coincidan con la búsqueda'
+                      : 'No hay sectores activos'}
+                  </h3>
+                  <p>
+                    {hayFiltroSectores
+                      ? 'Prueba con otro nombre o limpia el filtro'
+                      : 'Activa algunos sectores para comenzar a usarlos'}
+                  </p>
+                  {!hayFiltroSectores && (
+                    <button
+                      onClick={() => setMostrarModalCrear(true)}
+                      className="boton-primer-sector"
+                    >
+                      <span>➕</span>
+                      Crear Primer Sector
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="grid-sectores">
-                  {sectoresActivos.map((sector, index) => (
+                  {sectoresActivosFiltrados.map((sector, index) => (
                     <div
                       key={sector.id}
                       className={`tarjeta-sector ${modoNavegacion && elementoSeleccionado === index + 4 ? 'seleccionada' : ''}`}
@@ -1422,10 +1504,17 @@ export default function GestionSectores() {
                   Sectores Inactivos
                 </h2>
                 <div className="grid-sectores">
-                  {sectoresInactivos.map((sector, index) => (
+                  {sectoresInactivosFiltrados.length === 0 ? (
+                    <div className="tarjeta-vacia tarjeta-vacia-inactivos">
+                      <div className="icono-vacio">🔍</div>
+                      <h3>No hay sectores inactivos que coincidan</h3>
+                      <p>Modifica el filtro para ver otros resultados</p>
+                    </div>
+                  ) : (
+                    sectoresInactivosFiltrados.map((sector, index) => (
                     <div
                       key={sector.id}
-                      className={`tarjeta-sector tarjeta-inactiva ${modoNavegacion && elementoSeleccionado === index + 4 + sectoresActivos.length ? 'seleccionada' : ''}`}
+                      className={`tarjeta-sector tarjeta-inactiva ${modoNavegacion && elementoSeleccionado === index + 4 + sectoresActivosFiltrados.length ? 'seleccionada' : ''}`}
                       onClick={() => abrirModalProductos(sector)}
                       style={{
                         animationDelay: `${index * 0.1}s`
@@ -1515,7 +1604,7 @@ export default function GestionSectores() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )))}
                 </div>
               </div>
             )}

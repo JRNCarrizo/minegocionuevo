@@ -131,36 +131,36 @@ public class InventarioCompletoServiceSimple {
                 // Ordenar por fecha de actualización (más reciente primero) para obtener reconteos
                 detallesDelProducto.sort((d1, d2) -> d2.getFechaActualizacion().compareTo(d1.getFechaActualizacion()));
                 
-                int totalUsuario1 = 0;
-                int totalUsuario2 = 0;
+                Integer totalUsuario1 = null;
+                Integer totalUsuario2 = null;
                 List<String> formulasUsuario1 = new ArrayList<>();
                 List<String> formulasUsuario2 = new ArrayList<>();
                 
                 // Tomar solo el primer valor (más reciente) para cada usuario
                 for (DetalleConteo detalle : detallesDelProducto) {
-                    if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0 && totalUsuario1 == 0) {
+                    if (totalUsuario1 == null && detalle.getCantidadConteo1() != null) {
                         totalUsuario1 = detalle.getCantidadConteo1();
                         if (detalle.getFormulaCalculo1() != null && !detalle.getFormulaCalculo1().trim().isEmpty()) {
                             formulasUsuario1.add(detalle.getFormulaCalculo1());
                         }
                     }
-                    if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0 && totalUsuario2 == 0) {
+                    if (totalUsuario2 == null && detalle.getCantidadConteo2() != null) {
                         totalUsuario2 = detalle.getCantidadConteo2();
                         if (detalle.getFormulaCalculo2() != null && !detalle.getFormulaCalculo2().trim().isEmpty()) {
                             formulasUsuario2.add(detalle.getFormulaCalculo2());
                         }
                     }
                     
-                    // Si ya tenemos ambos valores, salir del bucle
-                    if (totalUsuario1 > 0 && totalUsuario2 > 0) {
+                    // Si ya tenemos ambos valores (incluyendo cero), salir del bucle
+                    if (totalUsuario1 != null && totalUsuario2 != null) {
                         break;
                     }
                 }
                 
                 referenciaJson.append("\"").append(primerDetalle.getProducto().getId()).append("\":{");
                 referenciaJson.append("\"nombre\":\"").append(primerDetalle.getProducto().getNombre().replace("\"", "\\\"")).append("\",");
-                referenciaJson.append("\"usuario1\":").append(totalUsuario1).append(",");
-                referenciaJson.append("\"usuario2\":").append(totalUsuario2).append(",");
+                referenciaJson.append("\"usuario1\":").append(totalUsuario1 != null ? totalUsuario1 : 0).append(",");
+                referenciaJson.append("\"usuario2\":").append(totalUsuario2 != null ? totalUsuario2 : 0).append(",");
                 referenciaJson.append("\"formulas1\":\"").append(String.join(" | ", formulasUsuario1).replace("\"", "\\\"")).append("\",");
                 referenciaJson.append("\"formulas2\":\"").append(String.join(" | ", formulasUsuario2).replace("\"", "\\\"")).append("\"");
                 referenciaJson.append("}");
@@ -370,12 +370,12 @@ public class InventarioCompletoServiceSimple {
             
             // Solo usar valores del reconteo (más recientes que la fecha de inicio)
             if (esValorReconteo) {
-                if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
+                if (detalle.getCantidadConteo1() != null) {
                     reconteosUsuario1.put(productoId, detalle.getCantidadConteo1());
                     System.out.println("🔍 [SIMPLE] Producto " + nombreProducto + " - Usuario 1 reconteo: " + detalle.getCantidadConteo1());
                 }
                 
-                if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
+                if (detalle.getCantidadConteo2() != null) {
                     reconteosUsuario2.put(productoId, detalle.getCantidadConteo2());
                     System.out.println("🔍 [SIMPLE] Producto " + nombreProducto + " - Usuario 2 reconteo: " + detalle.getCantidadConteo2());
                 }
@@ -389,18 +389,19 @@ public class InventarioCompletoServiceSimple {
         
         for (Long productoId : todosLosProductos) {
             String nombreProducto = nombresProductos.get(productoId);
-            Integer reconteo1 = reconteosUsuario1.getOrDefault(productoId, 0);
-            Integer reconteo2 = reconteosUsuario2.getOrDefault(productoId, 0);
+            boolean usuario1Reconto = reconteosUsuario1.containsKey(productoId);
+            boolean usuario2Reconto = reconteosUsuario2.containsKey(productoId);
+            Integer reconteo1 = reconteosUsuario1.get(productoId);
+            Integer reconteo2 = reconteosUsuario2.get(productoId);
             
             System.out.println("🔍 [SIMPLE] Comparando producto " + nombreProducto + ": Usuario 1=" + reconteo1 + ", Usuario 2=" + reconteo2);
             
             // Si ambos usuarios recontaron el producto, comparar reconteos
-            if (reconteo1 > 0 && reconteo2 > 0) {
+            if (usuario1Reconto && usuario2Reconto) {
                 System.out.println("🔍 [SIMPLE] Ambos usuarios recontaron " + nombreProducto + 
                                  " - Usuario 1: " + reconteo1 + ", Usuario 2: " + reconteo2);
-                System.out.println("🔍 [SIMPLE] ¿Son iguales? " + reconteo1.equals(reconteo2));
                 
-                if (!reconteo1.equals(reconteo2)) {
+                if (!Objects.equals(reconteo1, reconteo2)) {
                     System.out.println("⚠️ [SIMPLE] Diferencia encontrada en reconteo - producto: " + nombreProducto + 
                                      " - Usuario 1: " + reconteo1 + ", Usuario 2: " + reconteo2);
                     return true;
@@ -411,7 +412,7 @@ public class InventarioCompletoServiceSimple {
             }
             
             // Si solo uno de los usuarios recontó el producto, también es una diferencia
-            if ((reconteo1 > 0 && reconteo2 == 0) || (reconteo2 > 0 && reconteo1 == 0)) {
+            if ((usuario1Reconto && !usuario2Reconto) || (!usuario1Reconto && usuario2Reconto)) {
                 System.out.println("⚠️ [SIMPLE] Diferencia encontrada: solo un usuario recontó " + nombreProducto + 
                                  " (Usuario 1: " + reconteo1 + ", Usuario 2: " + reconteo2 + ")");
                 return true;
