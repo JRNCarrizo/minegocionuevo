@@ -913,10 +913,10 @@ public class InventarioCompletoService {
             }
             
             // Asignar los totales consolidados
-                detalleConsolidado.setCantidadConteo1(totalUsuario1 != null ? totalUsuario1 : 0);
-                detalleConsolidado.setFormulaCalculo1(formulasUsuario1.isEmpty() ? null : String.join(", ", formulasUsuario1));
-                detalleConsolidado.setCantidadConteo2(totalUsuario2 != null ? totalUsuario2 : 0);
-                detalleConsolidado.setFormulaCalculo2(formulasUsuario2.isEmpty() ? null : String.join(", ", formulasUsuario2));
+            detalleConsolidado.setCantidadConteo1(totalUsuario1);
+            detalleConsolidado.setFormulaCalculo1(formulasUsuario1.isEmpty() ? null : String.join(", ", formulasUsuario1));
+            detalleConsolidado.setCantidadConteo2(totalUsuario2);
+            detalleConsolidado.setFormulaCalculo2(formulasUsuario2.isEmpty() ? null : String.join(", ", formulasUsuario2));
             
             // Usar la fecha más reciente
             detalleConsolidado.setFechaActualizacion(fechaMasReciente);
