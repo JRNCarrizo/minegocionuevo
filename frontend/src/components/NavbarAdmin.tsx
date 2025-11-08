@@ -101,24 +101,6 @@ export default function NavbarAdmin({
               gap: '0.375rem',
               flexShrink: 0
             }}>
-              {/* Inicial del usuario */}
-              {nombreAdministrador && (
-                <div style={{
-                  width: '1.75rem',
-                  height: '1.75rem',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.75rem',
-                  color: 'white',
-                  fontWeight: '600'
-                }}>
-                  {nombreAdministrador.charAt(0).toUpperCase()}
-                </div>
-              )}
-
               {/* Botón de cambio de tema más pequeño */}
               <button 
                 onClick={toggleTheme}
@@ -150,6 +132,24 @@ export default function NavbarAdmin({
               >
                 {isDarkMode ? '☀️' : '🌙'}
               </button>
+              
+              {/* Inicial del usuario */}
+              {nombreAdministrador && (
+                <div style={{
+                  width: '1.75rem',
+                  height: '1.75rem',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.75rem',
+                  color: 'white',
+                  fontWeight: '600'
+                }}>
+                  {nombreAdministrador.charAt(0).toUpperCase()}
+                </div>
+              )}
               
               {/* Botón de salir más compacto */}
               <button 
@@ -248,38 +248,6 @@ export default function NavbarAdmin({
               justifyContent: 'flex-end',
               width: 'auto'
             }}>
-              {nombreAdministrador && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  backgroundColor: 'rgba(59, 130, 246, 0.05)',
-                  borderRadius: '0.5rem',
-                  border: '1px solid rgba(59, 130, 246, 0.1)'
-                }}>
-                  <div style={{
-                    width: '2rem',
-                    height: '2rem',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.875rem',
-                    color: 'white',
-                    fontWeight: '600'
-                  }}>
-                    {nombreAdministrador.charAt(0).toUpperCase()}
-                  </div>
-                  <span style={{
-                    fontSize: '0.875rem',
-                    color: 'var(--color-texto-principal)',
-                    fontWeight: '500'
-                  }}>{nombreAdministrador}</span>
-                </div>
-              )}
-              
               {/* Botón de cambio de tema */}
               <button 
                 onClick={toggleTheme}
@@ -311,6 +279,38 @@ export default function NavbarAdmin({
               >
                 {isDarkMode ? '☀️' : '🌙'}
               </button>
+
+              {nombreAdministrador && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                  borderRadius: '0.5rem',
+                  border: '1px solid rgba(59, 130, 246, 0.1)'
+                }}>
+                  <div style={{
+                    width: '2rem',
+                    height: '2rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.875rem',
+                    color: 'white',
+                    fontWeight: '600'
+                  }}>
+                    {nombreAdministrador.charAt(0).toUpperCase()}
+                  </div>
+                  <span style={{
+                    fontSize: '0.875rem',
+                    color: 'var(--color-texto-principal)',
+                    fontWeight: '500'
+                  }}>{nombreAdministrador}</span>
+                </div>
+              )}
               
               <button 
                 onClick={onCerrarSesion}
