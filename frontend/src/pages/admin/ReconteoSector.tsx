@@ -685,8 +685,25 @@ export default function ReconteoSector() {
 
   const esUsuario1 = datosUsuario?.id === conteoInfo?.usuario1Id;
   const esUsuario2 = datosUsuario?.id === conteoInfo?.usuario2Id;
-  const estadoEsperandoSegundo = conteoInfo?.estado === 'ESPERANDO_VERIFICACION';
-  const puedeEditarReconteo = !estadoEsperandoSegundo || esUsuario2;
+
+  const estadoUsuarioActual = esUsuario1
+    ? conteoInfo?.estadoUsuario1
+    : esUsuario2
+      ? conteoInfo?.estadoUsuario2
+      : undefined;
+
+  const estadoUsuarioOtro = esUsuario1
+    ? conteoInfo?.estadoUsuario2
+    : esUsuario2
+      ? conteoInfo?.estadoUsuario1
+      : undefined;
+
+  const usuarioActualFinalizo = estadoUsuarioActual === 'ESPERANDO_VERIFICACION' || estadoUsuarioActual === 'COMPLETADO';
+  const otroUsuarioFinalizo = estadoUsuarioOtro === 'ESPERANDO_VERIFICACION' || estadoUsuarioOtro === 'COMPLETADO';
+  const estadoEsperandoVerificacion = conteoInfo?.estado === 'ESPERANDO_VERIFICACION';
+  const debeEsperarOtroUsuario = estadoEsperandoVerificacion && usuarioActualFinalizo && !otroUsuarioFinalizo;
+
+  const puedeEditarReconteo = !usuarioActualFinalizo;
 
   const obtenerTextoEstado = (estado: string) => {
     switch (estado) {
@@ -844,12 +861,11 @@ export default function ReconteoSector() {
                 margin: 0,
                 fontSize: '0.875rem'
               }}>
-                {conteoInfo.estado === 'ESPERANDO_VERIFICACION'
-                  ? esUsuario2
-                    ? 'Debes completar tu reconteo para cerrar las diferencias.'
-                    : 'Ya completaste tu reconteo. Esperando al segundo usuario.'
-                  : 'Ambos usuarios deben hacer el reconteo para resolver las diferencias.'
-              }
+                {debeEsperarOtroUsuario
+                  ? 'Ya completaste tu reconteo. Esperando la verificación del otro usuario.'
+                  : usuarioActualFinalizo
+                    ? 'Tu reconteo está listo. El sistema procesará la información en cuanto el otro usuario finalice.'
+                    : 'Completa el reconteo de los productos asignados y luego confirma para comparar con el otro usuario.'}
               </p>
               )}
             </div>
@@ -1057,11 +1073,11 @@ export default function ReconteoSector() {
                 margin: 0,
                 lineHeight: '1.4'
               }}>
-                {conteoInfo.estado === 'ESPERANDO_VERIFICACION'
-                  ? esUsuario2
-                    ? 'Eres el segundo usuario. Completa tu reconteo para comparar y resolver las diferencias.'
-                    : 'Ya finalizaste tu reconteo. Esperando al segundo usuario para continuar.'
-                  : 'Ambos usuarios deben hacer el reconteo de los productos con diferencias. El sistema comparará los resultados para determinar las cantidades finales.'
+                {debeEsperarOtroUsuario
+                  ? 'Tu reconteo está guardado. Esperando al otro usuario para comparar y cerrar el sector.'
+                  : usuarioActualFinalizo
+                    ? 'El sistema mantiene tus datos listos. Apenas el otro usuario termine, se realizarán las verificaciones finales.'
+                    : 'Realiza el reconteo de cada producto con diferencia y confirma tus resultados para avanzar en la comparación.'
               }
               </p>
             </div>
@@ -1706,7 +1722,7 @@ export default function ReconteoSector() {
                               fontSize: '0.875rem',
                               textAlign: 'center'
                             }}>
-                              Esperando el reconteo del segundo usuario.
+                              Esperando que el otro usuario finalice su reconteo.
                             </div>
                           );
                         } else {
