@@ -520,12 +520,12 @@ export default function DashboardAdministrador() {
 
   const accionesRapidas = [
     {
-      titulo: 'Configura tu tienda',
-      descripcion: 'Tu tienda online',
-      icono: '⚙️',
-      enlace: '/admin/configuracion',
-      color: '#6b7280',
-      permiso: 'CONFIGURACION'
+      titulo: 'Gestión de Empresa',
+      descripcion: 'Administra la información y configuración de tu empresa',
+      icono: '🏢',
+      enlace: '/admin/gestion-empresa',
+      color: '#f59e0b',
+      permiso: 'GESTION_EMPRESA'
     },
     {
       titulo: 'Gestión de Administradores',
@@ -536,12 +536,12 @@ export default function DashboardAdministrador() {
       permiso: 'GESTION_ADMINISTRADORES'
     },
     {
-      titulo: 'Gestión de Empresa',
-      descripcion: 'Administra la información y configuración de tu empresa',
-      icono: '🏢',
-      enlace: '/admin/gestion-empresa',
-      color: '#f59e0b',
-      permiso: 'GESTION_EMPRESA'
+      titulo: 'Configura tu tienda',
+      descripcion: 'Tu tienda online',
+      icono: '⚙️',
+      enlace: '/admin/configuracion',
+      color: '#6b7280',
+      permiso: 'CONFIGURACION'
     },
     {
       titulo: 'Consumo y Suscripciones',
@@ -1215,19 +1215,31 @@ export default function DashboardAdministrador() {
           marginBottom: '3rem',
           animation: 'slideInUp 0.6s ease-out 0.3s both'
         }}>
-          <h2 style={{
-            fontSize: '1.875rem',
-                fontWeight: '600',
-                color: 'var(--color-texto-principal)',
-            marginBottom: '1.5rem',
-            textAlign: 'center'
-          }}>
-            Funciones Avanzadas
-          </h2>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.75rem' }}>
+            <h2 style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.75rem',
+              padding: isMobile ? '0.55rem 1.1rem' : '0.75rem 1.75rem',
+              borderRadius: '9999px',
+              background: 'linear-gradient(135deg, rgba(59,130,246,0.85) 0%, rgba(99,102,241,0.75) 50%, rgba(14,165,233,0.8) 100%)',
+              color: '#fff',
+              fontSize: isMobile ? '1.35rem' : '1.9rem',
+              fontWeight: 700,
+              letterSpacing: '0.01em',
+              boxShadow: '0 20px 38px -14px rgba(59, 130, 246, 0.45)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              Funciones Avanzadas
+            </h2>
+          </div>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: isMobile ? '1rem' : '1.5rem'
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(280px, 1fr))',
+            gap: isMobile ? '1rem' : '1.5rem',
+            justifyItems: 'stretch'
           }}>
             {accionesRapidas.map((accion, index) => {
               const cardIndex = index + 5; // Las acciones rápidas empiezan en el índice 5
