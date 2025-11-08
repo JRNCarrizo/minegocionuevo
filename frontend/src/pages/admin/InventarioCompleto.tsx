@@ -2473,10 +2473,13 @@ export default function InventarioCompleto() {
                                   (esUsuario1 && conteo?.conteo1Finalizado) ||
                                   (esUsuario2 && conteo?.conteo2Finalizado) ||
                                   estadoUsuarioActual === 'ESPERANDO_VERIFICACION' ||
-                                  estadoUsuarioActual === 'COMPLETADO'
+                                  estadoUsuarioActual === 'COMPLETADO' ||
+                                  estadoUsuarioActual === 'COMPARANDO_RECONTEO'
                                 );
                                 
-                                const puedeIniciarConteo = esAsignado && conteo && !usuarioYaCompletoReconteo && (
+                                const puedeIniciarConteo = esAsignado &&
+                                  conteo &&
+                                  !usuarioYaCompletoReconteo &&
                                   // ✅ CORREGIDO: No permitir iniciar conteo si el sector ya está completado
                                   conteo.estado !== 'COMPLETADO' && (
                                     // Si el usuario no ha iniciado su conteo (estado PENDIENTE)
