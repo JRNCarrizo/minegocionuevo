@@ -500,6 +500,13 @@ public class InventarioCompletoServiceSimple {
                 DetalleConteo detalleAntiguo = listaDetalles.get(i);
                 detalleAntiguo.setEliminado(true);
                 detalleAntiguo.setEstado(DetalleConteo.EstadoDetalle.ELIMINADO);
+                detalleAntiguo.setCantidadConteo1(null);
+                detalleAntiguo.setCantidadConteo2(null);
+                detalleAntiguo.setCantidadFinal(null);
+                detalleAntiguo.setDiferenciaEntreConteos(null);
+                detalleAntiguo.setDiferenciaSistema(null);
+                detalleAntiguo.setFormulaCalculo1(null);
+                detalleAntiguo.setFormulaCalculo2(null);
                 String obsAntiguo = detalleAntiguo.getObservaciones();
                 if (obsAntiguo == null || obsAntiguo.trim().isEmpty()) {
                     detalleAntiguo.setObservaciones("Reconteo consolidado, detalle antiguo descartado");
