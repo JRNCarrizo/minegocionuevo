@@ -499,7 +499,7 @@ public class InventarioCompletoServiceSimple {
             for (int i = 1; i < listaDetalles.size(); i++) {
                 DetalleConteo detalleAntiguo = listaDetalles.get(i);
                 detalleAntiguo.setEliminado(true);
-                detalleAntiguo.setEstado(DetalleConteo.EstadoDetalle.ELIMINADO);
+                detalleAntiguo.setEstado(DetalleConteo.EstadoDetalle.FINALIZADO);
                 detalleAntiguo.setCantidadConteo1(null);
                 detalleAntiguo.setCantidadConteo2(null);
                 detalleAntiguo.setCantidadFinal(null);
