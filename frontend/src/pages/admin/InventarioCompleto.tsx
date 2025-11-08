@@ -2492,8 +2492,7 @@ export default function InventarioCompleto() {
                                     estadoUsuarioActual === 'CON_DIFERENCIAS' ||
                                     // ✅ CORRECCIÓN: Solo permitir reconteo cuando el usuario específico debe hacer reconteo
                                     (conteo.estado === 'ESPERANDO_SEGUNDO_RECONTEO' && estadoUsuarioActual === 'ESPERANDO_SEGUNDO_RECONTEO')
-                                  )
-                                );
+                                  );
                                 
                                 // Mostrar botón si puede iniciar conteo O si es administrador y no hay usuarios asignados
                                 const mostrarBoton = puedeIniciarConteo || (datosUsuario?.rol === 'ADMINISTRADOR' && !tieneUsuariosAsignados);

@@ -2332,7 +2332,6 @@ const GestionProductos: React.FC = () => {
                         className="boton boton-secundario"
                         style={{
                           background: 'var(--color-card)',
-                    color: 'var(--color-texto-principal)',
                           color: 'var(--color-texto-secundario)',
                           border: '2px solid var(--color-borde)',
                           borderRadius: '8px',
@@ -2348,7 +2347,7 @@ const GestionProductos: React.FC = () => {
                         }}
                         onMouseOut={(e) => {
                           e.currentTarget.style.borderColor = 'var(--color-borde)';
-                          e.currentTarget.style.color = '#64748b';
+                          e.currentTarget.style.color = 'var(--color-texto-secundario)';
                         }}
                       >
                         🗑️ Limpiar filtros
@@ -2441,7 +2440,6 @@ const GestionProductos: React.FC = () => {
                         className="boton boton-secundario"
                         style={{
                           background: 'var(--color-card)',
-                    color: 'var(--color-texto-principal)',
                           color: 'var(--color-texto-secundario)',
                           border: '2px solid var(--color-borde)',
                           borderRadius: '8px',
@@ -2457,7 +2455,7 @@ const GestionProductos: React.FC = () => {
                         }}
                         onMouseOut={(e) => {
                           e.currentTarget.style.borderColor = 'var(--color-borde)';
-                          e.currentTarget.style.color = '#64748b';
+                          e.currentTarget.style.color = 'var(--color-texto-secundario)';
                         }}
                       >
                         🗑️ Limpiar filtros
@@ -2965,7 +2963,6 @@ const GestionProductos: React.FC = () => {
                     className="boton boton-secundario"
                     style={{
                       background: 'var(--color-card)',
-                    color: 'var(--color-texto-principal)',
                       color: '#3b82f6',
                       border: '2px solid #3b82f6',
                       borderRadius: '8px',
