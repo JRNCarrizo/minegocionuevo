@@ -2469,8 +2469,12 @@ export default function InventarioCompleto() {
                                 
                                 
                                 // ✅ CORRECCIÓN: Verificar si el usuario ya completó su reconteo
-                                const usuarioYaCompletoReconteo = (esUsuario1 && conteo?.conteo1Finalizado) || 
-                                                               (esUsuario2 && conteo?.conteo2Finalizado);
+                                const usuarioYaCompletoReconteo = (
+                                  (esUsuario1 && conteo?.conteo1Finalizado) ||
+                                  (esUsuario2 && conteo?.conteo2Finalizado) ||
+                                  estadoUsuarioActual === 'ESPERANDO_VERIFICACION' ||
+                                  estadoUsuarioActual === 'COMPLETADO'
+                                );
                                 
                                 const puedeIniciarConteo = esAsignado && conteo && !usuarioYaCompletoReconteo && (
                                   // ✅ CORREGIDO: No permitir iniciar conteo si el sector ya está completado
