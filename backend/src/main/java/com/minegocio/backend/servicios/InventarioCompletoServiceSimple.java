@@ -487,6 +487,12 @@ public class InventarioCompletoServiceSimple {
             } else {
                 detallePrincipal.setDiferenciaSistema(0);
             }
+            String observaciones = detallePrincipal.getObservaciones();
+            if (observaciones == null || observaciones.trim().isEmpty()) {
+                detallePrincipal.setObservaciones("Reconteo consolidado sin diferencias");
+            } else if (!observaciones.contains("Reconteo consolidado")) {
+                detallePrincipal.setObservaciones(observaciones + " | Reconteo consolidado sin diferencias");
+            }
             detalleConteoRepository.save(detallePrincipal);
 
             // Marcar el resto como eliminados para que no sigan apareciendo como diferencias
@@ -494,6 +500,12 @@ public class InventarioCompletoServiceSimple {
                 DetalleConteo detalleAntiguo = listaDetalles.get(i);
                 detalleAntiguo.setEliminado(true);
                 detalleAntiguo.setEstado(DetalleConteo.EstadoDetalle.ELIMINADO);
+                String obsAntiguo = detalleAntiguo.getObservaciones();
+                if (obsAntiguo == null || obsAntiguo.trim().isEmpty()) {
+                    detalleAntiguo.setObservaciones("Reconteo consolidado, detalle antiguo descartado");
+                } else if (!obsAntiguo.contains("Reconteo consolidado")) {
+                    detalleAntiguo.setObservaciones(obsAntiguo + " | Reconteo consolidado, detalle antiguo descartado");
+                }
                 detalleConteoRepository.save(detalleAntiguo);
             }
         });
