@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * ✅ NUEVA LÓGICA SIMPLE: Servicio auxiliar para manejar reconteos con referencia actual
@@ -450,38 +451,39 @@ public class InventarioCompletoServiceSimple {
                 return;
             }
 
-            // Determinar los valores finales para cada usuario (preferir reconteo, fallback a 0)
-            Integer valorUsuario1 = reconteosUsuario1.containsKey(productoId)
-                    ? reconteosUsuario1.get(productoId)
-                    : reconteosUsuario2.getOrDefault(productoId, 0);
-            Integer valorUsuario2 = reconteosUsuario2.containsKey(productoId)
-                    ? reconteosUsuario2.get(productoId)
-                    : reconteosUsuario1.getOrDefault(productoId, 0);
+            Comparator<DetalleConteo> porFechaDesc = Comparator.comparing(
+                (DetalleConteo d) -> d.getFechaActualizacion() != null ? d.getFechaActualizacion() : d.getFechaCreacion(),
+                Comparator.nullsFirst(Comparator.naturalOrder())
+            ).reversed();
 
-            if (valorUsuario1 == null) valorUsuario1 = 0;
-            if (valorUsuario2 == null) valorUsuario2 = 0;
+            List<DetalleConteo> ordenados = listaDetalles.stream()
+                .sorted(porFechaDesc)
+                .collect(Collectors.toList());
 
-            // Ordenar detalles por fecha (más reciente primero)
-            listaDetalles.sort((d1, d2) -> {
-                LocalDateTime fecha1 = d1.getFechaActualizacion() != null ? d1.getFechaActualizacion() : d1.getFechaCreacion();
-                LocalDateTime fecha2 = d2.getFechaActualizacion() != null ? d2.getFechaActualizacion() : d2.getFechaCreacion();
-                if (fecha1 == null && fecha2 == null) return 0;
-                if (fecha1 == null) return 1;
-                if (fecha2 == null) return -1;
-                return fecha2.compareTo(fecha1);
-            });
+            DetalleConteo detallePrincipal = ordenados.get(0);
 
-            // Mantener el detalle más reciente como consolidado
-            DetalleConteo detallePrincipal = listaDetalles.get(0);
+            Integer valorUsuario1 = ordenados.stream()
+                .filter(d -> d.getCantidadConteo1() != null)
+                .findFirst()
+                .map(DetalleConteo::getCantidadConteo1)
+                .orElse(0);
+
+            Integer valorUsuario2 = ordenados.stream()
+                .filter(d -> d.getCantidadConteo2() != null)
+                .findFirst()
+                .map(DetalleConteo::getCantidadConteo2)
+                .orElse(0);
+
             detallePrincipal.setCantidadConteo1(valorUsuario1);
             detallePrincipal.setCantidadConteo2(valorUsuario2);
-            detallePrincipal.setFormulaCalculo1(null);
-            detallePrincipal.setFormulaCalculo2(null);
             detallePrincipal.setEliminado(false);
             detallePrincipal.setEstado(DetalleConteo.EstadoDetalle.FINALIZADO);
-            int diferenciaEntre = (valorUsuario1 != null ? valorUsuario1 : 0) - (valorUsuario2 != null ? valorUsuario2 : 0);
+            detallePrincipal.setFormulaCalculo1(valorUsuario1 != null && valorUsuario1 != 0 ? detallePrincipal.getFormulaCalculo1() : null);
+            detallePrincipal.setFormulaCalculo2(valorUsuario2 != null && valorUsuario2 != 0 ? detallePrincipal.getFormulaCalculo2() : null);
+
+            int diferenciaEntre = valorUsuario1 - valorUsuario2;
             detallePrincipal.setDiferenciaEntreConteos(diferenciaEntre);
-            int cantidadFinal = Math.max(valorUsuario1 != null ? valorUsuario1 : 0, valorUsuario2 != null ? valorUsuario2 : 0);
+            int cantidadFinal = Math.max(valorUsuario1, valorUsuario2);
             detallePrincipal.setCantidadFinal(cantidadFinal);
             if (detallePrincipal.getStockSistema() != null) {
                 detallePrincipal.setDiferenciaSistema(detallePrincipal.getStockSistema() - cantidadFinal);
@@ -497,8 +499,8 @@ public class InventarioCompletoServiceSimple {
             detalleConteoRepository.save(detallePrincipal);
 
             // Marcar el resto como eliminados para que no sigan apareciendo como diferencias
-            for (int i = 1; i < listaDetalles.size(); i++) {
-                DetalleConteo detalleAntiguo = listaDetalles.get(i);
+            for (int i = 1; i < ordenados.size(); i++) {
+                DetalleConteo detalleAntiguo = ordenados.get(i);
                 detalleAntiguo.setEliminado(true);
                 detalleAntiguo.setEstado(DetalleConteo.EstadoDetalle.FINALIZADO);
                 detalleAntiguo.setCantidadConteo1(null);
