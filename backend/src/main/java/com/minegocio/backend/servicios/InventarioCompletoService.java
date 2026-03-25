@@ -3261,20 +3261,20 @@ public class InventarioCompletoService {
                     return d2.getFechaActualizacion().compareTo(d1.getFechaActualizacion());
                 });
                 
-                // Buscar el valor más reciente de Usuario1
+                // Buscar el valor más reciente de Usuario1 (incluye cantidad 0: debe coincidir con lo que ven en pantalla)
                 Integer valorMasRecienteUsuario1 = null;
                 for (DetalleConteo detalle : todosDetallesOrdenados) {
-                    if (detalle.getCantidadConteo1() != null && detalle.getCantidadConteo1() > 0) {
+                    if (detalle.getCantidadConteo1() != null) {
                         valorMasRecienteUsuario1 = detalle.getCantidadConteo1();
                         System.out.println("✅ [VERIFICAR] Usuario1 más reciente: " + valorMasRecienteUsuario1 + " (Detalle ID: " + detalle.getId() + ")");
                         break;
                     }
                 }
                 
-                // Buscar el valor más reciente de Usuario2
+                // Buscar el valor más reciente de Usuario2 (incluye cantidad 0)
                 Integer valorMasRecienteUsuario2 = null;
                 for (DetalleConteo detalle : todosDetallesOrdenados) {
-                    if (detalle.getCantidadConteo2() != null && detalle.getCantidadConteo2() > 0) {
+                    if (detalle.getCantidadConteo2() != null) {
                         valorMasRecienteUsuario2 = detalle.getCantidadConteo2();
                         System.out.println("✅ [VERIFICAR] Usuario2 más reciente: " + valorMasRecienteUsuario2 + " (Detalle ID: " + detalle.getId() + ")");
                         break;

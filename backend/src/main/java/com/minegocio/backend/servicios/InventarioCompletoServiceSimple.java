@@ -319,20 +319,13 @@ public class InventarioCompletoServiceSimple {
         Map<Long, String> nombresProductos = new HashMap<>();
         Map<Long, List<DetalleConteo>> detallesPorProducto = new HashMap<>();
         
-        // ✅ CORRECCIÓN: Determinar fecha de inicio del reconteo desde las observaciones
-        LocalDateTime fechaInicioReconteo = null;
-        if (conteoSector.getObservaciones() != null && conteoSector.getObservaciones().startsWith("Reconteo_")) {
-            try {
-                String fechaStr = conteoSector.getObservaciones().split("_")[1];
-                fechaInicioReconteo = LocalDateTime.parse(fechaStr);
-                System.out.println("✅ [SIMPLE] Fecha de inicio del reconteo desde observaciones: " + fechaInicioReconteo);
-            } catch (Exception e) {
-                System.out.println("⚠️ [SIMPLE] No se pudo parsear fecha de reconteo, usando por defecto");
-                fechaInicioReconteo = conteoSector.getFechaCreacion(); // Fallback
-            }
+        // Fecha de inicio del reconteo: solo si el sufijo es un ISO-8601 (Reconteo_2025-03-25T10:00:00).
+        // Si es "Reconteo_Usuario1_Finalizado" u otro texto, no usar fechaCreacion del sector (mezcla conteo inicial con reconteo).
+        LocalDateTime fechaInicioReconteo = parseFechaInicioReconteoDesdeObservaciones(conteoSector.getObservaciones());
+        if (fechaInicioReconteo != null) {
+            System.out.println("✅ [SIMPLE] Fecha de inicio del reconteo desde observaciones: " + fechaInicioReconteo);
         } else {
-            fechaInicioReconteo = conteoSector.getFechaCreacion(); // Por defecto, usar fecha de creación
-            System.out.println("🔍 [SIMPLE] No hay fecha de reconteo en observaciones, usando fecha de creación: " + fechaInicioReconteo);
+            System.out.println("🔍 [SIMPLE] Sin fecha ISO en observaciones; se usarán los valores más recientes por producto (por fecha de detalle)");
         }
         
         // Debug: Mostrar todas las fechas de actualización
@@ -345,51 +338,67 @@ public class InventarioCompletoServiceSimple {
                              ", Usuario2: " + detalle.getCantidadConteo2());
         }
         
-        System.out.println("🔍 [SIMPLE] Fecha de inicio del reconteo: " + fechaInicioReconteo);
-        
+        // Agrupar por producto
         for (DetalleConteo detalle : detalles) {
-            // Verificar que el producto no sea nulo
             if (detalle.getProducto() == null) {
                 System.err.println("⚠️ [SIMPLE] DetalleConteo con ID " + detalle.getId() + " tiene producto nulo, saltando...");
                 continue;
             }
-            
             Long productoId = detalle.getProducto().getId();
-            String nombreProducto = detalle.getProducto().getNombre();
-            nombresProductos.put(productoId, nombreProducto);
+            nombresProductos.put(productoId, detalle.getProducto().getNombre());
             detallesPorProducto.computeIfAbsent(productoId, k -> new ArrayList<>()).add(detalle);
+        }
+        
+        // Por cada producto: ordenar por fecha descendente y tomar el valor más reciente por usuario (incluye 0).
+        // Así no se mezclan líneas viejas del primer conteo con el reconteo por el orden arbitrario del listado.
+        for (Map.Entry<Long, List<DetalleConteo>> entry : detallesPorProducto.entrySet()) {
+            Long productoId = entry.getKey();
+            String nombreProducto = nombresProductos.get(productoId);
+            List<DetalleConteo> lista = new ArrayList<>(entry.getValue());
+            lista.sort((d1, d2) -> {
+                LocalDateTime f1 = d1.getFechaActualizacion() != null ? d1.getFechaActualizacion() : d1.getFechaCreacion();
+                LocalDateTime f2 = d2.getFechaActualizacion() != null ? d2.getFechaActualizacion() : d2.getFechaCreacion();
+                if (f1 == null && f2 == null) return 0;
+                if (f1 == null) return 1;
+                if (f2 == null) return -1;
+                return f2.compareTo(f1);
+            });
             
-            // Solo procesar valores que son del reconteo (más recientes que la fecha de inicio)
-            LocalDateTime fechaValor = detalle.getFechaActualizacion() != null 
-                ? detalle.getFechaActualizacion() 
-                : detalle.getFechaCreacion();
-            
-            boolean esValorReconteo = false;
-            if (fechaInicioReconteo == null) {
-                esValorReconteo = true;
-            } else if (fechaValor != null) {
-                esValorReconteo = !fechaValor.isBefore(fechaInicioReconteo); // incluye iguales
+            List<DetalleConteo> candidatos = lista;
+            if (fechaInicioReconteo != null) {
+                List<DetalleConteo> filtrados = lista.stream()
+                    .filter(d -> {
+                        LocalDateTime fv = d.getFechaActualizacion() != null ? d.getFechaActualizacion() : d.getFechaCreacion();
+                        return fv != null && !fv.isBefore(fechaInicioReconteo);
+                    })
+                    .collect(Collectors.toList());
+                if (!filtrados.isEmpty()) {
+                    candidatos = filtrados;
+                }
             }
             
-            System.out.println("🔍 [SIMPLE] Procesando detalle ID: " + detalle.getId() + 
-                             ", Producto: " + nombreProducto + 
-                             ", Fecha actualización: " + detalle.getFechaActualizacion() + 
-                             ", Es reconteo: " + esValorReconteo + 
-                             ", Usuario1: " + detalle.getCantidadConteo1() + 
-                             ", Usuario2: " + detalle.getCantidadConteo2() + 
-                             ", Eliminado: " + detalle.getEliminado());
+            Integer u1 = null;
+            for (DetalleConteo d : candidatos) {
+                if (d.getCantidadConteo1() != null) {
+                    u1 = d.getCantidadConteo1();
+                    break;
+                }
+            }
+            Integer u2 = null;
+            for (DetalleConteo d : candidatos) {
+                if (d.getCantidadConteo2() != null) {
+                    u2 = d.getCantidadConteo2();
+                    break;
+                }
+            }
             
-            // Solo usar valores del reconteo (más recientes que la fecha de inicio)
-            if (esValorReconteo) {
-                if (detalle.getCantidadConteo1() != null) {
-                    reconteosUsuario1.put(productoId, detalle.getCantidadConteo1());
-                    System.out.println("🔍 [SIMPLE] Producto " + nombreProducto + " - Usuario 1 reconteo: " + detalle.getCantidadConteo1());
-                }
-                
-                if (detalle.getCantidadConteo2() != null) {
-                    reconteosUsuario2.put(productoId, detalle.getCantidadConteo2());
-                    System.out.println("🔍 [SIMPLE] Producto " + nombreProducto + " - Usuario 2 reconteo: " + detalle.getCantidadConteo2());
-                }
+            System.out.println("🔍 [SIMPLE] Producto " + nombreProducto + " — consolidado reconteo U1=" + u1 + ", U2=" + u2);
+            
+            if (u1 != null) {
+                reconteosUsuario1.put(productoId, u1);
+            }
+            if (u2 != null) {
+                reconteosUsuario2.put(productoId, u2);
             }
         }
         
@@ -519,6 +528,26 @@ public class InventarioCompletoServiceSimple {
                 detalleConteoRepository.save(detalleAntiguo);
             }
         });
+    }
+
+    /**
+     * Fecha de inicio del reconteo solo si las observaciones son "Reconteo_" + ISO-8601 (ej. al pasar a CON_DIFERENCIAS).
+     * Cadenas como Reconteo_Usuario1_Finalizado devuelven null (no mezclar con fechaCreacion del sector).
+     */
+    private LocalDateTime parseFechaInicioReconteoDesdeObservaciones(String observaciones) {
+        if (observaciones == null || !observaciones.startsWith("Reconteo_")) {
+            return null;
+        }
+        String rest = observaciones.substring("Reconteo_".length());
+        if (rest.isEmpty() || !Character.isDigit(rest.charAt(0))) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(rest);
+        } catch (Exception e) {
+            System.out.println("⚠️ [SIMPLE] Sufijo tras Reconteo_ no es ISO-8601: " + rest);
+            return null;
+        }
     }
 
     /**
