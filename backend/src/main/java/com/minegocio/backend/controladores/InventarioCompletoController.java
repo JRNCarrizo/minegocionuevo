@@ -1292,10 +1292,12 @@ public class InventarioCompletoController {
             System.out.println("🔍 Obteniendo productos actualizados del inventario: " + inventarioId);
             
             List<Map<String, Object>> productosActualizados = inventarioCompletoService.obtenerProductosActualizadosInventario(inventarioId);
+            List<Map<String, Object>> desglosePorSectores = inventarioCompletoService.obtenerDesglosePorSectoresRegistroInventario(inventarioId);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "productosActualizados", productosActualizados,
+                "desglosePorSectores", desglosePorSectores,
                 "totalProductos", productosActualizados.size()
             ));
             

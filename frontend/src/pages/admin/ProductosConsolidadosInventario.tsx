@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useUsuarioActual } from '../../hooks/useUsuarioActual';
@@ -52,6 +52,9 @@ const ProductosConsolidadosInventario: React.FC = () => {
   
   // ✅ NUEVO ESTADO: Para filtrado de productos
   const [filtroProductos, setFiltroProductos] = useState<'TODOS' | 'CON_DIFERENCIA' | 'SIN_DIFERENCIA' | 'SIN_CONTAR'>('TODOS');
+
+  /** Lista plana (general) vs agrupada por sector (desglose por dónde se contó) */
+  const [vistaProductos, setVistaProductos] = useState<'general' | 'por_sector'>('general');
   
   // ✅ NUEVA FUNCIÓN: Filtrar productos según el criterio seleccionado
   const productosFiltrados = productos.filter(producto => {
@@ -66,6 +69,33 @@ const ProductosConsolidadosInventario: React.FC = () => {
         return true; // TODOS
     }
   });
+
+  /** Filas para vista por sector: un producto puede repetirse (una fila por sector donde se contó) */
+  const gruposPorSector = useMemo(() => {
+    const map = new Map<string, Array<{ producto: ProductoConsolidado; detalle: SectorInfo | null }>>();
+    const sinDesglose = 'Sin desglose por sector';
+
+    for (const p of productosFiltrados) {
+      if (!p.sectores || p.sectores.length === 0) {
+        if (!map.has(sinDesglose)) map.set(sinDesglose, []);
+        map.get(sinDesglose)!.push({ producto: p, detalle: null });
+        continue;
+      }
+      for (const s of p.sectores) {
+        const nombre = (s.nombreSector && s.nombreSector.trim()) ? s.nombreSector.trim() : 'Sector';
+        if (!map.has(nombre)) map.set(nombre, []);
+        map.get(nombre)!.push({ producto: p, detalle: s });
+      }
+    }
+
+    const ordenarClaves = (a: string, b: string) => {
+      if (a === sinDesglose) return 1;
+      if (b === sinDesglose) return -1;
+      return a.localeCompare(b, 'es');
+    };
+
+    return Array.from(map.entries()).sort(([ka], [kb]) => ordenarClaves(ka, kb));
+  }, [productosFiltrados]);
   
   // Estados para navegación por teclado
   const [modoNavegacion, setModoNavegacion] = useState(false);
@@ -294,9 +324,12 @@ const ProductosConsolidadosInventario: React.FC = () => {
       }
 
       // Preparar los productos editados para enviar al backend
+      // stockAnteriorRegistro = stock ajustado mostrado en consolidación (alineado con diferenciaSistema en pantalla).
+      // Sin esto, el historial usaba solo producto.stock en BD; si ya coincidía con el conteo, la diferencia quedaba en 0.
       const productosEditados = productos.map(producto => ({
         productoId: producto.productoId,
         cantidadFinal: producto.cantidadFinal || Math.max(producto.cantidadConteo1 || 0, producto.cantidadConteo2 || 0),
+        stockAnteriorRegistro: producto.stockSistema,
         observaciones: `Inventario completo - ${new Date().toLocaleDateString()}`,
         fueContado: producto.fueContado,
         accionSeleccionada: accionesProductosNoContados[producto.productoId] || producto.accionRecomendada
@@ -369,6 +402,152 @@ const ProductosConsolidadosInventario: React.FC = () => {
     });
   };
 
+  /** Columna Acciones reutilizada en vista general y por sector */
+  const renderColumnaAcciones = (producto: ProductoConsolidado) => (
+    <div style={{ textAlign: 'center' }}>
+      {editandoProductoNoContado === producto.productoId ? (
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              guardarEdicionProductoNoContado();
+            }}
+            style={{
+              background: '#10b981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.25rem',
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.8rem',
+              cursor: 'pointer'
+            }}
+          >
+            ✓
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              cancelarEdicionProductoNoContado();
+            }}
+            style={{
+              background: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.25rem',
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.8rem',
+              cursor: 'pointer'
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      ) : editando === producto.productoId ? (
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              guardarEdicion();
+            }}
+            style={{
+              background: '#10b981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.25rem',
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.8rem',
+              cursor: 'pointer'
+            }}
+          >
+            ✓
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              cancelarEdicion();
+            }}
+            style={{
+              background: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.25rem',
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.8rem',
+              cursor: 'pointer'
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      ) : producto.fueContado === false ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              iniciarEdicionProductoNoContado(producto.productoId);
+            }}
+            style={{
+              background: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.25rem',
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              width: '80px'
+            }}
+          >
+            ✏️ Editar
+          </button>
+          <select
+            value={accionesProductosNoContados[producto.productoId] || 'OMITIR'}
+            onChange={(e) => {
+              cambiarAccionProductoNoContado(producto.productoId, e.target.value);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              fontSize: '0.8rem',
+              padding: '0.375rem 0.5rem',
+              border: '1px solid #d1d5db',
+              borderRadius: '0.375rem',
+              background: 'white',
+              cursor: 'pointer',
+              width: '80px'
+            }}
+          >
+            <option value="OMITIR">Omitir</option>
+            <option value="DAR_POR_0">Dar por 0</option>
+          </select>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            editarProducto(producto);
+          }}
+          style={{
+            background: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.25rem',
+            padding: '0.25rem 0.5rem',
+            fontSize: '0.8rem',
+            cursor: 'pointer',
+            width: '80px'
+          }}
+        >
+          ✏️ Editar
+        </button>
+      )}
+    </div>
+  );
 
   if (cargando) {
     return (
@@ -549,6 +728,58 @@ const ProductosConsolidadosInventario: React.FC = () => {
           </div>
         ) : (
           <>
+            {/* Vista: lista general vs desglose por sector */}
+            <div style={{
+              padding: '1rem 1.5rem',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '0.75rem',
+              background: '#fafafa'
+            }}>
+              <span style={{ fontWeight: 600, color: '#374151', fontSize: '0.9rem' }}>Vista:</span>
+              <button
+                type="button"
+                onClick={() => setVistaProductos('general')}
+                style={{
+                  padding: '0.45rem 1rem',
+                  borderRadius: '0.375rem',
+                  border: vistaProductos === 'general' ? '2px solid #7c3aed' : '1px solid #d1d5db',
+                  background: vistaProductos === 'general' ? '#f5f3ff' : 'white',
+                  fontWeight: vistaProductos === 'general' ? 600 : 500,
+                  cursor: 'pointer',
+                  color: '#374151',
+                  fontSize: '0.875rem'
+                }}
+              >
+                Lista general
+              </button>
+              <button
+                type="button"
+                onClick={() => setVistaProductos('por_sector')}
+                style={{
+                  padding: '0.45rem 1rem',
+                  borderRadius: '0.375rem',
+                  border: vistaProductos === 'por_sector' ? '2px solid #7c3aed' : '1px solid #d1d5db',
+                  background: vistaProductos === 'por_sector' ? '#f5f3ff' : 'white',
+                  fontWeight: vistaProductos === 'por_sector' ? 600 : 500,
+                  cursor: 'pointer',
+                  color: '#374151',
+                  fontSize: '0.875rem'
+                }}
+              >
+                Por sector
+              </button>
+              <span style={{ fontSize: '0.8rem', color: '#64748b', maxWidth: '480px', lineHeight: 1.4 }}>
+                {vistaProductos === 'por_sector'
+                  ? 'Cantidades por sector donde se contó. Stock y diferencia son del producto completo (mismos valores en cada fila del producto).'
+                  : 'Una fila por producto con totales consolidados de todos los sectores.'}
+              </span>
+            </div>
+
+            {vistaProductos === 'general' ? (
+            <>
             {/* Header de la tabla */}
             <div style={{
               background: '#f8fafc',
@@ -730,156 +961,121 @@ const ProductosConsolidadosInventario: React.FC = () => {
                 </div>
 
 
-                {/* Acciones */}
-                <div style={{ textAlign: 'center' }}>
-                  {editandoProductoNoContado === producto.productoId ? (
-                    // Botones para productos no contados en edición
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          guardarEdicionProductoNoContado();
-                        }}
-                        style={{
-                          background: '#10b981',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '0.25rem',
-                          padding: '0.25rem 0.5rem',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        ✓
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          cancelarEdicionProductoNoContado();
-                        }}
-                        style={{
-                          background: '#ef4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '0.25rem',
-                          padding: '0.25rem 0.5rem',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : editando === producto.productoId ? (
-                    // Botones para productos contados en edición
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          guardarEdicion();
-                        }}
-                        style={{
-                          background: '#10b981',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '0.25rem',
-                          padding: '0.25rem 0.5rem',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        ✓
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          cancelarEdicion();
-                        }}
-                        style={{
-                          background: '#ef4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '0.25rem',
-                          padding: '0.25rem 0.5rem',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : producto.fueContado === false ? (
-                    // Botón y select para productos no contados (vertical)
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
-                      <button
-                        onClick={(e) => {
-                          console.log('🔍 DEBUG botón editar clickeado:', producto.productoId);
-                          e.stopPropagation();
-                          iniciarEdicionProductoNoContado(producto.productoId);
-                        }}
-                        style={{
-                          background: '#3b82f6',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '0.25rem',
-                          padding: '0.25rem 0.5rem',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer',
-                          width: '80px'
-                        }}
-                      >
-                        ✏️ Editar
-                      </button>
-                      
-                      <select
-                        value={accionesProductosNoContados[producto.productoId] || 'OMITIR'}
-                        onChange={(e) => {
-                          console.log('🔍 DEBUG select onChange ejecutado:', { productoId: producto.productoId, value: e.target.value });
-                          cambiarAccionProductoNoContado(producto.productoId, e.target.value);
-                        }}
-                        onClick={(e) => {
-                          console.log('🔍 DEBUG select onClick ejecutado');
-                          e.stopPropagation();
-                        }}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        style={{
-                          fontSize: '0.8rem',
-                          padding: '0.375rem 0.5rem',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '0.375rem',
-                          background: 'white',
-                          cursor: 'pointer',
-                          width: '80px'
-                        }}
-                      >
-                        <option value="OMITIR">Omitir</option>
-                        <option value="DAR_POR_0">Dar por 0</option>
-                      </select>
-                    </div>
-                  ) : (
-                    // Botón para productos contados
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editarProducto(producto);
-                      }}
-                      style={{
-                        background: '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '0.25rem',
-                        padding: '0.25rem 0.5rem',
-                        fontSize: '0.8rem',
-                        cursor: 'pointer',
-                        width: '80px'
-                      }}
-                    >
-                      ✏️ Editar
-                    </button>
-                  )}
-                </div>
+                {renderColumnaAcciones(producto)}
               </div>
             ))}
+            </>
+            ) : (
+            <>
+              {gruposPorSector.map(([nombreSector, filas]) => (
+                <div key={nombreSector}>
+                  <div style={{
+                    padding: '0.6rem 1.5rem',
+                    background: 'linear-gradient(90deg, #eef2ff 0%, #f8fafc 100%)',
+                    borderBottom: '1px solid #e2e8f0',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    color: '#4338ca'
+                  }}>
+                    {nombreSector}
+                  </div>
+                  <div style={{
+                    background: '#f8fafc',
+                    padding: '0.85rem 1.5rem',
+                    borderBottom: '1px solid #e2e8f0',
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(140px,2fr) repeat(5, minmax(72px,1fr)) auto',
+                    gap: '0.5rem',
+                    fontWeight: '600',
+                    color: '#374151',
+                    fontSize: '0.78rem'
+                  }}>
+                    <div>Producto</div>
+                    <div style={{ textAlign: 'center' }}>Stock sist.</div>
+                    <div style={{ textAlign: 'center' }}>Cont. U1</div>
+                    <div style={{ textAlign: 'center' }}>Cont. U2</div>
+                    <div style={{ textAlign: 'center' }}>Cant. sector</div>
+                    <div style={{ textAlign: 'center' }}>Dif. vs stock</div>
+                    <div style={{ textAlign: 'center' }}>Acciones</div>
+                  </div>
+                  {filas.map(({ producto, detalle }, rowIdx) => {
+                    const u1 = detalle ? (detalle.cantidadConteo1 ?? 0) : (producto.cantidadConteo1 ?? 0);
+                    const u2 = detalle ? (detalle.cantidadConteo2 ?? 0) : (producto.cantidadConteo2 ?? 0);
+                    const cantSector = Math.max(u1, u2);
+                    return (
+                      <div
+                        key={`${nombreSector}-${producto.productoId}-${rowIdx}`}
+                        style={{
+                          padding: '0.85rem 1.5rem',
+                          borderBottom: '1px solid #f1f5f9',
+                          display: 'grid',
+                          gridTemplateColumns: 'minmax(140px,2fr) repeat(5, minmax(72px,1fr)) auto',
+                          gap: '0.5rem',
+                          alignItems: 'center',
+                          cursor: producto.fueContado === false ? 'default' : 'pointer'
+                        }}
+                        onClick={() => producto.fueContado !== false && editarProducto(producto)}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#f8fafc';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
+                      >
+                        <div>
+                          <div style={{
+                            fontWeight: '600',
+                            color: producto.fueContado === false ? '#f59e0b' : '#1e293b',
+                            marginBottom: '0.2rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            flexWrap: 'wrap'
+                          }}>
+                            {producto.fueContado === false && (
+                              <span style={{
+                                background: '#f59e0b',
+                                color: 'white',
+                                fontSize: '0.65rem',
+                                padding: '0.1rem 0.3rem',
+                                borderRadius: '0.2rem',
+                                fontWeight: 'bold'
+                              }}>
+                                NO CONTADO
+                              </span>
+                            )}
+                            {producto.nombreProducto}
+                          </div>
+                          {producto.codigoProducto && (
+                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                              Código: {producto.codigoProducto}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ textAlign: 'center', color: '#64748b', fontSize: '0.9rem' }}>
+                          {producto.stockSistema}
+                        </div>
+                        <div style={{ textAlign: 'center', fontWeight: 600, color: '#475569' }}>{u1}</div>
+                        <div style={{ textAlign: 'center', fontWeight: 600, color: '#475569' }}>{u2}</div>
+                        <div style={{ textAlign: 'center', fontWeight: 700, color: '#7c3aed' }}>{cantSector}</div>
+                        <div style={{ textAlign: 'center' }}>
+                          <span style={{
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            color: calcularDiferenciaSistema(producto) === 0 ? '#10b981' :
+                              calcularDiferenciaSistema(producto) > 0 ? '#3b82f6' : '#ef4444'
+                          }}>
+                            {calcularDiferenciaSistema(producto) > 0 ? '+' : ''}{calcularDiferenciaSistema(producto)}
+                          </span>
+                        </div>
+                        {renderColumnaAcciones(producto)}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </>
+            )}
           </>
         )}
       </div>
@@ -1018,7 +1214,7 @@ const ProductosConsolidadosInventario: React.FC = () => {
                   <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#d97706' }}>
                     {registroGenerado.estadisticas?.productosConDiferencias}
                   </div>
-                  <div style={{ color: '#64748b' }}>Con Diferencias</div>
+                  <div style={{ color: '#64748b' }}>Cambiaron stock (vs sistema)</div>
                 </div>
                 <div style={{
                   background: '#d1fae5',
@@ -1029,7 +1225,7 @@ const ProductosConsolidadosInventario: React.FC = () => {
                   <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#059669' }}>
                     {registroGenerado.estadisticas?.productosSinDiferencias}
                   </div>
-                  <div style={{ color: '#64748b' }}>Sin Diferencias</div>
+                  <div style={{ color: '#64748b' }}>Sin cambio de stock</div>
                 </div>
                 <div style={{
                   background: '#e0e7ff',
@@ -1069,7 +1265,7 @@ const ProductosConsolidadosInventario: React.FC = () => {
                   <div>Producto</div>
                   <div style={{ textAlign: 'center' }}>Stock Anterior</div>
                   <div style={{ textAlign: 'center' }}>Stock Nuevo</div>
-                  <div style={{ textAlign: 'center' }}>Diferencia</div>
+                  <div style={{ textAlign: 'center' }}>Dif. vs stock</div>
                 </div>
                 
                 {registroGenerado.productosActualizados?.map((producto: any, index: number) => (
@@ -1114,7 +1310,7 @@ const ProductosConsolidadosInventario: React.FC = () => {
               </div>
             </div>
 
-            {/* Información de Sectores */}
+            {/* Información de Sectores (sin discrepancias entre contadores: en este paso el inventario ya está cerrado y coincidido) */}
             <div>
               <h3 style={{ color: '#374151', marginBottom: '1rem' }}>🏢 Sectores Procesados</h3>
               <div style={{
@@ -1137,9 +1333,6 @@ const ProductosConsolidadosInventario: React.FC = () => {
                     </div>
                     <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
                       Productos: {sector.productosContados}
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                      Diferencias: {sector.productosConDiferencias}
                     </div>
                     <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
                       Estado: {sector.estado}

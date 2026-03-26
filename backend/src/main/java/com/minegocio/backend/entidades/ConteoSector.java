@@ -60,6 +60,13 @@ public class ConteoSector {
     @Column(name = "referencia_actual", length = 2000)
     private String referenciaActual;
 
+    /**
+     * JSON: lista de {productoId, nombreProducto, codigoProducto, stockEnSector, cantidadAplicada}
+     * al momento de cerrar sin conteo físico (preservado) o vacío (aplicada=0).
+     */
+    @Column(name = "snapshot_stock_sin_conteo")
+    private String snapshotStockSinConteo;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_asignado_1_id")
     private Usuario usuarioAsignado1;
@@ -237,6 +244,14 @@ public class ConteoSector {
 
     public void setReferenciaActual(String referenciaActual) {
         this.referenciaActual = referenciaActual;
+    }
+
+    public String getSnapshotStockSinConteo() {
+        return snapshotStockSinConteo;
+    }
+
+    public void setSnapshotStockSinConteo(String snapshotStockSinConteo) {
+        this.snapshotStockSinConteo = snapshotStockSinConteo;
     }
 
     public LocalDateTime getFechaCreacion() {

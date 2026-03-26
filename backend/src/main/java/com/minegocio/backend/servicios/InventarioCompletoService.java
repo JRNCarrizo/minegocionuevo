@@ -24,6 +24,9 @@ import com.minegocio.backend.repositorios.StockPorSectorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.*;
 
 import java.math.BigDecimal;
@@ -285,8 +288,18 @@ public class InventarioCompletoService {
             Producto producto = productoRepository.findById(productoId)
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productoId));
             
-            Integer stockAnterior = producto.getStock();
-            Integer diferenciaStock = cantidadFinal - stockAnterior;
+            // Stock real en BD (momento del POST). Para "omitir" debe mandar la operación.
+            Integer stockAnteriorDb = producto.getStock();
+            // Referencia de la pantalla consolidada (stock ajustado al inventario). Si no viene, se usa el de BD.
+            Integer stockAnteriorRegistro = stockAnteriorDb;
+            Object stockAnteriorCliente = productoEditado.get("stockAnteriorRegistro");
+            if (stockAnteriorCliente != null) {
+                if (stockAnteriorCliente instanceof Number) {
+                    stockAnteriorRegistro = ((Number) stockAnteriorCliente).intValue();
+                }
+            }
+            
+            Integer diferenciaStock = cantidadFinal - stockAnteriorRegistro;
             
             // MANEJO DE PRODUCTOS NO CONTADOS
             if (fueContado != null && !fueContado) {
@@ -296,18 +309,19 @@ public class InventarioCompletoService {
                 if ("DAR_POR_0".equals(accionSeleccionada)) {
                     // Dar por 0 - actualizar stock a 0
                     cantidadFinal = 0;
-                    diferenciaStock = cantidadFinal - stockAnterior;
+                    diferenciaStock = cantidadFinal - stockAnteriorRegistro;
                     System.out.println("⚠️ Producto NO CONTADO - Dado por 0: " + producto.getNombre());
                 } else if ("EDITADO".equals(accionSeleccionada)) {
                     // EDITADO - usar el valor editado manualmente por el usuario
                     // La cantidadFinal ya viene del frontend con el valor editado
-                    diferenciaStock = cantidadFinal - stockAnterior;
+                    diferenciaStock = cantidadFinal - stockAnteriorRegistro;
                     System.out.println("⚠️ Producto NO CONTADO - Editado manualmente: " + producto.getNombre() + 
                                      " - Cantidad editada: " + cantidadFinal);
                 } else {
-                    // OMITIR - conservar valor actual (no hacer nada)
-                    cantidadFinal = stockAnterior;
+                    // OMITIR - conservar valor actual en BD (no el snapshot de consolidación)
+                    cantidadFinal = stockAnteriorDb;
                     diferenciaStock = 0;
+                    stockAnteriorRegistro = stockAnteriorDb;
                     System.out.println("⚠️ Producto NO CONTADO - Omitido (conserva valor): " + producto.getNombre());
                 }
             }
@@ -346,7 +360,7 @@ public class InventarioCompletoService {
             registroProducto.put("productoId", productoId);
             registroProducto.put("nombreProducto", producto.getNombre());
             registroProducto.put("codigoProducto", producto.getCodigoPersonalizado());
-            registroProducto.put("stockAnterior", stockAnterior);
+            registroProducto.put("stockAnterior", stockAnteriorRegistro);
             registroProducto.put("stockNuevo", cantidadFinal);
             registroProducto.put("diferenciaStock", diferenciaStock);
             registroProducto.put("observaciones", observacionesProducto);
@@ -360,7 +374,8 @@ public class InventarioCompletoService {
             }
             
             System.out.println("✅ Producto actualizado: " + producto.getNombre() + 
-                             " - Stock anterior: " + stockAnterior + 
+                             " - Stock anterior (registro): " + stockAnteriorRegistro + 
+                             " - Stock en BD al aplicar: " + stockAnteriorDb +
                              " - Stock nuevo: " + cantidadFinal + 
                              " - Diferencia: " + diferenciaStock);
         }
@@ -776,12 +791,9 @@ public class InventarioCompletoService {
         InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId)
                 .orElseThrow(() -> new RuntimeException("Inventario completo no encontrado"));
         
-        // Buscar el registro de inventario correspondiente
-        List<RegistroInventario> registrosInventarios = registroInventarioRepository.findByEmpresaOrderByFechaGeneracionDesc(inventario.getEmpresa());
-        RegistroInventario registroInventario = registrosInventarios.stream()
-            .filter(registro -> registro.getInventarioCompleto().getId().equals(inventarioId))
-            .findFirst()
-            .orElse(null);
+        // Registro más reciente de este inventario (evita depender del orden global por empresa)
+        RegistroInventario registroInventario = registroInventarioRepository
+            .findFirstByInventarioCompletoOrderByFechaGeneracionDesc(inventario);
         
         if (registroInventario == null) {
             System.out.println("❌ No se encontró registro de inventario para el inventario: " + inventarioId);
@@ -815,6 +827,356 @@ public class InventarioCompletoService {
         
         System.out.println("✅ Productos actualizados obtenidos: " + productosActualizados.size());
         return productosActualizados;
+    }
+
+    /**
+     * Desglose por sector para el historial: stock anterior, conteo y diferencia.
+     * Incluye productos sin cambio (diferencia 0) y los que están en el registro global del cierre
+     * pero no salieron en el consolidado del sector (p. ej. filas crudas de detalle o asignación por depósito).
+     */
+    public List<Map<String, Object>> obtenerDesglosePorSectoresRegistroInventario(Long inventarioId) {
+        InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId)
+                .orElseThrow(() -> new RuntimeException("Inventario completo no encontrado"));
+
+        RegistroInventario registroInventario = registroInventarioRepository
+                .findFirstByInventarioCompletoOrderByFechaGeneracionDesc(inventario);
+        List<DetalleRegistroInventario> detallesRegistroGlobal = registroInventario != null
+                ? detalleRegistroInventarioRepository.findByRegistroInventario(registroInventario)
+                : Collections.emptyList();
+
+        List<ConteoSector> sectores = new ArrayList<>(conteoSectorRepository.findByInventarioCompleto(inventario));
+        sectores.sort(Comparator.comparing(s -> Optional.ofNullable(s.getNombreSector()).orElse("")));
+
+        List<Map<String, Object>> desglose = new ArrayList<>();
+        for (ConteoSector cs : sectores) {
+            ConteoSector.EstadoConteo est = cs.getEstado();
+            if (est != ConteoSector.EstadoConteo.COMPLETADO && est != ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO) {
+                continue;
+            }
+
+            Map<String, Object> bloque = new HashMap<>();
+            bloque.put("conteoSectorId", cs.getId());
+            bloque.put("sectorId", cs.getSector() != null ? cs.getSector().getId() : null);
+            bloque.put("nombreSector", cs.getNombreSector());
+            bloque.put("estadoSector", est.name());
+
+            if (est == ConteoSector.EstadoConteo.COMPLETADO) {
+                Map<Long, Map<String, Object>> lineasPorProductoId = new LinkedHashMap<>();
+
+                for (DetalleConteo d : obtenerDetalleFinalSectorCompletado(cs.getId())) {
+                    Map<String, Object> linea = mapearLineaDesgloseDesdeDetalleFinal(d);
+                    if (linea != null && linea.get("productoId") != null) {
+                        lineasPorProductoId.put((Long) linea.get("productoId"), linea);
+                    }
+                }
+
+                Map<Long, List<DetalleConteo>> crudosPorProducto = new HashMap<>();
+                for (DetalleConteo raw : detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(cs)) {
+                    if (raw.getProducto() == null) {
+                        continue;
+                    }
+                    crudosPorProducto.computeIfAbsent(raw.getProducto().getId(), k -> new ArrayList<>()).add(raw);
+                }
+                for (Map.Entry<Long, List<DetalleConteo>> e : crudosPorProducto.entrySet()) {
+                    if (!lineasPorProductoId.containsKey(e.getKey())) {
+                        Map<String, Object> linea = construirLineaDesgloseDesdeDetallesCrudosSector(e.getValue());
+                        if (linea != null) {
+                            lineasPorProductoId.put(e.getKey(), linea);
+                        }
+                    }
+                }
+
+                Long sectorFisicoId = cs.getSector() != null ? cs.getSector().getId() : null;
+                String nombreSector = cs.getNombreSector();
+                for (DetalleRegistroInventario dr : detallesRegistroGlobal) {
+                    Producto p = dr.getProducto();
+                    if (p == null || lineasPorProductoId.containsKey(p.getId())) {
+                        continue;
+                    }
+                    boolean asignadoASector = false;
+                    if (nombreSector != null && nombreSector.equals(p.getSectorAlmacenamiento())) {
+                        asignadoASector = true;
+                    }
+                    if (!asignadoASector && sectorFisicoId != null) {
+                        asignadoASector = stockPorSectorRepository.findByProductoIdAndSectorId(p.getId(), sectorFisicoId).isPresent();
+                    }
+                    if (!asignadoASector) {
+                        continue;
+                    }
+                    Map<String, Object> linea = new HashMap<>();
+                    linea.put("productoId", p.getId());
+                    linea.put("nombreProducto", dr.getNombreProducto() != null ? dr.getNombreProducto() : p.getNombre());
+                    linea.put("codigoProducto", dr.getCodigoProducto() != null ? dr.getCodigoProducto() : p.getCodigoPersonalizado());
+                    linea.put("conteoAnterior", dr.getStockAnterior());
+                    linea.put("conteoActual", dr.getStockNuevo());
+                    linea.put("diferencia", dr.getDiferenciaStock());
+                    lineasPorProductoId.put(p.getId(), linea);
+                }
+
+                List<Map<String, Object>> lineas = new ArrayList<>(lineasPorProductoId.values());
+                lineas.sort(Comparator.comparing(m -> {
+                    Object n = m.get("nombreProducto");
+                    return n != null ? n.toString().toLowerCase(Locale.ROOT) : "";
+                }));
+                bloque.put("productos", lineas);
+            } else {
+                List<Map<String, Object>> lineasSinConteo = construirLineasDesgloseSectorSinConteoFisico(cs);
+                bloque.put("productos", lineasSinConteo);
+                bloque.put("mensaje",
+                        "Sin conteo físico: stock en el depósito al momento del cierre (sin ajuste en el conteo).");
+            }
+
+            desglose.add(bloque);
+        }
+
+        return desglose;
+    }
+
+    private Map<String, Object> mapearLineaDesgloseDesdeDetalleFinal(DetalleConteo d) {
+        if (d == null || d.getProducto() == null) {
+            return null;
+        }
+        Producto p = d.getProducto();
+        Map<String, Object> linea = new HashMap<>();
+        linea.put("productoId", p.getId());
+        linea.put("nombreProducto", d.getNombreProducto() != null ? d.getNombreProducto() : p.getNombre());
+        linea.put("codigoProducto", d.getCodigoProducto() != null ? d.getCodigoProducto() : p.getCodigoPersonalizado());
+
+        Integer conteoAnterior = d.getStockSistema();
+        Integer conteoActual = d.getCantidadFinal();
+        if (conteoActual == null) {
+            int c1 = d.getCantidadConteo1() != null ? d.getCantidadConteo1() : 0;
+            int c2 = d.getCantidadConteo2() != null ? d.getCantidadConteo2() : 0;
+            conteoActual = Math.max(c1, c2);
+        }
+        Integer diferencia;
+        if (d.getDiferenciaSistema() != null) {
+            diferencia = d.getDiferenciaSistema();
+        } else if (conteoAnterior != null && conteoActual != null) {
+            diferencia = conteoActual - conteoAnterior;
+        } else {
+            diferencia = null;
+        }
+
+        linea.put("conteoAnterior", conteoAnterior);
+        linea.put("conteoActual", conteoActual);
+        linea.put("diferencia", diferencia);
+        return linea;
+    }
+
+    /**
+     * Consolida filas crudas de detalle_conteo del sector cuando no hubo línea en el detalle final consolidado.
+     */
+    private Map<String, Object> construirLineaDesgloseDesdeDetallesCrudosSector(List<DetalleConteo> lista) {
+        if (lista == null || lista.isEmpty()) {
+            return null;
+        }
+        DetalleConteo primer = lista.get(0);
+        Producto p = primer.getProducto();
+        if (p == null) {
+            return null;
+        }
+        int total1 = 0;
+        int total2 = 0;
+        for (DetalleConteo det : lista) {
+            if (det.getCantidadConteo1() != null) {
+                total1 += det.getCantidadConteo1();
+            }
+            if (det.getCantidadConteo2() != null) {
+                total2 += det.getCantidadConteo2();
+            }
+        }
+        Integer c1 = total1 > 0 ? total1 : null;
+        Integer c2 = total2 > 0 ? total2 : null;
+        Integer cantFinal;
+        if (c1 != null && c2 != null) {
+            cantFinal = c1.equals(c2) ? c1 : (c1 + c2) / 2;
+        } else if (c1 != null) {
+            cantFinal = c1;
+        } else if (c2 != null) {
+            cantFinal = c2;
+        } else {
+            cantFinal = 0;
+        }
+        Integer stockRef = primer.getStockSistema();
+        Integer dif = (stockRef != null) ? cantFinal - stockRef : null;
+
+        Map<String, Object> linea = new HashMap<>();
+        linea.put("productoId", p.getId());
+        linea.put("nombreProducto", primer.getNombreProducto() != null ? primer.getNombreProducto() : p.getNombre());
+        linea.put("codigoProducto", primer.getCodigoProducto() != null ? primer.getCodigoProducto() : p.getCodigoPersonalizado());
+        linea.put("conteoAnterior", stockRef);
+        linea.put("conteoActual", cantFinal);
+        linea.put("diferencia", dif);
+        return linea;
+    }
+
+    private String serializarSnapshotStockSinConteo(List<Map<String, Object>> filas) {
+        if (filas == null || filas.isEmpty()) {
+            return "[]";
+        }
+        try {
+            return new ObjectMapper().writeValueAsString(filas);
+        } catch (JsonProcessingException e) {
+            return "[]";
+        }
+    }
+
+    private Map<String, Object> filaJsonSnapshotStock(Producto p, int stockEnSector, int cantidadAplicada) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("productoId", p.getId());
+        row.put("nombreProducto", p.getNombre());
+        row.put("codigoProducto", p.getCodigoPersonalizado());
+        row.put("stockEnSector", stockEnSector);
+        row.put("cantidadAplicada", cantidadAplicada);
+        return row;
+    }
+
+    /**
+     * Snapshot al marcar "completado sin conteo" (stock que había / se mantiene).
+     */
+    private List<Map<String, Object>> construirFilasJsonSnapshotPreservarSinConteo(Long sectorId, String sectorNombre, Long empresaId) {
+        List<Map<String, Object>> filas = new ArrayList<>();
+        Set<Long> ya = new HashSet<>();
+        for (StockPorSector sps : stockPorSectorRepository.findBySectorId(sectorId)) {
+            Producto p = sps.getProducto();
+            if (p == null) {
+                continue;
+            }
+            ya.add(p.getId());
+            int c = sps.getCantidad() != null ? sps.getCantidad() : 0;
+            filas.add(filaJsonSnapshotStock(p, c, c));
+        }
+        if (sectorNombre != null) {
+            for (Producto p : productoRepository.findByEmpresaId(empresaId)) {
+                if (ya.contains(p.getId())) {
+                    continue;
+                }
+                if (sectorNombre.equals(p.getSectorAlmacenamiento())) {
+                    int c = p.getStock() != null ? p.getStock() : 0;
+                    filas.add(filaJsonSnapshotStock(p, c, c));
+                    ya.add(p.getId());
+                }
+            }
+        }
+        filas.sort(Comparator.comparing(m -> String.valueOf(m.get("nombreProducto")).toLowerCase(Locale.ROOT)));
+        return filas;
+    }
+
+    private List<Map<String, Object>> construirFilasJsonSnapshotSectorVaciado(List<StockPorSector> stocksEnSector) {
+        List<Map<String, Object>> filas = new ArrayList<>();
+        for (StockPorSector stock : stocksEnSector) {
+            Integer cant = stock.getCantidad();
+            if (cant == null || cant <= 0) {
+                continue;
+            }
+            Producto p = stock.getProducto();
+            if (p == null) {
+                continue;
+            }
+            filas.add(filaJsonSnapshotStock(p, cant, 0));
+        }
+        filas.sort(Comparator.comparing(m -> String.valueOf(m.get("nombreProducto")).toLowerCase(Locale.ROOT)));
+        return filas;
+    }
+
+    private Map<String, Object> mapaDesgloseDesdeFilaJsonSnapshot(Map<String, Object> r) {
+        Map<String, Object> linea = new HashMap<>();
+        Object pid = r.get("productoId");
+        if (pid instanceof Number) {
+            linea.put("productoId", ((Number) pid).longValue());
+        } else {
+            linea.put("productoId", pid);
+        }
+        linea.put("nombreProducto", r.get("nombreProducto"));
+        linea.put("codigoProducto", r.get("codigoProducto"));
+        int stockEn;
+        int aplicada;
+        if (r.containsKey("stockEnSector")) {
+            stockEn = r.get("stockEnSector") instanceof Number ? ((Number) r.get("stockEnSector")).intValue() : 0;
+            aplicada = r.get("cantidadAplicada") instanceof Number ? ((Number) r.get("cantidadAplicada")).intValue() : stockEn;
+        } else if (r.containsKey("cantidad")) {
+            stockEn = r.get("cantidad") instanceof Number ? ((Number) r.get("cantidad")).intValue() : 0;
+            aplicada = stockEn;
+        } else {
+            stockEn = 0;
+            aplicada = 0;
+        }
+        linea.put("conteoAnterior", stockEn);
+        linea.put("conteoActual", aplicada);
+        linea.put("diferencia", aplicada - stockEn);
+        return linea;
+    }
+
+    /**
+     * Líneas para historial: snapshot JSON, o detalle_conteo del sector, o stock actual en depósito.
+     */
+    private List<Map<String, Object>> construirLineasDesgloseSectorSinConteoFisico(ConteoSector cs) {
+        String json = cs.getSnapshotStockSinConteo();
+        if (json != null && !json.isBlank()) {
+            try {
+                List<Map<String, Object>> raw = new ObjectMapper().readValue(json, new TypeReference<List<Map<String, Object>>>() {});
+                List<Map<String, Object>> out = new ArrayList<>();
+                for (Map<String, Object> row : raw) {
+                    out.add(mapaDesgloseDesdeFilaJsonSnapshot(row));
+                }
+                if (!out.isEmpty()) {
+                    return out;
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ No se pudo leer snapshot_stock_sin_conteo: " + e.getMessage());
+            }
+        }
+
+        List<Map<String, Object>> desdeDetalle = new ArrayList<>();
+        for (DetalleConteo d : detalleConteoRepository.findByConteoSectorAndEliminadoFalseOrderByProductoNombre(cs)) {
+            if (d.getProducto() == null) {
+                continue;
+            }
+            Producto p = d.getProducto();
+            Integer st = d.getStockSistema();
+            Integer fin = d.getCantidadFinal();
+            if (st == null && fin == null) {
+                continue;
+            }
+            int ant = st != null ? st : 0;
+            int act = fin != null ? fin : ant;
+            Map<String, Object> linea = new HashMap<>();
+            linea.put("productoId", p.getId());
+            linea.put("nombreProducto", d.getNombreProducto() != null ? d.getNombreProducto() : p.getNombre());
+            linea.put("codigoProducto", d.getCodigoProducto() != null ? d.getCodigoProducto() : p.getCodigoPersonalizado());
+            linea.put("conteoAnterior", ant);
+            linea.put("conteoActual", act);
+            linea.put("diferencia", act - ant);
+            desdeDetalle.add(linea);
+        }
+        if (!desdeDetalle.isEmpty()) {
+            desdeDetalle.sort(Comparator.comparing(m -> String.valueOf(m.get("nombreProducto")).toLowerCase(Locale.ROOT)));
+            return desdeDetalle;
+        }
+
+        if (cs.getSector() == null) {
+            return new ArrayList<>();
+        }
+        Long sectorId = cs.getSector().getId();
+        List<Map<String, Object>> fallback = new ArrayList<>();
+        for (StockPorSector sps : stockPorSectorRepository.findBySectorId(sectorId)) {
+            Producto p = sps.getProducto();
+            if (p == null) {
+                continue;
+            }
+            int c = sps.getCantidad() != null ? sps.getCantidad() : 0;
+            Map<String, Object> linea = new HashMap<>();
+            linea.put("productoId", p.getId());
+            linea.put("nombreProducto", p.getNombre());
+            linea.put("codigoProducto", p.getCodigoPersonalizado());
+            linea.put("conteoAnterior", c);
+            linea.put("conteoActual", c);
+            linea.put("diferencia", 0);
+            fallback.add(linea);
+        }
+        fallback.sort(Comparator.comparing(m -> String.valueOf(m.get("nombreProducto")).toLowerCase(Locale.ROOT)));
+        return fallback;
     }
 
     /**
@@ -4733,39 +5095,34 @@ public class InventarioCompletoService {
             // Verificar si ya existe un conteo para este sector
             Optional<ConteoSector> conteoExistente = conteoSectorRepository.findByInventarioCompletoAndSector(inventario, sector);
             
+            ConteoSector conteo;
             if (conteoExistente.isPresent()) {
-                // Si ya existe, actualizar el estado
-                ConteoSector conteo = conteoExistente.get();
-                conteo.setEstado(ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO);
-                conteo.setFechaFinalizacion(LocalDateTime.now());
-                conteo.setObservaciones("Sector marcado como completado sin conteo por " + usuario.getNombre() + " " + usuario.getApellidos());
-                conteoSectorRepository.save(conteo);
-                
-                System.out.println("✅ Conteo existente actualizado a COMPLETADO_SIN_CONTEO");
-                System.out.println("🔍 DEBUG - Estado guardado: " + conteo.getEstado());
-                System.out.println("🔍 DEBUG - Sector ID: " + conteo.getSector().getId());
-                System.out.println("🔍 DEBUG - Sector Nombre: " + conteo.getSector().getNombre());
+                conteo = conteoExistente.get();
+                System.out.println("✅ Conteo existente — actualizar a COMPLETADO_SIN_CONTEO");
             } else {
-                // Si no existe, crear un nuevo conteo marcado como completado sin conteo
-                ConteoSector nuevoConteo = new ConteoSector();
-                nuevoConteo.setInventarioCompleto(inventario);
-                nuevoConteo.setSector(sector);
-                nuevoConteo.setEstado(ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO);
-                nuevoConteo.setFechaCreacion(LocalDateTime.now());
-                nuevoConteo.setFechaFinalizacion(LocalDateTime.now());
-                nuevoConteo.setObservaciones("Sector marcado como completado sin conteo por " + usuario.getNombre() + " " + usuario.getApellidos());
-                nuevoConteo.setTotalProductos(0);
-                nuevoConteo.setProductosContados(0);
-                nuevoConteo.setProductosConDiferencias(0);
-                nuevoConteo.setPorcentajeCompletado(100.0);
-                
-                conteoSectorRepository.save(nuevoConteo);
-                
-                System.out.println("✅ Nuevo conteo creado como COMPLETADO_SIN_CONTEO");
-                System.out.println("🔍 DEBUG - Estado guardado: " + nuevoConteo.getEstado());
-                System.out.println("🔍 DEBUG - Sector ID: " + nuevoConteo.getSector().getId());
-                System.out.println("🔍 DEBUG - Sector Nombre: " + nuevoConteo.getSector().getNombre());
+                conteo = new ConteoSector();
+                conteo.setInventarioCompleto(inventario);
+                conteo.setSector(sector);
+                conteo.setFechaCreacion(LocalDateTime.now());
+                conteo.setTotalProductos(0);
+                conteo.setProductosContados(0);
+                conteo.setProductosConDiferencias(0);
+                System.out.println("✅ Nuevo conteo — COMPLETADO_SIN_CONTEO");
             }
+            
+            List<Map<String, Object>> filasSnap = construirFilasJsonSnapshotPreservarSinConteo(
+                    sectorId, sector.getNombre(), inventario.getEmpresa().getId());
+            conteo.setSnapshotStockSinConteo(serializarSnapshotStockSinConteo(filasSnap));
+            conteo.setEstado(ConteoSector.EstadoConteo.COMPLETADO_SIN_CONTEO);
+            conteo.setFechaFinalizacion(LocalDateTime.now());
+            conteo.setObservaciones("Sector marcado como completado sin conteo por " + usuario.getNombre() + " " + usuario.getApellidos());
+            conteo.setPorcentajeCompletado(100.0);
+            conteoSectorRepository.save(conteo);
+            
+            System.out.println("🔍 DEBUG - Estado guardado: " + conteo.getEstado());
+            System.out.println("🔍 DEBUG - Sector ID: " + conteo.getSector().getId());
+            System.out.println("🔍 DEBUG - Sector Nombre: " + conteo.getSector().getNombre());
+            System.out.println("🔍 Snapshot sin conteo: " + filasSnap.size() + " productos");
             
             // PASO CRÍTICO: Preservar el stock original de todos los productos en este sector
             System.out.println("🔄 === PRESERVANDO STOCK ORIGINAL DEL SECTOR ===");
@@ -4862,6 +5219,7 @@ public class InventarioCompletoService {
                     conteo.setProductosContados(0);
                     conteo.setProductosConDiferencias(0);
                     conteo.setPorcentajeCompletado(0.0);
+                    conteo.setSnapshotStockSinConteo(null);
                     
                     conteoSectorRepository.save(conteo);
                     
@@ -4952,6 +5310,10 @@ public class InventarioCompletoService {
             System.out.println("🔄 === OBTENIENDO PRODUCTOS CON STOCK EN EL SECTOR ===");
             List<StockPorSector> stocksEnSector = stockPorSectorRepository.findBySectorId(sectorId);
             System.out.println("🔍 Productos encontrados en el sector: " + stocksEnSector.size());
+            
+            List<Map<String, Object>> filasVaciado = construirFilasJsonSnapshotSectorVaciado(stocksEnSector);
+            conteo.setSnapshotStockSinConteo(serializarSnapshotStockSinConteo(filasVaciado));
+            System.out.println("🔍 Snapshot sector vacío: " + filasVaciado.size() + " productos con stock previo");
             
             int productosDescontados = 0;
             int cantidadTotalDescontada = 0;

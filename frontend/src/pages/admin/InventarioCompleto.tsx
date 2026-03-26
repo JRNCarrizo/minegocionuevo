@@ -106,6 +106,8 @@ export default function InventarioCompleto() {
   const [registrosInventarios, setRegistrosInventarios] = useState<any[]>([]);
   const [mostrarModalRegistro, setMostrarModalRegistro] = useState(false);
   const [registroSeleccionado, setRegistroSeleccionado] = useState<any>(null);
+  /** Vista del modal de historial: lista global del registro vs desglose por sector (conteo) */
+  const [vistaDetalleRegistro, setVistaDetalleRegistro] = useState<'general' | 'sectores'>('general');
   
   // Estados para navegación por teclado
   const [modoNavegacion, setModoNavegacion] = useState(false);
@@ -494,7 +496,9 @@ export default function InventarioCompleto() {
         const data = await response.json();
         console.log('✅ Datos recibidos del servidor:', data);
         registro.productosActualizados = data.productosActualizados;
+        registro.desglosePorSectores = data.desglosePorSectores || [];
         console.log('🔍 Registro con productos actualizados:', registro);
+        setVistaDetalleRegistro('general');
         setRegistroSeleccionado(registro);
         setMostrarModalRegistro(true);
       } else {
@@ -3776,8 +3780,206 @@ export default function InventarioCompleto() {
                     <span>📊</span>
                     Productos Actualizados
                   </h3>
+
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem',
+                    marginBottom: '1rem',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{ fontSize: '0.85rem', color: '#64748b', marginRight: '0.25rem' }}>Vista:</span>
+                    <button
+                      type="button"
+                      onClick={() => setVistaDetalleRegistro('general')}
+                      style={{
+                        padding: '0.45rem 1rem',
+                        borderRadius: '0.5rem',
+                        border: vistaDetalleRegistro === 'general' ? '2px solid #7c3aed' : '1px solid #cbd5e1',
+                        background: vistaDetalleRegistro === 'general' ? 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)' : '#fff',
+                        color: vistaDetalleRegistro === 'general' ? '#5b21b6' : '#475569',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Lista general (ajuste global)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVistaDetalleRegistro('sectores')}
+                      style={{
+                        padding: '0.45rem 1rem',
+                        borderRadius: '0.5rem',
+                        border: vistaDetalleRegistro === 'sectores' ? '2px solid #7c3aed' : '1px solid #cbd5e1',
+                        background: vistaDetalleRegistro === 'sectores' ? 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)' : '#fff',
+                        color: vistaDetalleRegistro === 'sectores' ? '#5b21b6' : '#475569',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Por sector
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 1rem 0', lineHeight: 1.45 }}>
+                    {vistaDetalleRegistro === 'general'
+                      ? 'Totales aplicados al stock del producto al cerrar el inventario.'
+                      : 'Por sector: stock anterior, conteo y diferencia (incluye productos sin cambio). Se listan filas del conteo en ese depósito y, si aplica, productos del cierre global asignados al sector por almacenamiento o stock en depósito.'}
+                  </p>
                   
-                  {isMobile ? (
+                  {vistaDetalleRegistro === 'sectores' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                      {(registroSeleccionado.desglosePorSectores?.length ?? 0) === 0 ? (
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '2rem',
+                          color: '#64748b',
+                          background: '#f8fafc',
+                          borderRadius: '1rem',
+                          border: '2px dashed #cbd5e1'
+                        }}>
+                          No hay desglose por sector disponible para este inventario.
+                        </div>
+                      ) : (
+                        registroSeleccionado.desglosePorSectores.map((bloque: any, bi: number) => (
+                          <div
+                            key={bloque.conteoSectorId ?? bloque.sectorId ?? bi}
+                            style={{
+                              borderRadius: '1rem',
+                              border: '2px solid #e2e8f0',
+                              overflow: 'hidden',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                            }}
+                          >
+                            <div style={{
+                              padding: '0.75rem 1rem',
+                              background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+                              borderBottom: '1px solid #ddd6fe',
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '0.5rem'
+                            }}>
+                              <div style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.95rem' }}>
+                                {bloque.nombreSector || 'Sector'}
+                              </div>
+                              <span style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                padding: '0.2rem 0.6rem',
+                                borderRadius: '0.35rem',
+                                background: bloque.estadoSector === 'COMPLETADO' ? '#dcfce7' : '#fef3c7',
+                                color: bloque.estadoSector === 'COMPLETADO' ? '#166534' : '#92400e'
+                              }}>
+                                {bloque.estadoSector === 'COMPLETADO' ? 'Contado' : 'Sin conteo físico'}
+                              </span>
+                            </div>
+                            {bloque.mensaje && (
+                              <div style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: '#92400e', background: '#fffbeb' }}>
+                                {bloque.mensaje}
+                              </div>
+                            )}
+                            {Array.isArray(bloque.productos) && bloque.productos.length > 0
+                              && (bloque.estadoSector === 'COMPLETADO' || bloque.estadoSector === 'COMPLETADO_SIN_CONTEO') ? (
+                              isMobile ? (
+                                <div style={{ padding: '0.75rem', display: 'grid', gap: '0.75rem' }}>
+                                  {bloque.productos.map((prod: any, pi: number) => {
+                                    const ant = prod.conteoAnterior ?? prod.stockReferencia;
+                                    const act = prod.conteoActual ?? prod.cantidadFinal;
+                                    const dif = prod.diferencia ?? prod.diferenciaVsReferencia;
+                                    return (
+                                    <div
+                                      key={`${bloque.conteoSectorId}-${prod.productoId}-${pi}`}
+                                      style={{
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '0.75rem',
+                                        padding: '0.75rem',
+                                        background: pi % 2 === 0 ? '#fff' : '#f8fafc'
+                                      }}
+                                    >
+                                      <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: '0.35rem' }}>{prod.nombreProducto}</div>
+                                      <div style={{ fontSize: '0.8rem', color: '#7c3aed', marginBottom: '0.5rem' }}>{prod.codigoProducto}</div>
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.35rem', fontSize: '0.8rem', textAlign: 'center' }}>
+                                        <div style={{ background: '#f1f5f9', padding: '0.35rem', borderRadius: '0.35rem' }}>
+                                          <div style={{ color: '#64748b', fontSize: '0.7rem' }}>Stock anterior</div>
+                                          <strong>{ant ?? '—'}</strong>
+                                        </div>
+                                        <div style={{ background: '#dbeafe', padding: '0.35rem', borderRadius: '0.35rem' }}>
+                                          <div style={{ color: '#1e40af', fontSize: '0.7rem' }}>Conteo</div>
+                                          <strong>{act ?? '—'}</strong>
+                                        </div>
+                                        <div style={{
+                                          background: dif === 0 ? '#dcfce7' : dif != null && dif > 0 ? '#dbeafe' : '#fee2e2',
+                                          padding: '0.35rem',
+                                          borderRadius: '0.35rem'
+                                        }}>
+                                          <div style={{ color: '#64748b', fontSize: '0.7rem' }}>Diferencia</div>
+                                          <strong style={{
+                                            color: dif == null ? '#64748b' : dif === 0 ? '#166534' : dif > 0 ? '#1d4ed8' : '#b91c1c'
+                                          }}>
+                                            {dif != null ? `${dif > 0 ? '+' : ''}${dif}` : '—'}
+                                          </strong>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <div style={{ overflowX: 'auto' }}>
+                                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                    <thead>
+                                      <tr style={{ background: '#f1f5f9' }}>
+                                        <th style={{ textAlign: 'left', padding: '0.6rem 0.75rem', color: '#475569' }}>Producto</th>
+                                        <th style={{ textAlign: 'center', padding: '0.6rem 0.4rem', color: '#475569' }}>Stock anterior</th>
+                                        <th style={{ textAlign: 'center', padding: '0.6rem 0.4rem', color: '#475569' }}>Conteo</th>
+                                        <th style={{ textAlign: 'center', padding: '0.6rem 0.4rem', color: '#475569' }}>Diferencia</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {bloque.productos.map((prod: any, pi: number) => {
+                                        const ant = prod.conteoAnterior ?? prod.stockReferencia;
+                                        const act = prod.conteoActual ?? prod.cantidadFinal;
+                                        const dif = prod.diferencia ?? prod.diferenciaVsReferencia;
+                                        return (
+                                        <tr key={`${bloque.conteoSectorId}-${prod.productoId}-${pi}`} style={{ background: pi % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                                          <td style={{ padding: '0.55rem 0.75rem', borderBottom: '1px solid #e2e8f0' }}>
+                                            <div style={{ fontWeight: 600, color: '#1e293b' }}>{prod.nombreProducto}</div>
+                                            <div style={{ fontSize: '0.75rem', color: '#7c3aed' }}>{prod.codigoProducto}</div>
+                                          </td>
+                                          <td style={{ textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>{ant ?? '—'}</td>
+                                          <td style={{ textAlign: 'center', fontWeight: 700, borderBottom: '1px solid #e2e8f0' }}>{act ?? '—'}</td>
+                                          <td style={{
+                                            textAlign: 'center',
+                                            fontWeight: 600,
+                                            borderBottom: '1px solid #e2e8f0',
+                                            color: dif == null ? '#64748b' : dif === 0 ? '#166534' : dif > 0 ? '#1d4ed8' : '#b91c1c'
+                                          }}>
+                                            {dif != null ? `${dif > 0 ? '+' : ''}${dif}` : '—'}
+                                          </td>
+                                        </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )
+                            ) : (bloque.estadoSector === 'COMPLETADO' || bloque.estadoSector === 'COMPLETADO_SIN_CONTEO') ? (
+                              <div style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }}>
+                                {bloque.estadoSector === 'COMPLETADO_SIN_CONTEO'
+                                  ? 'No hay registro de stock guardado para este sector (inventarios antiguos o sin productos en el depósito).'
+                                  : 'Sin líneas de producto en este sector.'}
+                              </div>
+                            ) : null}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  ) : null}
+                  
+                  {vistaDetalleRegistro === 'general' && (isMobile ? (
                     /* Vista móvil - Cards */
                     <div style={{ display: 'grid', gap: '1rem' }}>
                       {registroSeleccionado.productosActualizados?.length > 0 ? (
@@ -4007,7 +4209,7 @@ export default function InventarioCompleto() {
                         </div>
                       )}
                     </div>
-                  )}
+                  ))}
                 </div>
 
                 {/* Botón cerrar al final */}
