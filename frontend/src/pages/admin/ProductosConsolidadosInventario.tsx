@@ -19,6 +19,8 @@ interface ProductoConsolidado {
   fueContado?: boolean;
   accionRecomendada?: string;
   cantidadFinal?: number;
+  /** Unidades en stock total que no están en ninguna fila de sector (max(0, stock − suma sectores)) */
+  stockSinSectorizar?: number;
 }
 
 interface SectorInfo {
@@ -873,6 +875,11 @@ const ProductosConsolidadosInventario: React.FC = () => {
                 {/* Stock sistema */}
                 <div style={{ textAlign: 'center', color: '#64748b' }}>
                   {producto.stockSistema}
+                  {(producto.stockSinSectorizar != null && producto.stockSinSectorizar > 0) && (
+                    <div style={{ fontSize: '0.75rem', color: '#b45309', marginTop: '0.35rem', lineHeight: 1.3 }}>
+                      +{producto.stockSinSectorizar} sin sectorizar (no en depósitos)
+                    </div>
+                  )}
                 </div>
 
                 {/* Cantidad Final (Editable) */}
@@ -1054,6 +1061,11 @@ const ProductosConsolidadosInventario: React.FC = () => {
                         </div>
                         <div style={{ textAlign: 'center', color: '#64748b', fontSize: '0.9rem' }}>
                           {producto.stockSistema}
+                          {(producto.stockSinSectorizar != null && producto.stockSinSectorizar > 0) && (
+                            <div style={{ fontSize: '0.68rem', color: '#b45309', marginTop: '0.25rem' }}>
+                              +{producto.stockSinSectorizar} sin sectorizar
+                            </div>
+                          )}
                         </div>
                         <div style={{ textAlign: 'center', fontWeight: 600, color: '#475569' }}>{u1}</div>
                         <div style={{ textAlign: 'center', fontWeight: 600, color: '#475569' }}>{u2}</div>

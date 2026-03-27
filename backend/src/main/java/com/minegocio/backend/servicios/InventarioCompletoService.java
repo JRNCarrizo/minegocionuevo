@@ -299,8 +299,6 @@ public class InventarioCompletoService {
                 }
             }
             
-            Integer diferenciaStock = cantidadFinal - stockAnteriorRegistro;
-            
             // MANEJO DE PRODUCTOS NO CONTADOS
             if (fueContado != null && !fueContado) {
                 System.out.println("⚠️ Procesando producto NO CONTADO: " + producto.getNombre());
@@ -309,18 +307,15 @@ public class InventarioCompletoService {
                 if ("DAR_POR_0".equals(accionSeleccionada)) {
                     // Dar por 0 - actualizar stock a 0
                     cantidadFinal = 0;
-                    diferenciaStock = cantidadFinal - stockAnteriorRegistro;
                     System.out.println("⚠️ Producto NO CONTADO - Dado por 0: " + producto.getNombre());
                 } else if ("EDITADO".equals(accionSeleccionada)) {
                     // EDITADO - usar el valor editado manualmente por el usuario
                     // La cantidadFinal ya viene del frontend con el valor editado
-                    diferenciaStock = cantidadFinal - stockAnteriorRegistro;
                     System.out.println("⚠️ Producto NO CONTADO - Editado manualmente: " + producto.getNombre() + 
                                      " - Cantidad editada: " + cantidadFinal);
                 } else {
                     // OMITIR - conservar valor actual en BD (no el snapshot de consolidación)
                     cantidadFinal = stockAnteriorDb;
-                    diferenciaStock = 0;
                     stockAnteriorRegistro = stockAnteriorDb;
                     System.out.println("⚠️ Producto NO CONTADO - Omitido (conserva valor): " + producto.getNombre());
                 }
@@ -352,32 +347,39 @@ public class InventarioCompletoService {
             
             productoRepository.save(producto);
             
-            // Actualizar stock por sector y sincronizar
+            // Actualizar stock por sector y sincronizar (preserva remanente no sectorizado en product.stock)
             actualizarStockPorSector(producto, cantidadFinal);
+            
+            Producto productoTrasStock = productoRepository.findById(productoId)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado tras actualizar stock: " + productoId));
+            Integer stockNuevoReal = productoTrasStock.getStock() != null ? productoTrasStock.getStock() : 0;
+            // Lista general del historial: comparar total real en BD antes vs después (no el stock "ajustado" de la pantalla de consolidación vs el total final, que mezcla criterios y muestra ± falsos)
+            int stockAntBd = stockAnteriorDb != null ? stockAnteriorDb : 0;
+            Integer diferenciaStockRegistro = stockNuevoReal - stockAntBd;
             
             // Crear registro del producto
             Map<String, Object> registroProducto = new HashMap<>();
             registroProducto.put("productoId", productoId);
-            registroProducto.put("nombreProducto", producto.getNombre());
-            registroProducto.put("codigoProducto", producto.getCodigoPersonalizado());
-            registroProducto.put("stockAnterior", stockAnteriorRegistro);
-            registroProducto.put("stockNuevo", cantidadFinal);
-            registroProducto.put("diferenciaStock", diferenciaStock);
+            registroProducto.put("nombreProducto", productoTrasStock.getNombre());
+            registroProducto.put("codigoProducto", productoTrasStock.getCodigoPersonalizado());
+            registroProducto.put("stockAnterior", stockAntBd);
+            registroProducto.put("stockNuevo", stockNuevoReal);
+            registroProducto.put("diferenciaStock", diferenciaStockRegistro);
             registroProducto.put("observaciones", observacionesProducto);
             
             productosActualizados.add(registroProducto);
             
-            if (diferenciaStock != 0) {
+            if (diferenciaStockRegistro != 0) {
                 productosConDiferencias++;
             } else {
                 productosSinDiferencias++;
             }
             
-            System.out.println("✅ Producto actualizado: " + producto.getNombre() + 
-                             " - Stock anterior (registro): " + stockAnteriorRegistro + 
-                             " - Stock en BD al aplicar: " + stockAnteriorDb +
-                             " - Stock nuevo: " + cantidadFinal + 
-                             " - Diferencia: " + diferenciaStock);
+            System.out.println("✅ Producto actualizado: " + productoTrasStock.getNombre() + 
+                             " - Stock anterior BD (historial): " + stockAntBd + 
+                             " - Ref. consolidación (opcional): " + stockAnteriorRegistro +
+                             " - Stock nuevo (real): " + stockNuevoReal + 
+                             " - Diferencia: " + diferenciaStockRegistro);
         }
         
         // Crear información de sectores
@@ -615,13 +617,19 @@ public class InventarioCompletoService {
         }
         
         // Calcular stock ajustado para productos contados (descontando sectores completados sin conteo)
+        // Importante: stockSistema en el mapa viene del primer DetalleConteo y suele ser solo el stock EN ESE SECTOR.
+        // La consolidación suma conteos de varios sectores y debe comparar contra el STOCK TOTAL del producto en BD.
         System.out.println("🔍 Calculando stock ajustado para productos contados...");
         for (Map<String, Object> producto : productosConsolidados.values()) {
             Long productoId = (Long) producto.get("productoId");
-            Integer stockOriginal = (Integer) producto.get("stockSistema");
+            Integer stockDesdeDetallePrimerSector = (Integer) producto.get("stockSistema");
+            Producto prodBd = productoRepository.findById(productoId).orElse(null);
+            Integer stockBaseTotal = (prodBd != null && prodBd.getStock() != null)
+                ? prodBd.getStock()
+                : stockDesdeDetallePrimerSector;
             
-            // Calcular stock ajustado descontando sectores completados sin conteo
-            Integer stockAjustado = calcularStockAjustado(productoId, stockOriginal, sectoresSinConteo);
+            // Calcular stock ajustado descontando sectores completados sin conteo (sobre el total real del producto)
+            Integer stockAjustado = calcularStockAjustado(productoId, stockBaseTotal, sectoresSinConteo);
             producto.put("stockSistema", stockAjustado);
             
             // Recalcular diferencias con el stock ajustado
@@ -634,7 +642,8 @@ public class InventarioCompletoService {
             producto.put("diferenciaSistema", cantidadFinal - stockAjustado);
             
             System.out.println("  📊 Producto: " + producto.get("nombreProducto") + 
-                             " - Stock original: " + stockOriginal + 
+                             " - Stock detalle (1er sector, ref.): " + stockDesdeDetallePrimerSector + 
+                             " - Stock total BD: " + stockBaseTotal + 
                              " - Stock ajustado: " + stockAjustado + 
                              " - Cantidad final: " + cantidadFinal);
         }
@@ -700,6 +709,20 @@ public class InventarioCompletoService {
         System.out.println("  - Total en sistema: " + todosLosProductos.size());
         System.out.println("  - Contados: " + (todosLosProductos.size() - productosNoContados));
         System.out.println("  - No contados: " + productosNoContados);
+        
+        // Stock sin asignar a ningún sector: max(0, stock total - suma StockPorSector)
+        for (Map<String, Object> producto : productosConsolidados.values()) {
+            Long pid = (Long) producto.get("productoId");
+            Producto p = productoRepository.findById(pid).orElse(null);
+            if (p != null) {
+                int sumaFilas = stockPorSectorRepository.findByProductoId(pid).stream()
+                    .mapToInt(s -> s.getCantidad() != null ? s.getCantidad() : 0).sum();
+                int st = p.getStock() != null ? p.getStock() : 0;
+                producto.put("stockSinSectorizar", Math.max(0, st - sumaFilas));
+            } else {
+                producto.put("stockSinSectorizar", 0);
+            }
+        }
         
         List<Map<String, Object>> resultado = new ArrayList<>(productosConsolidados.values());
         
@@ -833,6 +856,7 @@ public class InventarioCompletoService {
      * Desglose por sector para el historial: stock anterior, conteo y diferencia.
      * Incluye productos sin cambio (diferencia 0) y los que están en el registro global del cierre
      * pero no salieron en el consolidado del sector (p. ej. filas crudas de detalle o asignación por depósito).
+     * Al final se agrega un bloque sintético "Sin sectorizar" (stock total mayor que la suma en depósitos), según el estado actual en BD.
      */
     public List<Map<String, Object>> obtenerDesglosePorSectoresRegistroInventario(Long inventarioId) {
         InventarioCompleto inventario = inventarioCompletoRepository.findById(inventarioId)
@@ -907,9 +931,21 @@ public class InventarioCompletoService {
                     linea.put("productoId", p.getId());
                     linea.put("nombreProducto", dr.getNombreProducto() != null ? dr.getNombreProducto() : p.getNombre());
                     linea.put("codigoProducto", dr.getCodigoProducto() != null ? dr.getCodigoProducto() : p.getCodigoPersonalizado());
-                    linea.put("conteoAnterior", dr.getStockAnterior());
-                    linea.put("conteoActual", dr.getStockNuevo());
-                    linea.put("diferencia", dr.getDiferenciaStock());
+                    // No usar stock nuevo/anterior global del registro como "conteo" de este depósito (evita 10→15 en sector A cuando B no se contó)
+                    Integer stockEnEsteDeposito = null;
+                    if (sectorFisicoId != null) {
+                        stockEnEsteDeposito = stockPorSectorRepository.findByProductoIdAndSectorId(p.getId(), sectorFisicoId)
+                            .map(s -> s.getCantidad()).orElse(null);
+                    }
+                    if (stockEnEsteDeposito != null) {
+                        linea.put("conteoAnterior", stockEnEsteDeposito);
+                        linea.put("conteoActual", stockEnEsteDeposito);
+                        linea.put("diferencia", 0);
+                    } else {
+                        linea.put("conteoAnterior", dr.getStockAnterior());
+                        linea.put("conteoActual", dr.getStockNuevo());
+                        linea.put("diferencia", dr.getDiferenciaStock());
+                    }
                     lineasPorProductoId.put(p.getId(), linea);
                 }
 
@@ -929,7 +965,59 @@ public class InventarioCompletoService {
             desglose.add(bloque);
         }
 
+        // Bloque sintético: productos cuyo stock total supera la suma en depósitos (stock "sin sectorizar")
+        Long empresaId = inventario.getEmpresa().getId();
+        List<Map<String, Object>> lineasSinSector = new ArrayList<>();
+        for (Producto p : productoRepository.findByEmpresaIdAndActivoTrue(empresaId)) {
+            int stockTotal = p.getStock() != null ? p.getStock() : 0;
+            Integer sumSect = stockPorSectorRepository.getStockTotalByProductoId(p.getId());
+            int sumaEnDepositos = sumSect != null ? sumSect : 0;
+            int residuo = Math.max(0, stockTotal - sumaEnDepositos);
+            if (residuo <= 0) {
+                continue;
+            }
+            Map<String, Object> linea = new HashMap<>();
+            linea.put("productoId", p.getId());
+            linea.put("nombreProducto", p.getNombre());
+            linea.put("codigoProducto", p.getCodigoPersonalizado());
+            linea.put("conteoAnterior", stockTotal);
+            linea.put("conteoActual", sumaEnDepositos);
+            linea.put("diferencia", residuo);
+            lineasSinSector.add(linea);
+        }
+        lineasSinSector.sort(Comparator.comparing(m -> {
+            Object n = m.get("nombreProducto");
+            return n != null ? n.toString().toLowerCase(Locale.ROOT) : "";
+        }));
+        Map<String, Object> bloqueSinSector = new HashMap<>();
+        bloqueSinSector.put("conteoSectorId", null);
+        bloqueSinSector.put("sectorId", null);
+        bloqueSinSector.put("nombreSector", "Sin sectorizar");
+        bloqueSinSector.put("estadoSector", "SIN_SECTORIZAR");
+        bloqueSinSector.put("esBloqueSinSectorizar", true);
+        bloqueSinSector.put("mensaje",
+                "Cantidad que no está asignada a ningún depósito: stock total del producto menos la suma de cantidades por depósito.");
+        bloqueSinSector.put("productos", lineasSinSector);
+        desglose.add(bloqueSinSector);
+
         return desglose;
+    }
+
+    /**
+     * Stock de referencia para una fila de detalle_conteo: lo que había en ESTE depósito, no producto.stock global.
+     */
+    private Integer obtenerStockSistemaEnSectorParaDetalle(Producto producto, ConteoSector conteoSector) {
+        if (producto == null) {
+            return null;
+        }
+        if (conteoSector != null && conteoSector.getSector() != null) {
+            Long sid = conteoSector.getSector().getId();
+            Optional<StockPorSector> row = stockPorSectorRepository.findByProductoIdAndSectorId(producto.getId(), sid);
+            if (row.isPresent() && row.get().getCantidad() != null) {
+                return row.get().getCantidad();
+            }
+        }
+        return producto.getStock();
     }
 
     private Map<String, Object> mapearLineaDesgloseDesdeDetalleFinal(DetalleConteo d) {
@@ -942,21 +1030,36 @@ public class InventarioCompletoService {
         linea.put("nombreProducto", d.getNombreProducto() != null ? d.getNombreProducto() : p.getNombre());
         linea.put("codigoProducto", d.getCodigoProducto() != null ? d.getCodigoProducto() : p.getCodigoPersonalizado());
 
+        // Stock de referencia en ESTE depósito; si en BD vieja quedó guardado el total del producto, corregir
         Integer conteoAnterior = d.getStockSistema();
-        Integer conteoActual = d.getCantidadFinal();
+        Long sectorIdDesglose = d.getConteoSector() != null && d.getConteoSector().getSector() != null
+            ? d.getConteoSector().getSector().getId() : null;
+        if (sectorIdDesglose != null && p.getStock() != null && conteoAnterior != null
+                && conteoAnterior.equals(p.getStock())) {
+            Integer enEsteDeposito = stockPorSectorRepository.findByProductoIdAndSectorId(p.getId(), sectorIdDesglose)
+                    .map(StockPorSector::getCantidad).orElse(null);
+            if (enEsteDeposito != null) {
+                conteoAnterior = enEsteDeposito;
+            }
+        }
+        int c1 = d.getCantidadConteo1() != null ? d.getCantidadConteo1() : 0;
+        int c2 = d.getCantidadConteo2() != null ? d.getCantidadConteo2() : 0;
+        int conteoMaxEnSector = Math.max(c1, c2);
+        Integer cf = d.getCantidadFinal();
+        // cantidadFinal a veces queda como total global (varios depósitos); en desglose por sector debe mostrarse el conteo en ESTE depósito
+        Integer conteoActual = cf;
+        if (cf != null && (c1 > 0 || c2 > 0) && conteoMaxEnSector > 0 && conteoAnterior != null) {
+            if (cf > conteoMaxEnSector && conteoMaxEnSector <= conteoAnterior) {
+                conteoActual = conteoMaxEnSector;
+            }
+        }
         if (conteoActual == null) {
-            int c1 = d.getCantidadConteo1() != null ? d.getCantidadConteo1() : 0;
-            int c2 = d.getCantidadConteo2() != null ? d.getCantidadConteo2() : 0;
-            conteoActual = Math.max(c1, c2);
+            conteoActual = conteoMaxEnSector > 0 ? conteoMaxEnSector : cf;
         }
-        Integer diferencia;
-        if (d.getDiferenciaSistema() != null) {
-            diferencia = d.getDiferenciaSistema();
-        } else if (conteoAnterior != null && conteoActual != null) {
-            diferencia = conteoActual - conteoAnterior;
-        } else {
-            diferencia = null;
-        }
+
+        Integer diferencia = (conteoAnterior != null && conteoActual != null)
+            ? conteoActual - conteoAnterior
+            : null;
 
         linea.put("conteoAnterior", conteoAnterior);
         linea.put("conteoActual", conteoActual);
@@ -2728,7 +2831,7 @@ public class InventarioCompletoService {
                 detalleEliminado.setFormulaCalculo1(formulaCalculo1);
                 detalleEliminado.setFormulaCalculo2(formulaCalculo2);
                 detalleEliminado.setEliminado(true);
-                detalleEliminado.setStockSistema(producto.getStock());
+                detalleEliminado.setStockSistema(obtenerStockSistemaEnSectorParaDetalle(producto, conteoSector));
                 
                 detalleConteoRepository.save(detalleEliminado);
                 System.out.println("✅ Detalle eliminado creado exitosamente para producto: " + producto.getNombre());
@@ -3158,7 +3261,7 @@ public class InventarioCompletoService {
             detalle.setProducto(producto);
             detalle.setCodigoProducto(producto.getCodigoPersonalizado());
             detalle.setNombreProducto(producto.getNombre());
-            detalle.setStockSistema(producto.getStock());
+            detalle.setStockSistema(obtenerStockSistemaEnSectorParaDetalle(producto, conteoSector));
             detalle.setPrecioUnitario(producto.getPrecio());
             
             // ✅ CORRECCIÓN: Buscar TODAS las entradas del producto para consolidar valores del otro usuario
@@ -3270,7 +3373,7 @@ public class InventarioCompletoService {
             detalle.setProducto(producto);
             detalle.setCodigoProducto(producto.getCodigoPersonalizado());
             detalle.setNombreProducto(producto.getNombre());
-            detalle.setStockSistema(producto.getStock());
+            detalle.setStockSistema(obtenerStockSistemaEnSectorParaDetalle(producto, conteoSector));
             detalle.setPrecioUnitario(producto.getPrecio());
             
             System.out.println("✅ NUEVA ENTRADA CREADA (antes de guardar)");
@@ -4668,6 +4771,14 @@ public class InventarioCompletoService {
             System.out.println("🔄 Cantidad final solicitada: " + cantidadFinal);
             System.out.println("🔄 Stock actual del producto: " + producto.getStock());
             
+            // Remanente no cargado en ningún StockPorSector (total - suma filas), a preservar al sincronizar
+            Producto prodRef = productoRepository.findById(producto.getId()).orElse(producto);
+            List<StockPorSector> filasIniciales = stockPorSectorRepository.findByProductoId(prodRef.getId());
+            int sumaInicial = filasIniciales.stream().mapToInt(s -> s.getCantidad() != null ? s.getCantidad() : 0).sum();
+            int stockInicial = prodRef.getStock() != null ? prodRef.getStock() : 0;
+            int residuoSinSectorizar = Math.max(0, stockInicial - sumaInicial);
+            System.out.println("🔄 Residuo sin sectorizar a preservar: " + residuoSinSectorizar + " (stock=" + stockInicial + ", suma filas=" + sumaInicial + ")");
+            
             // PASO 1: Obtener la distribución real del inventario por sectores
             Map<Long, Integer> distribucionPorSectores = obtenerDistribucionRealPorSectores(producto.getId());
             
@@ -4836,28 +4947,47 @@ public class InventarioCompletoService {
             }
             System.out.println("🔍 Distribución a mantener: " + distribucionPorSectores);
             
+            Set<Long> sectoresInventarioIds = new HashSet<>();
+            InventarioCompleto invActual = inventarioCompletoRepository.findById(this.inventarioActualId).orElse(null);
+            if (invActual != null) {
+                for (ConteoSector cs : conteoSectorRepository.findByInventarioCompleto(invActual)) {
+                    sectoresInventarioIds.add(cs.getSector().getId());
+                }
+            }
+            
             for (StockPorSector stock : todosLosStocks) {
                 Long sectorId = stock.getSector().getId();
+                if (!sectoresInventarioIds.contains(sectorId)) {
+                    System.out.println("⏭️ Stock en sector fuera de este inventario — no se elimina: " + producto.getNombre() + " en " + stock.getSector().getNombre());
+                    continue;
+                }
                 if (!distribucionPorSectores.containsKey(sectorId)) {
-                    // Este sector no está en la distribución, eliminar el registro
                     stockPorSectorRepository.delete(stock);
-                    System.out.println("🗑️ Stock eliminado: " + producto.getNombre() + " en " + stock.getSector().getNombre() + " (no está en distribución)");
+                    System.out.println("🗑️ Stock eliminado: " + producto.getNombre() + " en " + stock.getSector().getNombre() + " (no está en distribución del inventario)");
                 } else {
                     System.out.println("✅ Stock mantenido: " + producto.getNombre() + " en " + stock.getSector().getNombre() + " = " + stock.getCantidad());
                 }
             }
             
-                // PASO 5: SINCRONIZAR: Actualizar el stock total del producto
-                if (!producto.getStock().equals(cantidadFinalCompleta)) {
-                    producto.setStock(cantidadFinalCompleta);
-                    productoRepository.save(producto);
-                    System.out.println("🔄 Stock del producto sincronizado: " + producto.getNombre() + " = " + cantidadFinalCompleta);
+                // Sincronizar stock total: suma de filas + remanente no sectorizado (no pisar con solo cantidadFinalCompleta)
+                List<StockPorSector> filasFinal = stockPorSectorRepository.findByProductoId(producto.getId());
+                int sumaFinal = filasFinal.stream().mapToInt(s -> s.getCantidad() != null ? s.getCantidad() : 0).sum();
+                int stockFinal = sumaFinal + residuoSinSectorizar;
+                if (sumaInicial == 0 && stockInicial > 0) {
+                    stockFinal = Math.min(stockFinal, stockInicial);
+                }
+                Producto pSync = productoRepository.findById(producto.getId()).orElse(producto);
+                Integer stActual = pSync.getStock();
+                if (stActual == null || !stActual.equals(stockFinal)) {
+                    pSync.setStock(stockFinal);
+                    productoRepository.save(pSync);
+                    System.out.println("🔄 Stock del producto sincronizado: " + pSync.getNombre() + " = " + stockFinal + " (suma filas=" + sumaFinal + " + residuo=" + residuoSinSectorizar + ")");
                 }
             
             // PASO 6: VERIFICACIÓN FINAL - Mostrar el estado final
             System.out.println("🔄 === VERIFICACIÓN FINAL ===");
-            List<StockPorSector> stockFinal = stockPorSectorRepository.findByProductoId(producto.getId());
-            for (StockPorSector stock : stockFinal) {
+            List<StockPorSector> stocksVerificacionFinal = stockPorSectorRepository.findByProductoId(producto.getId());
+            for (StockPorSector stock : stocksVerificacionFinal) {
                 System.out.println("🔄 Stock final - Producto: " + producto.getNombre() + 
                                  " - Sector: " + stock.getSector().getNombre() + 
                                  " - Cantidad: " + stock.getCantidad());
@@ -4979,6 +5109,12 @@ public class InventarioCompletoService {
      * Fallback: actualizar solo el sector principal cuando no hay distribución disponible
      */
     private void actualizarStockSectorPrincipal(Producto producto, Integer cantidadFinal) {
+        Producto prod = productoRepository.findById(producto.getId()).orElse(producto);
+        List<StockPorSector> filasIni = stockPorSectorRepository.findByProductoId(prod.getId());
+        int sumaInicial = filasIni.stream().mapToInt(s -> s.getCantidad() != null ? s.getCantidad() : 0).sum();
+        int stockInicial = prod.getStock() != null ? prod.getStock() : 0;
+        int residuoSinSectorizar = Math.max(0, stockInicial - sumaInicial);
+        
         Sector sector = sectorRepository.findByNombreAndEmpresaId(producto.getSectorAlmacenamiento(), producto.getEmpresa().getId())
             .orElse(null);
         
@@ -5004,60 +5140,78 @@ public class InventarioCompletoService {
             System.out.println("✅ Nuevo stock por sector creado (fallback): " + producto.getNombre() + " en " + sector.getNombre() + " = " + cantidadFinal);
         }
         
-        // SINCRONIZAR: Actualizar el stock total del producto
-        if (!producto.getStock().equals(cantidadFinal)) {
-            producto.setStock(cantidadFinal);
-            productoRepository.save(producto);
-            System.out.println("🔄 Stock del producto sincronizado (fallback): " + producto.getNombre() + " = " + cantidadFinal);
+        List<StockPorSector> filasFinal = stockPorSectorRepository.findByProductoId(prod.getId());
+        int sumaFinal = filasFinal.stream().mapToInt(s -> s.getCantidad() != null ? s.getCantidad() : 0).sum();
+        int stockFinal = sumaFinal + residuoSinSectorizar;
+        if (sumaInicial == 0 && stockInicial > 0) {
+            stockFinal = Math.min(stockFinal, stockInicial);
+        }
+        Producto pSync = productoRepository.findById(prod.getId()).orElse(prod);
+        Integer st = pSync.getStock();
+        if (st == null || !st.equals(stockFinal)) {
+            pSync.setStock(stockFinal);
+            productoRepository.save(pSync);
+            System.out.println("🔄 Stock del producto sincronizado (fallback): " + pSync.getNombre() + " = " + stockFinal);
         }
     }
     
     /**
-     * Sincroniza el stock de todos los productos después de completar el inventario
+     * Revisa inconsistencias entre producto.stock y la suma de StockPorSector tras cerrar inventario.
+     * Si stock total es mayor que la suma en depósitos, es stock "sin sectorizar" (normal): no se toca.
+     * Si la suma en depósitos es mayor que el stock total, se reparte proporcionalmente para alinear filas al total del producto.
      */
     private void sincronizarStockCompleto(Long empresaId) {
         try {
-            System.out.println("🔄 SINCRONIZACIÓN AUTOMÁTICA - Iniciando sincronización masiva para empresa: " + empresaId);
+            System.out.println("🔄 SINCRONIZACIÓN AUTOMÁTICA - Iniciando revisión para empresa: " + empresaId);
             
-            // Obtener todos los productos de la empresa
             List<Producto> productos = productoRepository.findByEmpresaId(empresaId);
             int productosSincronizados = 0;
             int productosConInconsistencias = 0;
             
             for (Producto producto : productos) {
                 try {
-                    // Obtener stock actual en sectores
                     List<StockPorSector> stockEnSectores = stockPorSectorRepository.findByProductoId(producto.getId());
-                    Integer stockTotalEnSectores = stockEnSectores.stream()
-                            .mapToInt(StockPorSector::getCantidad)
+                    int stockTotalEnSectores = stockEnSectores.stream()
+                            .mapToInt(s -> s.getCantidad() != null ? s.getCantidad() : 0)
                             .sum();
+                    int stockProd = producto.getStock() != null ? producto.getStock() : 0;
+                    int diferencia = stockProd - stockTotalEnSectores;
                     
-                    Integer diferencia = producto.getStock() - stockTotalEnSectores;
-                    
-                    if (diferencia != 0) {
-                        productosConInconsistencias++;
-                        
-                        // Sincronizar el stock - actualizar stock_por_sector con el valor del producto
-                        if (!stockEnSectores.isEmpty()) {
-                            // Si hay sectores, actualizar el primer sector (o el sector principal)
-                            StockPorSector sectorPrincipal = stockEnSectores.get(0);
-                            sectorPrincipal.setCantidad(producto.getStock());
-                            sectorPrincipal.setFechaActualizacion(LocalDateTime.now());
-                            stockPorSectorRepository.save(sectorPrincipal);
-                        } else {
-                            // Si no hay sectores, crear uno con el sector de almacenamiento del producto
-                            if (producto.getSectorAlmacenamiento() != null && !producto.getSectorAlmacenamiento().trim().isEmpty()) {
-                                Sector sector = sectorRepository.findByNombreAndEmpresaId(producto.getSectorAlmacenamiento(), empresaId).orElse(null);
-                                if (sector != null) {
-                                    StockPorSector nuevoStock = new StockPorSector(producto, sector, producto.getStock());
-                                    stockPorSectorRepository.save(nuevoStock);
-                                }
-                            }
-                        }
-                        
-                        productosSincronizados++;
-                        System.out.println("✅ Stock sincronizado: " + producto.getNombre() + " - Diferencia: " + diferencia);
+                    if (diferencia > 0) {
+                        // Remanente solo en producto.stock; no volcar a un depósito (evita doble conteo)
+                        continue;
                     }
+                    if (diferencia == 0) {
+                        continue;
+                    }
+                    
+                    // diferencia < 0: filas suman más que el stock del producto
+                    productosConInconsistencias++;
+                    if (stockEnSectores.isEmpty()) {
+                        continue;
+                    }
+                    int target = Math.max(0, stockProd);
+                    int sum = stockTotalEnSectores;
+                    if (sum <= 0) {
+                        continue;
+                    }
+                    int allocated = 0;
+                    for (int i = 0; i < stockEnSectores.size(); i++) {
+                        StockPorSector sps = stockEnSectores.get(i);
+                        int q = sps.getCantidad() != null ? sps.getCantidad() : 0;
+                        int newQ;
+                        if (i == stockEnSectores.size() - 1) {
+                            newQ = Math.max(0, target - allocated);
+                        } else {
+                            newQ = (int) Math.floor((double) q * target / sum);
+                            allocated += newQ;
+                        }
+                        sps.setCantidad(newQ);
+                        sps.setFechaActualizacion(LocalDateTime.now());
+                        stockPorSectorRepository.save(sps);
+                    }
+                    productosSincronizados++;
+                    System.out.println("✅ Stock alineado (filas mayor que total): " + producto.getNombre() + " → total " + target);
                 } catch (Exception e) {
                     System.err.println("❌ Error sincronizando producto " + producto.getNombre() + ": " + e.getMessage());
                 }
@@ -5065,8 +5219,8 @@ public class InventarioCompletoService {
             
             System.out.println("🔄 SINCRONIZACIÓN AUTOMÁTICA - Completada:");
             System.out.println("  - Total productos: " + productos.size());
-            System.out.println("  - Productos con inconsistencias: " + productosConInconsistencias);
-            System.out.println("  - Productos sincronizados: " + productosSincronizados);
+            System.out.println("  - Productos con suma depósitos mayor que stock (corregidos): " + productosConInconsistencias);
+            System.out.println("  - Filas ajustadas: " + productosSincronizados);
             
         } catch (Exception e) {
             System.err.println("❌ Error en sincronización automática: " + e.getMessage());

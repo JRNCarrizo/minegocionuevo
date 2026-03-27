@@ -108,6 +108,8 @@ export default function InventarioCompleto() {
   const [registroSeleccionado, setRegistroSeleccionado] = useState<any>(null);
   /** Vista del modal de historial: lista global del registro vs desglose por sector (conteo) */
   const [vistaDetalleRegistro, setVistaDetalleRegistro] = useState<'general' | 'sectores'>('general');
+  /** Sectores expandidos en el modal (por clave de bloque); por defecto contraídos al abrir */
+  const [sectoresDesplegadosModal, setSectoresDesplegadosModal] = useState<Record<string, boolean>>({});
   
   // Estados para navegación por teclado
   const [modoNavegacion, setModoNavegacion] = useState(false);
@@ -128,6 +130,12 @@ export default function InventarioCompleto() {
       console.log('🔍 Modal - cantidad productos:', registroSeleccionado?.productosActualizados?.length);
     }
   }, [registroSeleccionado]);
+
+  useEffect(() => {
+    if (mostrarModalRegistro) {
+      setSectoresDesplegadosModal({});
+    }
+  }, [mostrarModalRegistro]);
 
   // Recargar datos cuando se monta el componente (para actualizar estados después de navegación)
   useEffect(() => {
@@ -3563,9 +3571,9 @@ export default function InventarioCompleto() {
                   background: 'white',
                   borderRadius: '1.5rem',
                   padding: isMobile ? '1.5rem' : '2.5rem',
-                  maxWidth: '95vw',
+                  maxWidth: '96vw',
                   maxHeight: '90vh',
-                  width: isMobile ? '100%' : '900px',
+                  width: isMobile ? '100%' : 'min(96vw, 1400px)',
                   overflow: 'auto',
                   boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
                   position: 'relative'
@@ -3605,37 +3613,40 @@ export default function InventarioCompleto() {
                   ✕
                 </button>
 
-                {/* Header con gradiente */}
+                {/* Encabezado del modal */}
                 <div style={{
-                  marginBottom: '2rem',
-                  paddingRight: '3rem'
+                  marginBottom: '1.75rem',
+                  paddingRight: '3rem',
+                  paddingBottom: '1.25rem',
+                  borderBottom: '1px solid #e2e8f0'
                 }}>
                   <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '1rem',
-                    marginBottom: '1rem'
+                    display: 'flex',
+                    alignItems: 'stretch',
+                    gap: '1rem'
                   }}>
-                    <span style={{ fontSize: '2rem' }}>📋</span>
-                    <h2 style={{
-                      margin: 0,
-                      color: 'white',
-                      fontSize: isMobile ? '1.1rem' : '1.5rem',
-                      fontWeight: '700'
-                    }}>
-                      Detalle del Inventario
-                    </h2>
-                  </div>
-                  <div style={{
-                    fontSize: isMobile ? '1rem' : '1.2rem',
-                    color: '#1e293b',
-                    fontWeight: '600',
-                    marginTop: '0.75rem'
-                  }}>
-                    Inventario Completo
+                    <div
+                      aria-hidden
+                      style={{
+                        width: 4,
+                        minHeight: '100%',
+                        borderRadius: 4,
+                        background: 'linear-gradient(180deg, #7c3aed 0%, #6d28d9 55%, #5b21b6 100%)',
+                        flexShrink: 0
+                      }}
+                    />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <h2 style={{
+                        margin: 0,
+                        color: '#0f172a',
+                        fontSize: isMobile ? '1.2rem' : '1.5rem',
+                        fontWeight: 700,
+                        letterSpacing: '-0.02em',
+                        lineHeight: 1.25
+                      }}>
+                        Detalle del inventario
+                      </h2>
+                    </div>
                   </div>
                 </div>
 
@@ -3825,7 +3836,7 @@ export default function InventarioCompleto() {
                   <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 1rem 0', lineHeight: 1.45 }}>
                     {vistaDetalleRegistro === 'general'
                       ? 'Totales aplicados al stock del producto al cerrar el inventario.'
-                      : 'Por sector: stock anterior, conteo y diferencia (incluye productos sin cambio). Se listan filas del conteo en ese depósito y, si aplica, productos del cierre global asignados al sector por almacenamiento o stock en depósito.'}
+                      : 'Cada depósito es desplegable: tocá el nombre para ver u ocultar la lista. Stock anterior, conteo y diferencia por fila. Al final aparece Sin sectorizar: productos con stock no asignado a ningún depósito (según datos actuales).'}
                   </p>
                   
                   {vistaDetalleRegistro === 'sectores' ? (
@@ -3842,9 +3853,20 @@ export default function InventarioCompleto() {
                           No hay desglose por sector disponible para este inventario.
                         </div>
                       ) : (
-                        registroSeleccionado.desglosePorSectores.map((bloque: any, bi: number) => (
+                        registroSeleccionado.desglosePorSectores.map((bloque: any, bi: number) => {
+                          const esSinSectorizar = bloque.estadoSector === 'SIN_SECTORIZAR' || bloque.esBloqueSinSectorizar === true;
+                          const bloqueKey = esSinSectorizar
+                            ? 'sin-sectorizar'
+                            : String(bloque.conteoSectorId ?? bloque.sectorId ?? `idx-${bi}`);
+                          const sectorExpandido = sectoresDesplegadosModal[bloqueKey] === true;
+                          const nProductosSector = Array.isArray(bloque.productos) ? bloque.productos.length : 0;
+                          const puedeMostrarTabla =
+                            bloque.estadoSector === 'COMPLETADO' ||
+                            bloque.estadoSector === 'COMPLETADO_SIN_CONTEO' ||
+                            bloque.estadoSector === 'SIN_SECTORIZAR';
+                          return (
                           <div
-                            key={bloque.conteoSectorId ?? bloque.sectorId ?? bi}
+                            key={bloque.conteoSectorId ?? bloque.sectorId ?? (esSinSectorizar ? 'sin-sectorizar' : bi)}
                             style={{
                               borderRadius: '1rem',
                               border: '2px solid #e2e8f0',
@@ -3852,37 +3874,73 @@ export default function InventarioCompleto() {
                               boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
                             }}
                           >
-                            <div style={{
-                              padding: '0.75rem 1rem',
-                              background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
-                              borderBottom: '1px solid #ddd6fe',
-                              display: 'flex',
-                              flexWrap: 'wrap',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: '0.5rem'
-                            }}>
-                              <div style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.95rem' }}>
-                                {bloque.nombreSector || 'Sector'}
+                            <button
+                              type="button"
+                              aria-expanded={sectorExpandido}
+                              onClick={() =>
+                                setSectoresDesplegadosModal((prev) => ({
+                                  ...prev,
+                                  [bloqueKey]: !prev[bloqueKey]
+                                }))
+                              }
+                              style={{
+                                width: '100%',
+                                padding: '0.85rem 1rem',
+                                background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+                                border: 'none',
+                                borderBottom: sectorExpandido ? '1px solid #ddd6fe' : 'none',
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '0.5rem',
+                                cursor: 'pointer',
+                                textAlign: 'left'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1 }}>
+                                <span style={{ fontSize: '0.75rem', color: '#6d28d9', flexShrink: 0 }} aria-hidden>
+                                  {sectorExpandido ? '▼' : '▶'}
+                                </span>
+                                <span style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {bloque.nombreSector || 'Sector'}
+                                </span>
+                                <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500, flexShrink: 0 }}>
+                                  ({nProductosSector} {nProductosSector === 1 ? 'producto' : 'productos'})
+                                </span>
                               </div>
                               <span style={{
                                 fontSize: '0.75rem',
                                 fontWeight: 600,
                                 padding: '0.2rem 0.6rem',
                                 borderRadius: '0.35rem',
-                                background: bloque.estadoSector === 'COMPLETADO' ? '#dcfce7' : '#fef3c7',
-                                color: bloque.estadoSector === 'COMPLETADO' ? '#166534' : '#92400e'
+                                background:
+                                  bloque.estadoSector === 'SIN_SECTORIZAR'
+                                    ? '#ede9fe'
+                                    : bloque.estadoSector === 'COMPLETADO'
+                                      ? '#dcfce7'
+                                      : '#fef3c7',
+                                color:
+                                  bloque.estadoSector === 'SIN_SECTORIZAR'
+                                    ? '#5b21b6'
+                                    : bloque.estadoSector === 'COMPLETADO'
+                                      ? '#166534'
+                                      : '#92400e'
                               }}>
-                                {bloque.estadoSector === 'COMPLETADO' ? 'Contado' : 'Sin conteo físico'}
+                                {bloque.estadoSector === 'SIN_SECTORIZAR'
+                                  ? 'Sin sectorizar'
+                                  : bloque.estadoSector === 'COMPLETADO'
+                                    ? 'Contado'
+                                    : 'Sin conteo físico'}
                               </span>
-                            </div>
-                            {bloque.mensaje && (
-                              <div style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: '#92400e', background: '#fffbeb' }}>
+                            </button>
+                            {sectorExpandido && bloque.mensaje && (
+                              <div style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: '#92400e', background: '#fffbeb', borderBottom: '1px solid #fde68a' }}>
                                 {bloque.mensaje}
                               </div>
                             )}
-                            {Array.isArray(bloque.productos) && bloque.productos.length > 0
-                              && (bloque.estadoSector === 'COMPLETADO' || bloque.estadoSector === 'COMPLETADO_SIN_CONTEO') ? (
+                            {sectorExpandido && Array.isArray(bloque.productos) && bloque.productos.length > 0
+                              && puedeMostrarTabla ? (
                               isMobile ? (
                                 <div style={{ padding: '0.75rem', display: 'grid', gap: '0.75rem' }}>
                                   {bloque.productos.map((prod: any, pi: number) => {
@@ -3903,11 +3961,11 @@ export default function InventarioCompleto() {
                                       <div style={{ fontSize: '0.8rem', color: '#7c3aed', marginBottom: '0.5rem' }}>{prod.codigoProducto}</div>
                                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.35rem', fontSize: '0.8rem', textAlign: 'center' }}>
                                         <div style={{ background: '#f1f5f9', padding: '0.35rem', borderRadius: '0.35rem' }}>
-                                          <div style={{ color: '#64748b', fontSize: '0.7rem' }}>Stock anterior</div>
+                                          <div style={{ color: '#64748b', fontSize: '0.7rem' }}>{esSinSectorizar ? 'Stock total' : 'Stock anterior'}</div>
                                           <strong>{ant ?? '—'}</strong>
                                         </div>
                                         <div style={{ background: '#dbeafe', padding: '0.35rem', borderRadius: '0.35rem' }}>
-                                          <div style={{ color: '#1e40af', fontSize: '0.7rem' }}>Conteo</div>
+                                          <div style={{ color: '#1e40af', fontSize: '0.7rem' }}>{esSinSectorizar ? 'En depósitos' : 'Conteo'}</div>
                                           <strong>{act ?? '—'}</strong>
                                         </div>
                                         <div style={{
@@ -3915,7 +3973,7 @@ export default function InventarioCompleto() {
                                           padding: '0.35rem',
                                           borderRadius: '0.35rem'
                                         }}>
-                                          <div style={{ color: '#64748b', fontSize: '0.7rem' }}>Diferencia</div>
+                                          <div style={{ color: '#64748b', fontSize: '0.7rem' }}>{esSinSectorizar ? 'Sin sectorizar' : 'Diferencia'}</div>
                                           <strong style={{
                                             color: dif == null ? '#64748b' : dif === 0 ? '#166534' : dif > 0 ? '#1d4ed8' : '#b91c1c'
                                           }}>
@@ -3933,9 +3991,9 @@ export default function InventarioCompleto() {
                                     <thead>
                                       <tr style={{ background: '#f1f5f9' }}>
                                         <th style={{ textAlign: 'left', padding: '0.6rem 0.75rem', color: '#475569' }}>Producto</th>
-                                        <th style={{ textAlign: 'center', padding: '0.6rem 0.4rem', color: '#475569' }}>Stock anterior</th>
-                                        <th style={{ textAlign: 'center', padding: '0.6rem 0.4rem', color: '#475569' }}>Conteo</th>
-                                        <th style={{ textAlign: 'center', padding: '0.6rem 0.4rem', color: '#475569' }}>Diferencia</th>
+                                        <th style={{ textAlign: 'center', padding: '0.6rem 0.4rem', color: '#475569' }}>{esSinSectorizar ? 'Stock total' : 'Stock anterior'}</th>
+                                        <th style={{ textAlign: 'center', padding: '0.6rem 0.4rem', color: '#475569' }}>{esSinSectorizar ? 'En depósitos' : 'Conteo'}</th>
+                                        <th style={{ textAlign: 'center', padding: '0.6rem 0.4rem', color: '#475569' }}>{esSinSectorizar ? 'Sin sectorizar' : 'Diferencia'}</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -3966,15 +4024,18 @@ export default function InventarioCompleto() {
                                   </table>
                                 </div>
                               )
-                            ) : (bloque.estadoSector === 'COMPLETADO' || bloque.estadoSector === 'COMPLETADO_SIN_CONTEO') ? (
+                            ) : sectorExpandido && puedeMostrarTabla ? (
                               <div style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }}>
-                                {bloque.estadoSector === 'COMPLETADO_SIN_CONTEO'
-                                  ? 'No hay registro de stock guardado para este sector (inventarios antiguos o sin productos en el depósito).'
-                                  : 'Sin líneas de producto en este sector.'}
+                                {bloque.estadoSector === 'SIN_SECTORIZAR'
+                                  ? 'No hay productos con stock sin asignar a depósitos (según datos actuales).'
+                                  : bloque.estadoSector === 'COMPLETADO_SIN_CONTEO'
+                                    ? 'No hay registro de stock guardado para este sector (inventarios antiguos o sin productos en el depósito).'
+                                    : 'Sin líneas de producto en este sector.'}
                               </div>
                             ) : null}
                           </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   ) : null}
