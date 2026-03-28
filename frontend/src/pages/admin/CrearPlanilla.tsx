@@ -45,12 +45,12 @@ interface Vehiculo {
 }
 
 export default function CrearPlanilla() {
-  const { datosUsuario, cerrarSesion } = useUsuarioActual();
+  const { datosUsuario, cerrarSesion, cargando: cargandoUsuario } = useUsuarioActual();
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
   
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const [cargandoProductos, setCargandoProductos] = useState(true);
 
   // La función obtenerFechaActual ahora está en utils/dateUtils.ts
 
@@ -342,13 +342,13 @@ export default function CrearPlanilla() {
 
   // Efecto para enfocar el campo de código de planilla cuando se carga la página
   useEffect(() => {
-    if (codigoPlanillaRef.current && !cargando) {
+    if (codigoPlanillaRef.current && !cargandoProductos) {
       // Pequeño delay para asegurar que la página esté completamente renderizada
       setTimeout(() => {
         codigoPlanillaRef.current?.focus();
       }, 100);
     }
-  }, [cargando]);
+  }, [cargandoProductos]);
 
   // Manejar tecla Escape para volver a la vista principal
   useEffect(() => {
@@ -460,7 +460,7 @@ export default function CrearPlanilla() {
 
   const cargarProductos = async () => {
     try {
-      setCargando(true);
+      setCargandoProductos(true);
       if (!datosUsuario?.empresaId) {
         console.error('No se encontró el ID de la empresa');
         toast.error('Error: No se encontró la información de la empresa');
@@ -473,7 +473,7 @@ export default function CrearPlanilla() {
       console.error('Error al cargar productos:', error);
       toast.error('Error al cargar los productos');
     } finally {
-      setCargando(false);
+      setCargandoProductos(false);
     }
   };
 
@@ -983,7 +983,7 @@ export default function CrearPlanilla() {
     }
   };
 
-  if (cargando || !datosUsuario) {
+  if (!datosUsuario) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -1008,7 +1008,9 @@ export default function CrearPlanilla() {
             animation: 'spin 1s linear infinite',
             margin: '0 auto 1rem'
           }}></div>
-          <p style={{ color: '#6b7280', margin: 0 }}>Cargando productos...</p>
+          <p style={{ color: '#6b7280', margin: 0 }}>
+            {cargandoUsuario ? 'Cargando sesión...' : 'Preparando...'}
+          </p>
         </div>
       </div>
     );
@@ -1375,6 +1377,30 @@ export default function CrearPlanilla() {
             }}>
               🔍 Buscar Productos
             </h3>
+            {cargandoProductos && (
+              <p style={{
+                fontSize: '0.8125rem',
+                color: '#64748b',
+                margin: '0 0 0.75rem 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <span
+                  style={{
+                    width: '0.875rem',
+                    height: '0.875rem',
+                    border: '2px solid #e2e8f0',
+                    borderTopColor: '#3b82f6',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite',
+                    flexShrink: 0
+                  }}
+                  aria-hidden
+                />
+                Cargando catálogo de productos…
+              </p>
+            )}
             
             {/* Campo de búsqueda y cantidad */}
             <div style={{ marginBottom: '1rem' }}>
@@ -1389,8 +1415,10 @@ export default function CrearPlanilla() {
                     <input
                       ref={inputBusquedaRef}
                       type="text"
-                      placeholder="Nombre, código o barras..."
+                      placeholder={cargandoProductos ? 'Esperando productos…' : 'Nombre, código o barras...'}
                       value={inputBusqueda}
+                      disabled={cargandoProductos}
+                      aria-busy={cargandoProductos}
                       onChange={(e) => {
                         setInputBusqueda(e.target.value);
                         mostrarPredicciones();
@@ -1402,8 +1430,10 @@ export default function CrearPlanilla() {
                         border: '2px solid #e5e7eb',
                         borderRadius: '0.5rem',
                         fontSize: isMobile ? '1rem' : '0.875rem',
-                        background: 'white',
+                        background: cargandoProductos ? '#f1f5f9' : 'white',
                         color: '#1e293b',
+                        opacity: cargandoProductos ? 0.85 : 1,
+                        cursor: cargandoProductos ? 'wait' : 'text',
                       minHeight: isMobile ? '48px' : 'auto'
                     }}
                   />

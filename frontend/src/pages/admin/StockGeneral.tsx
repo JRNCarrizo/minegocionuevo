@@ -1371,15 +1371,15 @@ export default function StockGeneral() {
                         }}>
                           {filtroTipo === 'sin_sectorizar' ? (
                             <span style={{
-                              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                              background: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
                               color: 'white',
                               padding: '0.5rem 1rem',
                               borderRadius: '12px',
                               fontSize: '0.8rem',
                               fontWeight: '600',
                               display: 'inline-block',
-                              boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
-                              border: '1px solid rgba(139, 92, 246, 0.2)',
+                              boxShadow: '0 2px 8px rgba(71, 85, 105, 0.25)',
+                              border: '1px solid rgba(71, 85, 105, 0.35)',
                               textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
                             }}>
                               📊 Consolidado

@@ -1,7 +1,9 @@
 /* ===== PÁGINA PRINCIPAL ===== */
 .stock-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Fondo neutro (gris oscuro); sin mezclas azuladas que en pantallas se lean violeta */
+  background: #141414;
+  background-image: radial-gradient(ellipse 90% 55% at 50% -10%, rgba(255, 255, 255, 0.05), transparent 50%);
   padding-top: 6rem;
 }
 
@@ -26,7 +28,7 @@
   width: 40px;
   height: 40px;
   border: 4px solid #f3f4f6;
-  border-top: 4px solid #667eea;
+  border-top: 4px solid #475569;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -43,39 +45,60 @@
   margin: 0;
 }
 
-/* ===== HEADER ===== */
+/* ===== HEADER: tarjeta a todo el ancho del contenedor (como filtros / estadísticas) ===== */
 .stock-header {
   text-align: center;
   margin-bottom: 1rem;
-  color: white;
+  width: 100%;
+}
+
+.header-content {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0.75rem 1.25rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  /* Colores neutros (sin tintes azul/violeta en bordes ni sombras) */
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .header-icon {
   font-size: 3rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
   width: 80px;
   height: 80px;
+  margin: 0;
+  flex-shrink: 0;
+  background: #f4f4f4;
+  border: 1px solid #e0e0e0;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(10px);
-  margin: 0 auto 0.5rem;
 }
 
 .header-title {
   font-size: 2rem;
   font-weight: 700;
-  margin: 0 0 0.25rem 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  margin: 0;
+  line-height: 1.15;
+  color: #171717;
 }
 
 .header-description {
-  font-size: 1rem;
-  opacity: 0.9;
+  font-size: 0.9375rem;
+  line-height: 1.35;
+  /* Gris neutro (no slate/azulado) */
+  color: #525252;
   margin: 0;
-  max-width: 600px;
-  margin: 0 auto;
+  max-width: none;
+  padding: 0 0.5rem;
 }
 
 /* ===== BOTÓN DE REGRESO ===== */
@@ -97,7 +120,6 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
   text-decoration: none;
 }
 
@@ -131,7 +153,7 @@
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  border-color: #667eea;
+  border-color: #475569;
 }
 
 .stat-icon {
@@ -142,7 +164,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
   color: white;
   flex-shrink: 0;
 }
@@ -213,9 +235,9 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #475569;
   background: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.14);
 }
 
 .filter-group {
@@ -235,9 +257,9 @@
 
 .filter-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #475569;
   background: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.14);
 }
 
 /* ===== TABLA ===== */
@@ -274,7 +296,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -287,7 +309,7 @@
 
 .refresh-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 25px rgba(51, 65, 85, 0.28);
 }
 
 /* ===== MENSAJE VACÍO ===== */
@@ -380,7 +402,7 @@
 
 .sortable-header:hover {
   background: #f1f5f9;
-  color: #667eea;
+  color: #334155;
 }
 
 .stock-table td {
@@ -466,14 +488,14 @@
 }
 
 .sector-badge {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 1rem;
   font-size: 0.85rem;
   font-weight: 500;
   display: inline-block;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 2px 8px rgba(51, 65, 85, 0.2);
   white-space: nowrap;
   max-width: 150px;
   overflow: hidden;
@@ -491,7 +513,7 @@
 
 .sector-badge-full:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(51, 65, 85, 0.28);
   z-index: 10;
   position: relative;
 }
@@ -566,14 +588,14 @@
 }
 
 .consolidated-badge {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 1rem;
   font-size: 0.85rem;
   font-weight: 500;
   display: inline-block;
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 2px 8px rgba(71, 85, 105, 0.22);
   white-space: nowrap;
   max-width: 150px;
   overflow: hidden;
@@ -741,7 +763,7 @@
 /* ===== ESTILOS PARA FILAS CONSOLIDADAS ===== */
 .table-row:has(.consolidated-badge) {
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  border-left: 4px solid #8b5cf6;
+  border-left: 4px solid #64748b;
 }
 
 .table-row:has(.consolidated-badge):hover {
@@ -750,7 +772,7 @@
 
 /* ===== MEJORAS PARA FILAS DE PRODUCTOS CON SECTOR ===== */
 .table-row:has(.sector-badge) {
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #475569;
 }
 
 .table-row:has(.sector-badge):hover {
@@ -802,6 +824,11 @@
   
   .stock-header {
     margin-bottom: 2rem;
+  }
+
+  .header-content {
+    padding: 0.65rem 1rem;
+    gap: 0.15rem;
   }
   
   .header-icon {
@@ -956,6 +983,11 @@
   .stock-table td:nth-child(5) {
     display: none;
   }
+
+  .header-content {
+    padding: 0.6rem 0.75rem;
+    gap: 0.12rem;
+  }
   
   .header-icon {
     width: 60px;
@@ -1055,13 +1087,13 @@
 
 /* Asegurar que las filas clickeables mantengan su estilo en diferentes estados */
 .table-row.clickeable-row.fila-seleccionada:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%) !important;
   color: white;
 }
 
 .table-row.clickeable-row.fila-seleccionada:hover::after {
   background: rgba(255, 255, 255, 0.95);
-  color: #667eea;
+  color: #334155;
   box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
 }
 
@@ -1069,8 +1101,8 @@
 .table-row.clickeable-row:has(.consolidated-badge):hover {
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
-  border-left: 4px solid #8b5cf6 !important;
+  box-shadow: 0 4px 12px rgba(71, 85, 105, 0.15);
+  border-left: 4px solid #64748b !important;
 }
 
 .table-row.clickeable-row:has(.consolidated-badge):hover::after {
@@ -1079,7 +1111,7 @@
   top: 50%;
   right: 1rem;
   transform: translateY(-50%);
-  background: rgba(139, 92, 246, 0.95);
+  background: rgba(51, 65, 85, 0.94);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 0.5rem;
@@ -1089,7 +1121,7 @@
   backdrop-filter: blur(10px);
   animation: fadeInTooltip 0.2s ease;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(30, 41, 59, 0.25);
 }
 
 /* ===== ESTILOS PARA TARJETAS MÓVILES ===== */

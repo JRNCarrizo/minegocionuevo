@@ -844,11 +844,8 @@ const RecibirProductos: React.FC = () => {
       }
 
       toast.success('Movimientos registrados correctamente');
-      setMovimientos([]);
-      await cargarStockDetallado();
-      setTimeout(() => {
-        navigate('/admin/sectores');
-      }, 1500);
+      // Volver a sectores de inmediato: no recargar stock aquí (provocaba pantalla "Cargando..." y lista vacía antes de salir)
+      navigate('/admin/sectores', { replace: true });
     } catch (error) {
       console.error('Error al registrar movimientos:', error);
       toast.error('Error al registrar movimientos');
@@ -1593,12 +1590,12 @@ const RecibirProductos: React.FC = () => {
                         key={mov.id}
                         data-product-index={index}
                         style={{
-                          padding: isMobile ? '1rem' : '1rem',
+                          padding: isMobile ? '0.65rem 0.75rem' : '0.55rem 0.7rem',
                           border: `2px solid ${mov.confirmado ? '#86efac' : '#e2e8f0'}`,
                           borderRadius: '8px',
-                          marginBottom: isMobile ? '1rem' : '0.75rem',
+                          marginBottom: isMobile ? '0.6rem' : '0.5rem',
                           background: mov.confirmado ? '#f0fdf4' : '#f8fafc',
-                          minHeight: isMobile ? '70px' : 'auto'
+                          minHeight: 'auto'
                         }}
                       >
                         <div style={{
@@ -1612,13 +1609,13 @@ const RecibirProductos: React.FC = () => {
                               display: 'flex',
                               flexWrap: 'wrap',
                               alignItems: 'center',
-                              gap: '0.35rem',
-                              marginBottom: '0.35rem'
+                              gap: '0.3rem',
+                              marginBottom: '0.3rem'
                             }}>
                               <span style={{
-                                fontSize: '0.7rem',
+                                fontSize: '0.65rem',
                                 fontWeight: 700,
-                                padding: '0.15rem 0.45rem',
+                                padding: '0.12rem 0.4rem',
                                 borderRadius: '4px',
                                 background: mov.tipo === 'recibir' ? '#d1fae5' : '#ffedd5',
                                 color: mov.tipo === 'recibir' ? '#065f46' : '#9a3412'
@@ -1626,48 +1623,74 @@ const RecibirProductos: React.FC = () => {
                                 {mov.tipo === 'recibir' ? 'Recibir' : 'Enviar'}
                               </span>
                               {mov.confirmado && (
-                                <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: 700 }}>✓ Confirmada</span>
+                                <span style={{ fontSize: '0.7rem', color: '#15803d', fontWeight: 700 }}>✓</span>
                               )}
                             </div>
-                            <div style={{ 
-                              fontWeight: '600', 
-                              marginBottom: isMobile ? '0.5rem' : '0.25rem',
-                              fontSize: isMobile ? '1rem' : 'inherit',
-                              lineHeight: isMobile ? '1.3' : 'inherit'
+                            {/* Fila 1: código interno + nombre + cantidad */}
+                            <div style={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              alignItems: 'center',
+                              gap: '0.45rem',
+                              marginBottom: '0.3rem',
+                              rowGap: '0.25rem'
                             }}>
-                              {mov.productoNombre}
-                            </div>
-                            {mov.codigoPersonalizado && (
-                              <div style={{ 
-                                fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                                color: '#64748b', 
-                                marginBottom: isMobile ? '0.5rem' : '0.25rem' 
-                              }}>
-                                Código: {mov.codigoPersonalizado}
-                              </div>
-                            )}
-                            <div style={{ 
-                              fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                              color: '#64748b', 
-                              marginBottom: isMobile ? '0.5rem' : '0.25rem' 
-                            }}>
-                              {mov.tipo === 'recibir' ? 'Desde' : 'Origen'}: {mov.ubicacion}
-                            </div>
-                            {mov.tipo === 'enviar' && mov.sectorDestinoNombre && (
-                              <div style={{ 
-                                fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                                color: '#9a3412',
+                              {mov.codigoPersonalizado ? (
+                                <span style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  padding: '0.15rem 0.45rem',
+                                  borderRadius: '4px',
+                                  background: '#e0e7ff',
+                                  color: '#3730a3',
+                                  flexShrink: 0
+                                }}>
+                                  {mov.codigoPersonalizado}
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: '0.7rem', color: '#cbd5e1', flexShrink: 0 }} title="Sin código interno">—</span>
+                              )}
+                              <span style={{
                                 fontWeight: 600,
-                                marginBottom: isMobile ? '0.5rem' : '0.25rem' 
+                                fontSize: isMobile ? '0.9rem' : '0.875rem',
+                                lineHeight: 1.25,
+                                color: '#0f172a',
+                                flex: '1 1 140px',
+                                minWidth: 0
                               }}>
-                                → Hacia: {mov.sectorDestinoNombre}
-                              </div>
-                            )}
-                            <div style={{ 
-                              fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                              color: '#64748b' 
+                                {mov.productoNombre}
+                              </span>
+                              <span style={{
+                                fontSize: isMobile ? '1rem' : '0.95rem',
+                                fontWeight: 800,
+                                padding: '0.25rem 0.6rem',
+                                borderRadius: '8px',
+                                background: 'linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%)',
+                                color: '#0f172a',
+                                flexShrink: 0,
+                                fontVariantNumeric: 'tabular-nums',
+                                letterSpacing: '0.02em',
+                                border: '1px solid #cbd5e1',
+                                boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)'
+                              }}>
+                                {mov.cantidad.toLocaleString('es-AR')}
+                              </span>
+                            </div>
+                            {/* Fila 2: origen / destino */}
+                            <div style={{
+                              fontSize: isMobile ? '0.75rem' : '0.78rem',
+                              color: '#64748b',
+                              lineHeight: 1.35
                             }}>
-                              Cantidad: {mov.cantidad}
+                              <span>
+                                {mov.tipo === 'recibir' ? 'Desde' : 'Origen'}: {mov.ubicacion}
+                              </span>
+                              {mov.tipo === 'enviar' && mov.sectorDestinoNombre && (
+                                <span style={{ color: '#9a3412', fontWeight: 600 }}>
+                                  {' · '}
+                                  Hacia: {mov.sectorDestinoNombre}
+                                </span>
+                              )}
                             </div>
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'stretch' }}>

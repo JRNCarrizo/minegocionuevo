@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,24 @@ import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { API_CONFIG } from '../../config/api';
 import ApiService from '../../services/api';
 import { formatearFechaConHora } from '../../utils/dateUtils';
+import {
+  HiOutlineBuildingOffice2,
+  HiOutlineMapPin,
+  HiOutlineCube,
+  HiOutlineHashtag,
+  HiOutlineArrowsRightLeft,
+  HiOutlineClipboardDocumentList,
+  HiOutlinePencilSquare,
+  HiOutlineNoSymbol,
+  HiOutlineTrash,
+  HiOutlineCheckCircle,
+  HiOutlineChartBar,
+  HiOutlineArrowPath,
+  HiPlus,
+  HiOutlineMagnifyingGlass,
+  HiOutlineEye,
+  HiOutlineEyeSlash,
+} from 'react-icons/hi2';
 import './GestionSectores.css';
 
 interface Sector {
@@ -823,6 +841,129 @@ export default function GestionSectores() {
     );
   });
 
+  /** Misma tarjeta que el historial por sector; `sectorCtx` null = historial general (sin perspectiva de un depósito). */
+  const renderTarjetaHistorialMovimiento = (movimiento: HistorialMovimiento, sectorCtx: Sector | null) => {
+    const sid = sectorCtx != null ? Number(sectorCtx.id) : NaN;
+    const destId = movimiento.sectorDestinoId != null ? Number(movimiento.sectorDestinoId) : NaN;
+    const origId =
+      movimiento.sectorOrigenId != null ? Number(movimiento.sectorOrigenId) : NaN;
+    const esRecepcion = movimiento.tipoMovimiento === 'RECEPCION';
+    const recepcionAquiRecibi =
+      esRecepcion && !Number.isNaN(sid) && destId === sid;
+    const recepcionAquiEnvi =
+      esRecepcion &&
+      !Number.isNaN(sid) &&
+      !Number.isNaN(origId) &&
+      origId === sid &&
+      destId !== sid;
+    const tituloTipoMovimiento = recepcionAquiEnvi
+      ? 'Enviar stock'
+      : movimiento.descripcionTipoMovimiento || movimiento.tipoMovimiento;
+    const claseIconoTipo = recepcionAquiEnvi
+      ? 'transferencia'
+      : movimiento.tipoMovimiento.toLowerCase();
+    const iconoTipoCabecera = recepcionAquiEnvi
+      ? '🔄'
+      : movimiento.tipoMovimiento === 'TRANSFERENCIA'
+        ? '🔄'
+        : movimiento.tipoMovimiento === 'RECEPCION'
+          ? '📦'
+          : movimiento.tipoMovimiento === 'ASIGNACION'
+            ? '🔗'
+            : movimiento.tipoMovimiento === 'REMOCION'
+              ? '🗑️'
+              : '📋';
+
+    return (
+      <div className="item-historial">
+        <div className="header-item-historial">
+          <div className="tipo-movimiento">
+            <span className={`icono-tipo ${claseIconoTipo}`}>
+              {iconoTipoCabecera}
+            </span>
+            <span className="nombre-tipo">
+              {tituloTipoMovimiento}
+            </span>
+          </div>
+          <div className="fecha-movimiento">
+            {formatearFechaConHora(movimiento.fechaMovimiento)}
+          </div>
+        </div>
+
+        <div className="detalles-movimiento">
+          <div className="producto-movimiento">
+            <div className="producto-nombre-codigo">
+              <div className="producto-movimiento-izq">
+                {movimiento.codigoPersonalizado && (
+                  <span className="codigo-producto">
+                    {movimiento.codigoPersonalizado}
+                  </span>
+                )}
+                <strong>{movimiento.nombreProducto}</strong>
+              </div>
+              <span className="cantidad">Cantidad: {movimiento.cantidad}</span>
+            </div>
+          </div>
+
+          <div className="sectores-movimiento">
+            {recepcionAquiRecibi ? (
+              <div className="sector-info">
+                <span className="label">Desde:</span>
+                <span className="sector-nombre">
+                  {movimiento.nombreSectorOrigen || 'Stock sin asignar'}
+                </span>
+              </div>
+            ) : recepcionAquiEnvi ? (
+              <div className="sector-info">
+                <span className="label">Hacia:</span>
+                <span className="sector-nombre">
+                  {movimiento.nombreSectorDestino || '—'}
+                </span>
+              </div>
+            ) : movimiento.tipoMovimiento === 'RECEPCION' ? (
+              <>
+                {movimiento.nombreSectorOrigen && (
+                  <div className="sector-info">
+                    <span className="label">Desde:</span>
+                    <span className="sector-nombre">{movimiento.nombreSectorOrigen}</span>
+                  </div>
+                )}
+                {movimiento.nombreSectorDestino && (
+                  <div className="sector-info">
+                    <span className="label">Recibido en:</span>
+                    <span className="sector-nombre">{movimiento.nombreSectorDestino}</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {movimiento.nombreSectorOrigen && (
+                  <div className="sector-info">
+                    <span className="label">Desde:</span>
+                    <span className="sector-nombre">{movimiento.nombreSectorOrigen}</span>
+                  </div>
+                )}
+                {movimiento.nombreSectorDestino && (
+                  <div className="sector-info">
+                    <span className="label">Hacia:</span>
+                    <span className="sector-nombre">{movimiento.nombreSectorDestino}</span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {movimiento.nombreUsuario && (
+            <div className="usuario-movimiento">
+              <span className="label">Usuario:</span>
+              <span className="usuario-nombre">{movimiento.nombreUsuario}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const limpiarFormulario = () => {
     setFormData({
       nombre: '',
@@ -933,22 +1074,6 @@ export default function GestionSectores() {
       setTransferiendo(false);
     }
   };
-
-  const obtenerColorSector = (index: number) => {
-    const colores = [
-      'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-      'linear-gradient(135deg, #374151 0%, #4b5563 100%)',
-      'linear-gradient(135deg, #475569 0%, #64748b 100%)',
-      'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-      'linear-gradient(135deg, #059669 0%, #047857 100%)',
-      'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-      'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-      'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)'
-    ];
-    return colores[index % colores.length];
-  };
-
-
 
   const limpiarStockCero = async () => {
     setLimpiandoStockCero(true);
@@ -1199,12 +1324,12 @@ export default function GestionSectores() {
       <div className="contenedor-sectores">
         {/* Header Principal */}
         <div className="header-sectores">
-          <div className="icono-header">
-            <span>🏢</span>
+          <div className="icono-header" aria-hidden>
+            <HiOutlineBuildingOffice2 className="icono-header-svg" />
           </div>
           <h1 className="titulo-sectores">Gestión de Sectores</h1>
           <p className="descripcion-sectores">
-            Administra los sectores de almacenamiento de tu empresa de manera moderna y eficiente
+            Ubicaciones de almacenamiento, stock por sector e historial de movimientos
           </p>
         </div>
 
@@ -1213,30 +1338,34 @@ export default function GestionSectores() {
           <button
             onClick={() => navigate('/admin/stock-general')}
             className={`boton-stock-general ${modoNavegacion && elementoSeleccionado === 0 ? 'seleccionado' : ''}`}
+            type="button"
           >
-            <span className="icono-boton">📊</span>
-            Ver Stock General
+            <HiOutlineChartBar className="icono-boton-svg" aria-hidden />
+            Ver stock general
           </button>
           <button
             onClick={() => abrirModalHistorialGeneral()}
             className={`boton-historial-general ${modoNavegacion && elementoSeleccionado === 1 ? 'seleccionado' : ''}`}
+            type="button"
           >
-            <span className="icono-boton">📈</span>
-            Historial General
+            <HiOutlineClipboardDocumentList className="icono-boton-svg" aria-hidden />
+            Historial general
           </button>
           <button
             onClick={() => setMostrarModalCrear(true)}
             className={`boton-crear ${modoNavegacion && elementoSeleccionado === 2 ? 'seleccionado' : ''}`}
+            type="button"
           >
-            <span className="icono-boton">➕</span>
-            Crear Nuevo Sector
+            <HiPlus className="icono-boton-svg" aria-hidden />
+            Nuevo sector
           </button>
           <button
             onClick={migrarSectores}
             className={`boton-migrar ${modoNavegacion && elementoSeleccionado === 3 ? 'seleccionado' : ''}`}
+            type="button"
           >
-            <span className="icono-boton">🔄</span>
-            Migrar Sectores Existentes
+            <HiOutlineArrowPath className="icono-boton-svg" aria-hidden />
+            Migrar sectores
           </button>
         </div>
 
@@ -1246,7 +1375,7 @@ export default function GestionSectores() {
           <div className="tarjeta-estadistica tarjeta-total">
             <div className="contenido-estadistica">
               <div className="icono-estadistica">
-                <span>🏢</span>
+                <HiOutlineBuildingOffice2 className="icono-estadistica-svg" aria-hidden />
               </div>
               <div className="texto-estadistica">
                 <p className="label-estadistica">Total Sectores</p>
@@ -1257,8 +1386,8 @@ export default function GestionSectores() {
           
           <div className="tarjeta-estadistica tarjeta-activos">
             <div className="contenido-estadistica">
-              <div className="icono-estadistica">
-                <span>✅</span>
+              <div className="icono-estadistica icono-estadistica--ok">
+                <HiOutlineCheckCircle className="icono-estadistica-svg" aria-hidden />
               </div>
               <div className="texto-estadistica">
                 <p className="label-estadistica">Sectores Activos</p>
@@ -1271,8 +1400,8 @@ export default function GestionSectores() {
           
           <div className="tarjeta-estadistica tarjeta-inactivos">
             <div className="contenido-estadistica">
-              <div className="icono-estadistica">
-                <span>❌</span>
+              <div className="icono-estadistica icono-estadistica--muted">
+                <HiOutlineNoSymbol className="icono-estadistica-svg" aria-hidden />
               </div>
               <div className="texto-estadistica">
                 <p className="label-estadistica">Sectores Inactivos</p>
@@ -1291,8 +1420,8 @@ export default function GestionSectores() {
               onClick={() => setMostrarSectoresInactivos(!mostrarSectoresInactivos)}
               className={`boton-toggle ${mostrarSectoresInactivos ? 'activo' : ''}`}
             >
-              <span className="icono-toggle">
-                {mostrarSectoresInactivos ? '👁️' : '👁️‍🗨️'}
+              <span className="icono-toggle" aria-hidden>
+                {mostrarSectoresInactivos ? <HiOutlineEyeSlash /> : <HiOutlineEye />}
               </span>
               {mostrarSectoresInactivos ? 'Ocultar Sectores Inactivos' : `Mostrar Sectores Inactivos (${sectoresInactivos.length})`}
             </button>
@@ -1302,7 +1431,7 @@ export default function GestionSectores() {
         {/* Buscador Avanzado */}
         <div className="buscador-sectores-avanzado">
           <div className="buscador-sectores-campo">
-            <div className="decorador-icono">🔍</div>
+            <HiOutlineMagnifyingGlass className="decorador-icono-svg" aria-hidden />
             <input
               type="text"
               value={filtroBusquedaSectores}
@@ -1368,11 +1497,12 @@ export default function GestionSectores() {
                   </p>
                   {!hayFiltroSectores && (
                     <button
+                      type="button"
                       onClick={() => setMostrarModalCrear(true)}
                       className="boton-primer-sector"
                     >
-                      <span>➕</span>
-                      Crear Primer Sector
+                      <HiPlus className="boton-primer-sector__icon" aria-hidden />
+                      Crear primer sector
                     </button>
                   )}
                 </div>
@@ -1387,24 +1517,18 @@ export default function GestionSectores() {
                         animationDelay: `${index * 0.1}s`
                       }}
                     >
-                      {/* Header de la card con gradiente */}
-                      <div 
-                        className="header-tarjeta-sector"
-                        style={{ background: obtenerColorSector(index) }}
-                      >
+                      <div className="header-tarjeta-sector">
                         <div className="contenido-header-sector">
-                          <div className="icono-sector">🏢</div>
+                          <div className="icono-sector-wrap" aria-hidden>
+                            <HiOutlineBuildingOffice2 className="icono-sector-svg" />
+                          </div>
                           <h3 className="nombre-sector">{sector.nombre}</h3>
                         </div>
-                        {/* Badge de estado */}
                         <div className="badge-estado">
-                          <span className="estado-sector activo">
-                            ✅ Activo
-                          </span>
+                          <span className="estado-pill estado-pill--activo">Activo</span>
                         </div>
                       </div>
 
-                      {/* Contenido de la card */}
                       <div className="contenido-tarjeta-sector">
                         {sector.descripcion && (
                           <p className="descripcion-sector">
@@ -1414,79 +1538,89 @@ export default function GestionSectores() {
                         
                         <div className="info-sector">
                           <div className="info-item">
-                            <span className="icono-info">📍</span>
+                            <HiOutlineMapPin className="info-item-svg" aria-hidden />
                             <span className="texto-info">
                               {sector.ubicacion || 'Sin ubicación'}
                             </span>
                           </div>
                           
-                          {/* Información de productos y unidades */}
-                          <div className="info-item">
-                            <span className="icono-info">📦</span>
+                          <div className="info-item info-item--metric">
+                            <HiOutlineCube className="info-item-svg" aria-hidden />
                             <span className="texto-info">
-                              Productos: {infoProductosPorSector[sector.id]?.productos || 0}
+                              <span className="info-metric-label">Productos</span>
+                              <span className="info-metric-value">{infoProductosPorSector[sector.id]?.productos ?? 0}</span>
                             </span>
                           </div>
                           
-                          <div className="info-item">
-                            <span className="icono-info">🔢</span>
+                          <div className="info-item info-item--metric">
+                            <HiOutlineHashtag className="info-item-svg" aria-hidden />
                             <span className="texto-info">
-                              Unidades: {infoProductosPorSector[sector.id]?.unidades?.toLocaleString() || 0}
+                              <span className="info-metric-label">Unidades</span>
+                              <span className="info-metric-value">{(infoProductosPorSector[sector.id]?.unidades ?? 0).toLocaleString()}</span>
                             </span>
                           </div>
                         </div>
 
-                        {/* Botones de acción */}
-                        <div className="botones-accion-sector">
+                        <div className="botones-accion-sector" onClick={(e) => e.stopPropagation()}>
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               navigate(`/admin/sectores/${sector.id}/recibir-productos`);
                             }}
-                            className="boton-accion boton-asignar"
+                            className="boton-sector-accion boton-sector-accion--primary"
                             title="Recibir o enviar stock"
                           >
-                            📦
+                            <HiOutlineArrowsRightLeft className="boton-sector-accion__icon" aria-hidden />
+                            <span className="boton-sector-accion__label">Stock</span>
                           </button>
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               abrirModalHistorial(sector);
                             }}
-                            className="boton-accion boton-historial"
-                            title="Ver historial de movimientos"
+                            className="boton-sector-accion"
+                            title="Historial de movimientos"
                           >
-                            📊
+                            <HiOutlineClipboardDocumentList className="boton-sector-accion__icon" aria-hidden />
+                            <span className="boton-sector-accion__label">Historial</span>
                           </button>
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               abrirModalEditar(sector);
                             }}
-                            className="boton-accion boton-editar"
-                            title="Editar"
+                            className="boton-sector-accion"
+                            title="Editar sector"
                           >
-                            ✏️
+                            <HiOutlinePencilSquare className="boton-sector-accion__icon" aria-hidden />
+                            <span className="boton-sector-accion__label">Editar</span>
                           </button>
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               cambiarEstadoSector(sector.id, false);
                             }}
-                            className="boton-accion boton-desactivar"
-                            title="Desactivar"
+                            className="boton-sector-accion boton-sector-accion--warn"
+                            title="Desactivar sector"
                           >
-                            ❌
+                            <HiOutlineNoSymbol className="boton-sector-accion__icon" aria-hidden />
+                            <span className="boton-sector-accion__label">Desactivar</span>
                           </button>
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               confirmarEliminarSector(sector);
                             }}
-                            className="boton-accion boton-eliminar"
+                            className="boton-sector-accion boton-sector-accion--danger"
                             title="Eliminar sector"
                           >
-                            🗑️
+                            <HiOutlineTrash className="boton-sector-accion__icon" aria-hidden />
+                            <span className="boton-sector-accion__label">Eliminar</span>
                           </button>
                         </div>
                       </div>
@@ -1500,8 +1634,8 @@ export default function GestionSectores() {
             {mostrarSectoresInactivos && sectoresInactivos.length > 0 && (
               <div className="seccion-sectores seccion-inactivos">
                 <h2 className="titulo-seccion titulo-inactivos">
-                  <span className="icono-titulo">❌</span>
-                  Sectores Inactivos
+                  <HiOutlineNoSymbol className="icono-titulo-svg" aria-hidden />
+                  Sectores inactivos
                 </h2>
                 <div className="grid-sectores">
                   {sectoresInactivosFiltrados.length === 0 ? (
@@ -1520,24 +1654,18 @@ export default function GestionSectores() {
                         animationDelay: `${index * 0.1}s`
                       }}
                     >
-                      {/* Header de la card con gradiente gris */}
-                      <div 
-                        className="header-tarjeta-sector header-inactivo"
-                        style={{ background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)' }}
-                      >
+                      <div className="header-tarjeta-sector header-tarjeta-sector--inactivo">
                         <div className="contenido-header-sector">
-                          <div className="icono-sector">🏢</div>
+                          <div className="icono-sector-wrap" aria-hidden>
+                            <HiOutlineBuildingOffice2 className="icono-sector-svg" />
+                          </div>
                           <h3 className="nombre-sector">{sector.nombre}</h3>
                         </div>
-                        {/* Badge de estado */}
                         <div className="badge-estado">
-                          <span className="estado-sector inactivo">
-                            ❌ Inactivo
-                          </span>
+                          <span className="estado-pill estado-pill--inactivo">Inactivo</span>
                         </div>
                       </div>
 
-                      {/* Contenido de la card */}
                       <div className="contenido-tarjeta-sector">
                         {sector.descripcion && (
                           <p className="descripcion-sector">
@@ -1547,59 +1675,65 @@ export default function GestionSectores() {
                         
                         <div className="info-sector">
                           <div className="info-item">
-                            <span className="icono-info">📍</span>
+                            <HiOutlineMapPin className="info-item-svg" aria-hidden />
                             <span className="texto-info">
                               {sector.ubicacion || 'Sin ubicación'}
                             </span>
                           </div>
                           
-                          {/* Información de productos y unidades */}
-                          <div className="info-item">
-                            <span className="icono-info">📦</span>
+                          <div className="info-item info-item--metric">
+                            <HiOutlineCube className="info-item-svg" aria-hidden />
                             <span className="texto-info">
-                              Productos: {infoProductosPorSector[sector.id]?.productos || 0}
+                              <span className="info-metric-label">Productos</span>
+                              <span className="info-metric-value">{infoProductosPorSector[sector.id]?.productos ?? 0}</span>
                             </span>
                           </div>
                           
-                          <div className="info-item">
-                            <span className="icono-info">🔢</span>
+                          <div className="info-item info-item--metric">
+                            <HiOutlineHashtag className="info-item-svg" aria-hidden />
                             <span className="texto-info">
-                              Unidades: {infoProductosPorSector[sector.id]?.unidades?.toLocaleString() || 0}
+                              <span className="info-metric-label">Unidades</span>
+                              <span className="info-metric-value">{(infoProductosPorSector[sector.id]?.unidades ?? 0).toLocaleString()}</span>
                             </span>
                           </div>
                         </div>
 
-                        {/* Botones de acción para sectores inactivos */}
-                        <div className="botones-accion-sector">
+                        <div className="botones-accion-sector" onClick={(e) => e.stopPropagation()}>
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               abrirModalHistorial(sector);
                             }}
-                            className="boton-accion boton-historial"
-                            title="Ver historial de movimientos"
+                            className="boton-sector-accion"
+                            title="Historial de movimientos"
                           >
-                            📊
+                            <HiOutlineClipboardDocumentList className="boton-sector-accion__icon" aria-hidden />
+                            <span className="boton-sector-accion__label">Historial</span>
                           </button>
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               abrirModalEditar(sector);
                             }}
-                            className="boton-accion boton-editar"
-                            title="Editar"
+                            className="boton-sector-accion"
+                            title="Editar sector"
                           >
-                            ✏️
+                            <HiOutlinePencilSquare className="boton-sector-accion__icon" aria-hidden />
+                            <span className="boton-sector-accion__label">Editar</span>
                           </button>
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               cambiarEstadoSector(sector.id, true);
                             }}
-                            className="boton-accion boton-activar"
-                            title="Activar"
+                            className="boton-sector-accion boton-sector-accion--success"
+                            title="Activar sector"
                           >
-                            ✅
+                            <HiOutlineCheckCircle className="boton-sector-accion__icon" aria-hidden />
+                            <span className="boton-sector-accion__label">Activar</span>
                           </button>
                         </div>
                       </div>
@@ -1612,15 +1746,16 @@ export default function GestionSectores() {
             {/* Estado vacío general */}
             {sectores.length === 0 && (
               <div className="tarjeta-vacia">
-                <div className="icono-vacio">🏢</div>
+                <HiOutlineBuildingOffice2 className="icono-vacio-svg" aria-hidden />
                 <h3>No hay sectores creados</h3>
                 <p>Comienza creando tu primer sector de almacenamiento</p>
                 <button
+                  type="button"
                   onClick={() => setMostrarModalCrear(true)}
                   className="boton-primer-sector"
                 >
-                  <span>➕</span>
-                  Crear Primer Sector
+                  <HiPlus className="boton-primer-sector__icon" aria-hidden />
+                  Crear primer sector
                 </button>
               </div>
             )}
@@ -1669,7 +1804,7 @@ export default function GestionSectores() {
                   <div className="campo-info">
                     <label>Estado</label>
                     <span className={`estado-sector ${sectorSeleccionado.activo ? 'activo' : 'inactivo'}`}>
-                      {sectorSeleccionado.activo ? '✅ Activo' : '❌ Inactivo'}
+                      {sectorSeleccionado.activo ? 'Activo' : 'Inactivo'}
                     </span>
                   </div>
                   <div className="campo-info">
@@ -1689,13 +1824,18 @@ export default function GestionSectores() {
                 ) : (
                   <div className="lista-productos">
                     {productosEnSector.slice(0, 5).map((stock) => (
-                      <div key={stock.id} className="item-producto">
-                        <div>
-                          <p className="nombre-producto">{stock.producto.nombre}</p>
-                          <p className="codigo-producto">{stock.producto.codigoPersonalizado || 'Sin código'}</p>
+                      <div key={stock.id} className="item-producto item-producto-compacto">
+                        <div className="item-producto-fila-principal">
+                          <span
+                            className="codigo-producto-chip"
+                            title={stock.producto.codigoPersonalizado ? 'Código interno' : 'Sin código interno'}
+                          >
+                            {stock.producto.codigoPersonalizado || '—'}
+                          </span>
+                          <p className="nombre-producto-inline">{stock.producto.nombre}</p>
                         </div>
                         <span className="cantidad-producto">
-                          {stock.cantidad}
+                          {stock.cantidad.toLocaleString('es-AR')}
                         </span>
                       </div>
                     ))}
@@ -2523,129 +2663,11 @@ export default function GestionSectores() {
                 </div>
               ) : (
                 <div className="lista-historial">
-                  {historialMovimientos.map((movimiento) => {
-                    const sid = sectorSeleccionado != null ? Number(sectorSeleccionado.id) : NaN;
-                    const destId = movimiento.sectorDestinoId != null ? Number(movimiento.sectorDestinoId) : NaN;
-                    const origId =
-                      movimiento.sectorOrigenId != null ? Number(movimiento.sectorOrigenId) : NaN;
-                    const esRecepcion = movimiento.tipoMovimiento === 'RECEPCION';
-                    /** Misma fila en BD: en el depósito que recibió se muestra como recepción */
-                    const recepcionAquiRecibi =
-                      esRecepcion && !Number.isNaN(sid) && destId === sid;
-                    /** En el depósito que cedió stock: mismo movimiento, narrativa de envío */
-                    const recepcionAquiEnvi =
-                      esRecepcion &&
-                      !Number.isNaN(sid) &&
-                      !Number.isNaN(origId) &&
-                      origId === sid &&
-                      destId !== sid;
-                    const tituloTipoMovimiento = recepcionAquiEnvi
-                      ? 'Enviar stock'
-                      : movimiento.descripcionTipoMovimiento || movimiento.tipoMovimiento;
-                    const claseIconoTipo = recepcionAquiEnvi
-                      ? 'transferencia'
-                      : movimiento.tipoMovimiento.toLowerCase();
-                    const iconoTipoCabecera = recepcionAquiEnvi
-                      ? '🔄'
-                      : movimiento.tipoMovimiento === 'TRANSFERENCIA'
-                        ? '🔄'
-                        : movimiento.tipoMovimiento === 'RECEPCION'
-                          ? '📦'
-                          : movimiento.tipoMovimiento === 'ASIGNACION'
-                            ? '🔗'
-                            : movimiento.tipoMovimiento === 'REMOCION'
-                              ? '🗑️'
-                              : '📋';
-
-                    return (
-                    <div key={movimiento.id} className="item-historial">
-                      <div className="header-item-historial">
-                        <div className="tipo-movimiento">
-                          <span className={`icono-tipo ${claseIconoTipo}`}>
-                            {iconoTipoCabecera}
-                          </span>
-                          <span className="nombre-tipo">
-                            {tituloTipoMovimiento}
-                          </span>
-                        </div>
-                        <div className="fecha-movimiento">
-                          {formatearFechaConHora(movimiento.fechaMovimiento)}
-                        </div>
-                      </div>
-                      
-                      <div className="detalles-movimiento">
-                        <div className="producto-movimiento">
-                          <div className="producto-nombre-codigo">
-                            <div className="producto-movimiento-izq">
-                              {movimiento.codigoPersonalizado && (
-                                <span className="codigo-producto">
-                                  {movimiento.codigoPersonalizado}
-                                </span>
-                              )}
-                              <strong>{movimiento.nombreProducto}</strong>
-                            </div>
-                            <span className="cantidad">Cantidad: {movimiento.cantidad}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="sectores-movimiento">
-                          {recepcionAquiRecibi ? (
-                            <div className="sector-info">
-                              <span className="label">Desde:</span>
-                              <span className="sector-nombre">
-                                {movimiento.nombreSectorOrigen || 'Stock sin asignar'}
-                              </span>
-                            </div>
-                          ) : recepcionAquiEnvi ? (
-                            <div className="sector-info">
-                              <span className="label">Hacia:</span>
-                              <span className="sector-nombre">
-                                {movimiento.nombreSectorDestino || '—'}
-                              </span>
-                            </div>
-                          ) : movimiento.tipoMovimiento === 'RECEPCION' ? (
-                            <>
-                              {movimiento.nombreSectorOrigen && (
-                                <div className="sector-info">
-                                  <span className="label">Desde:</span>
-                                  <span className="sector-nombre">{movimiento.nombreSectorOrigen}</span>
-                                </div>
-                              )}
-                              {movimiento.nombreSectorDestino && (
-                                <div className="sector-info">
-                                  <span className="label">Recibido en:</span>
-                                  <span className="sector-nombre">{movimiento.nombreSectorDestino}</span>
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              {movimiento.nombreSectorOrigen && (
-                                <div className="sector-info">
-                                  <span className="label">Desde:</span>
-                                  <span className="sector-nombre">{movimiento.nombreSectorOrigen}</span>
-                                </div>
-                              )}
-                              {movimiento.nombreSectorDestino && (
-                                <div className="sector-info">
-                                  <span className="label">Hacia:</span>
-                                  <span className="sector-nombre">{movimiento.nombreSectorDestino}</span>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                        
-                        {movimiento.nombreUsuario && (
-                          <div className="usuario-movimiento">
-                            <span className="label">Usuario:</span>
-                            <span className="usuario-nombre">{movimiento.nombreUsuario}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    );
-                  })}
+                  {historialMovimientos.map((movimiento) => (
+                    <Fragment key={movimiento.id}>
+                      {renderTarjetaHistorialMovimiento(movimiento, sectorSeleccionado)}
+                    </Fragment>
+                  ))}
                 </div>
               )}
             </div>
@@ -2705,13 +2727,17 @@ export default function GestionSectores() {
         <div className="modal-overlay">
           <div className="modal-formulario modal-historial-general">
             <div className="header-modal">
-              <h2 className="titulo-modal">
-                <span className="icono-titulo">📈</span>
-                Historial General - Movimientos del Día
-              </h2>
-              <button 
+              <div className="contenido-header-modal">
+                <div className="icono-modal">📈</div>
+                <div>
+                  <h3 className="titulo-modal">Historial general</h3>
+                  <p className="subtitulo-modal">Movimientos del día (todos los sectores)</p>
+                </div>
+              </div>
+              <button
+                type="button"
                 onClick={() => setMostrarModalHistorialGeneral(false)}
-                className="boton-cerrar"
+                className="boton-cerrar-modal"
               >
                 ✕
               </button>
@@ -2751,83 +2777,11 @@ export default function GestionSectores() {
                   <p>Los movimientos de stock aparecerán aquí cuando realices transferencias o recepciones.</p>
                 </div>
               ) : (
-                <div className="lista-historial-general">
+                <div className="lista-historial">
                   {historialGeneralFiltrado.map((movimiento) => (
-                    <div key={movimiento.id} className="item-historial-general">
-                      <div className="header-item-historial-general">
-                        <div className="tipo-movimiento-general">
-                          <span className={`icono-tipo-general ${movimiento.tipoMovimiento.toLowerCase()}`}>
-                            {movimiento.tipoMovimiento === 'TRANSFERENCIA' && '🔄'}
-                            {movimiento.tipoMovimiento === 'RECEPCION' && '📦'}
-                            {movimiento.tipoMovimiento === 'ASIGNACION' && '🔗'}
-                            {movimiento.tipoMovimiento === 'REMOCION' && '🗑️'}
-                          </span>
-                          <span className="nombre-tipo-general">
-                            {movimiento.descripcionTipoMovimiento || movimiento.tipoMovimiento}
-                          </span>
-                        </div>
-                        <div className="fecha-movimiento-general">
-                          {formatearFechaConHora(movimiento.fechaMovimiento)}
-                        </div>
-                      </div>
-                      
-                      <div className="detalles-movimiento-general">
-                        <div className="producto-movimiento-general">
-                          <div className="producto-nombre-codigo-general">
-                            <div className="producto-movimiento-izq-general">
-                              {movimiento.codigoPersonalizado && (
-                                <span className="codigo-producto-general">
-                                  {movimiento.codigoPersonalizado}
-                                </span>
-                              )}
-                              <strong>{movimiento.nombreProducto}</strong>
-                            </div>
-                            <span className="cantidad-general">Cantidad: {movimiento.cantidad}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="sectores-movimiento-general">
-                          {movimiento.tipoMovimiento === 'RECEPCION' ? (
-                            <>
-                              <div className="sector-info-general">
-                                <span className="label-general">Desde:</span>
-                                <span className="sector-nombre-general">
-                                  {movimiento.nombreSectorOrigen || 'Stock sin asignar'}
-                                </span>
-                              </div>
-                              {movimiento.nombreSectorDestino && (
-                                <div className="sector-info-general">
-                                  <span className="label-general">Recibido en:</span>
-                                  <span className="sector-nombre-general">{movimiento.nombreSectorDestino}</span>
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              {movimiento.nombreSectorOrigen && (
-                                <div className="sector-info-general">
-                                  <span className="label-general">Desde:</span>
-                                  <span className="sector-nombre-general">{movimiento.nombreSectorOrigen}</span>
-                                </div>
-                              )}
-                              {movimiento.nombreSectorDestino && (
-                                <div className="sector-info-general">
-                                  <span className="label-general">Hacia:</span>
-                                  <span className="sector-nombre-general">{movimiento.nombreSectorDestino}</span>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                        
-                        {movimiento.nombreUsuario && (
-                          <div className="usuario-movimiento-general">
-                            <span className="label-general">Usuario:</span>
-                            <span className="usuario-nombre-general">{movimiento.nombreUsuario}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <Fragment key={movimiento.id}>
+                      {renderTarjetaHistorialMovimiento(movimiento, null)}
+                    </Fragment>
                   ))}
                 </div>
               )}
