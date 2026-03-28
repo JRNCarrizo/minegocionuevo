@@ -46,8 +46,8 @@ public class HistorialMovimientoStock {
     
     // Enums
     public enum TipoMovimiento {
-        TRANSFERENCIA("Transferencia"),
-        RECEPCION("Recepción"),
+        TRANSFERENCIA("Enviar stock"),
+        RECEPCION("Recibir stock"),
         ASIGNACION("Asignación"),
         REMOCION("Remoción");
         

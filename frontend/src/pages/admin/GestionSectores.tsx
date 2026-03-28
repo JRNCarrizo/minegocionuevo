@@ -1444,7 +1444,7 @@ export default function GestionSectores() {
                               navigate(`/admin/sectores/${sector.id}/recibir-productos`);
                             }}
                             className="boton-accion boton-asignar"
-                            title="Recibir stock"
+                            title="Recibir o enviar stock"
                           >
                             📦
                           </button>
@@ -2523,18 +2523,49 @@ export default function GestionSectores() {
                 </div>
               ) : (
                 <div className="lista-historial">
-                  {historialMovimientos.map((movimiento) => (
+                  {historialMovimientos.map((movimiento) => {
+                    const sid = sectorSeleccionado != null ? Number(sectorSeleccionado.id) : NaN;
+                    const destId = movimiento.sectorDestinoId != null ? Number(movimiento.sectorDestinoId) : NaN;
+                    const origId =
+                      movimiento.sectorOrigenId != null ? Number(movimiento.sectorOrigenId) : NaN;
+                    const esRecepcion = movimiento.tipoMovimiento === 'RECEPCION';
+                    /** Misma fila en BD: en el depósito que recibió se muestra como recepción */
+                    const recepcionAquiRecibi =
+                      esRecepcion && !Number.isNaN(sid) && destId === sid;
+                    /** En el depósito que cedió stock: mismo movimiento, narrativa de envío */
+                    const recepcionAquiEnvi =
+                      esRecepcion &&
+                      !Number.isNaN(sid) &&
+                      !Number.isNaN(origId) &&
+                      origId === sid &&
+                      destId !== sid;
+                    const tituloTipoMovimiento = recepcionAquiEnvi
+                      ? 'Enviar stock'
+                      : movimiento.descripcionTipoMovimiento || movimiento.tipoMovimiento;
+                    const claseIconoTipo = recepcionAquiEnvi
+                      ? 'transferencia'
+                      : movimiento.tipoMovimiento.toLowerCase();
+                    const iconoTipoCabecera = recepcionAquiEnvi
+                      ? '🔄'
+                      : movimiento.tipoMovimiento === 'TRANSFERENCIA'
+                        ? '🔄'
+                        : movimiento.tipoMovimiento === 'RECEPCION'
+                          ? '📦'
+                          : movimiento.tipoMovimiento === 'ASIGNACION'
+                            ? '🔗'
+                            : movimiento.tipoMovimiento === 'REMOCION'
+                              ? '🗑️'
+                              : '📋';
+
+                    return (
                     <div key={movimiento.id} className="item-historial">
                       <div className="header-item-historial">
                         <div className="tipo-movimiento">
-                          <span className={`icono-tipo ${movimiento.tipoMovimiento.toLowerCase()}`}>
-                            {movimiento.tipoMovimiento === 'TRANSFERENCIA' && '🔄'}
-                            {movimiento.tipoMovimiento === 'RECEPCION' && '📦'}
-                            {movimiento.tipoMovimiento === 'ASIGNACION' && '🔗'}
-                            {movimiento.tipoMovimiento === 'REMOCION' && '🗑️'}
+                          <span className={`icono-tipo ${claseIconoTipo}`}>
+                            {iconoTipoCabecera}
                           </span>
                           <span className="nombre-tipo">
-                            {movimiento.descripcionTipoMovimiento || movimiento.tipoMovimiento}
+                            {tituloTipoMovimiento}
                           </span>
                         </div>
                         <div className="fecha-movimiento">
@@ -2545,31 +2576,63 @@ export default function GestionSectores() {
                       <div className="detalles-movimiento">
                         <div className="producto-movimiento">
                           <div className="producto-nombre-codigo">
-                            {movimiento.codigoPersonalizado && (
-                              <span className="codigo-producto">
-                                {movimiento.codigoPersonalizado}
-                              </span>
-                            )}
-                            <strong>{movimiento.nombreProducto}</strong>
+                            <div className="producto-movimiento-izq">
+                              {movimiento.codigoPersonalizado && (
+                                <span className="codigo-producto">
+                                  {movimiento.codigoPersonalizado}
+                                </span>
+                              )}
+                              <strong>{movimiento.nombreProducto}</strong>
+                            </div>
+                            <span className="cantidad">Cantidad: {movimiento.cantidad}</span>
                           </div>
                         </div>
                         
-                        <div className="cantidad-movimiento">
-                          <span className="cantidad">Cantidad: {movimiento.cantidad}</span>
-                        </div>
-                        
                         <div className="sectores-movimiento">
-                          {movimiento.nombreSectorOrigen && (
+                          {recepcionAquiRecibi ? (
                             <div className="sector-info">
                               <span className="label">Desde:</span>
-                              <span className="sector-nombre">{movimiento.nombreSectorOrigen}</span>
+                              <span className="sector-nombre">
+                                {movimiento.nombreSectorOrigen || 'Stock sin asignar'}
+                              </span>
                             </div>
-                          )}
-                          {movimiento.nombreSectorDestino && (
+                          ) : recepcionAquiEnvi ? (
                             <div className="sector-info">
                               <span className="label">Hacia:</span>
-                              <span className="sector-nombre">{movimiento.nombreSectorDestino}</span>
+                              <span className="sector-nombre">
+                                {movimiento.nombreSectorDestino || '—'}
+                              </span>
                             </div>
+                          ) : movimiento.tipoMovimiento === 'RECEPCION' ? (
+                            <>
+                              {movimiento.nombreSectorOrigen && (
+                                <div className="sector-info">
+                                  <span className="label">Desde:</span>
+                                  <span className="sector-nombre">{movimiento.nombreSectorOrigen}</span>
+                                </div>
+                              )}
+                              {movimiento.nombreSectorDestino && (
+                                <div className="sector-info">
+                                  <span className="label">Recibido en:</span>
+                                  <span className="sector-nombre">{movimiento.nombreSectorDestino}</span>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {movimiento.nombreSectorOrigen && (
+                                <div className="sector-info">
+                                  <span className="label">Desde:</span>
+                                  <span className="sector-nombre">{movimiento.nombreSectorOrigen}</span>
+                                </div>
+                              )}
+                              {movimiento.nombreSectorDestino && (
+                                <div className="sector-info">
+                                  <span className="label">Hacia:</span>
+                                  <span className="sector-nombre">{movimiento.nombreSectorDestino}</span>
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                         
@@ -2579,16 +2642,10 @@ export default function GestionSectores() {
                             <span className="usuario-nombre">{movimiento.nombreUsuario}</span>
                           </div>
                         )}
-                        
-                        {movimiento.observaciones && (
-                          <div className="observaciones-movimiento">
-                            <span className="label">Observaciones:</span>
-                            <span className="observaciones-texto">{movimiento.observaciones}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -2717,31 +2774,49 @@ export default function GestionSectores() {
                       <div className="detalles-movimiento-general">
                         <div className="producto-movimiento-general">
                           <div className="producto-nombre-codigo-general">
-                            {movimiento.codigoPersonalizado && (
-                              <span className="codigo-producto-general">
-                                {movimiento.codigoPersonalizado}
-                              </span>
-                            )}
-                            <strong>{movimiento.nombreProducto}</strong>
+                            <div className="producto-movimiento-izq-general">
+                              {movimiento.codigoPersonalizado && (
+                                <span className="codigo-producto-general">
+                                  {movimiento.codigoPersonalizado}
+                                </span>
+                              )}
+                              <strong>{movimiento.nombreProducto}</strong>
+                            </div>
+                            <span className="cantidad-general">Cantidad: {movimiento.cantidad}</span>
                           </div>
                         </div>
                         
-                        <div className="cantidad-movimiento-general">
-                          <span className="cantidad-general">Cantidad: {movimiento.cantidad}</span>
-                        </div>
-                        
                         <div className="sectores-movimiento-general">
-                          {movimiento.nombreSectorOrigen && (
-                            <div className="sector-info-general">
-                              <span className="label-general">Desde:</span>
-                              <span className="sector-nombre-general">{movimiento.nombreSectorOrigen}</span>
-                            </div>
-                          )}
-                          {movimiento.nombreSectorDestino && (
-                            <div className="sector-info-general">
-                              <span className="label-general">Hacia:</span>
-                              <span className="sector-nombre-general">{movimiento.nombreSectorDestino}</span>
-                            </div>
+                          {movimiento.tipoMovimiento === 'RECEPCION' ? (
+                            <>
+                              <div className="sector-info-general">
+                                <span className="label-general">Desde:</span>
+                                <span className="sector-nombre-general">
+                                  {movimiento.nombreSectorOrigen || 'Stock sin asignar'}
+                                </span>
+                              </div>
+                              {movimiento.nombreSectorDestino && (
+                                <div className="sector-info-general">
+                                  <span className="label-general">Recibido en:</span>
+                                  <span className="sector-nombre-general">{movimiento.nombreSectorDestino}</span>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {movimiento.nombreSectorOrigen && (
+                                <div className="sector-info-general">
+                                  <span className="label-general">Desde:</span>
+                                  <span className="sector-nombre-general">{movimiento.nombreSectorOrigen}</span>
+                                </div>
+                              )}
+                              {movimiento.nombreSectorDestino && (
+                                <div className="sector-info-general">
+                                  <span className="label-general">Hacia:</span>
+                                  <span className="sector-nombre-general">{movimiento.nombreSectorDestino}</span>
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                         
@@ -2749,13 +2824,6 @@ export default function GestionSectores() {
                           <div className="usuario-movimiento-general">
                             <span className="label-general">Usuario:</span>
                             <span className="usuario-nombre-general">{movimiento.nombreUsuario}</span>
-                          </div>
-                        )}
-                        
-                        {movimiento.observaciones && (
-                          <div className="observaciones-movimiento-general">
-                            <span className="label-general">Observaciones:</span>
-                            <span className="observaciones-texto-general">{movimiento.observaciones}</span>
                           </div>
                         )}
                       </div>

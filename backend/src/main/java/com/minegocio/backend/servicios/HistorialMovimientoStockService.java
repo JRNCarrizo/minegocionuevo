@@ -210,9 +210,9 @@ public class HistorialMovimientoStockService {
     private String obtenerDescripcionTipoMovimiento(HistorialMovimientoStock.TipoMovimiento tipo) {
         switch (tipo) {
             case TRANSFERENCIA:
-                return "Transferencia entre sectores";
+                return "Enviar stock";
             case RECEPCION:
-                return "Recepción de stock";
+                return "Recibir stock";
             case ASIGNACION:
                 return "Asignación desde stock general";
             case REMOCION:

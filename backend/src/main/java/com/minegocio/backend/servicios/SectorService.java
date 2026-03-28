@@ -789,12 +789,21 @@ public class SectorService {
                     System.out.println("🔄 SINCRONIZAR - Producto " + producto.getNombre() + " ahora tiene sector: " + sector.getNombre());
                 }
                 
-                // Registrar movimiento en el historial
-                String observaciones = String.format("Recepción de %d unidades en %s", 
-                    cantidad, sector.getNombre());
+                // Historial: sector origen real (otro depósito) o null si viene de stock sin asignar
+                final Sector sectorOrigenHistorial;
+                final String origenEtiquetaHistorial;
+                if (stockId.contains("_sin_asignar")) {
+                    sectorOrigenHistorial = null;
+                    origenEtiquetaHistorial = "stock sin asignar";
+                } else {
+                    sectorOrigenHistorial = stockOrigen.getSector();
+                    origenEtiquetaHistorial = sectorOrigenHistorial.getNombre();
+                }
+                String observaciones = String.format("Recibir stock: %d u. desde %s",
+                    cantidad, origenEtiquetaHistorial);
                 historialMovimientoStockService.registrarMovimiento(
-                    producto, null, sector, cantidad, 
-                    HistorialMovimientoStock.TipoMovimiento.RECEPCION, 
+                    producto, sectorOrigenHistorial, sector, cantidad,
+                    HistorialMovimientoStock.TipoMovimiento.RECEPCION,
                     usuario, sector.getEmpresa(), observaciones);
                 
             } catch (NumberFormatException e) {
@@ -998,7 +1007,7 @@ public class SectorService {
         }
         
         // Registrar movimiento en el historial
-        String observaciones = String.format("Transferencia de %d unidades desde %s hacia %s", 
+        String observaciones = String.format("Enviar stock: %d u. desde %s hacia %s",
             cantidad, sectorOrigen.getNombre(), sectorDestino.getNombre());
         historialMovimientoStockService.registrarMovimiento(
             producto, sectorOrigen, sectorDestino, cantidad, 

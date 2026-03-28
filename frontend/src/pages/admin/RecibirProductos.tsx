@@ -18,13 +18,19 @@ interface StockDetallado {
   }[];
 }
 
-interface RecepcionProducto {
+interface MovimientoPendiente {
+  id: string;
+  tipo: 'recibir' | 'enviar';
   productoId: number;
   stockId: string;
   ubicacion: string;
   cantidad: number;
   productoNombre: string;
   codigoPersonalizado?: string;
+  /** true = línea revisada y lista para ejecutar el registro */
+  confirmado: boolean;
+  sectorDestinoId?: number;
+  sectorDestinoNombre?: string;
 }
 
 const RecibirProductos: React.FC = () => {
@@ -38,7 +44,10 @@ const RecibirProductos: React.FC = () => {
   const [cargandoSector, setCargandoSector] = useState(true);
   const [stockDetallado, setStockDetallado] = useState<StockDetallado[]>([]);
   const [cargandoStock, setCargandoStock] = useState(true);
-  const [recepciones, setRecepciones] = useState<RecepcionProducto[]>([]);
+  const [modoOperacion, setModoOperacion] = useState<'recibir' | 'enviar'>('recibir');
+  const [sectoresEmpresa, setSectoresEmpresa] = useState<any[]>([]);
+  const [sectorDestinoId, setSectorDestinoId] = useState<number | ''>('');
+  const [movimientos, setMovimientos] = useState<MovimientoPendiente[]>([]);
   const [guardando, setGuardando] = useState(false);
 
   // Estados para búsqueda y selección
@@ -54,12 +63,15 @@ const RecibirProductos: React.FC = () => {
   const [mostrarOpciones, setMostrarOpciones] = useState(false);
   const [resultadoCalculo, setResultadoCalculo] = useState<number | null>(null);
   const [errorCalculo, setErrorCalculo] = useState<string | null>(null);
+  /** Solo modo enviar: buscar producto → cantidad (reemplaza buscador) → destino → agregar */
+  const [enviarPaso, setEnviarPaso] = useState<'buscar' | 'cantidad' | 'destino'>('buscar');
 
   // Referencias para focus
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
   const listaUbicacionesRef = useRef<HTMLDivElement>(null);
   const inputCantidadRef = useRef<HTMLInputElement>(null);
+  const selectDestinoRef = useRef<HTMLSelectElement>(null);
   const listaRecepcionesRef = useRef<HTMLDivElement>(null);
 
   // Función helper para hacer llamadas a la API
@@ -139,6 +151,25 @@ const RecibirProductos: React.FC = () => {
     }
   };
 
+  const parseCantidadIngresada = (): { num: number; error: string | null } => {
+    if (!cantidad.trim()) {
+      return { num: 0, error: 'Indicá la cantidad' };
+    }
+    const contieneOperadores = /[+\-*/x()]/.test(cantidad);
+    if (contieneOperadores) {
+      const evaluacion = evaluarExpresion(cantidad);
+      if (evaluacion.error) {
+        return { num: 0, error: evaluacion.error };
+      }
+      return { num: evaluacion.resultado!, error: null };
+    }
+    const cantidadNum = parseInt(cantidad, 10);
+    if (isNaN(cantidadNum) || cantidadNum <= 0) {
+      return { num: 0, error: 'Ingresá una cantidad válida' };
+    }
+    return { num: cantidadNum, error: null };
+  };
+
   // Cargar información del sector
   const cargarSector = async () => {
     if (!datosUsuario?.empresaId) {
@@ -152,7 +183,7 @@ const RecibirProductos: React.FC = () => {
       
       // Verificar que la respuesta sea un array o tenga la propiedad data
       const sectores = Array.isArray(response) ? response : (response?.data && Array.isArray(response.data) ? response.data : []);
-      
+      setSectoresEmpresa(sectores.filter((s: any) => s.activo !== false));
       const sectorEncontrado = sectores.find((s: any) => s.id === parseInt(sectorId!));
       if (sectorEncontrado) {
         setSector(sectorEncontrado);
@@ -165,6 +196,34 @@ const RecibirProductos: React.FC = () => {
     } finally {
       setCargandoSector(false);
     }
+  };
+
+  const cambiarModoOperacion = async (nuevo: 'recibir' | 'enviar') => {
+    if (nuevo === modoOperacion) return;
+    if (movimientos.length > 0) {
+      const ok = window.confirm(
+        'Hay líneas en la lista. Si cambiás de modo se vaciará la lista y se recargará el stock desde el servidor. ¿Continuar?'
+      );
+      if (!ok) return;
+      try {
+        await cargarStockDetallado();
+      } catch {
+        toast.error('No se pudo recargar el stock');
+        return;
+      }
+      setMovimientos([]);
+    }
+    setModoOperacion(nuevo);
+    setFiltroBusqueda('');
+    setProductoSeleccionado(null);
+    setUbicacionesFiltradas([]);
+    setUbicacionSeleccionadaIndex(-1);
+    setProductoSeleccionadoIndex(-1);
+    setModoCantidad(false);
+    setCantidad('');
+    setStockSeleccionado(null);
+    setSectorDestinoId('');
+    setEnviarPaso('buscar');
   };
 
   // Cargar stock detallado
@@ -212,7 +271,10 @@ const RecibirProductos: React.FC = () => {
       if (!coincideBusqueda) return false;
       
       // Verificar que el producto tenga stock disponible en al menos una ubicación
-      const tieneStockDisponible = producto.ubicaciones.some(ubicacion => ubicacion.cantidad > 0);
+      const tieneStockDisponible =
+        modoOperacion === 'recibir'
+          ? producto.ubicaciones.some(u => u.cantidad > 0 && u.ubicacion !== sector?.nombre)
+          : producto.ubicaciones.some(u => u.cantidad > 0 && u.ubicacion === sector?.nombre);
       
       // Log para debug
       console.log('🔍 [DEBUG] Producto:', producto.productoNombre, {
@@ -221,9 +283,6 @@ const RecibirProductos: React.FC = () => {
         ubicaciones: producto.ubicaciones.map(u => `${u.ubicacion}: ${u.cantidad}`)
       });
       
-      // Incluir TODOS los productos que coincidan con la búsqueda y tengan stock disponible
-      // Esto permite recibir productos que ya están en el sector actual (para aumentar stock)
-      // y también productos de otros sectores o sin sectores asignados
       return tieneStockDisponible;
     }).sort((a, b) => {
       const busqueda = filtroBusqueda.toLowerCase();
@@ -262,7 +321,7 @@ const RecibirProductos: React.FC = () => {
     } else {
       setMostrarOpciones(false);
     }
-  }, [filtroBusqueda, stockDetallado]);
+  }, [filtroBusqueda, stockDetallado, modoOperacion, sector?.nombre]);
 
   // Estado para controlar el focus del buscador
   const [focusBuscador, setFocusBuscador] = useState(false);
@@ -355,114 +414,53 @@ const RecibirProductos: React.FC = () => {
     }
   }, [ubicacionSeleccionadaIndex]);
 
-  // Manejar teclas para navegación
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Si estamos en modo cantidad, manejar solo Enter y Escape
-      if (modoCantidad) {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          confirmarRecepcion();
-        } else if (event.key === 'Escape') {
-          event.preventDefault();
-          cancelarCantidad();
-        }
-        return;
-      }
+    if (modoOperacion !== 'enviar' || !modoCantidad || !stockSeleccionado) return;
+    if (enviarPaso !== 'cantidad') return;
+    const t = window.setTimeout(() => {
+      inputCantidadRef.current?.focus();
+      inputCantidadRef.current?.select();
+    }, 90);
+    return () => window.clearTimeout(t);
+  }, [modoOperacion, modoCantidad, stockSeleccionado, enviarPaso]);
 
-      // Si hay un producto seleccionado y ubicaciones disponibles
-      if (productoSeleccionado && ubicacionesFiltradas.length > 0) {
-        if (event.key === 'ArrowUp') {
-          event.preventDefault();
-          setUbicacionSeleccionadaIndex(prev => 
-            prev <= 0 ? ubicacionesFiltradas.length - 1 : prev - 1
-          );
-        } else if (event.key === 'ArrowDown') {
-          event.preventDefault();
-          setUbicacionSeleccionadaIndex(prev => 
-            prev >= ubicacionesFiltradas.length - 1 ? 0 : prev + 1
-          );
-        } else if (event.key === 'Enter') {
-          event.preventDefault();
-          if (ubicacionSeleccionadaIndex >= 0) {
-            seleccionarUbicacion(ubicacionesFiltradas[ubicacionSeleccionadaIndex]);
-          }
-        } else if (event.key === 'Escape') {
-          event.preventDefault();
-          setProductoSeleccionado(null);
-          setUbicacionesFiltradas([]);
-          setUbicacionSeleccionadaIndex(-1);
-        }
-        return;
-      }
-
-      // Si hay productos filtrados
-      if (productosFiltrados.length > 0) {
-        if (event.key === 'ArrowUp') {
-          event.preventDefault();
-          setProductoSeleccionadoIndex(prev => 
-            prev <= 0 ? productosFiltrados.length - 1 : prev - 1
-          );
-        } else if (event.key === 'ArrowDown') {
-          event.preventDefault();
-          setProductoSeleccionadoIndex(prev => 
-            prev >= productosFiltrados.length - 1 ? 0 : prev + 1
-          );
-        } else if (event.key === 'Enter') {
-          event.preventDefault();
-          if (productoSeleccionadoIndex >= 0) {
-            seleccionarProducto(productosFiltrados[productoSeleccionadoIndex]);
-          }
-        } else if (event.key === 'Escape') {
-          event.preventDefault();
-          setFiltroBusqueda('');
-          setProductosFiltrados([]);
-          setProductoSeleccionadoIndex(-1);
-        }
-        return;
-      }
-
-      // Si no hay productos filtrados y se presiona Enter, activar el buscador
-      if (event.key === 'Enter' && !filtroBusqueda.trim()) {
-        event.preventDefault();
-        setFocusBuscador(true);
-        // Hacer scroll automático
-        setTimeout(() => {
-          window.scrollBy({
-            top: 250,
-            behavior: 'smooth'
-          });
-        }, 100);
-      }
-
-      // Escape global para volver a gestión de sectores
-      if (event.key === 'Escape' && !filtroBusqueda.trim() && productosFiltrados.length === 0 && !productoSeleccionado) {
-        event.preventDefault();
-        navigate('/admin/sectores');
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [productosFiltrados, productoSeleccionadoIndex, productoSeleccionado, ubicacionesFiltradas, ubicacionSeleccionadaIndex, modoCantidad, cantidad, filtroBusqueda, navigate]);
+  useEffect(() => {
+    if (modoOperacion !== 'enviar' || enviarPaso !== 'destino') return;
+    const t = window.setTimeout(() => {
+      selectDestinoRef.current?.focus();
+    }, 90);
+    return () => window.clearTimeout(t);
+  }, [modoOperacion, enviarPaso]);
 
   // Seleccionar producto
   const seleccionarProducto = (producto: StockDetallado) => {
     setProductoSeleccionado(producto);
-    // Filtrar ubicaciones con stock disponible que NO sean del sector actual
     const ubicacionesConStock = producto.ubicaciones.filter(ubicacion => {
       const tieneStock = ubicacion.cantidad > 0;
-      const noEsSectorActual = ubicacion.ubicacion !== sector?.nombre;
-      return tieneStock && noEsSectorActual;
+      if (modoOperacion === 'recibir') {
+        return tieneStock && ubicacion.ubicacion !== sector?.nombre;
+      }
+      return tieneStock && ubicacion.ubicacion === sector?.nombre;
     });
     
-    console.log('🔍 [DEBUG] Ubicaciones filtradas para recibir:', ubicacionesConStock.map(u => `${u.ubicacion}: ${u.cantidad}`));
-    console.log('🔍 [DEBUG] Sector actual excluido:', sector?.nombre);
+    console.log('🔍 [DEBUG] Ubicaciones filtradas:', ubicacionesConStock.map(u => `${u.ubicacion}: ${u.cantidad}`));
+    console.log('🔍 [DEBUG] Modo:', modoOperacion, 'Sector actual:', sector?.nombre);
     
+    if (ubicacionesConStock.length === 0) {
+      toast.error(
+        modoOperacion === 'enviar'
+          ? `No hay stock en "${sector?.nombre || 'este depósito'}" para este producto`
+          : 'No hay stock en otros depósitos para traer a este sector'
+      );
+      setProductoSeleccionado(null);
+      setFiltroBusqueda('');
+      setUbicacionesFiltradas([]);
+      return;
+    }
+
     setUbicacionesFiltradas(ubicacionesConStock);
     setUbicacionSeleccionadaIndex(ubicacionesConStock.length > 0 ? 0 : -1);
     setFiltroBusqueda(producto.productoNombre);
-    // Mostrar ubicaciones con animación
     if (ubicacionesConStock.length > 0) {
       setMostrarOpciones(true);
     }
@@ -473,62 +471,76 @@ const RecibirProductos: React.FC = () => {
     setStockSeleccionado(ubicacion);
     setModoCantidad(true);
     setCantidad('');
+    setSectorDestinoId('');
+    setEnviarPaso(modoOperacion === 'enviar' ? 'cantidad' : 'buscar');
   };
 
-  // Confirmar recepción
+  const avanzarCantidadEnviarAlDestino = () => {
+    if (modoOperacion !== 'enviar' || enviarPaso !== 'cantidad') return;
+    if (!stockSeleccionado) return;
+    const { num, error } = parseCantidadIngresada();
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    if (num > stockSeleccionado.cantidad) {
+      toast.error('La cantidad no puede ser mayor al stock disponible en el origen');
+      return;
+    }
+    setEnviarPaso('destino');
+    setSectorDestinoId('');
+  };
+
+  // Agregar línea a la lista (aún no registrada en servidor; confirmación aparte)
   const confirmarRecepcion = () => {
-    if (!productoSeleccionado || !stockSeleccionado || !cantidad.trim()) {
-      toast.error('Por favor completa todos los campos');
+    if (!productoSeleccionado || !stockSeleccionado) {
+      toast.error('Completá producto y origen');
       return;
     }
 
-    // Evaluar la expresión matemática si contiene operadores
-    let cantidadNum: number;
-    
-    // Verificar si la cantidad contiene operadores matemáticos
-    const contieneOperadores = /[+\-*/x()]/.test(cantidad);
-    
-    if (contieneOperadores) {
-      // Evaluar la expresión matemática
-      const evaluacion = evaluarExpresion(cantidad);
-      if (evaluacion.error) {
-        toast.error(`Error en el cálculo: ${evaluacion.error}`);
+    if (modoOperacion === 'enviar') {
+      if (enviarPaso !== 'destino') {
+        toast.error('Completá cantidad y destino antes de agregar');
         return;
       }
-      cantidadNum = evaluacion.resultado!;
-    } else {
-      // Si no contiene operadores, parsear como número normal
-      cantidadNum = parseInt(cantidad);
-      if (isNaN(cantidadNum) || cantidadNum <= 0) {
-        toast.error('Por favor ingresa una cantidad válida');
+      if (sectorDestinoId === '' || sectorDestinoId === Number(sectorId)) {
+        toast.error('Elegí un sector destino distinto al actual');
         return;
       }
+    }
+
+    const { num: cantidadNum, error: errCant } = parseCantidadIngresada();
+    if (errCant) {
+      toast.error(errCant);
+      return;
     }
 
     if (cantidadNum > stockSeleccionado.cantidad) {
-      toast.error('La cantidad no puede ser mayor al stock disponible');
+      toast.error('La cantidad no puede ser mayor al stock disponible en el origen');
       return;
     }
 
-    const nuevaRecepcion: RecepcionProducto = {
+    let destNombre: string | undefined;
+    if (modoOperacion === 'enviar' && sectorDestinoId !== '') {
+      destNombre = sectoresEmpresa.find((s: any) => s.id === sectorDestinoId)?.nombre;
+    }
+
+    const nuevaLinea: MovimientoPendiente = {
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `m-${Date.now()}-${Math.random()}`,
+      tipo: modoOperacion,
       productoId: productoSeleccionado.productoId,
       stockId: stockSeleccionado.stockId,
       ubicacion: stockSeleccionado.ubicacion,
       cantidad: cantidadNum,
       productoNombre: productoSeleccionado.productoNombre,
-      codigoPersonalizado: productoSeleccionado.codigoPersonalizado
+      codigoPersonalizado: productoSeleccionado.codigoPersonalizado,
+      confirmado: false,
+      sectorDestinoId: modoOperacion === 'enviar' ? Number(sectorDestinoId) : undefined,
+      sectorDestinoNombre: destNombre
     };
 
-    setRecepciones(prev => [...prev, nuevaRecepcion]);
+    setMovimientos(prev => [...prev, nuevaLinea]);
     
-    // Hacer scroll al último producto agregado solo si hay más de 3 productos
-    if (recepciones.length > 3) {
-      setTimeout(() => {
-        scrollToLastProduct();
-      }, 100);
-    }
-    
-    // Actualizar el stock detallado para descontar la cantidad
     setStockDetallado(prevStock => 
       prevStock.map(producto => {
         if (producto.productoId === productoSeleccionado.productoId) {
@@ -549,7 +561,6 @@ const RecibirProductos: React.FC = () => {
       })
     );
     
-    // Limpiar y volver al buscador
     setProductoSeleccionado(null);
     setStockSeleccionado(null);
     setModoCantidad(false);
@@ -560,20 +571,27 @@ const RecibirProductos: React.FC = () => {
     setProductoSeleccionadoIndex(-1);
     setResultadoCalculo(null);
     setErrorCalculo(null);
+    setSectorDestinoId('');
+    setEnviarPaso('buscar');
 
-    // Focus en el buscador
     setTimeout(() => {
       setFocusBuscador(true);
     }, 100);
 
-    toast.success('Producto agregado a la lista de recepción');
+    toast.success('Línea agregada. Confirmala con el tilde para incluirla en el registro final.');
+  };
+
+  const toggleConfirmarLinea = (id: string) => {
+    setMovimientos(prev =>
+      prev.map(m => (m.id === id ? { ...m, confirmado: !m.confirmado } : m))
+    );
   };
 
   // Función para hacer scroll automático al último producto agregado a la recepción
   const scrollToLastProduct = () => {
-    if (listaRecepcionesRef.current && recepciones.length > 0) {
+    if (listaRecepcionesRef.current && movimientos.length > 0) {
       const container = listaRecepcionesRef.current;
-      const lastProductIndex = recepciones.length - 1;
+      const lastProductIndex = movimientos.length - 1;
       
       // Buscar el último elemento de producto en la lista
       const productElements = container.querySelectorAll('[data-product-index]');
@@ -614,29 +632,152 @@ const RecibirProductos: React.FC = () => {
 
   // Cancelar cantidad
   const cancelarCantidad = () => {
-    setModoCantidad(false);
-    setCantidad('');
-    setStockSeleccionado(null);
-    setUbicacionSeleccionadaIndex(0);
+    if (modoOperacion === 'enviar') {
+      setModoCantidad(false);
+      setCantidad('');
+      setStockSeleccionado(null);
+      setProductoSeleccionado(null);
+      setUbicacionesFiltradas([]);
+      setUbicacionSeleccionadaIndex(-1);
+      setFiltroBusqueda('');
+      setSectorDestinoId('');
+      setEnviarPaso('buscar');
+    } else {
+      setModoCantidad(false);
+      setCantidad('');
+      setStockSeleccionado(null);
+      setUbicacionSeleccionadaIndex(0);
+    }
     setResultadoCalculo(null);
     setErrorCalculo(null);
   };
 
-  // Remover recepción de la lista
-  const removerRecepcion = (index: number) => {
-    const recepcionAEliminar = recepciones[index];
-    
-    // Restaurar el stock detallado sumando la cantidad eliminada
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (modoCantidad) {
+        if (modoOperacion === 'enviar') {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            cancelarCantidad();
+            return;
+          }
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            if (enviarPaso === 'cantidad') {
+              avanzarCantidadEnviarAlDestino();
+            } else if (enviarPaso === 'destino') {
+              confirmarRecepcion();
+            }
+            return;
+          }
+          return;
+        }
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          confirmarRecepcion();
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          cancelarCantidad();
+        }
+        return;
+      }
+
+      if (productoSeleccionado && ubicacionesFiltradas.length > 0) {
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          setUbicacionSeleccionadaIndex(prev =>
+            prev <= 0 ? ubicacionesFiltradas.length - 1 : prev - 1
+          );
+        } else if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          setUbicacionSeleccionadaIndex(prev =>
+            prev >= ubicacionesFiltradas.length - 1 ? 0 : prev + 1
+          );
+        } else if (event.key === 'Enter') {
+          event.preventDefault();
+          if (ubicacionSeleccionadaIndex >= 0) {
+            seleccionarUbicacion(ubicacionesFiltradas[ubicacionSeleccionadaIndex]);
+          }
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          setProductoSeleccionado(null);
+          setUbicacionesFiltradas([]);
+          setUbicacionSeleccionadaIndex(-1);
+        }
+        return;
+      }
+
+      if (productosFiltrados.length > 0) {
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          setProductoSeleccionadoIndex(prev =>
+            prev <= 0 ? productosFiltrados.length - 1 : prev - 1
+          );
+        } else if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          setProductoSeleccionadoIndex(prev =>
+            prev >= productosFiltrados.length - 1 ? 0 : prev + 1
+          );
+        } else if (event.key === 'Enter') {
+          event.preventDefault();
+          if (productoSeleccionadoIndex >= 0) {
+            seleccionarProducto(productosFiltrados[productoSeleccionadoIndex]);
+          }
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          setFiltroBusqueda('');
+          setProductosFiltrados([]);
+          setProductoSeleccionadoIndex(-1);
+        }
+        return;
+      }
+
+      if (event.key === 'Enter' && !filtroBusqueda.trim()) {
+        event.preventDefault();
+        setFocusBuscador(true);
+        setTimeout(() => {
+          window.scrollBy({
+            top: 250,
+            behavior: 'smooth'
+          });
+        }, 100);
+      }
+
+      if (event.key === 'Escape' && !filtroBusqueda.trim() && productosFiltrados.length === 0 && !productoSeleccionado) {
+        event.preventDefault();
+        navigate('/admin/sectores');
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [
+    productosFiltrados,
+    productoSeleccionadoIndex,
+    productoSeleccionado,
+    ubicacionesFiltradas,
+    ubicacionSeleccionadaIndex,
+    modoCantidad,
+    modoOperacion,
+    enviarPaso,
+    cantidad,
+    filtroBusqueda,
+    navigate
+  ]);
+
+  const removerMovimiento = (id: string) => {
+    const linea = movimientos.find(m => m.id === id);
+    if (!linea) return;
     setStockDetallado(prevStock => 
       prevStock.map(producto => {
-        if (producto.productoId === recepcionAEliminar.productoId) {
+        if (producto.productoId === linea.productoId) {
           return {
             ...producto,
             ubicaciones: producto.ubicaciones.map(ubicacion => {
-              if (ubicacion.stockId === recepcionAEliminar.stockId) {
+              if (ubicacion.stockId === linea.stockId) {
                 return {
                   ...ubicacion,
-                  cantidad: ubicacion.cantidad + recepcionAEliminar.cantidad
+                  cantidad: ubicacion.cantidad + linea.cantidad
                 };
               }
               return ubicacion;
@@ -646,15 +787,17 @@ const RecibirProductos: React.FC = () => {
         return producto;
       })
     );
-    
-    setRecepciones(prev => prev.filter((_, i) => i !== index));
-    toast.success('Producto removido de la lista de recepción');
+    setMovimientos(prev => prev.filter(m => m.id !== id));
+    toast.success('Línea quitada de la lista');
   };
 
-  // Guardar recepciones
-  const guardarRecepciones = async () => {
-    if (recepciones.length === 0) {
-      toast.error('No hay productos para recibir');
+  const registrarMovimientos = async () => {
+    if (movimientos.length === 0) {
+      toast.error('No hay movimientos en la lista');
+      return;
+    }
+    if (!movimientos.every(m => m.confirmado)) {
+      toast.error('Confirmá todas las líneas con el tilde antes de registrar');
       return;
     }
 
@@ -665,39 +808,47 @@ const RecibirProductos: React.FC = () => {
 
     try {
       setGuardando(true);
-      
-      const requestBody = {
-        recepciones: recepciones.map(r => ({
-          productoId: r.productoId,
-          stockId: r.stockId,
-          cantidad: r.cantidad
-        }))
-      };
+      const sid = parseInt(sectorId, 10);
+      const recibos = movimientos.filter(m => m.tipo === 'recibir');
+      const envios = movimientos.filter(m => m.tipo === 'enviar');
 
-      console.log('🔍 Enviando recepciones:', requestBody);
-      console.log('🔍 URL:', `/empresas/${datosUsuario.empresaId}/sectores/${sectorId}/recibir-productos`);
-      console.log('🔍 empresaId:', datosUsuario.empresaId);
-      console.log('🔍 sectorId:', sectorId);
-      
-      await apiCall(`/empresas/${datosUsuario.empresaId}/sectores/${sectorId}/recibir-productos`, {
-        method: 'POST',
-        body: JSON.stringify(requestBody)
-      });
+      if (recibos.length > 0) {
+        await apiCall(`/empresas/${datosUsuario.empresaId}/sectores/${sectorId}/recibir-productos`, {
+          method: 'POST',
+          body: JSON.stringify({
+            recepciones: recibos.map(r => ({
+              productoId: r.productoId,
+              stockId: r.stockId,
+              cantidad: r.cantidad
+            }))
+          })
+        });
+      }
 
-      toast.success('Productos recibidos exitosamente');
-      setRecepciones([]);
-      
-      // Recargar stock detallado
+      for (const e of envios) {
+        if (!e.sectorDestinoId) {
+          throw new Error('Falta sector destino en un envío');
+        }
+        await apiCall(`/empresas/${datosUsuario.empresaId}/sectores/transferir-stock`, {
+          method: 'POST',
+          body: JSON.stringify({
+            productoId: e.productoId,
+            sectorOrigenId: sid,
+            sectorDestinoId: e.sectorDestinoId,
+            cantidad: e.cantidad
+          })
+        });
+      }
+
+      toast.success('Movimientos registrados correctamente');
+      setMovimientos([]);
       await cargarStockDetallado();
-      
-      // Volver a la gestión de sectores
       setTimeout(() => {
         navigate('/admin/sectores');
       }, 1500);
-
     } catch (error) {
-      console.error('Error al recibir productos:', error);
-      toast.error('Error al recibir productos');
+      console.error('Error al registrar movimientos:', error);
+      toast.error('Error al registrar movimientos');
     } finally {
       setGuardando(false);
     }
@@ -711,21 +862,16 @@ const RecibirProductos: React.FC = () => {
     }
   }, [datosUsuario]);
 
-  // Auto-scroll para mantener visible el último producto agregado a la recepción
   useEffect(() => {
-    // Solo hacer scroll si hay productos en la lista y no estamos en modo cantidad
-    if (recepciones.length > 0 && !modoCantidad) {
-      // Solo hacer scroll si hay más de 3 productos (para evitar scroll en los primeros productos)
-      if (recepciones.length > 3) {
-        // Delay para asegurar que el DOM se haya actualizado completamente
+    if (movimientos.length > 0 && !modoCantidad) {
+      if (movimientos.length > 3) {
         const timeoutId = setTimeout(() => {
           scrollToLastProduct();
         }, 200);
-        
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [recepciones.length, modoCantidad]);
+  }, [movimientos.length, modoCantidad]);
 
   if (cargandoSector || cargandoStock || !datosUsuario) {
     return (
@@ -758,6 +904,17 @@ const RecibirProductos: React.FC = () => {
     );
   }
 
+  const ocultarBuscadorEnviar =
+    modoOperacion === 'enviar' &&
+    modoCantidad &&
+    stockSeleccionado &&
+    (enviarPaso === 'cantidad' || enviarPaso === 'destino');
+
+  const sectoresDestinoLista = sectoresEmpresa.filter(
+    (s: any) => s.id !== parseInt(sectorId || '0', 10)
+  );
+  const sizeListaDestino = Math.min(8, Math.max(2, sectoresDestinoLista.length || 2));
+
   return (
     <>
       <NavbarAdmin
@@ -774,325 +931,384 @@ const RecibirProductos: React.FC = () => {
           margin: '0 auto',
           padding: isMobile ? '8.5rem 1rem 2rem 1rem' : '7rem 2rem 2rem 2rem'
         }}>
-          {/* Header */}
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            padding: isMobile ? '1rem' : '24px',
-            marginBottom: isMobile ? '1rem' : '2rem',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-            border: '2px solid #e2e8f0'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'nowrap',
-              gap: '1rem'
-            }}>
-              <div>
-                <button 
-                  onClick={() => navigate('/admin/sectores')}
-                  style={{
-                    background: 'rgba(102, 126, 234, 0.1)',
-                    border: '2px solid rgba(102, 126, 234, 0.2)',
-                    borderRadius: '8px',
-                    color: '#667eea',
-                    padding: isMobile ? '0.75rem 1rem' : '0.5rem 1rem',
-                    fontSize: isMobile ? '1rem' : '0.875rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginBottom: isMobile ? '0.75rem' : '1rem',
-                    transition: 'all 0.2s ease',
-                    minHeight: isMobile ? '48px' : 'auto'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  ← Volver
-                </button>
-                <h1 style={{
-                  fontSize: isMobile ? '1.5rem' : '2rem',
-                  fontWeight: '700',
-                  color: '#1e293b',
-                  margin: '0 0 0.5rem 0'
-                }}>
-                  📦 Recibir Stock
-                </h1>
-                <p style={{
-                  color: '#64748b',
-                  margin: 0,
-                  fontSize: isMobile ? '0.9rem' : '1rem'
-                }}>
-                  Sector: {sector?.nombre}
+          <header className="recibir-page-header">
+            <div className="recibir-page-header__row">
+              <button
+                type="button"
+                className="recibir-page-header__back"
+                onClick={() => navigate('/admin/sectores')}
+              >
+                ← Volver
+              </button>
+              <div className="recibir-page-header__titles">
+                <h1 className="recibir-page-header__title">Movimientos de stock</h1>
+                <p className="recibir-page-header__meta">
+                  Depósito: <strong>{sector?.nombre}</strong>
+                  <span className="recibir-page-header__hint-inline">
+                    {' · '}
+                    {modoOperacion === 'recibir'
+                      ? 'Traé stock desde otros depósitos o general hacia acá.'
+                      : 'Enviá stock de acá hacia otro depósito.'}
+                  </span>
                 </p>
               </div>
+              <div className="recibir-page-header__segment" role="group" aria-label="Tipo de operación">
+                <button
+                  type="button"
+                  className={
+                    'recibir-page-header__mode' +
+                    (modoOperacion === 'recibir' ? ' recibir-page-header__mode--recibir-active' : '')
+                  }
+                  onClick={() => cambiarModoOperacion('recibir')}
+                >
+                  Recibir aquí
+                </button>
+                <button
+                  type="button"
+                  className={
+                    'recibir-page-header__mode' +
+                    (modoOperacion === 'enviar' ? ' recibir-page-header__mode--enviar-active' : '')
+                  }
+                  onClick={() => cambiarModoOperacion('enviar')}
+                >
+                  Enviar desde aquí
+                </button>
+              </div>
             </div>
-          </div>
+          </header>
 
           <div className="recibir-productos-container">
             {/* Panel izquierdo - Búsqueda y selección */}
             <div className="panel-busqueda">
-              <div className="card" style={{
-                background: 'white',
-                borderRadius: '16px',
-                padding: '24px',
-                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                border: '2px solid #e2e8f0'
-              }}>
-                <h2 style={{
-                  fontSize: isMobile ? '1.25rem' : '1.5rem',
-                  fontWeight: '600',
-                  color: '#1e293b',
-                  margin: '0 0 1.5rem 0'
-                }}>
-                  🔍 Buscador Avanzado
-                </h2>
+              <div className="card recibir-card">
+                <div className="recibir-card__header">
+                  <h2 className="recibir-card__title">Buscador avanzado</h2>
+                  <p className="recibir-card__subtitle">Buscá por nombre o código y elegí origen</p>
+                </div>
+                <div className="recibir-card__body buscador-avanzado">
+                {/* Campo de búsqueda y cantidad */}
+                <div style={{ marginBottom: '1rem' }}>
+                  {/* Enviar: solo cantidad (reemplaza al buscador) */}
+                  {modoOperacion === 'enviar' && modoCantidad && stockSeleccionado && enviarPaso === 'cantidad' && (
+                    <>
+                      <div style={{
+                        background: '#fff7ed',
+                        padding: isMobile ? '1rem' : '0.75rem',
+                        borderRadius: '8px',
+                        border: '2px solid #fdba74',
+                        marginBottom: '1rem',
+                        fontSize: isMobile ? '0.875rem' : '0.875rem'
+                      }}>
+                        <div style={{ fontWeight: '600', marginBottom: '0.35rem' }}>
+                          {productoSeleccionado?.codigoPersonalizado && (
+                            <span style={{ color: '#ea580c', fontWeight: '700' }}>{productoSeleccionado.codigoPersonalizado} · </span>
+                          )}
+                          {productoSeleccionado?.productoNombre}
+                        </div>
+                        <div style={{ color: '#64748b' }}>Origen: {stockSeleccionado.ubicacion} · Disponible: {stockSeleccionado.cantidad}</div>
+                      </div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: isMobile ? '1rem' : '0.875rem',
+                        fontWeight: '600',
+                        color: '#9a3412',
+                        marginBottom: isMobile ? '0.75rem' : '0.5rem'
+                      }}>
+                        Cantidad a enviar
+                      </label>
+                      <input
+                        ref={inputCantidadRef}
+                        type="text"
+                        inputMode="numeric"
+                        value={cantidad}
+                        onChange={(e) => setCantidad(e.target.value)}
+                        placeholder="Ej: 10, 3*5..."
+                        autoComplete="off"
+                        style={{
+                          width: '100%',
+                          padding: isMobile ? '1rem' : '0.85rem',
+                          border: '2px solid #fdba74',
+                          borderRadius: '8px',
+                          fontSize: isMobile ? '1.15rem' : '1.1rem',
+                          background: 'white',
+                          minHeight: isMobile ? '52px' : '48px'
+                        }}
+                      />
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.35rem' }}>
+                        Enter: siguiente paso · Esc: cancelar
+                      </div>
+                      {resultadoCalculo !== null && (
+                        <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '0.35rem', fontWeight: 600 }}>
+                          Resultado: {resultadoCalculo.toLocaleString()} u.
+                        </div>
+                      )}
+                      {errorCalculo && (
+                        <div style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.35rem' }}>{errorCalculo}</div>
+                      )}
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                        <button type="button" onClick={avanzarCantidadEnviarAlDestino} style={{ flex: 1, padding: '0.75rem', background: 'linear-gradient(135deg, #fb923c 0%, #ea580c 100%)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                          Siguiente: destino
+                        </button>
+                        <button type="button" onClick={cancelarCantidad} style={{ padding: '0.75rem 1rem', background: '#f1f5f9', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                          Cancelar
+                        </button>
+                      </div>
+                    </>
+                  )}
 
-                                 {/* Campo de búsqueda y cantidad */}
-                 <div style={{ marginBottom: '1.5rem' }}>
-                   <div style={{
-                     display: 'flex',
-                     gap: '1rem',
-                     alignItems: 'flex-end'
-                   }}>
-                     {/* Buscador */}
-                     <div style={{ flex: 1 }}>
-                       <label style={{
-                         display: 'block',
-                         fontSize: isMobile ? '1rem' : '0.875rem',
-                         fontWeight: '600',
-                         color: '#374151',
-                         marginBottom: isMobile ? '0.75rem' : '0.5rem'
-                       }}>
-                         Buscar por nombre o código:
-                       </label>
-                       <input
-                         ref={inputBusquedaRef}
-                         type="text"
-                         value={filtroBusqueda}
-                         onChange={(e) => setFiltroBusqueda(e.target.value)}
-                         placeholder="Escribe el nombre o código del producto..."
-                         style={{
-                           width: '100%',
-                           padding: isMobile ? '1rem' : '0.75rem',
-                           border: '2px solid #d1d5db',
-                           borderRadius: '8px',
-                           fontSize: isMobile ? '1rem' : '1rem',
-                           background: 'white',
-                           transition: 'all 0.2s ease',
-                           minHeight: isMobile ? '48px' : 'auto'
-                         }}
-                         onFocus={(e) => {
-                           e.target.style.borderColor = '#667eea';
-                           e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-                         }}
-                         onBlur={(e) => {
-                           e.target.style.borderColor = '#d1d5db';
-                           e.target.style.boxShadow = 'none';
-                         }}
-                       />
-                     </div>
+                  {/* Enviar: elegir destino (lista desplazable) */}
+                  {modoOperacion === 'enviar' && modoCantidad && stockSeleccionado && enviarPaso === 'destino' && (
+                    <>
+                      <div style={{
+                        background: '#f8fafc',
+                        padding: isMobile ? '1rem' : '0.75rem',
+                        borderRadius: '8px',
+                        border: '2px solid #e2e8f0',
+                        marginBottom: '1rem',
+                        fontSize: '0.875rem'
+                      }}>
+                        <div style={{ fontWeight: 600 }}>{productoSeleccionado?.productoNombre}</div>
+                        <div style={{ color: '#64748b', marginTop: '0.25rem' }}>
+                          {(() => {
+                            const p = parseCantidadIngresada();
+                            return (
+                              <>
+                                Cantidad: <strong>{p.error ? '—' : p.num}</strong> · Máx. {stockSeleccionado.cantidad}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      <label style={{ display: 'block', fontWeight: 600, color: '#9a3412', marginBottom: '0.5rem' }}>
+                        Depósito destino (↑↓ o deslizar)
+                      </label>
+                      <select
+                        ref={selectDestinoRef}
+                        size={sizeListaDestino}
+                        value={sectorDestinoId === '' ? '' : String(sectorDestinoId)}
+                        onChange={(e) => setSectorDestinoId(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            confirmarRecepcion();
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.35rem',
+                          borderRadius: '8px',
+                          border: '2px solid #fdba74',
+                          fontSize: isMobile ? '1rem' : '0.95rem',
+                          background: 'white',
+                          touchAction: 'pan-y'
+                        }}
+                      >
+                        <option value="">Elegí depósito…</option>
+                        {sectoresDestinoLista.map((s: any) => (
+                          <option key={s.id} value={s.id}>{s.nombre}</option>
+                        ))}
+                      </select>
+                      <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem', lineHeight: 1.4 }}>
+                        Elegí el depósito y pulsá <strong>Enter</strong> para agregar a la lista y volver al buscador. <strong>Esc</strong> cancela.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={cancelarCantidad}
+                        style={{
+                          marginTop: '0.75rem',
+                          padding: '0.65rem 1rem',
+                          background: '#f1f5f9',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          width: '100%'
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </>
+                  )}
 
-                     {/* Campo de cantidad - solo visible cuando modoCantidad es true */}
-                     {modoCantidad && stockSeleccionado && (
-                       <div style={{ flex: '0 0 250px' }}>
-                         <label style={{
-                           display: 'block',
-                           fontSize: isMobile ? '0.875rem' : '0.875rem',
-                           fontWeight: '600',
-                           color: '#374151',
-                           marginBottom: isMobile ? '0.5rem' : '0.5rem'
-                         }}>
-                           Cantidad:
-                         </label>
-                         <input
-                           ref={inputCantidadRef}
-                           type="text"
-                           value={cantidad}
-                           onChange={(e) => setCantidad(e.target.value)}
-                           placeholder="Ej: 336, 3*112, 3x60..."
-                           style={{
-                             width: '100%',
-                             padding: isMobile ? '1rem' : '0.75rem',
-                             border: '2px solid #d1d5db',
-                             borderRadius: '8px',
-                             fontSize: isMobile ? '1rem' : '1rem',
-                             background: 'white',
-                             transition: 'all 0.2s ease',
-                             minHeight: isMobile ? '48px' : 'auto'
-                           }}
-                           onFocus={(e) => {
-                             e.target.style.borderColor = '#667eea';
-                             e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-                           }}
-                           onBlur={(e) => {
-                             e.target.style.borderColor = '#d1d5db';
-                             e.target.style.boxShadow = 'none';
-                           }}
-                           onKeyDown={(e) => {
-                             // Permitir todas las teclas de edición normales
-                             if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
-                               return; // Permitir comportamiento normal
-                             }
-                             
-                             // Permitir Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-                             if (e.ctrlKey && (e.key === 'a' || e.key === 'c' || e.key === 'v' || e.key === 'x')) {
-                               return; // Permitir comportamiento normal
-                             }
-                             
-                             // Permitir Enter y Escape
-                             if (e.key === 'Enter' || e.key === 'Escape') {
-                               return; // Permitir comportamiento normal
-                             }
-                           }}
-                         />
-                         <div style={{
-                           fontSize: isMobile ? '0.75rem' : '0.75rem',
-                           color: '#64748b',
-                           marginTop: '0.25rem',
-                           lineHeight: '1.2'
-                         }}>
-                           💡 Puedes usar: +, -, *, /, x, paréntesis
-                         </div>
-                         
-                         {/* Mostrar resultado del cálculo en tiempo real */}
-                         {resultadoCalculo !== null && (
-                           <div style={{
-                             fontSize: isMobile ? '0.75rem' : '0.75rem',
-                             color: '#10b981',
-                             marginTop: '0.25rem',
-                             fontWeight: '600',
-                             background: '#f0fdf4',
-                             padding: '0.25rem 0.5rem',
-                             borderRadius: '4px',
-                             border: '1px solid #bbf7d0'
-                           }}>
-                             ✅ Resultado: {resultadoCalculo.toLocaleString()} unidades
-                           </div>
-                         )}
-                         
-                         {errorCalculo && (
-                           <div style={{
-                             fontSize: isMobile ? '0.75rem' : '0.75rem',
-                             color: '#ef4444',
-                             marginTop: '0.25rem',
-                             fontWeight: '600',
-                             background: '#fef2f2',
-                             padding: '0.25rem 0.5rem',
-                             borderRadius: '4px',
-                             border: '1px solid #fecaca'
-                           }}>
-                             ❌ {errorCalculo}
-                           </div>
-                         )}
-                       </div>
-                     )}
-                   </div>
+                  {!ocultarBuscadorEnviar && (
+                  <>
+                  {!(modoCantidad && stockSeleccionado && modoOperacion === 'recibir') && (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: '1rem',
+                    alignItems: isMobile ? 'stretch' : 'flex-end'
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: isMobile ? '1rem' : '0.875rem',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: isMobile ? '0.75rem' : '0.5rem'
+                      }}>
+                        Buscar por nombre o código:
+                      </label>
+                      <input
+                        ref={inputBusquedaRef}
+                        type="text"
+                        value={filtroBusqueda}
+                        onChange={(e) => setFiltroBusqueda(e.target.value)}
+                        placeholder="Escribe el nombre o código del producto..."
+                        style={{
+                          width: '100%',
+                          padding: isMobile ? '1rem' : '0.75rem',
+                          border: '2px solid #d1d5db',
+                          borderRadius: '8px',
+                          fontSize: isMobile ? '1rem' : '1rem',
+                          background: 'white',
+                          transition: 'all 0.2s ease',
+                          minHeight: isMobile ? '48px' : 'auto'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#667eea';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+                  </div>
+                  )}
 
-                   {/* Información del producto seleccionado cuando está en modo cantidad */}
-                   {modoCantidad && stockSeleccionado && (
-                     <>
-                       <div style={{
-                         background: '#f8fafc',
-                         padding: isMobile ? '1rem' : '0.75rem',
-                         borderRadius: '8px',
-                         border: '2px solid #e2e8f0',
-                         marginTop: isMobile ? '1rem' : '0.75rem',
-                         fontSize: isMobile ? '0.875rem' : '0.875rem'
-                       }}>
-                         <div style={{ fontWeight: '600', marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
-                           {productoSeleccionado?.codigoPersonalizado ? (
-                             <>
-                               <span style={{ color: '#3b82f6', fontWeight: '700' }}>
-                                 {productoSeleccionado.codigoPersonalizado}
-                               </span>
-                               <br />
-                               {productoSeleccionado.productoNombre}
-                             </>
-                           ) : (
-                             productoSeleccionado?.productoNombre
-                           )}
-                         </div>
-                         <div style={{ color: '#64748b', marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
-                           Desde: {stockSeleccionado.ubicacion}
-                         </div>
-                         <div style={{ color: '#64748b' }}>
-                           Stock disponible: {stockSeleccionado.cantidad}
-                         </div>
-                       </div>
-                       
-                       {/* Botones de confirmar y cancelar */}
-                       <div style={{
-                         display: 'flex',
-                         gap: isMobile ? '0.75rem' : '0.5rem',
-                         marginTop: isMobile ? '1rem' : '0.75rem'
-                       }}>
-                         <button
-                           onClick={confirmarRecepcion}
-                           style={{
-                             flex: 1,
-                             padding: isMobile ? '1rem' : '0.75rem',
-                             background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                             color: 'white',
-                             border: 'none',
-                             borderRadius: '8px',
-                             fontSize: isMobile ? '1rem' : '1rem',
-                             fontWeight: '600',
-                             cursor: 'pointer',
-                             transition: 'all 0.2s ease',
-                             minHeight: isMobile ? '48px' : 'auto'
-                           }}
-                           onMouseEnter={(e) => {
-                             e.currentTarget.style.transform = 'translateY(-2px)';
-                             e.currentTarget.style.boxShadow = '0 4px 15px rgba(67, 233, 123, 0.3)';
-                           }}
-                           onMouseLeave={(e) => {
-                             e.currentTarget.style.transform = 'translateY(0)';
-                             e.currentTarget.style.boxShadow = 'none';
-                           }}
-                         >
-                           Confirmar
-                         </button>
-                         <button
-                           onClick={cancelarCantidad}
-                           style={{
-                             padding: isMobile ? '1rem' : '0.75rem 1rem',
-                             background: '#f1f5f9',
-                             color: '#374151',
-                             border: 'none',
-                             borderRadius: '8px',
-                             fontSize: isMobile ? '1rem' : '1rem',
-                             fontWeight: '600',
-                             cursor: 'pointer',
-                             transition: 'all 0.2s ease',
-                             minHeight: isMobile ? '48px' : 'auto'
-                           }}
-                           onMouseEnter={(e) => {
-                             e.currentTarget.style.background = '#e2e8f0';
-                           }}
-                           onMouseLeave={(e) => {
-                             e.currentTarget.style.background = '#f1f5f9';
-                           }}
-                         >
-                           Cancelar
-                         </button>
-                       </div>
-                     </>
-                   )}
-                 </div>
+                  {modoCantidad && stockSeleccionado && modoOperacion === 'recibir' && (
+                    <>
+                      <div style={{
+                        background: '#f8fafc',
+                        padding: isMobile ? '1rem' : '0.75rem',
+                        borderRadius: '8px',
+                        border: '2px solid #e2e8f0',
+                        marginTop: isMobile ? '0.5rem' : '0',
+                        fontSize: isMobile ? '0.875rem' : '0.875rem'
+                      }}>
+                        <div style={{ fontWeight: '600', marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
+                          {productoSeleccionado?.codigoPersonalizado ? (
+                            <>
+                              <span style={{ color: '#3b82f6', fontWeight: '700' }}>
+                                {productoSeleccionado.codigoPersonalizado}
+                              </span>
+                              <br />
+                              {productoSeleccionado.productoNombre}
+                            </>
+                          ) : (
+                            productoSeleccionado?.productoNombre
+                          )}
+                        </div>
+                        <div style={{ color: '#64748b', marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
+                          Desde: {stockSeleccionado.ubicacion}
+                        </div>
+                        <div style={{ color: '#64748b' }}>
+                          Stock disponible: {stockSeleccionado.cantidad}
+                        </div>
+                      </div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: isMobile ? '0.875rem' : '0.875rem',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginTop: isMobile ? '0.85rem' : '0.75rem',
+                        marginBottom: isMobile ? '0.5rem' : '0.4rem'
+                      }}>
+                        Cantidad a recibir
+                      </label>
+                      <input
+                        ref={inputCantidadRef}
+                        type="text"
+                        inputMode="numeric"
+                        value={cantidad}
+                        onChange={(e) => setCantidad(e.target.value)}
+                        placeholder="Ej: 336, 3*112, 3x60..."
+                        autoComplete="off"
+                        style={{
+                          width: '100%',
+                          padding: isMobile ? '1rem' : '0.75rem',
+                          border: '2px solid #d1d5db',
+                          borderRadius: '8px',
+                          fontSize: isMobile ? '1rem' : '1rem',
+                          background: 'white',
+                          transition: 'all 0.2s ease',
+                          minHeight: isMobile ? '48px' : 'auto'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#667eea';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                      <div style={{
+                        fontSize: isMobile ? '0.75rem' : '0.75rem',
+                        color: '#64748b',
+                        marginTop: '0.35rem',
+                        lineHeight: 1.35
+                      }}>
+                        Podés usar +, −, ×, /, x y paréntesis. <strong>Enter</strong> agrega a la lista · <strong>Esc</strong> vuelve al paso anterior.
+                      </div>
+                      {resultadoCalculo !== null && (
+                        <div style={{
+                          fontSize: isMobile ? '0.75rem' : '0.75rem',
+                          color: '#10b981',
+                          marginTop: '0.35rem',
+                          fontWeight: '600',
+                          background: '#f0fdf4',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '4px',
+                          border: '1px solid #bbf7d0'
+                        }}>
+                          Resultado: {resultadoCalculo.toLocaleString()} unidades
+                        </div>
+                      )}
+                      {errorCalculo && (
+                        <div style={{
+                          fontSize: isMobile ? '0.75rem' : '0.75rem',
+                          color: '#ef4444',
+                          marginTop: '0.35rem',
+                          fontWeight: '600',
+                          background: '#fef2f2',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '4px',
+                          border: '1px solid #fecaca'
+                        }}>
+                          {errorCalculo}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={cancelarCantidad}
+                        style={{
+                          marginTop: isMobile ? '0.85rem' : '0.75rem',
+                          width: '100%',
+                          padding: isMobile ? '0.75rem' : '0.65rem 1rem',
+                          background: '#f1f5f9',
+                          color: '#374151',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: isMobile ? '0.95rem' : '0.875rem',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          minHeight: isMobile ? '44px' : 'auto'
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </>
+                  )}
+                  </>
+                  )}
+                </div>
 
                 {/* Instrucciones */}
-                {!filtroBusqueda.trim() && (
+                {!filtroBusqueda.trim() && !ocultarBuscadorEnviar && (
                   <div style={{
                     textAlign: 'center',
                     padding: '2rem',
@@ -1273,7 +1489,9 @@ const RecibirProductos: React.FC = () => {
                         fontWeight: '600',
                         color: '#374151'
                       }}>
-                        📍 Ubicaciones actuales de {productoSeleccionado.productoNombre}
+                        {modoOperacion === 'enviar'
+                          ? `📍 Stock en "${sector?.nombre}" — ${productoSeleccionado.productoNombre}`
+                          : `📍 Origen (otros depósitos) — ${productoSeleccionado.productoNombre}`}
                       </span>
                     </div>
                     <div ref={listaUbicacionesRef}>
@@ -1330,29 +1548,21 @@ const RecibirProductos: React.FC = () => {
                   </div>
                 )}
 
-                
+                </div>
               </div>
             </div>
 
-            {/* Panel central - Lista de recepciones */}
+            {/* Panel central - Lista de movimientos pendientes */}
             <div className="panel-recepcion">
-              <div className="card" style={{
-                background: 'white',
-                borderRadius: '16px',
-                padding: '24px',
-                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                border: '2px solid #e2e8f0'
-              }}>
-                <h2 style={{
-                  fontSize: isMobile ? '1.25rem' : '1.5rem',
-                  fontWeight: '600',
-                  color: '#1e293b',
-                  margin: '0 0 1.5rem 0'
-                }}>
-                  📋 Lista de Recepción
-                </h2>
-
-                {recepciones.length === 0 ? (
+              <div className="card recibir-card">
+                <div className="recibir-card__header">
+                  <h2 className="recibir-card__title">Lista de movimientos</h2>
+                  <p className="recibir-card__subtitle">
+                    Marcá cada línea con el tilde cuando esté revisada. El registro solo corre cuando <strong>todas</strong> están confirmadas.
+                  </p>
+                </div>
+                <div className="recibir-card__body contenido-recepcion">
+                {movimientos.length === 0 ? (
                   <div style={{
                     textAlign: 'center',
                     padding: '2rem',
@@ -1363,28 +1573,24 @@ const RecibirProductos: React.FC = () => {
                   }}>
                     <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📋</div>
                     <p style={{ margin: 0, fontSize: '1rem' }}>
-                      No hay productos en la lista de recepción
+                      No hay líneas en la lista
                     </p>
                   </div>
                 ) : (
                   <div 
                     ref={listaRecepcionesRef}
-                    style={{ 
-                      height: '400px', 
-                      overflowY: 'auto', 
-                      overflowX: 'hidden',
-                      marginBottom: '1.5rem' 
-                    }}>
-                    {recepciones.map((recepcion, index) => (
+                    className="lista-recepciones"
+                  >
+                    {movimientos.map((mov, index) => (
                       <div
-                        key={index}
+                        key={mov.id}
                         data-product-index={index}
                         style={{
                           padding: isMobile ? '1rem' : '1rem',
-                          border: '2px solid #e2e8f0',
+                          border: `2px solid ${mov.confirmado ? '#86efac' : '#e2e8f0'}`,
                           borderRadius: '8px',
                           marginBottom: isMobile ? '1rem' : '0.75rem',
-                          background: '#f8fafc',
+                          background: mov.confirmado ? '#f0fdf4' : '#f8fafc',
                           minHeight: isMobile ? '70px' : 'auto'
                         }}
                       >
@@ -1392,24 +1598,45 @@ const RecibirProductos: React.FC = () => {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'flex-start',
-                          marginBottom: isMobile ? '0.75rem' : '0.5rem'
+                          gap: '0.5rem'
                         }}>
-                          <div style={{ flex: 1 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              marginBottom: '0.35rem'
+                            }}>
+                              <span style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                padding: '0.15rem 0.45rem',
+                                borderRadius: '4px',
+                                background: mov.tipo === 'recibir' ? '#d1fae5' : '#ffedd5',
+                                color: mov.tipo === 'recibir' ? '#065f46' : '#9a3412'
+                              }}>
+                                {mov.tipo === 'recibir' ? 'Recibir' : 'Enviar'}
+                              </span>
+                              {mov.confirmado && (
+                                <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: 700 }}>✓ Confirmada</span>
+                              )}
+                            </div>
                             <div style={{ 
                               fontWeight: '600', 
                               marginBottom: isMobile ? '0.5rem' : '0.25rem',
                               fontSize: isMobile ? '1rem' : 'inherit',
                               lineHeight: isMobile ? '1.3' : 'inherit'
                             }}>
-                              {recepcion.productoNombre}
+                              {mov.productoNombre}
                             </div>
-                            {recepcion.codigoPersonalizado && (
+                            {mov.codigoPersonalizado && (
                               <div style={{ 
                                 fontSize: isMobile ? '0.8rem' : '0.875rem', 
                                 color: '#64748b', 
                                 marginBottom: isMobile ? '0.5rem' : '0.25rem' 
                               }}>
-                                Código: {recepcion.codigoPersonalizado}
+                                Código: {mov.codigoPersonalizado}
                               </div>
                             )}
                             <div style={{ 
@@ -1417,96 +1644,116 @@ const RecibirProductos: React.FC = () => {
                               color: '#64748b', 
                               marginBottom: isMobile ? '0.5rem' : '0.25rem' 
                             }}>
-                              Desde: {recepcion.ubicacion}
+                              {mov.tipo === 'recibir' ? 'Desde' : 'Origen'}: {mov.ubicacion}
                             </div>
+                            {mov.tipo === 'enviar' && mov.sectorDestinoNombre && (
+                              <div style={{ 
+                                fontSize: isMobile ? '0.8rem' : '0.875rem', 
+                                color: '#9a3412',
+                                fontWeight: 600,
+                                marginBottom: isMobile ? '0.5rem' : '0.25rem' 
+                              }}>
+                                → Hacia: {mov.sectorDestinoNombre}
+                              </div>
+                            )}
                             <div style={{ 
                               fontSize: isMobile ? '0.8rem' : '0.875rem', 
                               color: '#64748b' 
                             }}>
-                              Cantidad: {recepcion.cantidad}
+                              Cantidad: {mov.cantidad}
                             </div>
                           </div>
-                          <button
-                            onClick={() => removerRecepcion(index)}
-                            style={{
-                              background: '#ef4444',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              padding: isMobile ? '0.5rem' : '0.25rem 0.5rem',
-                              fontSize: isMobile ? '0.875rem' : '0.75rem',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease',
-                              minHeight: isMobile ? '2rem' : 'auto',
-                              minWidth: isMobile ? '2rem' : 'auto'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = '#dc2626';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = '#ef4444';
-                            }}
-                          >
-                            ✕
-                          </button>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'stretch' }}>
+                            <button
+                              type="button"
+                              title={mov.confirmado ? 'Desmarcar confirmación' : 'Confirmar línea'}
+                              onClick={() => toggleConfirmarLinea(mov.id)}
+                              style={{
+                                background: mov.confirmado ? '#22c55e' : '#e2e8f0',
+                                color: mov.confirmado ? 'white' : '#475569',
+                                border: 'none',
+                                borderRadius: '6px',
+                                padding: isMobile ? '0.5rem 0.6rem' : '0.35rem 0.5rem',
+                                fontSize: '1rem',
+                                cursor: 'pointer',
+                                fontWeight: 700,
+                                minWidth: '44px'
+                              }}
+                            >
+                              {mov.confirmado ? '✓' : '○'}
+                            </button>
+                            {!mov.confirmado && (
+                              <button
+                                type="button"
+                                title="Quitar de la lista"
+                                onClick={() => removerMovimiento(mov.id)}
+                                style={{
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  padding: isMobile ? '0.5rem' : '0.35rem 0.5rem',
+                                  fontSize: isMobile ? '0.875rem' : '0.75rem',
+                                  cursor: 'pointer',
+                                  minWidth: '44px'
+                                }}
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
+                </div>
               </div>
             </div>
 
             {/* Panel derecho - Resumen y botón */}
             <div className="panel-resumen">
-              <div className="card" style={{
-                background: 'white',
-                borderRadius: '16px',
-                padding: '24px',
-                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                border: '2px solid #e2e8f0'
-              }}>
-                <h2 style={{
-                  fontSize: isMobile ? '1.5rem' : '1.25rem',
-                  fontWeight: '600',
-                  color: '#1e293b',
-                  margin: '0 0 1.5rem 0'
-                }}>
-                  📊 Resumen
-                </h2>
-
-                <div style={{ marginBottom: '2rem' }}>
+              <div className="card recibir-card">
+                <div className="recibir-card__header">
+                  <h2 className="recibir-card__title">Resumen</h2>
+                </div>
+                <div className="recibir-card__body recibir-card__body--resumen">
+                <div style={{ marginBottom: '1rem', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: isMobile ? '1.5rem' : '1rem',
-                    padding: isMobile ? '1rem' : '0.75rem',
+                    marginBottom: isMobile ? '0.75rem' : '0.5rem',
+                    padding: isMobile ? '0.65rem 0.75rem' : '0.5rem 0.65rem',
                     background: '#f8fafc',
-                    borderRadius: '8px'
+                    borderRadius: '8px',
+                    border: '1px solid #eef2f7'
                   }}>
                     <span style={{ 
                       fontWeight: '600', 
                       color: '#374151',
                       fontSize: isMobile ? '1rem' : 'inherit'
                     }}>
-                      Productos:
+                      Líneas:
                     </span>
                     <span style={{ 
                       fontWeight: '700', 
-                      color: '#667eea', 
-                      fontSize: isMobile ? '1.5rem' : '1.25rem' 
+                      color: '#4f46e5', 
+                      fontSize: isMobile ? '1.25rem' : '1.1rem',
+                      fontVariantNumeric: 'tabular-nums'
                     }}>
-                      {recepciones.length}
+                      {movimientos.length}
                     </span>
                   </div>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    padding: isMobile ? '1rem' : '0.75rem',
+                    marginBottom: isMobile ? '0.65rem' : '0.5rem',
+                    padding: isMobile ? '0.65rem 0.75rem' : '0.5rem 0.65rem',
                     background: '#f8fafc',
-                    borderRadius: '8px'
+                    borderRadius: '8px',
+                    border: '1px solid #eef2f7'
                   }}>
                     <span style={{ 
                       fontWeight: '600', 
@@ -1517,45 +1764,92 @@ const RecibirProductos: React.FC = () => {
                     </span>
                     <span style={{ 
                       fontWeight: '700', 
-                      color: '#667eea', 
-                      fontSize: isMobile ? '1.5rem' : '1.25rem' 
+                      color: '#4f46e5', 
+                      fontSize: isMobile ? '1.25rem' : '1.1rem',
+                      fontVariantNumeric: 'tabular-nums'
                     }}>
-                      {recepciones.reduce((sum, r) => sum + r.cantidad, 0)}
+                      {movimientos.reduce((sum, r) => sum + r.cantidad, 0)}
+                    </span>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: isMobile ? '0.65rem 0.75rem' : '0.5rem 0.65rem',
+                    background: '#f0fdf4',
+                    borderRadius: '8px',
+                    border: '1px solid #bbf7d0'
+                  }}>
+                    <span style={{ 
+                      fontWeight: '600', 
+                      color: '#374151',
+                      fontSize: isMobile ? '0.95rem' : 'inherit'
+                    }}>
+                      Confirmadas:
+                    </span>
+                    <span style={{ 
+                      fontWeight: '700', 
+                      color: '#15803d', 
+                      fontSize: isMobile ? '1.15rem' : '1rem',
+                      fontVariantNumeric: 'tabular-nums'
+                    }}>
+                      {movimientos.filter(m => m.confirmado).length} / {movimientos.length || 0}
                     </span>
                   </div>
                 </div>
 
                 <button
-                  onClick={guardarRecepciones}
-                  disabled={guardando || recepciones.length === 0}
+                  onClick={registrarMovimientos}
+                  disabled={
+                    guardando ||
+                    movimientos.length === 0 ||
+                    !movimientos.every(m => m.confirmado)
+                  }
                   style={{
                     width: '100%',
                     padding: isMobile ? '1.25rem' : '1rem',
-                    background: guardando || recepciones.length === 0 ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background:
+                      guardando ||
+                      movimientos.length === 0 ||
+                      !movimientos.every(m => m.confirmado)
+                        ? '#9ca3af'
+                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     color: 'white',
                     border: 'none',
                     borderRadius: '8px',
                     fontSize: isMobile ? '1.125rem' : '1rem',
                     fontWeight: '600',
-                    cursor: guardando || recepciones.length === 0 ? 'not-allowed' : 'pointer',
+                    cursor:
+                      guardando ||
+                      movimientos.length === 0 ||
+                      !movimientos.every(m => m.confirmado)
+                        ? 'not-allowed'
+                        : 'pointer',
                     transition: 'all 0.2s ease',
                     minHeight: isMobile ? '56px' : 'auto'
                   }}
                   onMouseEnter={(e) => {
-                    if (!guardando && recepciones.length > 0) {
+                    if (!guardando && movimientos.length > 0 && movimientos.every(m => m.confirmado)) {
                       e.currentTarget.style.transform = 'translateY(-2px)';
                       e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!guardando && recepciones.length > 0) {
+                    if (!guardando && movimientos.length > 0 && movimientos.every(m => m.confirmado)) {
                       e.currentTarget.style.transform = 'translateY(0)';
                       e.currentTarget.style.boxShadow = 'none';
                     }
                   }}
                 >
-                  {guardando ? 'Guardando...' : 'Confirmar Recepción'}
+                  {guardando
+                    ? 'Registrando...'
+                    : movimientos.length === 0
+                      ? 'Registrar movimientos'
+                      : !movimientos.every(m => m.confirmado)
+                        ? 'Confirmá todas las líneas'
+                        : 'Registrar movimientos'}
                 </button>
+                </div>
               </div>
             </div>
           </div>

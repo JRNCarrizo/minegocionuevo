@@ -6,6 +6,132 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Encabezado de página: bajo en altura, título + operación en una sola franja */
+.recibir-page-header {
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.55rem 0.85rem 0.6rem;
+  margin-bottom: 1rem;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 4px 14px rgba(15, 23, 42, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.recibir-page-header__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+}
+
+.recibir-page-header__back {
+  flex-shrink: 0;
+  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.22);
+  border-radius: 8px;
+  color: #4f46e5;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  line-height: 1.2;
+}
+
+.recibir-page-header__back:hover {
+  background: rgba(102, 126, 234, 0.14);
+  border-color: rgba(102, 126, 234, 0.35);
+}
+
+.recibir-page-header__titles {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.recibir-page-header__title {
+  margin: 0;
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.recibir-page-header__meta {
+  margin: 0.1rem 0 0 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.recibir-page-header__meta strong {
+  color: #334155;
+  font-weight: 600;
+}
+
+.recibir-page-header__hint-inline {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.recibir-page-header__segment {
+  flex-shrink: 0;
+  display: inline-flex;
+  padding: 2px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  gap: 2px;
+}
+
+.recibir-page-header__mode {
+  border: none;
+  background: transparent;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1.2;
+  transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.recibir-page-header__mode--recibir-active {
+  background: linear-gradient(180deg, #d1fae5 0%, #bbf7d0 100%);
+  color: #065f46;
+  box-shadow: 0 1px 2px rgba(5, 150, 105, 0.12);
+}
+
+.recibir-page-header__mode--enviar-active {
+  background: linear-gradient(180deg, #ffedd5 0%, #fed7aa 100%);
+  color: #9a3412;
+  box-shadow: 0 1px 2px rgba(234, 88, 12, 0.12);
+}
+
+@media (max-width: 480px) {
+  .recibir-page-header {
+    padding: 0.5rem 0.65rem 0.55rem;
+  }
+
+  .recibir-page-header__segment {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .recibir-page-header__mode {
+    flex: 1;
+    text-align: center;
+    padding: 0.4rem 0.4rem;
+    font-size: 0.7rem;
+  }
+}
+
 /* Contenedor principal con margen inferior */
 .recibir-productos-container {
   min-height: 100vh;
@@ -17,21 +143,16 @@
   margin-bottom: 2rem;
 }
 
-/* Margen extra para la lista de recepciones */
-.lista-recepciones {
-  margin-bottom: 3rem;
-}
-
 /* Margen para el botón de guardar */
 .boton-guardar {
   margin-bottom: 2rem;
 }
 
-/* Layout responsivo */
+/* Mismas proporciones que Crear planilla (carga de planilla): 350px | flexible | 250px */
 .recibir-productos-container {
   display: grid;
-  grid-template-columns: 1fr 1fr 300px; /* Tres columnas: buscador, recepción, resumen */
-  gap: 1.5rem;
+  grid-template-columns: 350px 1fr 250px;
+  gap: 2rem;
   min-height: 100vh;
   padding-bottom: 4rem;
   width: 100%;
@@ -56,26 +177,23 @@
   flex-direction: column;
 }
 
-.panel-busqueda .card {
+.panel-busqueda .card.recibir-card {
   min-height: 550px;
   height: 550px;
-  display: flex;
-  flex-direction: column;
 }
 
-/* Panel de recepción */
+/* Panel de recepción: columna centrada para la card acotada */
 .panel-recepcion {
   min-height: 600px;
   height: 600px;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
-.panel-recepcion .card {
+.panel-recepcion .card.recibir-card {
   min-height: 550px;
   height: 550px;
-  display: flex;
-  flex-direction: column;
 }
 
 /* Panel de resumen (card pequeña a la derecha) */
@@ -86,21 +204,74 @@
   flex-direction: column;
 }
 
-.panel-resumen .card {
+.panel-resumen .card.recibir-card {
   min-height: 350px;
   height: 350px;
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem;
 }
 
-/* Asegurar que el contenido del buscador tenga espacio suficiente */
-.buscador-avanzado {
-  min-height: 500px;
-  height: 500px;
+/* Cards: cabecera compacta + cuerpo (más nítido y menos “bloque ancho”) */
+.recibir-productos-container .card.recibir-card {
+  padding: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.recibir-card__header {
+  flex-shrink: 0;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid #eef2f7;
+  background: linear-gradient(180deg, #fafbfc 0%, #f4f6f9 100%);
+}
+
+.recibir-card__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.recibir-card__subtitle {
+  margin: 0.35rem 0 0 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.45;
+  max-width: 42rem;
+}
+
+.recibir-card__body {
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.875rem 1rem 1rem;
+}
+
+.recibir-card__body--resumen {
+  padding-bottom: 1rem;
+}
+
+.panel-recepcion .card.recibir-card {
+  width: 100%;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Contenido del buscador: ocupa el alto de la card vía flex */
+.buscador-avanzado {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Dar más espacio a la lista de productos */
@@ -118,27 +289,26 @@
   overflow-y: auto;
 }
 
-/* Asegurar que el contenido de recepción tenga la misma altura */
 .contenido-recepcion {
-  min-height: 500px;
-  height: 500px;
+  min-height: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  flex: 1;
 }
 
-/* Hacer que la lista de recepciones ocupe el espacio disponible */
 .lista-recepciones {
   flex: 1;
+  min-height: 180px;
   overflow-y: auto;
-  min-height: 300px;
+  overflow-x: hidden;
+  margin-bottom: 0;
 }
 
 /* Responsive design */
 @media (max-width: 1200px) {
   .recibir-productos-container {
-    grid-template-columns: 1fr 1fr; /* Dos columnas en tablets */
-    gap: 1rem;
+    grid-template-columns: 350px 1fr;
+    gap: 1.5rem;
   }
   
   .panel-resumen {
@@ -147,7 +317,7 @@
     height: 300px;
   }
   
-  .panel-resumen .card {
+  .panel-resumen .card.recibir-card {
     min-height: 250px;
     height: 250px;
   }
@@ -167,12 +337,20 @@
     height: auto;
   }
   
-  .panel-busqueda .card,
-  .panel-recepcion .card,
-  .panel-resumen .card {
+  .panel-busqueda .card.recibir-card,
+  .panel-recepcion .card.recibir-card,
+  .panel-resumen .card.recibir-card {
     min-height: auto;
     height: auto;
-    padding: 1rem;
+    max-width: none;
+  }
+
+  .recibir-card__header {
+    padding: 0.6rem 0.875rem;
+  }
+
+  .recibir-card__body {
+    padding: 0.75rem 0.875rem 0.875rem;
   }
   
   .buscador-avanzado,
@@ -193,11 +371,5 @@
   .recibir-productos-container {
     padding: 0.5rem;
     gap: 0.75rem;
-  }
-  
-  .panel-busqueda .card,
-  .panel-recepcion .card,
-  .panel-resumen .card {
-    padding: 0.75rem;
   }
 }
