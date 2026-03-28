@@ -351,7 +351,7 @@ export default function RoturasPerdidas() {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+        background: '#f8fafc',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -381,7 +381,7 @@ export default function RoturasPerdidas() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)'
+      background: '#f8fafc'
     }}>
       <NavbarAdmin
         onCerrarSesion={cerrarSesion}
@@ -390,7 +390,7 @@ export default function RoturasPerdidas() {
       />
 
       <div style={{
-        maxWidth: '1400px',
+        maxWidth: '1200px',
         margin: '0 auto',
         padding: isMobile ? '8rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
       }}>
@@ -454,113 +454,92 @@ export default function RoturasPerdidas() {
           </div>
         )}
 
-        {/* Header */}
+        {/* Encabezado y filtros — mismo criterio que Carga de Planillas / Retornos */}
         <div style={{
           background: 'white',
           borderRadius: '16px',
           padding: isMobile ? '16px' : '24px',
           marginBottom: '2rem',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
           border: '2px solid #e2e8f0'
         }}>
           <div style={{
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'space-between',
-            flexDirection: isMobile ? 'column' : 'row',
-            gap: '1rem'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem'
-            }}>
-              <div style={{
-                width: '3rem',
-                height: '3rem',
-                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                borderRadius: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem',
-                color: 'white'
-              }}>
-                💔
-              </div>
-              <div>
-                <h1 style={{
-                  fontSize: isMobile ? '1.5rem' : '2rem',
-                  fontWeight: '700',
-                  color: '#1e293b',
-                  margin: 0
-                }}>
-                  Roturas y Pérdidas
-                </h1>
-                                 <p style={{
-                   color: '#64748b',
-                   margin: '0.25rem 0 0 0',
-                   fontSize: '0.875rem'
-                 }}>
-                   Control diario de productos dañados o perdidos
-                 </p>
-                 <p style={{
-                   color: '#059669',
-                   margin: '0.25rem 0 0 0',
-                   fontSize: '0.75rem',
-                   fontWeight: '500'
-                 }}>
-                   💡 Presiona Enter para agregar una nueva rotura/pérdida
-                 </p>
-              </div>
-            </div>
-            
-            <div style={{
-              display: 'flex',
-              gap: isMobile ? '8px' : '0.75rem',
-              flexDirection: isMobile ? 'column' : 'row'
-            }}>
-              <button
-                onClick={() => setMostrarModalAgregar(true)}
-                style={{
-                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: isMobile ? '12px 16px' : '0.75rem 1.5rem',
-                  fontSize: isMobile ? '0.8rem' : '0.875rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                  justifyContent: 'center'
-                }}
-              >
-                ➕ Agregar Rotura/Pérdida
-              </button>
-              
-
-            </div>
-          </div>
-        </div>
-
-        {/* Filtros */}
-        <div style={{
-          background: 'white',
-          borderRadius: '1rem',
-          padding: '1.5rem',
-          marginBottom: '2rem',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
+            alignItems: 'center',
+            flexWrap: isMobile ? 'wrap' : 'nowrap',
             gap: '1rem'
           }}>
             <div>
+              <h1 style={{
+                fontSize: isMobile ? '1.5rem' : '2rem',
+                fontWeight: '700',
+                color: '#1e293b',
+                margin: '0 0 0.5rem 0'
+              }}>
+                💔 Roturas y Pérdidas
+              </h1>
+              <p style={{
+                color: '#64748b',
+                margin: 0,
+                fontSize: '1rem'
+              }}>
+                Control diario de productos dañados o perdidos
+              </p>
+              <p style={{
+                color: '#059669',
+                margin: '0.35rem 0 0 0',
+                fontSize: '0.8125rem',
+                fontWeight: '500'
+              }}>
+                💡 Enter — agregar rotura o pérdida
+              </p>
+            </div>
+            <button
+              onClick={() => setMostrarModalAgregar(true)}
+              style={{
+                background: '#1e293b',
+                color: 'white',
+                border: '1px solid #334155',
+                borderRadius: '8px',
+                padding: isMobile ? '12px 16px' : '0.75rem 1.5rem',
+                fontSize: isMobile ? '0.8rem' : '1rem',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.2s ease',
+                justifyContent: 'center'
+              }}
+              onMouseEnter={(e) => {
+                if (!isMobile) {
+                  e.currentTarget.style.background = '#334155';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isMobile) {
+                  e.currentTarget.style.background = '#1e293b';
+                }
+              }}
+            >
+              ➕ Agregar Rotura/Pérdida
+            </button>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            flexWrap: isMobile ? 'wrap' : 'nowrap',
+            alignItems: isMobile ? 'stretch' : 'flex-end',
+            gap: isMobile ? '1rem' : '0.75rem',
+            marginTop: '1.25rem'
+          }}>
+            <div style={{
+              flex: isMobile ? 'none' : '1 1 0',
+              minWidth: isMobile ? '100%' : '160px',
+              width: isMobile ? '100%' : undefined
+            }}>
               <label style={{
                 display: 'block',
                 fontSize: '0.875rem',
@@ -574,135 +553,152 @@ export default function RoturasPerdidas() {
                 type="text"
                 value={filtroBusqueda}
                 onChange={(e) => setFiltroBusqueda(e.target.value)}
-                placeholder="Buscar por producto, código o observaciones..."
+                placeholder="Producto, código u observaciones..."
+                title="Buscar por producto, código o observaciones"
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
-                  border: modoNavegacion && elementoSeleccionado === -1 ? '3px solid #3b82f6' : '1px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
+                  padding: isMobile ? '12px' : '0.75rem',
+                  border: modoNavegacion && elementoSeleccionado === -1 ? '3px solid #3b82f6' : '2px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: isMobile ? '0.75rem' : '1rem',
                   outline: 'none',
                   transition: 'border-color 0.2s',
-                  background: modoNavegacion && elementoSeleccionado === -1 ? '#eff6ff' : 'white'
+                  background: modoNavegacion && elementoSeleccionado === -1 ? '#eff6ff' : 'white',
+                  boxSizing: 'border-box'
                 }}
               />
-              {filtroBusqueda && (
-                <button
-                  onClick={() => setFiltroBusqueda('')}
-                  style={{
-                    marginTop: '0.5rem',
-                    padding: '0.25rem 0.75rem',
-                    background: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.25rem',
-                    fontSize: '0.75rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Limpiar búsqueda
-                </button>
-              )}
             </div>
-            
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#374151',
-                marginBottom: '0.5rem'
-              }}>
-                📅 Filtrar por rango de fechas
-              </label>
+
+            <div style={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: isMobile ? '0.75rem' : '0.5rem',
+              alignItems: isMobile ? 'stretch' : 'flex-end',
+              flexShrink: 0
+            }}>
+              <div style={{ width: isMobile ? '100%' : 'auto' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
+                  📅 Desde
+                </label>
+                <input
+                  type="date"
+                  value={filtroFechaDesde}
+                  onChange={(e) => setFiltroFechaDesde(e.target.value)}
+                  style={{
+                    width: isMobile ? '100%' : 'auto',
+                    minWidth: isMobile ? undefined : '140px',
+                    padding: isMobile ? '12px' : '0.75rem',
+                    border: '2px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: isMobile ? '0.75rem' : '1rem',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                    background: 'white',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+              <div style={{ width: isMobile ? '100%' : 'auto' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
+                  Hasta
+                </label>
+                <input
+                  type="date"
+                  value={filtroFechaHasta}
+                  onChange={(e) => setFiltroFechaHasta(e.target.value)}
+                  min={filtroFechaDesde}
+                  style={{
+                    width: isMobile ? '100%' : 'auto',
+                    minWidth: isMobile ? undefined : '140px',
+                    padding: isMobile ? '12px' : '0.75rem',
+                    border: '2px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: isMobile ? '0.75rem' : '1rem',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                    background: 'white',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            </div>
+
+            {(filtroBusqueda || filtroFechaDesde || filtroFechaHasta) && (
               <div style={{
                 display: 'flex',
-                gap: '1rem',
-                flexDirection: isMobile ? 'column' : 'row'
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                gap: '0.35rem',
+                alignItems: 'center',
+                alignSelf: isMobile ? 'stretch' : 'flex-end',
+                flexShrink: 0,
+                paddingBottom: isMobile ? 0 : '2px'
               }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '0.75rem',
-                    color: '#6b7280',
-                    marginBottom: '0.25rem'
-                  }}>
-                    Desde
-                  </label>
-                  <input
-                    type="date"
-                    value={filtroFechaDesde}
-                    onChange={(e) => setFiltroFechaDesde(e.target.value)}
+                {filtroBusqueda && (
+                  <button
+                    type="button"
+                    onClick={() => setFiltroBusqueda('')}
                     style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s'
+                      padding: '0.35rem 0.6rem',
+                      background: '#f1f5f9',
+                      color: '#475569',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
                     }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '0.75rem',
-                    color: '#6b7280',
-                    marginBottom: '0.25rem'
-                  }}>
-                    Hasta
-                  </label>
-                  <input
-                    type="date"
-                    value={filtroFechaHasta}
-                    onChange={(e) => setFiltroFechaHasta(e.target.value)}
-                    min={filtroFechaDesde}
+                  >
+                    ✕ Búsqueda
+                  </button>
+                )}
+                {(filtroFechaDesde || filtroFechaHasta) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFiltroFechaDesde('');
+                      setFiltroFechaHasta('');
+                    }}
                     style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s'
+                      padding: '0.35rem 0.6rem',
+                      background: '#f1f5f9',
+                      color: '#475569',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
                     }}
-                  />
-                </div>
+                  >
+                    ✕ Fechas
+                  </button>
+                )}
               </div>
-              {(filtroFechaDesde || filtroFechaHasta) && (
-                <button
-                  onClick={() => {
-                    setFiltroFechaDesde('');
-                    setFiltroFechaHasta('');
-                  }}
-                  style={{
-                    marginTop: '0.5rem',
-                    padding: '0.25rem 0.75rem',
-                    background: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.25rem',
-                    fontSize: '0.75rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Limpiar filtros de fecha
-                </button>
-              )}
-            </div>
-            
-
+            )}
           </div>
         </div>
 
         {/* Lista de Roturas y Pérdidas */}
         <div style={{
           background: 'white',
-          borderRadius: '1rem',
-          padding: '1.5rem',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
+          borderRadius: '16px',
+          padding: isMobile ? '16px' : '24px',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+          border: '2px solid #e2e8f0'
         }}>
           
           {/* Indicador de filtros aplicados */}

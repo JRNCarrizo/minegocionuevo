@@ -1375,54 +1375,6 @@ export default function InventarioCompleto() {
           paddingLeft: isMobile ? '0.5rem' : '2rem',
           paddingRight: isMobile ? '0.5rem' : '2rem'
         }}>
-          {/* Header */}
-          <div style={{
-            textAlign: 'center',
-            marginBottom: '2rem'
-          }}>
-            <h1 style={{
-              color: '#1e293b',
-              fontSize: isMobile ? '1.8rem' : '2.5rem',
-              fontWeight: 'bold',
-              marginBottom: '0.5rem',
-              textShadow: 'none'
-            }}>
-              🏢 Inventario Completo
-            </h1>
-            <p style={{
-              color: '#64748b',
-              fontSize: isMobile ? '1rem' : '1.2rem',
-              margin: 0
-            }}>
-              Inventario de todos los sectores con doble verificación
-            </p>
-            
-            {/* Instrucciones de navegación */}
-            <div style={{
-              marginTop: '1rem',
-              padding: '0.75rem 1.5rem',
-              background: 'rgba(255, 255, 255, 0.8)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '0.75rem',
-              border: '1px solid rgba(148, 163, 184, 0.4)',
-              boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
-              display: 'inline-block'
-            }}>
-              <div style={{
-                color: '#475569',
-                fontSize: '0.9rem',
-                display: 'flex',
-                gap: '1rem',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                justifyContent: 'center'
-              }}>
-                <span><strong>Enter</strong> Crear Inventario</span>
-                <span><strong>Esc</strong> Volver</span>
-              </div>
-            </div>
-          </div>
-          
           {!inventario ? (
             /* Crear nuevo inventario */
             <div style={{
@@ -2934,11 +2886,11 @@ export default function InventarioCompleto() {
           {/* Registros de inventarios completados */}
           {registrosInventarios.length > 0 && (
             <div style={{
-              background: 'white',
-              borderRadius: '1.25rem',
+              background: '#eef2f6',
+              borderRadius: '1rem',
               padding: isMobile ? '1.5rem' : '2rem',
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)',
-              border: '2px solid #f1f5f9',
+              boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+              border: '1px solid #e2e8f0',
               marginTop: '2rem'
             }}>
               <div style={{
@@ -2947,7 +2899,7 @@ export default function InventarioCompleto() {
                 justifyContent: 'space-between',
                 marginBottom: '1.75rem',
                 paddingBottom: '1rem',
-                borderBottom: '2px solid #f1f5f9'
+                borderBottom: '1px solid #d8dee6'
               }}>
                 <h3 style={{
                   margin: 0,
@@ -2959,8 +2911,9 @@ export default function InventarioCompleto() {
                   gap: '0.5rem'
                 }}>
                   <span style={{
-                    background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                    borderRadius: '0.75rem',
+                    background: '#f1f5f9',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem',
                     padding: '0.5rem',
                     display: 'inline-flex',
                     fontSize: '1.25rem'
@@ -2968,12 +2921,14 @@ export default function InventarioCompleto() {
                   Historial de Inventarios
                 </h3>
                 <div style={{
-                  background: '#f0f4ff',
-                  color: '#5b21b6',
+                  background: '#ffffff',
+                  color: '#334155',
                   padding: '0.5rem 1rem',
-                  borderRadius: '0.75rem',
+                  borderRadius: '0.5rem',
                   fontSize: '0.85rem',
-                  fontWeight: '600'
+                  fontWeight: '600',
+                  border: '1px solid #d8dee6',
+                  boxShadow: '0 1px 2px rgba(15, 23, 42, 0.05)'
                 }}>
                   {registrosInventarios.length} {registrosInventarios.length === 1 ? 'registro' : 'registros'}
                 </div>
@@ -2988,14 +2943,22 @@ export default function InventarioCompleto() {
                   <div
                     key={registro.inventarioId}
                     style={{
-                      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                      borderRadius: '1rem',
+                      background: '#ffffff',
+                      borderRadius: '0.75rem',
                       padding: isMobile ? '1.25rem' : '1.5rem',
-                      border: '2px solid #e2e8f0',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                      border: '1px solid #d8dee6',
+                      transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 14px rgba(15, 23, 42, 0.05)',
                       position: 'relative',
                       overflow: 'hidden'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#cbd5e1';
+                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(15, 23, 42, 0.07), 0 10px 24px rgba(15, 23, 42, 0.09)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#d8dee6';
+                      e.currentTarget.style.boxShadow = '0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 14px rgba(15, 23, 42, 0.05)';
                     }}
                   >
                     {/* Badge de estado en la esquina */}
@@ -4310,35 +4273,6 @@ export default function InventarioCompleto() {
               </div>
             </div>
           )}
-
-          {/* Botón de regreso */}
-          <div style={{
-            textAlign: 'center',
-            marginTop: '2rem'
-          }}>
-            <button
-              onClick={() => navigate('/admin/gestion-inventario')}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '0.5rem',
-                padding: '0.75rem 1.5rem',
-                fontSize: '1rem',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-              }}
-            >
-              ← Volver a Gestión de Inventario
-            </button>
-          </div>
         </div>
       </div>
     </>

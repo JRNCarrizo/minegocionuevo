@@ -436,7 +436,7 @@ export default function Ingresos() {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+        background: '#f8fafc',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -466,7 +466,7 @@ export default function Ingresos() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)'
+      background: '#f8fafc'
     }}>
       <NavbarAdmin
         onCerrarSesion={cerrarSesion}
@@ -475,126 +475,90 @@ export default function Ingresos() {
       />
 
       <div style={{
-        maxWidth: '1400px',
+        maxWidth: '1200px',
         margin: '0 auto',
         padding: isMobile ? '8rem 1rem 1rem 1rem' : '7rem 2rem 2rem 2rem'
       }}>
-        {/* Header */}
+        {/* Encabezado y filtros — mismo criterio que Carga de Planillas / Retornos */}
         <div style={{
           background: 'white',
           borderRadius: '16px',
           padding: isMobile ? '16px' : '24px',
           marginBottom: '2rem',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
           border: '2px solid #e2e8f0'
         }}>
           <div style={{
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'space-between',
-            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'center',
+            flexWrap: isMobile ? 'wrap' : 'nowrap',
             gap: '1rem'
           }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem'
-            }}>
-              <div style={{
-                width: '3rem',
-                height: '3rem',
-                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                borderRadius: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem',
-                color: 'white'
+            <div>
+              <h1 style={{
+                fontSize: isMobile ? '1.5rem' : '2rem',
+                fontWeight: '700',
+                color: '#1e293b',
+                margin: '0 0 0.5rem 0'
               }}>
-                📥
-              </div>
-              <div>
-                <h1 style={{
-                  fontSize: isMobile ? '1.5rem' : '2rem',
-                  fontWeight: '700',
-                  color: '#1e293b',
-                  margin: 0
-                }}>
-                  Ingresos
-                </h1>
-                <p style={{
-                  color: '#64748b',
-                  margin: 0,
-                  fontSize: '0.875rem'
-                }}>
-                  Registra la entrada de nueva mercadería al inventario
-                </p>
-                                 <p style={{
-                   color: '#059669',
-                   margin: '0.25rem 0 0 0',
-                   fontSize: '0.75rem',
-                   fontWeight: '500'
-                 }}>
-                   💡 Haz clic en "Nuevo Remito" para crear un ingreso
-                 </p>
-              </div>
+                📥 Ingresos
+              </h1>
+              <p style={{
+                color: '#64748b',
+                margin: 0,
+                fontSize: '1rem'
+              }}>
+                Registra la entrada de nueva mercadería al inventario
+              </p>
+              <p style={{
+                color: '#059669',
+                margin: '0.35rem 0 0 0',
+                fontSize: '0.8125rem',
+                fontWeight: '500'
+              }}>
+                💡 Enter — nuevo remito (fuera de campos de texto)
+              </p>
             </div>
             <button
               onClick={abrirModalCrear}
               style={{
-                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                background: '#1e293b',
                 color: 'white',
-                border: 'none',
-                borderRadius: '12px',
+                border: '1px solid #334155',
+                borderRadius: '8px',
                 padding: isMobile ? '12px 16px' : '0.75rem 1.5rem',
-                fontSize: isMobile ? '0.8rem' : '0.875rem',
-                fontWeight: '600',
+                fontSize: isMobile ? '0.8rem' : '1rem',
+                fontWeight: '500',
                 cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.2s ease',
                 justifyContent: 'center'
               }}
-              onMouseOver={(e) => {
+              onMouseEnter={(e) => {
                 if (!isMobile) {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(5, 150, 105, 0.4)';
+                  e.currentTarget.style.background = '#334155';
                 }
               }}
-              onMouseOut={(e) => {
+              onMouseLeave={(e) => {
                 if (!isMobile) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.3)';
+                  e.currentTarget.style.background = '#1e293b';
                 }
               }}
             >
-              + Nuevo Remito
+              ➕ Nuevo Remito
             </button>
           </div>
-        </div>
 
-        {/* Filtros */}
-        <div style={{
-          background: 'white',
-          borderRadius: '1rem',
-          padding: isMobile ? '1.5rem' : '2rem',
-          marginBottom: '2rem',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <h3 style={{
-            fontSize: '1.25rem',
-            fontWeight: '600',
-            color: '#1e293b',
-            marginBottom: '1rem'
-          }}>
-            Filtros
-          </h3>
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '1rem'
+            display: 'flex',
+            gap: '1rem',
+            marginTop: '1.25rem',
+            flexWrap: isMobile ? 'wrap' : 'nowrap'
           }}>
-            <div>
+            <div style={{ flex: 1, minWidth: isMobile ? '100%' : '200px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '0.875rem',
@@ -602,7 +566,7 @@ export default function Ingresos() {
                 color: '#374151',
                 marginBottom: '0.5rem'
               }}>
-                📅 Filtrar por Fecha
+                📅 Filtrar por fecha
               </label>
               <input
                 type="date"
@@ -610,14 +574,15 @@ export default function Ingresos() {
                 onChange={(e) => setFiltroFecha(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem'
+                  padding: isMobile ? '12px' : '0.75rem',
+                  border: '2px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: isMobile ? '0.75rem' : '1rem',
+                  background: 'white'
                 }}
               />
             </div>
-            <div>
+            <div style={{ flex: 1, minWidth: isMobile ? '100%' : '200px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '0.875rem',
@@ -629,24 +594,19 @@ export default function Ingresos() {
               </label>
               <input
                 type="text"
-                placeholder="Número de remito o observaciones..."
+                placeholder="Remito u observaciones..."
+                title="Número de remito u observaciones"
                 value={filtroBusqueda}
                 onChange={(e) => setFiltroBusqueda(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem'
+                  padding: isMobile ? '12px' : '0.75rem',
+                  border: '2px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: isMobile ? '0.75rem' : '1rem',
+                  background: 'white'
                 }}
               />
-            </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'end',
-              gap: '0.5rem'
-            }}>
-
             </div>
           </div>
         </div>
@@ -654,27 +614,27 @@ export default function Ingresos() {
         {/* Contenido principal */}
         <div style={{
           background: 'white',
-          borderRadius: '1rem',
-          padding: isMobile ? '1.5rem' : '2rem',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
+          borderRadius: '16px',
+          padding: isMobile ? '16px' : '24px',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+          border: '2px solid #e2e8f0'
         }}>
           {gruposPorFecha.length === 0 ? (
             <div style={{
               textAlign: 'center',
-              padding: '3rem',
-              color: '#6b7280'
+              padding: '2rem 1rem',
+              color: '#64748b'
             }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📥</div>
-              <p>No hay remitos registrados</p>
-              <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
-                Crea tu primer remito de ingreso haciendo clic en "Nuevo Remito"
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📥</div>
+              <p style={{ margin: '0 0 0.5rem 0' }}>No hay remitos registrados</p>
+              <p style={{ fontSize: '0.875rem', margin: 0 }}>
+                Usá <strong>Nuevo Remito</strong> para crear el primero
               </p>
             </div>
           ) : (
             <div style={{
               display: 'grid',
-              gap: '2rem'
+              gap: '1.5rem'
             }}>
               {gruposPorFecha.map((grupo) => (
                 <div key={grupo.fecha}>

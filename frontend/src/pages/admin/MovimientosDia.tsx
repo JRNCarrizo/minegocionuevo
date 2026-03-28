@@ -1111,60 +1111,69 @@ export default function MovimientosDia() {
         paddingRight: isMobile ? '1rem' : '2rem'
       }}>
         {/* Header */}
-                 <div style={{
-           background: 'var(--color-card)',
-           borderRadius: '1rem',
-           padding: '2rem',
-           marginBottom: '2rem',
-           boxShadow: '0 10px 25px var(--color-sombra)',
-           border: '1px solid var(--color-borde)',
-           opacity: transicionando ? 0.8 : 1,
-           transition: 'opacity 0.3s ease'
-         }}>
+        <div style={{
+          background: 'var(--color-card)',
+          borderRadius: '1rem',
+          padding: '2rem',
+          marginBottom: '2rem',
+          boxShadow: '0 10px 25px var(--color-sombra)',
+          border: '1px solid var(--color-borde)',
+          opacity: transicionando ? 0.8 : 1,
+          transition: 'opacity 0.3s ease'
+        }}>
           <div style={{
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: isMobile ? 'wrap' : 'nowrap',
-            gap: '1rem'
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            gap: '1.25rem'
           }}>
-                         <div>
-                               <h1 style={{
-                  fontSize: isMobile ? '1.5rem' : '2rem',
-                  fontWeight: '700',
-                  color: 'var(--color-texto-principal)',
-                  margin: '0 0 0.5rem 0'
-                }}>
-                  📊 {modoRango ? 'Movimientos por Rango' : 'Movimientos del Día'}
-                </h1>
-                                <p style={{
-                  color: 'var(--color-texto-secundario)',
-                  margin: 0,
-                  fontSize: '1rem'
-                }}>
-                  {transicionando 
-                    ? '🔄 Cambiando modo...'
-                    : modoRango 
-                      ? `Balance acumulado del ${formatearFecha(fechaInicio)} al ${formatearFecha(fechaFin)}`
-                      : movimientos?.diaCerrado 
-                        ? `🔒 Día cerrado - Balance final guardado para ${formatearFecha(fechaSeleccionada)}`
-                        : 'Balance diario de inventario y movimientos'
-                  }
-                </p>
-             </div>
-            
-                                                               <div style={{
+            <div style={{
+              textAlign: 'center',
+              width: '100%',
+              maxWidth: '42rem',
+              margin: '0 auto'
+            }}>
+              <h1 style={{
+                fontSize: isMobile ? '1.5rem' : '2rem',
+                fontWeight: '700',
+                color: 'var(--color-texto-principal)',
+                margin: '0 0 0.5rem 0',
+                lineHeight: 1.25
+              }}>
+                📊 {modoRango ? 'Movimientos por Rango' : 'Movimientos del Día'}
+              </h1>
+              <p style={{
+                color: 'var(--color-texto-secundario)',
+                margin: 0,
+                fontSize: '1rem',
+                lineHeight: 1.5
+              }}>
+                {transicionando
+                  ? '🔄 Cambiando modo...'
+                  : modoRango
+                    ? `Balance acumulado del ${formatearFecha(fechaInicio)} al ${formatearFecha(fechaFin)}`
+                    : movimientos?.diaCerrado
+                      ? `🔒 Día cerrado - Balance final guardado para ${formatearFecha(fechaSeleccionada)}`
+                      : 'Balance diario de inventario y movimientos'
+                }
+              </p>
+            </div>
+
+            <div style={{
               display: 'flex',
               flexDirection: 'column',
               gap: '1rem',
-              alignItems: 'flex-end'
+              alignItems: 'center',
+              width: '100%'
             }}>
               {/* Primera fila: Botones de exportar y toggle día/rango */}
               <div style={{
                 display: 'flex',
                 gap: '1rem',
                 alignItems: 'center',
-                flexWrap: 'wrap'
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                width: '100%'
               }}>
                 {/* Botón de cerrar/reabrir día - DESTACADO */}
                 <button
@@ -1318,32 +1327,18 @@ export default function MovimientosDia() {
                 </div>
               </div>
 
-              {/* Segunda fila: Filtros de fecha */}
-              {!modoRango ? (
-                <input
-                  type="date"
-                  value={fechaSeleccionada}
-                  onChange={(e) => setFechaSeleccionada(e.target.value)}
-                  style={{
-                    padding: '0.75rem',
-                    border: '1px solid var(--color-borde)',
-                    borderRadius: '0.5rem',
-                    fontSize: '1rem',
-                    background: 'var(--color-card)',
-                    color: 'var(--color-texto-principal)',
-                    minWidth: '200px'
-                  }}
-                />
-              ) : (
-                <div style={{
-                  display: 'flex',
-                  gap: '0.5rem',
-                  alignItems: 'center'
-                }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                width: '100%',
+                flexWrap: 'wrap'
+              }}>
+                {/* Segunda fila: Filtros de fecha */}
+                {!modoRango ? (
                   <input
                     type="date"
-                    value={fechaInicio}
-                    onChange={(e) => setFechaInicio(e.target.value)}
+                    value={fechaSeleccionada}
+                    onChange={(e) => setFechaSeleccionada(e.target.value)}
                     style={{
                       padding: '0.75rem',
                       border: '1px solid var(--color-borde)',
@@ -1351,31 +1346,54 @@ export default function MovimientosDia() {
                       fontSize: '1rem',
                       background: 'var(--color-card)',
                       color: 'var(--color-texto-principal)',
-                      minWidth: '150px'
+                      minWidth: '200px'
                     }}
                   />
-                  <span style={{ color: 'var(--color-texto-secundario)', fontSize: '0.875rem' }}>a</span>
-                  <input
-                    type="date"
-                    value={fechaFin}
-                    onChange={(e) => setFechaFin(e.target.value)}
-                    style={{
-                      padding: '0.75rem',
-                      border: '1px solid var(--color-borde)',
-                      borderRadius: '0.5rem',
-                      fontSize: '1rem',
-                      background: 'var(--color-card)',
-                      color: 'var(--color-texto-principal)',
-                      minWidth: '150px'
-                    }}
-                  />
-                </div>
-              )}
+                ) : (
+                  <div style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center'
+                  }}>
+                    <input
+                      type="date"
+                      value={fechaInicio}
+                      onChange={(e) => setFechaInicio(e.target.value)}
+                      style={{
+                        padding: '0.75rem',
+                        border: '1px solid var(--color-borde)',
+                        borderRadius: '0.5rem',
+                        fontSize: '1rem',
+                        background: 'var(--color-card)',
+                        color: 'var(--color-texto-principal)',
+                        minWidth: '150px'
+                      }}
+                    />
+                    <span style={{ color: 'var(--color-texto-secundario)', fontSize: '0.875rem' }}>a</span>
+                    <input
+                      type="date"
+                      value={fechaFin}
+                      onChange={(e) => setFechaFin(e.target.value)}
+                      style={{
+                        padding: '0.75rem',
+                        border: '1px solid var(--color-borde)',
+                        borderRadius: '0.5rem',
+                        fontSize: '1rem',
+                        background: 'var(--color-card)',
+                        color: 'var(--color-texto-principal)',
+                        minWidth: '150px'
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-                                   {movimientos && (
+        {movimientos && (
             <div style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
