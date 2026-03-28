@@ -68,6 +68,7 @@ const RecibirProductos: React.FC = () => {
 
   // Referencias para focus
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
+  const recibirGridRef = useRef<HTMLDivElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
   const listaUbicacionesRef = useRef<HTMLDivElement>(null);
   const inputCantidadRef = useRef<HTMLInputElement>(null);
@@ -326,10 +327,18 @@ const RecibirProductos: React.FC = () => {
   // Estado para controlar el focus del buscador
   const [focusBuscador, setFocusBuscador] = useState(false);
 
-  // Auto-focus en el buscador solo cuando se solicita
+  // Al volver al buscador: alinear el bloque de las 3 columnas al margen superior (navbar) y luego enfocar el input
   useEffect(() => {
-    if (focusBuscador && inputBusquedaRef.current && !cargandoSector && !cargandoStock) {
-      inputBusquedaRef.current.focus();
+    if (focusBuscador && !cargandoSector && !cargandoStock) {
+      const grid = recibirGridRef.current;
+      if (grid) {
+        requestAnimationFrame(() => {
+          grid.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+        });
+      }
+      if (inputBusquedaRef.current) {
+        inputBusquedaRef.current.focus();
+      }
       setFocusBuscador(false);
     }
   }, [focusBuscador, cargandoSector, cargandoStock]);
@@ -735,12 +744,6 @@ const RecibirProductos: React.FC = () => {
       if (event.key === 'Enter' && !filtroBusqueda.trim()) {
         event.preventDefault();
         setFocusBuscador(true);
-        setTimeout(() => {
-          window.scrollBy({
-            top: 250,
-            behavior: 'smooth'
-          });
-        }, 100);
       }
 
       if (event.key === 'Escape' && !filtroBusqueda.trim() && productosFiltrados.length === 0 && !productoSeleccionado) {
@@ -977,7 +980,11 @@ const RecibirProductos: React.FC = () => {
             </div>
           </header>
 
-          <div className="recibir-productos-container">
+          <div
+            ref={recibirGridRef}
+            className="recibir-productos-container"
+            style={{ scrollMarginTop: isMobile ? '8.5rem' : '6.75rem' }}
+          >
             {/* Panel izquierdo - Búsqueda y selección */}
             <div className="panel-busqueda">
               <div className="card recibir-card">
