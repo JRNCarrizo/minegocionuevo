@@ -283,7 +283,9 @@ public class InventarioCompletoService {
             Integer cantidadFinal = Integer.valueOf(productoEditado.get("cantidadFinal").toString());
             String observacionesProducto = (String) productoEditado.get("observaciones");
             Boolean fueContado = (Boolean) productoEditado.get("fueContado");
-            String accionSeleccionada = (String) productoEditado.get("accionSeleccionada");
+            String accionSeleccionada = productoEditado.get("accionSeleccionada") != null
+                    ? productoEditado.get("accionSeleccionada").toString().trim()
+                    : "";
             
             Producto producto = productoRepository.findById(productoId)
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productoId));
@@ -304,11 +306,11 @@ public class InventarioCompletoService {
                 System.out.println("⚠️ Procesando producto NO CONTADO: " + producto.getNombre());
                 System.out.println("⚠️ Acción seleccionada: " + accionSeleccionada);
                 
-                if ("DAR_POR_0".equals(accionSeleccionada)) {
+                if ("DAR_POR_0".equalsIgnoreCase(accionSeleccionada)) {
                     // Dar por 0 - actualizar stock a 0
                     cantidadFinal = 0;
                     System.out.println("⚠️ Producto NO CONTADO - Dado por 0: " + producto.getNombre());
-                } else if ("EDITADO".equals(accionSeleccionada)) {
+                } else if ("EDITADO".equalsIgnoreCase(accionSeleccionada) || "EDITAR".equalsIgnoreCase(accionSeleccionada)) {
                     // EDITADO - usar el valor editado manualmente por el usuario
                     // La cantidadFinal ya viene del frontend con el valor editado
                     System.out.println("⚠️ Producto NO CONTADO - Editado manualmente: " + producto.getNombre() + 
@@ -320,6 +322,14 @@ public class InventarioCompletoService {
                     System.out.println("⚠️ Producto NO CONTADO - Omitido (conserva valor): " + producto.getNombre());
                 }
             }
+            
+            // "Dar por cero" / edición a 0: no usar actualizarStockPorSector con cantidad 0, porque suma
+            // stock de sectores COMPLETADO_SIN_CONTEO y deja unidades en depósito (registro seguía mostrando stock).
+            boolean forzarCeroTotalNoContado = Boolean.FALSE.equals(fueContado)
+                    && cantidadFinal != null && cantidadFinal == 0
+                    && ("DAR_POR_0".equalsIgnoreCase(accionSeleccionada)
+                            || "EDITADO".equalsIgnoreCase(accionSeleccionada)
+                            || "EDITAR".equalsIgnoreCase(accionSeleccionada));
             
             // Actualizar sector del producto basado en el inventario
             // Solo actualizar sector si el producto fue contado
@@ -347,8 +357,17 @@ public class InventarioCompletoService {
             
             productoRepository.save(producto);
             
-            // Actualizar stock por sector y sincronizar (preserva remanente no sectorizado en product.stock)
-            actualizarStockPorSector(producto, cantidadFinal);
+            if (forzarCeroTotalNoContado) {
+                Integer hintUnidadesContados = null;
+                Object ux = productoEditado.get("unidadesEnSectoresContadosDarPorCero");
+                if (ux instanceof Number && ((Number) ux).intValue() > 0) {
+                    hintUnidadesContados = ((Number) ux).intValue();
+                }
+                aplicarDarPorCeroNoContadoSoloEnSectoresContados(productoId, hintUnidadesContados);
+            } else {
+                // Actualizar stock por sector y sincronizar (preserva remanente no sectorizado en product.stock)
+                actualizarStockPorSector(producto, cantidadFinal);
+            }
             
             Producto productoTrasStock = productoRepository.findById(productoId)
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado tras actualizar stock: " + productoId));
@@ -615,6 +634,14 @@ public class InventarioCompletoService {
                 }
             }
         }
+
+        // Sectores en estado COMPLETADO (hubo conteo): productos con stock en el depósito pero sin ningún DetalleConteo
+        // (ningún usuario los registró) → deben aparecer en consolidación como NO CONTADO (editar / omitir / cero).
+        // Los sectores COMPLETADO_SIN_CONTEO no entran aquí: su stock se conserva tal cual y no pasan por esa lista.
+        incorporarProductosSinRegistroDeConteoEnSectoresContados(sectoresContados, productosConsolidados);
+        // Líneas ya creadas desde DetalleConteo con 0/0 (nadie contó de hecho): marcarlas aunque StockPorSector sea 0
+        // o falte la fila; si no, el bucle final dejaba fueContado=true y desaparecían de "Sin contar".
+        marcarConteosCeroEnSectoresComoSinRegistroEfectivo(sectoresContados, productosConsolidados);
         
         // Calcular stock ajustado para productos contados (descontando sectores completados sin conteo)
         // Importante: stockSistema en el mapa viene del primer DetalleConteo y suele ser solo el stock EN ESE SECTOR.
@@ -648,8 +675,8 @@ public class InventarioCompletoService {
                              " - Cantidad final: " + cantidadFinal);
         }
         
-        // AGREGAR PRODUCTOS NO CONTADOS - Solo productos que NO están en sectores contados NI en sectores sin conteo
-        // (Los productos de sectores sin conteo NO aparecen en la lista, pero se descuentan del stock)
+        // AGREGAR PRODUCTOS NO CONTADOS globales - excluye quienes solo tienen stock en sectores "completado sin conteo"
+        // (esos mantienen su stock en sistema y no requieren omitir/editar/cero en esta pantalla)
         System.out.println("🔍 Buscando productos realmente no contados...");
         List<Producto> todosLosProductos = productoRepository.findByEmpresaId(inventario.getEmpresa().getId());
         System.out.println("🔍 Total de productos en el sistema: " + todosLosProductos.size());
@@ -696,12 +723,24 @@ public class InventarioCompletoService {
                                  " - Stock original: " + producto.getStock() + 
                                  " - Stock ajustado: " + stockAjustado);
             } else if (productosConsolidados.containsKey(producto.getId())) {
-                // Marcar productos contados (ya procesados anteriormente)
-                productosConsolidados.get(producto.getId()).put("fueContado", true);
-                productosConsolidados.get(producto.getId()).put("accionRecomendada", "ACTUALIZAR");
+                Map<String, Object> agregado = productosConsolidados.get(producto.getId());
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> slSectores = (List<Map<String, Object>>) agregado.get("sectores");
+                boolean marcaSectorSinConteoEfectivo = slSectores != null && slSectores.stream()
+                        .anyMatch(m -> Boolean.TRUE.equals(m.get("sinRegistroDeConteo")));
+                // No pisar fueContado=false ni filas marcadas como sin conteo efectivo en sector contado
+                if (marcaSectorSinConteoEfectivo) {
+                    agregado.put("fueContado", Boolean.FALSE);
+                    if (!"EDITADO".equalsIgnoreCase(String.valueOf(agregado.get("accionRecomendada")))) {
+                        agregado.put("accionRecomendada", "OMITIR");
+                    }
+                } else if (!Boolean.FALSE.equals(agregado.get("fueContado"))) {
+                    agregado.put("fueContado", true);
+                    agregado.put("accionRecomendada", "ACTUALIZAR");
+                }
             } else {
-                // Producto está en sector sin conteo - NO agregarlo a la lista
-                System.out.println("  ✅ Producto en sector sin conteo (NO agregado a lista): " + producto.getNombre());
+                // Solo vinculado a sectores "completado sin conteo": fuera de la lista de acciones; stock intacto
+                System.out.println("  ℹ️ Producto solo en sector(es) sin conteo (sin fila en consolidación): " + producto.getNombre());
             }
         }
         
@@ -4762,6 +4801,72 @@ public class InventarioCompletoService {
     }
     
     /**
+     * "Dar por cero" / edición a 0 en producto no contado: pone en 0 solo el stock en depósitos que
+     * pertenecen a sectores {@link ConteoSector.EstadoConteo#COMPLETADO} de este inventario.
+     * No modifica {@link ConteoSector.EstadoConteo#COMPLETADO_SIN_CONTEO} ni depósitos fuera del inventario.
+     * El stock total se baja en las unidades que había en depósitos contados (filas) y, si no hay fila pero la
+     * consolidación indicó {@code stockEsperadoEnSector}, el cliente envía {@code unidadesEnSectoresContadosDarPorCero}.
+     * No se usa {@code sumaFinal + residuoSinSectorizar}: si el sector A estaba solo en el remanente del producto,
+     * ese residuo duplicaba las 5 del sector contado y el total seguía en 10.
+     */
+    private void aplicarDarPorCeroNoContadoSoloEnSectoresContados(Long productoId, Integer unidadesHintCliente) {
+        InventarioCompleto inv = inventarioCompletoRepository.findById(this.inventarioActualId).orElse(null);
+        if (inv == null) {
+            System.err.println("⚠️ aplicarDarPorCero: inventario actual no encontrado (id=" + this.inventarioActualId + ")");
+            return;
+        }
+        Set<Long> sectoresFisicosContados = conteoSectorRepository.findByInventarioCompleto(inv).stream()
+                .filter(cs -> cs.getEstado() == ConteoSector.EstadoConteo.COMPLETADO)
+                .map(cs -> cs.getSector().getId())
+                .collect(Collectors.toSet());
+
+        Producto prodRef = productoRepository.findById(productoId).orElse(null);
+        if (prodRef == null) {
+            return;
+        }
+
+        List<StockPorSector> filasIniciales = stockPorSectorRepository.findByProductoId(productoId);
+        int stockInicial = prodRef.getStock() != null ? prodRef.getStock() : 0;
+
+        int sumaEnDepositosContadosAntes = 0;
+        for (StockPorSector s : filasIniciales) {
+            Long sid = s.getSector().getId();
+            if (sectoresFisicosContados.contains(sid)) {
+                sumaEnDepositosContadosAntes += s.getCantidad() != null ? s.getCantidad() : 0;
+            }
+        }
+
+        int unidadesQuitadasDeContados = sumaEnDepositosContadosAntes;
+        if (unidadesQuitadasDeContados <= 0 && unidadesHintCliente != null && unidadesHintCliente > 0) {
+            unidadesQuitadasDeContados = unidadesHintCliente;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (StockPorSector s : filasIniciales) {
+            Long sid = s.getSector().getId();
+            if (!sectoresFisicosContados.contains(sid)) {
+                continue;
+            }
+            s.setCantidad(0);
+            s.setFechaActualizacion(now);
+            stockPorSectorRepository.save(s);
+        }
+
+        List<StockPorSector> filasFinal = stockPorSectorRepository.findByProductoId(productoId);
+        int sumaFinal = filasFinal.stream().mapToInt(s -> s.getCantidad() != null ? s.getCantidad() : 0).sum();
+
+        int stockPorResta = Math.max(0, stockInicial - unidadesQuitadasDeContados);
+        int stockFinal = Math.max(sumaFinal, stockPorResta);
+
+        prodRef.setStock(stockFinal);
+        productoRepository.save(prodRef);
+        System.out.println("✅ Dar por cero (sectores COMPLETADO): " + prodRef.getNombre()
+                + " — quitadas de contados=" + unidadesQuitadasDeContados
+                + " (filas=" + sumaEnDepositosContadosAntes + ", hint=" + unidadesHintCliente + ")"
+                + " — suma depósitos tras=" + sumaFinal + " → stock total=" + stockFinal);
+    }
+    
+    /**
      * Actualizar stock por sector para un producto
      */
     private void actualizarStockPorSector(Producto producto, Integer cantidadFinal) {
@@ -5065,6 +5170,18 @@ public class InventarioCompletoService {
                     } else {
                         System.out.println("  ⚠️ SECTOR CONTADO SIN DETALLES - Producto: " + producto.getNombre() + 
                                          " - Sector: " + conteoSector.getSector().getNombre());
+                    }
+                    // Conteo en 0 o sin líneas, pero hay unidades en el depósito: incluir en distribución para poder
+                    // aplicar "dar por 0" / cantidad final vía actualizarStockPorSector (antes quedaba fuera del mapa).
+                    if (cantidadSector == 0) {
+                        Optional<StockPorSector> stDep = stockPorSectorRepository.findByProductoIdAndSectorId(
+                                producto.getId(), sectorId);
+                        int enDeposito = stDep.map(s -> s.getCantidad() != null ? s.getCantidad() : 0).orElse(0);
+                        if (enDeposito > 0) {
+                            cantidadSector = enDeposito;
+                            System.out.println("  📦 COMPLETADO: base desde StockPorSector (sin conteo efectivo): "
+                                    + cantidadSector + " en " + conteoSector.getSector().getNombre());
+                        }
                     }
                 } else {
                     // PASO 2B: Sector completado sin conteo - buscar en StockPorSector
@@ -5624,6 +5741,156 @@ public class InventarioCompletoService {
         } catch (Exception e) {
             System.err.println("❌ Error verificando stock de sectores sin conteo: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * En cada sector con conteo realizado ({@link ConteoSector.EstadoConteo#COMPLETADO}), detecta productos que
+     * tienen cantidad &gt; 0 en {@link StockPorSector} del depósito pero no tienen ningún {@link DetalleConteo}
+     * (ningún contador los cargó). Se exponen en la consolidación con {@code fueContado=false} para decidir
+     * editar / omitir / cero. No aplica a sectores {@link ConteoSector.EstadoConteo#COMPLETADO_SIN_CONTEO}.
+     */
+    private void incorporarProductosSinRegistroDeConteoEnSectoresContados(
+            List<ConteoSector> sectoresContados,
+            Map<Long, Map<String, Object>> productosConsolidados) {
+
+        for (ConteoSector sector : sectoresContados) {
+            // Solo excluir si hubo conteo con cantidad > 0 (línea en 0,0 = nadie contó de hecho)
+            List<DetalleConteo> detallesSector = detalleConteoRepository
+                    .findByConteoSectorAndEliminadoFalseOrderByProductoNombre(sector);
+            Map<Long, List<DetalleConteo>> detallesPorProducto = detallesSector.stream()
+                    .collect(Collectors.groupingBy(d -> d.getProducto().getId()));
+            Set<Long> idsConConteoEfectivo = new HashSet<>();
+            for (Map.Entry<Long, List<DetalleConteo>> e : detallesPorProducto.entrySet()) {
+                int t1 = 0;
+                int t2 = 0;
+                for (DetalleConteo d : e.getValue()) {
+                    t1 += d.getCantidadConteo1() != null ? d.getCantidadConteo1() : 0;
+                    t2 += d.getCantidadConteo2() != null ? d.getCantidadConteo2() : 0;
+                }
+                if (Math.max(t1, t2) > 0) {
+                    idsConConteoEfectivo.add(e.getKey());
+                }
+            }
+
+            List<StockPorSector> stocks = stockPorSectorRepository.findBySectorId(sector.getSector().getId());
+
+            for (StockPorSector sps : stocks) {
+                Producto prod = sps.getProducto();
+                if (prod == null) {
+                    continue;
+                }
+                Long pid = prod.getId();
+                int cant = sps.getCantidad() != null ? sps.getCantidad() : 0;
+                if (cant <= 0) {
+                    continue;
+                }
+                if (idsConConteoEfectivo.contains(pid)) {
+                    continue;
+                }
+
+                Map<String, Object> sectorInfo = new HashMap<>();
+                sectorInfo.put("sectorId", sector.getId());
+                sectorInfo.put("nombreSector", sector.getNombreSector());
+                sectorInfo.put("cantidadConteo1", 0);
+                sectorInfo.put("cantidadConteo2", 0);
+                sectorInfo.put("formulaCalculo1", "");
+                sectorInfo.put("formulaCalculo2", "");
+                sectorInfo.put("sinRegistroDeConteo", true);
+                sectorInfo.put("stockEsperadoEnSector", cant);
+
+                if (productosConsolidados.containsKey(pid)) {
+                    Map<String, Object> ex = productosConsolidados.get(pid);
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> slist = (List<Map<String, Object>>) ex.get("sectores");
+                    if (slist == null) {
+                        slist = new ArrayList<>();
+                        ex.put("sectores", slist);
+                    }
+                    final Long conteoSectorId = sector.getId();
+                    boolean ya = false;
+                    for (Map<String, Object> sm : slist) {
+                        if (conteoSectorId.equals(sm.get("sectorId"))) {
+                            ya = true;
+                            sm.put("sinRegistroDeConteo", true);
+                            sm.put("stockEsperadoEnSector", cant);
+                            break;
+                        }
+                    }
+                    if (!ya) {
+                        slist.add(sectorInfo);
+                    }
+                    ex.put("fueContado", Boolean.FALSE);
+                    ex.put("accionRecomendada", "OMITIR");
+                } else {
+                    Map<String, Object> nuevo = new HashMap<>();
+                    nuevo.put("productoId", pid);
+                    nuevo.put("nombreProducto", prod.getNombre());
+                    nuevo.put("codigoProducto", prod.getCodigoPersonalizado());
+                    nuevo.put("stockSistema", cant);
+                    nuevo.put("cantidadConteo1", 0);
+                    nuevo.put("cantidadConteo2", 0);
+                    nuevo.put("formulaCalculo1", "");
+                    nuevo.put("formulaCalculo2", "");
+                    nuevo.put("diferenciaEntreConteos", 0);
+                    nuevo.put("fueContado", Boolean.FALSE);
+                    nuevo.put("accionRecomendada", "OMITIR");
+                    nuevo.put("cantidadFinal", 0);
+                    List<Map<String, Object>> sl = new ArrayList<>();
+                    sl.add(sectorInfo);
+                    nuevo.put("sectores", sl);
+                    productosConsolidados.put(pid, nuevo);
+                }
+
+                System.out.println("  ⚠️ [CONTEO] Stock en sector contado sin detalle: " + prod.getNombre()
+                        + " → " + sector.getNombreSector() + " (esperado en depósito: " + cant + ")");
+            }
+        }
+    }
+
+    /**
+     * En cada sector {@link ConteoSector} contado, si la línea consolidada tiene conteo 0/0 (máximo 0),
+     * se considera sin registro efectivo: se marca {@code sinRegistroDeConteo} y el stock en depósito
+     * desde {@link StockPorSector} (0 si no hay fila). Así el producto sigue en consolidación con
+     * omitir / dar por cero / editar aunque no hubiera stock en filas de depósito.
+     */
+    private void marcarConteosCeroEnSectoresComoSinRegistroEfectivo(
+            List<ConteoSector> sectoresContados,
+            Map<Long, Map<String, Object>> productosConsolidados) {
+
+        for (ConteoSector cs : sectoresContados) {
+            Long conteoSectorId = cs.getId();
+            Long physicalSectorId = cs.getSector().getId();
+
+            for (Map<String, Object> ex : productosConsolidados.values()) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> slist = (List<Map<String, Object>>) ex.get("sectores");
+                if (slist == null) {
+                    continue;
+                }
+                Long pid = (Long) ex.get("productoId");
+                for (Map<String, Object> sm : slist) {
+                    if (!conteoSectorId.equals(sm.get("sectorId"))) {
+                        continue;
+                    }
+                    Integer raw1 = (Integer) sm.get("cantidadConteo1");
+                    Integer raw2 = (Integer) sm.get("cantidadConteo2");
+                    int c1 = raw1 != null ? raw1 : 0;
+                    int c2 = raw2 != null ? raw2 : 0;
+                    if (Math.max(c1, c2) > 0) {
+                        continue;
+                    }
+                    int stockEsp = stockPorSectorRepository.findByProductoIdAndSectorId(pid, physicalSectorId)
+                            .map(s -> s.getCantidad() != null ? s.getCantidad() : 0)
+                            .orElse(0);
+                    sm.put("sinRegistroDeConteo", true);
+                    sm.put("stockEsperadoEnSector", stockEsp);
+                    ex.put("fueContado", Boolean.FALSE);
+                    if (!"EDITADO".equalsIgnoreCase(String.valueOf(ex.get("accionRecomendada")))) {
+                        ex.put("accionRecomendada", "OMITIR");
+                    }
+                }
+            }
         }
     }
 

@@ -30,6 +30,9 @@ interface SectorInfo {
   cantidadConteo2: number;
   formulaCalculo1?: string;
   formulaCalculo2?: string;
+  /** Hubo conteo en el sector pero no se cargó línea para este producto (stock en depósito > 0) */
+  sinRegistroDeConteo?: boolean;
+  stockEsperadoEnSector?: number;
 }
 
 const ProductosConsolidadosInventario: React.FC = () => {
@@ -57,6 +60,12 @@ const ProductosConsolidadosInventario: React.FC = () => {
 
   /** Lista plana (general) vs agrupada por sector (desglose por dónde se contó) */
   const [vistaProductos, setVistaProductos] = useState<'general' | 'por_sector'>('general');
+
+  /** Cantidad final en pantalla: respeta 0 (p. ej. Dar por cero); no usar || sobre cantidadFinal. */
+  const cantidadFinalMostrada = (p: ProductoConsolidado): number => {
+    if (p.cantidadFinal != null) return p.cantidadFinal;
+    return Math.max(p.cantidadConteo1 || 0, p.cantidadConteo2 || 0);
+  };
   
   // ✅ NUEVA FUNCIÓN: Filtrar productos según el criterio seleccionado
   const productosFiltrados = productos.filter(producto => {
@@ -262,7 +271,7 @@ const ProductosConsolidadosInventario: React.FC = () => {
     const producto = productos.find(p => p.productoId === productoId);
     if (producto) {
       setEditandoProductoNoContado(productoId);
-      setCantidadEditadaNoContado(producto.cantidadFinal || producto.stockSistema);
+      setCantidadEditadaNoContado(cantidadFinalMostrada(producto));
       // Cambiar la acción a "EDITAR"
       setAccionesProductosNoContados(prev => ({
         ...prev,
@@ -328,14 +337,41 @@ const ProductosConsolidadosInventario: React.FC = () => {
       // Preparar los productos editados para enviar al backend
       // stockAnteriorRegistro = stock ajustado mostrado en consolidación (alineado con diferenciaSistema en pantalla).
       // Sin esto, el historial usaba solo producto.stock en BD; si ya coincidía con el conteo, la diferencia quedaba en 0.
-      const productosEditados = productos.map(producto => ({
-        productoId: producto.productoId,
-        cantidadFinal: producto.cantidadFinal || Math.max(producto.cantidadConteo1 || 0, producto.cantidadConteo2 || 0),
-        stockAnteriorRegistro: producto.stockSistema,
-        observaciones: `Inventario completo - ${new Date().toLocaleDateString()}`,
-        fueContado: producto.fueContado,
-        accionSeleccionada: accionesProductosNoContados[producto.productoId] || producto.accionRecomendada
-      }));
+      const productosEditados = productos.map(producto => {
+        const acc =
+          accionesProductosNoContados[producto.productoId] || producto.accionRecomendada || '';
+        /** Unidades en sectores con conteo (sin línea efectiva) que la consolidación mostró en depósito; el backend resta del total si no hay fila StockPorSector en ese sector. */
+        let unidadesEnSectoresContadosDarPorCero: number | undefined;
+        if (
+          producto.fueContado === false &&
+          (acc === 'DAR_POR_0' || acc === 'EDITADO' || acc === 'EDITAR') &&
+          (acc === 'DAR_POR_0' || producto.cantidadFinal === 0)
+        ) {
+          let u = 0;
+          for (const s of producto.sectores || []) {
+            if (s.sinRegistroDeConteo && s.stockEsperadoEnSector != null) {
+              u += s.stockEsperadoEnSector;
+            }
+          }
+          if (u > 0) {
+            unidadesEnSectoresContadosDarPorCero = u;
+          }
+        }
+        return {
+          productoId: producto.productoId,
+          // Usar ?? (no ||): si "Dar por 0" deja cantidadFinal en 0, con || se reemplazaría por el máximo de conteos.
+          cantidadFinal: producto.cantidadFinal != null
+            ? producto.cantidadFinal
+            : Math.max(producto.cantidadConteo1 || 0, producto.cantidadConteo2 || 0),
+          stockAnteriorRegistro: producto.stockSistema,
+          observaciones: `Inventario completo - ${new Date().toLocaleDateString()}`,
+          fueContado: producto.fueContado,
+          accionSeleccionada: acc,
+          ...(unidadesEnSectoresContadosDarPorCero != null
+            ? { unidadesEnSectoresContadosDarPorCero }
+            : {})
+        };
+      });
 
       const token = localStorage.getItem('token');
       const baseUrl = API_CONFIG.getBaseUrl();
@@ -373,8 +409,10 @@ const ProductosConsolidadosInventario: React.FC = () => {
   };
 
   const calcularDiferenciaSistema = (producto: ProductoConsolidado) => {
-    // Usar la cantidad final real (que puede ser editada o definida por acciones)
-    const cantidadFinal = producto.cantidadFinal || producto.stockSistema || Math.max(producto.cantidadConteo1 || 0, producto.cantidadConteo2 || 0);
+    // Respetar cantidadFinal === 0 (p. ej. "Dar por 0"); no usar || que reemplazaría el cero.
+    const cantidadFinal = producto.cantidadFinal != null
+      ? producto.cantidadFinal
+      : Math.max(producto.cantidadConteo1 || 0, producto.cantidadConteo2 || 0);
     return cantidadFinal - producto.stockSistema;
   };
 
@@ -486,7 +524,18 @@ const ProductosConsolidadosInventario: React.FC = () => {
           </button>
         </div>
       ) : producto.fueContado === false ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.45rem',
+            alignItems: 'stretch',
+            justifyContent: 'center',
+            minWidth: '118px'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <button
             type="button"
             onClick={(e) => {
@@ -498,34 +547,61 @@ const ProductosConsolidadosInventario: React.FC = () => {
               color: 'white',
               border: 'none',
               borderRadius: '0.25rem',
-              padding: '0.25rem 0.5rem',
+              padding: '0.35rem 0.5rem',
               fontSize: '0.8rem',
               cursor: 'pointer',
-              width: '80px'
+              whiteSpace: 'nowrap'
             }}
           >
-            ✏️ Editar
+            Editar
           </button>
-          <select
-            value={accionesProductosNoContados[producto.productoId] || 'OMITIR'}
-            onChange={(e) => {
-              cambiarAccionProductoNoContado(producto.productoId, e.target.value);
-            }}
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            style={{
+          {(() => {
+            const acc = accionesProductosNoContados[producto.productoId] || 'OMITIR';
+            const omitirActivo = acc === 'OMITIR';
+            const ceroActivo = acc === 'DAR_POR_0';
+            const baseBtn: React.CSSProperties = {
               fontSize: '0.8rem',
-              padding: '0.375rem 0.5rem',
-              border: '1px solid #d1d5db',
-              borderRadius: '0.375rem',
-              background: 'white',
+              padding: '0.35rem 0.5rem',
+              borderRadius: '0.25rem',
               cursor: 'pointer',
-              width: '80px'
-            }}
-          >
-            <option value="OMITIR">Omitir</option>
-            <option value="DAR_POR_0">Dar por 0</option>
-          </select>
+              whiteSpace: 'nowrap',
+              fontWeight: 500
+            };
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    cambiarAccionProductoNoContado(producto.productoId, 'OMITIR');
+                  }}
+                  style={{
+                    ...baseBtn,
+                    border: omitirActivo ? '2px solid #64748b' : '1px solid #cbd5e1',
+                    background: omitirActivo ? '#f1f5f9' : 'white',
+                    color: '#334155'
+                  }}
+                >
+                  Omitir
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    cambiarAccionProductoNoContado(producto.productoId, 'DAR_POR_0');
+                  }}
+                  style={{
+                    ...baseBtn,
+                    border: ceroActivo ? '2px solid #d97706' : '1px solid #fcd34d',
+                    background: ceroActivo ? '#fffbeb' : 'white',
+                    color: '#92400e'
+                  }}
+                >
+                  Dar por cero
+                </button>
+              </div>
+            );
+          })()}
         </div>
       ) : (
         <button
@@ -867,7 +943,13 @@ const ProductosConsolidadosInventario: React.FC = () => {
                       color: '#3b82f6',
                       marginTop: '0.25rem'
                     }}>
-                      Sectores: {producto.sectores.map(s => s.nombreSector).join(', ')}
+                      Sectores:{' '}
+                      {producto.sectores.map((s) => {
+                        const pendiente = s.sinRegistroDeConteo && s.stockEsperadoEnSector != null
+                          ? ` (sin contar en conteo; ${s.stockEsperadoEnSector} en depósito)`
+                          : '';
+                        return s.nombreSector + pendiente;
+                      }).join(', ')}
                     </div>
                   )}
                 </div>
@@ -948,7 +1030,7 @@ const ProductosConsolidadosInventario: React.FC = () => {
                       cursor: producto.fueContado === false ? 'default' : 'pointer',
                       border: producto.fueContado === false && accionesProductosNoContados[producto.productoId] === 'EDITADO' ? '2px solid #3b82f6' : 'none'
                     }} onClick={() => producto.fueContado !== false && editarProducto(producto)}>
-                      {producto.cantidadFinal || producto.stockSistema || Math.max(producto.cantidadConteo1 || 0, producto.cantidadConteo2 || 0)}
+                      {cantidadFinalMostrada(producto)}
                       {producto.fueContado === false && accionesProductosNoContados[producto.productoId] === 'EDITADO' && (
                         <span style={{ marginLeft: '0.25rem', fontSize: '0.8rem' }}>✏️</span>
                       )}
