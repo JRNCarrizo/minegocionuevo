@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    host: '0.0.0.0', // Permite acceso desde cualquier IP
+    // true = escucha en todas las interfaces (misma WiFi / celular). En la consola aparece "Network: http://192.168.x.x:5173/"
+    host: true,
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
