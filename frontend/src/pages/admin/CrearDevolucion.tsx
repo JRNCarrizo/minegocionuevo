@@ -1098,24 +1098,6 @@ export default function CrearDevolucion() {
               >
                 Cancelar
               </button>
-              <button
-                 onClick={guardarPlanilla}
-                 disabled={guardando || detalles.length === 0}
-                style={{
-                   padding: '0.75rem 1.5rem',
-                   background: guardando || detalles.length === 0 ? '#9ca3af' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.75rem',
-                   fontSize: '0.875rem',
-                  fontWeight: '600',
-                   cursor: guardando || detalles.length === 0 ? 'not-allowed' : 'pointer',
-                   transition: 'all 0.3s ease',
-                   boxShadow: guardando || detalles.length === 0 ? 'none' : '0 4px 12px rgba(245, 158, 11, 0.3)'
-                 }}
-               >
-                 {guardando ? '💾 Creando...' : '💾 Crear Registro de Devolución'}
-              </button>
             </div>
           </div>
         </div>
@@ -1400,18 +1382,6 @@ export default function CrearDevolucion() {
             border: '1px solid #e2e8f0',
             height: 'fit-content'
           }}>
-            <h2 style={{
-              fontSize: '1.25rem',
-              fontWeight: '600',
-              color: '#1e293b',
-              margin: '0 0 1.5rem 0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              🛒 Agregar Productos
-            </h2>
-
             {/* Búsqueda de productos */}
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
@@ -1421,7 +1391,7 @@ export default function CrearDevolucion() {
                 color: '#64748b',
                 marginBottom: isMobile ? '0.75rem' : '0.5rem'
               }}>
-                🔍 Buscar Producto
+                🔍 Agregar productos
               </label>
               <div style={{ 
                 display: 'grid',
@@ -1906,123 +1876,100 @@ export default function CrearDevolucion() {
             )}
           </div>
 
-          {/* Panel derecho - Resumen de productos */}
+          {/* Panel derecho - Resumen (mismo formato que Crear planilla) */}
           <div style={{
-            background: 'white',
-            borderRadius: '1rem',
-            padding: isMobile ? '1.5rem' : '2rem',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            background: '#f8fafc',
+            borderRadius: '0.75rem',
+            padding: '1.5rem',
             border: '1px solid #e2e8f0',
-            height: 'fit-content'
+            height: 'fit-content',
+            position: 'sticky',
+            top: '2rem'
           }}>
-            <h2 style={{
-              fontSize: '1.25rem',
-                          fontWeight: '600',
-                          color: '#1e293b',
-              margin: '0 0 1.5rem 0',
-                            display: 'flex',
-                            alignItems: 'center',
-              gap: '0.5rem'
+            <h3 style={{
+              fontSize: '1.125rem',
+              fontWeight: '600',
+              color: '#1e293b',
+              marginBottom: '1rem'
             }}>
               📊 Resumen de la Planilla
-            </h2>
-            
+            </h3>
+
             <div style={{
-              display: 'grid',
-              gap: '1rem'
+              background: 'white',
+              borderRadius: '0.5rem',
+              padding: '1rem',
+              border: '1px solid #e2e8f0'
             }}>
-              <div>
-                <div style={{
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                  color: 'white',
-                  padding: '1rem',
-                  borderRadius: '0.75rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>Total Productos</div>
-                  <div style={{ fontSize: '2rem', fontWeight: '700' }}>{detalles.length}</div>
-                      </div>
-                    </div>
-
-                    <div>
-                <div style={{
-                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                  color: 'white',
-                  padding: '1rem',
-                  borderRadius: '0.75rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>Total Unidades</div>
-                  <div style={{ fontSize: '2rem', fontWeight: '700' }}>{calcularTotalUnidades()}</div>
-                </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.5rem'
+              }}>
+                <span style={{ fontSize: '0.875rem', color: '#64748b' }}>Productos:</span>
+                <span style={{ fontSize: '1rem', fontWeight: '600', color: '#1e293b' }}>
+                  {detalles.length}
+                </span>
               </div>
-              
-                             <div style={{
-                 background: '#f8fafc',
-                 padding: '1rem',
-                 borderRadius: '0.75rem',
-                 border: '1px solid #e2e8f0'
-               }}>
-                 <h3 style={{
-                   fontSize: '1rem',
-                        fontWeight: '600',
-                   color: '#1e293b',
-                   margin: '0 0 0.75rem 0'
-                 }}>
-                   📋 Información
-                 </h3>
-                 <div style={{
-                          fontSize: '0.875rem',
-                   color: '#64748b',
-                   lineHeight: '1.5',
-                   marginBottom: '1rem'
-                 }}>
-                   <div><strong>Número:</strong> {numeroPlanilla || 'No definido'}</div>
-                   <div><strong>Fecha:</strong> {fechaPlanilla ? new Date(fechaPlanilla).toLocaleDateString() : 'No definida'}</div>
-                   <div><strong>Observaciones:</strong> {observaciones ? 'Sí' : 'No'}</div>
-                    </div>
 
-                    <button
-                   onClick={guardarPlanilla}
-                   disabled={guardando || detalles.length === 0}
-                      style={{
-                     width: '100%',
-                     padding: '0.75rem',
-                     background: guardando || detalles.length === 0 ? '#9ca3af' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '0.5rem',
-                     fontSize: '0.875rem',
-                     fontWeight: '600',
-                     cursor: guardando || detalles.length === 0 ? 'not-allowed' : 'pointer',
-                     transition: 'all 0.3s ease',
-                     boxShadow: guardando || detalles.length === 0 ? 'none' : '0 4px 12px rgba(245, 158, 11, 0.3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                     justifyContent: 'center',
-                     gap: '0.5rem'
-                   }}
-                 >
-                   {guardando ? (
-                     <>
-                       <div style={{
-                         width: '1rem',
-                         height: '1rem',
-                         border: '2px solid transparent',
-                         borderTop: '2px solid white',
-                         borderRadius: '50%',
-                         animation: 'spin 1s linear infinite'
-                       }}></div>
-                       Creando...
-                     </>
-                   ) : (
-                     '📋 Crear Registro'
-                   )}
-                    </button>
-                  </div>
-                </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1rem'
+              }}>
+                <span style={{ fontSize: '0.875rem', color: '#64748b' }}>Total Unidades:</span>
+                <span style={{ fontSize: '1.25rem', fontWeight: '700', color: '#3b82f6' }}>
+                  {calcularTotalUnidades()}
+                </span>
+              </div>
+
+              <div style={{
+                paddingTop: '1rem',
+                borderTop: '1px solid #e2e8f0'
+              }}>
+                <button
+                  onClick={guardarPlanilla}
+                  disabled={guardando || detalles.length === 0}
+                  style={{
+                    width: '100%',
+                    background: guardando || detalles.length === 0
+                      ? '#9ca3af'
+                      : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    padding: '0.75rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    cursor: guardando || detalles.length === 0 ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  {guardando ? (
+                    <>
+                      <div style={{
+                        width: '1rem',
+                        height: '1rem',
+                        border: '2px solid transparent',
+                        borderTop: '2px solid white',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                      Creando...
+                    </>
+                  ) : (
+                    '📋 Crear Registro'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
+        </div>
       </div>
 
       {/* Scanner de código de barras */}

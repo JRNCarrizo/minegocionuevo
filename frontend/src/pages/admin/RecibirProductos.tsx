@@ -65,6 +65,10 @@ const RecibirProductos: React.FC = () => {
   const [errorCalculo, setErrorCalculo] = useState<string | null>(null);
   /** Solo modo enviar: buscar producto → cantidad (reemplaza buscador) → destino → agregar */
   const [enviarPaso, setEnviarPaso] = useState<'buscar' | 'cantidad' | 'destino'>('buscar');
+  /** Al entrar: flechas eligen Recibir/Enviar; Enter confirma y baja al buscador */
+  const [faseInicioPantallaStock, setFaseInicioPantallaStock] = useState<
+    'elegir-modo' | 'listo'
+  >('elegir-modo');
 
   // Referencias para focus
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
@@ -172,6 +176,10 @@ const RecibirProductos: React.FC = () => {
   };
 
   // Cargar información del sector
+  useEffect(() => {
+    setFaseInicioPantallaStock('elegir-modo');
+  }, [sectorId]);
+
   const cargarSector = async () => {
     if (!datosUsuario?.empresaId) {
       toast.error('No se pudo obtener la información de la empresa');
@@ -315,25 +323,49 @@ const RecibirProductos: React.FC = () => {
 
     setProductosFiltrados(filtrados);
     setProductoSeleccionadoIndex(-1);
-    
-    // Mostrar opciones con animación si hay resultados
+
+    // Lista de productos: mostrar si hay coincidencias.
+    // Lista de orígenes (mismo flag mostrarOpciones): si ya hay producto elegido y el texto
+    // fijado es "código · nombre", el filtro puede no coincidir — no ocultar el bloque de orígenes.
     if (filtrados.length > 0) {
+      setMostrarOpciones(true);
+    } else if (
+      productoSeleccionado &&
+      ubicacionesFiltradas.length > 0 &&
+      !modoCantidad
+    ) {
       setMostrarOpciones(true);
     } else {
       setMostrarOpciones(false);
     }
-  }, [filtroBusqueda, stockDetallado, modoOperacion, sector?.nombre]);
+  }, [
+    filtroBusqueda,
+    stockDetallado,
+    modoOperacion,
+    sector?.nombre,
+    productoSeleccionado,
+    ubicacionesFiltradas,
+    modoCantidad
+  ]);
 
   // Estado para controlar el focus del buscador
   const [focusBuscador, setFocusBuscador] = useState(false);
 
-  // Al volver al buscador: alinear el bloque de las 3 columnas al margen superior (navbar) y luego enfocar el input
+  // Al volver al buscador: alinear el grid un poco más arriba (mejor bajo el navbar) y enfocar el input
   useEffect(() => {
     if (focusBuscador && !cargandoSector && !cargandoStock) {
       const grid = recibirGridRef.current;
       if (grid) {
+        const headerOffsetPx = isMobile ? 148 : 96;
         requestAnimationFrame(() => {
-          grid.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+          const y =
+            grid.getBoundingClientRect().top +
+            (window.scrollY || document.documentElement.scrollTop) -
+            headerOffsetPx;
+          window.scrollTo({
+            top: Math.max(0, y),
+            behavior: 'smooth'
+          });
         });
       }
       if (inputBusquedaRef.current) {
@@ -341,7 +373,7 @@ const RecibirProductos: React.FC = () => {
       }
       setFocusBuscador(false);
     }
-  }, [focusBuscador, cargandoSector, cargandoStock]);
+  }, [focusBuscador, cargandoSector, cargandoStock, isMobile]);
 
 
   // Auto-focus en el campo de cantidad cuando se activa
@@ -469,10 +501,17 @@ const RecibirProductos: React.FC = () => {
 
     setUbicacionesFiltradas(ubicacionesConStock);
     setUbicacionSeleccionadaIndex(ubicacionesConStock.length > 0 ? 0 : -1);
-    setFiltroBusqueda(producto.productoNombre);
+    const textoFijo =
+      producto.codigoPersonalizado && producto.codigoPersonalizado.trim()
+        ? `${producto.codigoPersonalizado.trim()} · ${producto.productoNombre}`
+        : producto.productoNombre;
+    setFiltroBusqueda(textoFijo);
     if (ubicacionesConStock.length > 0) {
       setMostrarOpciones(true);
     }
+    requestAnimationFrame(() => {
+      inputBusquedaRef.current?.blur();
+    });
   };
 
   // Seleccionar ubicación
@@ -691,6 +730,49 @@ const RecibirProductos: React.FC = () => {
         return;
       }
 
+      const ae = document.activeElement as HTMLElement | null;
+      const tag = ae?.tagName ?? '';
+      const enCampoEditable =
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        (tag === 'INPUT' && ae !== document.body);
+      const puedeTecladoElegirModo =
+        ae === document.body ||
+        ae === document.documentElement ||
+        (!!ae?.closest('.recibir-page-header') &&
+          !ae.classList.contains('recibir-page-header__back'));
+
+      if (
+        faseInicioPantallaStock === 'elegir-modo' &&
+        puedeTecladoElegirModo &&
+        !enCampoEditable &&
+        !modoCantidad &&
+        !productoSeleccionado &&
+        !filtroBusqueda.trim()
+      ) {
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          void cambiarModoOperacion('recibir');
+          return;
+        }
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+          event.preventDefault();
+          void cambiarModoOperacion('enviar');
+          return;
+        }
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          setFaseInicioPantallaStock('listo');
+          setFocusBuscador(true);
+          return;
+        }
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          navigate('/admin/sectores');
+          return;
+        }
+      }
+
       if (productoSeleccionado && ubicacionesFiltradas.length > 0) {
         if (event.key === 'ArrowUp') {
           event.preventDefault();
@@ -712,6 +794,8 @@ const RecibirProductos: React.FC = () => {
           setProductoSeleccionado(null);
           setUbicacionesFiltradas([]);
           setUbicacionSeleccionadaIndex(-1);
+          setFiltroBusqueda('');
+          requestAnimationFrame(() => inputBusquedaRef.current?.focus());
         }
         return;
       }
@@ -741,12 +825,22 @@ const RecibirProductos: React.FC = () => {
         return;
       }
 
-      if (event.key === 'Enter' && !filtroBusqueda.trim()) {
+      if (
+        event.key === 'Enter' &&
+        !filtroBusqueda.trim() &&
+        faseInicioPantallaStock === 'listo'
+      ) {
         event.preventDefault();
         setFocusBuscador(true);
       }
 
-      if (event.key === 'Escape' && !filtroBusqueda.trim() && productosFiltrados.length === 0 && !productoSeleccionado) {
+      if (
+        event.key === 'Escape' &&
+        !filtroBusqueda.trim() &&
+        productosFiltrados.length === 0 &&
+        !productoSeleccionado &&
+        faseInicioPantallaStock === 'listo'
+      ) {
         event.preventDefault();
         navigate('/admin/sectores');
       }
@@ -765,6 +859,7 @@ const RecibirProductos: React.FC = () => {
     enviarPaso,
     cantidad,
     filtroBusqueda,
+    faseInicioPantallaStock,
     navigate
   ]);
 
@@ -951,15 +1046,32 @@ const RecibirProductos: React.FC = () => {
                       : 'Enviá stock de acá hacia otro depósito.'}
                   </span>
                 </p>
+                {faseInicioPantallaStock === 'elegir-modo' && (
+                  <p className="recibir-page-header__teclado-hint">
+                    ← → o ↑ ↓ para elegir modo · Enter para bajar al buscador
+                  </p>
+                )}
               </div>
-              <div className="recibir-page-header__segment" role="group" aria-label="Tipo de operación">
+              <div
+                className={
+                  'recibir-page-header__segment' +
+                  (faseInicioPantallaStock === 'elegir-modo'
+                    ? ' recibir-page-header__segment--paso-teclado'
+                    : '')
+                }
+                role="group"
+                aria-label="Tipo de operación"
+              >
                 <button
                   type="button"
                   className={
                     'recibir-page-header__mode' +
                     (modoOperacion === 'recibir' ? ' recibir-page-header__mode--recibir-active' : '')
                   }
-                  onClick={() => cambiarModoOperacion('recibir')}
+                  onClick={() => {
+                    setFaseInicioPantallaStock('listo');
+                    void cambiarModoOperacion('recibir');
+                  }}
                 >
                   Recibir aquí
                 </button>
@@ -969,7 +1081,10 @@ const RecibirProductos: React.FC = () => {
                     'recibir-page-header__mode' +
                     (modoOperacion === 'enviar' ? ' recibir-page-header__mode--enviar-active' : '')
                   }
-                  onClick={() => cambiarModoOperacion('enviar')}
+                  onClick={() => {
+                    setFaseInicioPantallaStock('listo');
+                    void cambiarModoOperacion('enviar');
+                  }}
                 >
                   Enviar desde aquí
                 </button>
@@ -980,15 +1095,11 @@ const RecibirProductos: React.FC = () => {
           <div
             ref={recibirGridRef}
             className="recibir-productos-container"
-            style={{ scrollMarginTop: isMobile ? '8.5rem' : '6.75rem' }}
+            style={{ scrollMarginTop: isMobile ? '7.25rem' : '5.5rem' }}
           >
             {/* Panel izquierdo - Búsqueda y selección */}
             <div className="panel-busqueda">
               <div className="card recibir-card">
-                <div className="recibir-card__header">
-                  <h2 className="recibir-card__title">Buscador avanzado</h2>
-                  <p className="recibir-card__subtitle">Buscá por nombre o código y elegí origen</p>
-                </div>
                 <div className="recibir-card__body buscador-avanzado">
                 {/* Campo de búsqueda y cantidad */}
                 <div style={{ marginBottom: '1rem' }}>
@@ -1138,39 +1249,43 @@ const RecibirProductos: React.FC = () => {
                   {!ocultarBuscadorEnviar && (
                   <>
                   {!(modoCantidad && stockSeleccionado && modoOperacion === 'recibir') && (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: isMobile ? 'column' : 'row',
-                    gap: '1rem',
-                    alignItems: isMobile ? 'stretch' : 'flex-end'
-                  }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                       <label style={{
                         display: 'block',
                         fontSize: isMobile ? '1rem' : '0.875rem',
                         fontWeight: '600',
-                        color: '#374151',
+                        color: '#64748b',
                         marginBottom: isMobile ? '0.75rem' : '0.5rem'
                       }}>
-                        Buscar por nombre o código:
+                        🔍 Agregar productos
                       </label>
                       <input
                         ref={inputBusquedaRef}
                         type="text"
                         value={filtroBusqueda}
+                        readOnly={!!productoSeleccionado && !modoCantidad}
                         onChange={(e) => setFiltroBusqueda(e.target.value)}
-                        placeholder="Escribe el nombre o código del producto..."
+                        placeholder="Código de barras, código personalizado o nombre..."
                         style={{
                           width: '100%',
                           padding: isMobile ? '1rem' : '0.75rem',
                           border: '2px solid #d1d5db',
                           borderRadius: '8px',
                           fontSize: isMobile ? '1rem' : '1rem',
-                          background: 'white',
+                          background:
+                            productoSeleccionado && !modoCantidad ? '#f8fafc' : 'white',
+                          color: productoSeleccionado && !modoCantidad ? '#1e293b' : undefined,
+                          cursor: productoSeleccionado && !modoCantidad ? 'default' : 'text',
+                          caretColor:
+                            productoSeleccionado && !modoCantidad ? 'transparent' : undefined,
                           transition: 'all 0.2s ease',
                           minHeight: isMobile ? '48px' : 'auto'
                         }}
                         onFocus={(e) => {
+                          setFaseInicioPantallaStock('listo');
+                          if (productoSeleccionado && !modoCantidad) {
+                            return;
+                          }
                           e.target.style.borderColor = '#667eea';
                           e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
                         }}
@@ -1179,47 +1294,17 @@ const RecibirProductos: React.FC = () => {
                           e.target.style.boxShadow = 'none';
                         }}
                       />
-                    </div>
                   </div>
                   )}
 
                   {modoCantidad && stockSeleccionado && modoOperacion === 'recibir' && (
-                    <>
-                      <div style={{
-                        background: '#f8fafc',
-                        padding: isMobile ? '1rem' : '0.75rem',
-                        borderRadius: '8px',
-                        border: '2px solid #e2e8f0',
-                        marginTop: isMobile ? '0.5rem' : '0',
-                        fontSize: isMobile ? '0.875rem' : '0.875rem'
-                      }}>
-                        <div style={{ fontWeight: '600', marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
-                          {productoSeleccionado?.codigoPersonalizado ? (
-                            <>
-                              <span style={{ color: '#3b82f6', fontWeight: '700' }}>
-                                {productoSeleccionado.codigoPersonalizado}
-                              </span>
-                              <br />
-                              {productoSeleccionado.productoNombre}
-                            </>
-                          ) : (
-                            productoSeleccionado?.productoNombre
-                          )}
-                        </div>
-                        <div style={{ color: '#64748b', marginBottom: isMobile ? '0.5rem' : '0.25rem' }}>
-                          Desde: {stockSeleccionado.ubicacion}
-                        </div>
-                        <div style={{ color: '#64748b' }}>
-                          Stock disponible: {stockSeleccionado.cantidad}
-                        </div>
-                      </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <label style={{
                         display: 'block',
-                        fontSize: isMobile ? '0.875rem' : '0.875rem',
+                        fontSize: isMobile ? '1rem' : '0.875rem',
                         fontWeight: '600',
-                        color: '#374151',
-                        marginTop: isMobile ? '0.85rem' : '0.75rem',
-                        marginBottom: isMobile ? '0.5rem' : '0.4rem'
+                        color: '#64748b',
+                        marginBottom: isMobile ? '0.75rem' : '0.5rem'
                       }}>
                         Cantidad a recibir
                       </label>
@@ -1250,6 +1335,32 @@ const RecibirProductos: React.FC = () => {
                           e.target.style.boxShadow = 'none';
                         }}
                       />
+                      <div style={{
+                        marginTop: isMobile ? '0.65rem' : '0.5rem',
+                        padding: isMobile ? '0.65rem' : '0.5rem 0.65rem',
+                        background: '#f8fafc',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: isMobile ? '0.8125rem' : '0.8rem',
+                        color: '#475569',
+                        lineHeight: 1.4
+                      }}>
+                        {productoSeleccionado?.codigoPersonalizado ? (
+                          <>
+                            <span style={{ color: '#3b82f6', fontWeight: '700' }}>
+                              {productoSeleccionado.codigoPersonalizado}
+                            </span>
+                            <span style={{ color: '#94a3b8' }}> · </span>
+                          </>
+                        ) : null}
+                        <span style={{ fontWeight: '600', color: '#1e293b' }}>
+                          {productoSeleccionado?.productoNombre}
+                        </span>
+                        <span style={{ color: '#94a3b8' }}> · </span>
+                        Desde: <span style={{ fontWeight: '500' }}>{stockSeleccionado.ubicacion}</span>
+                        <span style={{ color: '#94a3b8' }}> · </span>
+                        Disp.: <span style={{ fontWeight: '600' }}>{stockSeleccionado.cantidad}</span>
+                      </div>
                       <div style={{
                         fontSize: isMobile ? '0.75rem' : '0.75rem',
                         color: '#64748b',
@@ -1305,50 +1416,11 @@ const RecibirProductos: React.FC = () => {
                       >
                         Cancelar
                       </button>
-                    </>
+                    </div>
                   )}
                   </>
                   )}
                 </div>
-
-                {/* Instrucciones */}
-                {!filtroBusqueda.trim() && !ocultarBuscadorEnviar && (
-                  <div style={{
-                    textAlign: 'center',
-                    padding: '2rem',
-                    color: '#64748b',
-                    background: '#f8fafc',
-                    borderRadius: '8px',
-                    border: '2px dashed #cbd5e1'
-                  }}>
-                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-                    <p style={{ margin: 0, fontSize: '1rem', marginBottom: '0.5rem' }}>
-                      Presiona <kbd style={{
-                        background: '#e2e8f0',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '4px',
-                        padding: '0.25rem 0.5rem',
-                        fontSize: '0.875rem',
-                        fontWeight: '600',
-                        color: '#374151'
-                      }}>Enter</kbd> para activar el buscador
-                    </p>
-                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
-                      Luego escribe el nombre o código del producto
-                    </p>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8' }}>
-                      <kbd style={{
-                        background: '#e2e8f0',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '3px',
-                        padding: '0.125rem 0.375rem',
-                        fontSize: '0.75rem',
-                        fontWeight: '600',
-                        color: '#374151'
-                      }}>Esc</kbd> para volver a gestión de sectores
-                    </p>
-                  </div>
-                )}
 
                 {/* Lista de productos filtrados - Diseño compacto */}
                 {productosFiltrados.length > 0 && !productoSeleccionado && (
@@ -1366,21 +1438,6 @@ const RecibirProductos: React.FC = () => {
                     transform: mostrarOpciones ? 'translateY(0)' : 'translateY(-10px)',
                     transition: 'all 0.2s ease-in-out'
                   }}>
-                    <div style={{
-                      padding: isMobile ? '0.75rem' : '0.5rem',
-                      borderBottom: '1px solid #e2e8f0',
-                      background: '#f8fafc',
-                      borderTopLeftRadius: '6px',
-                      borderTopRightRadius: '6px'
-                    }}>
-                      <span style={{
-                        fontSize: isMobile ? '1rem' : '0.875rem',
-                        fontWeight: '600',
-                        color: '#374151'
-                      }}>
-                        📦 {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} encontrado{productosFiltrados.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
                     <div ref={listaProductosRef}>
                       {productosFiltrados.map((producto, index) => (
                         <div

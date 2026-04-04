@@ -489,15 +489,15 @@ export default function CrearIngreso() {
            break;
          case 'busqueda':
            inputBusquedaRef.current?.focus();
-           // Scroll automático para que el buscador quede visible
+           // Scroll automático para que el buscador quede visible (offset = distancia al borde superior; menor = menos margen)
            setTimeout(() => {
              const element = inputBusquedaRef.current;
              if (element) {
                const elementPosition = element.getBoundingClientRect().top;
-                              const offsetPosition = elementPosition + window.pageYOffset - 210; // 210px de offset desde arriba
-               
+               const offsetDesdeArriba = isMobile ? 200 : 165;
+               const offsetPosition = elementPosition + window.pageYOffset - offsetDesdeArriba;
                window.scrollTo({
-                 top: offsetPosition,
+                 top: Math.max(0, offsetPosition),
                  behavior: 'smooth'
                });
              }
@@ -1431,19 +1431,7 @@ export default function CrearIngreso() {
             border: '1px solid #e2e8f0',
             height: 'fit-content'
           }}>
-            <h2 style={{
-              fontSize: '1.25rem',
-              fontWeight: '600',
-              color: '#1e293b',
-              margin: '0 0 1.5rem 0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              🛒 Agregar Productos
-            </h2>
-            
-                         {/* Búsqueda de productos */}
+                         {/* Búsqueda / agregar productos */}
              <div style={{ marginBottom: '1.5rem' }}>
                <label style={{
                  display: 'block',
@@ -1452,134 +1440,168 @@ export default function CrearIngreso() {
                  color: '#64748b',
                  marginBottom: isMobile ? '0.75rem' : '0.5rem'
                }}>
-                 🔍 Buscar Producto
+                 🔍 Agregar productos
                </label>
                <div style={{ 
-                 display: 'grid',
-                 gridTemplateColumns: '1fr',
+                 display: 'flex',
+                 flexDirection: 'column',
                  gap: '0.5rem',
-                 alignItems: 'end'
+                 alignItems: 'stretch'
                }}>
                  {!mostrarCampoCantidad && (
-                   <div style={{ position: 'relative' }}>
-                     <input
-                       ref={inputBusquedaRef}
-                       type="text"
-                       placeholder="Código de barras, código personalizado o nombre..."
-                       value={inputBusqueda}
-                       onChange={(e) => buscarProductos(e.target.value)}
-                       onKeyDown={manejarTeclas}
-                       style={{
-                         width: '100%',
-                         padding: isMobile ? '1rem' : '0.75rem',
-                         border: '2px solid #e2e8f0',
-                         borderRadius: '0.5rem',
-                         fontSize: isMobile ? '1rem' : '0.875rem',
-                         minHeight: isMobile ? '48px' : 'auto'
-                       }}
-                     />
-                
-                                   {/* Lista de productos filtrados */}
-                   {mostrarProductos && (
-                     <div
-                       ref={listaProductosRef}
-                       style={{
-                         position: 'absolute',
-                         top: '100%',
-                         left: 0,
-                         right: 0,
-                         background: 'white',
-                         border: '1px solid #e2e8f0',
-                         borderRadius: '0.5rem',
-                         boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                         zIndex: 1000,
-                         maxHeight: '320px',
-                         overflow: 'auto',
-                         paddingTop: '0.5rem',
-                         paddingBottom: '0.5rem'
-                       }}>
-                       {productosFiltrados.map((producto, index) => (
-                         <div
-                           key={producto.id}
-                           onClick={() => agregarProducto(producto)}
-                           style={{
-                             padding: isMobile ? '0.75rem' : '0.5rem',
-                             cursor: 'pointer',
-                             borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
-                             background: index === productoSeleccionado ? '#3b82f6' : 'white',
-                             color: index === productoSeleccionado ? 'white' : '#1e293b',
-                             fontSize: isMobile ? '1rem' : '0.875rem',
-                             transition: 'all 0.2s ease',
-                             minHeight: isMobile ? '60px' : 'auto'
-                           }}
-                           onMouseOver={() => setProductoSeleccionado(index)}
-                         >
-                           <div style={{ 
-                             fontWeight: '600', 
-                             color: index === productoSeleccionado ? 'white' : '#1e293b',
-                             fontSize: isMobile ? '1rem' : '0.875rem',
-                             lineHeight: '1.3'
-                           }}>
-                             {producto.codigoPersonalizado ? (
-                               <>
-                                 <span style={{ 
-                                   color: index === productoSeleccionado ? '#bfdbfe' : '#3b82f6', 
-                                   fontWeight: '700' 
-                                 }}>
-                                   {producto.codigoPersonalizado}
-                                 </span>
-                                 <br />
-                                 {producto.nombre}
-                               </>
-                             ) : (
-                               producto.nombre
-                             )}
-                           </div>
-                           <div style={{ 
-                             fontSize: isMobile ? '0.875rem' : '0.75rem', 
-                             color: index === productoSeleccionado ? '#e2e8f0' : '#64748b',
-                             marginTop: '0.25rem'
-                           }}>
-                             {producto.codigoBarras && `Barras: ${producto.codigoBarras}`}
-                             {producto.codigoBarras && ` • `}
-                             {`Stock: ${producto.stock}`}
-                           </div>
-                         </div>
-                       ))}
+                   <div style={{
+                     display: 'flex',
+                     gap: '0.5rem',
+                     alignItems: 'stretch',
+                     position: 'relative'
+                   }}>
+                     <div style={{ flex: 1, minWidth: 0 }}>
+                       <input
+                         ref={inputBusquedaRef}
+                         type="text"
+                         placeholder="Código de barras, código personalizado o nombre..."
+                         value={inputBusqueda}
+                         onChange={(e) => buscarProductos(e.target.value)}
+                         onKeyDown={manejarTeclas}
+                         style={{
+                           width: '100%',
+                           boxSizing: 'border-box',
+                           padding: isMobile ? '1rem' : '0.75rem',
+                           border: '2px solid #e2e8f0',
+                           borderRadius: '0.5rem',
+                           fontSize: isMobile ? '1rem' : '0.875rem',
+                           minHeight: isMobile ? '48px' : '42px'
+                         }}
+                       />
                      </div>
-                   )}
-                 </div>
+                     <button
+                       type="button"
+                       title="Escanear código de barras"
+                       aria-label="Escanear código de barras"
+                       onClick={() => setMostrarScanner(true)}
+                       style={{
+                         flexShrink: 0,
+                         width: isMobile ? '48px' : '42px',
+                         minWidth: isMobile ? '48px' : '42px',
+                         alignSelf: 'stretch',
+                         minHeight: isMobile ? '48px' : '42px',
+                         padding: 0,
+                         background: '#3b82f6',
+                         color: 'white',
+                         border: 'none',
+                         borderRadius: '0.5rem',
+                         fontSize: '1.25rem',
+                         cursor: 'pointer',
+                         display: 'flex',
+                         alignItems: 'center',
+                         justifyContent: 'center',
+                         lineHeight: 1
+                       }}
+                     >
+                       📷
+                     </button>
+                     {mostrarProductos && (
+                       <div
+                         ref={listaProductosRef}
+                         style={{
+                           position: 'absolute',
+                           top: 'calc(100% + 0.35rem)',
+                           left: 0,
+                           right: 0,
+                           background: 'white',
+                           border: '1px solid #e2e8f0',
+                           borderRadius: '0.5rem',
+                           boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                           zIndex: 1000,
+                           maxHeight: '320px',
+                           overflow: 'auto',
+                           paddingTop: '0.5rem',
+                           paddingBottom: '0.5rem'
+                         }}>
+                         {productosFiltrados.map((producto, index) => (
+                           <div
+                             key={producto.id}
+                             onClick={() => agregarProducto(producto)}
+                             style={{
+                               padding: isMobile ? '0.75rem' : '0.5rem',
+                               cursor: 'pointer',
+                               borderBottom: index < productosFiltrados.length - 1 ? '1px solid #f1f5f9' : 'none',
+                               background: index === productoSeleccionado ? '#3b82f6' : 'white',
+                               color: index === productoSeleccionado ? 'white' : '#1e293b',
+                               fontSize: isMobile ? '1rem' : '0.875rem',
+                               transition: 'all 0.2s ease',
+                               minHeight: isMobile ? '60px' : 'auto'
+                             }}
+                             onMouseOver={() => setProductoSeleccionado(index)}
+                           >
+                             <div style={{
+                               fontWeight: '600',
+                               color: index === productoSeleccionado ? 'white' : '#1e293b',
+                               fontSize: isMobile ? '1rem' : '0.875rem',
+                               lineHeight: '1.3'
+                             }}>
+                               {producto.codigoPersonalizado ? (
+                                 <>
+                                   <span style={{
+                                     color: index === productoSeleccionado ? '#bfdbfe' : '#3b82f6',
+                                     fontWeight: '700'
+                                   }}>
+                                     {producto.codigoPersonalizado}
+                                   </span>
+                                   <br />
+                                   {producto.nombre}
+                                 </>
+                               ) : (
+                                 producto.nombre
+                               )}
+                             </div>
+                             <div style={{
+                               fontSize: isMobile ? '0.875rem' : '0.75rem',
+                               color: index === productoSeleccionado ? '#e2e8f0' : '#64748b',
+                               marginTop: '0.25rem'
+                             }}>
+                               {producto.codigoBarras && `Barras: ${producto.codigoBarras}`}
+                               {producto.codigoBarras && ` • `}
+                               {`Stock: ${producto.stock}`}
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                   </div>
                  )}
 
                  {/* Campo de cantidad temporal */}
                  {mostrarCampoCantidad && (
-                   <div style={{ position: 'relative' }}>
-                     <input
-                       ref={cantidadTemporalRef}
-                       type="text"
-                       value={cantidadTemporalTexto || cantidadTemporal || ''}
-                       onChange={(e) => {
-                         const valor = e.target.value;
-                         setCantidadTemporalTexto(valor);
-                         // También actualizar el valor numérico si es un número simple
-                         const numero = parseInt(valor);
-                         if (!isNaN(numero) && !/[+\-*/x()]/.test(valor)) {
-                           setCantidadTemporal(numero);
-                          } else if (valor === '') {
-                            setCantidadTemporal(0);
-                          }
-                        }}
-                        onKeyDown={manejarEnterCantidadTemporal}
-                        placeholder="Ej: 336, 3*112, 3x60..."
-                        style={{
-                          width: '100%',
-                          padding: isMobile ? '1rem' : '0.75rem',
-                          border: '2px solid #e2e8f0',
-                          borderRadius: '0.5rem',
-                          fontSize: isMobile ? '1rem' : '0.875rem',
-                          minHeight: isMobile ? '48px' : 'auto'
-                        }}
-                      />
+                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                     <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                       <input
+                         ref={cantidadTemporalRef}
+                         type="text"
+                         value={cantidadTemporalTexto || cantidadTemporal || ''}
+                         onChange={(e) => {
+                           const valor = e.target.value;
+                           setCantidadTemporalTexto(valor);
+                           // También actualizar el valor numérico si es un número simple
+                           const numero = parseInt(valor);
+                           if (!isNaN(numero) && !/[+\-*/x()]/.test(valor)) {
+                             setCantidadTemporal(numero);
+                            } else if (valor === '') {
+                              setCantidadTemporal(0);
+                            }
+                          }}
+                          onKeyDown={manejarEnterCantidadTemporal}
+                          placeholder="Ej: 336, 3*112, 3x60..."
+                          style={{
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            padding: isMobile ? '1rem' : '0.75rem',
+                            border: '2px solid #e2e8f0',
+                            borderRadius: '0.5rem',
+                            fontSize: isMobile ? '1rem' : '0.875rem',
+                            minHeight: isMobile ? '48px' : '42px'
+                          }}
+                        />
                       
                       {/* Mostrar resultado del cálculo en tiempo real */}
                       {resultadoCalculoIngreso !== null && (
@@ -1621,6 +1643,34 @@ export default function CrearIngreso() {
                          💡 Puedes usar: +, -, *, /, x, paréntesis
                        </div>
                      </div>
+                     <button
+                       type="button"
+                       title="Escanear código de barras"
+                       aria-label="Escanear código de barras"
+                       onClick={() => setMostrarScanner(true)}
+                       style={{
+                         flexShrink: 0,
+                         width: isMobile ? '48px' : '42px',
+                         minWidth: isMobile ? '48px' : '42px',
+                         minHeight: isMobile ? '48px' : '42px',
+                         marginTop: 0,
+                         padding: 0,
+                         background: '#3b82f6',
+                         color: 'white',
+                         border: 'none',
+                         borderRadius: '0.5rem',
+                         fontSize: '1.25rem',
+                         cursor: 'pointer',
+                         display: 'flex',
+                         alignItems: 'center',
+                         justifyContent: 'center',
+                         lineHeight: 1,
+                         alignSelf: 'flex-start'
+                       }}
+                     >
+                       📷
+                     </button>
+                   </div>
                    )}
                </div>
 
@@ -1675,14 +1725,24 @@ export default function CrearIngreso() {
                  </div>
                )}
 
-              
+            </div>
+
+            {/* Nuevo producto (misma zona que antes tenía el botón ancho del escáner) */}
+            <div style={{
+              background: '#fffbeb',
+              borderRadius: '0.5rem',
+              padding: '0.5rem',
+              border: '1px solid #fcd34d',
+              marginTop: '0.25rem'
+            }}>
               <button
-                onClick={() => setMostrarScanner(true)}
+                type="button"
+                title="Crear producto nuevo en el catálogo"
+                onClick={abrirModalCrearProducto}
                 style={{
                   width: '100%',
-                  marginTop: '0.5rem',
-                  padding: '0.75rem',
-                  background: '#3b82f6',
+                  padding: '0.65rem 0.75rem',
+                  background: '#f59e0b',
                   color: 'white',
                   border: 'none',
                   borderRadius: '0.5rem',
@@ -1695,53 +1755,9 @@ export default function CrearIngreso() {
                   gap: '0.5rem'
                 }}
               >
-                📷 Escanear Código de Barras
+                ➕ Nuevo producto
               </button>
             </div>
-
-                         {/* Crear nuevo producto */}
-             <div style={{
-               background: '#fef3c7',
-               borderRadius: '0.5rem',
-               padding: '1rem',
-               border: '1px solid #f59e0b'
-             }}>
-               <h4 style={{
-                 fontSize: '1rem',
-                 fontWeight: '600',
-                 color: '#92400e',
-                 margin: '0 0 0.75rem 0'
-               }}>
-                 ➕ Crear Nuevo Producto
-               </h4>
-                               <p style={{
-                  fontSize: '0.875rem',
-                  color: '#92400e',
-                  margin: '0 0 1rem 0'
-                }}>
-                  Crea el producto si es nuevo, para luego poder agregarlo al remito
-                </p>
-                                                               <button
-                   onClick={abrirModalCrearProducto}
-                   style={{
-                     width: '100%',
-                     padding: '0.75rem',
-                     background: '#f59e0b',
-                     color: 'white',
-                     border: 'none',
-                     borderRadius: '0.5rem',
-                     fontSize: '0.875rem',
-                     fontWeight: '600',
-                     cursor: 'pointer',
-                     display: 'flex',
-                     alignItems: 'center',
-                     justifyContent: 'center',
-                     gap: '0.5rem'
-                   }}
-                 >
-                   📝 Crear Producto
-                 </button>
-             </div>
           </div>
 
                      {/* Panel derecho - Lista de productos */}
@@ -1807,19 +1823,25 @@ export default function CrearIngreso() {
                          alignItems: 'center'
                        }}>
                          <div>
-                           <div style={{ 
-                             fontWeight: '600', 
+                           <div style={{
+                             display: 'flex',
+                             flexWrap: 'wrap',
+                             alignItems: 'baseline',
+                             gap: '0.25rem 0.5rem',
+                             fontWeight: '600',
                              color: '#1e293b',
                              fontSize: isMobile ? '1rem' : '0.875rem',
                              lineHeight: '1.3'
                            }}>
                              {detalle.codigoPersonalizado ? (
                                <>
-                                 <span style={{ color: '#3b82f6', fontWeight: '700' }}>
+                                 <span style={{ color: '#3b82f6', fontWeight: '700', flexShrink: 0 }}>
                                    {detalle.codigoPersonalizado}
                                  </span>
-                                 <br />
-                                 {detalle.descripcion}
+                                 <span style={{ color: '#cbd5e1', fontWeight: '400', userSelect: 'none' }} aria-hidden>·</span>
+                                 <span style={{ fontWeight: '600', minWidth: 0, wordBreak: 'break-word' }}>
+                                   {detalle.descripcion}
+                                 </span>
                                </>
                              ) : (
                                detalle.descripcion
@@ -1832,7 +1854,8 @@ export default function CrearIngreso() {
                            display: 'flex',
                            alignItems: 'center',
                            gap: isMobile ? '0.75rem' : '0.5rem',
-                           flexShrink: 0
+                           flexShrink: 0,
+                           ...(isMobile ? { justifyContent: 'flex-end', width: '100%' } : {})
                          }}>
                            <div>
                              <label style={{
@@ -1897,201 +1920,156 @@ export default function CrearIngreso() {
              )}
            </div>
 
-           {/* Panel derecho - Resumen de productos */}
+           {/* Panel derecho - Resumen (mismo formato que Crear planilla) */}
            <div style={{
-             background: 'white',
-             borderRadius: '1rem',
-             padding: isMobile ? '1.5rem' : '2rem',
-             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+             background: '#f8fafc',
+             borderRadius: '0.75rem',
+             padding: '1.5rem',
              border: '1px solid #e2e8f0',
-             height: 'fit-content'
+             height: 'fit-content',
+             position: 'sticky',
+             top: '2rem'
            }}>
-             <h2 style={{
-               fontSize: '1.25rem',
+             <h3 style={{
+               fontSize: '1.125rem',
                fontWeight: '600',
                color: '#1e293b',
-               margin: '0 0 1.5rem 0',
-               display: 'flex',
-               alignItems: 'center',
-               gap: '0.5rem'
+               marginBottom: '1rem'
              }}>
                📊 Resumen del Remito
-             </h2>
-             
+             </h3>
+
              <div style={{
-               display: 'grid',
-               gap: '1rem'
+               background: 'white',
+               borderRadius: '0.5rem',
+               padding: '1rem',
+               border: '1px solid #e2e8f0'
              }}>
-               <div>
-                 <label style={{
-                   display: 'block',
-                   fontSize: '0.875rem',
-                   fontWeight: '600',
-                   color: '#64748b',
-                   marginBottom: '0.5rem'
-                 }}>
-                   🛒 Cantidad de Productos
-                 </label>
-                 <div style={{
-                   padding: '0.75rem',
-                   background: 'white',
-                   border: '1px solid #e2e8f0',
-                   borderRadius: '0.5rem',
-                   fontSize: '0.875rem',
-                   color: '#1e293b',
-                   fontWeight: '500'
-                 }}>
-                   <span style={{ 
-                     color: '#3b82f6', 
-                     fontWeight: '700',
-                     fontSize: '1.1rem'
-                   }}>
-                     {detalles.length}
-                   </span>
-                 </div>
+               <div style={{
+                 display: 'flex',
+                 justifyContent: 'space-between',
+                 alignItems: 'center',
+                 marginBottom: '0.5rem'
+               }}>
+                 <span style={{ fontSize: '0.875rem', color: '#64748b' }}>Productos:</span>
+                 <span style={{ fontSize: '1rem', fontWeight: '600', color: '#1e293b' }}>
+                   {detalles.length}
+                 </span>
                </div>
-               
-               <div>
-                 <label style={{
-                   display: 'block',
-                   fontSize: '0.875rem',
-                   fontWeight: '600',
-                   color: '#64748b',
-                   marginBottom: '0.5rem'
-                 }}>
-                   📦 Total de Unidades
-                 </label>
-                 <div style={{
-                   padding: '0.75rem',
-                   background: 'white',
-                   border: '1px solid #e2e8f0',
-                   borderRadius: '0.5rem',
-                   fontSize: '0.875rem',
-                   color: '#1e293b',
-                   fontWeight: '500'
-                 }}>
-                   <span style={{ 
-                     color: '#059669', 
-                     fontWeight: '700',
-                     fontSize: '1.1rem'
-                   }}>
-                     {detalles.reduce((total, detalle) => total + detalle.cantidad, 0)}
-                   </span>
-                 </div>
+
+               <div style={{
+                 display: 'flex',
+                 justifyContent: 'space-between',
+                 alignItems: 'center',
+                 marginBottom: '0.5rem'
+               }}>
+                 <span style={{ fontSize: '0.875rem', color: '#64748b' }}>Total Unidades:</span>
+                 <span style={{ fontSize: '1.25rem', fontWeight: '700', color: '#3b82f6' }}>
+                   {detalles.reduce((total, detalle) => total + detalle.cantidad, 0)}
+                 </span>
                </div>
-               
-                               <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '0.875rem',
-                    fontWeight: '600',
-                    color: '#64748b',
-                    marginBottom: '0.5rem'
-                  }}>
-                                         💰 Valor Total Estimado
-                   </label>
+
+               <div style={{
+                 display: 'flex',
+                 justifyContent: 'space-between',
+                 alignItems: 'center',
+                 marginBottom: detalles.length > 0 ? '0.75rem' : '1rem'
+               }}>
+                 <span style={{ fontSize: '0.875rem', color: '#64748b' }}>Valor estimado:</span>
+                 <span style={{ fontSize: '1rem', fontWeight: '600', color: '#1e293b' }}>
+                   ${detalles.reduce((total, detalle) => {
+                     const producto = productos.find(p => p.id === detalle.productoId);
+                     return total + (detalle.cantidad * (producto?.precio || 0));
+                   }, 0).toFixed(2)}
+                 </span>
+               </div>
+
+               {detalles.length > 0 && (
+                 <div style={{
+                   paddingTop: '0.75rem',
+                   borderTop: '1px solid #e2e8f0',
+                   marginBottom: '1rem'
+                 }}>
                    <div style={{
-                     padding: '0.75rem',
-                     background: 'white',
-                     border: '1px solid #e2e8f0',
-                     borderRadius: '0.5rem',
-                     fontSize: '0.875rem',
-                     color: '#1e293b',
-                     fontWeight: '500'
+                     fontSize: '0.75rem',
+                     fontWeight: '600',
+                     color: '#64748b',
+                     marginBottom: '0.5rem'
                    }}>
-                     <span style={{ 
-                       color: '#f59e0b', 
-                       fontWeight: '700',
-                       fontSize: '1.1rem'
-                     }}>
-                       ${detalles.reduce((total, detalle) => {
-                         const producto = productos.find(p => p.id === detalle.productoId);
-                         return total + (detalle.cantidad * (producto?.precio || 0));
-                       }, 0).toFixed(2)}
-                     </span>
+                     📈 Cambios de stock
                    </div>
-                </div>
+                   <div style={{
+                     padding: '0.5rem',
+                     background: '#f8fafc',
+                     borderRadius: '0.375rem',
+                     fontSize: '0.75rem',
+                     color: '#475569',
+                     maxHeight: '120px',
+                     overflow: 'auto',
+                     lineHeight: 1.4
+                   }}>
+                     {detalles.map(detalle => {
+                       const producto = productos.find(p => p.id === detalle.productoId);
+                       if (producto) {
+                         const stockActual = producto.stock;
+                         const nuevoStock = stockActual + detalle.cantidad;
+                         return (
+                           <div key={detalle.id} style={{ marginBottom: '0.25rem' }}>
+                             <strong>{producto.nombre}:</strong> {stockActual} → {nuevoStock}{' '}
+                             <span style={{ color: '#059669' }}>(+{detalle.cantidad})</span>
+                           </div>
+                         );
+                       }
+                       return (
+                         <div key={detalle.id} style={{ marginBottom: '0.25rem' }}>
+                           <strong>{detalle.descripcion}:</strong>{' '}
+                           <span style={{ color: '#059669' }}>(+{detalle.cantidad})</span>
+                         </div>
+                       );
+                     })}
+                   </div>
+                 </div>
+               )}
 
-                {/* Resumen de cambios de stock */}
-                {detalles.length > 0 && (
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '0.875rem',
-                      fontWeight: '600',
-                      color: '#64748b',
-                      marginBottom: '0.5rem'
-                    }}>
-                      📈 Cambios de Stock
-                    </label>
-                    <div style={{
-                      padding: '0.75rem',
-                      background: '#f0fdf4',
-                      border: '1px solid #bbf7d0',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.75rem',
-                      color: '#166534',
-                      maxHeight: '120px',
-                      overflow: 'auto'
-                    }}>
-                      {detalles.map(detalle => {
-                        const producto = productos.find(p => p.id === detalle.productoId);
-                        if (producto) {
-                          const stockActual = producto.stock;
-                          const nuevoStock = stockActual + detalle.cantidad;
-                          return (
-                            <div key={detalle.id} style={{ marginBottom: '0.25rem' }}>
-                              <strong>{producto.nombre}:</strong> {stockActual} → {nuevoStock} <span style={{ color: '#059669' }}>(+{detalle.cantidad})</span>
-                            </div>
-                          );
-                        }
-                        return (
-                          <div key={detalle.id} style={{ marginBottom: '0.25rem' }}>
-                            <strong>{detalle.descripcion}:</strong> <span style={{ color: '#059669' }}>(+{detalle.cantidad})</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Botón de Guardar Remito */}
-                <div style={{ marginTop: '1.5rem' }}>
-                  <button
-                    onClick={guardarRemito}
-                    disabled={guardando || detalles.length === 0}
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      background: guardando || detalles.length === 0 ? '#9ca3af' : 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '0.75rem',
-                      fontSize: '1rem',
-                      fontWeight: '600',
-                      cursor: guardando || detalles.length === 0 ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.3s ease',
-                      boxShadow: guardando || detalles.length === 0 ? 'none' : '0 4px 12px rgba(5, 150, 105, 0.3)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem'
-                    }}
-                  >
-                    {guardando ? '💾 Guardando...' : '💾 Guardar Remito'}
-                  </button>
-                  {detalles.length === 0 && (
-                    <p style={{
-                      fontSize: '0.75rem',
-                      color: '#64748b',
-                      textAlign: 'center',
-                      marginTop: '0.5rem',
-                      marginBottom: 0
-                    }}>
-                      Agrega productos para poder guardar
-                    </p>
-                  )}
-                </div>
+               <div style={{
+                 paddingTop: '1rem',
+                 borderTop: '1px solid #e2e8f0'
+               }}>
+                 <button
+                   onClick={guardarRemito}
+                   disabled={guardando || detalles.length === 0}
+                   style={{
+                     width: '100%',
+                     background: guardando || detalles.length === 0
+                       ? '#9ca3af'
+                       : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                     color: 'white',
+                     border: 'none',
+                     borderRadius: '0.5rem',
+                     padding: '0.75rem',
+                     fontSize: '0.875rem',
+                     fontWeight: '600',
+                     cursor: guardando || detalles.length === 0 ? 'not-allowed' : 'pointer',
+                     display: 'flex',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     gap: '0.5rem'
+                   }}
+                 >
+                   {guardando ? '💾 Guardando...' : '💾 Guardar Remito'}
+                 </button>
+                 {detalles.length === 0 && (
+                   <p style={{
+                     fontSize: '0.75rem',
+                     color: '#64748b',
+                     textAlign: 'center',
+                     marginTop: '0.5rem',
+                     marginBottom: 0
+                   }}>
+                     Agrega productos para poder guardar
+                   </p>
+                 )}
+               </div>
              </div>
            </div>
         </div>
