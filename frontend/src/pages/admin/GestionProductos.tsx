@@ -300,8 +300,8 @@ const GestionProductos: React.FC = () => {
         return true;
       });
 
-      // Definir las cards de acciones rápidas (9 cards)
-      const totalAccionesRapidas = 9;
+      // Definir las cards de acciones rápidas (8 cards)
+      const totalAccionesRapidas = 8;
       const totalCards = totalAccionesRapidas + productosFiltrados.length;
 
       switch (event.key) {
@@ -1200,10 +1200,10 @@ const GestionProductos: React.FC = () => {
               </div>
             </div>
 
-            {/* Tarjeta Control de Inventario */}
+            {/* Tarjeta Scanner */}
             <div 
               data-card-index="1"
-              onClick={() => navigate('/admin/control-inventario')}
+              onClick={abrirModalSeleccionScanner}
               style={{
                 background: 'var(--color-card)',
                 borderRadius: '1rem',
@@ -1214,85 +1214,6 @@ const GestionProductos: React.FC = () => {
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.4s both',
                 backgroundColor: navegacionActiva && cardSeleccionada === 1 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
-              }}
-              onMouseOver={(e) => {
-                if (!navegacionActiva) {
-                  e.currentTarget.style.transform = 'translateY(-8px)';
-                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(220, 38, 38, 0.15)';
-                  e.currentTarget.style.borderColor = '#dc2626';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!navegacionActiva) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)';
-                  e.currentTarget.style.borderColor = 'var(--color-borde)';
-                }
-              }}
-            >
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: '1rem'
-              }}>
-                <div style={{
-                  width: '2.5rem',
-                  height: '2.5rem',
-                  background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-                  borderRadius: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.25rem',
-                  marginRight: '0.75rem',
-                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)'
-                }}>
-                  🔍
-                </div>
-                <div>
-                  <h3 style={{
-                    fontSize: '1.125rem',
-                    fontWeight: '600',
-                    color: 'var(--color-texto-principal)',
-                    marginBottom: '0.25rem'
-                  }}>
-                    Control de Inventario
-                  </h3>
-                  <p style={{
-                    fontSize: '0.875rem',
-                    color: 'var(--color-texto-secundario)',
-                    margin: 0,
-                    lineHeight: '1.5'
-                  }}>
-                    Realiza conteo físico y control de stock
-                  </p>
-                </div>
-              </div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                color: '#dc2626',
-                fontSize: '0.875rem',
-                fontWeight: '600'
-              }}>
-                Ir al control →
-              </div>
-            </div>
-
-            {/* Tarjeta Scanner */}
-            <div 
-              data-card-index="2"
-              onClick={abrirModalSeleccionScanner}
-              style={{
-                background: 'var(--color-card)',
-                borderRadius: '1rem',
-                padding: '1.5rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
-                border: navegacionActiva && cardSeleccionada === 2 ? '2px solid #000' : '1px solid var(--color-borde)',
-                transition: 'all 0.3s ease',
-                animation: 'slideInUp 0.6s ease-out 0.4s both',
-                backgroundColor: navegacionActiva && cardSeleccionada === 2 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
@@ -1360,7 +1281,7 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Historial de Carga */}
             <div 
-              data-card-index="3"
+              data-card-index="2"
               onClick={irAHistorialCarga}
               style={{
                 background: 'var(--color-card)',
@@ -1368,10 +1289,10 @@ const GestionProductos: React.FC = () => {
                 padding: '1.5rem',
                 cursor: 'pointer',
                 boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
-                border: navegacionActiva && cardSeleccionada === 3 ? '2px solid #000' : '1px solid var(--color-borde)',
+                border: navegacionActiva && cardSeleccionada === 2 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.6s both',
-                backgroundColor: navegacionActiva && cardSeleccionada === 3 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
+                backgroundColor: navegacionActiva && cardSeleccionada === 2 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
@@ -1439,7 +1360,7 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Importación Masiva */}
             <div 
-              data-card-index="4"
+              data-card-index="3"
               onClick={abrirImportacion}
               style={{
                 background: 'var(--color-card)',
@@ -1447,10 +1368,10 @@ const GestionProductos: React.FC = () => {
                 padding: '1.5rem',
                 cursor: 'pointer',
                 boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
-                border: navegacionActiva && cardSeleccionada === 4 ? '2px solid #000' : '1px solid var(--color-borde)',
+                border: navegacionActiva && cardSeleccionada === 3 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.7s both',
-                backgroundColor: navegacionActiva && cardSeleccionada === 4 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
+                backgroundColor: navegacionActiva && cardSeleccionada === 3 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
@@ -1518,7 +1439,7 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Importación de Inventario */}
             <div 
-              data-card-index="5"
+              data-card-index="4"
               onClick={irAImportacionInventario}
               style={{
                 background: 'var(--color-card)',
@@ -1526,10 +1447,10 @@ const GestionProductos: React.FC = () => {
                 padding: '1.5rem',
                 cursor: 'pointer',
                 boxShadow: '0 4px 6px -1px var(--color-sombra), 0 2px 4px -1px var(--color-sombra)',
-                border: navegacionActiva && cardSeleccionada === 5 ? '2px solid #000' : '1px solid var(--color-borde)',
+                border: navegacionActiva && cardSeleccionada === 4 ? '2px solid #000' : '1px solid var(--color-borde)',
                 transition: 'all 0.3s ease',
                 animation: 'slideInUp 0.6s ease-out 0.8s both',
-                backgroundColor: navegacionActiva && cardSeleccionada === 5 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
+                backgroundColor: navegacionActiva && cardSeleccionada === 4 ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-card)'
               }}
               onMouseOver={(e) => {
                 if (!navegacionActiva) {
@@ -1597,7 +1518,7 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Reporte de Stock */}
             <div 
-              data-card-index="6"
+              data-card-index="5"
               onClick={cargando ? undefined : descargarReporteStock}
               style={{
                 background: 'var(--color-card)',
@@ -1677,7 +1598,7 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Limpieza de Datos */}
             <div 
-              data-card-index="7"
+              data-card-index="6"
               onClick={limpiandoDatos ? undefined : limpiarDatosInconsistentes}
               style={{
                 background: 'var(--color-card)',
@@ -1757,7 +1678,7 @@ const GestionProductos: React.FC = () => {
 
             {/* Tarjeta Sincronización de Stock */}
             <div 
-              data-card-index="8"
+              data-card-index="7"
               onClick={sincronizandoStock ? undefined : sincronizarTodoStock}
               style={{
                 background: 'var(--color-card)',

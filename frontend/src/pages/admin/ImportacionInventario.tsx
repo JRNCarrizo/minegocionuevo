@@ -263,7 +263,7 @@ export default function ImportacionInventario() {
                 paddingLeft: '1.5rem',
                 lineHeight: '1.6'
               }}>
-                <li>El archivo debe tener una pestaña llamada <strong>"Stock"</strong></li>
+                <li>El archivo debe tener una pestaña cuyo nombre incluya <strong>"Stock"</strong> (por ejemplo la primera hoja del Excel que descargás desde <strong>Stock general</strong>)</li>
                 <li>Columna <strong>"Producto"</strong>: Código personalizado</li>
                 <li>Columna <strong>"Descripción"</strong>: Nombre del producto</li>
                 <li>Columna <strong>"Stock"</strong>: Cantidad en stock</li>

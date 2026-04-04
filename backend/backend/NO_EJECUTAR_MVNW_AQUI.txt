@@ -1,0 +1,8 @@
+No hay mvnw en esta carpeta.
+
+Subí un nivel y ejecutá Maven ahí:
+
+  cd ..
+  ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev-persistent
+
+(Git Bash en Windows, desde .../MiNegocio-master/backend)

@@ -26,6 +26,21 @@ import java.util.stream.Collectors;
 @Service
 public class ImportacionProductoService {
 
+    /** Orden de columnas en Excel (debe coincidir con PlantillaCargaMasivaService) */
+    private static final String[] ENCABEZADOS_IMPORTACION = {
+        "Código Personalizado",
+        "Nombre*",
+        "Marca",
+        "Descripción",
+        "Categoría",
+        "Sector de almacenamiento",
+        "Stock Actual*",
+        "Precio",
+        "Código de Barras"
+    };
+
+    private static final int NUM_COLUMNAS_IMPORTACION = ENCABEZADOS_IMPORTACION.length;
+
     @Autowired
     private ProductoRepository productoRepository;
 
@@ -58,14 +73,14 @@ public class ImportacionProductoService {
             int headerRowIndex = encontrarFilaEncabezados(sheet);
             if (headerRowIndex == -1) {
                 return new ResultadoImportacionDTO(0, 0, 1,
-                    Arrays.asList(Map.of("fila", 1, "error", "Formato de archivo incorrecto. No se encontraron los encabezados esperados. Verifique que tenga las columnas: Nombre*, Marca, Descripción, Categoría, Sector Almacenamiento, Stock Actual*, Stock Mínimo, Precio, Código de Barras, Código Personalizado, Estado")),
+                    Arrays.asList(Map.of("fila", 1, "error", "Formato de archivo incorrecto. Encabezados esperados (en este orden): " + String.join(", ", ENCABEZADOS_IMPORTACION))),
                     new ArrayList<>(), "Formato de archivo incorrecto");
             }
 
             Row headerRow = sheet.getRow(headerRowIndex);
             if (headerRow == null || !validarEncabezados(headerRow)) {
                 return new ResultadoImportacionDTO(0, 0, 1,
-                    Arrays.asList(Map.of("fila", headerRowIndex + 1, "error", "Formato de archivo incorrecto. Verifique que tenga las columnas: Nombre*, Marca, Descripción, Categoría, Sector Almacenamiento, Stock Actual*, Stock Mínimo, Precio, Código de Barras, Código Personalizado, Estado")),
+                    Arrays.asList(Map.of("fila", headerRowIndex + 1, "error", "Formato de archivo incorrecto. Encabezados esperados (en este orden): " + String.join(", ", ENCABEZADOS_IMPORTACION))),
                     new ArrayList<>(), "Formato de archivo incorrecto");
             }
 
@@ -190,7 +205,7 @@ public class ImportacionProductoService {
                 producto.setCodigoBarras(productoBase.getCodigoBarras());
                 producto.setCodigoPersonalizado(productoBase.getCodigoPersonalizado());
                 producto.setEmpresa(empresa);
-                producto.setActivo("Activo".equalsIgnoreCase(productoBase.getEstado()));
+                producto.setActivo(true);
 
                 // Guardar el producto principal
                 Producto productoSaved = productoRepository.save(producto);
@@ -318,24 +333,17 @@ public class ImportacionProductoService {
      * Busca la fila que contiene los encabezados esperados
      */
     private int encontrarFilaEncabezados(Sheet sheet) {
-        String[] headersEsperados = {
-            "Nombre*", "Marca", "Descripción", "Categoría", 
-            "Sector Almacenamiento", "Stock Actual*", "Stock Mínimo", 
-            "Precio", "Código de Barras", "Código Personalizado", "Estado"
-        };
-        
         System.out.println("🔍 Buscando encabezados en las primeras filas del archivo...");
-        System.out.println("📋 Encabezados esperados: " + String.join(", ", headersEsperados));
+        System.out.println("📋 Encabezados esperados: " + String.join(", ", ENCABEZADOS_IMPORTACION));
         
-        // Buscar en las primeras 15 filas (cubre reporte de stock y plantilla)
+        // Buscar en las primeras 15 filas (cubre plantilla con título e instrucciones)
         for (int rowIndex = 0; rowIndex <= Math.min(15, sheet.getLastRowNum()); rowIndex++) {
             Row row = sheet.getRow(rowIndex);
             if (row != null) {
                 String encabezadosFila = obtenerEncabezadosFila(row);
                 System.out.println("🔍 Fila " + rowIndex + ": " + encabezadosFila);
                 
-                // Verificar si esta fila tiene suficientes celdas
-                if (row.getLastCellNum() >= 11) {
+                if (row.getLastCellNum() >= NUM_COLUMNAS_IMPORTACION) {
                     if (validarEncabezados(row)) {
                         System.out.println("✅ Encontrados encabezados válidos en fila " + rowIndex);
                         return rowIndex;
@@ -358,7 +366,7 @@ public class ImportacionProductoService {
      */
     private String obtenerEncabezadosFila(Row row) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 11; i++) {
+        for (int i = 0; i < NUM_COLUMNAS_IMPORTACION; i++) {
             Cell cell = row.getCell(i);
             if (cell != null) {
                 String valor = obtenerValorCelda(cell);
@@ -371,28 +379,22 @@ public class ImportacionProductoService {
     }
 
     /**
-     * Valida que los encabezados del archivo sean correctos (formato del reporte de stock)
+     * Valida que los encabezados del archivo coincidan con la plantilla actual
      */
     private boolean validarEncabezados(Row headerRow) {
-        String[] headersEsperados = {
-            "Nombre*", "Marca", "Descripción", "Categoría", 
-            "Sector Almacenamiento", "Stock Actual*", "Stock Mínimo", 
-            "Precio", "Código de Barras", "Código Personalizado", "Estado"
-        };
-        
         System.out.println("🔍 Validando encabezados de la fila...");
         
-        for (int i = 0; i < headersEsperados.length; i++) {
+        for (int i = 0; i < ENCABEZADOS_IMPORTACION.length; i++) {
             Cell cell = headerRow.getCell(i);
             String valorCelda = obtenerValorCelda(cell);
             
             if (cell == null) {
-                System.out.println("❌ Columna " + i + " está vacía, esperado: '" + headersEsperados[i] + "'");
+                System.out.println("❌ Columna " + i + " está vacía, esperado: '" + ENCABEZADOS_IMPORTACION[i] + "'");
                 return false;
             }
             
-            if (!headersEsperados[i].equals(valorCelda)) {
-                System.out.println("❌ Encabezado no coincide en columna " + i + ": esperado='" + headersEsperados[i] + "', encontrado='" + valorCelda + "'");
+            if (!ENCABEZADOS_IMPORTACION[i].equals(valorCelda)) {
+                System.out.println("❌ Encabezado no coincide en columna " + i + ": esperado='" + ENCABEZADOS_IMPORTACION[i] + "', encontrado='" + valorCelda + "'");
                 return false;
             }
             
@@ -404,11 +406,15 @@ public class ImportacionProductoService {
     }
 
     /**
-     * Valida una fila de datos (formato del reporte de stock)
+     * Valida una fila de datos (orden: código personalizado, nombre, marca, …)
      */
     private Map<String, Object> validarFila(Row row, int numeroFila, Long empresaId) {
-        // Validar nombre (obligatorio)
-        String nombre = obtenerValorCelda(row.getCell(0));
+        String codigoPersonalizado = obtenerValorCelda(row.getCell(0));
+        if (codigoPersonalizado != null && codigoPersonalizado.length() > 50) {
+            return Map.of("fila", numeroFila, "error", "El código personalizado no puede exceder 50 caracteres");
+        }
+
+        String nombre = obtenerValorCelda(row.getCell(1));
         if (nombre == null || nombre.trim().isEmpty()) {
             return Map.of("fila", numeroFila, "error", "El nombre es obligatorio");
         }
@@ -416,85 +422,60 @@ public class ImportacionProductoService {
             return Map.of("fila", numeroFila, "error", "El nombre no puede exceder 200 caracteres");
         }
 
-        // Validar marca (opcional pero con límite)
-        String marca = obtenerValorCelda(row.getCell(1));
+        String marca = obtenerValorCelda(row.getCell(2));
         if (marca != null && marca.length() > 100) {
             return Map.of("fila", numeroFila, "error", "La marca no puede exceder 100 caracteres");
         }
 
-        // Validar descripción (opcional pero con límite)
-        String descripcion = obtenerValorCelda(row.getCell(2));
+        String descripcion = obtenerValorCelda(row.getCell(3));
         if (descripcion != null && descripcion.length() > 1000) {
             return Map.of("fila", numeroFila, "error", "La descripción no puede exceder 1000 caracteres");
         }
 
-        // Validar categoría (opcional pero con límite)
-        String categoria = obtenerValorCelda(row.getCell(3));
+        String categoria = obtenerValorCelda(row.getCell(4));
         if (categoria != null && categoria.length() > 100) {
             return Map.of("fila", numeroFila, "error", "La categoría no puede exceder 100 caracteres");
         }
 
-        // Validar sector de almacenamiento (opcional pero con límite)
-        String sectorAlmacenamiento = obtenerValorCelda(row.getCell(4));
+        String sectorAlmacenamiento = obtenerValorCelda(row.getCell(5));
         if (sectorAlmacenamiento != null && sectorAlmacenamiento.length() > 100) {
             return Map.of("fila", numeroFila, "error", "El sector de almacenamiento no puede exceder 100 caracteres");
         }
 
-        // Validar stock actual (obligatorio)
-        Integer stock = obtenerValorEntero(row.getCell(5));
+        Integer stock = obtenerValorEntero(row.getCell(6));
         if (stock == null || stock < 0) {
             return Map.of("fila", numeroFila, "error", "El stock actual debe ser un número mayor o igual a 0");
         }
 
-        // Validar stock mínimo (opcional)
-        Integer stockMinimo = obtenerValorEntero(row.getCell(6));
-        if (stockMinimo != null && stockMinimo < 0) {
-            return Map.of("fila", numeroFila, "error", "El stock mínimo debe ser un número mayor o igual a 0");
-        }
-
-        // Validar precio (opcional)
         BigDecimal precio = obtenerValorDecimal(row.getCell(7));
         if (precio != null && precio.compareTo(BigDecimal.ZERO) <= 0) {
             return Map.of("fila", numeroFila, "error", "El precio debe ser mayor a 0 si se especifica");
         }
 
-        // Validar código de barras (opcional pero con límite)
         String codigoBarras = obtenerValorCelda(row.getCell(8));
         if (codigoBarras != null && codigoBarras.length() > 50) {
             return Map.of("fila", numeroFila, "error", "El código de barras no puede exceder 50 caracteres");
         }
 
-        // Validar código personalizado (opcional pero con límite)
-        String codigoPersonalizado = obtenerValorCelda(row.getCell(9));
-        if (codigoPersonalizado != null && codigoPersonalizado.length() > 50) {
-            return Map.of("fila", numeroFila, "error", "El código personalizado no puede exceder 50 caracteres");
-        }
-
-        // Validar estado (opcional)
-        String estado = obtenerValorCelda(row.getCell(10));
-        if (estado != null && !estado.equalsIgnoreCase("Activo") && !estado.equalsIgnoreCase("Inactivo")) {
-            return Map.of("fila", numeroFila, "error", "El estado debe ser 'Activo' o 'Inactivo'");
-        }
-
-        return null; // Sin errores
+        return null;
     }
 
     /**
-     * Convierte una fila de Excel a DTO de producto (formato del reporte de stock)
+     * Convierte una fila de Excel a DTO (siempre Activo; stock mínimo 0 si no viene en Excel)
      */
     private ImportacionProductoDTO convertirFilaAProducto(Row row) {
         return new ImportacionProductoDTO(
-            obtenerValorCelda(row.getCell(0)), // nombre
-            obtenerValorCelda(row.getCell(2)), // descripcion
+            obtenerValorCelda(row.getCell(1)), // nombre
+            obtenerValorCelda(row.getCell(3)), // descripcion
             obtenerValorDecimal(row.getCell(7)), // precio
-            obtenerValorEntero(row.getCell(5)), // stock
-            obtenerValorEntero(row.getCell(6)), // stockMinimo
-            obtenerValorCelda(row.getCell(3)), // categoria
-            obtenerValorCelda(row.getCell(1)), // marca
-            obtenerValorCelda(row.getCell(4)), // sectorAlmacenamiento
+            obtenerValorEntero(row.getCell(6)), // stock
+            0, // stockMinimo no está en plantilla
+            obtenerValorCelda(row.getCell(4)), // categoria
+            obtenerValorCelda(row.getCell(2)), // marca
+            obtenerValorCelda(row.getCell(5)), // sectorAlmacenamiento
             obtenerValorCelda(row.getCell(8)), // codigoBarras
-            obtenerValorCelda(row.getCell(9)), // codigoPersonalizado
-            obtenerValorCelda(row.getCell(10)) // estado
+            obtenerValorCelda(row.getCell(0)), // codigoPersonalizado
+            "Activo"
         );
     }
 

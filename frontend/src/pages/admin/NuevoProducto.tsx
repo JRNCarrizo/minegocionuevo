@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, memo, useRef } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
 import LimitService from '../../services/limitService';
@@ -10,6 +10,10 @@ import { useUsuarioActual } from '../../hooks/useUsuarioActual';
 import { useResponsive } from '../../hooks/useResponsive';
 import '../../styles/gestor-imagenes.css';
 import Barcode from 'react-barcode';
+
+type PestanaNuevoProducto = 'basica' | 'inventario' | 'precio' | 'imagenes';
+
+const ORDEN_PESTANAS: PestanaNuevoProducto[] = ['basica', 'inventario', 'precio', 'imagenes'];
 
 // Componente de campo de formulario optimizado con memo
 const CampoFormulario = memo(({ 
@@ -137,9 +141,12 @@ export default function NuevoProducto() {
   const { datosUsuario, cerrarSesion } = useUsuarioActual();
   const { isMobile } = useResponsive();
   const [searchParams] = useSearchParams();
+  const routeParams = useParams<{ id?: string }>();
+  const productoIdEdicion = routeParams.id ? parseInt(routeParams.id, 10) : NaN;
+  const esEdicion = Number.isFinite(productoIdEdicion) && productoIdEdicion > 0;
   
   // Detectar si viene desde "Crear Ingreso"
-  const vieneDesdeIngreso = searchParams.get('desde') === 'ingreso';
+  const vieneDesdeIngreso = !esEdicion && searchParams.get('desde') === 'ingreso';
 
   // Función para reproducir el sonido "pi"
   const playBeepSound = () => {
@@ -179,7 +186,10 @@ export default function NuevoProducto() {
     nombre: '',
     marca: '',
     descripcion: '',
-    precio: '0',
+    precio: '',
+    costo: '',
+    margenGanancia: '',
+    ivaPorcentaje: '',
     stock: '',
     stockMinimo: '5',
     unidad: '',
@@ -191,7 +201,7 @@ export default function NuevoProducto() {
   });
   const [cargando, setCargando] = useState(false);
   const [categorias, setCategorias] = useState<string[]>([]);
-  const [pasoActual, setPasoActual] = useState(1);
+  const [pestanaActiva, setPestanaActiva] = useState<PestanaNuevoProducto>('basica');
   const [errores, setErrores] = useState<{[key: string]: string}>({});
   const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
   const [nuevaCategoria, setNuevaCategoria] = useState('');
@@ -206,6 +216,12 @@ export default function NuevoProducto() {
   const [codigosFiltrados, setCodigosFiltrados] = useState<string[]>([]);
   const [mostrarSugerenciasCodigo, setMostrarSugerenciasCodigo] = useState(false);
   const [mostrarScanner, setMostrarScanner] = useState(false);
+  const [cargandoProducto, setCargandoProducto] = useState(esEdicion);
+  const [sectorOriginal, setSectorOriginal] = useState('');
+  const [activoProducto, setActivoProducto] = useState(true);
+  const [destacadoProducto, setDestacadoProducto] = useState(false);
+
+  const idVistaCodigoBarras = esEdicion ? 'barcode-preview-editar' : 'barcode-preview-nuevo';
 
   // Refs para navegación con Enter
   const nombreRef = useRef<HTMLInputElement>(null);
@@ -215,6 +231,8 @@ export default function NuevoProducto() {
   const categoriaRef = useRef<HTMLSelectElement>(null);
   const descripcionRef = useRef<HTMLTextAreaElement>(null);
   const precioRef = useRef<HTMLInputElement>(null);
+  const costoRef = useRef<HTMLInputElement>(null);
+  const margenGananciaRef = useRef<HTMLInputElement>(null);
   const unidadRef = useRef<HTMLInputElement>(null);
   const stockRef = useRef<HTMLInputElement>(null);
   const stockMinimoRef = useRef<HTMLInputElement>(null);
@@ -269,6 +287,24 @@ export default function NuevoProducto() {
       console.error('Error al cargar códigos personalizados:', error);
     }
   }, [empresaId]);
+
+  const irPestana = useCallback((p: PestanaNuevoProducto) => {
+    setPestanaActiva(p);
+    setTimeout(() => {
+      document.querySelector('.tarjeta-formulario')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }, []);
+
+  const irSiguientePestana = useCallback(() => {
+    setPestanaActiva(prev => {
+      const i = ORDEN_PESTANAS.indexOf(prev);
+      return ORDEN_PESTANAS[Math.min(i + 1, ORDEN_PESTANAS.length - 1)];
+    });
+  }, []);
+
+  const manejarEscape = useCallback(() => {
+    navigate('/admin/productos');
+  }, [navigate]);
 
   const manejarCambioMarca = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -419,12 +455,12 @@ export default function NuevoProducto() {
     // Si no hay sugerencias o no se está mostrando sugerencias, manejar navegación normal
     if (e.key === 'Enter') {
       e.preventDefault();
-      siguientePaso();
+      irSiguientePestana();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       manejarEscape();
     }
-  }, [mostrarSugerenciasSector, sectoresFiltrados, sectorSeleccionadoIndex, seleccionarSector, crearNuevoSector, formulario.sectorAlmacenamiento]);
+  }, [mostrarSugerenciasSector, sectoresFiltrados, sectorSeleccionadoIndex, seleccionarSector, crearNuevoSector, formulario.sectorAlmacenamiento, irSiguientePestana, manejarEscape]);
 
   const manejarCambioCodigoPersonalizado = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { value } = e.target;
@@ -491,6 +527,59 @@ export default function NuevoProducto() {
     }
   }, [empresaId]);
 
+  const cargarProductoParaEdicion = useCallback(async () => {
+    if (!esEdicion || !empresaId) {
+      setCargandoProducto(false);
+      return;
+    }
+    try {
+      setCargandoProducto(true);
+      const response = await ApiService.obtenerProducto(empresaId, productoIdEdicion, true);
+      if (!response?.data) {
+        toast.error('Producto no encontrado');
+        navigate('/admin/productos');
+        return;
+      }
+      const producto = response.data as Record<string, unknown>;
+      const precioNum = typeof producto.precio === 'number' ? producto.precio : parseFloat(String(producto.precio ?? ''));
+      const precioStr = Number.isFinite(precioNum) ? String(precioNum) : '';
+      const stockNum = typeof producto.stock === 'number' ? producto.stock : Number(producto.stock ?? '');
+      const smRaw = producto.stockMinimo;
+      const smNum = smRaw != null && smRaw !== '' ? Number(smRaw) : 5;
+
+      setFormulario({
+        nombre: String(producto.nombre ?? ''),
+        marca: String(producto.marca ?? ''),
+        descripcion: String(producto.descripcion ?? ''),
+        precio: precioStr,
+        costo: '',
+        margenGanancia: '',
+        ivaPorcentaje: '',
+        stock: Number.isFinite(stockNum) ? String(stockNum) : '',
+        stockMinimo: Number.isFinite(smNum) ? String(smNum) : '5',
+        unidad: String(producto.unidad ?? ''),
+        categoria: String(producto.categoria ?? ''),
+        sectorAlmacenamiento: String(producto.sectorAlmacenamiento ?? ''),
+        codigoPersonalizado: String(producto.codigoPersonalizado ?? ''),
+        codigoBarras: String(producto.codigoBarras ?? ''),
+        imagenes: Array.isArray(producto.imagenes) ? (producto.imagenes as string[]) : [],
+      });
+      setSectorOriginal(String(producto.sectorAlmacenamiento ?? ''));
+      setActivoProducto(producto.activo !== false);
+      setDestacadoProducto(Boolean(producto.destacado));
+      const cat = String(producto.categoria ?? '');
+      if (cat) {
+        setCategorias(prev => (prev.includes(cat) ? prev : [...prev, cat]));
+      }
+    } catch (err) {
+      console.error('Error al cargar producto:', err);
+      toast.error('Error al cargar el producto');
+      navigate('/admin/productos');
+    } finally {
+      setCargandoProducto(false);
+    }
+  }, [esEdicion, empresaId, productoIdEdicion, navigate]);
+
   useEffect(() => {
     cargarCategorias();
     cargarMarcas();
@@ -498,12 +587,16 @@ export default function NuevoProducto() {
     cargarCodigosPersonalizados();
   }, [cargarCategorias, cargarMarcas, cargarSectoresAlmacenamiento, cargarCodigosPersonalizados]);
 
-  // Auto-focus en el primer campo al cargar
   useEffect(() => {
-    if (nombreRef.current) {
-      nombreRef.current.focus();
+    if (esEdicion) {
+      cargarProductoParaEdicion();
     }
-  }, []);
+  }, [esEdicion, cargarProductoParaEdicion]);
+
+  useEffect(() => {
+    if (cargandoProducto) return;
+    nombreRef.current?.focus();
+  }, [cargandoProducto]);
 
   const manejarCambio = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -567,101 +660,155 @@ export default function NuevoProducto() {
     }));
   }, []);
 
-  const validarPaso = (paso: number): boolean => {
+  const redondear2 = (n: number) => Math.round(n * 100) / 100;
+
+  const manejarCambioCosto = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormulario(prev => {
+      const next = { ...prev, costo: value };
+      const cStr = value.trim().replace(',', '.');
+      if (cStr === '' || cStr === '-') {
+        return next;
+      }
+      const c = parseFloat(cStr);
+      if (Number.isNaN(c)) {
+        return next;
+      }
+      const mStr = prev.margenGanancia.trim().replace(',', '.');
+      const m = parseFloat(mStr);
+      // Margen negativo suele ser un valor arrastrado (p. ej. precio < costo → -90 %); si aplicamos la fórmula, el precio queda muy por debajo del costo (10000 → 1000)
+      if (prev.margenGanancia.trim() !== '' && !Number.isNaN(m) && m >= 0) {
+        next.precio = redondear2(c * (1 + m / 100)).toFixed(2);
+        return next;
+      }
+      if (prev.margenGanancia.trim() !== '' && !Number.isNaN(m) && m < 0) {
+        next.margenGanancia = '';
+        next.precio = value;
+        return next;
+      }
+      const pStr = prev.precio.trim().replace(',', '.');
+      const p = parseFloat(pStr);
+      const tienePrecioVentaReal = prev.precio.trim() !== '' && !Number.isNaN(p) && p > 0;
+      const costoPrevN = parseFloat(prev.costo.trim().replace(',', '.'));
+      const precioPrevN = parseFloat(prev.precio.trim().replace(',', '.'));
+      // Si el precio venía igual al costo (p. ej. al tipear 1000 → 10000), seguir espejando; si no, recalcular margen respecto al precio fijado a mano
+      const costoYPrecioIguales =
+        !Number.isNaN(costoPrevN) &&
+        !Number.isNaN(precioPrevN) &&
+        costoPrevN === precioPrevN;
+      if (tienePrecioVentaReal && c > 0 && !costoYPrecioIguales) {
+        const margenPct = ((p / c) - 1) * 100;
+        if (Number.isFinite(margenPct)) {
+          next.margenGanancia = String(redondear2(margenPct));
+        }
+        return next;
+      }
+      next.precio = value;
+      return next;
+    });
+    setErrores(er => {
+      const n = { ...er };
+      delete n.costo;
+      return n;
+    });
+  }, []);
+
+  const manejarCambioMargen = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormulario(prev => {
+      const next = { ...prev, margenGanancia: value };
+      const cStr = prev.costo.trim().replace(',', '.');
+      const c = parseFloat(cStr);
+      if (prev.costo.trim() === '' || Number.isNaN(c)) {
+        return next;
+      }
+      if (value.trim() === '') {
+        next.precio = prev.costo;
+        return next;
+      }
+      const mStr = value.trim().replace(',', '.');
+      const m = parseFloat(mStr);
+      if (Number.isNaN(m)) {
+        return next;
+      }
+      next.precio = redondear2(c * (1 + m / 100)).toFixed(2);
+      return next;
+    });
+    setErrores(er => {
+      const n = { ...er };
+      delete n.margenGanancia;
+      return n;
+    });
+  }, []);
+
+  const manejarCambioPrecioVenta = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormulario(prev => {
+      const next = { ...prev, precio: value };
+      const cStr = prev.costo.trim().replace(',', '.');
+      const c = parseFloat(cStr);
+      if (prev.costo.trim() === '' || Number.isNaN(c) || c <= 0) {
+        return next;
+      }
+      const pStr = value.trim().replace(',', '.');
+      if (pStr === '' || pStr === '-') {
+        return next;
+      }
+      const p = parseFloat(pStr);
+      if (Number.isNaN(p)) {
+        return next;
+      }
+      const margenPct = ((p / c) - 1) * 100;
+      if (Number.isFinite(margenPct)) {
+        next.margenGanancia = String(redondear2(margenPct));
+      }
+      return next;
+    });
+    setErrores(er => {
+      const n = { ...er };
+      delete n.precio;
+      return n;
+    });
+  }, []);
+
+  const obtenerErroresValidacion = (): {[key: string]: string} => {
     const nuevosErrores: {[key: string]: string} = {};
 
-    if (paso === 1) {
-      if (!formulario.nombre.trim()) {
-        nuevosErrores.nombre = 'El nombre del producto es obligatorio';
-      }
-      if (formulario.precio && (isNaN(Number(formulario.precio)) || Number(formulario.precio) < 0)) {
-        nuevosErrores.precio = 'El precio debe ser un número válido mayor o igual a 0';
-      }
-      if (!formulario.categoria) {
-        nuevosErrores.categoria = 'Selecciona una categoría';
-      }
+    if (!formulario.nombre.trim()) {
+      nuevosErrores.nombre = 'El nombre del producto es obligatorio';
+    }
+    if (!formulario.categoria) {
+      nuevosErrores.categoria = 'Selecciona una categoría';
     }
 
-    if (paso === 2) {
-      if (!formulario.stock || isNaN(Number(formulario.stock)) || Number(formulario.stock) < 0) {
-        nuevosErrores.stock = 'El stock debe ser un número válido mayor o igual a 0';
-      }
-      if (!formulario.stockMinimo || isNaN(Number(formulario.stockMinimo)) || Number(formulario.stockMinimo) < 0) {
-        nuevosErrores.stockMinimo = 'El stock mínimo debe ser un número válido mayor o igual a 0';
-      }
+    const stockStr = formulario.stock.trim();
+    if (stockStr !== '' && (isNaN(Number(stockStr)) || Number(stockStr) < 0)) {
+      nuevosErrores.stock = 'El stock debe ser un número válido mayor o igual a 0';
+    }
+    const smStr = formulario.stockMinimo.trim();
+    if (smStr !== '' && (isNaN(Number(smStr)) || Number(smStr) < 0)) {
+      nuevosErrores.stockMinimo = 'El stock mínimo debe ser un número válido mayor o igual a 0';
     }
 
-    setErrores(nuevosErrores);
-    return Object.keys(nuevosErrores).length === 0;
-  };
-
-  const siguientePaso = () => {
-    if (validarPaso(pasoActual)) {
-      setPasoActual(pasoActual + 1);
-      
-      // Scroll al principio del formulario y enfocar el primer campo del nuevo paso
-      setTimeout(() => {
-        // Scroll al principio del formulario
-        const formulario = document.querySelector('.tarjeta-formulario');
-        if (formulario) {
-          formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-        
-        // Enfocar el primer campo del nuevo paso
-        const nuevoPaso = pasoActual + 1;
-        if (nuevoPaso === 2) {
-          // Paso 2: Enfocar el campo de stock
-          setTimeout(() => {
-            if (stockRef.current) {
-              stockRef.current.focus();
-            }
-          }, 100);
-        } else if (nuevoPaso === 3) {
-          // Paso 3: No hay campos de texto, pero podemos enfocar el botón de guardar
-          setTimeout(() => {
-            const botonGuardar = document.querySelector('button[type="submit"]') as HTMLButtonElement;
-            if (botonGuardar) {
-              botonGuardar.focus();
-            }
-          }, 100);
-        }
-      }, 50);
+    const precioStr = formulario.precio.trim().replace(',', '.');
+    if (precioStr !== '' && (isNaN(Number(precioStr)) || Number(precioStr) < 0)) {
+      nuevosErrores.precio = 'El precio debe ser un número válido mayor o igual a 0';
     }
-  };
 
-  const pasoAnterior = () => {
-    setPasoActual(pasoActual - 1);
-    
-    // Scroll al principio del formulario y enfocar el primer campo del paso anterior
-    setTimeout(() => {
-      // Scroll al principio del formulario
-      const formulario = document.querySelector('.tarjeta-formulario');
-      if (formulario) {
-        formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      
-      // Enfocar el primer campo del paso anterior
-      const pasoAnterior = pasoActual - 1;
-      if (pasoAnterior === 1) {
-        // Paso 1: Enfocar el campo de nombre
-        setTimeout(() => {
-          if (nombreRef.current) {
-            nombreRef.current.focus();
-          }
-        }, 100);
-      } else if (pasoAnterior === 2) {
-        // Paso 2: Enfocar el campo de stock
-        setTimeout(() => {
-          if (stockRef.current) {
-            stockRef.current.focus();
-          }
-        }, 100);
-      }
-    }, 50);
-  };
+    const costoStr = formulario.costo.trim().replace(',', '.');
+    if (costoStr !== '' && (isNaN(Number(costoStr)) || Number(costoStr) < 0)) {
+      nuevosErrores.costo = 'El costo debe ser un número válido mayor o igual a 0';
+    }
+    const margenStr = formulario.margenGanancia.trim().replace(',', '.');
+    if (margenStr !== '' && isNaN(Number(margenStr))) {
+      nuevosErrores.margenGanancia = 'El margen debe ser un número válido';
+    }
+    const ivaStr = formulario.ivaPorcentaje.trim().replace(',', '.');
+    if (ivaStr !== '' && (isNaN(Number(ivaStr)) || Number(ivaStr) < 0)) {
+      nuevosErrores.ivaPorcentaje = 'El IVA % debe ser un número válido';
+    }
 
-  const validarFormulario = () => {
-    return validarPaso(1) && validarPaso(2);
+    return nuevosErrores;
   };
 
   // Navegación entre campos con Enter
@@ -699,9 +846,14 @@ export default function NuevoProducto() {
         case 'sectorAlmacenamiento':
           sectorAlmacenamientoRef.current?.focus();
           break;
-        case 'siguientePaso':
-          // Si estamos en el último campo del paso actual, pasar al siguiente paso
-          siguientePaso();
+        case 'costo':
+          costoRef.current?.focus();
+          break;
+        case 'margenGanancia':
+          margenGananciaRef.current?.focus();
+          break;
+        case 'siguientePestana':
+          irSiguientePestana();
           break;
         case 'enviar':
           // Si estamos en el último campo, enviar el formulario
@@ -711,17 +863,6 @@ export default function NuevoProducto() {
     } else if (e.key === 'Escape') {
       e.preventDefault();
       manejarEscape();
-    }
-  };
-
-  // Manejador de Escape para navegación hacia atrás
-  const manejarEscape = () => {
-    if (pasoActual === 1) {
-      // Si estamos en el primer paso, salir del formulario
-      navigate('/admin/productos');
-    } else {
-      // Si estamos en otros pasos, volver al paso anterior
-      pasoAnterior();
     }
   };
 
@@ -764,15 +905,8 @@ export default function NuevoProducto() {
     }
   };
 
-  // Manejador de teclado global para el formulario
   const manejarTecladoGlobal = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      // Si estamos en el Paso 3 (Imágenes), enviar el formulario
-      if (pasoActual === 3) {
-        e.preventDefault();
-        enviarFormulario(e as any);
-      }
-    } else if (e.key === 'Escape') {
+    if (e.key === 'Escape') {
       e.preventDefault();
       manejarEscape();
     }
@@ -781,8 +915,17 @@ export default function NuevoProducto() {
   const enviarFormulario = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validarFormulario()) {
+    const erroresEnvio = obtenerErroresValidacion();
+    if (Object.keys(erroresEnvio).length > 0) {
+      setErrores(erroresEnvio);
       toast.error('Por favor, corrige los errores en el formulario');
+      if (erroresEnvio.nombre || erroresEnvio.categoria) {
+        irPestana('basica');
+      } else if (erroresEnvio.stock || erroresEnvio.stockMinimo) {
+        irPestana('inventario');
+      } else if (erroresEnvio.precio || erroresEnvio.costo || erroresEnvio.margenGanancia || erroresEnvio.ivaPorcentaje) {
+        irPestana('precio');
+      }
       return;
     }
 
@@ -794,62 +937,97 @@ export default function NuevoProducto() {
         return;
       }
 
-      // Verificar límites antes de crear el producto
-      console.log('🔍 Verificando límites antes de crear producto...');
-      const canProceed = await LimitService.checkLimitsBeforeAction('addProduct');
-      
-      if (!canProceed) {
-        console.log('❌ Límite de productos alcanzado');
-        setCargando(false);
-        return;
+      if (!esEdicion) {
+        console.log('🔍 Verificando límites antes de crear producto...');
+        const canProceed = await LimitService.checkLimitsBeforeAction('addProduct');
+        if (!canProceed) {
+          console.log('❌ Límite de productos alcanzado');
+          return;
+        }
+        console.log('✅ Límites verificados, procediendo a crear producto...');
       }
 
-      console.log('✅ Límites verificados, procediendo a crear producto...');
+      const stockVal = formulario.stock.trim() === '' ? 0 : Number(formulario.stock);
+      const stockMinVal = formulario.stockMinimo.trim() === '' ? 5 : Number(formulario.stockMinimo);
+      const precioRaw = formulario.precio.trim().replace(',', '.');
+      const precioVal = precioRaw === '' ? 0 : Number(precioRaw);
 
       const datosProducto = {
         nombre: formulario.nombre.trim(),
         descripcion: formulario.descripcion.trim() || undefined,
-        precio: formulario.precio ? Number(formulario.precio) : undefined,
-        stock: Number(formulario.stock),
-        stockMinimo: Number(formulario.stockMinimo),
+        precio: precioVal,
+        stock: stockVal,
+        stockMinimo: stockMinVal,
         categoria: formulario.categoria || undefined,
         marca: formulario.marca.trim() || undefined,
         unidad: formulario.unidad.trim() || undefined,
         sectorAlmacenamiento: formulario.sectorAlmacenamiento.trim() || undefined,
         codigoPersonalizado: formulario.codigoPersonalizado.trim() || undefined,
         codigoBarras: formulario.codigoBarras.trim() || undefined,
-        activo: true,
-        destacado: false,
+        activo: esEdicion ? activoProducto : true,
+        destacado: esEdicion ? destacadoProducto : false,
         imagenes: formulario.imagenes
       };
 
-      console.log('Creando producto:', datosProducto);
-      
-      const response = await ApiService.crearProducto(empresaId, datosProducto);
-      
-      if (response && (response.data || ('id' in response && response.id))) {
-        toast.success('✅ Producto creado exitosamente');
-        
-        // Si viene desde "Crear Ingreso", regresar ahí con el producto creado
-        if (vieneDesdeIngreso) {
-          const producto = response.data || response;
-          navigate(`/admin/crear-ingreso?producto=${encodeURIComponent(JSON.stringify(producto))}`);
-        } else {
+      if (esEdicion) {
+        const response = await ApiService.actualizarProducto(empresaId, productoIdEdicion, datosProducto);
+        if (response?.data) {
+          const sectorNuevo = formulario.sectorAlmacenamiento.trim();
+          if (sectorOriginal !== sectorNuevo && sectorNuevo !== '') {
+            try {
+              const migracionResponse = await fetch(
+                `/api/empresas/${empresaId}/productos/${productoIdEdicion}/migrar-sector`,
+                {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ sectorDestino: sectorNuevo })
+                }
+              );
+              if (migracionResponse.ok) {
+                toast.success('Producto actualizado y stock migrado al nuevo sector');
+              } else {
+                toast('Producto actualizado; revisá la migración de stock al sector', { icon: '⚠️' });
+              }
+            } catch {
+              toast('Producto actualizado; hubo un problema al migrar el stock', { icon: '⚠️' });
+            }
+          } else {
+            toast.success('Producto actualizado correctamente');
+          }
           navigate('/admin/productos');
+        } else {
+          toast.error('Respuesta inesperada del servidor');
         }
       } else {
-        toast.error('Error: No se recibió respuesta del servidor');
+        console.log('Creando producto:', datosProducto);
+        const response = await ApiService.crearProducto(empresaId, datosProducto);
+        if (response && (response.data || ('id' in response && response.id))) {
+          toast.success('✅ Producto creado exitosamente');
+          if (vieneDesdeIngreso) {
+            const producto = response.data || response;
+            navigate(`/admin/crear-ingreso?producto=${encodeURIComponent(JSON.stringify(producto))}`);
+          } else {
+            navigate('/admin/productos');
+          }
+        } else {
+          toast.error('Error: No se recibió respuesta del servidor');
+        }
       }
     } catch (error: unknown) {
-      console.error('Error al crear producto:', error);
+      console.error(esEdicion ? 'Error al actualizar producto:' : 'Error al crear producto:', error);
       
-      let mensajeError = 'Error al crear el producto';
+      let mensajeError = esEdicion ? 'Error al actualizar el producto' : 'Error al crear el producto';
       
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number; data?: unknown; statusText?: string } };
         
         if (axiosError.response?.status === 403) {
-          mensajeError = 'No tienes permisos para crear productos';
+          mensajeError = esEdicion
+            ? 'No tienes permisos para modificar productos'
+            : 'No tienes permisos para crear productos';
         } else if (axiosError.response?.status === 401) {
           mensajeError = 'Tu sesión ha expirado';
         } else if (axiosError.response?.status === 400) {
@@ -1013,6 +1191,48 @@ export default function NuevoProducto() {
   };
 
 
+  if (esEdicion && cargandoProducto) {
+    return (
+      <div className="pagina-crear-producto">
+        <NavbarAdmin
+          onCerrarSesion={cerrarSesion}
+          empresaNombre={datosUsuario?.empresaNombre}
+          nombreAdministrador={datosUsuario?.nombre}
+        />
+        <div
+          className="contenedor-principal"
+          style={{
+            minHeight: '60vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: '6rem'
+          }}
+        >
+          <div style={{ textAlign: 'center', color: '#64748b' }}>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                border: '4px solid #e2e8f0',
+                borderTop: '4px solid #3b82f6',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto 16px'
+              }}
+            />
+            <p style={{ margin: 0, fontSize: '1rem' }}>Cargando producto…</p>
+          </div>
+        </div>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <div className="pagina-crear-producto">
       <NavbarAdmin
@@ -1027,7 +1247,7 @@ export default function NuevoProducto() {
         paddingLeft: '1rem',
         paddingRight: '1rem'
       }}>
-        <div className="contenido-formulario">
+        <div className="contenido-formulario" onKeyDown={manejarTecladoGlobal}>
           {/* Header del formulario */}
           <div className="header-formulario">
             <div className="header-info" style={{ textAlign: 'center' }}>
@@ -1040,35 +1260,48 @@ export default function NuevoProducto() {
                 📦
               </div>
               <h1 className="titulo-formulario" style={{ margin: 0 }}>
-                Crear Nuevo Producto
+                {esEdicion ? 'Editar producto' : 'Crear Nuevo Producto'}
               </h1>
               <p className="subtitulo-formulario">
-                Completa la información del producto para añadirlo a tu catálogo
+                {esEdicion
+                  ? 'Modificá los datos del producto con las mismas pestañas que en la creación. Solo la información básica obligatoria debe estar completa para guardar.'
+                  : (
+                    <>
+                      Completa la información del producto para añadirlo a tu catálogo. Solo la pestaña{' '}
+                      <strong>Información básica</strong> es obligatoria; inventario, precio e imágenes son opcionales.
+                    </>
+                  )}
               </p>
             </div>
-            
-            {/* Indicador de pasos */}
-            <div className="indicador-pasos">
-              <div className={`paso ${pasoActual >= 1 ? 'activo' : ''}`}>
-                <div className="paso-numero">1</div>
-                <span className="paso-texto">Información Básica</span>
-              </div>
-              <div className={`paso ${pasoActual >= 2 ? 'activo' : ''}`}>
-                <div className="paso-numero">2</div>
-                <span className="paso-texto">Inventario</span>
-              </div>
-              <div className={`paso ${pasoActual >= 3 ? 'activo' : ''}`}>
-                <div className="paso-numero">3</div>
-                <span className="paso-texto">Imágenes</span>
-              </div>
+
+            {/* Pestañas */}
+            <div className="pestanas-nuevo-producto" role="tablist" aria-label="Secciones del producto">
+              {([
+                { id: 'basica' as const, label: 'Información básica', short: 'Básica' },
+                { id: 'inventario' as const, label: 'Gestión de inventario', short: 'Inventario' },
+                { id: 'precio' as const, label: 'Precio e impuestos', short: 'Precio' },
+                { id: 'imagenes' as const, label: 'Imágenes', short: 'Imágenes' },
+              ]).map(({ id, label, short }) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={pestanaActiva === id}
+                  className={`pestana-btn ${pestanaActiva === id ? 'activa' : ''}`}
+                  onClick={() => irPestana(id)}
+                  title={label}
+                >
+                  {short}
+                </button>
+              ))}
             </div>
           </div>
 
           {/* Formulario */}
           <div className="tarjeta-formulario">
-            <form onSubmit={enviarFormulario} onKeyDown={manejarTecladoGlobal}>
-              {/* Paso 1: Información Básica */}
-              {pasoActual === 1 && (
+            <form onSubmit={enviarFormulario}>
+              {/* Pestaña: Información básica */}
+              {pestanaActiva === 'basica' && (
                 <div className="paso-contenido">
                   <div className="paso-header">
                     <h2 className="paso-titulo">📝 Información Básica del Producto</h2>
@@ -1268,7 +1501,7 @@ export default function NuevoProducto() {
                             padding: isMobile ? '0 10px' : '0'
                           }}>
                             <div 
-                              id="barcode-preview-nuevo"
+                              id={idVistaCodigoBarras}
                               style={{
                                 display: 'flex',
                                 justifyContent: 'center',
@@ -1292,8 +1525,8 @@ export default function NuevoProducto() {
                               flexWrap: 'wrap',
                               width: '100%'
                             }}>
-                              <button type="button" onClick={() => descargarCodigoBarras('barcode-preview-nuevo')} style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease' }}>💾 Descargar</button>
-                              <button type="button" onClick={() => imprimirCodigoBarras('barcode-preview-nuevo')} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease' }}>🖨️ Imprimir</button>
+                              <button type="button" onClick={() => descargarCodigoBarras(idVistaCodigoBarras)} style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease' }}>💾 Descargar</button>
+                              <button type="button" onClick={() => imprimirCodigoBarras(idVistaCodigoBarras)} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s ease' }}>🖨️ Imprimir</button>
                             </div>
                           </div>
                         )}
@@ -1351,7 +1584,15 @@ export default function NuevoProducto() {
                         name="descripcion"
                         value={formulario.descripcion}
                         onChange={manejarCambio}
-                        onKeyDown={(e) => manejarEnterCampo(e, 'precio')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            irSiguientePestana();
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            manejarEscape();
+                          }
+                        }}
                         className={`campo-input ${errores.descripcion ? 'campo-error' : ''}`}
                         placeholder="Describe las características, beneficios y detalles del producto..."
                         rows={4}
@@ -1359,67 +1600,46 @@ export default function NuevoProducto() {
                       {errores.descripcion && <div className="campo-mensaje-error">{errores.descripcion}</div>}
                     </div>
 
-                    <div className="campos-fila">
-                      <div className="campo-grupo" style={{ position: 'relative' }}>
-                        <label htmlFor="precio" className="campo-label">
-                          Precio (opcional)
+                    {esEdicion && (
+                      <div
+                        className="campos-fila"
+                        style={{ alignItems: 'center', marginTop: '0.25rem' }}
+                      >
+                        <label
+                          className="campo-label"
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: 0 }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={activoProducto}
+                            onChange={(e) => setActivoProducto(e.target.checked)}
+                          />
+                          Producto activo
                         </label>
-                        <input
-                          ref={precioRef}
-                          type="number"
-                          id="precio"
-                          name="precio"
-                          value={formulario.precio}
-                          onChange={manejarCambio}
-                          onKeyDown={(e) => manejarEnterCampo(e, 'unidad')}
-                          className={`campo-input ${errores.precio ? 'campo-error' : ''}`}
-                          placeholder="0.00"
-                          min="0"
-                          step="0.01"
-                        />
-                        {errores.precio && <div className="campo-mensaje-error">{errores.precio}</div>}
-                      </div>
-                      <div className="campo-grupo" style={{ position: 'relative' }}>
-                        <label htmlFor="unidad" className="campo-label">
-                          Unidad
+                        <label
+                          className="campo-label"
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: 0 }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={destacadoProducto}
+                            onChange={(e) => setDestacadoProducto(e.target.checked)}
+                          />
+                          Producto destacado
                         </label>
-                        <input
-                          ref={unidadRef}
-                          type="text"
-                          id="unidad"
-                          name="unidad"
-                          value={formulario.unidad}
-                          onChange={manejarCambio}
-                          onKeyDown={(e) => manejarEnterCampo(e, 'siguientePaso')}
-                          className={`campo-input ${errores.unidad ? 'campo-error' : ''}`}
-                          placeholder="Ej: kg, litro, unidad, par..."
-                        />
-                        {errores.unidad && <div className="campo-mensaje-error">{errores.unidad}</div>}
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="botones-paso">
-                    <button
-                      type="button"
-                      onClick={siguientePaso}
-                      className="boton-siguiente"
-                      disabled={!formulario.nombre || !formulario.categoria}
-                    >
-                      Siguiente Paso
-                      <span className="icono-boton">→</span>
-                    </button>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Paso 2: Inventario */}
-              {pasoActual === 2 && (
+              {/* Pestaña: Inventario */}
+              {pestanaActiva === 'inventario' && (
                 <div className="paso-contenido">
                   <div className="paso-header">
                     <h2 className="paso-titulo">📊 Gestión de Inventario</h2>
                     <p className="paso-descripcion">
-                      Configura el stock y las alertas de inventario
+                      Configura stock, unidad de medida y sector. Si lo dejás vacío, se usará stock 0 y stock mínimo 5.
                     </p>
                   </div>
 
@@ -1427,7 +1647,7 @@ export default function NuevoProducto() {
                     <div className="campos-fila">
                       <div className="campo-grupo" style={{ position: 'relative' }}>
                         <label htmlFor="stock" className="campo-label">
-                          Stock Actual <span className="campo-requerido">*</span>
+                          Stock actual <span className="campo-opcional">(opcional, por defecto 0)</span>
                         </label>
                         <input
                           ref={stockRef}
@@ -1445,7 +1665,7 @@ export default function NuevoProducto() {
                       </div>
                       <div className="campo-grupo" style={{ position: 'relative' }}>
                         <label htmlFor="stockMinimo" className="campo-label">
-                          Stock Mínimo <span className="campo-requerido">*</span>
+                          Stock mínimo <span className="campo-opcional">(opcional, por defecto 5)</span>
                         </label>
                         <input
                           ref={stockMinimoRef}
@@ -1454,13 +1674,31 @@ export default function NuevoProducto() {
                           name="stockMinimo"
                           value={formulario.stockMinimo}
                           onChange={manejarCambio}
-                          onKeyDown={(e) => manejarEnterCampo(e, 'siguientePaso')}
+                          onKeyDown={(e) => manejarEnterCampo(e, 'unidad')}
                           className={`campo-input ${errores.stockMinimo ? 'campo-error' : ''}`}
                           placeholder="5"
                           min="0"
                         />
                         {errores.stockMinimo && <div className="campo-mensaje-error">{errores.stockMinimo}</div>}
                       </div>
+                    </div>
+
+                    <div className="campo-grupo" style={{ position: 'relative' }}>
+                      <label htmlFor="unidad" className="campo-label">
+                        Unidad <span className="campo-opcional">(opcional)</span>
+                      </label>
+                      <input
+                        ref={unidadRef}
+                        type="text"
+                        id="unidad"
+                        name="unidad"
+                        value={formulario.unidad}
+                        onChange={manejarCambio}
+                        onKeyDown={(e) => manejarEnterCampo(e, 'sectorAlmacenamiento')}
+                        className={`campo-input ${errores.unidad ? 'campo-error' : ''}`}
+                        placeholder="Ej: kg, litro, unidad, par..."
+                      />
+                      {errores.unidad && <div className="campo-mensaje-error">{errores.unidad}</div>}
                     </div>
 
                     <div className="campo-grupo" style={{ position: 'relative' }}>
@@ -1539,31 +1777,123 @@ export default function NuevoProducto() {
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
 
-                  <div className="botones-paso">
-                    <button
-                      type="button"
-                      onClick={pasoAnterior}
-                      className="boton-anterior"
-                    >
-                      <span className="icono-boton">←</span>
-                      Paso Anterior
-                    </button>
-                    <button
-                      type="button"
-                      onClick={siguientePaso}
-                      className="boton-siguiente"
-                      disabled={!formulario.stock}
-                    >
-                      Siguiente Paso
-                      <span className="icono-boton">→</span>
-                    </button>
+              {/* Pestaña: Precio e impuestos */}
+              {pestanaActiva === 'precio' && (
+                <div className="paso-contenido">
+                  <div className="paso-header">
+                    <h2 className="paso-titulo">💰 Precio e impuestos</h2>
+                    <p className="paso-descripcion">
+                      El <strong>precio de venta</strong> es lo que se guarda en el catálogo. Costo, margen y precio se actualizan entre sí al escribir; si el costo es mayor que 0, el margen se recalcula cuando cambiás el precio de venta. El IVA % es solo referencia en pantalla.
+                    </p>
+                  </div>
+
+                  <div className="campos-formulario">
+                    <div className="campos-fila">
+                      <div className="campo-grupo" style={{ position: 'relative' }}>
+                        <label htmlFor="costo" className="campo-label">
+                          Costo <span className="campo-opcional">(no se guarda en el servidor)</span>
+                        </label>
+                        <input
+                          ref={costoRef}
+                          type="number"
+                          id="costo"
+                          name="costo"
+                          value={formulario.costo}
+                          onChange={manejarCambioCosto}
+                          onKeyDown={(e) => manejarEnterCampo(e, 'margenGanancia')}
+                          className={`campo-input ${errores.costo ? 'campo-error' : ''}`}
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                        />
+                        {errores.costo && <div className="campo-mensaje-error">{errores.costo}</div>}
+                      </div>
+                      <div className="campo-grupo" style={{ position: 'relative' }}>
+                        <label htmlFor="margenGanancia" className="campo-label">
+                          Margen de ganancia %
+                        </label>
+                        <input
+                          ref={margenGananciaRef}
+                          type="number"
+                          id="margenGanancia"
+                          name="margenGanancia"
+                          value={formulario.margenGanancia}
+                          onChange={manejarCambioMargen}
+                          onKeyDown={(e) => manejarEnterCampo(e, 'precio')}
+                          className={`campo-input ${errores.margenGanancia ? 'campo-error' : ''}`}
+                          placeholder="Ej: 30"
+                          step="0.01"
+                        />
+                        {errores.margenGanancia && <div className="campo-mensaje-error">{errores.margenGanancia}</div>}
+                      </div>
+                    </div>
+
+                    <div className="campo-grupo" style={{ position: 'relative' }}>
+                      <label htmlFor="precio" className="campo-label">
+                        Precio de venta <span className="campo-opcional">(opcional, por defecto 0)</span>
+                      </label>
+                      <input
+                        ref={precioRef}
+                        type="number"
+                        id="precio"
+                        name="precio"
+                        value={formulario.precio}
+                        onChange={manejarCambioPrecioVenta}
+                        onKeyDown={(e) => manejarEnterCampo(e, 'siguientePestana')}
+                        className={`campo-input ${errores.precio ? 'campo-error' : ''}`}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                      {errores.precio && <div className="campo-mensaje-error">{errores.precio}</div>}
+                    </div>
+
+                    <div className="campo-grupo" style={{ position: 'relative' }}>
+                      <label htmlFor="ivaPorcentaje" className="campo-label">
+                        IVA / impuesto % <span className="campo-opcional">(referencia, no se guarda)</span>
+                      </label>
+                      <input
+                        type="number"
+                        id="ivaPorcentaje"
+                        name="ivaPorcentaje"
+                        value={formulario.ivaPorcentaje}
+                        onChange={manejarCambio}
+                        className={`campo-input ${errores.ivaPorcentaje ? 'campo-error' : ''}`}
+                        placeholder="Ej: 21"
+                        min="0"
+                        step="0.01"
+                      />
+                      {errores.ivaPorcentaje && <div className="campo-mensaje-error">{errores.ivaPorcentaje}</div>}
+                    </div>
+
+                    {(() => {
+                      const p = parseFloat(formulario.precio.trim().replace(',', '.'));
+                      const iva = parseFloat(formulario.ivaPorcentaje.trim().replace(',', '.'));
+                      if (
+                        formulario.precio.trim() !== '' &&
+                        formulario.ivaPorcentaje.trim() !== '' &&
+                        !Number.isNaN(p) &&
+                        !Number.isNaN(iva) &&
+                        iva >= 0
+                      ) {
+                        const conIva = (p * (1 + iva / 100)).toFixed(2);
+                        return (
+                          <p className="texto-referencia-iva">
+                            Referencia: precio + {iva}% IVA ≈ <strong>{conIva}</strong> (solo informativo)
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               )}
 
-              {/* Paso 3: Imágenes */}
-              {pasoActual === 3 && (
+              {/* Pestaña: Imágenes */}
+              {pestanaActiva === 'imagenes' && (
                 <div className="paso-contenido">
                   <div className="paso-header">
                     <h2 className="paso-titulo">🖼️ Imágenes del Producto</h2>
@@ -1598,36 +1928,28 @@ export default function NuevoProducto() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="botones-paso">
-                    <button
-                      type="button"
-                      onClick={pasoAnterior}
-                      className="boton-anterior"
-                    >
-                      <span className="icono-boton">←</span>
-                      Paso Anterior
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={cargando}
-                      className="boton-crear"
-                    >
-                      {cargando ? (
-                        <>
-                          <span className="spinner-mini"></span>
-                          Creando Producto...
-                        </>
-                      ) : (
-                        <>
-                          <span className="icono-boton">✅</span>
-                          Crear Producto
-                        </>
-                      )}
-                    </button>
-                  </div>
                 </div>
               )}
+
+              <div className="barra-crear-producto">
+                <button
+                  type="submit"
+                  disabled={cargando}
+                  className="boton-crear boton-crear-ancho"
+                >
+                  {cargando ? (
+                    <>
+                      <span className="spinner-mini"></span>
+                      {esEdicion ? 'Guardando…' : 'Creando producto…'}
+                    </>
+                  ) : (
+                    <>
+                      <span className="icono-boton">✅</span>
+                      {esEdicion ? 'Guardar cambios' : 'Crear producto'}
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
           </div>
 
@@ -1687,53 +2009,58 @@ export default function NuevoProducto() {
         .subtitulo-formulario {
           font-size: 1.125rem;
           color: #64748b;
-          max-width: 500px;
+          max-width: 520px;
           margin: 0 auto;
         }
 
-        .indicador-pasos {
+        .pestanas-nuevo-producto {
           display: flex;
+          flex-wrap: wrap;
           justify-content: center;
-          gap: 2rem;
-          margin-top: 2rem;
+          gap: 0.5rem;
+          margin-top: 1.25rem;
+          padding: 0 0.5rem;
         }
 
-        .paso {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          opacity: 0.5;
-          transition: all 0.3s ease;
-        }
-
-        .paso.activo {
-          opacity: 1;
-        }
-
-        .paso-numero {
-          width: 2.5rem;
-          height: 2.5rem;
-          border-radius: 50%;
-          background: #e2e8f0;
-          color: #64748b;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        .pestana-btn {
+          border: 2px solid #e2e8f0;
+          background: #fff;
+          color: #475569;
           font-weight: 600;
-          font-size: 1rem;
-          transition: all 0.3s ease;
+          font-size: 0.875rem;
+          padding: 0.6rem 1rem;
+          border-radius: 999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
         }
 
-        .paso.activo .paso-numero {
+        .pestana-btn:hover {
+          border-color: #93c5fd;
+          color: #1d4ed8;
+        }
+
+        .pestana-btn.activa {
           background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
           color: white;
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+          border-color: transparent;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
         }
 
-        .paso-texto {
-          font-weight: 600;
-          color: #374151;
-          font-size: 0.875rem;
+        .barra-crear-producto {
+          padding: 1.25rem 2rem 2rem;
+          border-top: 1px solid #e2e8f0;
+          background: #f8fafc;
+        }
+
+        .boton-crear-ancho {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .texto-referencia-iva {
+          font-size: 0.9rem;
+          color: #64748b;
+          margin: 0;
         }
 
         .tarjeta-formulario {

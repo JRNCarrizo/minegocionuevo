@@ -23,8 +23,12 @@ import com.minegocio.backend.entidades.Producto;
 import com.minegocio.backend.repositorios.ProductoRepository;
 import com.minegocio.backend.repositorios.StockPorSectorRepository;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Date;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.Comparator;
+import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -1212,26 +1216,22 @@ public class SectorController {
     }
 
     /**
-     * Exportar stock general a Excel con pestañas por sector
+     * Exportar stock general a Excel (misma lógica de datos que GET /stock-general: por sector + sin sectorizar).
      */
     @GetMapping("/exportar-stock-general-excel")
     public ResponseEntity<byte[]> exportarStockGeneralExcel(@PathVariable Long empresaId) {
         try {
-            // Configurar sistema para modo headless (sin interfaz gráfica)
             System.setProperty("java.awt.headless", "true");
-            
-            System.out.println("🔍 [CONTROLLER] Exportando stock general a Excel con pestañas por sector");
-            
-            // Obtener todos los sectores de la empresa
+
+            List<Map<String, Object>> stockGeneral = sectorService.obtenerStockGeneral(empresaId);
             List<Sector> sectores = sectorRepository.findByEmpresaIdOrderByNombre(empresaId);
-            if (sectores.isEmpty()) {
+
+            if (stockGeneral.isEmpty() && sectores.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
-            
-            // Crear el workbook de Excel
+
             try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-                
-                // Crear estilos
+
                 CellStyle headerStyle = workbook.createCellStyle();
                 Font headerFont = workbook.createFont();
                 headerFont.setBold(true);
@@ -1243,100 +1243,258 @@ public class SectorController {
                 headerStyle.setBorderTop(BorderStyle.THIN);
                 headerStyle.setBorderRight(BorderStyle.THIN);
                 headerStyle.setBorderLeft(BorderStyle.THIN);
-                
+
                 CellStyle dataStyle = workbook.createCellStyle();
                 dataStyle.setBorderBottom(BorderStyle.THIN);
                 dataStyle.setBorderTop(BorderStyle.THIN);
                 dataStyle.setBorderRight(BorderStyle.THIN);
                 dataStyle.setBorderLeft(BorderStyle.THIN);
-                
-                // Crear pestaña para cada sector
+
+                CellStyle titleStyle = workbook.createCellStyle();
+                Font titleFont = workbook.createFont();
+                titleFont.setBold(true);
+                titleFont.setFontHeightInPoints((short) 14);
+                titleStyle.setFont(titleFont);
+                titleStyle.setAlignment(HorizontalAlignment.CENTER);
+
+                Set<String> nombresPestanasUsados = new HashSet<>();
+
+                // 1) Pestaña "Stock": mismo formato que Importación de inventario (Producto=código, Descripción=nombre, Stock=cantidad total)
+                String nombrePestanaStock = nombreUnicoPestanaExcel("Stock", nombresPestanasUsados);
+                Sheet hojaStockImport = workbook.createSheet(nombrePestanaStock);
+                Row headerStockImport = hojaStockImport.createRow(0);
+                String[] headersImport = {"Producto", "Descripción", "Stock"};
+                for (int i = 0; i < headersImport.length; i++) {
+                    Cell c = headerStockImport.createCell(i);
+                    c.setCellValue(headersImport[i]);
+                    c.setCellStyle(headerStyle);
+                }
+                List<FilaStockImportacionInventario> filasImport = consolidarStockParaImportacionInventario(stockGeneral);
+                int filaStock = 1;
+                for (FilaStockImportacionInventario fila : filasImport) {
+                    Row row = hojaStockImport.createRow(filaStock++);
+                    row.createCell(0).setCellValue(fila.codigo);
+                    row.createCell(1).setCellValue(fila.descripcion != null ? fila.descripcion : "");
+                    row.createCell(2).setCellValue(fila.cantidadTotal);
+                    for (int i = 0; i < 3; i++) {
+                        row.getCell(i).setCellStyle(dataStyle);
+                    }
+                }
+                hojaStockImport.setColumnWidth(0, 18 * 256);
+                hojaStockImport.setColumnWidth(1, 50 * 256);
+                hojaStockImport.setColumnWidth(2, 14 * 256);
+
                 for (Sector sector : sectores) {
-                    String nombrePestana = sector.getNombre().length() > 31 ? 
-                        sector.getNombre().substring(0, 31) : sector.getNombre();
-                    
+                    List<Map<String, Object>> items = stockGeneral.stream()
+                            .filter(item -> {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> sec = (Map<String, Object>) item.get("sector");
+                                if (sec == null || sec.get("id") == null) {
+                                    return false;
+                                }
+                                long idSector = ((Number) sec.get("id")).longValue();
+                                return idSector == sector.getId();
+                            })
+                            .collect(Collectors.toList());
+
+                    String nombrePestana = nombreUnicoPestanaExcel(sector.getNombre(), nombresPestanasUsados);
                     Sheet sheet = workbook.createSheet(nombrePestana);
-                    
-                    // Título del sector
+
                     Row titleRow = sheet.createRow(0);
                     Cell titleCell = titleRow.createCell(0);
                     titleCell.setCellValue("SECTOR: " + sector.getNombre().toUpperCase());
-                    
-                    // Estilo para el título
-                    CellStyle titleStyle = workbook.createCellStyle();
-                    Font titleFont = workbook.createFont();
-                    titleFont.setBold(true);
-                    titleFont.setFontHeightInPoints((short) 14);
-                    titleStyle.setFont(titleFont);
-                    titleStyle.setAlignment(HorizontalAlignment.CENTER);
                     titleCell.setCellStyle(titleStyle);
                     sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 2));
-                    
-                    // Obtener productos del sector
-                    List<StockPorSector> productosEnSector = sectorService.obtenerProductosEnSector(sector.getId(), empresaId);
-                    
-                    if (productosEnSector.isEmpty()) {
-                        // Si no hay productos, crear una fila indicando que está vacío
+
+                    if (items.isEmpty()) {
                         Row emptyRow = sheet.createRow(2);
                         Cell emptyCell = emptyRow.createCell(0);
                         emptyCell.setCellValue("No hay productos en este sector");
                         emptyCell.setCellStyle(dataStyle);
                         sheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 2));
                     } else {
-                        // Crear encabezados
                         Row headerRow = sheet.createRow(2);
-                        String[] headers = {"Código", "Producto", "Cantidad"};
+                        String[] headers = {"Código", "Nombre", "Cantidad"};
                         for (int i = 0; i < headers.length; i++) {
                             Cell cell = headerRow.createCell(i);
                             cell.setCellValue(headers[i]);
                             cell.setCellStyle(headerStyle);
                         }
-                        
-                        // Llenar datos
                         int rowNum = 3;
-                        for (StockPorSector stock : productosEnSector) {
+                        for (Map<String, Object> item : items) {
                             Row row = sheet.createRow(rowNum++);
-                            row.createCell(0).setCellValue(stock.getProducto().getCodigoPersonalizado() != null ? 
-                                stock.getProducto().getCodigoPersonalizado() : "-");
-                            row.createCell(1).setCellValue(stock.getProducto().getNombre());
-                            row.createCell(2).setCellValue(stock.getCantidad());
-                            
-                            // Aplicar estilo a las celdas de datos
-                            for (int i = 0; i < 3; i++) {
-                                row.getCell(i).setCellStyle(dataStyle);
-                            }
+                            llenarFilaStockGeneralDesdeMap(row, item, dataStyle);
                         }
                     }
-                    
-                    // Configurar anchos de columnas fijos (evita problemas con autoSizeColumn en headless)
-                    sheet.setColumnWidth(0, 15 * 256); // Código - 15 caracteres
-                    sheet.setColumnWidth(1, 50 * 256); // Producto - 50 caracteres  
-                    sheet.setColumnWidth(2, 12 * 256); // Cantidad - 12 caracteres
+
+                    sheet.setColumnWidth(0, 15 * 256);
+                    sheet.setColumnWidth(1, 50 * 256);
+                    sheet.setColumnWidth(2, 12 * 256);
                 }
-                
-                // Convertir a bytes
+
+                List<Map<String, Object>> sinSector = stockGeneral.stream()
+                        .filter(item -> item.get("sector") == null)
+                        .collect(Collectors.toList());
+
+                if (!sinSector.isEmpty()) {
+                    String pestanaSin = nombreUnicoPestanaExcel("Sin sectorizar", nombresPestanasUsados);
+                    Sheet sheetSin = workbook.createSheet(pestanaSin);
+
+                    Row titleRow = sheetSin.createRow(0);
+                    Cell titleCell = titleRow.createCell(0);
+                    titleCell.setCellValue("STOCK SIN SECTORIZAR (misma vista que pantalla Stock general)");
+                    titleCell.setCellStyle(titleStyle);
+                    sheetSin.addMergedRegion(new CellRangeAddress(0, 0, 0, 2));
+
+                    Row headerRow = sheetSin.createRow(2);
+                    String[] headers = {"Código", "Nombre", "Cantidad"};
+                    for (int i = 0; i < headers.length; i++) {
+                        Cell cell = headerRow.createCell(i);
+                        cell.setCellValue(headers[i]);
+                        cell.setCellStyle(headerStyle);
+                    }
+                    int rowNum = 3;
+                    for (Map<String, Object> item : sinSector) {
+                        Row row = sheetSin.createRow(rowNum++);
+                        llenarFilaStockGeneralDesdeMap(row, item, dataStyle);
+                    }
+                    sheetSin.setColumnWidth(0, 15 * 256);
+                    sheetSin.setColumnWidth(1, 50 * 256);
+                    sheetSin.setColumnWidth(2, 12 * 256);
+                }
+
+                if (workbook.getNumberOfSheets() == 0) {
+                    Sheet sheet = workbook.createSheet("Stock");
+                    Row r = sheet.createRow(0);
+                    r.createCell(0).setCellValue("No hay datos de stock para exportar");
+                }
+
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 workbook.write(outputStream);
                 byte[] excelBytes = outputStream.toByteArray();
-                
-                String nombreArchivo = "stock_general_por_sectores.xlsx";
-                
+
                 HttpHeaders responseHeaders = new HttpHeaders();
                 responseHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-                responseHeaders.setContentDispositionFormData("attachment", nombreArchivo);
+                responseHeaders.setContentDispositionFormData("attachment", "stock_general_por_sectores.xlsx");
                 responseHeaders.setContentLength(excelBytes.length);
-                
-                System.out.println("✅ [CONTROLLER] Excel con pestañas exportado exitosamente. Tamaño: " + excelBytes.length + " bytes");
-                
+
                 return ResponseEntity.ok()
                         .headers(responseHeaders)
                         .body(excelBytes);
             }
-            
+
         } catch (Exception e) {
             System.err.println("❌ [CONTROLLER] Error al exportar stock general a Excel: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    private static final class FilaStockImportacionInventario {
+        final String codigo;
+        final String descripcion;
+        final int cantidadTotal;
+
+        FilaStockImportacionInventario(String codigo, String descripcion, int cantidadTotal) {
+            this.codigo = codigo;
+            this.descripcion = descripcion;
+            this.cantidadTotal = cantidadTotal;
+        }
+    }
+
+    /**
+     * Una fila por producto: suma cantidades de todos los sectores + sin sectorizar (coherente con actualizar stock global en importación).
+     */
+    private static List<FilaStockImportacionInventario> consolidarStockParaImportacionInventario(
+            List<Map<String, Object>> stockGeneral) {
+        Map<Long, Integer> sumaPorProducto = new HashMap<>();
+        Map<Long, String> codigoPorProducto = new HashMap<>();
+        Map<Long, String> nombrePorProducto = new HashMap<>();
+
+        for (Map<String, Object> item : stockGeneral) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> prod = (Map<String, Object>) item.get("producto");
+            if (prod == null || prod.get("id") == null) {
+                continue;
+            }
+            long pid = ((Number) prod.get("id")).longValue();
+            int cant = 0;
+            Object cObj = item.get("cantidad");
+            if (cObj instanceof Number) {
+                cant = ((Number) cObj).intValue();
+            }
+            sumaPorProducto.merge(pid, cant, Integer::sum);
+
+            String cod = "";
+            if (prod.get("codigoPersonalizado") != null) {
+                cod = String.valueOf(prod.get("codigoPersonalizado")).trim();
+            }
+            if (!cod.isEmpty()) {
+                codigoPorProducto.putIfAbsent(pid, cod);
+            }
+            String nom = prod.get("nombre") != null ? String.valueOf(prod.get("nombre")).trim() : "";
+            if (!nom.isEmpty()) {
+                nombrePorProducto.putIfAbsent(pid, nom);
+            }
+        }
+
+        List<FilaStockImportacionInventario> filas = new ArrayList<>();
+        for (Map.Entry<Long, Integer> e : sumaPorProducto.entrySet()) {
+            Long pid = e.getKey();
+            String codigo = codigoPorProducto.get(pid);
+            if (codigo == null || codigo.isEmpty()) {
+                continue;
+            }
+            String descripcion = nombrePorProducto.getOrDefault(pid, "");
+            filas.add(new FilaStockImportacionInventario(codigo, descripcion, e.getValue()));
+        }
+        filas.sort(Comparator.comparing(f -> f.codigo.toLowerCase(Locale.ROOT)));
+        return filas;
+    }
+
+    private static String nombreUnicoPestanaExcel(String base, Set<String> usados) {
+        String limpio = base == null ? "Hoja" : base.replaceAll("[\\\\/*?:\\[\\]]", "_");
+        if (limpio.isBlank()) {
+            limpio = "Hoja";
+        }
+        if (limpio.length() > 31) {
+            limpio = limpio.substring(0, 31);
+        }
+        String candidato = limpio;
+        int i = 2;
+        while (usados.contains(candidato)) {
+            String sufijo = " (" + i + ")";
+            int maxPref = Math.max(1, 31 - sufijo.length());
+            String pref = limpio.length() > maxPref ? limpio.substring(0, maxPref) : limpio;
+            candidato = pref + sufijo;
+            i++;
+        }
+        usados.add(candidato);
+        return candidato;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void llenarFilaStockGeneralDesdeMap(Row row, Map<String, Object> item, CellStyle dataStyle) {
+        Map<String, Object> prod = (Map<String, Object>) item.get("producto");
+        String codigo = "-";
+        if (prod != null && prod.get("codigoPersonalizado") != null) {
+            String c = String.valueOf(prod.get("codigoPersonalizado")).trim();
+            if (!c.isEmpty()) {
+                codigo = c;
+            }
+        }
+        String nombre = (prod != null && prod.get("nombre") != null) ? String.valueOf(prod.get("nombre")) : "-";
+        int cantidad = 0;
+        Object cObj = item.get("cantidad");
+        if (cObj instanceof Number) {
+            cantidad = ((Number) cObj).intValue();
+        }
+
+        row.createCell(0).setCellValue(codigo);
+        row.createCell(1).setCellValue(nombre);
+        row.createCell(2).setCellValue(cantidad);
+        for (int i = 0; i < 3; i++) {
+            row.getCell(i).setCellStyle(dataStyle);
         }
     }
 }

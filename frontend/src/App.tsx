@@ -16,7 +16,6 @@ import NuevoProducto from './pages/admin/NuevoProducto.tsx';
 import GestionProductos from './pages/admin/GestionProductos.tsx';
 import ImportacionInventario from './pages/admin/ImportacionInventario.tsx';
 import DetalleProducto from './pages/admin/DetalleProducto.tsx';
-import EditarProducto from './pages/admin/EditarProducto.tsx';
 import GestionPedidos from './pages/admin/GestionPedidos.tsx';
 import GestionClientes from './pages/admin/GestionClientes.tsx';
 import ConfiguracionEmpresa from './pages/admin/ConfiguracionEmpresa.tsx';
@@ -106,7 +105,7 @@ function AppContent() {
           <Route path="/admin/gestion-productos" element={<GestionProductos />} />
           <Route path="/admin/importacion-inventario" element={<ImportacionInventario />} />
           <Route path="/admin/productos/nuevo" element={<NuevoProducto />} />
-          <Route path="/admin/productos/editar/:id" element={<EditarProducto />} />
+          <Route path="/admin/productos/editar/:id" element={<NuevoProducto />} />
           <Route path="/admin/productos/:id" element={<DetalleProducto />} />
           <Route path="/admin/pedidos" element={<GestionPedidos />} />
           <Route path="/admin/clientes" element={<GestionClientes />} />

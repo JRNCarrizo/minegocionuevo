@@ -34,11 +34,6 @@ import java.io.IOException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import com.minegocio.backend.seguridad.UsuarioPrincipal;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Cell;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
@@ -1462,44 +1457,12 @@ public class ProductoController {
             response.setHeader("Access-Control-Allow-Origin", "*");
             response.setHeader("Access-Control-Allow-Methods", "GET");
             response.setHeader("Access-Control-Allow-Headers", "*");
-            
-            // Generar plantilla directamente sin usar el servicio (formato unificado)
-            try (Workbook workbook = new XSSFWorkbook()) {
-                Sheet sheet = workbook.createSheet("Productos");
-                
-                // Crear encabezados (formato unificado con 11 columnas)
-                Row headerRow = sheet.createRow(0);
-                String[] headers = {
-                    "Nombre*", "Marca", "Descripción", "Categoría", 
-                    "Sector Almacenamiento", "Stock Actual*", "Stock Mínimo", 
-                    "Precio", "Código de Barras", "Código Personalizado", "Estado"
-                };
-                
-                for (int i = 0; i < headers.length; i++) {
-                    Cell cell = headerRow.createCell(i);
-                    cell.setCellValue(headers[i]);
-                }
-                
-                // Crear fila de ejemplo
-                Row exampleRow = sheet.createRow(1);
-                exampleRow.createCell(0).setCellValue("Producto Ejemplo");
-                exampleRow.createCell(1).setCellValue("Samsung");
-                exampleRow.createCell(2).setCellValue("Descripción del producto");
-                exampleRow.createCell(3).setCellValue("Electrónicos");
-                exampleRow.createCell(4).setCellValue("Depósito A");
-                exampleRow.createCell(5).setCellValue(50);
-                exampleRow.createCell(6).setCellValue(10);
-                exampleRow.createCell(7).setCellValue(299.99);
-                exampleRow.createCell(8).setCellValue("1234567890123");
-                exampleRow.createCell(9).setCellValue("PROD-001");
-                exampleRow.createCell(10).setCellValue("Activo");
-                
-                // Escribir directamente a la respuesta
-                workbook.write(response.getOutputStream());
-                response.getOutputStream().flush();
-                
-                System.out.println("✅ Plantilla directa generada exitosamente");
-            }
+
+            byte[] plantilla = plantillaCargaMasivaService.generarPlantillaCargaMasiva();
+            response.getOutputStream().write(plantilla);
+            response.getOutputStream().flush();
+
+            System.out.println("✅ Plantilla directa generada exitosamente");
             
         } catch (Exception e) {
             System.err.println("❌ Error en plantilla directa: " + e.getMessage());
