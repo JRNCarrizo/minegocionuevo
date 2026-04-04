@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ApiService from '../../services/api';
@@ -38,6 +38,8 @@ interface VentaRapida {
 
 export default function CajaRapida() {
   const { isMobile } = useResponsive();
+  /** Altura real del navbar en px (sticky y scroll deben usar el mismo valor). */
+  const [alturaNavbarPx, setAlturaNavbarPx] = useState<number | null>(null);
   // Función para reproducir el sonido "pi"
   const playBeepSound = () => {
     try {
@@ -119,6 +121,8 @@ export default function CajaRapida() {
   const [procesandoVenta, setProcesandoVenta] = useState(false);
   
   const inputCodigoRef = useRef<HTMLInputElement>(null);
+  /** Fila de los 3 paneles (buscar / venta / cuenta): el scroll alinea esta línea, no solo el input. */
+  const filaPrincipalCajaRef = useRef<HTMLDivElement>(null);
   const inputCantidadRef = useRef<HTMLInputElement>(null);
   const listaProductosRef = useRef<HTMLDivElement>(null);
   const [productoRecienAgregado, setProductoRecienAgregado] = useState<number | null>(null);
@@ -134,6 +138,38 @@ export default function CajaRapida() {
       cargarProductos();
     }
   }, [datosUsuario?.empresaId]);
+
+  useLayoutEffect(() => {
+    const medirNavbar = () => {
+      const nav =
+        (document.querySelector('.navbar-admin') as HTMLElement | null) ||
+        (document.querySelector('.navbar-admin-pages') as HTMLElement | null);
+      const h = nav ? Math.ceil(nav.getBoundingClientRect().height) : isMobile ? 132 : 88;
+      setAlturaNavbarPx(h);
+    };
+    medirNavbar();
+    window.addEventListener('resize', medirNavbar);
+    const navEl =
+      document.querySelector('.navbar-admin') || document.querySelector('.navbar-admin-pages');
+    const ro = navEl ? new ResizeObserver(medirNavbar) : null;
+    if (navEl && ro) ro.observe(navEl);
+    return () => {
+      window.removeEventListener('resize', medirNavbar);
+      ro?.disconnect();
+    };
+  }, [isMobile]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    if (cargando) return;
+    const id = window.setTimeout(() => {
+      inputCodigoRef.current?.focus({ preventScroll: true });
+    }, 200);
+    return () => window.clearTimeout(id);
+  }, [cargando]);
 
   useEffect(() => {
     // Filtrar productos cuando cambie el filtro
@@ -422,33 +458,111 @@ export default function CajaRapida() {
     setProductoSeleccionado(-1); // Resetear selección cuando cambia la búsqueda
   };
 
-  const manejarTeclas = (e: React.KeyboardEvent) => {
-    if (!mostrarProductos || productosFiltrados.length === 0) return;
+  /**
+   * Alinea la fila de los 3 contenedores (grid) bajo el navbar, no el input suelto
+   * (evita que solo el buscador quede pegado arriba y el resto de la fila se pierda).
+   */
+  const scrollBuscadorAlMargenSuperior = useCallback(() => {
+    window.setTimeout(() => {
+      const fila = filaPrincipalCajaRef.current;
+      const element = fila ?? inputCodigoRef.current;
+      if (!element) return;
+      const navEl =
+        (document.querySelector('.navbar-admin') as HTMLElement | null) ||
+        (document.querySelector('.navbar-admin-pages') as HTMLElement | null);
+      const navBottom = navEl
+        ? navEl.getBoundingClientRect().bottom
+        : alturaNavbarPx ?? (isMobile ? 120 : 80);
+      element.style.scrollMarginTop = `${Math.round(navBottom + 12)}px`;
+      element.style.scrollMarginBottom = `${isMobile ? 96 : 64}px`;
+      element.scrollIntoView({
+        block: 'start',
+        behavior: 'smooth',
+        inline: 'nearest'
+      });
+    }, 50);
+  }, [isMobile, alturaNavbarPx]);
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setProductoSeleccionado(prev => 
-          prev < productosFiltrados.length - 1 ? prev + 1 : 0
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setProductoSeleccionado(prev => 
-          prev > 0 ? prev - 1 : productosFiltrados.length - 1
-        );
-        break;
-      case 'Enter':
-        e.preventDefault();
+  const programarFocoBuscador = useCallback(() => {
+    setTimeout(() => {
+      if (!modoCantidad && !mostrarModalPago) {
+        inputCodigoRef.current?.focus({ preventScroll: true });
+      }
+    }, 300);
+  }, [modoCantidad, mostrarModalPago]);
+
+  // Enter sin foco en el buscador: alinear vista y enfocar input (POS rápido al entrar a la sección).
+  useEffect(() => {
+    const onDocKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (mostrarModalPago || mostrarScanner) return;
+      if (modoCantidad) return;
+
+      const ae = document.activeElement;
+      if (ae === inputCodigoRef.current) return;
+
+      const tag = ae?.tagName;
+      if (tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (tag === 'BUTTON' || tag === 'A') return;
+      if (tag === 'INPUT') return;
+
+      e.preventDefault();
+      inputCodigoRef.current?.focus({ preventScroll: true });
+      scrollBuscadorAlMargenSuperior();
+      programarFocoBuscador();
+    };
+    document.addEventListener('keydown', onDocKeyDown, true);
+    return () => document.removeEventListener('keydown', onDocKeyDown, true);
+  }, [
+    mostrarModalPago,
+    mostrarScanner,
+    modoCantidad,
+    scrollBuscadorAlMargenSuperior,
+    programarFocoBuscador
+  ]);
+
+  const manejarTeclas = (e: React.KeyboardEvent) => {
+    if (modoCantidad) return;
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      scrollBuscadorAlMargenSuperior();
+      programarFocoBuscador();
+      if (mostrarProductos && productosFiltrados.length > 0) {
         if (productoSeleccionado >= 0 && productoSeleccionado < productosFiltrados.length) {
           seleccionarProducto(productosFiltrados[productoSeleccionado]);
         } else if (inputCodigo.trim()) {
           buscarProductoPorCodigo(inputCodigo);
         }
-        break;
-      case 'Escape':
+      } else if (inputCodigo.trim()) {
+        buscarProductoPorCodigo(inputCodigo);
+      }
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      if (mostrarProductos) {
+        e.preventDefault();
         setMostrarProductos(false);
         setProductoSeleccionado(-1);
+      }
+      return;
+    }
+
+    if (!mostrarProductos || productosFiltrados.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setProductoSeleccionado(prev =>
+          prev < productosFiltrados.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setProductoSeleccionado(prev =>
+          prev > 0 ? prev - 1 : productosFiltrados.length - 1
+        );
         break;
     }
   };
@@ -601,109 +715,103 @@ export default function CajaRapida() {
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: '4rem 1rem 2rem 1rem'
+        paddingTop: (alturaNavbarPx ?? (isMobile ? 132 : 88)) + 28,
+        paddingLeft: isMobile ? '1rem' : '2rem',
+        paddingRight: isMobile ? '1rem' : '2rem',
+        /* Espacio inferior para que exista scroll real hacia el buscador */
+        paddingBottom: isMobile ? 'max(10rem, 28vh)' : 'max(12rem, 32vh)'
       }}>
-        <div style={{
-          marginBottom: isMobile ? '2rem' : '3rem',
-          paddingTop: isMobile ? '4rem' : '1rem'
-        }}>
-          <div>
-            <h1 style={{
-              fontSize: isMobile ? '2rem' : '2.5rem',
-              fontWeight: '700',
-              color: '#1e293b',
-              marginBottom: '0.5rem',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>
-              💰 Caja Rápida
-            </h1>
-            <p style={{
-              fontSize: isMobile ? '1rem' : '1.125rem',
-              color: '#64748b',
-              lineHeight: '1.6'
-            }}>
-              Sistema de punto de venta para ventas cara a cara
-            </p>
-          </div>
-          
-          {/* Card Historial de Ventas */}
-          <div style={{
-            marginTop: '2rem',
-            display: 'flex',
-            justifyContent: 'center'
-          }}>
-            <Link 
+        <div
+          style={{
+            background: 'white',
+            borderRadius: '1rem',
+            padding: isMobile ? '1.5rem' : '2rem',
+            marginBottom: isMobile ? '1.5rem' : '2rem',
+            marginTop: 0,
+            boxShadow:
+              '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            border: '1px solid #e2e8f0'
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              alignItems: isMobile ? 'stretch' : 'center',
+              justifyContent: 'space-between',
+              gap: isMobile ? '1.25rem' : '1.5rem'
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1
+                style={{
+                  fontSize: isMobile ? '1.5rem' : '2rem',
+                  fontWeight: '700',
+                  color: '#1e293b',
+                  margin: '0 0 0.5rem 0',
+                  lineHeight: 1.2
+                }}
+              >
+                💰 Caja Rápida
+              </h1>
+              <p
+                style={{
+                  fontSize: isMobile ? '0.9375rem' : '1rem',
+                  color: '#64748b',
+                  lineHeight: 1.5,
+                  margin: 0
+                }}
+              >
+                Sistema de punto de venta para ventas cara a cara
+              </p>
+            </div>
+
+            <Link
               to="/admin/historial-ventas"
               style={{
-                background: 'white',
-                borderRadius: '1rem',
-                padding: '1.5rem 2rem',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                border: '1px solid #e2e8f0',
+                flexShrink: 0,
+                alignSelf: isMobile ? 'stretch' : 'auto',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                borderRadius: '0.75rem',
+                padding: isMobile ? '0.85rem 1.25rem' : '0.75rem 1.5rem',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.25)',
+                border: 'none',
                 textDecoration: 'none',
-                color: 'inherit',
-                transition: 'all 0.3s ease',
-                display: 'flex',
+                color: 'white',
+                fontWeight: '600',
+                fontSize: isMobile ? '0.9375rem' : '0.875rem',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '1rem',
-                maxWidth: '400px',
-                width: '100%'
+                justifyContent: 'center',
+                gap: '0.5rem',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 20px 40px rgba(139, 92, 246, 0.15)';
-                e.currentTarget.style.borderColor = '#8b5cf6';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.35)';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.25)';
               }}
             >
-              <div style={{
-                width: '3rem',
-                height: '3rem',
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                borderRadius: '0.75rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem',
-                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
-              }}>
-                📊
-              </div>
-              <div>
-                <h3 style={{
-                  fontSize: '1.125rem',
-                  fontWeight: '600',
-                  color: '#1e293b',
-                  margin: '0 0 0.25rem 0'
-                }}>
-                  Historial de Ventas
-                </h3>
-                <p style={{
-                  fontSize: '0.875rem',
-                  color: '#64748b',
-                  margin: 0
-                }}>
-                  Consulta el historial de ventas rápidas
-                </p>
-              </div>
+              <span aria-hidden>📊</span>
+              Historial de ventas
             </Link>
           </div>
         </div>
 
-        <div style={{
-          display: isMobile ? 'flex' : 'grid',
-          flexDirection: isMobile ? 'column' : 'row',
-          gridTemplateColumns: isMobile ? 'none' : '350px 1fr 350px',
-          gap: isMobile ? '1rem' : '1.5rem',
-          height: isMobile ? 'auto' : 'calc(100vh - 320px)' // Ajustado para más espacio del navbar
-        }}>
+        <div
+          ref={filaPrincipalCajaRef}
+          style={{
+            display: isMobile ? 'flex' : 'grid',
+            flexDirection: isMobile ? 'column' : 'row',
+            gridTemplateColumns: isMobile ? 'none' : '350px 1fr 350px',
+            gap: isMobile ? '1rem' : '1.5rem',
+            minHeight: isMobile ? 'auto' : 'min(calc(100vh - 280px), 720px)',
+            alignItems: isMobile ? 'stretch' : 'start'
+          }}
+        >
           {/* Panel izquierdo - Controles */}
           <div style={{
             background: 'white',
@@ -715,7 +823,9 @@ export default function CajaRapida() {
             flexDirection: 'column',
             height: isMobile ? 'auto' : 'fit-content',
             position: isMobile ? 'static' : 'sticky',
-            top: isMobile ? 'auto' : '1rem',
+            top: isMobile
+              ? 'auto'
+              : `${(alturaNavbarPx ?? 80) + 12}px`,
             order: isMobile ? 1 : 0
           }}>
             {/* Título y búsqueda */}
@@ -1163,7 +1273,9 @@ export default function CajaRapida() {
             flexDirection: 'column',
             height: isMobile ? 'auto' : '100%',
             position: isMobile ? 'static' : 'sticky',
-            top: isMobile ? 'auto' : '1rem',
+            top: isMobile
+              ? 'auto'
+              : `${(alturaNavbarPx ?? 80) + 12}px`,
             order: isMobile ? 3 : 0
           }}>
             {/* Título */}

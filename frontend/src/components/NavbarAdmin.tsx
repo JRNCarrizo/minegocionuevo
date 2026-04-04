@@ -18,7 +18,9 @@ export default function NavbarAdmin({
   const { datosUsuario } = useUsuarioActual();
   const { isDarkMode, toggleTheme } = useTheme(datosUsuario?.id);
   return (
-    <nav style={{
+    <nav
+      className="navbar-admin"
+      style={{
       background: 'var(--color-navbar)',
       backdropFilter: 'blur(20px)',
       borderBottom: '1px solid var(--color-borde)',
