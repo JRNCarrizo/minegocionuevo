@@ -7,6 +7,8 @@ import CartModal from '../components/CartModal';
 import NavbarCliente from '../components/NavbarCliente';
 import { useCart } from '../hooks/useCart';
 import { useClienteAuth } from '../hooks/useClienteAuth';
+import { useResponsive } from '../hooks/useResponsive';
+import { FaShoppingCart } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { getCookie } from '../utils/cookies';
 
@@ -21,6 +23,7 @@ export default function ProductoPublico() {
   const [showCart, setShowCart] = useState(false);
   const { clienteInfo, cerrarSesion } = useClienteAuth();
   const { addToCart, items } = useCart();
+  const { isMobile } = useResponsive();
 
   const cargarProducto = useCallback(async () => {
     if (!subdominio || !id) return;
@@ -148,7 +151,6 @@ export default function ProductoPublico() {
         empresa={empresa}
         clienteInfo={clienteInfo}
         onCerrarSesion={cerrarSesion}
-        onShowCart={() => setShowCart(true)}
       />
               <CartModal 
           open={showCart} 
@@ -159,6 +161,67 @@ export default function ProductoPublico() {
           }}
           permitirCompra={!!clienteInfo}
         />
+
+      <div
+        style={{
+          position: 'fixed',
+          bottom: isMobile ? '20px' : '30px',
+          right: isMobile ? '20px' : '30px',
+          zIndex: 1000,
+          cursor: 'pointer'
+        }}
+      >
+        <div
+          onClick={() => setShowCart(true)}
+          style={{
+            width: isMobile ? '60px' : '70px',
+            height: isMobile ? '60px' : '70px',
+            background: empresa?.colorPrimario
+              ? `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)`
+              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: empresa?.colorPrimario
+              ? `0 8px 25px ${empresa.colorPrimario}40`
+              : '0 8px 25px rgba(102, 126, 234, 0.4)',
+            transition: 'all 0.3s ease',
+            position: 'relative'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          <FaShoppingCart size={isMobile ? 24 : 28} color="white" />
+          {items.reduce((sum, item) => sum + item.cantidad, 0) > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                top: isMobile ? '-6px' : '-8px',
+                right: isMobile ? '-6px' : '-8px',
+                background: '#ef4444',
+                color: 'white',
+                borderRadius: '50%',
+                width: isMobile ? '24px' : '28px',
+                height: isMobile ? '24px' : '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: isMobile ? '10px' : '12px',
+                fontWeight: '700',
+                border: isMobile ? '2px solid white' : '3px solid white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}
+            >
+              {items.reduce((sum, item) => sum + item.cantidad, 0)}
+            </div>
+          )}
+        </div>
+      </div>
 
       <main className="contenedor">
         {/* Breadcrumb */}
@@ -518,19 +581,6 @@ export default function ProductoPublico() {
                   </h3>
                   
                   <div style={{ display: 'grid', gap: '16px' }}>
-                        {!clienteInfo && (
-                          <div style={{
-                            padding: '12px 14px',
-                            background: '#fffbeb',
-                            border: '1px solid #fcd34d',
-                            borderRadius: '10px',
-                            fontSize: '13px',
-                            color: '#92400e',
-                            lineHeight: 1.45
-                          }}>
-                            Podés agregar al carrito y ver el total. Para finalizar la compra necesitás iniciar sesión.
-                          </div>
-                        )}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',

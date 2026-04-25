@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useSubdominio } from '../hooks/useSubdominio';
 import { useResponsive } from '../hooks/useResponsive';
-import CartModal from '../components/CartModal';
 import NavbarCliente from '../components/NavbarCliente';
 import ProductoDetalleModal from '../components/ProductoDetalleModal';
 import api from '../services/api';
@@ -533,7 +532,6 @@ export default function AreaPersonalCliente() {
   const [cargandoPedidos, setCargandoPedidos] = useState(false);
   const [detallePedido, setDetallePedido] = useState<Pedido|null>(null);
   const [clienteInfo, setClienteInfo] = useState<{ nombre: string; email: string } | null>(null);
-  const [showCart, setShowCart] = useState(false);
   const [tabActiva, setTabActiva] = useState<'pedidos' | 'favoritos'>('pedidos');
   
   // Estados para favoritos
@@ -1091,16 +1089,7 @@ export default function AreaPersonalCliente() {
         empresa={empresa}
         clienteInfo={clienteInfo}
         onCerrarSesion={cerrarSesion}
-        onShowCart={() => setShowCart(true)}
       />
-              <CartModal 
-          open={showCart} 
-          onClose={() => setShowCart(false)} 
-          onCompraExitosa={() => {
-            // Recargar la página para actualizar datos
-            window.location.reload();
-          }}
-        />
 
       <main className="contenedor" style={{
         paddingTop: isMobile ? '12rem' : '3rem'

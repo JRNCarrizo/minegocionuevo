@@ -283,7 +283,6 @@ export default function CatalogoPublico() {
         empresa={empresa}
         clienteInfo={clienteInfo}
         onCerrarSesion={cerrarSesion}
-        onShowCart={() => setShowCart(true)}
       />
               <CartModal 
           open={showCart} 
@@ -1363,20 +1362,6 @@ export default function CatalogoPublico() {
                         justifyContent: 'flex-end',
                         marginTop: 'auto'
                       }}>
-                        {!clienteInfo && (
-                          <div style={{
-                            padding: '8px 10px',
-                            background: '#fffbeb',
-                            border: '1px solid #fcd34d',
-                            borderRadius: '8px',
-                            textAlign: 'center',
-                            fontSize: '11px',
-                            color: '#92400e',
-                            lineHeight: 1.35
-                          }}>
-                            Armá el carrito y el total desde el ícono flotante. Para comprar, iniciá sesión.
-                          </div>
-                        )}
                         {/* Controles de cantidad */}
                         <div style={{
                           display: 'flex',

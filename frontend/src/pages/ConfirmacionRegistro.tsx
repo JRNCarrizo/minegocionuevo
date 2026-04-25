@@ -77,7 +77,6 @@ const ConfirmacionRegistro: React.FC = () => {
         empresa={empresa}
         clienteInfo={null}
         onCerrarSesion={() => {}}
-        onShowCart={() => {}}
       />
 
       <div style={{
