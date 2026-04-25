@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSubdominio } from "../hooks/useSubdominio";
-import api from "../services/api";
+import { useResponsive } from "../hooks/useResponsive";
 import { API_CONFIG } from "../config/api";
 
 interface ConfirmarCompraProps {
@@ -21,81 +21,94 @@ interface DatosBancarios {
   empresaNombre: string;
 }
 
-const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({ 
-  open, 
-  onClose, 
-  onConfirm, 
-  usuario, 
-  loading = false 
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  marginBottom: 6,
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#64748b",
+  letterSpacing: "0.02em",
+};
+
+const inputStyle = (error: boolean, disabled: boolean): React.CSSProperties => ({
+  width: "100%",
+  padding: "10px 12px",
+  border: `1px solid ${error ? "#f87171" : "#e2e8f0"}`,
+  borderRadius: 8,
+  fontSize: 14,
+  background: disabled ? "#f8fafc" : "#fff",
+  color: "#0f172a",
+  boxSizing: "border-box",
+  outline: "none",
+  transition: "border-color 0.15s ease, box-shadow 0.15s ease",
+});
+
+const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
+  open,
+  onClose,
+  onConfirm,
+  usuario,
+  loading = false,
 }) => {
   const [nombre, setNombre] = useState(usuario?.nombre || "");
   const [email, setEmail] = useState(usuario?.email || "");
   const [direccion, setDireccion] = useState("");
   const [acordarConVendedor, setAcordarConVendedor] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [datosBancarios, setDatosBancarios] = useState<DatosBancarios | null>(null);
   const [cargandoBancarios, setCargandoBancarios] = useState(false);
-  const { subdominio } = useSubdominio();
+  const { subdominio, empresa } = useSubdominio();
+  const { isMobile } = useResponsive();
+
+  useEffect(() => {
+    if (open) {
+      setNombre(usuario?.nombre || "");
+      setEmail(usuario?.email || "");
+    }
+  }, [open, usuario]);
 
   useEffect(() => {
     const fetchDatosBancarios = async () => {
-      if (!subdominio) {
-        console.log('No hay subdominio disponible');
-        return;
-      }
-      
-      console.log('Iniciando fetch de datos bancarios para subdominio:', subdominio);
+      if (!subdominio) return;
       setCargandoBancarios(true);
       try {
-        const response = await fetch(`${API_CONFIG.getBaseUrl().replace('/api', '')}/publico/${subdominio}/datos-bancarios`);
-        console.log('Respuesta del servidor:', response.status, response.statusText);
-        
+        const response = await fetch(
+          `${API_CONFIG.getBaseUrl().replace("/api", "")}/publico/${subdominio}/datos-bancarios`
+        );
         if (response.ok) {
           const data = await response.json();
-          console.log('Datos bancarios obtenidos:', data);
           setDatosBancarios(data.data);
-          console.log('Estado datosBancarios actualizado:', data.data);
-        } else {
-          console.error('Error al obtener datos bancarios:', response.status, response.statusText);
         }
-      } catch (error) {
-        console.error("Error al cargar datos bancarios:", error);
+      } catch {
+        /* ignore */
       } finally {
         setCargandoBancarios(false);
-        console.log('Carga de datos bancarios finalizada');
       }
     };
 
     if (open && subdominio) {
-      console.log('Modal abierto y subdominio disponible, iniciando fetch');
       fetchDatosBancarios();
-    } else {
-      console.log('Modal no abierto o subdominio no disponible:', { open, subdominio });
     }
   }, [open, subdominio]);
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
-    
-    if (!nombre.trim()) {
-      newErrors.nombre = 'El nombre es requerido';
-    }
-    
+    const newErrors: { [key: string]: string } = {};
+
+    if (!nombre.trim()) newErrors.nombre = "Requerido";
     if (!email.trim()) {
-      newErrors.email = 'El email es requerido';
+      newErrors.email = "Requerido";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'El email no es válido';
+      newErrors.email = "Email inválido";
     }
-    
-    // La dirección solo es requerida si no se selecciona "acordar con vendedor"
+
     if (!acordarConVendedor) {
       if (!direccion.trim()) {
-        newErrors.direccion = 'La dirección es requerida';
+        newErrors.direccion = "Requerida";
       } else if (direccion.trim().length < 10) {
-        newErrors.direccion = 'La dirección debe tener al menos 10 caracteres';
+        newErrors.direccion = "Mínimo 10 caracteres";
       }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -103,736 +116,413 @@ const ConfirmarCompraModal: React.FC<ConfirmarCompraProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onConfirm({ 
-        nombre: nombre.trim(), 
-        email: email.trim(), 
+      onConfirm({
+        nombre: nombre.trim(),
+        email: email.trim(),
         direccion: acordarConVendedor ? "Acordar con vendedor" : direccion.trim(),
-        acordarConVendedor 
+        acordarConVendedor,
       });
     }
   };
 
   if (!open) return null;
 
-  console.log('Renderizando modal - Estado actual:', {
-    cargandoBancarios,
-    datosBancarios,
-    subdominio,
-    open
-  });
+  const headerGradient = empresa?.colorPrimario
+    ? `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)`
+    : "linear-gradient(135deg, #0f766e 0%, #0d9488 100%)";
 
-  return (
-    <div 
-      className="confirmar-compra-overlay" 
-      onClick={onClose}
+  const chip = (k: string, v: string) => (
+    <div
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(8px)',
-        zIndex: 1100,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        animation: 'fadeIn 0.3s ease-out'
+        background: "#fffbeb",
+        border: "1px solid #fde68a",
+        borderRadius: 8,
+        padding: "10px 12px",
       }}
     >
-      <div 
-        className="confirmar-compra-modal" 
-        onClick={e => e.stopPropagation()}
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#a16207", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        {k}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: "#422006", marginTop: 4, wordBreak: "break-all", fontVariantNumeric: "tabular-nums" }}>
+        {v}
+      </div>
+    </div>
+  );
+
+  return (
+    <div
+      className="confirmar-compra-overlay"
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(15, 23, 42, 0.55)",
+        backdropFilter: "blur(10px)",
+        zIndex: 1100,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: isMobile ? 12 : 20,
+        animation: "fadeIn 0.2s ease-out",
+      }}
+    >
+      <div
+        className="confirmar-compra-modal"
+        onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-          borderRadius: '20px',
-          padding: '0',
-          width: '90vw',
-          maxWidth: '600px',
-          maxHeight: '85vh',
-          overflow: 'hidden',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-          border: '1px solid rgba(255,255,255,0.2)',
-          animation: 'slideIn 0.4s ease-out',
-          position: 'relative'
+          background: "#fff",
+          borderRadius: 14,
+          width: "100%",
+          maxWidth: isMobile ? 440 : 760,
+          maxHeight: "min(92vh, 880px)",
+          height: isMobile ? "auto" : "min(88vh, 820px)",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          boxShadow: "0 24px 48px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(15,23,42,0.06)",
+          animation: "slideIn 0.25s ease-out",
         }}
       >
-        {/* Header */}
-        <div style={{
-          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          color: 'white',
-          padding: '24px 32px',
-          borderTopLeftRadius: '20px',
-          borderTopRightRadius: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
-              💳 Confirmar Compra
+        <div
+          style={{
+            background: headerGradient,
+            color: "#fff",
+            padding: isMobile ? "14px 16px" : "16px 22px",
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ margin: 0, fontSize: isMobile ? 17 : 18, fontWeight: 700, letterSpacing: "-0.02em" }}>
+              Confirmar pedido
             </h2>
-            <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
-              Completa tus datos para finalizar el pedido
+            <p style={{ margin: "4px 0 0 0", opacity: 0.92, fontSize: 12 }}>
+              Datos de envío y contacto
             </p>
           </div>
-          <button 
+          <button
+            type="button"
+            aria-label="Cerrar"
             onClick={onClose}
             disabled={loading}
             style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              borderRadius: '50%',
-              width: '40px',
-              height: '40px',
-              color: 'white',
-              fontSize: '20px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease',
-              opacity: loading ? 0.5 : 1
-            }}
-            onMouseOver={(e) => {
-              if (!loading) {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (!loading) {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-              }
+              background: "rgba(255,255,255,0.2)",
+              border: "none",
+              borderRadius: 8,
+              width: 36,
+              height: 36,
+              color: "#fff",
+              fontSize: 20,
+              cursor: loading ? "not-allowed" : "pointer",
+              flexShrink: 0,
+              lineHeight: 1,
             }}
           >
             ×
           </button>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: '32px', maxHeight: 'calc(85vh - 140px)', overflow: 'auto' }}>
-          <form onSubmit={handleSubmit} style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '24px',
-            alignItems: 'center',
-            maxWidth: '500px',
-            margin: '0 auto'
-          }}>
-            
-            {/* Información personal */}
-            <div style={{
-              background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-              borderRadius: '20px',
-              padding: '32px',
-              border: '2px solid #e2e8f0',
-              width: '100%'
-            }}>
-              <h3 style={{ 
-                margin: '0 0 24px 0', 
-                fontSize: '20px', 
-                fontWeight: '700', 
-                color: '#1e293b',
-                textAlign: 'center'
-              }}>
-                👤 Información Personal
-              </h3>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {/* Nombre */}
-                <div style={{ textAlign: 'center' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '12px',
-                    fontSize: '15px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    textAlign: 'center'
-                  }}>
-                    Nombre completo *
-                  </label>
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: isMobile ? "16px 16px 12px" : "20px 24px 12px",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            <div
+              style={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 12,
+                overflow: "hidden",
+                marginBottom: 14,
+              }}
+            >
+              <div
+                style={{
+                  padding: "10px 14px",
+                  background: "#f8fafc",
+                  borderBottom: "1px solid #e2e8f0",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#64748b",
+                }}
+              >
+                Contacto
+              </div>
+              <div style={{ padding: 14, display: "grid", gap: 14, gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
+                <div>
+                  <label style={labelStyle}>Nombre completo</label>
                   <input
                     type="text"
                     value={nombre}
-                    onChange={e => {
+                    onChange={(e) => {
                       setNombre(e.target.value);
-                      if (errors.nombre) {
-                        setErrors(prev => ({ ...prev, nombre: '' }));
-                      }
+                      if (errors.nombre) setErrors((p) => ({ ...p, nombre: "" }));
                     }}
                     disabled={loading}
-                    style={{
-                      width: '100%',
-                      padding: '16px 20px',
-                      border: `2px solid ${errors.nombre ? '#ef4444' : '#d1d5db'}`,
-                      borderRadius: '16px',
-                      fontSize: '16px',
-                      background: 'white',
-                      transition: 'all 0.2s ease',
-                      boxSizing: 'border-box',
-                      textAlign: 'center'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#8b5cf6';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = errors.nombre ? '#ef4444' : '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                    placeholder="Ingresa tu nombre completo"
+                    style={inputStyle(!!errors.nombre, loading)}
+                    placeholder="Nombre y apellido"
                   />
                   {errors.nombre && (
-                    <p style={{
-                      margin: '8px 0 0 0',
-                      fontSize: '14px',
-                      color: '#ef4444',
-                      textAlign: 'center'
-                    }}>
-                      {errors.nombre}
-                    </p>
+                    <p style={{ margin: "6px 0 0 0", fontSize: 12, color: "#dc2626" }}>{errors.nombre}</p>
                   )}
                 </div>
-
-                {/* Email */}
-                <div style={{ textAlign: 'center' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '12px',
-                    fontSize: '15px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    textAlign: 'center'
-                  }}>
-                    Email *
-                  </label>
+                <div>
+                  <label style={labelStyle}>Email</label>
                   <input
                     type="email"
                     value={email}
-                    onChange={e => {
+                    onChange={(e) => {
                       setEmail(e.target.value);
-                      if (errors.email) {
-                        setErrors(prev => ({ ...prev, email: '' }));
-                      }
+                      if (errors.email) setErrors((p) => ({ ...p, email: "" }));
                     }}
                     disabled={loading}
-                    style={{
-                      width: '100%',
-                      padding: '16px 20px',
-                      border: `2px solid ${errors.email ? '#ef4444' : '#d1d5db'}`,
-                      borderRadius: '16px',
-                      fontSize: '16px',
-                      background: 'white',
-                      transition: 'all 0.2s ease',
-                      boxSizing: 'border-box',
-                      textAlign: 'center'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#8b5cf6';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = errors.email ? '#ef4444' : '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                    placeholder="tu@email.com"
+                    style={inputStyle(!!errors.email, loading)}
+                    placeholder="correo@ejemplo.com"
                   />
                   {errors.email && (
-                    <p style={{
-                      margin: '8px 0 0 0',
-                      fontSize: '14px',
-                      color: '#ef4444',
-                      textAlign: 'center'
-                    }}>
-                      {errors.email}
-                    </p>
+                    <p style={{ margin: "6px 0 0 0", fontSize: 12, color: "#dc2626" }}>{errors.email}</p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Dirección de envío */}
-            <div style={{
-              background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-              borderRadius: '20px',
-              padding: '32px',
-              border: '2px solid #e2e8f0',
-              width: '100%'
-            }}>
-              <h3 style={{ 
-                margin: '0 0 24px 0', 
-                fontSize: '20px', 
-                fontWeight: '700', 
-                color: '#1e293b',
-                textAlign: 'center'
-              }}>
-                📍 Dirección de Envío
-              </h3>
-              
-              {/* Opción de acordar con vendedor */}
-              <div style={{ 
-                marginBottom: '24px',
-                display: 'flex',
-                justifyContent: 'center'
-              }}>
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  cursor: 'pointer',
-                  padding: '20px',
-                  borderRadius: '16px',
-                  background: acordarConVendedor ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' : 'white',
-                  border: `2px solid ${acordarConVendedor ? '#3b82f6' : '#e2e8f0'}`,
-                  transition: 'all 0.2s ease',
-                  maxWidth: '400px',
-                  width: '100%'
-                }}>
+            <div
+              style={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 12,
+                overflow: "hidden",
+                marginBottom: 14,
+              }}
+            >
+              <div
+                style={{
+                  padding: "10px 14px",
+                  background: "#f8fafc",
+                  borderBottom: "1px solid #e2e8f0",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#64748b",
+                }}
+              >
+                Entrega
+              </div>
+              <div style={{ padding: 14 }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 10,
+                    cursor: loading ? "default" : "pointer",
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    border: `1px solid ${acordarConVendedor ? "#38bdf8" : "#e2e8f0"}`,
+                    background: acordarConVendedor ? "#f0f9ff" : "#fff",
+                    marginBottom: !acordarConVendedor ? 12 : 0,
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={acordarConVendedor}
                     onChange={(e) => {
                       setAcordarConVendedor(e.target.checked);
                       if (e.target.checked) {
-                        setDireccion('');
-                        setErrors(prev => ({ ...prev, direccion: '' }));
+                        setDireccion("");
+                        setErrors((p) => ({ ...p, direccion: "" }));
                       }
                     }}
                     disabled={loading}
-                    style={{
-                      width: '24px',
-                      height: '24px',
-                      accentColor: '#3b82f6'
-                    }}
+                    style={{ width: 16, height: 16, marginTop: 2, accentColor: "#0ea5e9", flexShrink: 0 }}
                   />
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: '18px',
-                      fontWeight: '700',
-                      color: '#1e293b',
-                      marginBottom: '8px'
-                    }}>
-                      🤝 Acordar con el vendedor
-                    </div>
-                    <div style={{
-                      fontSize: '15px',
-                      color: '#64748b',
-                      lineHeight: '1.4'
-                    }}>
-                      Coordinar entrega directamente con el vendedor
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>Acordar entrega con el vendedor</div>
+                    <div style={{ fontSize: 12, color: "#64748b", marginTop: 2, lineHeight: 1.4 }}>
+                      Sin dirección ahora; coordinás por contacto.
                     </div>
                   </div>
                 </label>
-              </div>
-              
-              {/* Campo de dirección (solo si no se selecciona acordar con vendedor) */}
-              {!acordarConVendedor && (
-                <div>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151'
-                  }}>
-                    Dirección completa *
-                  </label>
-                  <textarea
-                    value={direccion}
-                    onChange={e => {
-                      setDireccion(e.target.value);
-                      if (errors.direccion) {
-                        setErrors(prev => ({ ...prev, direccion: '' }));
-                      }
-                    }}
-                    disabled={loading}
-                    rows={4}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: `2px solid ${errors.direccion ? '#ef4444' : '#d1d5db'}`,
-                      borderRadius: '12px',
-                      fontSize: '16px',
-                      background: 'white',
-                      transition: 'all 0.2s ease',
-                      boxSizing: 'border-box',
-                      resize: 'vertical',
-                      fontFamily: 'inherit'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#8b5cf6';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = errors.direccion ? '#ef4444' : '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                    placeholder="Ingresa tu dirección completa para el envío..."
-                  />
-                  {errors.direccion && (
-                    <p style={{
-                      margin: '4px 0 0 0',
-                      fontSize: '14px',
-                      color: '#ef4444'
-                    }}>
-                      {errors.direccion}
-                    </p>
-                  )}
-                </div>
-              )}
-              
-              {/* Mensaje informativo cuando se selecciona acordar con vendedor */}
-              {acordarConVendedor && (
-                <div style={{
-                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  border: '2px solid #f59e0b',
-                  marginTop: '12px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '16px' }}>💡</span>
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#92400e' }}>
-                      Información importante
-                    </span>
+
+                {!acordarConVendedor && (
+                  <div>
+                    <label style={labelStyle}>Dirección de envío</label>
+                    <textarea
+                      value={direccion}
+                      onChange={(e) => {
+                        setDireccion(e.target.value);
+                        if (errors.direccion) setErrors((p) => ({ ...p, direccion: "" }));
+                      }}
+                      disabled={loading}
+                      rows={3}
+                      style={{
+                        ...inputStyle(!!errors.direccion, loading),
+                        resize: "vertical",
+                        minHeight: 72,
+                        fontFamily: "inherit",
+                        lineHeight: 1.45,
+                      }}
+                      placeholder="Calle, número, ciudad, referencias…"
+                    />
+                    {errors.direccion && (
+                      <p style={{ margin: "6px 0 0 0", fontSize: 12, color: "#dc2626" }}>{errors.direccion}</p>
+                    )}
                   </div>
-                  <p style={{
-                    margin: 0,
-                    fontSize: '14px',
-                    color: '#92400e',
-                    lineHeight: '1.5'
-                  }}>
-                    Al seleccionar esta opción, el vendedor se pondrá en contacto contigo para coordinar la entrega. 
-                    No es necesario proporcionar una dirección ahora.
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            {/* Datos bancarios para transferencia */}
             {cargandoBancarios ? (
-              <div style={{
-                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                borderRadius: '20px',
-                padding: '32px',
-                border: '2px solid #f59e0b',
-                width: '100%',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '12px',
-                  fontSize: '18px',
-                  color: '#92400e',
-                  fontWeight: '600'
-                }}>
-                  <div style={{
-                    width: '20px',
-                    height: '20px',
-                    border: '2px solid rgba(146, 64, 14, 0.3)',
-                    borderTop: '2px solid #92400e',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }} />
-                  Cargando datos bancarios...
-                </div>
+              <div
+                style={{
+                  padding: "12px 14px",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 10,
+                  fontSize: 13,
+                  color: "#64748b",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 12,
+                }}
+              >
+                <div
+                  style={{
+                    width: 16,
+                    height: 16,
+                    border: "2px solid #e2e8f0",
+                    borderTopColor: "#ca8a04",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite",
+                  }}
+                />
+                Cargando datos para transferencia…
               </div>
-            ) : datosBancarios && (
-              <div style={{
-                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                borderRadius: '20px',
-                padding: '32px',
-                border: '2px solid #f59e0b',
-                width: '100%'
-              }}>
-                <h3 style={{ 
-                  margin: '0 0 24px 0', 
-                  fontSize: '20px', 
-                  fontWeight: '700', 
-                  color: '#92400e',
-                  textAlign: 'center'
-                }}>
-                  🏦 Datos Bancarios para Transferencia
-                </h3>
-                
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-                  gap: '16px' 
-                }}>
-                  {datosBancarios.banco && (
-                    <div style={{
-                      background: 'white',
-                      padding: '16px',
-                      borderRadius: '12px',
-                      border: '1px solid #f59e0b'
-                    }}>
-                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
-                        Banco
-                      </div>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
-                        {datosBancarios.banco}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {datosBancarios.tipoCuenta && (
-                    <div style={{
-                      background: 'white',
-                      padding: '16px',
-                      borderRadius: '12px',
-                      border: '1px solid #f59e0b'
-                    }}>
-                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
-                        Tipo de Cuenta
-                      </div>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
-                        {datosBancarios.tipoCuenta}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {datosBancarios.numeroCuenta && (
-                    <div style={{
-                      background: 'white',
-                      padding: '16px',
-                      borderRadius: '12px',
-                      border: '1px solid #f59e0b'
-                    }}>
-                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
-                        Número de Cuenta
-                      </div>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
-                        {datosBancarios.numeroCuenta}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {datosBancarios.cbu && (
-                    <div style={{
-                      background: 'white',
-                      padding: '16px',
-                      borderRadius: '12px',
-                      border: '1px solid #f59e0b'
-                    }}>
-                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
-                        CBU
-                      </div>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
-                        {datosBancarios.cbu}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {datosBancarios.alias && (
-                    <div style={{
-                      background: 'white',
-                      padding: '16px',
-                      borderRadius: '12px',
-                      border: '1px solid #f59e0b'
-                    }}>
-                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
-                        Alias
-                      </div>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
-                        {datosBancarios.alias}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {datosBancarios.titular && (
-                    <div style={{
-                      background: 'white',
-                      padding: '16px',
-                      borderRadius: '12px',
-                      border: '1px solid #f59e0b'
-                    }}>
-                      <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '4px' }}>
-                        Titular
-                      </div>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
-                        {datosBancarios.titular}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div style={{
-                  background: 'white',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  marginTop: '16px',
-                  border: '1px solid #f59e0b'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '16px' }}>💡</span>
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#92400e' }}>
-                      Información importante
-                    </span>
+            ) : (
+              datosBancarios && (
+                <div
+                  style={{
+                    border: "1px solid #fde68a",
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    marginBottom: 12,
+                    background: "#fffbeb",
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      borderBottom: "1px solid #fde68a",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "#a16207",
+                    }}
+                  >
+                    Pago por transferencia
                   </div>
-                  <p style={{
-                    margin: 0,
-                    fontSize: '14px',
-                    color: '#92400e',
-                    lineHeight: '1.5'
-                  }}>
-                    Una vez realizada la transferencia, envía el comprobante al vendedor para confirmar tu pedido. 
-                    El pedido será procesado una vez confirmado el pago.
+                  <div style={{ padding: 12, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 8 }}>
+                    {datosBancarios.banco && chip("Banco", datosBancarios.banco)}
+                    {datosBancarios.tipoCuenta && chip("Tipo", datosBancarios.tipoCuenta)}
+                    {datosBancarios.numeroCuenta && chip("Cuenta", datosBancarios.numeroCuenta)}
+                    {datosBancarios.cbu && chip("CBU", datosBancarios.cbu)}
+                    {datosBancarios.alias && chip("Alias", datosBancarios.alias)}
+                    {datosBancarios.titular && chip("Titular", datosBancarios.titular)}
+                  </div>
+                  <p style={{ margin: 0, padding: "0 14px 12px", fontSize: 11, color: "#854d0e", lineHeight: 1.45 }}>
+                    Enviá el comprobante al vendedor para acelerar la confirmación del pedido.
                   </p>
                 </div>
-              </div>
+              )
             )}
 
-            {/* Información adicional */}
-            <div style={{
-              background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-              borderRadius: '16px',
-              padding: '20px',
-              border: '2px solid #93c5fd'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                <span style={{ fontSize: '20px' }}>ℹ️</span>
-                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e40af' }}>
-                  Información importante
-                </h4>
-              </div>
-              <ul style={{
-                margin: 0,
-                paddingLeft: '20px',
-                fontSize: '14px',
-                color: '#1e40af',
-                lineHeight: '1.5'
-              }}>
-                <li>Tu pedido será procesado una vez confirmado</li>
-                <li>Recibirás una confirmación por email</li>
-                <li>Puedes hacer seguimiento desde "Mi Cuenta"</li>
-                <li>El stock se descuenta automáticamente al confirmar</li>
-                {acordarConVendedor && (
-                  <li style={{ fontWeight: '600', color: '#dc2626' }}>
-                    ⚠️ Al seleccionar "Acordar con vendedor", el vendedor se pondrá en contacto contigo para coordinar la entrega
-                  </li>
-                )}
-              </ul>
-            </div>
+            <p style={{ margin: 0, fontSize: 11, color: "#94a3b8", lineHeight: 1.45 }}>
+              Recibirás confirmación por email. Seguimiento en &quot;Mi cuenta&quot;.
+            </p>
+          </div>
 
-            {/* Botones de acción */}
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column',
-              gap: '16px',
-              alignItems: 'center',
-              width: '100%'
-            }}>
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  border: 'none',
-                  borderRadius: '16px',
-                  padding: '18px 40px',
-                  fontSize: '18px',
-                  fontWeight: '700',
-                  color: 'white',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                  width: '100%',
-                  maxWidth: '400px',
-                  opacity: loading ? 0.7 : 1
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(16,185,129,0.4)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)';
-                  }
-                }}
-              >
-                {loading ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                    <div style={{
-                      width: '16px',
-                      height: '16px',
-                      border: '2px solid rgba(255,255,255,0.3)',
-                      borderTop: '2px solid white',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }} />
-                    Procesando...
-                  </span>
-                ) : (
-                  acordarConVendedor ? '🤝 Confirmar y Acordar Entrega' : '💳 Confirmar Compra'
-                )}
-              </button>
-              
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={loading}
-                style={{
-                  background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                  border: '2px solid #cbd5e1',
-                  borderRadius: '12px',
-                  padding: '14px 28px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: '#475569',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  width: '100%',
-                  maxWidth: '300px',
-                  opacity: loading ? 0.5 : 1
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.borderColor = '#64748b';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.borderColor = '#cbd5e1';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
-                  }
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
+          <div
+            style={{
+              flexShrink: 0,
+              padding: isMobile ? "12px 16px 16px" : "14px 24px 18px",
+              borderTop: "1px solid #e2e8f0",
+              background: "#fafafa",
+              display: "flex",
+              flexDirection: isMobile ? "column-reverse" : "row",
+              gap: 10,
+              justifyContent: "flex-end",
+            }}
+          >
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              style={{
+                padding: "10px 18px",
+                fontSize: 14,
+                fontWeight: 600,
+                color: "#475569",
+                background: "#fff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 8,
+                cursor: loading ? "not-allowed" : "pointer",
+                width: isMobile ? "100%" : "auto",
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                padding: "10px 22px",
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#fff",
+                background: empresa?.colorPrimario
+                  ? `linear-gradient(180deg, ${empresa.colorPrimario} 0%, ${empresa.colorPrimario}dd 100%)`
+                  : "linear-gradient(180deg, #0d9488 0%, #0f766e 100%)",
+                border: "none",
+                borderRadius: 8,
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.75 : 1,
+                width: isMobile ? "100%" : "auto",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
+              }}
+            >
+              {loading ? "Procesando…" : acordarConVendedor ? "Confirmar y coordinar" : "Confirmar pedido"}
+            </button>
+          </div>
+        </form>
       </div>
-      
+
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        
         @keyframes slideIn {
-          from { 
-            opacity: 0;
-            transform: translateY(-20px) scale(0.95);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>
