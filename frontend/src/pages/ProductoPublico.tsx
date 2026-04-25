@@ -71,12 +71,6 @@ export default function ProductoPublico() {
   const agregarAlCarrito = async () => {
     if (!producto) return;
     
-    // Verificar si el usuario está autenticado
-    if (!clienteInfo) {
-      toast.error('Debes iniciar sesión para agregar productos al carrito');
-      return;
-    }
-    
     if (producto.stock === 0) {
       toast.error('Este producto está agotado');
       return;
@@ -163,6 +157,7 @@ export default function ProductoPublico() {
             // Recargar el producto para actualizar stock
             cargarProducto();
           }}
+          permitirCompra={!!clienteInfo}
         />
 
       <main className="contenedor">
@@ -522,9 +517,20 @@ export default function ProductoPublico() {
                     🛒 Comprar Producto
                   </h3>
                   
-                  {clienteInfo ? (
-                    // Mostrar controles de compra solo si hay cliente logueado
-                    <div style={{ display: 'grid', gap: '16px' }}>
+                  <div style={{ display: 'grid', gap: '16px' }}>
+                        {!clienteInfo && (
+                          <div style={{
+                            padding: '12px 14px',
+                            background: '#fffbeb',
+                            border: '1px solid #fcd34d',
+                            borderRadius: '10px',
+                            fontSize: '13px',
+                            color: '#92400e',
+                            lineHeight: 1.45
+                          }}>
+                            Podés agregar al carrito y ver el total. Para finalizar la compra necesitás iniciar sesión.
+                          </div>
+                        )}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -642,6 +648,7 @@ export default function ProductoPublico() {
                           })()}
                         </button>
                         
+                        {clienteInfo && (
                         <button
                           onClick={comprarAhora}
                           style={{
@@ -665,53 +672,9 @@ export default function ProductoPublico() {
                         >
                           Comprar ahora
                         </button>
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    // Mostrar botón de iniciar sesión si no hay cliente logueado
-                    <div style={{ display: 'grid', gap: '16px' }}>
-                      <div style={{
-                        padding: '16px',
-                        background: '#f0f9ff',
-                        border: '1px solid #bae6fd',
-                        borderRadius: '12px',
-                        textAlign: 'center',
-                        fontSize: '16px',
-                        color: '#0369a1'
-                      }}>
-                        🔑 Inicia sesión para comprar este producto
-                      </div>
-                      <Link to="/login" style={{
-                        width: '100%',
-                        padding: '16px 24px',
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '12px',
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        transition: 'all 0.2s ease',
-                        textDecoration: 'none'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.3)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
-                      >
-                        <span>🔑</span>
-                        <span>Iniciar Sesión</span>
-                      </Link>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

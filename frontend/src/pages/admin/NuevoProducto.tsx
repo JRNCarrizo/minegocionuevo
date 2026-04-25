@@ -236,6 +236,7 @@ export default function NuevoProducto() {
   const unidadRef = useRef<HTMLInputElement>(null);
   const stockRef = useRef<HTMLInputElement>(null);
   const stockMinimoRef = useRef<HTMLInputElement>(null);
+  const botonSubmitRef = useRef<HTMLButtonElement>(null);
   const evitarScrollCambieNumero = (e: React.WheelEvent<HTMLInputElement>) => {
     // Cuando el input number está enfocado, la rueda cambia el valor.
     // Blureamos para que el scroll de la página no modifique el número.
@@ -914,6 +915,21 @@ export default function NuevoProducto() {
     if (e.key === 'Escape') {
       e.preventDefault();
       manejarEscape();
+    }
+
+    // En la pestaña de imágenes suele no haber un input enfocado (dropzone),
+    // entonces Enter no dispara el submit del form. Si no estamos escribiendo en un campo,
+    // usamos Enter para guardar (crear/editar) sin cortar el flujo.
+    if (e.key === 'Enter' && pestanaActiva === 'imagenes') {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      const esCampoEditable =
+        tag === 'input' || tag === 'textarea' || tag === 'select' || (target?.isContentEditable ?? false);
+
+      if (!esCampoEditable) {
+        e.preventDefault();
+        botonSubmitRef.current?.click();
+      }
     }
   };
 
@@ -1940,6 +1956,7 @@ export default function NuevoProducto() {
 
               <div className="barra-crear-producto">
                 <button
+                  ref={botonSubmitRef}
                   type="submit"
                   disabled={cargando}
                   className="boton-crear boton-crear-ancho"

@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import CartIcon from './CartIcon';
-import { FaInstagram, FaFacebook, FaShoppingCart } from 'react-icons/fa';
+import { FaInstagram, FaFacebook } from 'react-icons/fa';
 import { useResponsive } from '../hooks/useResponsive';
 
 interface NavbarClienteProps {
@@ -328,6 +328,15 @@ export default function NavbarCliente({
             </div>
           )}
 
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: isMobile ? '8px' : '12px'
+            }}
+            title="Ver carrito"
+          >
+            <CartIcon onClick={onShowCart} />
           {/* Información del cliente */}
           {clienteInfo ? (
             <div style={{
@@ -436,6 +445,7 @@ export default function NavbarCliente({
               <span>Iniciar Sesión</span>
             </Link>
           )}
+          </div>
         </div>
       </div>
     </header>

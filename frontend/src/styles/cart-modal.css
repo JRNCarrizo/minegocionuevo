@@ -18,6 +18,24 @@
   box-shadow: 0 4px 24px rgba(0,0,0,0.18);
   position: relative;
 }
+
+/* Rediseño CartModal: sin min-width rígido, lista con scroll suave */
+.cart-modal.cart-modal-redesign {
+  min-width: unset;
+  padding: 0;
+  overflow: hidden;
+}
+.cart-modal-list-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+.cart-modal-list-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.cart-modal-list-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
 .close-btn {
   position: absolute;
   top: 10px;

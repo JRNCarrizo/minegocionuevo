@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import "../styles/cart-modal.css";
 import { useCart } from "../hooks/useCart";
 import ConfirmarCompraModal from "./ConfirmarCompraModal";
 import apiService from "../services/api";
@@ -11,6 +12,8 @@ interface CartModalProps {
   open: boolean;
   onClose: () => void;
   onCompraExitosa?: () => void; // Callback para recargar productos
+  /** Si es false, se muestra lista y total pero no el flujo de compra (visitante sin sesión). */
+  permitirCompra?: boolean;
 }
 
 const getClienteInfo = () => {
@@ -40,14 +43,15 @@ const getClienteInfo = () => {
   return null;
 };
 
-const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa }) => {
+const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa, permitirCompra = true }) => {
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
   const [showConfirm, setShowConfirm] = useState(false);
   const [compraRealizada, setCompraRealizada] = useState(false);
   const [loading, setLoading] = useState(false);
   const usuario = getClienteInfo();
   const { empresa, subdominio } = useSubdominio();
-  const { isMobile } = useResponsive();
+  const { isMobile, isDesktop } = useResponsive();
+  const subdominioStock = subdominio || empresa?.subdominio;
 
   const handleConfirmarCompra = async (datos: { nombre: string; email: string; direccion: string; acordarConVendedor?: boolean }) => {
     console.log('=== DEBUG CREAR PEDIDO ===');
@@ -161,617 +165,443 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
         }}
       >
         <div 
-          className="cart-modal" 
+          className="cart-modal cart-modal-redesign" 
           onClick={e => e.stopPropagation()}
           style={{
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-            borderRadius: isMobile ? '16px' : '20px',
-            padding: '0',
-            width: isMobile ? '95vw' : '90vw',
-            maxWidth: '800px',
-            maxHeight: isMobile ? '90vh' : '85vh',
+            background: '#ffffff',
+            borderRadius: isMobile ? '14px' : '16px',
+            padding: 0,
+            width: isMobile ? 'min(100vw - 16px, 440px)' : 'min(980px, calc(100vw - 32px))',
+            maxWidth: isMobile ? '100%' : 980,
+            maxHeight: isMobile ? '92vh' : '88vh',
+            ...(items.length > 0
+              ? { height: isMobile ? 'min(90vh, 640px)' : 'min(82vh, 720px)' }
+              : {}),
+            display: 'flex',
+            flexDirection: 'column',
             overflow: 'hidden',
-            boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            animation: 'slideIn 0.4s ease-out',
+            boxShadow: '0 24px 48px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15,23,42,0.06)',
+            border: '1px solid #e2e8f0',
+            animation: 'slideIn 0.35s ease-out',
             position: 'relative'
           }}
         >
-          {/* Header */}
+          {/* Header compacto */}
           <div style={{
             background: empresa?.colorPrimario ? 
               `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)` :
-              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
             color: 'white',
-            padding: isMobile ? '16px 20px' : '24px 32px',
-            borderTopLeftRadius: isMobile ? '16px' : '20px',
-            borderTopRightRadius: isMobile ? '16px' : '20px',
+            padding: isMobile ? '12px 14px' : '14px 20px',
+            flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            gap: 12
           }}>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <h2 style={{ 
                 margin: 0, 
-                fontSize: isMobile ? '20px' : '24px', 
-                fontWeight: '600' 
+                fontSize: isMobile ? '17px' : '18px', 
+                fontWeight: 700,
+                letterSpacing: '-0.02em'
               }}>
-                🛒 Carrito de Compras
+                Tu carrito
               </h2>
               <p style={{ 
-                margin: '4px 0 0 0', 
-                opacity: 0.9, 
-                fontSize: isMobile ? '12px' : '14px' 
+                margin: '2px 0 0 0', 
+                opacity: 0.92, 
+                fontSize: isMobile ? '12px' : '13px' 
               }}>
-                {items.length} {items.length === 1 ? 'producto' : 'productos'} en tu carrito
+                {items.length} {items.length === 1 ? 'producto' : 'productos'}
+                {items.length > 0 ? ` · ${items.reduce((s, i) => s + i.cantidad, 0)} unidades` : ''}
               </p>
             </div>
             <button 
+              type="button"
+              aria-label="Cerrar"
               onClick={onClose}
               style={{
-                background: 'rgba(255,255,255,0.2)',
+                background: 'rgba(255,255,255,0.18)',
                 border: 'none',
-                borderRadius: '50%',
-                width: isMobile ? '36px' : '40px',
-                height: isMobile ? '36px' : '40px',
+                borderRadius: '10px',
+                width: 36,
+                height: 36,
                 color: 'white',
-                fontSize: isMobile ? '18px' : '20px',
+                fontSize: '22px',
+                lineHeight: 1,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'all 0.2s ease'
+                flexShrink: 0,
+                transition: 'background 0.15s ease'
               }}
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+              onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.28)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; }}
             >
               ×
             </button>
           </div>
 
-          {/* Content */}
-          <div style={{ 
-            padding: isMobile ? '20px' : '32px', 
-            maxHeight: isMobile ? 'calc(90vh - 120px)' : 'calc(85vh - 140px)', 
-            overflow: 'auto' 
-          }}>
           {items.length === 0 ? (
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '32px 20px',
+              color: '#64748b',
+              textAlign: 'center'
+            }}>
               <div style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                color: '#64748b',
+                width: 72,
+                height: 72,
+                background: '#f1f5f9',
+                borderRadius: '16px',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                minHeight: '300px'
+                marginBottom: 16,
+                fontSize: '28px'
               }}>
-                <div style={{
-                  width: '100px',
-                  height: '100px',
-                  background: 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 24px',
-                  fontSize: '40px',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.1)'
-                }}>
-                  🛒
-                </div>
-                <h3 style={{ 
-                  margin: '0 0 16px 0', 
-                  fontSize: '24px', 
-                  fontWeight: '700', 
-                  color: '#1e293b',
-                  textAlign: 'center'
-                }}>
-                  Tu carrito está vacío
-                </h3>
-                <p style={{ 
-                  margin: 0, 
-                  fontSize: '18px',
-                  textAlign: 'center',
-                  maxWidth: '300px',
-                  lineHeight: '1.5'
-                }}>
-                  Agrega algunos productos para comenzar a comprar
-                </p>
+                🛒
               </div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>
+                Carrito vacío
+              </h3>
+              <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5, maxWidth: 280 }}>
+                Agregá productos desde el catálogo para ver el detalle y el total acá.
+              </p>
+            </div>
           ) : (
-            <>
-                {/* Productos */}
-                <div style={{ 
-                  marginBottom: '32px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '16px'
-                }}>
-                  {/* Header de la lista */}
+            <div style={{
+              flex: 1,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: isDesktop ? 'row' : 'column'
+            }}>
+              {/* Lista: solo esta zona hace scroll */}
+              <div
+                className="cart-modal-list-scroll"
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  minHeight: isDesktop ? 0 : 180,
+                  overflowY: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  borderBottom: isDesktop ? 'none' : '1px solid #e2e8f0'
+                }}
+              >
+                {isDesktop && (
                   <div style={{
-                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                    borderRadius: '12px',
-                    padding: isMobile ? '12px 16px' : '16px 20px',
-                    border: '2px solid #e2e8f0',
-                    display: 'flex',
+                    display: 'grid',
+                    gridTemplateColumns: '52px 1fr 72px 120px 88px 36px',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '8px'
+                    gap: 10,
+                    padding: '8px 16px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    color: '#94a3b8',
+                    borderBottom: '1px solid #e2e8f0',
+                    background: '#fafafa',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1
                   }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <span style={{
-                        fontSize: isMobile ? '14px' : '16px',
-                        fontWeight: '600',
-                        color: '#1e293b'
-                      }}>
-                        📦 Productos en el carrito
-                      </span>
-                      <span style={{
-                        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                        color: 'white',
-                        padding: '4px 8px',
-                        borderRadius: '12px',
-                        fontSize: isMobile ? '12px' : '14px',
-                        fontWeight: '600'
-                      }}>
-                        {items.length} {items.length === 1 ? 'producto' : 'productos'}
-                      </span>
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      flexWrap: 'wrap'
-                    }}>
-                      <span style={{
-                        fontSize: isMobile ? '12px' : '14px',
-                        color: '#64748b',
-                        fontWeight: '500'
-                      }}>
-                        Total unidades: {items.reduce((sum, item) => sum + item.cantidad, 0)}
-                      </span>
-                      <span style={{
-                        fontSize: isMobile ? '14px' : '16px',
-                        fontWeight: '700',
-                        color: '#059669'
-                      }}>
-                        ${total.toFixed(2)}
-                      </span>
-                    </div>
+                    <span />
+                    <span>Producto</span>
+                    <span style={{ textAlign: 'right' }}>P. unit.</span>
+                    <span style={{ textAlign: 'center' }}>Cant.</span>
+                    <span style={{ textAlign: 'right' }}>Subtotal</span>
+                    <span />
                   </div>
-
-                  {/* Lista de productos */}
-                  {items.map((item, index) => (
-                    <div 
-                      key={item.id}
-                      style={{
-                        background: 'white',
-                        borderRadius: '16px',
-                        padding: '0',
-                        border: '2px solid #e2e8f0',
-                        transition: 'all 0.2s ease',
-                        animation: `slideInUp 0.3s ease-out ${index * 0.1}s both`,
-                        display: 'flex',
-                        alignItems: 'stretch',
-                        overflow: 'hidden',
-                        minHeight: isMobile ? '120px' : '140px'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.borderColor = '#8b5cf6';
-                        e.currentTarget.style.boxShadow = '0 4px 16px rgba(139,92,246,0.15)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.borderColor = '#e2e8f0';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
-                    >
-                      {/* Imagen del producto - lado izquierdo */}
-                      <div style={{
-                        width: isMobile ? '120px' : '140px',
-                        height: '100%',
-                        minWidth: isMobile ? '120px' : '140px',
-                        maxWidth: isMobile ? '120px' : '140px',
-                        flexShrink: 0,
-                        position: 'relative',
-                        overflow: 'hidden'
-                      }}>
-                        {item.imagen ? (
-                          <img 
-                            src={item.imagen} 
-                            alt={item.nombre}
-                            style={{
+                )}
+                <div style={{ padding: isDesktop ? '4px 0 12px' : '8px 12px 12px' }}>
+                  {items.map((item) => {
+                    const thumb = 48;
+                    const sub = item.precio * item.cantidad;
+                    const btnQty: React.CSSProperties = {
+                      width: 28,
+                      height: 28,
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 6,
+                      background: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: '#475569',
+                      lineHeight: 1,
+                      padding: 0
+                    };
+                    return (
+                      <div
+                        key={item.id}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: isDesktop
+                            ? '52px 1fr 72px 120px 88px 36px'
+                            : '48px 1fr',
+                          gridTemplateRows: isDesktop ? 'auto' : 'auto auto',
+                          gap: isDesktop ? 10 : '8px 10px',
+                          alignItems: 'center',
+                          padding: isDesktop ? '10px 16px' : '10px 4px',
+                          borderBottom: '1px solid #f1f5f9'
+                        }}
+                      >
+                        <div style={{
+                          width: thumb,
+                          height: thumb,
+                          borderRadius: 8,
+                          overflow: 'hidden',
+                          background: '#f1f5f9',
+                          flexShrink: 0,
+                          gridRow: isDesktop ? 'auto' : 'span 2'
+                        }}>
+                          {item.imagen ? (
+                            <img
+                              src={item.imagen}
+                              alt=""
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div style={{
                               width: '100%',
                               height: '100%',
-                              objectFit: 'cover'
-                            }}
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://via.placeholder.com/140x140?text=Sin+Imagen';
-                            }}
-                          />
-                        ) : (
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 18,
+                              color: '#94a3b8'
+                            }}>📦</div>
+                          )}
+                        </div>
+                        <div style={{ minWidth: 0, gridColumn: isDesktop ? 'auto' : '2', gridRow: isDesktop ? 'auto' : '1' }}>
                           <div style={{
-                            width: '100%',
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                            color: '#64748b',
-                            fontSize: '12px',
-                            textAlign: 'center',
-                            padding: '16px'
-                          }}>
-                            <div style={{
-                              fontSize: '24px',
-                              marginBottom: '4px',
-                              opacity: 0.7
-                            }}>
-                              📸
-                            </div>
-                            <div style={{
-                              fontSize: '10px',
-                              opacity: 0.8
-                            }}>
-                              Sin imagen
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Información del producto - lado derecho */}
-                      <div style={{ 
-                        flex: 1,
-                        padding: isMobile ? '16px' : '20px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        minWidth: 0
-                      }}>
-                        {/* Información principal */}
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{ 
-                            margin: '0 0 8px 0', 
-                            fontSize: isMobile ? '16px' : '18px', 
-                            fontWeight: '600', 
-                            color: '#1e293b',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            wordBreak: 'break-word'
+                            fontSize: 14,
+                            fontWeight: 600,
+                            color: '#0f172a',
+                            lineHeight: 1.3,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
                           }}>
                             {item.nombre}
-                          </h4>
-                          
-                          {/* Precio unitario y total */}
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            marginBottom: '12px',
-                            flexWrap: 'wrap',
-                            gap: '8px'
-                          }}>
-                            <div style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '4px'
-                            }}>
-                              <span style={{
-                                fontSize: isMobile ? '14px' : '16px',
-                                color: '#64748b',
-                                fontWeight: '500'
-                              }}>
-                                Precio unitario: ${item.precio.toFixed(2)}
-                              </span>
-                              <span style={{
-                                fontSize: isMobile ? '18px' : '20px',
-                                fontWeight: '700',
-                                color: '#8b5cf6'
-                              }}>
-                                Total: ${(item.precio * item.cantidad).toFixed(2)}
-                              </span>
-                            </div>
-                            
-                            {/* Cantidad */}
-                            <div style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}>
-                              <span style={{
-                                fontSize: isMobile ? '12px' : '14px',
-                                color: '#64748b',
-                                fontWeight: '500'
-                              }}>
-                                Cantidad
-                              </span>
-                              <span style={{
-                                fontSize: isMobile ? '16px' : '18px',
-                                fontWeight: '700',
-                                color: '#059669',
-                                background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-                                padding: '4px 12px',
-                                borderRadius: '8px',
-                                border: '1px solid #bbf7d0'
-                              }}>
-                                {item.cantidad} {item.cantidad === 1 ? 'unidad' : 'unidades'}
-                              </span>
-                            </div>
                           </div>
+                          {!isDesktop && (
+                            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                              ${item.precio.toFixed(2)} c/u · <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: '#0f172a' }}>${sub.toFixed(2)}</span>
+                            </div>
+                          )}
                         </div>
-
-                        {/* Controles y acciones */}
+                        {isDesktop && (
+                          <span style={{ fontSize: 13, color: '#64748b', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                            ${item.precio.toFixed(2)}
+                          </span>
+                        )}
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '12px',
-                          flexWrap: 'wrap'
+                          justifyContent: isDesktop ? 'center' : 'flex-start',
+                          gap: 4,
+                          gridColumn: isDesktop ? 'auto' : 2,
+                          gridRow: isDesktop ? 'auto' : 2
                         }}>
-                          {/* Controles de cantidad */}
-                          <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: isMobile ? '8px' : '12px',
-                            flexWrap: 'wrap'
-                          }}>
-                            <button
-                              onClick={() => updateQuantity(item.id, Math.max(1, item.cantidad - 1), undefined, empresa?.subdominio)}
-                              style={{
-                                background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                                border: '2px solid #cbd5e1',
-                                borderRadius: '8px',
-                                width: isMobile ? '32px' : '36px',
-                                height: isMobile ? '32px' : '36px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                fontSize: isMobile ? '16px' : '18px',
-                                fontWeight: '600',
-                                color: '#475569',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.borderColor = '#8b5cf6';
-                                e.currentTarget.style.background = 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)';
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.borderColor = '#cbd5e1';
-                                e.currentTarget.style.background = 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
-                              }}
-                            >
-                              -
-                            </button>
-                            
-                            <input
-                              type="number"
-                              min={1}
-                              value={item.cantidad}
-                              onChange={async e => {
-                                const nuevaCantidad = Number(e.target.value);
-                                await updateQuantity(item.id, nuevaCantidad, undefined, empresa?.subdominio);
-                              }}
-                              style={{
-                                width: isMobile ? '50px' : '60px',
-                                height: isMobile ? '32px' : '36px',
-                                border: '2px solid #cbd5e1',
-                                borderRadius: '8px',
-                                textAlign: 'center',
-                                fontSize: isMobile ? '14px' : '16px',
-                                fontWeight: '600',
-                                color: '#1e293b',
-                                background: 'white'
-                              }}
-                            />
-                            
-                            <button
-                              onClick={() => updateQuantity(item.id, item.cantidad + 1, undefined, empresa?.subdominio)}
-                              style={{
-                                background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                                border: '2px solid #cbd5e1',
-                                borderRadius: '8px',
-                                width: isMobile ? '32px' : '36px',
-                                height: isMobile ? '32px' : '36px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                fontSize: isMobile ? '16px' : '18px',
-                                fontWeight: '600',
-                                color: '#475569',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.borderColor = '#8b5cf6';
-                                e.currentTarget.style.background = 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)';
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.borderColor = '#cbd5e1';
-                                e.currentTarget.style.background = 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
-                              }}
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          {/* Botón eliminar */}
                           <button
-                            onClick={() => removeFromCart(item.id)}
+                            type="button"
+                            onClick={() => updateQuantity(item.id, Math.max(1, item.cantidad - 1), undefined, subdominioStock)}
+                            style={btnQty}
+                          >-</button>
+                          <input
+                            type="number"
+                            min={1}
+                            value={item.cantidad}
+                            onChange={async (e) => {
+                              const n = Number(e.target.value);
+                              await updateQuantity(item.id, n, undefined, subdominioStock);
+                            }}
                             style={{
-                              background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
-                              border: '2px solid #fecaca',
-                              borderRadius: '8px',
-                              padding: isMobile ? '8px 12px' : '10px 16px',
-                              fontSize: isMobile ? '12px' : '14px',
-                              fontWeight: '600',
-                              color: '#dc2626',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
+                              width: 44,
+                              height: 28,
+                              border: '1px solid #e2e8f0',
+                              borderRadius: 6,
+                              textAlign: 'center',
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: '#0f172a',
+                              background: '#fff'
                             }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)';
-                              e.currentTarget.style.transform = 'translateY(-1px)';
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)';
-                              e.currentTarget.style.transform = 'translateY(0)';
-                            }}
-                          >
-                            ❌ Eliminar
-                          </button>
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.id, item.cantidad + 1, undefined, subdominioStock)}
+                            style={btnQty}
+                          >+</button>
+                          {!isDesktop && (
+                            <button
+                              type="button"
+                              onClick={() => removeFromCart(item.id)}
+                              style={{
+                                marginLeft: 'auto',
+                                border: 'none',
+                                background: 'transparent',
+                                color: '#ef4444',
+                                fontSize: 13,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                padding: '4px 8px'
+                              }}
+                            >
+                              Quitar
+                            </button>
+                          )}
                         </div>
+                        {isDesktop && (
+                          <>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                              ${sub.toFixed(2)}
+                            </span>
+                            <button
+                              type="button"
+                              title="Quitar"
+                              aria-label="Quitar producto"
+                              onClick={() => removeFromCart(item.id)}
+                              style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 8,
+                                border: 'none',
+                                background: '#fef2f2',
+                                color: '#dc2626',
+                                cursor: 'pointer',
+                                fontSize: 16,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                lineHeight: 1
+                              }}
+                            >
+                              ×
+                            </button>
+                          </>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Resumen fijo (lateral en desktop, abajo en móvil) */}
+              <aside style={{
+                width: isDesktop ? 268 : '100%',
+                flexShrink: 0,
+                borderLeft: isDesktop ? '1px solid #e2e8f0' : 'none',
+                background: '#f8fafc',
+                padding: isMobile ? '14px 16px 16px' : '16px 18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12
+              }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8', marginBottom: 4 }}>
+                    Total estimado
+                  </div>
+                  <div style={{
+                    fontSize: isMobile ? 22 : 24,
+                    fontWeight: 800,
+                    color: '#059669',
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.02em'
+                  }}>
+                    ${total.toFixed(2)}
+                  </div>
                 </div>
 
-                {/* Resumen y acciones */}
-                <div style={{
-                  background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                  borderRadius: isMobile ? '16px' : '20px',
-                  padding: isMobile ? '20px' : '32px',
-                  border: '2px solid #e2e8f0',
-                  width: '100%',
-                  maxWidth: '600px',
-                  margin: '0 auto'
-                }}>
-                  {/* Título centrado */}
-                  <div style={{ 
-                    textAlign: 'center', 
-                    marginBottom: isMobile ? '20px' : '24px',
-                    paddingBottom: isMobile ? '16px' : '20px',
-                    borderBottom: '2px solid #e2e8f0'
+                {!permitirCompra && (
+                  <div style={{
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    background: '#fffbeb',
+                    border: '1px solid #fde68a',
+                    color: '#92400e',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    lineHeight: 1.45
                   }}>
-                    <h3 style={{ 
-                      margin: '0 0 8px 0', 
-                      fontSize: isMobile ? '20px' : '24px', 
-                      fontWeight: '700', 
-                      color: '#1e293b',
-                      textAlign: 'center'
-                    }}>
-                      💰 Resumen del Pedido
-                    </h3>
-                    <p style={{ 
-                      margin: 0, 
-                      fontSize: isMobile ? '28px' : '32px', 
-                      fontWeight: '800', 
-                      color: '#059669',
-                      textAlign: 'center'
-                    }}>
-                      ${total.toFixed(2)}
-                    </p>
+                    Solo cotización: la compra en línea requiere iniciar sesión.
                   </div>
-                  
-                  {/* Botones centrados */}
-                  <div style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    gap: isMobile ? '12px' : '16px',
-                    alignItems: 'center'
+                )}
+
+                {permitirCompra && (
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(true)}
+                    disabled={loading}
+                    style={{
+                      background: empresa?.colorPrimario ? 
+                        `linear-gradient(180deg, ${empresa.colorPrimario} 0%, ${empresa.colorPrimario}dd 100%)` :
+                        'linear-gradient(180deg, #059669 0%, #047857 100%)',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '12px 16px',
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: 'white',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      opacity: loading ? 0.75 : 1,
+                      width: '100%',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.06)'
+                    }}
+                  >
+                    {loading ? 'Procesando…' : 'Finalizar compra'}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={clearCart}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#64748b',
+                    background: '#fff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 10,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Vaciar carrito
+                </button>
+
+                {compraRealizada && (
+                  <div style={{
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    background: '#ecfdf5',
+                    border: '1px solid #6ee7b7',
+                    color: '#065f46',
+                    fontWeight: 600,
+                    fontSize: 13,
+                    textAlign: 'center'
                   }}>
-                    <button
-                      onClick={() => setShowConfirm(true)}
-                      disabled={loading}
-                      style={{
-                        background: empresa?.colorPrimario ? 
-                          `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorPrimario}dd 100%)` :
-                          'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                        border: 'none',
-                        borderRadius: isMobile ? '12px' : '16px',
-                        padding: isMobile ? '14px 32px' : '16px 40px',
-                        fontSize: isMobile ? '16px' : '18px',
-                        fontWeight: '700',
-                        color: 'white',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        boxShadow: empresa?.colorPrimario ? 
-                          `0 4px 12px ${empresa.colorPrimario}40` :
-                          '0 4px 12px rgba(16,185,129,0.3)',
-                        width: '100%',
-                        maxWidth: '400px',
-                        opacity: loading ? 0.7 : 1
-                      }}
-                      onMouseOver={(e) => {
-                        if (!loading) {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = empresa?.colorPrimario ? 
-                            `0 6px 16px ${empresa.colorPrimario}60` :
-                            '0 6px 16px rgba(16,185,129,0.4)';
-                        }
-                      }}
-                      onMouseOut={(e) => {
-                        if (!loading) {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = empresa?.colorPrimario ? 
-                            `0 4px 12px ${empresa.colorPrimario}40` :
-                            '0 4px 12px rgba(16,185,129,0.3)';
-                        }
-                      }}
-                    >
-                      {loading ? '⏳ Procesando...' : '💳 Finalizar Compra'}
-                    </button>
-                    
-                    <button
-                      onClick={clearCart}
-                      style={{
-                        background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                        border: '2px solid #cbd5e1',
-                        borderRadius: '12px',
-                        padding: '12px 24px',
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        color: '#475569',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        width: '100%',
-                        maxWidth: '300px'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.borderColor = '#64748b';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.background = 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.borderColor = '#cbd5e1';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.background = 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
-                      }}
-                    >
-                      🗑️ Vaciar Carrito
-                    </button>
+                    Pedido registrado correctamente.
                   </div>
-                  
-                  {compraRealizada && (
-                    <div style={{
-                      background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
-                      border: '2px solid #10b981',
-                      borderRadius: '16px',
-                      padding: '20px',
-                      marginTop: '20px',
-                      textAlign: 'center',
-                      color: '#065f46',
-                      fontWeight: '600',
-                      fontSize: '16px'
-                    }}>
-                      ✅ ¡Compra realizada con éxito!
-                    </div>
-                  )}
-                </div>
-            </>
+                )}
+              </aside>
+            </div>
           )}
-          </div>
         </div>
       </div>
       
@@ -800,16 +630,6 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa })
           }
         }
         
-        @keyframes slideInUp {
-          from { 
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
       `}</style>
     </>
   );

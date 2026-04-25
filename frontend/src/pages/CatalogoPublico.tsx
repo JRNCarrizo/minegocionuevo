@@ -289,6 +289,7 @@ export default function CatalogoPublico() {
           open={showCart} 
           onClose={() => setShowCart(false)} 
           onCompraExitosa={cargarProductos}
+          permitirCompra={!!clienteInfo}
         />
       <ProductoDetalleModal 
         open={showProductoModal} 
@@ -301,9 +302,8 @@ export default function CatalogoPublico() {
         empresa={empresa}
       />
 
-      {/* Carrito flotante */}
-      {clienteInfo && (
-        <div style={{
+      {/* Carrito flotante (visitantes y clientes) */}
+      <div style={{
           position: 'fixed',
           bottom: isMobile ? '20px' : '30px',
           right: isMobile ? '20px' : '30px',
@@ -406,7 +406,6 @@ export default function CatalogoPublico() {
             }} />
           </div>
         </div>
-      )}
 
       <main className="contenedor" style={{ 
         paddingTop: isMobile ? '16px' : '20px',
@@ -1355,10 +1354,8 @@ export default function CatalogoPublico() {
                       </div>
                     </div>
 
-                    {/* Controles */}
-                    {clienteInfo ? (
-                      // Mostrar controles de carrito solo si hay cliente logueado
-                      <div style={{
+                    {/* Controles de carrito: todos pueden armar carrito y ver total; compra solo con sesión */}
+                    <div style={{
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '8px',
@@ -1366,6 +1363,20 @@ export default function CatalogoPublico() {
                         justifyContent: 'flex-end',
                         marginTop: 'auto'
                       }}>
+                        {!clienteInfo && (
+                          <div style={{
+                            padding: '8px 10px',
+                            background: '#fffbeb',
+                            border: '1px solid #fcd34d',
+                            borderRadius: '8px',
+                            textAlign: 'center',
+                            fontSize: '11px',
+                            color: '#92400e',
+                            lineHeight: 1.35
+                          }}>
+                            Armá el carrito y el total desde el ícono flotante. Para comprar, iniciá sesión.
+                          </div>
+                        )}
                         {/* Controles de cantidad */}
                         <div style={{
                           display: 'flex',
@@ -1582,49 +1593,6 @@ export default function CatalogoPublico() {
                           })()}
                         </button>
                       </div>
-                    ) : (
-                      // Mostrar botón de iniciar sesión si no hay cliente logueado
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        alignItems: 'stretch',
-                        marginTop: 'auto'
-                      }}>
-                        <div style={{
-                          padding: '8px 12px',
-                          background: '#f0f9ff',
-                          border: '1px solid #bae6fd',
-                          borderRadius: '8px',
-                          textAlign: 'center',
-                          fontSize: '11px',
-                          color: '#0369a1'
-                        }}>
-                          🔑 Inicia sesión para comprar
-                        </div>
-                        <Link to="/login" style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          background: `linear-gradient(135deg, ${empresa?.colorPrimario || '#3b82f6'} 0%, ${empresa?.colorPrimario ? `${empresa.colorPrimario}dd` : '#1d4ed8'} 100%)`,
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '4px',
-                          transition: 'all 0.2s ease',
-                          textDecoration: 'none'
-                        }}
-                        >
-                          <span>🔑</span>
-                          <span>Iniciar Sesión</span>
-                        </Link>
-                      </div>
-                    )}
                   </div>
                 </div>
               );

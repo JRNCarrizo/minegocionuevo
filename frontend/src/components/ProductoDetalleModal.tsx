@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '../hooks/useCart';
-import { useClienteAuth } from '../hooks/useClienteAuth';
 import apiService from '../services/api';
 import type { Producto } from '../types';
 import toast from 'react-hot-toast';
@@ -27,11 +26,6 @@ export default function ProductoDetalleModal({
   const [imagenActual, setImagenActual] = useState(0);
   const [cantidad, setCantidad] = useState(1);
   const { addToCart, items } = useCart();
-  
-  // Usar el hook de autenticación del cliente
-  const { isAuthenticated: clienteLogueado, checkAuth } = useClienteAuth();
-  
-  // El hook useClienteAuth maneja automáticamente la autenticación
 
   // Función para navegar entre imágenes
   const navegarImagen = (direccion: 'anterior' | 'siguiente') => {
@@ -142,12 +136,6 @@ export default function ProductoDetalleModal({
 
   const agregarAlCarrito = async () => {
     if (!producto) return;
-    
-    // Verificar autenticación usando el hook
-    if (!clienteLogueado) {
-      toast.error('Debes iniciar sesión para agregar productos al carrito');
-      return;
-    }
     
     if (producto.stock === 0) {
       toast.error('Este producto está agotado');
@@ -663,20 +651,20 @@ export default function ProductoDetalleModal({
                   }}>
                                       <button
                     onClick={() => setCantidad(Math.max(1, cantidad - 1))}
-                    disabled={cantidad <= 1 || !clienteLogueado}
+                    disabled={cantidad <= 1}
                     style={{
                       width: '40px',
                       height: '40px',
-                      background: cantidad <= 1 || !clienteLogueado ? '#e5e7eb' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                      background: cantidad <= 1 ? '#e5e7eb' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                       color: 'white',
                       border: 'none',
                       fontSize: '18px',
                       fontWeight: '700',
-                      cursor: cantidad <= 1 || !clienteLogueado ? 'not-allowed' : 'pointer',
+                      cursor: cantidad <= 1 ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      opacity: cantidad <= 1 || !clienteLogueado ? 0.5 : 1
+                      opacity: cantidad <= 1 ? 0.5 : 1
                     }}
                   >
                     -
@@ -703,7 +691,7 @@ export default function ProductoDetalleModal({
                       disabled={(() => {
                         const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
                         const cantidadDisponible = (producto.stock || 0) - cantidadEnCarrito;
-                        return cantidad >= cantidadDisponible || !clienteLogueado;
+                        return cantidad >= cantidadDisponible;
                       })()}
                       style={{
                         width: '40px',
@@ -711,7 +699,7 @@ export default function ProductoDetalleModal({
                         background: (() => {
                           const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
                           const cantidadDisponible = (producto.stock || 0) - cantidadEnCarrito;
-                          return cantidad >= cantidadDisponible || !clienteLogueado ? '#e5e7eb' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                          return cantidad >= cantidadDisponible ? '#e5e7eb' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
                         })(),
                         color: 'white',
                         border: 'none',
@@ -720,7 +708,7 @@ export default function ProductoDetalleModal({
                         cursor: (() => {
                           const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
                           const cantidadDisponible = (producto.stock || 0) - cantidadEnCarrito;
-                          return cantidad >= cantidadDisponible || !clienteLogueado ? 'not-allowed' : 'pointer';
+                          return cantidad >= cantidadDisponible ? 'not-allowed' : 'pointer';
                         })(),
                         display: 'flex',
                         alignItems: 'center',
@@ -728,7 +716,7 @@ export default function ProductoDetalleModal({
                         opacity: (() => {
                           const cantidadEnCarrito = items.find(i => i.id === producto.id)?.cantidad || 0;
                           const cantidadDisponible = (producto.stock || 0) - cantidadEnCarrito;
-                          return cantidad >= cantidadDisponible || !clienteLogueado ? 0.5 : 1;
+                          return cantidad >= cantidadDisponible ? 0.5 : 1;
                         })()
                       }}
                     >
@@ -777,11 +765,11 @@ export default function ProductoDetalleModal({
                 }}>
                   <button
                     onClick={agregarAlCarrito}
-                    disabled={producto.stock === 0 || !clienteLogueado}
+                    disabled={producto.stock === 0}
                     style={{
                       flex: 1,
                       padding: '16px 24px',
-                      background: producto.stock === 0 || !clienteLogueado
+                      background: producto.stock === 0
                         ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
                         : `linear-gradient(135deg, ${empresa?.colorSecundario || '#64748b'} 0%, ${empresa?.colorSecundario ? `${empresa.colorSecundario}dd` : '#475569'} 100%)`,
                       color: 'white',
@@ -789,16 +777,16 @@ export default function ProductoDetalleModal({
                       borderRadius: '12px',
                       fontSize: '16px',
                       fontWeight: '700',
-                      cursor: producto.stock === 0 || !clienteLogueado ? 'not-allowed' : 'pointer',
+                      cursor: producto.stock === 0 ? 'not-allowed' : 'pointer',
                       transition: 'all 0.2s ease',
-                      opacity: producto.stock === 0 || !clienteLogueado ? 0.6 : 1,
+                      opacity: producto.stock === 0 ? 0.6 : 1,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px'
                     }}
                     onMouseOver={(e) => {
-                      if (producto.stock !== 0 && clienteLogueado) {
+                      if (producto.stock !== 0) {
                         e.currentTarget.style.transform = 'translateY(-2px)';
                         e.currentTarget.style.boxShadow = empresa?.colorSecundario 
                           ? `0 8px 25px ${empresa.colorSecundario}40`
@@ -811,7 +799,7 @@ export default function ProductoDetalleModal({
                     }}
                   >
                     <span>🛒</span>
-                    <span>{!clienteLogueado ? 'Inicia sesión para comprar' : 'Agregar al carrito'}</span>
+                    <span>Agregar al carrito</span>
                   </button>
                   
                   <button
