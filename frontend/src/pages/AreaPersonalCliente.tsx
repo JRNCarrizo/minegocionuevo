@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useSubdominio } from '../hooks/useSubdominio';
@@ -9,6 +10,21 @@ import api from '../services/api';
 import * as cookies from '../utils/cookies';
 import { formatearFechaConHora, formatearFecha } from '../utils/dateUtils';
 import type { Pedido, DetallePedido, ProductoFavorito, Producto } from '../types';
+
+/** Subdominio para APIs públicas: el del hostname suele existir aunque `empresa` venga incompleto. */
+function resolveSubdominioParaApi(fromHook: string | null, empresa: { subdominio?: string } | null): string {
+  return (fromHook || empresa?.subdominio || '').trim();
+}
+
+/** El backend envía `productoId`; el objeto anidado `producto` a veces no viene. */
+function resolveDetalleProductoId(detalle: DetallePedido | null): number | null {
+  if (!detalle) return null;
+  const loose = detalle as DetallePedido & { producto_id?: number | string };
+  const raw = detalle.producto?.id ?? detalle.productoId ?? loose.producto_id;
+  if (raw == null || raw === '') return null;
+  const n = typeof raw === 'string' ? parseInt(raw, 10) : Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
+}
 
 interface ClienteInfo {
   id: number;
@@ -22,6 +38,7 @@ function EstadoBadge({ estado }: { estado: string }) {
   const { isMobile } = useResponsive();
   const colores: Record<string, string> = {
     PENDIENTE: '#f59e0b',
+    PENDIENTE_PAGO: '#dc2626',
     CONFIRMADO: '#3b82f6',
     PREPARANDO: '#6366f1',
     ENVIADO: '#8b5cf6',
@@ -52,9 +69,13 @@ function EstadoBadge({ estado }: { estado: string }) {
 function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Pedido|null, open: boolean, onClose: () => void, onCancelar?: (pedidoId: number) => void }) {
   const [productoSeleccionado, setProductoSeleccionado] = useState<DetallePedido | null>(null);
   const [mostrarProducto, setMostrarProducto] = useState(false);
-  const { empresa } = useSubdominio();
+  const { empresa, subdominio } = useSubdominio();
+  const { isMobile } = useResponsive();
+  const wideLines = !isMobile;
 
   if (!pedido || !open) return null;
+
+  const subdominioApi = resolveSubdominioParaApi(subdominio, empresa);
 
   const obtenerColorEstado = (estado: Pedido['estado']) => {
     const colores: Record<Pedido['estado'], string> = {
@@ -87,129 +108,152 @@ function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Ped
     setMostrarProducto(true);
   };
 
-  return (
+  return createPortal(
     <>
-      <div className="modal-overlay" style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        width: '100vw', 
-        height: '100vh', 
-        background: 'rgba(0,0,0,0.6)', 
-        zIndex: 1000, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        backdropFilter: 'blur(4px)'
-      }}>
-        <div className="modal-content" style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '0',
-          maxWidth: '800px',
-          width: '95vw',
-          maxHeight: '90vh',
-          overflow: 'hidden',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          border: '1px solid rgba(255,255,255,0.1)'
-        }}>
-          {/* Header del modal */}
-          <div style={{
-            background: empresa?.colorPrimario ? 
-              `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)` :
-              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            padding: '24px 32px',
-            borderTopLeftRadius: '16px',
-            borderTopRightRadius: '16px',
+      <div
+        className="modal-overlay"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.55)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(6px)',
+          padding: isMobile ? '12px' : '20px',
+          boxSizing: 'border-box'
+        }}
+      >
+        <div
+          className="modal-content"
+          style={{
+            background: '#fff',
+            borderRadius: isMobile ? '14px' : '16px',
+            padding: 0,
+            width: '100%',
+            maxWidth: wideLines ? 'min(1040px, calc(100vw - 40px))' : '100%',
+            maxHeight: 'min(92vh, 880px)',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 24px 64px rgba(15,23,42,0.22)',
+            border: '1px solid #e2e8f0'
+          }}
+        >
+          <div
+            style={{
+              background: empresa?.colorPrimario
+                ? `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)`
+                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              padding: isMobile ? '12px 14px' : '14px 20px',
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ margin: 0, fontSize: isMobile ? '17px' : '19px', fontWeight: 700, letterSpacing: '-0.02em' }}>
                 Pedido #{pedido.numeroPedido || pedido.id}
               </h2>
-              <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
+              <p style={{ margin: '3px 0 0 0', opacity: 0.92, fontSize: isMobile ? '12px' : '13px' }}>
                 {formatearFechaConHora(pedido.fechaCreacion)}
               </p>
             </div>
-            <button 
+            <button
+              type="button"
+              aria-label="Cerrar"
               onClick={onClose}
               style={{
                 background: 'rgba(255,255,255,0.2)',
                 border: 'none',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
+                borderRadius: '10px',
+                width: 36,
+                height: 36,
                 color: 'white',
                 fontSize: '20px',
+                lineHeight: 1,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'all 0.2s ease'
+                flexShrink: 0,
+                transition: 'background 0.15s ease'
               }}
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+              onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.32)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
             >
               ×
             </button>
           </div>
 
-          {/* Contenido del modal */}
-          <div style={{ padding: '32px', maxHeight: 'calc(90vh - 120px)', overflow: 'auto' }}>
-            {/* Estado del pedido */}
-            <div style={{
-              background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-              borderRadius: '12px',
-              padding: '20px',
-              marginBottom: '24px',
-              border: '1px solid #e2e8f0'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
-                    Estado del Pedido
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              overflowY: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              padding: isMobile ? '12px 14px' : '16px 20px'
+            }}
+          >
+            <div
+              style={{
+                background: '#f8fafc',
+                borderRadius: 10,
+                padding: isMobile ? '10px 12px' : '12px 14px',
+                marginBottom: 12,
+                border: '1px solid #e2e8f0'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{ margin: '0 0 6px 0', fontSize: isMobile ? '12px' : '13px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Estado
                   </h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                     <span
                       style={{
-                        backgroundColor: obtenerColorEstado(pedido.estado) + '20',
+                        backgroundColor: obtenerColorEstado(pedido.estado) + '22',
                         color: obtenerColorEstado(pedido.estado),
-                        padding: '8px 16px',
-                        borderRadius: '20px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        border: `2px solid ${obtenerColorEstado(pedido.estado)}30`
+                        padding: '4px 10px',
+                        borderRadius: 8,
+                        fontSize: isMobile ? '12px' : '13px',
+                        fontWeight: 600,
+                        border: `1px solid ${obtenerColorEstado(pedido.estado)}35`
                       }}
                     >
                       {obtenerTextoEstado(pedido.estado)}
                     </span>
                     {pedido.estado === 'CANCELADO' && (
-                      <span style={{ fontSize: '14px', color: '#64748b' }}>
-                        • Pedido cancelado
-                      </span>
+                      <span style={{ fontSize: 12, color: '#64748b' }}>Cancelado</span>
                     )}
                     {pedido.estado === 'ENTREGADO' && (
-                      <span style={{ fontSize: '14px', color: '#64748b' }}>
-                        • Pedido entregado exitosamente
-                      </span>
+                      <span style={{ fontSize: 12, color: '#64748b' }}>Entregado</span>
                     )}
                   </div>
                 </div>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${obtenerColorEstado(pedido.estado)}20 0%, ${obtenerColorEstado(pedido.estado)}40 100%)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: `3px solid ${obtenerColorEstado(pedido.estado)}30`
-                }}>
-                  <span style={{ fontSize: '24px', color: obtenerColorEstado(pedido.estado) }}>
+                <div
+                  style={{
+                    width: isMobile ? 40 : 44,
+                    height: isMobile ? 40 : 44,
+                    borderRadius: '50%',
+                    background: `${obtenerColorEstado(pedido.estado)}18`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: `1px solid ${obtenerColorEstado(pedido.estado)}35`,
+                    flexShrink: 0
+                  }}
+                >
+                  <span style={{ fontSize: isMobile ? 18 : 20, color: obtenerColorEstado(pedido.estado) }}>
                     {pedido.estado === 'PENDIENTE' && '⏳'}
+                    {pedido.estado === 'PENDIENTE_PAGO' && '💳'}
                     {pedido.estado === 'CONFIRMADO' && '✅'}
                     {pedido.estado === 'PREPARANDO' && '👨‍🍳'}
                     {pedido.estado === 'ENVIADO' && '🚚'}
@@ -220,294 +264,291 @@ function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Ped
               </div>
             </div>
 
-            {/* Información del pedido */}
             {pedido.direccionEntrega && (
-              <div style={{
-                background: '#f8fafc',
-                borderRadius: '12px',
-                padding: '20px',
-                marginBottom: '24px',
-                border: '1px solid #e2e8f0'
-              }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
-                  📍 Dirección de Entrega
+              <div
+                style={{
+                  background: '#fff',
+                  borderRadius: 10,
+                  padding: isMobile ? '10px 12px' : '12px 14px',
+                  marginBottom: 12,
+                  border: '1px solid #e2e8f0'
+                }}
+              >
+                <h3 style={{ margin: '0 0 6px 0', fontSize: isMobile ? '12px' : '13px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Entrega
                 </h3>
-                <p style={{ margin: 0, fontSize: '16px', color: '#475569', lineHeight: '1.5' }}>
+                <p style={{ margin: 0, fontSize: isMobile ? '13px' : '14px', color: '#334155', lineHeight: 1.45 }}>
                   {pedido.direccionEntrega}
                 </p>
               </div>
             )}
 
-            {/* Productos */}
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
-                🛍️ Productos ({pedido.detalles?.length || 0})
+            <div style={{ marginBottom: 14 }}>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: isMobile ? '14px' : '15px', fontWeight: 700, color: '#0f172a' }}>
+                Productos <span style={{ fontWeight: 500, color: '#64748b' }}>({pedido.detalles?.length || 0})</span>
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {pedido.detalles?.map((detalle, index) => (
-                  <div 
-                    key={detalle.id || index} 
+              <div
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 10,
+                  overflow: 'hidden',
+                  background: '#fff'
+                }}
+              >
+                {wideLines && (
+                  <div
                     style={{
-                      background: '#fff',
-                      borderRadius: '12px',
-                      padding: '20px',
-                      border: '2px solid #e2e8f0',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                      display: 'grid',
+                      gridTemplateColumns: '44px 1fr 72px 72px 88px',
+                      gap: 8,
+                      padding: '8px 10px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      color: '#94a3b8',
+                      background: '#f8fafc',
+                      borderBottom: '1px solid #e2e8f0',
+                      alignItems: 'center'
                     }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = '#3b82f6';
-                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.15)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = '#e2e8f0';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-                    }}
-                    onClick={() => verDetalleProducto(detalle)}
                   >
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                      {/* Imagen del producto */}
-                      <div style={{ flexShrink: 0 }}>
+                    <span />
+                    <span>Producto</span>
+                    <span style={{ textAlign: 'right' }}>P. unit.</span>
+                    <span style={{ textAlign: 'center' }}>Cant.</span>
+                    <span style={{ textAlign: 'right' }}>Subt.</span>
+                  </div>
+                )}
+                {pedido.detalles?.map((detalle, index) => {
+                  const thumb = isMobile ? 40 : 44;
+                  const nombre = detalle.productoNombre || detalle.nombreProducto;
+                  return (
+                    <div
+                      key={detalle.id || index}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          verDetalleProducto(detalle);
+                        }
+                      }}
+                      style={{
+                        display: wideLines ? 'grid' : 'flex',
+                        gridTemplateColumns: wideLines ? '44px 1fr 72px 72px 88px' : undefined,
+                        flexDirection: wideLines ? undefined : 'row',
+                        gap: wideLines ? 8 : 10,
+                        alignItems: wideLines ? 'center' : 'flex-start',
+                        padding: isMobile ? '10px 10px' : '10px 12px',
+                        borderBottom: index < (pedido.detalles?.length || 0) - 1 ? '1px solid #f1f5f9' : 'none',
+                        cursor: 'pointer',
+                        transition: 'background 0.12s ease'
+                      }}
+                      onMouseOver={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.background = '#fff'; }}
+                      onClick={() => verDetalleProducto(detalle)}
+                    >
+                      <div style={{ flexShrink: 0, width: thumb, height: thumb }}>
                         {detalle.productoImagen ? (
-                          <img 
-                            src={detalle.productoImagen} 
-                            alt={detalle.productoNombre || detalle.nombreProducto}
+                          <img
+                            src={detalle.productoImagen}
+                            alt=""
                             style={{
-                              width: '80px',
-                              height: '80px',
+                              width: thumb,
+                              height: thumb,
                               objectFit: 'cover',
-                              borderRadius: '12px',
-                              border: '2px solid #e2e8f0'
+                              borderRadius: 8,
+                              border: '1px solid #e2e8f0',
+                              display: 'block'
                             }}
                             onError={(e) => {
-                              e.currentTarget.src = 'https://via.placeholder.com/80x80?text=Sin+Imagen';
+                              (e.target as HTMLImageElement).style.display = 'none';
                             }}
                           />
                         ) : (
-                          <div style={{
-                            width: '80px',
-                            height: '80px',
-                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                            borderRadius: '12px',
-                            border: '2px solid #e2e8f0',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <span style={{ fontSize: '12px', color: '#64748b', textAlign: 'center' }}>
-                              Sin imagen
-                            </span>
+                          <div
+                            style={{
+                              width: thumb,
+                              height: thumb,
+                              background: '#f1f5f9',
+                              borderRadius: 8,
+                              border: '1px solid #e2e8f0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 10,
+                              color: '#94a3b8',
+                              textAlign: 'center',
+                              lineHeight: 1.1
+                            }}
+                          >
+                            —
                           </div>
                         )}
                       </div>
-                      
-                      {/* Información del producto */}
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                          <div style={{ flex: 1 }}>
-                            <h4 style={{ 
-                              margin: '0 0 4px 0', 
-                              fontSize: '16px', 
-                              fontWeight: '600', 
-                              color: '#1e293b',
-                              lineHeight: '1.3'
-                            }}>
-                              {detalle.productoNombre || detalle.nombreProducto}
-                            </h4>
+                        <div
+                          style={{
+                            fontSize: isMobile ? 13 : 14,
+                            fontWeight: 600,
+                            color: '#0f172a',
+                            lineHeight: 1.25,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {nombre}
+                        </div>
+                        {!wideLines && (
+                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+                            ${detalle.precioUnitario?.toFixed(2)} c/u · {detalle.cantidad} u. ·{' '}
+                            <span style={{ fontWeight: 700, color: '#0f172a' }}>
+                              ${(detalle.subtotal || detalle.precioTotal)?.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                        {(detalle.productoMarca || detalle.marcaProducto || detalle.productoCategoria || detalle.categoriaProducto) && (
+                          <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                             {(detalle.productoMarca || detalle.marcaProducto) && (
-                              <p style={{ 
-                                margin: '0 0 8px 0', 
-                                fontSize: '14px', 
-                                color: '#64748b',
-                                lineHeight: '1.4',
-                                fontWeight: '500'
-                              }}>
-                                🏷️ {detalle.productoMarca || detalle.marcaProducto}
-                              </p>
+                              <span style={{ fontSize: 10, color: '#64748b' }}>
+                                {detalle.productoMarca || detalle.marcaProducto}
+                              </span>
                             )}
                             {(detalle.productoCategoria || detalle.categoriaProducto) && (
-                              <span style={{
-                                display: 'inline-block',
-                                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                                color: '#1e40af',
-                                fontSize: '12px',
-                                padding: '4px 12px',
-                                borderRadius: '12px',
-                                fontWeight: '500',
-                                border: '1px solid #93c5fd'
-                              }}>
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  padding: '1px 6px',
+                                  borderRadius: 4,
+                                  background: '#eff6ff',
+                                  color: '#1d4ed8',
+                                  fontWeight: 500
+                                }}
+                              >
                                 {detalle.productoCategoria || detalle.categoriaProducto}
                               </span>
                             )}
                           </div>
-                          
-                          {/* Precios */}
-                          <div style={{ textAlign: 'right', marginLeft: '16px' }}>
-                            <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b' }}>
-                              Precio unitario
-                            </p>
-                            <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#059669' }}>
-                              ${detalle.precioUnitario?.toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Cantidad y subtotal */}
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          padding: '12px 0',
-                          borderTop: '1px solid #f1f5f9',
-                          marginTop: '12px'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '14px', color: '#64748b' }}>Cantidad:</span>
-                            <span style={{ 
-                              fontSize: '16px', 
-                              fontWeight: '600', 
-                              color: '#1e293b',
-                              background: '#f1f5f9',
-                              padding: '4px 12px',
-                              borderRadius: '8px'
-                            }}>
-                              {detalle.cantidad}
-                            </span>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b' }}>
-                              Subtotal
-                            </p>
-                            <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>
-                              ${(detalle.subtotal || detalle.precioTotal)?.toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
+                        )}
                       </div>
+                      {wideLines && (
+                        <>
+                          <span style={{ fontSize: 13, color: '#64748b', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                            ${detalle.precioUnitario?.toFixed(2)}
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 600, textAlign: 'center', color: '#334155' }}>
+                            {detalle.cantidad}
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 700, textAlign: 'right', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                            ${(detalle.subtotal || detalle.precioTotal)?.toFixed(2)}
+                          </span>
+                        </>
+                      )}
                     </div>
-                    <div style={{ 
-                      textAlign: 'center', 
-                      marginTop: '12px',
-                      padding: '8px',
-                      background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                      borderRadius: '8px',
-                      border: '1px solid #bae6fd'
-                    }}>
-                      <span style={{ fontSize: '12px', color: '#0369a1', fontWeight: '500' }}>
-                        👆 Haz clic para ver más detalles del producto
-                      </span>
-                    </div>
-                  </div>
-                ))}
-      </div>
-    </div>
+                  );
+                })}
+              </div>
+              <p style={{ margin: '6px 0 0 0', fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>
+                Tocá una fila para abrir la ficha del producto
+              </p>
+            </div>
 
-            {/* Resumen de totales */}
-            <div style={{
-              background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-              borderRadius: '16px',
-              padding: '24px',
-              border: '2px solid #e2e8f0'
-            }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
-                💰 Resumen de Totales
+            <div
+              style={{
+                background: '#f8fafc',
+                borderRadius: 10,
+                padding: isMobile ? '12px 14px' : '14px 16px',
+                border: '1px solid #e2e8f0'
+              }}
+            >
+              <h3 style={{ margin: '0 0 10px 0', fontSize: isMobile ? '13px' : '14px', fontWeight: 700, color: '#0f172a' }}>
+                Totales
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '16px', color: '#64748b' }}>Subtotal:</span>
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+                  <span style={{ color: '#64748b' }}>Subtotal</span>
+                  <span style={{ fontWeight: 600, color: '#334155', fontVariantNumeric: 'tabular-nums' }}>
                     ${pedido.subtotal?.toFixed(2) || pedido.total?.toFixed(2)}
                   </span>
                 </div>
                 {pedido.impuestos && pedido.impuestos > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '16px', color: '#64748b' }}>Impuestos:</span>
-                    <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+                    <span style={{ color: '#64748b' }}>Impuestos</span>
+                    <span style={{ fontWeight: 600, color: '#334155', fontVariantNumeric: 'tabular-nums' }}>
                       ${pedido.impuestos.toFixed(2)}
                     </span>
                   </div>
                 )}
                 {pedido.descuento && pedido.descuento > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '16px', color: '#64748b' }}>Descuento:</span>
-                    <span style={{ fontSize: '16px', fontWeight: '600', color: '#059669' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+                    <span style={{ color: '#64748b' }}>Descuento</span>
+                    <span style={{ fontWeight: 600, color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
                       -${pedido.descuento.toFixed(2)}
                     </span>
                   </div>
                 )}
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  padding: '16px 0',
-                  borderTop: '2px solid #cbd5e1',
-                  marginTop: '8px'
-                }}>
-                  <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1e293b' }}>
-                    Total del Pedido
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#059669' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingTop: 10,
+                    marginTop: 4,
+                    borderTop: '1px solid #cbd5e1'
+                  }}
+                >
+                  <span style={{ fontSize: isMobile ? 14 : 15, fontWeight: 700, color: '#0f172a' }}>Total</span>
+                  <span style={{ fontSize: isMobile ? 18 : 20, fontWeight: 800, color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
                     ${pedido.total?.toFixed(2)}
-                  </p>
+                  </span>
                 </div>
               </div>
             </div>
-
-            {/* Botón de cancelar pedido */}
-            {(pedido.estado === 'PENDIENTE' || pedido.estado === 'CONFIRMADO') && (
-              <div style={{
-                padding: '24px 32px',
-                borderTop: '1px solid #e2e8f0',
-                background: '#f8fafc',
-                borderBottomLeftRadius: '16px',
-                borderBottomRightRadius: '16px'
-              }}>
-                <div style={{
-                  background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
-                  border: '2px solid #fecaca',
-                  borderRadius: '12px',
-                  padding: '20px',
-                  textAlign: 'center'
-                }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: '600', color: '#dc2626' }}>
-                    ⚠️ ¿Necesitas cancelar este pedido? El stock de los productos será restaurado automáticamente.
-                  </h4>
-                  <button 
-                    onClick={() => {
-                      if (window.confirm('¿Estás seguro de que quieres cancelar este pedido? El stock será restaurado.')) {
-                        if (onCancelar && pedido) {
-                          onCancelar(pedido.id);
-                        }
-                      }
-                    }}
-                    style={{
-                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      padding: '12px 24px',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 12px rgba(239,68,68,0.3)'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(239,68,68,0.4)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.3)';
-                    }}
-                  >
-                    ❌ Cancelar Pedido
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
+
+          {(pedido.estado === 'PENDIENTE' || pedido.estado === 'CONFIRMADO') && (
+            <div
+              style={{
+                flexShrink: 0,
+                padding: isMobile ? '12px 14px' : '12px 20px',
+                borderTop: '1px solid #e2e8f0',
+                background: '#fff7ed'
+              }}
+            >
+              <p style={{ margin: '0 0 10px 0', fontSize: 12, color: '#9a3412', lineHeight: 1.45 }}>
+                Podés cancelar el pedido si aún no fue preparado; el stock se repone automáticamente.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('¿Estás seguro de que quieres cancelar este pedido? El stock será restaurado.')) {
+                    if (onCancelar && pedido) {
+                      onCancelar(pedido.id);
+                    }
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  maxWidth: 280,
+                  display: 'block',
+                  margin: '0 auto',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '10px 16px',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(239,68,68,0.25)'
+                }}
+              >
+                Cancelar pedido
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -515,11 +556,12 @@ function PedidoDetalleModal({ pedido, open, onClose, onCancelar }: { pedido: Ped
       <ProductoDetalleModal
         open={mostrarProducto}
         onClose={() => setMostrarProducto(false)}
-        productoId={productoSeleccionado?.producto?.id || null}
-        subdominio={empresa?.subdominio || ''}
+        productoId={resolveDetalleProductoId(productoSeleccionado)}
+        subdominio={subdominioApi}
         empresa={empresa}
       />
-    </>
+    </>,
+    document.body
   );
 }
 
@@ -1081,7 +1123,7 @@ export default function AreaPersonalCliente() {
           ? `linear-gradient(135deg, ${empresa.colorFondo} 0%, ${empresa.colorFondo}dd 100%)`
           : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
       minHeight: '100vh',
-      paddingBottom: '40px',
+      paddingBottom: isMobile ? '20px' : '28px',
       color: empresa?.colorTexto || '#1f2937'
     }}>
       {/* Navbar del cliente */}
@@ -1092,39 +1134,41 @@ export default function AreaPersonalCliente() {
       />
 
       <main className="contenedor" style={{
-        paddingTop: isMobile ? '12rem' : '3rem'
+        // NavbarCliente es fixed; en móvil su altura crece (layout en columna).
+        // Dejamos un offset seguro para que la cabecera nunca quede tapada.
+        paddingTop: isMobile ? '168px' : '94px'
       }}>
         {/* Cabecera mejorada */}
         <div style={{
           textAlign: 'center',
-          marginBottom: isMobile ? '20px' : '40px',
-          padding: isMobile ? '24px 16px' : '40px 20px',
+          marginBottom: isMobile ? '14px' : '22px',
+          padding: isMobile ? '14px 14px' : '16px 18px',
           background: empresa?.colorPrimario ? 
             `linear-gradient(135deg, ${empresa.colorPrimario} 0%, ${empresa.colorSecundario || empresa.colorPrimario} 100%)` :
             'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          borderRadius: '20px',
+          borderRadius: isMobile ? '14px' : '16px',
           color: 'white',
           boxShadow: empresa?.colorPrimario ? 
             `0 10px 30px ${empresa.colorPrimario}40` :
             '0 10px 30px rgba(102, 126, 234, 0.3)',
-          marginTop: isMobile ? '20px' : '60px'
+          marginTop: isMobile ? '12px' : '16px'
         }}>
           <div style={{
-            width: isMobile ? '60px' : '80px',
-            height: isMobile ? '60px' : '80px',
+            width: isMobile ? '54px' : '62px',
+            height: isMobile ? '54px' : '62px',
             background: 'rgba(255,255,255,0.2)',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 20px',
-            fontSize: isMobile ? '24px' : '32px'
+            margin: '0 auto 12px',
+            fontSize: isMobile ? '22px' : '26px'
           }}>
             👤
           </div>
           <h1 style={{ 
-            margin: '0 0 8px 0', 
-            fontSize: isMobile ? '24px' : '32px', 
+            margin: '0 0 4px 0', 
+            fontSize: isMobile ? '20px' : '24px', 
             fontWeight: '700',
             textShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
@@ -1132,9 +1176,9 @@ export default function AreaPersonalCliente() {
           </h1>
           <p style={{ 
             margin: 0, 
-            fontSize: isMobile ? '14px' : '18px', 
-            opacity: 0.9,
-            fontWeight: '300'
+            fontSize: isMobile ? '12px' : '14px', 
+            opacity: 0.92,
+            fontWeight: 500
           }}>
             Bienvenido a tu área personal, {cliente?.nombre}
           </p>
@@ -1142,18 +1186,18 @@ export default function AreaPersonalCliente() {
 
         <div style={{ 
           display: 'grid', 
-          gap: isMobile ? '20px' : '32px', 
-          maxWidth: '1200px', 
+          gap: isMobile ? '14px' : '18px', 
+          maxWidth: '980px', 
           margin: '0 auto',
-          padding: isMobile ? '0 16px' : '0'
+          padding: isMobile ? '0 12px' : '0'
         }}>
             {/* Información del perfil */}
           <div style={{
             background: '#fff',
-            borderRadius: '20px',
-            padding: isMobile ? '20px' : '32px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: isMobile ? '14px' : '16px',
+            padding: isMobile ? '14px' : '18px',
+            boxShadow: '0 10px 28px rgba(15, 23, 42, 0.10)',
+            border: '1px solid #e2e8f0',
             position: 'relative',
               overflow: 'hidden'
           }}>
@@ -1173,27 +1217,27 @@ export default function AreaPersonalCliente() {
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              marginBottom: '32px',
-              gap: '12px'
+              marginBottom: isMobile ? '12px' : '14px',
+              gap: '10px'
             }}>
               <div style={{
-                width: '50px',
-                height: '50px',
+                width: '40px',
+                height: '40px',
                 background: empresa?.colorAcento ? 
                   `linear-gradient(135deg, ${empresa.colorAcento} 0%, ${empresa.colorAcento}dd 100%)` :
                   'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                borderRadius: '12px',
+                borderRadius: '10px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '24px',
+                fontSize: '18px',
                 color: 'white'
               }}>
                 👤
               </div>
               <h2 style={{ 
                 margin: 0, 
-                fontSize: '24px', 
+                fontSize: isMobile ? '16px' : '18px', 
                 fontWeight: '700', 
                 color: empresa?.colorTexto || '#1e293b',
                 textAlign: 'center'
@@ -1207,27 +1251,27 @@ export default function AreaPersonalCliente() {
               display: 'flex', 
               flexDirection: 'column', 
               alignItems: 'center',
-              gap: '32px'
+              gap: isMobile ? '14px' : '16px'
             }}>
               {/* Campos de información - centrados */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: isMobile ? '16px' : '20px',
+                gap: isMobile ? '10px' : '12px',
                 width: '100%',
-                maxWidth: '800px',
+                maxWidth: '860px',
                 margin: '0 auto'
               }}>
                 <div style={{
                   background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                  padding: isMobile ? '16px' : '24px',
-                  borderRadius: '16px',
+                  padding: isMobile ? '12px' : '14px',
+                  borderRadius: '12px',
                   border: '1px solid #e2e8f0',
                   textAlign: 'center'
                 }}>
                   <p style={{ 
                     margin: '0 0 12px 0', 
-                    fontSize: isMobile ? '11px' : '13px', 
+                    fontSize: isMobile ? '10px' : '11px', 
                     color: '#64748b', 
                     fontWeight: '600', 
                     textTransform: 'uppercase',
@@ -1237,7 +1281,7 @@ export default function AreaPersonalCliente() {
                   </p>
                   <p style={{ 
                     margin: 0, 
-                    fontSize: isMobile ? '16px' : '18px', 
+                    fontSize: isMobile ? '14px' : '15px', 
                     fontWeight: '600', 
                     color: '#1e293b',
                     wordBreak: 'break-word'
@@ -1248,14 +1292,14 @@ export default function AreaPersonalCliente() {
 
                 <div style={{
                   background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                  padding: isMobile ? '16px' : '24px',
-                  borderRadius: '16px',
+                  padding: isMobile ? '12px' : '14px',
+                  borderRadius: '12px',
                   border: '1px solid #e2e8f0',
                   textAlign: 'center'
                 }}>
                   <p style={{ 
                     margin: '0 0 12px 0', 
-                    fontSize: isMobile ? '11px' : '13px', 
+                    fontSize: isMobile ? '10px' : '11px', 
                     color: '#64748b', 
                     fontWeight: '600', 
                     textTransform: 'uppercase',
@@ -1265,7 +1309,7 @@ export default function AreaPersonalCliente() {
                   </p>
                   <p style={{ 
                     margin: 0, 
-                    fontSize: isMobile ? '16px' : '18px', 
+                    fontSize: isMobile ? '14px' : '15px', 
                     fontWeight: '600', 
                     color: '#1e293b',
                     wordBreak: 'break-all'
@@ -1277,14 +1321,14 @@ export default function AreaPersonalCliente() {
                 {cliente?.telefono && (
                   <div style={{
                     background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                    padding: isMobile ? '16px' : '24px',
-                    borderRadius: '16px',
+                    padding: isMobile ? '12px' : '14px',
+                    borderRadius: '12px',
                     border: '1px solid #e2e8f0',
                     textAlign: 'center'
                   }}>
                     <p style={{ 
                       margin: '0 0 12px 0', 
-                      fontSize: isMobile ? '11px' : '13px', 
+                      fontSize: isMobile ? '10px' : '11px', 
                       color: '#64748b', 
                       fontWeight: '600', 
                       textTransform: 'uppercase',
@@ -1294,7 +1338,7 @@ export default function AreaPersonalCliente() {
                     </p>
                     <p style={{ 
                       margin: 0, 
-                      fontSize: isMobile ? '16px' : '18px', 
+                      fontSize: isMobile ? '14px' : '15px', 
                       fontWeight: '600', 
                       color: '#1e293b',
                       wordBreak: 'break-all'
@@ -1564,63 +1608,63 @@ export default function AreaPersonalCliente() {
                     </Link>
                   </div>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 10 : 12 }}>
                     {pedidos.map((pedido) => (
                         <div key={pedido.id} style={{
-                          background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                          borderRadius: '16px',
-                          padding: isMobile ? '16px' : '24px',
-                          border: '2px solid #e2e8f0',
-                          transition: 'all 0.2s ease',
+                          background: '#fff',
+                          borderRadius: 12,
+                          padding: isMobile ? '12px 14px' : '14px 18px',
+                          border: '1px solid #e2e8f0',
+                          boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
+                          transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
                           cursor: 'pointer'
                         }}
                         onMouseOver={(e) => {
-                          e.currentTarget.style.borderColor = '#8b5cf6';
-                          e.currentTarget.style.boxShadow = '0 4px 16px rgba(139,92,246,0.15)';
+                          e.currentTarget.style.borderColor = '#c4b5fd';
+                          e.currentTarget.style.boxShadow = '0 4px 14px rgba(139,92,246,0.12)';
                         }}
                         onMouseOut={(e) => {
                           e.currentTarget.style.borderColor = '#e2e8f0';
-                          e.currentTarget.style.boxShadow = 'none';
+                          e.currentTarget.style.boxShadow = '0 1px 3px rgba(15,23,42,0.06)';
                         }}
                         onClick={() => setDetallePedido(pedido)}>
-                          {/* Header del pedido - Responsive */}
-                          <div style={{ 
-                            display: 'flex', 
+                          <div style={{
+                            display: 'flex',
                             flexDirection: isMobile ? 'column' : 'row',
-                            alignItems: isMobile ? 'flex-start' : 'center', 
-                            justifyContent: 'space-between', 
-                            marginBottom: '16px',
-                            gap: isMobile ? '12px' : '0'
+                            alignItems: isMobile ? 'stretch' : 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: 10,
+                            gap: isMobile ? 10 : 12
                           }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
                               <div style={{
-                                width: isMobile ? '32px' : '40px',
-                                height: isMobile ? '32px' : '40px',
+                                width: 36,
+                                height: 36,
                                 background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                                borderRadius: '10px',
+                                borderRadius: 8,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 color: 'white',
-                                fontSize: isMobile ? '14px' : '18px',
-                                fontWeight: '600',
+                                fontSize: 15,
                                 flexShrink: 0
                               }}>
                                 📦
                               </div>
                               <div style={{ minWidth: 0, flex: 1 }}>
-                                <h3 style={{ 
-                                  margin: '0 0 4px 0', 
-                                  fontSize: isMobile ? '16px' : '18px', 
-                                  fontWeight: '600', 
-                                  color: '#1e293b',
-                                  wordBreak: 'break-word'
+                                <h3 style={{
+                                  margin: '0 0 2px 0',
+                                  fontSize: isMobile ? 15 : 16,
+                                  fontWeight: 700,
+                                  color: '#0f172a',
+                                  wordBreak: 'break-word',
+                                  lineHeight: 1.25
                                 }}>
                                   Pedido #{pedido.numeroPedido || pedido.id}
                                 </h3>
-                                <p style={{ 
-                                  margin: 0, 
-                                  fontSize: isMobile ? '12px' : '14px', 
+                                <p style={{
+                                  margin: 0,
+                                  fontSize: 12,
                                   color: '#64748b',
                                   wordBreak: 'break-word'
                                 }}>
@@ -1628,141 +1672,135 @@ export default function AreaPersonalCliente() {
                                 </p>
                               </div>
                             </div>
-                            
-                            {/* Botones y estado - Responsive */}
-                            <div style={{ 
-                              display: 'flex', 
+
+                            <div style={{
+                              display: 'flex',
                               flexDirection: isMobile ? 'column' : 'row',
-                              alignItems: isMobile ? 'stretch' : 'center', 
-                              gap: isMobile ? '8px' : '12px',
-                              width: isMobile ? '100%' : 'auto'
+                              alignItems: isMobile ? 'stretch' : 'center',
+                              gap: 8,
+                              width: isMobile ? '100%' : 'auto',
+                              flexShrink: 0
                             }}>
-                              <EstadoBadge estado={pedido.estado} />
-                              
-                              <div style={{
-                                display: 'flex',
-                                gap: '8px',
-                                flexDirection: isMobile ? 'row' : 'row'
-                              }}>
-                                <button style={{
-                                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '8px',
-                                  padding: isMobile ? '6px 12px' : '8px 16px',
-                                  fontSize: isMobile ? '12px' : '14px',
-                                  fontWeight: '600',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s ease',
-                                  flex: isMobile ? 1 : 'auto',
-                                  whiteSpace: 'nowrap'
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDetallePedido(pedido);
-                                }}
-                                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
-                                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                                  {isMobile ? '👁️ Ver' : '👁️ Ver Detalles'}
-                                </button>
-                                
-                                {/* Botón de cancelar solo para pedidos pendientes o confirmados */}
-                                {(pedido.estado === 'PENDIENTE' || pedido.estado === 'CONFIRMADO') && (
-                                  <button style={{
-                                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                              <div style={{ alignSelf: isMobile ? 'flex-start' : 'center' }}>
+                                <EstadoBadge estado={pedido.estado} />
+                              </div>
+
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                <button
+                                  type="button"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                                     color: 'white',
                                     border: 'none',
-                                    borderRadius: '8px',
-                                    padding: isMobile ? '6px 12px' : '8px 16px',
-                                    fontSize: isMobile ? '12px' : '14px',
-                                    fontWeight: '600',
+                                    borderRadius: 8,
+                                    padding: '7px 12px',
+                                    fontSize: 12,
+                                    fontWeight: 600,
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
                                     flex: isMobile ? 1 : 'auto',
                                     whiteSpace: 'nowrap'
                                   }}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (window.confirm('¿Estás seguro de que quieres cancelar este pedido? El stock será restaurado.')) {
-                                      cancelarPedido(pedido.id);
-                                    }
+                                    setDetallePedido(pedido);
                                   }}
-                                  onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
-                                  onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                                    {isMobile ? '❌ Cancelar' : '❌ Cancelar'}
+                                >
+                                  Ver detalle
+                                </button>
+
+                                {(pedido.estado === 'PENDIENTE' || pedido.estado === 'CONFIRMADO') && (
+                                  <button
+                                    type="button"
+                                    style={{
+                                      background: '#fff',
+                                      color: '#dc2626',
+                                      border: '1px solid #fecaca',
+                                      borderRadius: 8,
+                                      padding: '7px 12px',
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      flex: isMobile ? 1 : 'auto',
+                                      whiteSpace: 'nowrap'
+                                    }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (window.confirm('¿Estás seguro de que quieres cancelar este pedido? El stock será restaurado.')) {
+                                        cancelarPedido(pedido.id);
+                                      }
+                                    }}
+                                  >
+                                    Cancelar
                                   </button>
                                 )}
                               </div>
                             </div>
                           </div>
-                          
-                          {/* Contenido del pedido - Responsive */}
-                          <div style={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: isMobile ? '1fr' : '1fr auto', 
-                            gap: isMobile ? '12px' : '16px', 
-                            alignItems: isMobile ? 'flex-start' : 'center' 
+
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? '1fr' : '1fr auto',
+                            gap: isMobile ? 8 : 12,
+                            alignItems: 'center',
+                            paddingTop: 10,
+                            borderTop: '1px solid #f1f5f9'
                           }}>
                             <div>
-                              <p style={{ 
-                                margin: '0 0 8px 0', 
-                                fontSize: isMobile ? '12px' : '14px', 
-                                color: '#64748b', 
-                                fontWeight: '500' 
+                              <p style={{
+                                margin: '0 0 6px 0',
+                                fontSize: 11,
+                                color: '#94a3b8',
+                                fontWeight: 600,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em'
                               }}>
-                                Productos:
+                                Productos
                               </p>
-                              <div style={{ 
-                                display: 'flex', 
-                                flexWrap: 'wrap', 
-                                gap: isMobile ? '6px' : '8px' 
-                              }}>
-                                {pedido.detalles?.slice(0, isMobile ? 2 : 3).map(det => (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {pedido.detalles?.slice(0, isMobile ? 3 : 4).map(det => (
                                   <span key={det.id} style={{
-                                    background: 'white',
-                                    padding: isMobile ? '3px 8px' : '4px 12px',
-                                    borderRadius: '8px',
-                                    fontSize: isMobile ? '10px' : '12px',
-                                    color: '#1e293b',
+                                    background: '#f8fafc',
+                                    padding: '3px 8px',
+                                    borderRadius: 6,
+                                    fontSize: 11,
+                                    color: '#334155',
                                     border: '1px solid #e2e8f0',
-                                    wordBreak: 'break-word',
-                                    maxWidth: isMobile ? '120px' : 'none'
+                                    maxWidth: isMobile ? 140 : 200,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
                                   }}>
-                                    {det.nombreProducto} {det.cantidad}
+                                    {det.nombreProducto} ×{det.cantidad}
                                   </span>
                                 ))}
-                                {pedido.detalles && pedido.detalles.length > (isMobile ? 2 : 3) && (
+                                {pedido.detalles && pedido.detalles.length > (isMobile ? 3 : 4) && (
                                   <span style={{
-                                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                                    color: 'white',
-                                    padding: isMobile ? '3px 8px' : '4px 12px',
-                                    borderRadius: '8px',
-                                    fontSize: isMobile ? '10px' : '12px',
-                                    fontWeight: '600'
+                                    background: '#ede9fe',
+                                    color: '#5b21b6',
+                                    padding: '3px 8px',
+                                    borderRadius: 6,
+                                    fontSize: 11,
+                                    fontWeight: 600
                                   }}>
-                                    +{pedido.detalles.length - (isMobile ? 2 : 3)} más
+                                    +{pedido.detalles.length - (isMobile ? 3 : 4)}
                                   </span>
                                 )}
                               </div>
                             </div>
-                            
-                            {/* Total - Responsive */}
-                            <div style={{ 
+
+                            <div style={{
                               textAlign: isMobile ? 'left' : 'right',
                               alignSelf: isMobile ? 'flex-start' : 'center'
                             }}>
-                              <p style={{ 
-                                margin: '0 0 4px 0', 
-                                fontSize: isMobile ? '12px' : '14px', 
-                                color: '#64748b' 
-                              }}>
+                              <p style={{ margin: '0 0 2px 0', fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                                 Total
                               </p>
-                              <p style={{ 
-                                margin: 0, 
-                                fontSize: isMobile ? '20px' : '24px', 
-                                fontWeight: '700', 
-                                color: '#8b5cf6' 
+                              <p style={{
+                                margin: 0,
+                                fontSize: isMobile ? 17 : 18,
+                                fontWeight: 800,
+                                color: '#7c3aed',
+                                fontVariantNumeric: 'tabular-nums'
                               }}>
                                 ${pedido.total?.toFixed(2)}
                               </p>

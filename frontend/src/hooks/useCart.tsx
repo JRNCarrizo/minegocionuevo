@@ -8,6 +8,8 @@ export interface CartItem {
   precio: number;
   cantidad: number;
   imagen?: string;
+  /** Stock al momento de agregar; limita la UI y se complementa con validateStock. */
+  stock?: number;
 }
 
 interface CartContextType {
@@ -136,7 +138,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const existe = prev.find(i => i.id === item.id);
         if (existe) {
           console.log(`Actualizando cantidad de ${item.nombre} de ${existe.cantidad} a ${nuevaCantidad}`);
-          const nuevoEstado = prev.map(i => i.id === item.id ? { ...i, cantidad: nuevaCantidad } : i);
+          const mergedStock = item.stock !== undefined ? item.stock : existe.stock;
+          const nuevoEstado = prev.map(i =>
+            i.id === item.id ? { ...i, cantidad: nuevaCantidad, stock: mergedStock } : i
+          );
           console.log('Nuevo estado del carrito:', nuevoEstado);
           return nuevoEstado;
         } else {
@@ -160,35 +165,61 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
-  const updateQuantity = async (id: number, cantidad: number, empresaId?: number, subdominio?: string) => {
-    try {
-      console.log(`=== ACTUALIZANDO CANTIDAD ===`);
-      console.log(`ProductoId: ${id}`);
-      console.log(`Nueva cantidad: ${cantidad}`);
-      console.log(`EmpresaId: ${empresaId}`);
-      console.log(`Subdominio: ${subdominio}`);
-      
-      if (cantidad <= 0) {
-        console.log('Cantidad <= 0, removiendo del carrito');
-        removeFromCart(id);
-        return true;
-      }
+  const updateQuantity = useCallback(
+    async (id: number, cantidad: number, empresaId?: number, subdominio?: string) => {
+      try {
+        console.log(`=== ACTUALIZANDO CANTIDAD ===`);
+        console.log(`ProductoId: ${id}`);
+        console.log(`Nueva cantidad: ${cantidad}`);
+        console.log(`EmpresaId: ${empresaId}`);
+        console.log(`Subdominio: ${subdominio}`);
 
-      // Para cambios de cantidad, no validar stock (solo validar al agregar)
-      console.log('Actualizando cantidad sin validar stock...');
-      setItems(prev => {
-        const nuevoEstado = prev.map(i => i.id === id ? { ...i, cantidad } : i);
-        console.log('Nuevo estado del carrito:', nuevoEstado);
-        return nuevoEstado;
-      });
-      
-      console.log('Cantidad actualizada exitosamente');
-      return true;
-    } catch (error) {
-      console.error('Error al actualizar cantidad:', error);
-      return false;
-    }
-  };
+        if (cantidad <= 0) {
+          console.log('Cantidad <= 0, removiendo del carrito');
+          setItems(prev => prev.filter(i => i.id !== id));
+          return true;
+        }
+
+        const requested = Math.floor(Number(cantidad));
+        if (!Number.isFinite(requested) || requested < 1) {
+          toast.error('Cantidad inválida');
+          return false;
+        }
+
+        const line = items.find(i => i.id === id);
+        if (!line) {
+          return false;
+        }
+
+        let targetQty = requested;
+        if (line.stock != null && Number.isFinite(line.stock) && line.stock >= 0) {
+          if (targetQty > line.stock) {
+            toast.error(`Solo hay ${line.stock} unidades disponibles de "${line.nombre}".`);
+            return false;
+          }
+        }
+
+        console.log('Validando stock antes de actualizar cantidad...');
+        const stockValido = await validateStock(id, targetQty, empresaId, subdominio);
+        if (!stockValido) {
+          return false;
+        }
+
+        setItems(prev => {
+          const nuevoEstado = prev.map(i => (i.id === id ? { ...i, cantidad: targetQty } : i));
+          console.log('Nuevo estado del carrito:', nuevoEstado);
+          return nuevoEstado;
+        });
+
+        console.log('Cantidad actualizada exitosamente');
+        return true;
+      } catch (error) {
+        console.error('Error al actualizar cantidad:', error);
+        return false;
+      }
+    },
+    [items, validateStock]
+  );
 
   const clearCart = () => setItems([]);
 

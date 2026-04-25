@@ -100,7 +100,8 @@ export default function ProductoPublico() {
       nombre: producto.nombre,
       precio: producto.precio,
       cantidad,
-      imagen: producto.imagenes && producto.imagenes[0]
+      imagen: producto.imagenes && producto.imagenes[0],
+      stock: producto.stock
     }, undefined, subdominio || undefined);
     
     if (agregado) {

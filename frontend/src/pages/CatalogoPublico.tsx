@@ -1424,7 +1424,8 @@ export default function CatalogoPublico() {
                                     nombre: producto.nombre,
                                     precio: producto.precio,
                                     cantidad: 1,
-                                    imagen: producto.imagenes && producto.imagenes[0]
+                                    imagen: producto.imagenes && producto.imagenes[0],
+                                    stock: producto.stock
                                   }, undefined, subdominio || undefined);
                                   
                                   if (agregado) {
@@ -1539,15 +1540,24 @@ export default function CatalogoPublico() {
                                 nombre: producto.nombre,
                                 precio: producto.precio || 0, // Usar 0 si no hay precio
                                 cantidad: 1,
-                                imagen: producto.imagenes && producto.imagenes[0]
+                                imagen: producto.imagenes && producto.imagenes[0],
+                                stock: producto.stock
                               }, undefined, subdominio || undefined);
                               
                               if (agregado) {
                                 toast.success('Producto agregado al carrito');
                               }
                             } else {
-                              // Si ya hay cantidad, mostrar mensaje
-                              toast.success(`Tienes ${cantidadEnCarrito} unidades en el carrito`);
+                              // Si ya está en el carrito, sumar +1 (si hay stock)
+                              const nuevaCantidad = cantidadEnCarrito + 1;
+                              if (nuevaCantidad > producto.stock) {
+                                toast.error('No hay más stock disponible');
+                                return;
+                              }
+                              const ok = await updateQuantity(producto.id, nuevaCantidad, undefined, subdominio || undefined);
+                              if (ok) {
+                                toast.success(`Agregado: ${nuevaCantidad} en carrito`);
+                              }
                             }
                           }}
                         >

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useCart } from '../hooks/useCart';
 import apiService from '../services/api';
-import type { Producto } from '../types';
+import type { ApiResponse, Producto } from '../types';
 import toast from 'react-hot-toast';
 import { getCookie } from '../utils/cookies';
 
@@ -59,21 +60,36 @@ export default function ProductoDetalleModal({
   };
 
   const cargarProducto = async () => {
-    if (!subdominio || !productoId) return;
-    
+    const sid = (subdominio || '').trim();
+    const pid = productoId != null ? Number(productoId) : NaN;
+
+    if (!sid) {
+      setProducto(null);
+      setError('No se identificó la tienda. Recargá la página o entrá desde el enlace de tu tienda.');
+      setCargando(false);
+      return;
+    }
+    if (!Number.isFinite(pid) || pid <= 0) {
+      setProducto(null);
+      setError('No se identificó el producto en el pedido.');
+      setCargando(false);
+      return;
+    }
+
     try {
       setCargando(true);
       setError(null);
-      const response = await apiService.obtenerProductoPublico(subdominio, productoId);
-      setProducto(response.data || null);
+      const response = (await apiService.obtenerProductoPublico(sid, pid)) as ApiResponse<Producto>;
+      const p = response?.data ?? null;
+      setProducto(p);
       setImagenActual(0);
-      
-      // Inicializar cantidad basada en lo que ya está en el carrito
-      const cantidadEnCarrito = items.find(i => i.id === productoId)?.cantidad || 0;
+
+      const cantidadEnCarrito = items.find(i => i.id === pid)?.cantidad || 0;
       setCantidad(cantidadEnCarrito > 0 ? cantidadEnCarrito : 1);
     } catch (err) {
       console.error('Error al cargar producto:', err);
       setError('No se pudo cargar el producto');
+      setProducto(null);
     } finally {
       setCargando(false);
     }
@@ -161,7 +177,8 @@ export default function ProductoDetalleModal({
       nombre: producto.nombre,
       precio: producto.precio,
       cantidad,
-      imagen: producto.imagenes && producto.imagenes.length > 0 ? producto.imagenes[0] : undefined
+      imagen: producto.imagenes && producto.imagenes.length > 0 ? producto.imagenes[0] : undefined,
+      stock: producto.stock
     }, undefined, subdominio || undefined);
     
     if (agregado) {
@@ -175,7 +192,7 @@ export default function ProductoDetalleModal({
 
   if (!open) return null;
 
-  return (
+  const modalUi = (
     <div style={{
       position: 'fixed',
       top: 0,
@@ -186,7 +203,7 @@ export default function ProductoDetalleModal({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000,
+      zIndex: 1200,
       padding: '20px'
     }}
     onClick={handleClose}
@@ -196,9 +213,12 @@ export default function ProductoDetalleModal({
         borderRadius: '20px',
         maxWidth: 'min(90vw, 1200px)',
         maxHeight: '90vh',
+        minHeight: 'min(45vh, 360px)',
         overflow: 'auto',
         position: 'relative',
-        width: '100%'
+        width: '100%',
+        zIndex: 1,
+        boxSizing: 'border-box'
       }}
       onClick={(e) => e.stopPropagation()}
       >
@@ -235,7 +255,29 @@ export default function ProductoDetalleModal({
           ✕
         </button>
 
-        {cargando ? (
+        {!productoId ? (
+          <div style={{ padding: '48px 32px', textAlign: 'center' }}>
+            <p style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#64748b' }}>
+              No se pudo identificar el producto para mostrar el detalle.
+            </p>
+            <button
+              type="button"
+              onClick={handleClose}
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '10px 20px',
+                fontSize: '15px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        ) : cargando ? (
           <div style={{
             padding: '60px 40px',
             textAlign: 'center'
@@ -846,4 +888,8 @@ export default function ProductoDetalleModal({
       `}</style>
     </div>
   );
+
+  return typeof document !== 'undefined'
+    ? createPortal(modalUi, document.body)
+    : modalUi;
 } 

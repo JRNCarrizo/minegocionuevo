@@ -324,6 +324,11 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa, p
                   {items.map((item) => {
                     const thumb = 48;
                     const sub = item.precio * item.cantidad;
+                    const maxStock =
+                      item.stock != null && Number.isFinite(item.stock) && item.stock >= 0
+                        ? item.stock
+                        : undefined;
+                    const atMaxStock = maxStock !== undefined && item.cantidad >= maxStock;
                     const btnQty: React.CSSProperties = {
                       width: 28,
                       height: 28,
@@ -425,9 +430,13 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa, p
                           <input
                             type="number"
                             min={1}
+                            max={maxStock}
                             value={item.cantidad}
                             onChange={async (e) => {
-                              const n = Number(e.target.value);
+                              const raw = e.target.value;
+                              if (raw === '') return;
+                              const n = Number(raw);
+                              if (!Number.isFinite(n)) return;
                               await updateQuantity(item.id, n, undefined, subdominioStock);
                             }}
                             style={{
@@ -444,8 +453,15 @@ const CartModal: React.FC<CartModalProps> = ({ open, onClose, onCompraExitosa, p
                           />
                           <button
                             type="button"
-                            onClick={() => updateQuantity(item.id, item.cantidad + 1, undefined, subdominioStock)}
-                            style={btnQty}
+                            disabled={atMaxStock}
+                            onClick={() =>
+                              updateQuantity(item.id, item.cantidad + 1, undefined, subdominioStock)
+                            }
+                            style={{
+                              ...btnQty,
+                              opacity: atMaxStock ? 0.45 : 1,
+                              cursor: atMaxStock ? 'not-allowed' : 'pointer'
+                            }}
                           >+</button>
                           {!isDesktop && (
                             <button

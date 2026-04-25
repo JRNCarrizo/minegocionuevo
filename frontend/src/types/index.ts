@@ -142,12 +142,14 @@ export interface Pedido {
 
 export interface DetallePedido {
   id: number;
+  /** Presente en respuestas API (p. ej. pedidos públicos); el objeto `producto` completo suele no venir. */
+  productoId?: number;
   cantidad: number;
   precioUnitario: number;
   precioTotal: number;
   subtotal: number; // Agregar subtotal
   observaciones?: string;
-  producto: Producto;
+  producto?: Producto;
   nombreProducto: string;
   productoNombre: string; // Nuevo campo del DTO
   productoDescripcion?: string; // Nuevo campo del DTO

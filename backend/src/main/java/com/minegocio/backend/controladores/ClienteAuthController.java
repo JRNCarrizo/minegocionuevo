@@ -12,10 +12,14 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,6 +62,52 @@ public class ClienteAuthController {
     
     @Autowired
     private com.minegocio.backend.servicios.LimiteService limiteService;
+
+    @Autowired
+    private Environment environment;
+
+    /** Si es true, la respuesta de registro incluye tokenVerificacion (solo para depuración / entornos controlados). */
+    @Value("${minegocio.expose-client-verification-token:false}")
+    private boolean exposeClientVerificationToken;
+
+    /** true si algún perfil activo es de desarrollo (dev, dev-persistent, etc.) */
+    private boolean esPerfilDesarrollo() {
+        return Arrays.stream(environment.getActiveProfiles())
+                .anyMatch(p -> p != null && p.toLowerCase().contains("dev"));
+    }
+
+    /** Solo perfil exacto "dev" (H2 en memoria): registro auto-verificado con JWT. No usar para dev-persistent. */
+    private boolean esPerfilDevClasico() {
+        return Arrays.asList(environment.getActiveProfiles()).contains("dev");
+    }
+
+    /**
+     * Imprime en la consola del IDE (stdout) el token de verificación para simular el mail.
+     */
+    private void imprimirTokenSimulacionEmailEnConsola(String subdominio, Empresa empresa, ClienteDTO cliente) {
+        if (!esPerfilDesarrollo()) {
+            return;
+        }
+        String token = cliente.getTokenVerificacion();
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        String hostEjemplo = "http://" + subdominio + ".localhost:5173";
+        System.out.println("");
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        System.out.println("  SIMULACIÓN EMAIL — REGISTRO CLIENTE (copiar token y pegar en /verificar-email)");
+        System.out.println("  Tienda (subdominio): " + subdominio);
+        System.out.println("  Empresa: " + (empresa.getNombre() != null ? empresa.getNombre() : ""));
+        System.out.println("  Email cliente: " + cliente.getEmail());
+        System.out.println("------------------------------------------------------------------------");
+        System.out.println("  TOKEN (solo esta línea):");
+        System.out.println(token);
+        System.out.println("------------------------------------------------------------------------");
+        System.out.println("  URL de ejemplo (frontend local):");
+        System.out.println("  " + hostEjemplo + "/verificar-email?token=" + token);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        System.out.println("");
+    }
 
     /**
      * Registro de nuevo cliente
@@ -155,12 +205,12 @@ public class ClienteAuthController {
             System.out.println("  Token generado: '" + tokenGenerado + "'");
             
             ClienteDTO clienteCreado = clienteService.crearCliente(empresa.getId(), nuevoClienteDTO);
-            
-            // MODO DESARROLLO: Auto-verificar y generar token (solo en dev-persistent)
-            String profileActivo = System.getProperty("spring.profiles.active", "");
-            boolean esDesarrollo = profileActivo.contains("dev");
-            
-            if (esDesarrollo) {
+
+            imprimirTokenSimulacionEmailEnConsola(subdominio, empresa, clienteCreado);
+
+            // MODO DESARROLLO clásico (perfil exacto "dev" + H2): auto-verificar y devolver JWT.
+            // Con "dev-persistent" NO entra acá: se usa flujo normal + token impreso arriba para simular el mail.
+            if (esPerfilDevClasico()) {
                 System.out.println("🔧 MODO DESARROLLO: Auto-verificando cliente...");
                 // Activar y verificar automáticamente
                 ClienteDTO clienteActualizado = clienteService.marcarClienteComoVerificado(empresa.getId(), clienteCreado.getId());
@@ -207,16 +257,19 @@ public class ClienteAuthController {
                 // No lanzar excepción para no fallar el registro
             }
             
-            return ResponseEntity.status(201).body(Map.of(
-                "mensaje", "Cliente registrado exitosamente. Por favor, verifica tu email para activar tu cuenta.",
-                "requiereVerificacion", true,
-                "cliente", Map.of(
+            Map<String, Object> cuerpoRegistro = new HashMap<>();
+            cuerpoRegistro.put("mensaje", "Cliente registrado exitosamente. Por favor, verifica tu email para activar tu cuenta.");
+            cuerpoRegistro.put("requiereVerificacion", true);
+            cuerpoRegistro.put("cliente", Map.of(
                     "id", clienteCreado.getId(),
                     "nombre", clienteCreado.getNombre(),
                     "apellidos", clienteCreado.getApellidos(),
                     "email", clienteCreado.getEmail()
-                )
             ));
+            if ((exposeClientVerificationToken || esPerfilDesarrollo()) && clienteCreado.getTokenVerificacion() != null) {
+                cuerpoRegistro.put("tokenVerificacion", clienteCreado.getTokenVerificacion());
+            }
+            return ResponseEntity.status(201).body(cuerpoRegistro);
             
         } catch (Exception e) {
             System.out.println("ERROR REGISTRO CLIENTE: " + e.getMessage());

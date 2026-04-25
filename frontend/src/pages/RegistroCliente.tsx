@@ -72,6 +72,20 @@ const RegistroCliente: React.FC = () => {
       
       const response = await api.registrarCliente(subdominio, datosCliente);
 
+      if (response.tokenVerificacion) {
+        const verificarPath = `/verificar-email?token=${encodeURIComponent(response.tokenVerificacion)}`;
+        console.log(
+          '%c[Registro cliente] Token de verificación (confirmar cuenta):',
+          'color:#0ea5e9;font-weight:bold',
+          response.tokenVerificacion
+        );
+        console.log(
+          '%c[Registro cliente] URL en esta tienda:',
+          'color:#64748b;font-weight:bold',
+          `${window.location.origin}${verificarPath}`
+        );
+      }
+
       if (response.requiereVerificacion) {
         toast.success('¡Cuenta creada exitosamente! Por favor, verifica tu email para activar tu cuenta.');
         reset();
