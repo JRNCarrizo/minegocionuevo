@@ -236,6 +236,11 @@ export default function NuevoProducto() {
   const unidadRef = useRef<HTMLInputElement>(null);
   const stockRef = useRef<HTMLInputElement>(null);
   const stockMinimoRef = useRef<HTMLInputElement>(null);
+  const evitarScrollCambieNumero = (e: React.WheelEvent<HTMLInputElement>) => {
+    // Cuando el input number está enfocado, la rueda cambia el valor.
+    // Blureamos para que el scroll de la página no modifique el número.
+    e.currentTarget.blur();
+  };
   const sectorAlmacenamientoRef = useRef<HTMLInputElement>(null);
 
   const cargarCategorias = useCallback(async () => {
@@ -1656,6 +1661,7 @@ export default function NuevoProducto() {
                           name="stock"
                           value={formulario.stock}
                           onChange={manejarCambio}
+                          onWheel={evitarScrollCambieNumero}
                           onKeyDown={(e) => manejarEnterCampo(e, 'stockMinimo')}
                           className={`campo-input ${errores.stock ? 'campo-error' : ''}`}
                           placeholder="0"
@@ -1674,6 +1680,7 @@ export default function NuevoProducto() {
                           name="stockMinimo"
                           value={formulario.stockMinimo}
                           onChange={manejarCambio}
+                          onWheel={evitarScrollCambieNumero}
                           onKeyDown={(e) => manejarEnterCampo(e, 'unidad')}
                           className={`campo-input ${errores.stockMinimo ? 'campo-error' : ''}`}
                           placeholder="5"
