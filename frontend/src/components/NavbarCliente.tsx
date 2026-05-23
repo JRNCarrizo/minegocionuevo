@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { FaInstagram, FaFacebook } from 'react-icons/fa';
 import { useResponsive } from '../hooks/useResponsive';
+import { LOGIN_CATALOGO_HABILITADO } from '../config/featureFlags';
 
 interface NavbarClienteProps {
   empresa: {
@@ -411,7 +412,7 @@ export default function NavbarCliente({
                 🚪 Salir
               </button>
             </div>
-          ) : (
+          ) : LOGIN_CATALOGO_HABILITADO ? (
             <Link to="/login" style={{
               color: 'white',
               textDecoration: 'none',
@@ -432,7 +433,7 @@ export default function NavbarCliente({
               <span>🔑</span>
               <span>Iniciar Sesión</span>
             </Link>
-          )}
+          ) : null}
         </div>
       </div>
     </header>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { REGISTRO_PUBLICO_HABILITADO } from '../config/featureFlags';
 import ApiService from '../services/api';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 
@@ -501,6 +502,7 @@ export default function LoginAdministrador() {
               </Link>
             </div>
 
+            {REGISTRO_PUBLICO_HABILITADO && (
             <div style={{ textAlign: 'center', marginTop: '1rem' }}>
               <span style={{
                 fontSize: '0.875rem',
@@ -519,6 +521,7 @@ export default function LoginAdministrador() {
                 </Link>
               </span>
             </div>
+            )}
           </form>
         </div>
       </div>

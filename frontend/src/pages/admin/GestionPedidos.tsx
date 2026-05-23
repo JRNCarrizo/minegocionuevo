@@ -28,6 +28,7 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
   const [mostrarProducto, setMostrarProducto] = useState(false);
 
   if (!pedido || !open) return null;
+  const wideLines = !isMobile;
 
   const obtenerColorEstado = (estado: Pedido['estado']) => {
     const colores: Record<Pedido['estado'], string> = {
@@ -69,50 +70,56 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
         width: '100vw', 
         height: '100vh', 
         background: 'rgba(0,0,0,0.6)', 
-        zIndex: 1000, 
+        zIndex: 1100, 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        backdropFilter: 'blur(4px)'
+        backdropFilter: 'blur(8px)',
+        padding: isMobile ? '12px' : '20px',
+        boxSizing: 'border-box'
       }}>
         <div className="modal-content" style={{
           background: '#fff',
-          borderRadius: '16px',
+          borderRadius: isMobile ? '14px' : '16px',
           padding: '0',
-          maxWidth: isMobile ? '95vw' : '900px',
-          width: '95vw',
-          maxHeight: '90vh',
+          width: '100%',
+          maxWidth: wideLines ? 'min(1040px, calc(100vw - 40px))' : '100%',
+          maxHeight: 'min(92vh, 880px)',
+          display: 'flex',
+          flexDirection: 'column',
           overflow: 'hidden',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          border: '1px solid rgba(255,255,255,0.1)'
+          boxShadow: '0 24px 64px rgba(15,23,42,0.22)',
+          border: '1px solid #e2e8f0'
         }}>
           {/* Header del modal */}
           <div style={{
             background: 'linear-gradient(135deg, #1e40af 0%, #3730a3 100%)',
             color: 'white',
-            padding: '24px 32px',
-            borderTopLeftRadius: '16px',
-            borderTopRightRadius: '16px',
+            padding: isMobile ? '12px 14px' : '14px 20px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            gap: 12,
+            flexShrink: 0
           }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ margin: 0, fontSize: isMobile ? '17px' : '19px', fontWeight: 800, letterSpacing: '-0.02em' }}>
                 Pedido #{pedido.numeroPedido || pedido.id}
               </h2>
-              <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
+              <p style={{ margin: '3px 0 0 0', opacity: 0.92, fontSize: isMobile ? '12px' : '13px' }}>
                 {formatearFechaConHora(pedido.fechaCreacion)}
               </p>
             </div>
             <button 
+              type="button"
+              aria-label="Cerrar"
               onClick={onClose}
               style={{
                 background: 'rgba(255,255,255,0.2)',
                 border: 'none',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
+                borderRadius: '10px',
+                width: 36,
+                height: 36,
                 color: 'white',
                 fontSize: '20px',
                 cursor: 'pointer',
@@ -129,38 +136,38 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
           </div>
 
           {/* Contenido del modal */}
-          <div style={{ padding: isMobile ? '16px' : '32px', maxHeight: 'calc(90vh - 120px)', overflow: 'auto' }}>
+          <div style={{ flex: 1, minHeight: 0, padding: isMobile ? '12px 14px' : '16px 20px', overflow: 'auto' }}>
             {/* Información del cliente */}
             <div style={{
-              background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-              borderRadius: '12px',
-              padding: '20px',
-              marginBottom: '24px',
-              border: '1px solid #bae6fd'
+              background: '#f8fafc',
+              borderRadius: '10px',
+              padding: isMobile ? '10px 12px' : '12px 14px',
+              marginBottom: '12px',
+              border: '1px solid #e2e8f0'
             }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
-                👤 Información del Cliente
+              <h3 style={{ margin: '0 0 8px 0', fontSize: isMobile ? '12px' : '13px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Cliente
               </h3>
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', 
-                gap: isMobile ? '12px' : '16px' 
+                gap: isMobile ? '8px' : '10px' 
               }}>
                 <div>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Nombre</p>
-                  <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                  <p style={{ margin: '0 0 2px 0', fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Nombre</p>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
                     {pedido.cliente?.nombre} {pedido.cliente?.apellidos}
                   </p>
                 </div>
                 <div>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Email</p>
-                  <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                  <p style={{ margin: '0 0 2px 0', fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Email</p>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#0f172a', wordBreak: 'break-all' }}>
                     {pedido.cliente?.email}
                   </p>
                 </div>
                 <div>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Teléfono</p>
-                  <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                  <p style={{ margin: '0 0 2px 0', fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Teléfono</p>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
                     {pedido.cliente?.telefono || 'No especificado'}
                   </p>
                 </div>
@@ -251,25 +258,27 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
             {/* Dirección de entrega */}
             {pedido.direccionEntrega && (
               <div style={{
-                background: '#f8fafc',
-                borderRadius: '12px',
-                padding: isMobile ? '16px' : '20px',
-                marginBottom: '24px',
+                background: '#fff',
+                borderRadius: '10px',
+                padding: isMobile ? '10px 12px' : '12px 14px',
+                marginBottom: '12px',
                 border: '1px solid #e2e8f0'
               }}>
                 <h3 style={{ 
-                  margin: '0 0 12px 0', 
-                  fontSize: isMobile ? '16px' : '18px', 
-                  fontWeight: '600', 
-                  color: '#1e293b' 
+                  margin: '0 0 6px 0', 
+                  fontSize: isMobile ? '12px' : '13px', 
+                  fontWeight: 700, 
+                  color: '#64748b',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em'
                 }}>
-                  📍 Dirección de Entrega
+                  Entrega
                 </h3>
                 <p style={{ 
                   margin: 0, 
-                  fontSize: isMobile ? '14px' : '16px', 
-                  color: '#475569', 
-                  lineHeight: '1.5',
+                  fontSize: isMobile ? '13px' : '14px', 
+                  color: '#334155', 
+                  lineHeight: '1.45',
                   wordBreak: 'break-word'
                 }}>
                   {pedido.direccionEntrega}
@@ -278,238 +287,121 @@ function PedidoDetalleModal({ pedido, open, onClose }: { pedido: Pedido | null, 
             )}
 
             {/* Productos */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <h3 style={{ 
-                margin: '0 0 16px 0', 
-                fontSize: isMobile ? '18px' : '20px', 
-                fontWeight: '600', 
-                color: '#1e293b' 
+                margin: '0 0 8px 0', 
+                fontSize: isMobile ? '14px' : '15px', 
+                fontWeight: 800, 
+                color: '#0f172a' 
               }}>
-                🛍️ Productos ({pedido.detalles?.length || 0})
+                Productos <span style={{ fontWeight: 600, color: '#64748b' }}>({pedido.detalles?.length || 0})</span>
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
-                {pedido.detalles?.map((detalle, index) => (
-                  <div 
-                    key={detalle.id || index} 
-                    style={{
-                      background: '#fff',
-                      borderRadius: '12px',
-                      padding: isMobile ? '16px' : '20px',
-                      border: '2px solid #e2e8f0',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = '#3b82f6';
-                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.15)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = '#e2e8f0';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-                    }}
-                    onClick={() => verDetalleProducto(detalle)}
-                  >
-                    {/* Layout principal del producto - Responsive */}
-                    <div style={{ 
-                      display: 'flex', 
-                      flexDirection: isMobile ? 'column' : 'row',
-                      gap: isMobile ? '12px' : '16px' 
-                    }}>
-                      {/* Imagen del producto - Responsive */}
-                      <div style={{ 
-                        flexShrink: 0,
-                        alignSelf: isMobile ? 'center' : 'flex-start'
-                      }}>
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+                {wideLines && (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '44px 1fr 72px 72px 88px',
+                    gap: 8,
+                    padding: '8px 10px',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    color: '#94a3b8',
+                    background: '#f8fafc',
+                    borderBottom: '1px solid #e2e8f0',
+                    alignItems: 'center',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1
+                  }}>
+                    <span />
+                    <span>Producto</span>
+                    <span style={{ textAlign: 'right' }}>P. unit.</span>
+                    <span style={{ textAlign: 'center' }}>Cant.</span>
+                    <span style={{ textAlign: 'right' }}>Subt.</span>
+                  </div>
+                )}
+
+                {pedido.detalles?.map((detalle, index) => {
+                  const thumb = isMobile ? 40 : 44;
+                  const nombre = detalle.productoNombre || detalle.nombreProducto;
+                  const subt = detalle.subtotal?.toFixed(2) || detalle.precioTotal?.toFixed(2) || '0.00';
+                  return (
+                    <div
+                      key={detalle.id || index}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          verDetalleProducto(detalle);
+                        }
+                      }}
+                      onClick={() => verDetalleProducto(detalle)}
+                      style={{
+                        display: wideLines ? 'grid' : 'flex',
+                        gridTemplateColumns: wideLines ? '44px 1fr 72px 72px 88px' : undefined,
+                        gap: wideLines ? 8 : 10,
+                        alignItems: wideLines ? 'center' : 'flex-start',
+                        padding: isMobile ? '10px 10px' : '10px 12px',
+                        borderBottom: index < (pedido.detalles?.length || 0) - 1 ? '1px solid #f1f5f9' : 'none',
+                        cursor: 'pointer',
+                        transition: 'background 0.12s ease'
+                      }}
+                      onMouseOver={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.background = '#fff'; }}
+                    >
+                      <div style={{ flexShrink: 0, width: thumb, height: thumb }}>
                         {detalle.productoImagen ? (
-                          <img 
-                            src={detalle.productoImagen} 
-                            alt={detalle.productoNombre || detalle.nombreProducto}
-                            style={{
-                              width: isMobile ? '60px' : '80px',
-                              height: isMobile ? '60px' : '80px',
-                              objectFit: 'cover',
-                              borderRadius: '12px',
-                              border: '2px solid #e2e8f0'
-                            }}
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://via.placeholder.com/80x80?text=Sin+Imagen';
-                            }}
+                          <img
+                            src={detalle.productoImagen}
+                            alt=""
+                            style={{ width: thumb, height: thumb, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0', display: 'block' }}
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                           />
                         ) : (
-                          <div style={{
-                            width: isMobile ? '60px' : '80px',
-                            height: isMobile ? '60px' : '80px',
-                            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                            borderRadius: '12px',
-                            border: '2px solid #e2e8f0',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <span style={{ 
-                              fontSize: isMobile ? '10px' : '12px', 
-                              color: '#64748b', 
-                              textAlign: 'center' 
-                            }}>
-                              Sin imagen
-                            </span>
+                          <div style={{ width: thumb, height: thumb, background: '#f1f5f9', borderRadius: 8, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#94a3b8' }}>—</div>
+                        )}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: isMobile ? 13 : 14,
+                          fontWeight: 700,
+                          color: '#0f172a',
+                          lineHeight: 1.25,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}>
+                          {nombre}
+                        </div>
+                        {!wideLines && (
+                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+                            ${detalle.precioUnitario?.toFixed(2)} c/u · {detalle.cantidad} u. ·{' '}
+                            <span style={{ fontWeight: 800, color: '#0f172a' }}>${subt}</span>
                           </div>
                         )}
                       </div>
-                      
-                      {/* Información del producto - Responsive */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {/* Header del producto - Responsive */}
-                        <div style={{ 
-                          display: 'flex', 
-                          flexDirection: isMobile ? 'column' : 'row',
-                          justifyContent: 'space-between', 
-                          alignItems: isMobile ? 'flex-start' : 'flex-start', 
-                          marginBottom: '8px',
-                          gap: isMobile ? '8px' : '0'
-                        }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <h4 style={{ 
-                              margin: '0 0 4px 0', 
-                              fontSize: isMobile ? '14px' : '16px', 
-                              fontWeight: '600', 
-                              color: '#1e293b',
-                              lineHeight: '1.3',
-                              wordBreak: 'break-word'
-                            }}>
-                              {detalle.productoNombre || detalle.nombreProducto}
-                            </h4>
-                            {(detalle.productoMarca || detalle.marcaProducto) && (
-                              <p style={{ 
-                                margin: '0 0 8px 0', 
-                                fontSize: isMobile ? '12px' : '14px', 
-                                color: '#64748b',
-                                lineHeight: '1.4',
-                                fontWeight: '500',
-                                wordBreak: 'break-word'
-                              }}>
-                                🏷️ {detalle.productoMarca || detalle.marcaProducto}
-                              </p>
-                            )}
-                            {(detalle.productoCategoria || detalle.categoriaProducto) && (
-                              <span style={{
-                                display: 'inline-block',
-                                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                                color: '#1e40af',
-                                fontSize: isMobile ? '10px' : '12px',
-                                padding: isMobile ? '3px 8px' : '4px 12px',
-                                borderRadius: '12px',
-                                fontWeight: '500',
-                                border: '1px solid #93c5fd',
-                                wordBreak: 'break-word'
-                              }}>
-                                {detalle.productoCategoria || detalle.categoriaProducto}
-                              </span>
-                            )}
-                          </div>
-                          
-                          {/* Precios - Responsive */}
-                          <div style={{ 
-                            textAlign: isMobile ? 'left' : 'right', 
-                            marginLeft: isMobile ? '0' : '16px',
-                            alignSelf: isMobile ? 'flex-start' : 'flex-end'
-                          }}>
-                            <p style={{ 
-                              margin: '0 0 4px 0', 
-                              fontSize: isMobile ? '10px' : '12px', 
-                              color: '#64748b' 
-                            }}>
-                              Precio unitario
-                            </p>
-                            <p style={{ 
-                              margin: 0, 
-                              fontSize: isMobile ? '14px' : '16px', 
-                              fontWeight: '600', 
-                              color: '#059669' 
-                            }}>
-                              ${detalle.precioUnitario?.toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Cantidad y subtotal - Responsive */}
-                        <div style={{ 
-                          display: 'flex', 
-                          flexDirection: isMobile ? 'column' : 'row',
-                          justifyContent: 'space-between', 
-                          alignItems: isMobile ? 'flex-start' : 'center',
-                          padding: '12px 0',
-                          borderTop: '1px solid #f1f5f9',
-                          marginTop: '12px',
-                          gap: isMobile ? '8px' : '0'
-                        }}>
-                          <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px',
-                            flexWrap: 'wrap'
-                          }}>
-                            <span style={{ 
-                              fontSize: isMobile ? '12px' : '14px', 
-                              color: '#64748b' 
-                            }}>
-                              Cantidad:
-                            </span>
-                            <span style={{ 
-                              fontSize: isMobile ? '14px' : '16px', 
-                              fontWeight: '600', 
-                              color: '#1e293b',
-                              background: '#f1f5f9',
-                              padding: isMobile ? '3px 8px' : '4px 12px',
-                              borderRadius: '8px'
-                            }}>
-                              {detalle.cantidad}
-                            </span>
-                          </div>
-                          <div style={{ 
-                            textAlign: isMobile ? 'left' : 'right',
-                            alignSelf: isMobile ? 'flex-start' : 'flex-end'
-                          }}>
-                            <p style={{ 
-                              margin: '0 0 4px 0', 
-                              fontSize: isMobile ? '10px' : '12px', 
-                              color: '#64748b' 
-                            }}>
-                              Subtotal
-                            </p>
-                            <p style={{ 
-                              margin: 0, 
-                              fontSize: isMobile ? '16px' : '18px', 
-                              fontWeight: '700', 
-                              color: '#1e293b' 
-                            }}>
-                              ${detalle.subtotal?.toFixed(2) || detalle.precioTotal?.toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+
+                      {wideLines && (
+                        <>
+                          <span style={{ fontSize: 13, color: '#64748b', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                            ${detalle.precioUnitario?.toFixed(2)}
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 700, textAlign: 'center', color: '#334155' }}>
+                            {detalle.cantidad}
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 800, textAlign: 'right', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                            ${subt}
+                          </span>
+                        </>
+                      )}
                     </div>
-                    
-                    {/* Indicador de click - Responsive */}
-                    <div style={{ 
-                      textAlign: 'center', 
-                      marginTop: '12px',
-                      padding: isMobile ? '6px' : '8px',
-                      background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                      borderRadius: '8px',
-                      border: '1px solid #bae6fd'
-                    }}>
-                      <span style={{ 
-                        fontSize: isMobile ? '10px' : '12px', 
-                        color: '#0369a1', 
-                        fontWeight: '500' 
-                      }}>
-                        👆 Haz clic para ver más detalles del producto
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useResponsive } from '../hooks/useResponsive';
+import { REGISTRO_PUBLICO_HABILITADO } from '../config/featureFlags';
 
 export default function PaginaPrincipal() {
   const { isMobile } = useResponsive();
@@ -188,6 +189,7 @@ export default function PaginaPrincipal() {
               }}>
                 Iniciar Sesión
               </Link>
+              {REGISTRO_PUBLICO_HABILITADO && (
               <Link to="/registro" style={{
                 padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -213,6 +215,7 @@ export default function PaginaPrincipal() {
               }}>
                 Registrarse
               </Link>
+              )}
             </div>
           </div>
         </div>
@@ -274,6 +277,7 @@ export default function PaginaPrincipal() {
                 flexWrap: 'wrap',
                 animation: 'slideInUp 0.8s ease-out 0.4s both'
               }}>
+                {REGISTRO_PUBLICO_HABILITADO && (
                 <Link to="/registro" style={{
                   padding: '1rem 2rem',
                   backgroundColor: 'white',
@@ -297,6 +301,7 @@ export default function PaginaPrincipal() {
                 }}>
                   Empezar Gratis →
                 </Link>
+                )}
                 <Link to="/demo" style={{
                   padding: '1rem 2rem',
                   backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -662,6 +667,7 @@ export default function PaginaPrincipal() {
                     ))}
                   </ul>
 
+                  {REGISTRO_PUBLICO_HABILITADO && (
                   <Link to="/registro" 
                         style={{
                           display: 'block',
@@ -693,6 +699,7 @@ export default function PaginaPrincipal() {
                         }}>
                     {plan.precio === '$0' ? 'Empezar Gratis' : 'Elegir Plan'} →
                   </Link>
+                  )}
                 </div>
               ))}
             </div>
@@ -744,6 +751,7 @@ export default function PaginaPrincipal() {
               Únete a miles de empresarios que ya están creciendo con nuestra plataforma.
               Configura tu tienda en menos de 5 minutos.
             </p>
+            {REGISTRO_PUBLICO_HABILITADO && (
             <Link to="/registro" style={{
               display: 'inline-block',
               padding: '1rem 2rem',
@@ -768,6 +776,7 @@ export default function PaginaPrincipal() {
             }}>
               Crear mi tienda gratis →
             </Link>
+            )}
           </div>
         </section>
 
